@@ -5,9 +5,7 @@ import { createRunCorrelationId, createRunTraceId } from "./run-observability.mj
 
 export function buildManagedRunContext({
   input = {},
-  k8sNamespace = "",
   req,
-  runnerImage = "",
   runtimeSession = {},
 }) {
   const runId = input.runId || input.run_id || randomUUID();
@@ -17,7 +15,7 @@ export function buildManagedRunContext({
     ...managedRunToolFields(input),
     ...managedRunResourceFields(runtimeSession, input),
     ...managedRunAccountingFields(input),
-    ...managedRunRunnerFields({ input, k8sNamespace, req, runnerImage }),
+    ...managedRunRuntimeFields({ input, req }),
     ...managedRunProviderFields(runtimeSession),
   };
 }
@@ -57,13 +55,11 @@ function managedRunAccountingFields(input = {}) {
   };
 }
 
-function managedRunRunnerFields({ input = {}, k8sNamespace = "", req, runnerImage = "" } = {}) {
+function managedRunRuntimeFields({ input = {}, req } = {}) {
   return {
     model: input.model || "opl-runtime",
     tokenCount: Number(input.tokenCount || input.token_count || 0),
     userAgent: req.headers["user-agent"] || "",
-    runnerImage: input.runnerImage || input.runner_image || runnerImage,
-    namespace: input.namespace || k8sNamespace,
   };
 }
 
@@ -86,7 +82,6 @@ function managedRunResourceFields(runtimeSession = {}, input = {}) {
     ...managedRunPlanFields(runtimeSession, input),
     ...managedRunSchedulingFields(runtimeSession, input),
     ...managedRunResourceRequestFields(runtimeSession, input),
-    ...managedRunProvisioningFields(runtimeSession, input),
   };
 }
 
@@ -120,12 +115,5 @@ function managedRunResourceRequestFields(runtimeSession = {}, input = {}) {
     gpuCount: Number(input.gpuCount ?? input.gpu_count ?? runtimeSession.gpuCount ?? 0),
     storageRequest: input.storageRequest || input.storage_request || runtimeSession.storageRequest || "",
     storageLimit: input.storageLimit || input.storage_limit || runtimeSession.storageLimit || "",
-  };
-}
-
-function managedRunProvisioningFields(runtimeSession = {}, input = {}) {
-  return {
-    provisioningMode: input.provisioningMode || input.provisioning_mode || runtimeSession.provisioningMode || "schedule_to_node_pool",
-    nodePoolScalePayload: input.nodePoolScalePayload || input.node_pool_scale_payload || runtimeSession.nodePoolScalePayload || null,
   };
 }

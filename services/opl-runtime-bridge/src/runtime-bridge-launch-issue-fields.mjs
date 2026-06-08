@@ -43,7 +43,6 @@ export function selectedPlanResourceFields(input = {}, selectedServerPlan = {}) 
     ...selectedPlanIdentityFields(input, selectedServerPlan),
     ...selectedPlanSchedulingFields(input, selectedServerPlan),
     ...selectedPlanRequestFields(input, selectedServerPlan),
-    ...selectedPlanProvisioningFields(input, selectedServerPlan),
   };
 }
 
@@ -88,23 +87,11 @@ function selectedPlanRequestFields(input = {}, selectedServerPlan = {}) {
   };
 }
 
-function selectedPlanProvisioningFields(input = {}, selectedServerPlan = {}) {
-  return {
-    provisioningMode: input.provisioningMode || input.provisioning_mode || selectedServerPlan.provisioningMode || "schedule_to_node_pool",
-    tkeClusterId: input.tkeClusterId || input.tke_cluster_id || selectedServerPlan.tkeClusterId || "",
-    nodePoolId: input.nodePoolId || input.node_pool_id || selectedServerPlan.nodePoolId || "",
-    nodePoolCreatePayload: input.nodePoolCreatePayload || input.node_pool_create_payload || selectedServerPlan.nodePoolCreatePayload || null,
-    nodePoolScalePayload: input.nodePoolScalePayload || input.node_pool_scale_payload || selectedServerPlan.nodePoolScalePayload || null,
-    provisionerPayload: input.provisionerPayload || input.provisioner_payload || selectedServerPlan.provisionerPayload || null,
-  };
-}
-
 export function runtimeSessionResourceFields(runtimeSession = {}, selectedServerPlan = {}) {
   return {
     ...runtimeSessionPlanFields(runtimeSession, selectedServerPlan),
     ...runtimeSessionSchedulingFields(runtimeSession, selectedServerPlan),
     ...runtimeSessionRequestFields(runtimeSession, selectedServerPlan),
-    ...runtimeSessionProvisioningFields(runtimeSession, selectedServerPlan),
   };
 }
 
@@ -138,16 +125,5 @@ function runtimeSessionRequestFields(runtimeSession = {}, selectedServerPlan = {
     gpuCount: Number(runtimeSession.gpuCount ?? selectedServerPlan.gpuCount ?? selectedServerPlan.gpu ?? 0),
     storageRequest: runtimeSession.storageRequest || selectedServerPlan.storageRequest || "",
     storageLimit: runtimeSession.storageLimit || selectedServerPlan.storageLimit || "",
-  };
-}
-
-function runtimeSessionProvisioningFields(runtimeSession = {}, selectedServerPlan = {}) {
-  return {
-    provisioningMode: runtimeSession.provisioningMode || selectedServerPlan.provisioningMode || "schedule_to_node_pool",
-    tkeClusterId: runtimeSession.tkeClusterId || selectedServerPlan.tkeClusterId || "",
-    nodePoolId: runtimeSession.nodePoolId || selectedServerPlan.nodePoolId || "",
-    nodePoolCreatePayload: runtimeSession.nodePoolCreatePayload || selectedServerPlan.nodePoolCreatePayload || null,
-    nodePoolScalePayload: runtimeSession.nodePoolScalePayload || selectedServerPlan.nodePoolScalePayload || null,
-    provisionerPayload: runtimeSession.provisionerPayload || selectedServerPlan.provisionerPayload || null,
   };
 }

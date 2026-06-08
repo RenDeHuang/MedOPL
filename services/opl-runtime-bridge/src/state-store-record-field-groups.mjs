@@ -33,7 +33,6 @@ export function runtimeResourceFields(input = {}) {
     ...serverPlanIdentityFields(input),
     ...runtimeSchedulingFields(input),
     ...runtimeResourceRequestFields(input),
-    ...runtimeProvisioningFields(input),
   };
 }
 
@@ -67,17 +66,6 @@ function runtimeResourceRequestFields(input = {}) {
     gpuCount: Number(input.gpuCount ?? input.gpu_count ?? 0),
     storageRequest: input.storageRequest || input.storage_request || "",
     storageLimit: input.storageLimit || input.storage_limit || "",
-  };
-}
-
-function runtimeProvisioningFields(input = {}) {
-  return {
-    provisioningMode: input.provisioningMode || input.provisioning_mode || "schedule_to_node_pool",
-    tkeClusterId: input.tkeClusterId || input.tke_cluster_id || input.clusterId || input.cluster_id || "",
-    nodePoolId: input.nodePoolId || input.node_pool_id || "",
-    nodePoolCreatePayload: input.nodePoolCreatePayload || input.node_pool_create_payload || null,
-    nodePoolScalePayload: input.nodePoolScalePayload || input.node_pool_scale_payload || null,
-    provisionerPayload: input.provisionerPayload || input.provisioner_payload || null,
   };
 }
 

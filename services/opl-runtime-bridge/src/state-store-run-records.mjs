@@ -25,8 +25,6 @@ export function buildRunRecord(input = {}) {
     toolName: input.toolName || input.tool_name || "med-autoscience",
     ...runtimeResourceFields(input),
     ...runtimeDispatchFields(input),
-    runnerImage: input.runnerImage || input.runner_image || "",
-    namespace: input.namespace || "",
     jobName: input.jobName || input.job_name || "",
     billingMetadataRef: input.billingMetadataRef || input.billing_metadata_ref || "",
     usageMetadataRef: input.usageMetadataRef || input.usage_metadata_ref || "",

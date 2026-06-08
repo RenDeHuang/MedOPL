@@ -4,7 +4,7 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 
 import { artifactsRoot, runtimeRoot, stateFile } from "./state-store-paths.mjs";
-import { normalizeCostRecords } from "./state-store-cost-normalization.mjs";
+import { dropRetiredStateFields } from "./state-store-retired-fields.mjs";
 
 let stateWriteQueue = Promise.resolve();
 
@@ -20,7 +20,6 @@ const emptyState = {
   messageRequests: [],
   messageReplies: [],
   traceLinks: [],
-  costRecords: [],
   sessionLedgerEntries: [],
   events: [],
 };
@@ -85,10 +84,10 @@ async function ensureRuntimeUnlocked() {
 }
 
 function sanitizeState(state) {
+  const runtimeState = dropRetiredStateFields(state);
   return {
-    ...state,
+    ...runtimeState,
     messageReplies: Array.isArray(state.messageReplies) ? state.messageReplies : [],
     sessionLedgerEntries: Array.isArray(state.sessionLedgerEntries) ? state.sessionLedgerEntries : [],
-    costRecords: normalizeCostRecords(state.costRecords),
   };
 }

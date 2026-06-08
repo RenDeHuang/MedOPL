@@ -61,22 +61,19 @@ func TestRouterServesExpectedEndpoints(t *testing.T) {
 	if rec.Code != http.StatusFound {
 		t.Fatalf("/api/logout status = %d", rec.Code)
 	}
-	for _, item := range []struct {
-		path string
-		body string
-	}{
-		{path: "/workflow/commands", body: `{"workflowCommandId":"cmd-v22","commandType":"managed_run.submit","tenantId":"tenant-v22","workspaceId":"workspace-v22","requestedBy":"user-v22","idempotencyKey":"idem-v22"}`},
-		{path: "/runtime/launch", body: `{"workflowCommandId":"cmd-launch","tenantId":"tenant-v22","workspaceId":"workspace-v22","requestedBy":"user-v22","idempotencyKey":"idem-launch"}`},
-		{path: "/runs", body: `{"workflowCommandId":"cmd-run","tenantId":"tenant-v22","workspaceId":"workspace-v22","requestedBy":"user-v22","idempotencyKey":"idem-run"}`},
-		{path: "/billing/freeze", body: `{"workflowCommandId":"cmd-billing","tenantId":"tenant-v22","workspaceId":"workspace-v22","requestedBy":"user-v22","idempotencyKey":"idem-billing"}`},
-		{path: "/resources/release", body: `{"workflowCommandId":"cmd-release","tenantId":"tenant-v22","workspaceId":"workspace-v22","requestedBy":"user-v22","idempotencyKey":"idem-release"}`},
+	for _, path := range []string{
+		"/workflow/commands",
+		"/runtime/launch",
+		"/runs",
+		"/billing/freeze",
+		"/resources/release",
 	} {
-		req := httptest.NewRequest(http.MethodPost, item.path, bytes.NewBufferString(item.body))
+		req := httptest.NewRequest(http.MethodPost, path, bytes.NewBufferString(`{"workflowCommandId":"legacy-root-facade","idempotencyKey":"legacy-root-facade"}`))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
-		if rec.Code != http.StatusAccepted {
-			t.Fatalf("%s status = %d", item.path, rec.Code)
+		if rec.Code != http.StatusGone && rec.Code != http.StatusNotFound {
+			t.Fatalf("%s legacy root facade status = %d body = %s", path, rec.Code, rec.Body.String())
 		}
 	}
 }

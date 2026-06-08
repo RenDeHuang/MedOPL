@@ -28,7 +28,6 @@ import {
 } from "./runtime-bridge-launch-issue.mjs";
 import {
   publicArtifactView,
-  publicCostView,
   publicLaunchView,
   publicMessageView,
   publicProgressView,
@@ -214,10 +213,7 @@ export function createLaunchApi({
   buildTime,
   runtimeMode,
   oplWebUrl,
-  runnerUrl,
   portalInternalBaseUrl,
-  k8sNamespace,
-  runnerImage,
   nodeEnv,
   langfusePublisher,
   publishTraceEvent,
@@ -241,10 +237,7 @@ export function createLaunchApi({
       runtime: {
         runtimeBridgePublicUrl: baseUrl,
         oplWebUrl: oplWebUrl || null,
-        runnerUrl: runnerUrl || null,
         portalInternalBaseUrl: portalInternalBaseUrl || null,
-        namespace: k8sNamespace,
-        runnerImage: runnerImage || null,
       },
       trace: {
         publisherConfigured: langfusePublisher.configured(),
@@ -326,7 +319,6 @@ export function createLaunchApi({
       state.traceLinks.filter((item) => String(item?.runId || "").trim()),
       scope
     );
-    const costs = scopedCollection(state.costRecords, scope);
     const workspaces = scopedCollection(
       oplResources.workspaces?.length ? oplResources.workspaces : state.workspaces,
       scope,
@@ -440,7 +432,6 @@ export function createLaunchApi({
       runs: runs.map(publicRunView),
       runActions: runActions.map(publicRunActionView),
       traces: traces.map(publicTraceView),
-      costs: costs.map(publicCostView),
     };
   }
 
@@ -480,8 +471,6 @@ export function createLaunchApi({
         traceId,
         workspaceId: workspace.workspaceId,
         workspaceSessionId: workspaceSession.workspaceSessionId,
-        k8sNamespace,
-        runnerImage,
         selectedServerPlan,
       }));
       await bindProviderConfig(runtimeSession, input.providerKeyPayload || input.provider_key_payload || input);

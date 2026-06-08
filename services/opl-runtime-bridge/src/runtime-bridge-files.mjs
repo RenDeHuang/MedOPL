@@ -171,8 +171,8 @@ export function createRuntimeBridgeFileApi({
         payload = { ok: false, error: "run_not_found" };
         return;
       }
-      await runApi.syncRunnerRun(state, run).catch((error) => {
-        addEvent(state, "runner_artifact_sync_failed", { ...run, error: String(error.message || error) });
+      await runApi.syncRuntimeRun(state, run).catch((error) => {
+        addEvent(state, "runtime_artifact_sync_failed", { ...run, error: String(error.message || error) });
         return null;
       });
       const items = state.artifacts

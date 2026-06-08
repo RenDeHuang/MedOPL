@@ -33,8 +33,6 @@ export function buildRuntimeSessionInput({
   traceId,
   workspaceId,
   workspaceSessionId,
-  k8sNamespace,
-  runnerImage,
   selectedServerPlan = {},
 }) {
   return {
@@ -44,8 +42,6 @@ export function buildRuntimeSessionInput({
     ...launchSessionOwnerFields(input),
     workspaceId,
     workspaceSessionId,
-    namespace: k8sNamespace,
-    image: runnerImage,
     ...selectedPlanResourceFields(input, selectedServerPlan),
   };
 }

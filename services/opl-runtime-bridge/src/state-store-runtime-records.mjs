@@ -27,8 +27,6 @@ export function buildRuntimeSessionRecord(input = {}) {
     ...runtimeDispatchFields(input),
     engine: input.engine || "opl-codex-default",
     status: input.status || "ready",
-    namespace: input.namespace || "",
-    image: input.image || "",
     ...providerConfigFields(input),
     createdAt: nowIso(),
     warmedAt: nowIso(),

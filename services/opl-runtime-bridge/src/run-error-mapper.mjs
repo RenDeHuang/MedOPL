@@ -23,8 +23,8 @@ export function mapRunError(error, context = {}) {
       });
     } catch {
       return buildRunError({
-        code: RUN_ERROR_CODES.RUNNER_UPSTREAM_5XX,
-        stage: RUN_STAGES.RUNNER_SUBMIT,
+        code: RUN_ERROR_CODES.RUNTIME_UPSTREAM_5XX,
+        stage: RUN_STAGES.RUNTIME_SUBMIT,
         message: source.message || "任务服务器启动失败，管理员可以用错误编号定位原因。",
         retryable: true,
         details: { ...details, upstreamCode: code, upstreamStage: stage },
@@ -35,8 +35,8 @@ export function mapRunError(error, context = {}) {
 
   if (code) {
     return buildRunError({
-      code: code === "LAUNCH_TOKEN_INVALID" ? RUN_ERROR_CODES.LAUNCH_TOKEN_INVALID : RUN_ERROR_CODES.RUNNER_UPSTREAM_5XX,
-      stage: code === "LAUNCH_TOKEN_INVALID" ? RUN_STAGES.RUNNER_SUBMIT : RUN_STAGES.RUNNER_SUBMIT,
+      code: code === "LAUNCH_TOKEN_INVALID" ? RUN_ERROR_CODES.LAUNCH_TOKEN_INVALID : RUN_ERROR_CODES.RUNTIME_UPSTREAM_5XX,
+      stage: RUN_STAGES.RUNTIME_SUBMIT,
       message: source.message || "任务服务器启动失败，管理员可以用错误编号定位原因。",
       retryable: code !== "LAUNCH_TOKEN_INVALID",
       details: { ...details, upstreamCode: code },
@@ -45,10 +45,10 @@ export function mapRunError(error, context = {}) {
   }
 
   const message = String(source.message || source.error || error || "");
-  if (/workspace/i.test(message) && /runner/i.test(message)) {
+  if (/workspace/i.test(message) && /runtime/i.test(message)) {
     return buildRunError({
-      code: RUN_ERROR_CODES.RUNNER_WORKSPACE_CREATE_FAILED,
-      stage: RUN_STAGES.RUNNER_WORKSPACE_CREATE,
+      code: RUN_ERROR_CODES.RUNTIME_WORKSPACE_CREATE_FAILED,
+      stage: RUN_STAGES.RUNTIME_WORKSPACE_CREATE,
       retryable: true,
       details,
       correlationId,
@@ -56,8 +56,8 @@ export function mapRunError(error, context = {}) {
   }
 
   return buildRunError({
-    code: RUN_ERROR_CODES.RUNNER_UPSTREAM_5XX,
-    stage: RUN_STAGES.RUNNER_SUBMIT,
+    code: RUN_ERROR_CODES.RUNTIME_UPSTREAM_5XX,
+    stage: RUN_STAGES.RUNTIME_SUBMIT,
     message: source.message || "任务服务器启动失败，管理员可以用错误编号定位原因。",
     retryable: true,
     details,
