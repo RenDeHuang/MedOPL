@@ -82,6 +82,21 @@ const evidence = await readRepoFile("docs/evidence/README.md");
 const specs = await readRepoFile("docs/specs/README.md");
 const operationsSpec = await readRepoFile("specs/operations/spec.md");
 
+const fullCloudSequence = [
+  "mock/snapshot provider",
+  "readonly quote",
+  "dry-run plan",
+  "readonly inventory",
+  "authorized create/release",
+  "authorized deploy",
+  "canary / QA / status update",
+];
+
+const retiredShortCloudRoutes = [
+  "mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> authorized/tencent create/release provider",
+  "mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> authorized/tencent create/release",
+];
+
 for (const marker of [
   "operation class",
   "target environment",
@@ -94,18 +109,25 @@ for (const marker of [
 ]) {
   assertIncludes(proposal, marker, "real_cloud_authorization_proposal");
 }
+assertIncludes(proposal, "The current cursor is the real-cloud authorization boundary", "real_cloud_authorization_proposal_cursor_truth");
+assertExcludes(proposal, "The current local productization cursor is not the real-cloud authorization boundary", "real_cloud_authorization_proposal_retired_cursor_claim");
 
 for (const marker of [
-  "mock/snapshot provider",
-  "readonly quote",
-  "dry-run plan",
-  "readonly inventory",
-  "authorized create/release",
-  "authorized deploy",
-  "canary / QA / status update",
+  ...fullCloudSequence,
 ]) {
   assertIncludes(design, marker, "real_cloud_authorization_design_sequence");
   assertIncludes(evalPlan, marker, "real_cloud_authorization_eval_sequence");
+  assertIncludes(specs, marker, "real_cloud_authorization_specs_full_sequence");
+}
+for (const retiredRoute of retiredShortCloudRoutes) {
+  assertExcludes(specs, retiredRoute, "real_cloud_authorization_specs_retired_short_cloud_route");
+}
+const inlineCloudRoutes = specs.match(/`[^`\n]*mock\/snapshot[^`\n]*authorized[^`\n]*`/gu) || [];
+assert(inlineCloudRoutes.length > 0, "real_cloud_authorization_specs_inline_cloud_routes_missing");
+for (const route of inlineCloudRoutes) {
+  for (const marker of ["readonly", "inventory", "authorized", "deploy", "canary / QA / status update"]) {
+    assertIncludes(route, marker, "real_cloud_authorization_specs_inline_cloud_route_must_be_full");
+  }
 }
 
 for (const marker of [
