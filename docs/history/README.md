@@ -3751,3 +3751,60 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-08 fix/v22-portal-opl-refund-api
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `fix/v22-portal-opl-refund-api`
+
+Base trunk HEAD: `2e43aca325c8ee7e00619c103c3d5af4f510c51d`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Folded the local Portal OPL entry / refund regression fix into the current post-landing truth.
+- Landed the local AI MVP readiness baseline at `ca1aa0e0bd42ed1635c8e2ab76d828ed91ae7d9d`.
+- Landed real-cloud vision docs, the no-secret `real-cloud-readiness` lane, legacy runtime cloud cleanup and cloud lane contract decoupling.
+- Kept readiness strictly pre-cloud: mock/snapshot, readonly quote, dry-run plan and readonly inventory contracts are separated from mutation/deploy/live `cloud-future-authorized`.
+- Kept real cloud, secret reads, provider calls, deploy, kubectl, build/push, live-test and upstream writes unauthorized.
+
+Verification:
+
+- `npm run verify`: pass after closeout sync.
+- `npm run gate:review`: pass after closeout sync.
+- `npm run test:health`: pass after closeout sync.
+- `npm run test:contract`: pass after closeout sync.
+- `npm run test:real-cloud-readiness`: pass after closeout sync.
+- `sentrux check .`: pass after closeout sync.
+- `sentrux gate .`: pass after closeout sync.
+
+Can-claim:
+
+- The local MVP baseline and real-cloud readiness prework are landed on the recovery trunk lineage.
+- The repo has a registered `real-cloud-readiness` lane for no-secret readiness contracts.
+- Legacy runtime cloud compatibility surfaces were removed from the active runtime path.
+- Cloud mutation/deploy/live-test contracts remain visible but are isolated under future-authorized boundaries.
+
+Cannot-claim:
+
+- Real Tencent Cloud readonly live inventory has run.
+- Any secret file, provider key, kubeconfig, token, SSH key or cloud credential was read.
+- Any real cloud API, deploy, kubectl, build/push, live-test, resource creation, resource release, billing mutation or production canary was executed.
+- Readiness lane evidence authorizes mutation, deploy or production release.
+
+landed_commit: `bbc442e8f5b312530ab5669a6789908a16c62999`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` contains `bbc442e8f5b312530ab5669a6789908a16c62999`; the follow-up closeout commit is docs/fixture-only.
+- `origin/fix/v22-portal-opl-refund-api` contains `bbc442e8f5b312530ab5669a6789908a16c62999`.
+- Standard verification is expected to run against `origin/recovery/platform-v22-trunk` after the closeout push because the runner's default trunk ref is remote-tracking.
+- No secret read, real cloud operation, live provider call, deploy, kubectl, build/push, live-test or upstream modification was performed.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`

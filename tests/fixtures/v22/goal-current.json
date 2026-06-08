@@ -5,15 +5,15 @@
   "human_truth": "docs/active/README.md",
   "spec_truth": "docs/specs/README.md",
   "verify_manifest": "tests/fixtures/v22/agent-verify-manifest.json",
-  "last_updated_at": "2026-05-27",
+  "last_updated_at": "2026-06-08",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "6e26a636f2ae6dd73dbe288fc5bd1245d6b53f67",
+  "base_trunk_head": "bbc442e8f5b312530ab5669a6789908a16c62999",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "6e26a636f2ae6dd73dbe288fc5bd1245d6b53f67",
+  "last_landed_commit": "bbc442e8f5b312530ab5669a6789908a16c62999",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -23,7 +23,7 @@
     "precloud_deployable_rc_and_node_backend_physical_removal_are_local_precloud_evidence_not_production_or_real_cloud_evidence",
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation"
   ],
-  "current_problem": "Local Portal/OPL delivery RC is landed and pushed at 6e26a636f2ae6dd73dbe288fc5bd1245d6b53f67: Go Portal launch projection now routes through configured local OPL Gateway and Runtime Bridge URLs and the deterministic clean upstream fixture -> Runtime Bridge fake ACP projection is repo-native evidence. The current cursor remains real-cloud-authorization-boundary, which is a blocked authorization package and does not authorize secret/provider/cloud/deploy/kubectl/build-push/live-test work.",
+  "current_problem": "Local AI MVP baseline and real-cloud readiness prework landed and pushed at bbc442e8f5b312530ab5669a6789908a16c62999: the repo now has no-secret real-cloud readiness lane coverage for mock/snapshot, readonly quote, dry-run plan and readonly inventory contracts, plus legacy runtime cloud cleanup and cloud lane contract decoupling. The current cursor remains real-cloud-authorization-boundary, which is a blocked authorization package and does not authorize secret/provider/cloud/deploy/kubectl/build-push/live-test work.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -147,6 +147,21 @@
       "closed_at": "2026-05-27",
       "archive": "changes/archive/2026-05-27-local-portal-opl-delivery-rc",
       "landed_commit": "6e26a636f2ae6dd73dbe288fc5bd1245d6b53f67"
+    },
+    {
+      "id": "real-cloud-readiness-prework-baseline",
+      "stage": "S7 real-cloud readiness prework before readonly authorization",
+      "priority": 89,
+      "cursor_eligible": false,
+      "status": "landed",
+      "next_leaf_step": "real-cloud-authorization-boundary",
+      "depends_on": [
+        "local-portal-opl-delivery-rc",
+        "real-cloud-authorization-boundary"
+      ],
+      "history_summary": "Local AI MVP baseline, real-cloud vision docs, real-cloud readiness lane, legacy runtime cloud cleanup and cloud lane contract decoupling landed as pre-cloud / no-secret evidence. Readonly live cloud remains authorization-required.",
+      "closed_at": "2026-06-08",
+      "landed_commit": "bbc442e8f5b312530ab5669a6789908a16c62999"
     }
   ],
   "current_leaf": {
@@ -350,9 +365,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/v22-local-portal-opl-delivery-rc",
-  "last_landed_at": "2026-05-27",
-  "history_latest_branch": "feat/v22-local-portal-opl-delivery-rc",
+  "last_landed_branch": "fix/v22-portal-opl-refund-api",
+  "last_landed_at": "2026-06-08",
+  "history_latest_branch": "fix/v22-portal-opl-refund-api",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,

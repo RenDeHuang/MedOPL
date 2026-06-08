@@ -17,15 +17,15 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 | --- | --- |
 | current phase | `Real-cloud authorization boundary before readiness` |
 | current cursor | `real-cloud-authorization-boundary` |
-| current blocker | Pre-cloud deployable RC, Go Portal action regression, and Node Portal backend physical removal closeout are recorded, but secret read, provider operation, true cloud mutation, deploy, kubectl, build/push and live-test remain blocked until a separate explicit authorization package names operation class, target environment, evidence sink and rollback owner |
+| current blocker | Local AI MVP baseline, real-cloud readiness lane, real-cloud vision docs and legacy runtime cloud cleanup are landed as pre-cloud / no-secret evidence, but readonly live cloud still requires explicit authorization naming operation class, target environment, secret allowlist, API allowlist, evidence sink and rollback owner |
 | next owner | `MedOPL Operations` for real-cloud authorization package; `MedOPL Platform` keeps pre-cloud local RC / Node retirement evidence as local guardrail |
 | open change package | `changes/active/real-cloud-authorization-boundary` |
 | default verification | `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk` |
 | default first proof | golden path health from `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk` |
 | latest product closeout | `feat/v22-slide-09-precloud-readiness` / `97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73` |
-| latest repo closeout | `feat/v22-local-portal-opl-delivery-rc` / `6e26a636f2ae6dd73dbe288fc5bd1245d6b53f67` |
+| latest repo closeout | `fix/v22-portal-opl-refund-api` / `bbc442e8f5b312530ab5669a6789908a16c62999` |
 
-Current summary: pre-cloud local product proof, local RC archive, golden-path-first-class, golden-path-productization-roadmap, Figma Portal UI absorption, provider key reuse, Portal typed API contract, OPL entry real preflight / launch projection, local control-plane hardening, Go control-plane MVP takeover, pre-cloud deployable RC, local SaaS backend RC and local Portal/OPL delivery RC are closed locally / post-push verified. Portal frontend defaults to Go `/api`; `services/medopl-go-backend` owns the local pre-cloud SaaS backend deployment surface; Node Portal backend is no longer deployment/proxy/API owner. The local SaaS backend RC remains local deterministic evidence for service orchestration, Gateway local live probe, Runtime Bridge local fake probe and aggregate RC guard; the latest local Portal/OPL delivery RC proves the configured local Go Portal launch projection can route through OPL Gateway and Runtime Bridge against a clean upstream fixture with fake ACP message/run/artifact projection. These proofs remain below real-cloud authorization and cannot claim live provider, production runtime, production billing or production deploy readiness. The current cursor is the blocked `real-cloud-authorization-boundary`, which is an authorization package only and not real-cloud readiness. 当前 truth 不再从 recovery/status matrix 推断。Framework 模型、surface budget、admission、readiness、evidence 等级和 can-claim / cannot-claim 均归各自 owner README；本文件只引用它们的结论，不复制成第二套 framework 或 evidence truth。
+Current summary: pre-cloud local product proof, local RC archive, golden-path-first-class, golden-path-productization-roadmap, Figma Portal UI absorption, provider key reuse, Portal typed API contract, OPL entry real preflight / launch projection, local control-plane hardening, Go control-plane MVP takeover, pre-cloud deployable RC, local SaaS backend RC, local Portal/OPL delivery RC, local AI MVP baseline, real-cloud readiness lane, real-cloud vision docs and legacy runtime cloud cleanup are closed locally / post-push verified. Portal frontend defaults to Go `/api`; `services/medopl-go-backend` owns the local pre-cloud SaaS backend deployment surface; Node Portal backend is no longer deployment/proxy/API owner. The local SaaS backend RC remains local deterministic evidence for service orchestration, Gateway local live probe, Runtime Bridge local fake probe and aggregate RC guard; the latest local Portal/OPL delivery RC proves the configured local Go Portal launch projection can route through OPL Gateway and Runtime Bridge against a clean upstream fixture with fake ACP message/run/artifact projection. The latest real-cloud prework proves the repo has a no-secret `real-cloud-readiness` lane for mock/snapshot, readonly quote, dry-run plan and readonly inventory contracts, and that mutation/deploy/live work stays in `cloud-future-authorized`. These proofs remain below real-cloud authorization and cannot claim live provider, production runtime, production billing or production deploy readiness. The current cursor is the blocked `real-cloud-authorization-boundary`, which is an authorization package only; readonly live cloud can start only after current-session authorization. 当前 truth 不再从 recovery/status matrix 推断。Framework 模型、surface budget、admission、readiness、evidence 等级和 can-claim / cannot-claim 均归各自 owner README；本文件只引用它们的结论，不复制成第二套 framework 或 evidence truth。
 
 ## Open Blockers
 
@@ -46,6 +46,7 @@ Current summary: pre-cloud local product proof, local RC archive, golden-path-fi
 | Go local RC parity | `node tests/contract/contract-test-v22-go-backend-service-surface.mjs`; `node tests/contract/contract-test-v22-precloud-deployable-rc.mjs` |
 | pre-cloud deployable RC | `node tests/contract/contract-test-v22-precloud-deployable-rc.mjs`; `go test ./...` from `services/medopl-go-backend`; `npm --prefix services/portal/frontend run typecheck` |
 | local SaaS backend RC | `node tests/contract/contract-test-v22-local-saas-backend-rc.mjs`; `npm run test:regression` |
+| real-cloud readiness lane | `node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk` |
 
 ## Cannot Claim
 
@@ -60,6 +61,7 @@ Current summary: pre-cloud local product proof, local RC archive, golden-path-fi
 - 不能宣称 `services/medopl-go-backend` 已经是 production backend，除非 Go local RC、manifest、tests、landing gate 和 post-merge closeout 已完成。
 - 不能把 Go local RC deterministic parity 写成 live provider、真实 OPL upstream、real-cloud、production billing 或 production runtime evidence。
 - 不能把 local SaaS backend RC 写成真实云、live provider、production runtime、production billing 或 production deploy 已完成。
+- 不能把 real-cloud readiness lane 写成已读取 secret、已调用真实云、已完成 readonly live inventory 或已授权 mutation/deploy/live-test。
 - 不能把 Node Portal backend 写成长期 active backend、过渡控制面、shell、facade、relay 或第二控制面；`services/portal/src` 已物理清退。
 - 不能跳过 post-merge closeout 直接把下一个 leaf 写成已完成或已 landed。
 - 不能把 governance gate 通过写成黄金链路健康；default verify 必须先暴露 golden path health。
