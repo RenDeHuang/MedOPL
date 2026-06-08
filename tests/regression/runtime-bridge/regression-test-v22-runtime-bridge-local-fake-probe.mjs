@@ -266,7 +266,7 @@ try {
   assert(finalBootstrap.runs.some((item) => item.runId === "run-local-fake" && item.status === "succeeded"), "final_bootstrap_must_project_run");
   assert(finalBootstrap.resources.artifacts.some((item) => item.runId === "run-local-fake"), "final_bootstrap_must_project_run_artifact");
   assert(finalBootstrap.traces.some((item) => item.runId === "run-local-fake"), "final_bootstrap_must_project_run_trace");
-  assert(finalBootstrap.costs.length === 0, "local_fake_probe_must_not_create_production_cost_records");
+  assert.equal(Object.hasOwn(finalBootstrap, "costs"), false, "runtime_bridge_bootstrap_must_not_project_billing_ledger");
   assert.equal(JSON.stringify(finalBootstrap).includes("dummy-local-provider-key"), false, "final_bootstrap_must_not_expose_provider_key_payload");
 
   console.log(JSON.stringify({
@@ -286,7 +286,7 @@ try {
       "bootstrap",
       "session_bind",
       "message_reply_artifact_trace",
-      "runtime_run_artifact_ledger_projection",
+      "runtime_run_artifact_trace_projection",
       "artifact_detail",
       "trace_links",
     ],

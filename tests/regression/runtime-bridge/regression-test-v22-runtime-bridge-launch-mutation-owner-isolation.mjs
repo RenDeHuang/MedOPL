@@ -33,6 +33,7 @@ const runtimeAgentRelayPath = "services/opl-runtime-bridge/src/runtime-bridge-ru
 const publicArtifactsPath = "services/opl-runtime-bridge/src/runtime-bridge-public-artifacts.mjs";
 const launchLookupPath = "services/opl-runtime-bridge/src/runtime-bridge-launch-lookup.mjs";
 const runtimeBridgeEventsPath = "services/opl-runtime-bridge/src/runtime-bridge-events.mjs";
+const retiredRoutesPath = "services/opl-runtime-bridge/src/runtime-bridge-retired-routes.mjs";
 
 assert.equal(
   await exists(runtimeBridgeFilesPath),
@@ -65,6 +66,12 @@ assert.equal(
 );
 
 assert.equal(
+  await exists(retiredRoutesPath),
+  true,
+  "runtime_bridge_retired_routes_owner_missing",
+);
+
+assert.equal(
   await exists(messageRoutesPath),
   true,
   "runtime_bridge_message_route_owner_missing",
@@ -75,6 +82,7 @@ const runtimeAgentRelaySource = await readRepoFile(runtimeAgentRelayPath);
 const publicArtifactsSource = await readRepoFile(publicArtifactsPath);
 const launchLookupSource = await readRepoFile(launchLookupPath);
 const runtimeBridgeEventsSource = await readRepoFile(runtimeBridgeEventsPath);
+const retiredRoutesSource = await readRepoFile(retiredRoutesPath);
 const messageRoutesSource = await readRepoFile(messageRoutesPath);
 const mcpCompatibleShapesSource = await readRepoFile("services/opl-runtime-bridge/src/runtime-bridge-mcp-compatible-shapes.mjs");
 const runsSource = await readRepoFile("services/opl-runtime-bridge/src/runtime-bridge-runs.mjs");
@@ -113,7 +121,6 @@ for (const localLaunchProjectionHelper of [
   "function publicRunView",
   "function publicRunActionView",
   "function publicTraceView",
-  "function publicCostView",
 ]) {
   assert.equal(
     launchSource.includes(localLaunchProjectionHelper),
@@ -356,7 +363,6 @@ for (const localEventHelper of [
   "async function publishTraceEvent",
   "async function handleTraceLinks",
   "async function handleTraceEvents",
-  "async function handleCostRecords",
 ]) {
   assert.equal(
     routesSource.includes(localEventHelper),
@@ -368,6 +374,25 @@ for (const localEventHelper of [
     `runtime_event_owner_must_export_helper:${localEventHelper}`,
   );
 }
+
+assert.equal(
+  routesSource.includes("async function handleCostRecordsRetired"),
+  false,
+  "routes_must_not_own_cost_records_tombstone_handler",
+);
+assert(
+  routesSource.includes("createRetiredRouteHandlers"),
+  "routes_must_import_retired_routes_owner",
+);
+assert(
+  retiredRoutesSource.includes("function handleCostRecordsRetired"),
+  "retired_routes_owner_must_keep_cost_records_tombstone_boundary",
+);
+assert.equal(
+  runtimeBridgeEventsSource.includes("handleCostRecords"),
+  false,
+  "runtime_event_owner_must_not_own_retired_cost_records_route",
+);
 
 for (const relayImplementationImport of [
   'from "./local-fake-runtime-agent-relay.mjs"',

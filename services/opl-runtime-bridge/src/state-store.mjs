@@ -5,8 +5,6 @@ export {
   updateState,
   writeState,
 } from "./state-store-core.mjs";
-import { buildCostRecord } from "./state-store-cost-records.mjs";
-import { addEvent } from "./state-store-events.mjs";
 
 export { nowIso } from "./state-store-record-time.mjs";
 export { artifactsRoot, runtimeRoot, stateFile } from "./state-store-paths.mjs";
@@ -32,10 +30,3 @@ export {
   listSessionLedgerEntries,
 } from "./state-store-session-ledger.mjs";
 export { addTraceRecord } from "./state-store-artifact-trace-mutations.mjs";
-
-export function addCostRecord(state, input = {}) {
-  const cost = buildCostRecord(input);
-  state.costRecords.push(cost);
-  addEvent(state, cost.status === "exact" ? "runner_cost_reconciled" : "runner_cost_pending", cost);
-  return cost;
-}

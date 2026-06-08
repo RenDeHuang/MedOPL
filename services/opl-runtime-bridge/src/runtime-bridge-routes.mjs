@@ -17,6 +17,7 @@ import {
 } from "./runtime-bridge-contract-payloads.mjs";
 import { createRuntimeBridgeFileApi } from "./runtime-bridge-files.mjs";
 import { createRuntimeBridgeMessageRouteApi } from "./runtime-bridge-message-routes.mjs";
+import { createRetiredRouteHandlers } from "./runtime-bridge-retired-routes.mjs";
 import {
   buildLaunchCookie,
   isWebuiRuntimeMode,
@@ -26,7 +27,6 @@ import {
   readConfig,
   routeKey,
   sendJson,
-  sendRetired,
 } from "./runtime-bridge-routes-http.mjs";
 
 export function createRuntimeBridgeRuntime() {
@@ -50,8 +50,6 @@ export function createRuntimeBridgeRuntime() {
     launchApi,
     portalInternalBaseUrl: config.portalInternalBaseUrl,
     portalInternalAuthToken: config.portalInternalAuthToken,
-    runnerImage: config.runnerImage,
-    k8sNamespace: config.k8sNamespace,
     publishTraceEvent: eventApi.publishTraceEvent,
     readLaunchRuntimeSession,
     runtimeAgentRelay,
@@ -74,6 +72,7 @@ export function createRuntimeBridgeRuntime() {
     runApi,
     runtimeAgentRelay,
   });
+  const retiredRoutes = createRetiredRouteHandlers();
 
   async function readLaunchRuntimeSession(input, url, req, res) {
     const launch = launchApi.verifyLaunchToken(launchTokenFrom(input, url, req));
@@ -105,24 +104,12 @@ export function createRuntimeBridgeRuntime() {
     });
   }
 
-  async function handleWorkbenchRetired(_req, res) {
-    sendRetired(res, "旧 /workbench dev projection 已退场；请打开 OPL_WEB_URL，并由 OPL Web 使用 launch token 拉 bootstrap。", "OPL_WEB_URL");
-  }
-
-  async function handleLegacyLaunchTokensRetired(_req, res) {
-    sendRetired(res, "旧 /api/launch-tokens 已退场；Portal 现在通过 /api/opl-launch/tokens 签发 OPL Web launch。", "/api/opl-launch/tokens");
-  }
-
   async function handleIssueLaunchToken(req, res) {
     const payload = await launchApi.issueLaunchToken(await readBody(req));
     if (payload.launchToken) {
       res.setHeader("set-cookie", buildLaunchCookie(payload.launchToken));
     }
     sendJson(res, 200, payload);
-  }
-
-  async function handleWorkbenchBootstrapRetired(_req, res) {
-    sendRetired(res, "旧 /api/workbench/bootstrap 已退场；OPL Web 必须使用 /api/opl-launch/bootstrap。", "/api/opl-launch/bootstrap");
   }
 
   async function handleBootstrap(req, res, url) {
@@ -159,22 +146,14 @@ export function createRuntimeBridgeRuntime() {
     });
   }
 
-  async function handleRuntimeSessionsRetired(_req, res) {
-    sendRetired(res, "旧 /api/runtime-sessions 已退场；runtime/session 由 OPL Web 与 OPL runtime 管理，Portal 只通过 launch/bootstrap 绑定。", "/api/opl-launch/sessions/bind");
-  }
-
-  async function handleRuntimeSessionRunsRetired(_req, res) {
-    sendRetired(res, "旧 /api/runtime-sessions/:id/runs 已退场；run 必须由 OPL Web 携带 launch token 调 /api/opl-launch/runs。", "/api/opl-launch/runs");
-  }
-
   const exactHandlers = new Map([
     ["GET /healthz", handleHealth],
     ["GET /status", handleHealth],
     ["GET /api/opl/status", handleRuntimeBridgeStatus],
-    ["GET /workbench", handleWorkbenchRetired],
-    ["POST /api/launch-tokens", handleLegacyLaunchTokensRetired],
+    ["GET /workbench", retiredRoutes.handleWorkbenchRetired],
+    ["POST /api/launch-tokens", retiredRoutes.handleLegacyLaunchTokensRetired],
     ["POST /api/opl-launch/tokens", handleIssueLaunchToken],
-    ["GET /api/workbench/bootstrap", handleWorkbenchBootstrapRetired],
+    ["GET /api/workbench/bootstrap", retiredRoutes.handleWorkbenchBootstrapRetired],
     ["GET /api/opl-launch/bootstrap", handleBootstrap],
     ["GET /api/opl/bootstrap", handleBootstrap],
     ["POST /api/opl-launch/runs", runApi.handleRuntimeRun],
@@ -184,16 +163,16 @@ export function createRuntimeBridgeRuntime() {
     ["POST /api/opl/files", fileApi.handleRuntimeBridgeFile],
     ["POST /api/opl-launch/sessions/bind", handleBindSession],
     ["POST /api/opl/sessions/bind", handleBindSession],
-    ["POST /api/runtime-sessions", handleRuntimeSessionsRetired],
+    ["POST /api/runtime-sessions", retiredRoutes.handleRuntimeSessionsRetired],
     ["GET /api/runs", fileApi.handleRunsList],
     ["GET /api/artifacts", fileApi.handleArtifactsList],
     ["GET /api/trace-links", eventApi.handleTraceLinks],
     ["POST /internal/trace-events", eventApi.handleTraceEvents],
-    ["GET /api/cost-records", eventApi.handleCostRecords],
+    ["GET /api/cost-records", retiredRoutes.handleCostRecordsRetired],
   ]);
 
   const dynamicHandlers = [
-    { method: "POST", pattern: /^\/api\/runtime-sessions\/([^/]+)\/runs$/, handler: handleRuntimeSessionRunsRetired },
+    { method: "POST", pattern: /^\/api\/runtime-sessions\/([^/]+)\/runs$/, handler: retiredRoutes.handleRuntimeSessionRunsRetired },
     { method: "GET", pattern: /^\/api\/runs\/([^/]+)\/status$/, handler: runApi.handleRunStatus },
     { method: "GET", pattern: /^\/api\/opl-launch\/runs\/([^/]+)\/status$/, handler: runApi.handleRunStatus },
     { method: "GET", pattern: /^\/api\/opl\/runs\/([^/]+)\/status$/, handler: runApi.handleRunStatus },

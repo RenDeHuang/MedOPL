@@ -8,7 +8,6 @@ import (
 	"github.com/rendehuang/medopl/services/medopl-go-backend/internal/server/handlers"
 	controlplaneservice "github.com/rendehuang/medopl/services/medopl-go-backend/internal/service/controlplane"
 	labservice "github.com/rendehuang/medopl/services/medopl-go-backend/internal/service/lab"
-	workflowservice "github.com/rendehuang/medopl/services/medopl-go-backend/internal/service/workflow"
 )
 
 func Router(cfg config.Config) *gin.Engine {
@@ -74,11 +73,5 @@ func Router(cfg config.Config) *gin.Engine {
 		controlplaneservice.WithGatewayURLs(cfg.OPLGatewayURL, cfg.RuntimeBridgeURL),
 	)
 	handlers.RegisterControlPlaneRoutes(api, controlPlane)
-	workflowFacade := workflowservice.NewFacade(memory.NewWorkflowStore())
-	router.POST("/workflow/commands", handlers.WorkflowCommands(workflowFacade))
-	router.POST("/runtime/launch", handlers.WorkflowCommandAction(workflowFacade, handlers.CommandTypeRuntimeLaunch))
-	router.POST("/runs", handlers.WorkflowCommandAction(workflowFacade, handlers.CommandTypeManagedRun))
-	router.POST("/billing/freeze", handlers.WorkflowCommandAction(workflowFacade, handlers.CommandTypeBillingFreeze))
-	router.POST("/resources/release", handlers.WorkflowCommandAction(workflowFacade, handlers.CommandTypeResourceRelease))
 	return router
 }

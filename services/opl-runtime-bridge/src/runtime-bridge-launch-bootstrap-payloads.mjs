@@ -191,23 +191,3 @@ export function publicTraceView(item = {}) {
     createdAt: text(item.createdAt || item.created_at),
   };
 }
-
-export function publicCostView(item = {}) {
-  return {
-    costRecordId: text(item.costRecordId || item.cost_record_id || item.id),
-    runId: text(item.runId || item.run_id),
-    workspaceId: text(item.workspaceId || item.workspace_id),
-    workspaceSessionId: text(item.workspaceSessionId || item.workspace_session_id),
-    runtimeSessionId: text(item.runtimeSessionId || item.runtime_session_id),
-    resourceBindingId: text(item.resourceBindingId || item.resource_binding_id),
-    providerKeyRef: text(item.providerKeyRef || item.provider_key_ref),
-    status: text(item.status),
-    billingMetadataRef: text(item.billingMetadataRef || item.billing_metadata_ref || item.costSummary?.billingMetadataRef || item.costSummary?.billing_metadata_ref),
-    usageMetadataRef: text(item.usageMetadataRef || item.usage_metadata_ref || item.costSummary?.usageMetadataRef || item.costSummary?.usage_metadata_ref),
-    currency: text(item.currency || item.costSummary?.currency),
-    estimatedCost: number(item.estimatedCost ?? item.estimated_cost ?? item.costSummary?.estimatedCost),
-    billedCost: number(item.billedCost ?? item.billed_cost ?? item.costSummary?.billedCost),
-    createdAt: text(item.createdAt || item.created_at),
-    updatedAt: text(item.updatedAt || item.updated_at),
-  };
-}

@@ -89,11 +89,9 @@ const workflowFiles = [
   "internal/service/workflow/facade.go",
   "internal/service/workflow/facade_test.go",
 ];
-const workflowRouteFiles = [
+const retiredWorkflowHttpFacadeFiles = [
   "internal/server/handlers/workflow_commands.go",
   "internal/server/handlers/workflow_commands_test.go",
-  "internal/server/router.go",
-  "internal/server/router_test.go",
 ];
 const labTypedApiFiles = [
   "internal/domain/lab/lab.go",
@@ -278,7 +276,7 @@ async function assertRuntimeBrokerInterface() {
   assertNotMatches(source, /rawApiKey|providerSecret|apiKey|launchToken|runtimeToken|bearerToken|SecretId|SecretKey|kubeconfig|storageKey|objectKey|signedUrl|presignedUrl|localPath|pathOnRuntime|ledgerEntries|cloudInventory|billingLedger|http\.Client|http\.NewRequest|fetch|redis\.NewClient|sql\.Open|pgx|github\.com\/lib\/pq/u, "runtime_broker_must_not_expose_forbidden_marker");
 }
 
-async function assertWorkflowFacadeAndRoutes() {
+async function assertWorkflowFacadeBoundary() {
   const workflowMarkers = new Map([
     ["internal/domain/workflow/workflow.go", ["type Command struct", "type Execution struct", "type ApprovalTask struct", "WorkflowStatusPending", "WorkflowStatusRunning", "WorkflowStatusSucceeded", "WorkflowStatusFailed", "WorkflowStatusCancelled", "ErrInvalidTransition", "ErrCommandIDRequired", "ErrIdempotencyKeyRequired", "Transition", "ValidateCommand"]],
     ["internal/repository/workflow/store.go", ["type Store interface", "CreateExecution", "ExecutionByCommandID", "ExecutionByIdempotencyKey", "UpdateExecution", "CreateApprovalTask", "ApprovalTask"]],
@@ -293,21 +291,15 @@ async function assertWorkflowFacadeAndRoutes() {
   const workflowSource = (await Promise.all(workflowFiles.map((file) => readRepoFile(`${serviceRoot}/${file}`)))).join("\n");
   assertNotMatches(workflowSource, /Temporal|LangGraph|http\.Client|redis\.NewClient|sql\.Open|pgx|rawApiKey|launchToken|runtimeToken|bearerToken|objectKey|localPath|signedUrl|TargetRef|PayloadSummaryRef|ObjectRef|PayloadRef/u, "workflow_facade_must_not_introduce_forbidden_marker");
 
-  const routeMarkers = new Map([
-    ["internal/server/handlers/workflow_commands.go", ["func WorkflowCommands", "type WorkflowCommandRequest struct", "WorkflowCommandID", "IdempotencyKey", "func WorkflowCommandAction", "workflow_command_id_required", "idempotency_key_required", "unsupported_workflow_command_type", "workflowCommandId", "SubmitCommand"]],
-    ["internal/server/handlers/workflow_commands_test.go", ["TestWorkflowCommandsFailsClosedWithoutWorkflowCommandID", "TestWorkflowCommandsFailsClosedWithoutIdempotencyKey", "TestWorkflowCommandsRoutesLaunchRunBillingReleaseThroughFacade", "TestWorkflowActionRoutesUseFixedCommandTypes", "TestWorkflowCommandsRejectsUnsupportedCommandType"]],
-    ["internal/server/router.go", ["workflowFacade", "NewWorkflowStore", "NewFacade", "POST(\"/workflow/commands\"", "POST(\"/runtime/launch\"", "POST(\"/runs\"", "POST(\"/billing/freeze\"", "POST(\"/resources/release\""]],
-  ]);
-  for (const file of workflowRouteFiles) assert.equal(await exists(`${serviceRoot}/${file}`), true, `go_backend_workflow_route_required_file_missing:${file}`);
-  for (const [file, markers] of routeMarkers) {
-    const source = await readRepoFile(`${serviceRoot}/${file}`);
-    for (const marker of markers) assertIncludes(source, marker, `go_backend_workflow_route_marker_missing:${file}:${marker}`);
+  for (const file of retiredWorkflowHttpFacadeFiles) {
+    assert.equal(await exists(`${serviceRoot}/${file}`), false, `go_backend_legacy_workflow_http_facade_must_be_removed:${file}`);
   }
-  const handlerSource = await readRepoFile(`${serviceRoot}/internal/server/handlers/workflow_commands.go`);
   const routerSource = await readRepoFile(`${serviceRoot}/internal/server/router.go`);
-  for (const commandType of ["runtime.launch", "managed_run.submit", "billing.freeze", "resource.release"]) assertIncludes(handlerSource, commandType, `go_backend_workflow_route_command_type_missing:${commandType}`);
-  for (const marker of ["SubmitRun(", "CreateRunRequest(", "RecordRuntimeResult(", "runtimebroker", "runfileartifact", "redis.NewClient", "sql.Open", "pgx", "Temporal", "LangGraph", "rawApiKey", "launchToken", "runtimeToken", "bearerToken", "objectKey", "localPath", "signedUrl"]) {
-    assert.equal(handlerSource.includes(marker), false, `go_backend_workflow_route_must_not_bypass_facade:${marker}`);
+  assertIncludes(routerSource, "handlers.RegisterControlPlaneRoutes(api, controlPlane)", "go_backend_router_must_keep_control_plane_route_owner");
+  for (const retiredRootFacade of ['POST("/workflow/commands"', 'POST("/runtime/launch"', 'POST("/runs"', 'POST("/billing/freeze"', 'POST("/resources/release"']) {
+    assert.equal(routerSource.includes(retiredRootFacade), false, `go_backend_router_must_not_expose_legacy_root_facade:${retiredRootFacade}`);
+  }
+  for (const marker of ["WorkflowCommands", "WorkflowCommandAction", "workflowservice.NewFacade", "NewWorkflowStore", "SubmitRun(", "CreateRunRequest(", "RecordRuntimeResult(", "runtimebroker", "runfileartifact", "redis.NewClient", "sql.Open", "pgx", "Temporal", "LangGraph", "rawApiKey", "launchToken", "runtimeToken", "bearerToken", "objectKey", "localPath", "signedUrl"]) {
     assert.equal(routerSource.includes(marker), false, `go_backend_workflow_router_must_not_bypass_facade:${marker}`);
   }
 }
@@ -410,7 +402,7 @@ await assertEntPostgresBoundary();
 await assertVolatileBoundary();
 await assertRunFileArtifactDomain();
 await assertRuntimeBrokerInterface();
-await assertWorkflowFacadeAndRoutes();
+await assertWorkflowFacadeBoundary();
 await assertLabTypedPortalAPI();
 await assertLocalRCControlPlaneParity();
 
@@ -420,7 +412,7 @@ console.log(JSON.stringify({
   service: serviceRoot,
   endpoints: ["/health", "/version", "/config/check", "/api/lab-packages", "/api/lab-subscription", "/api/lab-entitlement", "/api/lab-packages/activate", "/api/lab-packages/upgrade"],
   canonicalTruth: "postgres_ent_schema",
-  workflowFacade: "command_boundary",
+  workflowFacade: "internal_service_boundary",
   labTypedAPI: "go_control_plane_mvp",
   localRCParity: "provider_launch_billing_audit_resource_release",
 }, null, 2));

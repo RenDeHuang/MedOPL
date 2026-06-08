@@ -50,13 +50,7 @@ export function createRuntimeBridgeEventApi({
     sendJson(res, 200, { ok: true, trace });
   }
 
-  async function handleCostRecords(_req, res) {
-    const state = await readState();
-    sendJson(res, 200, { ok: true, items: state.costRecords });
-  }
-
   return {
-    handleCostRecords,
     handleTraceEvents,
     handleTraceLinks,
     publishTraceEvent,

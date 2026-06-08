@@ -14,7 +14,7 @@ export function addArtifactRecord(state, input = {}) {
   );
   if (exists) return exists;
   state.artifacts.push(artifact);
-  addEvent(state, "runner_artifact_synced", artifact);
+  addEvent(state, "runtime_artifact_synced", artifact);
   return artifact;
 }
 

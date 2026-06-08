@@ -171,7 +171,7 @@ function runtimeLedgerEntryInput(ledgerEntry = {}, { runtimeSession = {}, run = 
 function createRunRecord(state, input = {}) {
   const run = buildRunRecord(input);
   state.runs.push(run);
-  addEvent(state, "runner_run_submitted", run);
+  addEvent(state, "runtime_run_submitted", run);
   return run;
 }
 
@@ -182,7 +182,7 @@ function updateRunStatus(state, runId, patch = {}) {
     ...patch,
     updatedAt: nowIso(),
   });
-  addEvent(state, "runner_run_status_synced", run);
+  addEvent(state, "runtime_run_status_synced", run);
   return run;
 }
 
@@ -197,7 +197,7 @@ function fullRuntimeScope(runtimeSession = {}, input = {}) {
   };
 }
 
-function runnerFailureEvent(runtimeSession = {}, mapped = {}) {
+function runtimeFailureEvent(runtimeSession = {}, mapped = {}) {
   return {
     ...runtimeSession,
     correlationId: mapped.correlationId,
@@ -299,7 +299,7 @@ export function createRunApi({
     };
   }
 
-  async function syncRunnerRun(state, run, runStatus = null) {
+  async function syncRuntimeRun(state, run, runStatus = null) {
     if (!runStatus) return run;
     return updateRunStatus(state, run.runId, runStatus) || run;
   }
@@ -348,7 +348,7 @@ export function createRunApi({
         payload = { ok: false, error: "run_not_found" };
         return;
       }
-      const synced = await syncRunnerRun(state, run);
+      const synced = await syncRuntimeRun(state, run);
       payload = { ok: true, run: synced || run };
     });
     sendJson(res, status, payload);
@@ -414,7 +414,7 @@ export function createRunApi({
         }
         status = 502;
         const mapped = mapRunError(error, { correlationId: input?.correlationId || input?.correlation_id || "" });
-        eventApi.recordEvent(state, "runner_run_failed", runnerFailureEvent(activeRuntimeSession, mapped));
+        eventApi.recordEvent(state, "runtime_run_failed", runtimeFailureEvent(activeRuntimeSession, mapped));
         payload = { ok: false, error: mapped };
       }
     });
@@ -443,6 +443,6 @@ export function createRunApi({
     handleRunStatus,
     runtimeMode,
     submitRuntimeRun,
-    syncRunnerRun,
+    syncRuntimeRun,
   };
 }
