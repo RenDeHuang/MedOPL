@@ -87,8 +87,8 @@
   ],
   "leaves": [
     {
-      "leaf_id": "leaf-portal-postgres-redis-local-production-data-closure",
-      "gap_id": "portal-postgres-redis-local-production-data-closure",
+      "leaf_id": "leaf-portal-postgres-only-local-production-data-closure",
+      "gap_id": "portal-postgres-only-local-production-data-closure",
       "stage": "S5 frontend/backend product completion",
       "risk_class": "local_service_code",
       "live_external_allowed": false,

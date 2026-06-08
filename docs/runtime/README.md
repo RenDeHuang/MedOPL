@@ -22,9 +22,9 @@ Runtime Bridge 负责 session/message/run/file/artifact/provider route/providerK
 
 AI Runtime Contract 固定 Runtime Bridge AI runtime adapter layer：Portal/Gateway 只把托管工作台上下文、`providerKeyRef`、run/file/artifact intent 和 trace/audit metadata 投给 Runtime Bridge；Runtime Bridge 再适配 OPL ACP runtime、Runtime Agent HTTP API 和未来 MCP-compatible boundary。稳定对象是 runtimeSession、runtimeTool、runtimeResource、runtimeRun、runtimeArtifact 和 runtimeApproval。MCP-compatible boundary 只表示 tools / resources / prompts / artifacts / approval shape compatibility，当前 machine boundary 是 `runtime-bridge-mcp-compatible-shapes.mjs` 的本地 shape-only projection；不代表 production MCP server、外部 MCP client、真实云、secret、deploy、kubectl、build/push 或 live-test 已授权。
 
-Portal canonical truth 是 control-plane store，生产方向是 PostgreSQL。Redis 不是事实源，只能用于 session、cache、queue、lock 或短期协调。Portal 保存账号、用户、工作空间、钱包、冻结金额、账本、审计、resource binding、fileRef/logical index、session/run/artifact/trace metadata 的业务事实。
+Portal canonical truth 是 control-plane store，生产方向是 PostgreSQL-only required data plane。Portal 保存账号、用户、工作空间、钱包、冻结金额、账本、审计、resource binding、fileRef/logical index、session/run/artifact/trace metadata 的业务事实。Redis is not a required production dependency；当前生产拓扑和本地产品闭环不得要求 Redis，后续只有在 session、cache、queue、lock 或短期协调压力被 PostgreSQL 方案和 runtime evidence 证明不足时，才可另开独立授权 leaf 作为 optional volatile accelerator 评估。
 
-Runtime / data readiness 必须 fail closed：缺 PostgreSQL/Redis production-mode 连接、schema、Gateway upstream URL、provider binding、Runtime Bridge capability 或明确授权时，返回稳定 gate，不允许 JSON fallback、fake 200 或隐式旧路径。
+Runtime / data readiness 必须 fail closed：缺 PostgreSQL production-mode 连接、schema、Gateway upstream URL、provider binding、Runtime Bridge capability 或明确授权时，返回稳定 gate，不允许 JSON fallback、fake 200 或隐式旧路径。
 
 数据与云控制面真相采用 Portal 内部 operation/job/projection/reconciliation 模型：
 
@@ -85,4 +85,4 @@ Portal Control Plane
 
 ## Current Truth Pointer
 
-Runtime、Gateway、Portal canonical data truth、PostgreSQL/Redis 方向、object/blob plane、clean upstream 和 no-fake-success 边界由本文、`docs/specs/README.md` 和 source/eval 持有。当前阶段、cursor、blocker 和 verification entry 才看 `docs/active/README.md`。旧分散 architecture truth 不得恢复为当前架构真相入口。
+Runtime、Gateway、Portal canonical data truth、PostgreSQL-only 方向、object/blob plane、clean upstream 和 no-fake-success 边界由本文、`docs/specs/README.md` 和 source/eval 持有。当前阶段、cursor、blocker 和 verification entry 才看 `docs/active/README.md`。旧分散 architecture truth 不得恢复为当前架构真相入口。

@@ -47,20 +47,21 @@ assertIncludesAll(contract, [
   "portal/opl/gateway 入口",
   "TKE",
   "Portal/Gateway/Runtime/worker 承载层",
+  "COS",
+  "workspace file space object storage",
+  "文件空间事实源",
   "CBS",
   "TKE 节点盘/必要持久卷",
   "不作为普通用户文件空间主叙事",
   "NAT",
   "TKE 私网出公网、拉镜像、访问模型/API/云 API",
-  "Redis",
-  "session/queue/lock/cache",
   "PostgreSQL",
   "Portal canonical store、账本、资源绑定、审计、文件索引",
 ], "production_cloud_topology_resource_roles");
 
 assertIncludesAll(contract, [
   "普通用户产品语言不展示",
-  "CLB/TKE/CBS/NAT/Redis/PostgreSQL",
+  "CLB/TKE/COS/CBS/NAT/PostgreSQL",
   "工作台资源",
   "托管运行环境",
   "文件空间",
@@ -68,6 +69,19 @@ assertIncludesAll(contract, [
   "释放策略",
   "审计状态",
 ], "production_cloud_topology_user_language");
+
+assertIncludesAll(contract, [
+  "Namespace",
+  "RBAC",
+  "ResourceQuota",
+  "LimitRange",
+  "NetworkPolicy",
+  "Pod Security",
+  "taint",
+  "label",
+  "nodeSelector",
+  "toleration",
+], "production_cloud_topology_kubernetes_multitenancy_controls");
 
 assertIncludesAll(contract, [
   "region",
@@ -115,9 +129,17 @@ assertNotIncludesAny(contract, [
 assertIncludesAll(readme, [
   "spec:v22-production-cloud-topology-boundary",
   "production cloud topology",
-  "CLB / TKE / CBS / NAT / Redis / PostgreSQL",
+  "CLB / TKE / COS / CBS / NAT / PostgreSQL",
   "当前只是合同",
 ], "contracts_readme_production_cloud_topology");
+
+assertNotIncludesAny(contract, [
+  "| Redis |",
+  "Redis instance summary",
+  "CLB/TKE/CBS/NAT/Redis/PostgreSQL",
+  "CLB / TKE / CBS / NAT / Redis / PostgreSQL",
+  "\"Redis\":",
+], "production_cloud_topology_must_not_require_redis");
 
 assert.equal(suite, "", "production_topology_must_not_read_legacy_suite_source");
 assert(futureAuthorizedFiles.includes(selfFile), "future_authorized_suite_must_include_production_cloud_topology_contract");
@@ -127,7 +149,8 @@ console.log(JSON.stringify({
   contract: "v22_production_cloud_topology_boundary",
   checked: [
     "contract_only_not_deployed_connected_or_verified",
-    "resource_roles_for_clb_tke_cbs_nat_redis_postgresql",
+    "resource_roles_for_clb_tke_cos_cbs_nat_postgresql",
+    "kubernetes_multitenancy_controls_for_shared_and_dedicated_pools",
     "user_product_language_hides_cloud_control_plane_terms",
     "future_readonly_inventory_and_deploy_plan_dimensions",
     "no_real_cloud_secret_deploy_kubectl_build_push_or_resource_mutation",

@@ -456,7 +456,7 @@
     "current_cursor_unchanged": true,
     "no_product_implementation": true,
     "no_business_test_cleanup_claim": true,
-    "historical_business_cursor_at_closeout": "leaf-portal-postgres-redis-local-production-data-closure"
+    "historical_business_cursor_at_closeout": "leaf-portal-postgres-only-local-production-data-closure"
   },
   "backend_go_convergence_program": {
     "schema_version": 1,
@@ -503,8 +503,7 @@
       "Go",
       "Gin",
       "Ent",
-      "PostgreSQL",
-      "Redis"
+      "PostgreSQL-only required data plane"
     ],
     "target_layers": [
       "Portal Control Plane",
@@ -536,7 +535,7 @@
         "id": "production-data-layer",
         "order": 4,
         "status": "closed",
-        "goal": "Keep PostgreSQL canonical and Redis volatile-only before Go data migration."
+        "goal": "Keep the PostgreSQL-only required data plane before Go data migration; Redis remains non-required and cannot hold truth."
       },
       {
         "id": "runtime-run-file-artifact-closure",

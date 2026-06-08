@@ -139,7 +139,7 @@ Node Portal backend physical removal: `services/portal/src` 已物理清退；�
 - readonly/tencent quote provider: [spec:v22-tencent-readonly-quote-provider-boundary](#spec-v22-tencent-readonly-quote-provider-boundary)。当前只定义 interface 和 mock adapter，输出 `regionLabel`、`planSpec`、`estimatedCost`、`quoteSource`、`quoteStatus`、`quoteSnapshotId`，不读取 secret，不调用真实腾讯云 API。
 - dry-run/tencent resource plan provider: [spec:v22-tencent-dry-run-resource-plan-provider-boundary](#spec-v22-tencent-dry-run-resource-plan-provider-boundary)。当前只基于 readonly quote 和 managed resource binding plan 生成不会执行的资源创建计划，输出 `resourcePlanId`、`resourceBindingId`、`planMode`、`resourceSteps`、`approvalRequired`、`releasePolicy`、`auditStatus`、`riskNotes` 等业务字段；`realResourceCreated` 和 `chargeApplied` 不属于 `resourcePlan` 顶层字段。
 - readonly/tencent inventory: [spec:v22-tencent-readonly-inventory-boundary](#spec-v22-tencent-readonly-inventory-boundary)。当前只定义真实云只读盘点合同，用来验证云上事实和 Portal 账本是否一致；未来 secret 文件只能 allowlist_only 读取 readonly inventory keys，不允许“一读全读”；仅允许 Describe/List/Get/Head 类只读 API，不读取 COS 对象正文，不调用 mutation API，不创建、删除、释放、扩缩容或改标签。
-- production cloud topology: [spec:v22-production-cloud-topology-boundary](#spec-v22-production-cloud-topology-boundary)。当前只是合同，定义 CLB / TKE / CBS / NAT / Redis / PostgreSQL 在 MedOPL v22 生产拓扑中的角色，并区分 platform service node pool、shared user compute pool、dedicated user compute pool；不代表已部署、已接入或已验证，不读取 secret，不调用真实云，不改 deploy，不 kubectl，不 build/push，不创建/删除资源。普通用户产品语言不展示这些云资源名；region/VPC/subnet/security group/resource tag/cost allocation 后续进入 readonly inventory 和 deploy plan。
+- production cloud topology: [spec:v22-production-cloud-topology-boundary](#spec-v22-production-cloud-topology-boundary)。当前只是合同，定义 CLB / TKE / COS / CBS / NAT / PostgreSQL 在 MedOPL v22 生产拓扑中的角色，并区分 platform service node pool、shared user compute pool、dedicated user compute pool；不代表已部署、已接入或已验证，不读取 secret，不调用真实云，不改 deploy，不 kubectl，不 build/push，不创建/删除资源。普通用户产品语言不展示这些云资源名；region/VPC/subnet/security group/resource tag/cost allocation 后续进入 readonly inventory 和 deploy plan。
 - cloud onboarding workflow: [spec:v22-cloud-onboarding-workflow-boundary](#spec-v22-cloud-onboarding-workflow-boundary)。该 repo-tracked cloud onboarding workflow 合同把 official SDK provider strategy、wrapper、dependency loader、check-config、default gate、user-authorized readonly live、report review、TC3 cleanup、dry-run create/release、mutation wrapper、authorized live、deploy、Portal production integration 和 canary/QA/status update 定成业务推进顺序；它不替代 AGENTS.md，AGENTS.md 管 A/B/C/D 纪律和授权红线，本合同管业务推进顺序、阶段状态、blocker 回流和下一步任务包。
 - authorized/tencent create/release: [spec:v22-authorized-tencent-create-release-boundary](#spec-v22-authorized-tencent-create-release-boundary)。当前只定义真实创建/释放前的授权边界，覆盖基础套餐、Pro 套餐、自定义规格、共享 TKE 集群、共享用户计算池 + 硬 quota、namespace/quota、node pool class、COS 文件空间、7 天保护期、文件夹管理、T+1 分账标签和失败审计；标准套餐不是一用户一个 node pool，高级隔离套餐可以映射 `dedicated_node_pool`；7 天保护期只由存储资源 / 文件空间删除或独立欠费保留策略触发；不读取 secret，不调用真实腾讯云 API，不创建或释放真实资源。
 - authorized/tencent create/release implementation: [spec:v22-authorized-tencent-create-release-implementation-boundary](#spec-v22-authorized-tencent-create-release-implementation-boundary)。当前只定义后续真实 create/release implementation 前的授权、风控、失败回滚、费用保护和审计合同；默认风控上限不是默认开通规格，计算资源和存储资源生命周期分离，且风控可由 Portal 管理员按账号修改；不读取 secret，不调用真实腾讯云 API，不创建或释放真实资源。
@@ -853,7 +853,7 @@ T+1 账单用于对账和审计，不作为实时扣费来源。Portal 实时展
 
 ## Portal Canonical Store
 
-Portal canonical truth 存在 PostgreSQL，不存在 Redis、COS 或云标签中。真实 create/release 前必须能写入并审计以下业务记录：
+Portal canonical truth 存在 PostgreSQL，不存在 COS、CBS、Redis 或云标签中。真实 create/release 前必须能写入并审计以下业务记录：
 
 - workspace。
 - resource binding。
@@ -866,7 +866,7 @@ Portal canonical truth 存在 PostgreSQL，不存在 Redis、COS 或云标签中
 - audit event。
 - provider secret reference。
 
-Redis 只能作为 queue / lock / session / cache。COS 只保存文件对象。腾讯云 tag / cost allocation 只作为云侧对账证据。
+当前生产必需数据面是 PostgreSQL-only required data plane。queue、lock、session、job state 和短期协调优先由 PostgreSQL-backed 表、状态机、事务锁和运行时内存边界承接；Redis 不属于必需拓扑，不得作为上线前置。若后续 runtime evidence 证明需要更高吞吐的 volatile accelerator，必须另开独立 leaf 并证明 Redis 仍不持有 canonical truth。COS 只保存文件对象。CBS 只作为 TKE 节点盘或必要持久卷。腾讯云 tag / cost allocation 只作为云侧对账证据。
 
 Portal 点击“开通工作台资源”时，必须先写 cloud operation 和审计事件，再进入 dry-run diff 和真实执行授权。真实执行结果必须回写 cloud operation state，不能只靠云侧状态代表 Portal truth。
 
@@ -1369,7 +1369,7 @@ Canonical backend boundary：
 数据和安全边界：
 
 - raw provider key、bearer token、launchToken、runtimeToken、objectKey、localPath、signedUrl 不得进入前端持久化、普通用户 payload、日志、evidence 或 git。
-- local memory store 只能证明 local MVP shape；PostgreSQL/Redis production data layer 需要后续 eval 明确接管。
+- local memory store 只能证明 local MVP shape；PostgreSQL-only production data layer 需要后续 eval 明确接管。
 - Node Portal backend retirement 必须按 inventory / migration map / eval 推进，不允许 ad hoc 删除导致黄金链路断裂。
 
 验收边界：
@@ -1417,7 +1417,7 @@ Canonical backend boundary：
 - Go backend 进入 active service surface 前，必须先补 manifest allowlist、test lane registry、workflow review recommendation 和 package verification；不能只新增目录就宣称 canonical backend 已经上线。
 - 后续如果接 Temporal、LangGraph 或其他 durable engine，只能替换 workflow facade 后面的实现，不得改变 Portal / Runtime Broker / Cloud Worker 合同。
 
-参考 `sub2api` 的范围只限工程形状：Go、Gin、Ent schema、repository/service/handler/server 分层、PostgreSQL 和 Redis 边界。不得吸收 `sub2api` 的订阅聚合、代理转换、套餐语义、用户路径或配置模型。
+参考 `sub2api` 的范围只限工程形状：Go、Gin、Ent schema、repository/service/handler/server 分层、PostgreSQL canonical store 边界和 no-Redis-truth guard。不得吸收 `sub2api` 的订阅聚合、代理转换、套餐语义、用户路径、Redis 必需依赖或配置模型。
 
 后端职责边界：
 
@@ -1430,7 +1430,7 @@ Canonical backend boundary：
 数据边界：
 
 - PostgreSQL 是 canonical truth。
-- Redis 只能用于 session、cache、queue、lock 或短期协调。
+- Redis is not a required production dependency；当前目标是 PostgreSQL-only required data plane。session、cache、queue、lock 或短期协调优先由 PostgreSQL-backed 表、状态机、事务锁和 runtime memory boundary 承接；只有后续独立授权 leaf 和 evidence 证明需要时，Redis 才能作为 optional volatile accelerator 评估，且不得持有 canonical truth。
 - Object/blob plane 只承载文件正文和私有 locator，不成为账本、资源或审计事实源。
 - raw provider key、bearer token、launchToken、runtimeToken、objectKey、localPath、signedUrl 不得进入前端持久化、普通用户 payload、日志、evidence 或 git。
 
@@ -1447,7 +1447,7 @@ truth -> gap -> eval -> implementation/cleanup -> verify -> landing gate -> post
 1. `structure-truth-convergence`: 明确 Portal / Workflow / Runtime Broker / Agent Runtime / Cloud Worker 边界。
 2. `responsibility-inventory`: 把现有 Portal、Gateway、Runtime Bridge 文件归类为正确位置、错位、待迁移和待删除。
 3. `docs-code-alignment-pass-1`: 先 gate 最危险错位：Portal 长任务、cloud operation 和内存 launch 状态。
-4. `production-data-layer`: PostgreSQL canonical，Redis volatile only，JSON 不再作为 production path。
+4. `production-data-layer`: PostgreSQL canonical，Redis not required，JSON 不再作为 production path。
 5. `runtime-run-file-artifact-closure`: run、file、artifact 和 trace 接口与 Runtime Bridge 合同一致。
 6. `workflow-facade`: 长任务统一进入 workflow facade；durable engine 在 facade 后面替换。
 7. `commercial-mainline`: 结构稳定后设计 `api_only`、`full_runtime`、`customer_dedicated`，再判断 UI 是否需要修改。
@@ -7416,7 +7416,7 @@ production cloud topology contract 只回答：
 - 不代表已接入。
 - 不代表已验证。
 - 不代表 Portal / Gateway / Runtime Bridge / worker 已在这些资源上运行。
-- 不代表真实 CLB、TKE、CBS、NAT、Redis、PostgreSQL 已通过 MedOPL 自动化管理。
+- 不代表真实 CLB、TKE、COS、CBS、NAT、PostgreSQL 已通过 MedOPL 自动化管理。
 
 ## Resource Roles
 
@@ -7426,12 +7426,12 @@ production cloud topology contract 只回答：
 | --- | --- | --- |
 | CLB | portal/opl/gateway 入口 | 承担 `portal.medopl.cn`、`opl.medopl.cn`、Gateway 等入口流量分发边界；当前合同不创建监听器、不配置证书、不验证域名。 |
 | TKE | Portal/Gateway/Runtime/worker 承载层 | 承载 Portal、OPL Gateway、Runtime Bridge、worker 和后续后台任务；当前合同不 kubectl，不创建 namespace，不部署 workload。 |
+| COS | workspace file space object storage / 文件空间事实源 | 承载用户文件空间、输入文件、输出文件和 artifact 正文；COS object body 不进入 Portal canonical truth，不在普通用户 payload、日志、evidence 或 git 暴露 bucket、objectKey、storageKey、signedUrl 或 raw response。 |
 | CBS | TKE 节点盘/必要持久卷 | 用于 TKE 节点盘或必要持久卷；CBS 不作为普通用户文件空间主叙事，普通用户仍只看到文件空间、容量、保护期、批量下载和批量删除。 |
 | NAT | TKE 私网出公网、拉镜像、访问模型/API/云 API | 为私网内 TKE workload 出公网提供边界，用于拉镜像、访问模型/API 或后续授权云 API；当前合同不配置路由表、不验证出网。 |
-| Redis | session/queue/lock/cache | 承担 session、queue、lock、cache 等短状态能力；Redis 不是账本、审计或文件索引 canonical store。 |
 | PostgreSQL | Portal canonical store、账本、资源绑定、审计、文件索引 | 承担 Portal canonical store、钱包/账本、资源绑定、审计事件、文件索引和合同态业务数据；PostgreSQL 不是普通用户可见云数据库。 |
 
-这些资源属于生产基础设施拓扑，不等于用户购买的“文件空间主叙事”或“云控制台清单”。普通用户产品语言不展示 CLB/TKE/CBS/NAT/Redis/PostgreSQL。
+这些资源属于生产基础设施拓扑，不等于用户购买的“文件空间主叙事”或“云控制台清单”。普通用户产品语言不展示 CLB/TKE/COS/CBS/NAT/PostgreSQL。
 
 TKE 内部节点池必须区分资源角色：
 
@@ -7439,7 +7439,7 @@ TKE 内部节点池必须区分资源角色：
 - shared user compute pool：承载标准套餐 workspace workload，通过 namespace quota、limit 和 admission policy 隔离。
 - dedicated user compute pool：承载高级隔离套餐绑定的 workspace runtime 或账号组 runtime。
 
-平台服务不得调度到 dedicated user compute pool。用户 workload 不得调度到 platform service node pool。shared user compute pool 可以承载多个用户的 workload，但必须通过 ResourceQuota / LimitRange / admission policy 和 Portal resource binding 硬隔离。
+平台服务不得调度到 dedicated user compute pool。用户 workload 不得调度到 platform service node pool。shared user compute pool 可以承载多个用户的 workload，但必须参考 Kubernetes 官方多租户模型，用 Namespace、RBAC、ResourceQuota、LimitRange、NetworkPolicy、Pod Security、admission policy 和 Portal resource binding 硬隔离。高级套餐专属池必须用 taint、label、nodeSelector、toleration 和 resourceBindingId / account group binding 防止平台服务或其他用户调度进入。
 
 ## User Product Language Boundary
 
@@ -7457,7 +7457,7 @@ TKE 内部节点池必须区分资源角色：
 
 普通用户产品语言不展示：
 
-- CLB/TKE/CBS/NAT/Redis/PostgreSQL。
+- CLB/TKE/COS/CBS/NAT/PostgreSQL。
 - Kubernetes、node pool、节点池、云资源清单、服务器编号。
 - VPC、subnet、security group、route table、load balancer listener。
 - objectKey、storageKey、localPath、signedUrl、cosPrefix、storageBackend。
@@ -7476,8 +7476,8 @@ TKE 内部节点池必须区分资源角色：
 - route table / NAT route summary。
 - CLB listener / domain / certificate binding summary。
 - TKE cluster / namespace / workload class summary。
+- COS bucket / prefix / metadata-only file-space summary。
 - CBS disk / persistent volume summary。
-- Redis instance summary。
 - PostgreSQL instance summary。
 - resource tag。
 - cost allocation。
@@ -7507,7 +7507,7 @@ production cloud topology 只定义“资源类别与职责”。readonly invent
 - 不调用真实云。
 - 不读取 secret。
 - 不创建/删除资源。
-- 不创建、修改或删除 CLB、TKE、CBS、NAT、Redis、PostgreSQL。
+- 不创建、修改或删除 CLB、TKE、COS、CBS、NAT、PostgreSQL。
 - 不配置 VPC、subnet、security group、route table、listener、certificate 或 resource tag。
 - 不运行 live-test。
 - 不改 `.sentrux`、`adapters`、`upstream`。
@@ -7536,9 +7536,9 @@ production cloud topology 只定义“资源类别与职责”。readonly invent
   "resourceRoles": {
     "CLB": "portal/opl/gateway 入口",
     "TKE": "Portal/Gateway/Runtime/worker 承载层",
+    "COS": "workspace file space object storage / 文件空间事实源",
     "CBS": "TKE 节点盘/必要持久卷，不作为普通用户文件空间主叙事",
     "NAT": "TKE 私网出公网、拉镜像、访问模型/API/云 API",
-    "Redis": "session/queue/lock/cache",
     "PostgreSQL": "Portal canonical store、账本、资源绑定、审计、文件索引",
     "platform service node pool": "Portal/OPL Gateway/Runtime Bridge/trace/billing/system 平台服务池",
     "shared user compute pool": "标准套餐 workspace workload 共享池，必须由 quota/limit/admission 隔离",
@@ -7547,14 +7547,16 @@ production cloud topology 只定义“资源类别与职责”。readonly invent
   "schedulingIsolation": {
     "platformServicesMustNotScheduleToDedicatedUserComputePool": true,
     "userWorkloadMustNotScheduleToPlatformServiceNodePool": true,
-    "sharedUserComputePoolRequiresQuotaLimitAdmission": true
+    "sharedUserComputePoolRequiresQuotaLimitAdmission": true,
+    "sharedUserComputePoolRequiresNamespaceRbacResourceQuotaLimitRangeNetworkPolicyPodSecurity": true,
+    "dedicatedUserComputePoolRequiresTaintLabelNodeSelectorToleration": true
   },
   "ordinaryUserProductLanguageHides": [
     "CLB",
     "TKE",
+    "COS",
     "CBS",
     "NAT",
-    "Redis",
     "PostgreSQL"
   ],
   "ordinaryUserProductLanguageAllows": [
@@ -7570,6 +7572,9 @@ production cloud topology 只定义“资源类别与职责”。readonly invent
     "VPC",
     "subnet",
     "security group",
+    "COS bucket / prefix metadata-only summary",
+    "CBS disk / persistent volume summary",
+    "PostgreSQL instance summary",
     "resource tag",
     "cost allocation"
   ],

@@ -46,7 +46,7 @@ for (const forbidden of [
   "### portal-saas-control-plane-product-loop",
   "### optional-resource-lifecycle-and-pricing-boundary",
   "### portal-opl-runtime-managed-chain",
-  "### portal-canonical-data-postgres-redis-closure",
+  "### portal-canonical-data-postgres-only-closure",
   "### governance-verification-post-merge-closeout",
   "proposal.md",
   "spec-delta.md",
@@ -66,7 +66,9 @@ assertIncludes(product, "Optional Resource Lifecycle", "product_must_own_resourc
 assertIncludes(product, "120min", "product_must_own_stop_billing_window");
 assertIncludes(product, "T+1", "product_must_own_audit_window");
 assertIncludes(runtime, "PostgreSQL", "runtime_must_own_postgres_truth");
-assertIncludes(runtime, "Redis", "runtime_must_own_redis_truth");
+assertIncludes(runtime, "Redis is not a required production dependency", "runtime_must_record_redis_optional_boundary");
+assertIncludes(runtime, "PostgreSQL-only required data plane", "runtime_must_own_postgres_only_required_data_plane");
+assertExcludes(runtime, "缺 PostgreSQL/Redis production-mode 连接", "runtime_must_not_require_redis_connection");
 assertIncludes(runtime, "fail closed", "runtime_must_keep_fail_closed_language");
 assertIncludes(delivery, current.current_cursor, "delivery_must_reference_current_cursor");
 assertIncludes(delivery, "Go Control Plane MVP Takeover Lane", "delivery_must_own_go_control_plane_takeover_lane");

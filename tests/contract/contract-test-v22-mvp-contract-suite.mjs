@@ -29,7 +29,8 @@ for (const phrase of [
 
 for (const phrase of [
   "PostgreSQL",
-  "Redis",
+  "Redis is not a required production dependency",
+  "PostgreSQL-only required data plane",
 ]) {
   assert(runtimeSource.includes(phrase), `runtime_truth_missing:${phrase}`);
 }

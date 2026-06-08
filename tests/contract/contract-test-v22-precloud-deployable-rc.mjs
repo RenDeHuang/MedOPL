@@ -92,6 +92,20 @@ async function assertNodeBackendRetiredFromDeployableSurface() {
   }
 }
 
+async function assertProductComposeIsPostgresOnlyRequiredDataPlane() {
+  const compose = JSON.parse(await readRepoFile("compose.product.yaml"));
+  assert.equal(Object.hasOwn(compose.services ?? {}, "redis"), false, "product_compose_must_not_require_redis_service");
+  assert.equal(Object.hasOwn(compose.volumes ?? {}, "redis-data"), false, "product_compose_must_not_keep_redis_volume");
+  for (const serviceName of ["portal", "portal-dev"]) {
+    const service = compose.services?.[serviceName];
+    assert(service, `product_compose_missing:${serviceName}`);
+    assert.equal(service.environment?.PORTAL_STORAGE_MODE, "postgres", `${serviceName}_storage_mode_must_be_postgres_only`);
+    assert.equal(Object.hasOwn(service.environment ?? {}, "PORTAL_REDIS_URL"), false, `${serviceName}_must_not_require_redis_url`);
+    assert.equal(Object.hasOwn(service.depends_on ?? {}, "redis"), false, `${serviceName}_must_not_depend_on_redis`);
+    assert.equal(Object.hasOwn(service.depends_on ?? {}, "postgres"), true, `${serviceName}_must_depend_on_postgres`);
+  }
+}
+
 async function assertGoPrecloudSurface() {
   const router = await readRepoFile("services/medopl-go-backend/internal/server/router.go");
   for (const marker of [
@@ -140,6 +154,7 @@ async function assertTruthAndEvalRegistration() {
 
 await assertChangePackage();
 await assertNodeBackendRetiredFromDeployableSurface();
+await assertProductComposeIsPostgresOnlyRequiredDataPlane();
 await assertGoPrecloudSurface();
 await assertTruthAndEvalRegistration();
 

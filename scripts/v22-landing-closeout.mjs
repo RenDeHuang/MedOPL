@@ -378,8 +378,8 @@ function renderCloseoutBlock({ landedCommit, nextCursor, verificationSummary }) 
 
 function renderCurrentProblem({ branch, landedCommit }) {
   return [
-    "The next indexed local implementation leaf remains PostgreSQL/Redis local production data closure.",
-    `The latest governance closeout branch ${branch} landed at ${landedCommit} and does not implement PostgreSQL/Redis.`,
+    "The next indexed local implementation leaf remains PostgreSQL-only local production data closure.",
+    `The latest governance closeout branch ${branch} landed at ${landedCommit} and does not implement PostgreSQL-only.`,
   ].join(" ");
 }
 
