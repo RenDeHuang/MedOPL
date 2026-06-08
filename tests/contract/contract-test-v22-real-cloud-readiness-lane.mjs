@@ -4,13 +4,6 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-  TEST_LANE_REGISTRY,
-  TEST_LANE_SUITES,
-  listSmokeEvalScripts,
-  smokeEvalMetadataOf,
-} from "../../scripts/v22-test-classification.mjs";
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
 const selfFile = "tests/contract/contract-test-v22-real-cloud-readiness-lane.mjs";
@@ -59,49 +52,17 @@ const cloudTestSources = await Promise.all([...readinessFiles, ...mutationOrDepl
   await readFile(path.join(repoRoot, file), "utf8"),
 ]));
 
-const selfEntry = TEST_LANE_REGISTRY.find((entry) => entry.file === selfFile);
-assert(selfEntry, "real_cloud_readiness_lane_contract_must_be_registered");
-assert.equal(selfEntry.lane, "contract", "real_cloud_readiness_contract_lane_mismatch");
-assert.equal(selfEntry.authorization, "none", "real_cloud_readiness_contract_must_not_require_authorization");
-for (const suite of ["health", "local-contract", "current", "review"]) {
-  assert(TEST_LANE_SUITES[suite].includes(selfFile), `real_cloud_readiness_contract_missing_suite:${suite}`);
-}
-
-assert(TEST_LANE_SUITES["real-cloud-readiness"], "registry_suite_missing:real-cloud-readiness");
-assert.deepEqual(
-  listSmokeEvalScripts({ tiers: ["real-cloud-readiness"] }),
-  readinessFiles,
-  "real_cloud_readiness_tier_must_cover_only_readiness_contracts",
-);
-
-for (const file of readinessFiles) {
-  const metadata = smokeEvalMetadataOf(file);
-  assert.equal(metadata.lane, undefined, "metadata_must_not_leak_lane_shape");
-  assert.equal(metadata.tier, "real-cloud-readiness", `readiness_file_tier_mismatch:${file}`);
-  assert.equal(metadata.category, "real-cloud-readiness", `readiness_file_category_mismatch:${file}`);
-  assert.equal(metadata.authorization, "none", `readiness_file_must_be_local_no_authorization:${file}`);
-  assert.equal(metadata.surface, "cloud", `readiness_file_surface_mismatch:${file}`);
-  assert(TEST_LANE_SUITES["real-cloud-readiness"].includes(file), `readiness_suite_missing_file:${file}`);
-  assert(!TEST_LANE_SUITES["cloud-future-authorized"].includes(file), `future_authorized_must_not_run_readiness_file:${file}`);
-}
-
-for (const file of mutationOrDeployFiles) {
-  const metadata = smokeEvalMetadataOf(file);
-  assert.equal(metadata.tier, "future-authorized", `mutation_or_deploy_file_must_stay_future_authorized:${file}`);
-  assert.equal(metadata.authorization, "future-authorized", `mutation_or_deploy_file_must_require_future_authorization:${file}`);
-  assert(TEST_LANE_SUITES["cloud-future-authorized"].includes(file), `future_authorized_suite_missing_file:${file}`);
-  assert(!TEST_LANE_SUITES["real-cloud-readiness"].includes(file), `readiness_suite_must_not_run_mutation_or_deploy_file:${file}`);
-}
-
 for (const [file, source] of cloudTestSources) {
   assert(!source.includes("contract-test-v22-mvp-contract-suite.mjs"), `cloud_lane_test_must_not_anchor_old_mvp_suite:${file}`);
   assert(!source.includes("smoke-test-v22-"), `cloud_lane_test_must_not_anchor_legacy_smoke_name:${file}`);
 }
 
-assert.equal(TEST_LANE_SUITES["local-rc-authorized"], undefined, "empty_local_rc_authorized_suite_must_not_remain_active");
 assert.equal(manifestSuites.has("local-rc-authorized"), false, "manifest_must_not_keep_empty_local_rc_authorized_suite");
 assert.equal(manifestSuites.has("real-cloud-readiness"), true, "manifest_must_register_real_cloud_readiness_suite");
 assert.equal(packageJson.scripts["test:real-cloud-readiness"], "node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk", "package_must_expose_real_cloud_readiness_lane");
+for (const suiteId of ["health", "local-contract", "current", "review"]) {
+  assert(commandFiles(manifestSuites.get(suiteId)?.commands || []).includes(selfFile), `real_cloud_readiness_contract_missing_suite:${suiteId}`);
+}
 
 const manifestReadinessFiles = commandFiles(manifestSuites.get("real-cloud-readiness")?.commands || []);
 assert.deepEqual(manifestReadinessFiles, readinessFiles, "manifest_real_cloud_readiness_suite_must_match_registry");

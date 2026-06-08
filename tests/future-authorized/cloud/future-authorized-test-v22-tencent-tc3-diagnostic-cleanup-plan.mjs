@@ -1,12 +1,18 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-import { TEST_LANE_SUITES } from "../../../scripts/v22-test-classification.mjs";
-
 const contractPath = "docs/specs/README.md";
+const manifestPath = "tests/fixtures/v22/agent-verify-manifest.json";
 const readmePath = "docs/specs/README.md";
 const selfFile = "tests/future-authorized/cloud/future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs";
 const smokePath = "tests/future-authorized/cloud/future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs";
+
+function commandFiles(commands = []) {
+  return commands
+    .map((command) => String(command).match(/^node\s+(tests\/.+\.mjs)(?:\s|$)/u)?.[1] || "")
+    .filter(Boolean)
+    .sort();
+}
 
 function assertIncludesAll(source, phrases, label) {
   for (const phrase of phrases) {
@@ -21,8 +27,10 @@ function assertNotIncludesAny(source, phrases, label) {
 }
 
 const contract = await readFile(contractPath, "utf8");
+const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 const readme = await readFile(readmePath, "utf8");
 const smoke = await readFile(smokePath, "utf8");
+const realCloudReadinessFiles = commandFiles(manifest.suites.find((suite) => suite.id === "real-cloud-readiness")?.commands || []);
 
 assertIncludesAll(contract, [
   "TC3 Diagnostic Cleanup Plan",
@@ -77,7 +85,7 @@ assertIncludesAll(readme, [
   "official SDK readonly live 成功生成脱敏 report",
 ], "tc3_cleanup_readme");
 
-assert(TEST_LANE_SUITES["real-cloud-readiness"].includes(selfFile), "real_cloud_readiness_suite_must_include_tc3_cleanup_plan_contract");
+assert(realCloudReadinessFiles.includes(selfFile), "real_cloud_readiness_suite_must_include_tc3_cleanup_plan_contract");
 
 assertNotIncludesAny(contract, [
   "\"deleteTc3Now\": true",

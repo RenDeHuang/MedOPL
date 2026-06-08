@@ -1,14 +1,22 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-import { TEST_LANE_SUITES } from "../../../scripts/v22-test-classification.mjs";
-
 const contractPath = "docs/specs/README.md";
+const manifestPath = "tests/fixtures/v22/agent-verify-manifest.json";
 const readmePath = "docs/specs/README.md";
 const selfFile = "tests/future-authorized/cloud/future-authorized-test-v22-authorized-tencent-create-release-contract.mjs";
 
+function commandFiles(commands = []) {
+  return commands
+    .map((command) => String(command).match(/^node\s+(tests\/.+\.mjs)(?:\s|$)/u)?.[1] || "")
+    .filter(Boolean)
+    .sort();
+}
+
 const contract = await readFile(contractPath, "utf8");
+const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 const readme = await readFile(readmePath, "utf8");
+const futureAuthorizedFiles = commandFiles(manifest.suites.find((suite) => suite.id === "cloud-future-authorized")?.commands || []);
 
 const requiredPhrases = [
   "authorized Tencent create/release",
@@ -103,7 +111,7 @@ for (const forbidden of [
 
 assert(readme.includes("spec:v22-authorized-tencent-create-release-boundary"), "contracts_readme_missing_authorized_tencent_contract");
 assert(readme.includes("authorized/tencent create/release"), "contracts_readme_missing_authorized_tencent_route");
-assert(TEST_LANE_SUITES["cloud-future-authorized"].includes(selfFile), "future_authorized_suite_missing_authorized_tencent_create_release_contract");
+assert(futureAuthorizedFiles.includes(selfFile), "future_authorized_suite_missing_authorized_tencent_create_release_contract");
 
 console.log(JSON.stringify({
   ok: true,

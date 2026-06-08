@@ -1,11 +1,17 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-import { TEST_LANE_SUITES } from "../../../scripts/v22-test-classification.mjs";
-
 const contractPath = "docs/specs/README.md";
+const manifestPath = "tests/fixtures/v22/agent-verify-manifest.json";
 const readmePath = "docs/specs/README.md";
 const selfFile = "tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs";
+
+function commandFiles(commands = []) {
+  return commands
+    .map((command) => String(command).match(/^node\s+(tests\/.+\.mjs)(?:\s|$)/u)?.[1] || "")
+    .filter(Boolean)
+    .sort();
+}
 
 function assertIncludesAll(source, phrases, label) {
   for (const phrase of phrases) {
@@ -19,11 +25,13 @@ function assertNotIncludesAny(source, phrases, label) {
   }
 }
 
-const [contract, readme, suite] = await Promise.all([
+const [contract, manifest, readme, suite] = await Promise.all([
   readFile(contractPath, "utf8"),
+  readFile(manifestPath, "utf8").then(JSON.parse),
   readFile(readmePath, "utf8"),
   Promise.resolve(""),
 ]);
+const futureAuthorizedFiles = commandFiles(manifest.suites.find((entry) => entry.id === "cloud-future-authorized")?.commands || []);
 
 assertIncludesAll(contract, [
   "v22 Production Cloud Topology Boundary",
@@ -112,7 +120,7 @@ assertIncludesAll(readme, [
 ], "contracts_readme_production_cloud_topology");
 
 assert.equal(suite, "", "production_topology_must_not_read_legacy_suite_source");
-assert(TEST_LANE_SUITES["cloud-future-authorized"].includes(selfFile), "future_authorized_suite_must_include_production_cloud_topology_contract");
+assert(futureAuthorizedFiles.includes(selfFile), "future_authorized_suite_must_include_production_cloud_topology_contract");
 
 console.log(JSON.stringify({
   ok: true,
