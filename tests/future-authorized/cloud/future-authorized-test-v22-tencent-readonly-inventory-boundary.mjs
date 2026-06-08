@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
+import { TEST_LANE_SUITES } from "../../../scripts/v22-test-classification.mjs";
+
 const contractPath = "docs/specs/README.md";
 const readmePath = "docs/specs/README.md";
-const suitePath = "tests/contract/contract-test-v22-mvp-contract-suite.mjs";
+const selfFile = "tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-boundary.mjs";
 
 function assertIncludesAll(source, phrases, label) {
   for (const phrase of phrases) {
@@ -20,7 +22,7 @@ function assertNotIncludesAny(source, phrases, label) {
 const [contract, readme, suite] = await Promise.all([
   readFile(contractPath, "utf8"),
   readFile(readmePath, "utf8"),
-  readFile(suitePath, "utf8"),
+  Promise.resolve(""),
 ]);
 
 assertIncludesAll(readme, [
@@ -29,9 +31,8 @@ assertIncludesAll(readme, [
   "mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> readonly/tencent inventory -> authorized/tencent create/release",
 ], "contracts_readme_inventory");
 
-assertIncludesAll(suite, [
-  "smoke-test-v22-tencent-readonly-inventory-boundary",
-], "mvp_suite_inventory");
+assert.equal(suite, "", "readonly_inventory_must_not_read_legacy_suite_source");
+assert(TEST_LANE_SUITES["real-cloud-readiness"].includes(selfFile), "real_cloud_readiness_suite_must_include_readonly_inventory_contract");
 
 assertIncludesAll(contract, [
   "v22 Tencent Readonly Inventory Boundary",
@@ -205,6 +206,6 @@ console.log(JSON.stringify({
   checked: {
     contractPath,
     readmePath,
-    suitePath,
+    registrySuite: "real-cloud-readiness",
   },
 }, null, 2));

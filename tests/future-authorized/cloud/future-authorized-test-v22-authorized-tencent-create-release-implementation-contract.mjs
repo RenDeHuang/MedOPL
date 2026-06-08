@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
+import { TEST_LANE_SUITES } from "../../../scripts/v22-test-classification.mjs";
+
 const contractPath = "docs/specs/README.md";
 const readmePath = "docs/specs/README.md";
-const suitePath = "tests/contract/contract-test-v22-mvp-contract-suite.mjs";
+const selfFile = "tests/future-authorized/cloud/future-authorized-test-v22-authorized-tencent-create-release-implementation-contract.mjs";
 
 function assertIncludesAll(source, phrases, label) {
   for (const phrase of phrases) {
@@ -19,7 +21,6 @@ function assertNotIncludesAny(source, phrases, label) {
 
 const contract = await readFile(contractPath, "utf8");
 const readme = await readFile(readmePath, "utf8");
-const suite = await readFile(suitePath, "utf8");
 
 assertIncludesAll(contract, [
   "v22 Authorized Tencent Create/Release Implementation Boundary",
@@ -151,9 +152,7 @@ assertIncludesAll(readme, [
   "计算资源和存储资源生命周期分离",
 ], "contracts_readme_implementation_boundary");
 
-assertIncludesAll(suite, [
-  "smoke-test-v22-authorized-tencent-create-release-implementation-contract",
-], "mvp_suite_implementation_boundary");
+assert(TEST_LANE_SUITES["cloud-future-authorized"].includes(selfFile), "future_authorized_suite_must_include_implementation_contract");
 
 console.log(JSON.stringify({
   ok: true,
@@ -161,6 +160,6 @@ console.log(JSON.stringify({
   checked: {
     contractPath,
     readmePath,
-    suitePath,
+    registrySuite: "cloud-future-authorized",
   },
 }, null, 2));

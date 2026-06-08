@@ -58,8 +58,8 @@ active test 必须有 lane owner。每个 `tests/**/*.mjs` 都必须通过 regis
 - `current-owner`: 证明当前产品、runtime、source、docs 或 workflow owner 的行为。
 - `negative-retirement-guard`: 防止旧入口、旧兼容语义、secret/cloud/deploy 越界或 taxonomy 漂移复活。
 - `suite-wrapper`: 只包装 active registered tests，不能包装不存在的旧路径。
+- `real-cloud-readiness-boundary`: 只表达 mock/snapshot、readonly quote、dry-run plan 和 readonly inventory 的本地 readiness gate；不授权 secret、真实云、deploy、kubectl 或 live-test。
 - `future-authorized-boundary`: 只表达 future-authorized 边界，不授权真实云执行。
-- `local-rc-authorized-boundary`: 只表达本地 RC 授权边界；当前 active registry 中数量为 0。未来新增时必须有用户 step-local 授权和显式 env，不能进入默认 suite。
 
 旧 alias / wrapper / facade / compat-only test 迁完 caller 后直接删除。historical proof / closeout evidence 不作为 active test 保留。duplicate aggregate test 必须合并或删除。history 只保摘要，git history 保细节。
 

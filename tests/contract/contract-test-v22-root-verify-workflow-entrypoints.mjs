@@ -30,6 +30,7 @@ const expectedScripts = {
   "test:smoke": "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk",
   "test:contract": "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk",
   "test:regression": "node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk",
+  "test:real-cloud-readiness": "node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk",
   "test:fast": "node scripts/v22-verify.mjs package pre-slide-fast --base origin/recovery/platform-v22-trunk",
   "test:lanes": "node scripts/v22-verify.mjs package test-lanes --base origin/recovery/platform-v22-trunk",
   "verify:local-release-candidate": "node scripts/v22-verify.mjs package local-release-candidate --base origin/recovery/platform-v22-trunk",

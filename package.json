@@ -14,6 +14,7 @@
     "test:smoke": "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk",
     "test:contract": "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk",
     "test:regression": "node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk",
+    "test:real-cloud-readiness": "node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk",
     "gate:review": "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
     "gate:change": "node scripts/v22-verify.mjs package change-package-gate --base origin/recovery/platform-v22-trunk",
     "closeout:check": "node scripts/v22-landing-closeout.mjs check --trunk-ref origin/recovery/platform-v22-trunk",
