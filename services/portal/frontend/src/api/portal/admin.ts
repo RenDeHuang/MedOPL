@@ -1,8 +1,7 @@
 import { goControlPlaneClient } from "../client";
 import axios from "axios";
 import type { PortalPagination, PortalAdminActionValue, PortalActionErrorShape } from "./common";
-import type { SessionTracesPayload } from "./traces";
-import type { PublicSettingsPayload } from "./public";
+import type { PublicSettingsPayload } from "./types";
 
 export type { PublicSettingsPayload };
 
@@ -47,8 +46,10 @@ export interface AdminSystemPayload {
   publicSettings: PublicSettingsPayload;
 }
 
+export type AdminAgentTracesPayload = Record<string, any>;
+
 export async function fetchAdminAgentTraces(params?: Record<string, string | number | undefined>) {
-  const { data } = await goControlPlaneClient.get<SessionTracesPayload>("/admin/agent-traces", { params });
+  const { data } = await goControlPlaneClient.get<AdminAgentTracesPayload>("/admin/agent-traces", { params });
   return data;
 }
 

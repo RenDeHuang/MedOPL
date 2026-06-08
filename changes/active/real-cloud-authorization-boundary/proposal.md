@@ -37,6 +37,28 @@ The current local productization cursor is not the real-cloud authorization boun
 - Future authorization must name the operation class, target environment, evidence sink and rollback owner.
 - Local dry-run or future-authorized eval evidence cannot be upgraded into live or production evidence.
 
+Every future sensitive operation must have a current-session authorization record with all of these fields before execution:
+
+- `operation class`: one of readonly quote/inventory, mutation create/release, build/push, deploy/kubectl, live-test/canary, rollback with side effect, or schema/data migration.
+- `target environment`: account/project, region, namespace or endpoint scope, plus the exact tenant/workspace/resource binding scope if applicable.
+- `secret allowlist`: the exact secret refs or local secret paths allowed for this operation; no source-env or read-all secret behavior.
+- `API allowlist`: the exact readonly, mutation, registry, deploy, kubectl or smoke operations allowed.
+- `budget`: cost, resource, time and retry limits; missing budget keeps the operation blocked.
+- `evidence sink`: `.runtime/<approved-run-id>` or another user-approved non-git sink for raw evidence, with only sanitized summaries allowed in git.
+- `rollback owner`: the person or role allowed to decide stop/retry/rollback, plus the rollback evidence required before expansion.
+
+The first executable cloud sequence after this boundary remains:
+
+```text
+mock/snapshot provider
+-> readonly quote
+-> dry-run plan
+-> readonly inventory
+-> authorized create/release
+-> authorized deploy
+-> canary / QA / status update
+```
+
 ## Subscribed Truth
 
 - docs/active/README.md

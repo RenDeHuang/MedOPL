@@ -1,21 +1,14 @@
 import { useState } from "react";
+import { Alert, AlertDescription, Badge, Button, Card, cn, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Progress } from "../components/ui/core";
 import { Link } from "react-router";
 import { AlertCircle, Check, HardDrive, Server, Shield, Zap } from "lucide-react";
-import { Button } from "../components/ui/button";
-import { Card } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Alert, AlertDescription } from "../components/ui/alert";
-import { Progress } from "../components/ui/progress";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "../components/ui/dialog";
-import { cn } from "../components/ui/utils";
-import { loadRuntimeEnvironmentModel, usePortalQuery } from "../data/portalAdapters";
-import { activateLabPackage, upgradeLabPackage } from "../../api/portal/lab";
+import { activateRuntimeEnvironmentPlan, useRuntimeEnvironmentModel } from "../data/portalRuntimeEnvironmentModel";
 
 type ServiceStatus = "not_activated" | "active";
 
 export function RuntimeEnvironment() {
   const [refreshVersion, setRefreshVersion] = useState(0);
-  const query = usePortalQuery(loadRuntimeEnvironmentModel, [refreshVersion]);
+  const query = useRuntimeEnvironmentModel(refreshVersion);
   const [selectedPlan, setSelectedPlan] = useState("pro_8c16g_100gb");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [activationPending, setActivationPending] = useState(false);
@@ -39,11 +32,7 @@ export function RuntimeEnvironment() {
       const payload = workspaceId
         ? { packageId: current.id, workspaceId, idempotencyKey, ...(subscriptionId ? { subscriptionId } : {}) }
         : { packageId: current.id, idempotencyKey, ...(subscriptionId ? { subscriptionId } : {}) };
-      if (subscriptionId) {
-        await upgradeLabPackage(payload);
-      } else {
-        await activateLabPackage(payload);
-      }
+      await activateRuntimeEnvironmentPlan(payload);
       setShowConfirmDialog(false);
       setRefreshVersion((v) => v + 1);
     } catch {

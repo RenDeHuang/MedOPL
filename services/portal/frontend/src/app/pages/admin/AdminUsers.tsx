@@ -1,70 +1,28 @@
 import { useState } from "react";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Textarea } from "../../components/ui/core";
 import { Search, MoreVertical, Ban, CheckCircle, DollarSign, Trash2, Plus, Edit } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Badge } from "../../components/ui/badge";
-import { Label } from "../../components/ui/label";
-import { Textarea } from "../../components/ui/textarea";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../../components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "../../components/ui/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../../components/ui/table";
-import {
+  adminLocalActionMessage,
+  buildAdminUserRechargePayload,
+  buildAdminUserRefundPayload,
   createAdminUser,
   deleteAdminUser,
+  filterAdminUsers,
   normalizePortalAdminActionError,
   rechargeAdminUser,
   refundAdminUser,
   toggleAdminUser,
   updateAdminUser,
-} from "../../../api/portal/admin";
-import { adminLocalActionMessage, loadAdminUsersModel, usePortalQuery } from "../../data/portalAdapters";
-
-type UserStatus = "active" | "restricted" | "disabled";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  status: UserStatus;
-  balance: number;
-  workspaces: number;
-  plan: string;
-  createdAt: string;
-}
+  type AdminUserStatus,
+  type AdminUserView,
+  useAdminUsersModel,
+} from "../../data/portalAdminUsersModel";
 
 export function AdminUsers() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [refreshVersion, setRefreshVersion] = useState(0);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<AdminUserView | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -80,9 +38,9 @@ export function AdminUsers() {
   const [userPasswordInput, setUserPasswordInput] = useState("");
   const [actionError, setActionError] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
-  const query = usePortalQuery(loadAdminUsersModel, [refreshVersion]);
+  const query = useAdminUsersModel(refreshVersion);
 
-  const getStatusBadge = (status: UserStatus) => {
+  const getStatusBadge = (status: AdminUserStatus) => {
     switch (status) {
       case "active":
         return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">正常</Badge>;
@@ -101,16 +59,11 @@ export function AdminUsers() {
     return <div className="p-6"><Card className="p-6 border-red-200 bg-red-50 text-sm text-red-700">{query.error}</Card></div>;
   }
 
-  const filteredUsers = query.data.users.filter((user: User) => {
-    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "all" || user.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  const filteredUsers = filterAdminUsers(query.data.users, searchQuery, statusFilter);
 
   const refreshUsers = () => setRefreshVersion((value) => value + 1);
 
-  const openDetailDialog = (user: User) => {
+  const openDetailDialog = (user: AdminUserView) => {
     setSelectedUser(user);
     setActionError("");
     setDetailDialogOpen(true);
@@ -125,7 +78,7 @@ export function AdminUsers() {
     setCreateDialogOpen(true);
   };
 
-  const openEditDialog = (user: User) => {
+  const openEditDialog = (user: AdminUserView) => {
     setSelectedUser(user);
     setUserNameInput(user.name);
     setUserEmailInput(user.email);
@@ -134,26 +87,26 @@ export function AdminUsers() {
     setEditDialogOpen(true);
   };
 
-  const openToggleDialog = (user: User) => {
+  const openToggleDialog = (user: AdminUserView) => {
     setSelectedUser(user);
     setActionError("");
     setToggleDialogOpen(true);
   };
 
-  const openDeleteDialog = (user: User) => {
+  const openDeleteDialog = (user: AdminUserView) => {
     setSelectedUser(user);
     setActionError("");
     setDeleteDialogOpen(true);
   };
 
-  const openRechargeDialog = (user: User) => {
+  const openRechargeDialog = (user: AdminUserView) => {
     setSelectedUser(user);
     setRechargeAmount("");
     setActionError("");
     setRechargeDialogOpen(true);
   };
 
-  const openRefundDialog = (user: User) => {
+  const openRefundDialog = (user: AdminUserView) => {
     setSelectedUser(user);
     setRefundAmount("");
     setRefundReason("");
@@ -271,36 +224,33 @@ export function AdminUsers() {
   };
 
   const submitRecharge = async () => {
-    if (!selectedUser) return;
-    const amount = Number(rechargeAmount);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      setActionError("请输入大于 0 的充值金额。");
+    try {
+      const payload = buildAdminUserRechargePayload(selectedUser, rechargeAmount);
+      if (!payload) return;
+      await runUserAction(
+        "recharge",
+        () => rechargeAdminUser(payload),
+        () => setRechargeDialogOpen(false),
+      );
+    } catch (error) {
+      setActionError(normalizePortalAdminActionError(error, "操作失败，请稍后重试。"));
       return;
     }
-    await runUserAction(
-      "recharge",
-      () => rechargeAdminUser({ userId: selectedUser.id, amount, redirectTo: "/admin/users" }),
-      () => setRechargeDialogOpen(false),
-    );
   };
 
   const submitRefund = async () => {
-    if (!selectedUser) return;
-    const amount = Number(refundAmount);
-    const reason = refundReason.trim();
-    if (!Number.isFinite(amount) || amount <= 0) {
-      setActionError("请输入大于 0 的退款金额。");
+    try {
+      const payload = buildAdminUserRefundPayload(selectedUser, refundAmount, refundReason);
+      if (!payload) return;
+      await runUserAction(
+        "refund",
+        () => refundAdminUser(payload),
+        () => setRefundDialogOpen(false),
+      );
+    } catch (error) {
+      setActionError(normalizePortalAdminActionError(error, "操作失败，请稍后重试。"));
       return;
     }
-    if (!reason) {
-      setActionError("请输入退款原因。");
-      return;
-    }
-    await runUserAction(
-      "refund",
-      () => refundAdminUser({ userId: selectedUser.id, amount, reason, redirectTo: "/admin/users" }),
-      () => setRefundDialogOpen(false),
-    );
   };
 
   return (

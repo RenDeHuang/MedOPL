@@ -1,28 +1,11 @@
 import { useState } from "react";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/core";
 import { DollarSign, AlertCircle, CheckCircle, XCircle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../../components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
-import { Input } from "../../components/ui/input";
-import { markAdminBillingOp } from "../../../api/portal/admin";
-import { normalizePortalAdminActionError } from "../../../api/portal/admin";
-import { loadAdminBillingOpsModel, usePortalQuery } from "../../data/portalAdapters";
+  markAdminBillingOp,
+  normalizePortalAdminActionError,
+  useAdminBillingOpsModel,
+} from "../../data/portalAdminOpsModel";
 
 interface BillingItem {
   rowKey: string;
@@ -44,7 +27,7 @@ export function AdminBillingOps() {
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [actionError, setActionError] = useState("");
   const [refreshVersion, setRefreshVersion] = useState(0);
-  const query = usePortalQuery(loadAdminBillingOpsModel, [refreshVersion]);
+  const query = useAdminBillingOpsModel(refreshVersion);
 
   const runBillingOpAction = async (item: BillingItem, status: "approved" | "rejected", anomaly: boolean) => {
     const note = (notes[item.id] || item.note || item.reason || "").trim();

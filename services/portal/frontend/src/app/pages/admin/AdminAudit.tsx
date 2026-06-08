@@ -1,25 +1,7 @@
 import { useState } from "react";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/core";
 import { Search, Filter, FileText, User, FolderOpen, Activity } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Badge } from "../../components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../../components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../../components/ui/table";
-import { loadAdminAuditModel, usePortalQuery } from "../../data/portalAdapters";
+import { useAdminAuditModel } from "../../data/portalAdminOpsModel";
 
 interface AuditEvent {
   rowKey: string;
@@ -43,7 +25,7 @@ export function AdminAudit() {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const query = usePortalQuery(loadAdminAuditModel, []);
+  const query = useAdminAuditModel();
 
   const getStatusBadge = (status: string) => {
     switch (status) {

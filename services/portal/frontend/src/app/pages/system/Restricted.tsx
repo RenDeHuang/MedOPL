@@ -1,5 +1,5 @@
 import { Shield } from "lucide-react";
-import { Button } from "../../components/ui/button";
+import { Button } from "../../components/ui/core";
 
 interface RestrictedProps {
   title?: string;

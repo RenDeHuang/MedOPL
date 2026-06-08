@@ -1,35 +1,13 @@
 import { useState } from "react";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Input, Label, Switch, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Tabs, TabsContent, TabsList, TabsTrigger, Textarea } from "../../components/ui/core";
 import { Plus, Pin, Edit, Trash2, CheckCircle, AlertCircle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
-import { Textarea } from "../../components/ui/textarea";
-import { Switch } from "../../components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../../components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../../components/ui/table";
-import {
+  adminReadOnlyMessage,
   deleteAdminAnnouncement,
   saveAdminAnnouncement,
   toggleAdminAnnouncement,
-} from "../../../api/portal/admin";
-import { adminReadOnlyMessage, loadAdminAlertsModel, usePortalQuery } from "../../data/portalAdapters";
+  useAdminAlertsModel,
+} from "../../data/portalAdminOpsModel";
 
 interface Announcement {
   id: string;
@@ -64,7 +42,7 @@ export function AdminAlerts() {
   const [announcementActive, setAnnouncementActive] = useState(true);
   const [actionError, setActionError] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
-  const query = usePortalQuery(loadAdminAlertsModel, [refreshVersion]);
+  const query = useAdminAlertsModel(refreshVersion);
 
   const getSeverityBadge = (severity: "error" | "warning" | "info") => {
     switch (severity) {

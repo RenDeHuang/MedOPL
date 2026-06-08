@@ -3,10 +3,14 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import {
   addArtifactRecord,
+} from "./state-store-artifact-trace-mutations.mjs";
+import {
   addMessageReplyRecord,
+} from "./state-store-message-reply-mutations.mjs";
+import {
   addRunAction,
-  artifactsRoot,
-} from "./state-store.mjs";
+} from "./state-store-run-action-mutations.mjs";
+import { artifactsRoot } from "./state-store-paths.mjs";
 import { sendMessage } from "./opl-client.mjs";
 import { readProviderSecret } from "./provider-secret-store.mjs";
 

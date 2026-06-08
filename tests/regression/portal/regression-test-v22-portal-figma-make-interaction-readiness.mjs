@@ -33,7 +33,7 @@ function sliceBetween(text, start, end, label) {
 }
 
 const [
-  buttonSource,
+  coreSource,
   sheetSource,
   overviewSource,
   tasksSource,
@@ -53,11 +53,14 @@ const [
   dialogSource,
   adminApiSource,
   resourceApiSource,
-  adapterSource,
+  portalTypesSource,
+  adminOpsModelSource,
+  portalQuerySource,
   oplEntryModelSource,
+  runtimeModelSource,
   displayErrorsSource,
 ] = await Promise.all([
-  source(`${appRoot}/components/ui/button.tsx`),
+  source(`${appRoot}/components/ui/core.tsx`),
   source(`${appRoot}/components/ui/sheet.tsx`),
   source(`${appRoot}/pages/Overview.tsx`),
   source(`${appRoot}/pages/TasksResults.tsx`),
@@ -77,12 +80,15 @@ const [
   source(`${appRoot}/components/ui/dialog.tsx`),
   source("services/portal/frontend/src/api/portal/admin.ts"),
   source("services/portal/frontend/src/api/portal/resources.ts"),
-  source(`${appRoot}/data/portalAdapters.ts`),
+  source("services/portal/frontend/src/api/portal/types.ts"),
+  source(`${appRoot}/data/portalAdminOpsModel.ts`),
+  source(`${appRoot}/data/portalQuery.ts`),
   source(`${appRoot}/data/portalOplEntryModel.ts`),
+  source(`${appRoot}/data/portalRuntimeEnvironmentModel.ts`),
   source(`${appRoot}/data/portalDisplayErrors.ts`),
 ]);
 
-assertRefForwarded(buttonSource, "Button");
+assertRefForwarded(coreSource, "Button");
 for (const componentName of [
   "SheetTrigger",
   "SheetClose",
@@ -120,24 +126,24 @@ for (const [label, pageSource, routes] of [
 assertIncludes(oplEntrySource, "OPL 网关暂不可用，请稍后重试；如持续失败，请联系管理员。", "opl_entry_product_error_copy");
 assertIncludes(oplEntrySource, "<a href={query.data.oplWebUrl}", "opl_entry_ready_cta_must_open_opl_url");
 assertIncludes(oplEntrySource, "<Button asChild", "opl_entry_primary_ctas_must_bind_children");
-assertIncludes(resourceApiSource, "providerBound: boolean;", "opl_launch_status_payload_must_include_provider_bound_projection");
-assertIncludes(resourceApiSource, "providerKeyRef: string;", "opl_launch_status_payload_must_include_provider_key_ref_projection");
-assertIncludes(resourceApiSource, "gatewayReady: boolean;", "opl_launch_status_payload_must_include_gateway_ready_projection");
-assertIncludes(resourceApiSource, "gatewayState: string;", "opl_launch_status_payload_must_include_gateway_state_projection");
+assertIncludes(portalTypesSource, "providerBound: boolean;", "opl_launch_status_payload_must_include_provider_bound_projection");
+assertIncludes(portalTypesSource, "providerKeyRef: string;", "opl_launch_status_payload_must_include_provider_key_ref_projection");
+assertIncludes(portalTypesSource, "gatewayReady: boolean;", "opl_launch_status_payload_must_include_gateway_ready_projection");
+assertIncludes(portalTypesSource, "gatewayState: string;", "opl_launch_status_payload_must_include_gateway_state_projection");
 assertIncludes(oplEntryModelSource, "providerBound: status.providerBound", "opl_entry_adapter_must_forward_backend_provider_bound");
 assertIncludes(oplEntryModelSource, "providerKeyRef: status.providerKeyRef", "opl_entry_adapter_must_forward_backend_provider_key_ref");
 assertIncludes(oplEntryModelSource, "gatewayReady: status.gatewayReady", "opl_entry_adapter_must_forward_backend_gateway_ready");
 assertIncludes(oplEntryModelSource, "gatewayState: status.gatewayState", "opl_entry_adapter_must_forward_backend_gateway_state");
 assertIncludes(oplEntryModelSource, "blockingUser: status.blockingUser", "opl_entry_adapter_must_forward_backend_blocking_state");
 assertExcludes(oplEntryModelSource, 'providerBound: false, providerKeyRef: ""', "opl_entry_adapter_must_not_synthesize_missing_provider_projection");
-assertIncludes(oplEntrySource, "query.data.providerBound", "opl_entry_page_must_render_backend_provider_bound");
-assertIncludes(oplEntrySource, "query.data.providerKeyRef", "opl_entry_page_must_render_backend_provider_key_ref");
-assertIncludes(oplEntrySource, "query.data.gatewayReady", "opl_entry_page_must_render_backend_gateway_ready");
-assertIncludes(oplEntrySource, "query.data.gatewayState", "opl_entry_page_must_render_backend_gateway_state");
-assertIncludes(oplEntrySource, "query.data.currentStage", "opl_entry_page_must_render_backend_current_stage");
-assertIncludes(oplEntrySource, "query.data.blockingUser", "opl_entry_page_must_render_backend_blocking_user");
-assertIncludes(oplEntrySource, "currentStage ===", "opl_entry_steps_must_consume_backend_current_stage");
-assertIncludes(oplEntrySource, "blockingUser", "opl_entry_steps_must_consume_backend_blocking_state");
+assertIncludes(oplEntryModelSource, "input.providerBound", "opl_entry_model_must_render_backend_provider_bound");
+assertIncludes(oplEntryModelSource, "input.providerKeyRef", "opl_entry_model_must_render_backend_provider_key_ref");
+assertIncludes(oplEntryModelSource, "input.gatewayReady", "opl_entry_model_must_render_backend_gateway_ready");
+assertIncludes(oplEntryModelSource, "input.gatewayState", "opl_entry_model_must_render_backend_gateway_state");
+assertIncludes(oplEntryModelSource, "input.currentStage", "opl_entry_model_must_render_backend_current_stage");
+assertIncludes(oplEntryModelSource, "input.blockingUser", "opl_entry_model_must_render_backend_blocking_user");
+assertIncludes(oplEntryModelSource, "currentStage ===", "opl_entry_steps_must_consume_backend_current_stage");
+assertIncludes(oplEntryModelSource, "blockingUser", "opl_entry_steps_must_consume_backend_blocking_state");
 
 assertIncludes(userMenuSource, "Dialog", "user_menu_account_info_must_open_dialog");
 assertIncludes(userMenuSource, "setAccountDialogOpen(true)", "user_menu_account_info_must_have_visible_product_action");
@@ -206,16 +212,17 @@ assertIncludes(adminAlertsSource, "toggleAdminAnnouncement", "admin_alerts_page_
 assertIncludes(adminAlertsSource, "deleteAdminAnnouncement", "admin_alerts_page_must_wire_delete_announcement");
 assertIncludes(adminAlertsSource, "setRefreshVersion", "admin_alerts_page_must_refresh_after_mutation");
 assertIncludes(adminAlertsSource, "Dialog", "admin_alerts_actions_must_open_dialogs_for_confirmed_actions");
-assertIncludes(adapterSource, "alertRowKey(", "admin_alerts_pending_rows_must_use_stable_event_key");
-assertIncludes(adapterSource, 'return `alert:items:${type}:${detail}:${primary}:${action}`;', "admin_alerts_pending_row_key_must_include_type_detail_primary_action");
-assertExcludes(adapterSource, "alert:items:${type}:${detail}:${primary}:${index}", "admin_alerts_pending_row_key_must_not_use_list_index");
-assertIncludes(adapterSource, "rowKey: alertRowKey(row)", "admin_alerts_dashboard_pending_rows_must_expose_ui_row_key");
+assertIncludes(adminOpsModelSource, "alertRowKey(", "admin_alerts_pending_rows_must_use_stable_event_key");
+assertIncludes(adminOpsModelSource, 'return `alert:items:${type}:${detail}:${primary}:${action}`;', "admin_alerts_pending_row_key_must_include_type_detail_primary_action");
+assertExcludes(adminOpsModelSource, "alert:items:${type}:${detail}:${primary}:${index}", "admin_alerts_pending_row_key_must_not_use_list_index");
+assertIncludes(adminOpsModelSource, "rowKey: alertRowKey(row)", "admin_alerts_pending_rows_must_expose_ui_row_key");
 assertIncludes(adminAlertsSource, "key={item.rowKey}", "admin_alerts_pending_table_must_use_ui_row_key");
 assertExcludes(adminAlertsSource, "key={item.id}", "admin_alerts_pending_table_must_not_key_by_business_id");
+assertIncludes(adminOpsModelSource, "rowKey: alertRowKey(row)", "admin_alerts_dashboard_pending_rows_must_expose_ui_row_key");
 assertIncludes(adminDashboardSource, "key={item.rowKey}", "admin_dashboard_pending_summary_must_use_ui_row_key");
 assertExcludes(adminDashboardSource, "key={item.id}", "admin_dashboard_pending_summary_must_not_key_by_business_id");
-assertIncludes(adapterSource, "adminServiceRowKey(", "admin_service_lists_must_use_stable_row_key_helper");
-assertIncludes(adapterSource, 'return `admin-service:${source}:${identity}:${status}:${index}`;', "admin_service_row_key_must_include_source_identity_status_index");
+assertIncludes(adminOpsModelSource, "adminServiceRowKey(", "admin_service_lists_must_use_stable_row_key_helper");
+assertIncludes(adminOpsModelSource, 'return `admin-service:${source}:${identity}:${status}:${index}`;', "admin_service_row_key_must_include_source_identity_status_index");
 assertIncludes(adminSystemSource, "key={route.rowKey}", "admin_system_key_routes_must_use_ui_row_key");
 assertIncludes(adminOpsSource, "key={service.rowKey}", "admin_ops_services_must_use_ui_row_key");
 assertExcludes(adminSystemSource, "key={route.name}", "admin_system_key_routes_must_not_key_by_display_name");
@@ -244,7 +251,9 @@ for (const [label, sourceText, forbidden] of [
 assertIncludes(runtimeSource, "当前页面仅展示状态，不提供资源调整动作。", "runtime_adjust_actions_must_show_product_boundary");
 assertExcludes(runtimeSource, "释放计算资源需要后端确认流程；当前入口未接入。", "runtime_release_action_must_be_physically_retired_from_user_ui");
 assertExcludes(runtimeSource, "删除存储资源需要后端确认流程；当前入口未接入。", "runtime_delete_storage_action_must_be_physically_retired_from_user_ui");
-assertIncludes(runtimeSource, "activateLabPackage", "runtime_environment_must_wire_activate_lab_package_action");
+assertIncludes(runtimeModelSource, "activateRuntimeEnvironmentPlan", "runtime_environment_model_must_wire_activation_action");
+assertIncludes(runtimeModelSource, "activateLabPackage", "runtime_environment_model_must_call_activate_lab_package");
+assertIncludes(runtimeSource, "activateRuntimeEnvironmentPlan", "runtime_environment_page_must_call_model_activation_action");
 assertExcludes(runtimeSource, "activateCustomLabPackage", "runtime_environment_must_not_wire_custom_lab_package_active_action");
 assertExcludes(runtimeSource, 'selectedPlan === "custom"', "runtime_environment_must_not_expose_custom_active_plan");
 assertExcludes(runtimeSource, 'setOptimisticServiceStatus("active")', "runtime_environment_must_not_force_optimistic_active_status");
@@ -262,8 +271,8 @@ for (const fieldName of ["siteName", "homeTitle", "registration"]) {
 assertIncludes(adminBillingSource, "markAdminBillingOp", "admin_billing_ops_must_wire_local_mark_action");
 assertIncludes(adminBillingSource, "runBillingOpAction", "admin_billing_ops_must_handle_status_action");
 assertIncludes(adminBillingSource, "处理状态、异常标记和备注会写入审计", "admin_billing_ops_must_show_local_action_boundary");
-assertIncludes(adapterSource, "id: stringValue(row.id)", "admin_billing_ops_action_id_must_use_backend_operational_id");
-assertExcludes(adapterSource, "id: stringValue(row.runId || row.userId || row.createdAt", "admin_billing_ops_action_id_must_not_use_frontend_fallback_id");
+assertIncludes(adminOpsModelSource, "id: stringValue(row.id)", "admin_billing_ops_action_id_must_use_backend_operational_id");
+assertExcludes(adminOpsModelSource, "id: stringValue(row.runId || row.userId || row.createdAt", "admin_billing_ops_action_id_must_not_use_frontend_fallback_id");
 
 for (const forbidden of [
   "<Button variant=\"outline\">\n                <Upload",
@@ -284,11 +293,12 @@ assertIncludes(workspaceSource, "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4"
 assertIncludes(tasksSource, "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5", "tasks_summary_layout_must_reflow_mobile");
 assertIncludes(billingSource, "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6", "billing_summary_layout_must_reflow_mobile");
 
-for (const sourceText of [overviewSource, tasksSource, workspaceSource, runtimeSource, oplEntrySource, adapterSource]) {
+for (const sourceText of [overviewSource, tasksSource, workspaceSource, runtimeSource, oplEntrySource, portalQuerySource]) {
   assertExcludes(sourceText, "Request failed with status code", "portal_user_surface_must_not_expose_transport_error");
 }
-assertExcludes(adapterSource, "error instanceof Error ? error.message", "portal_query_error_must_not_directly_expose_error_message");
-assertIncludes(adapterSource, "PortalDisplayError", "portal_query_must_use_display_error_boundary");
+assertExcludes(portalQuerySource, "error instanceof Error ? error.message", "portal_query_error_must_not_directly_expose_error_message");
+assertIncludes(portalQuerySource, "portalDisplayMessage(error)", "portal_query_must_use_display_error_boundary");
+assertIncludes(displayErrorsSource, "PortalDisplayError", "portal_display_errors_must_define_display_error_boundary");
 assertIncludes(displayErrorsSource, "OPL 网关暂不可用，请稍后重试；如持续失败，请联系管理员。", "opl_launch_error_must_have_product_message");
 assertIncludes(displayErrorsSource, "Portal 数据暂时不可用，请稍后重试。", "portal_data_error_must_have_product_message");
 

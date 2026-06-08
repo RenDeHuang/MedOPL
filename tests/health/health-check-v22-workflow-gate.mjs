@@ -128,6 +128,21 @@ assertIncludesAll(reviewWithBlockers.recommendedCommands.join("\n"), [
   "npm --prefix services/portal run check",
 ], "review_recommended_commands");
 
+const reviewWithAuthorizedSentruxRulesAlignment = evaluateReview({
+  base: "recovery/platform-v22-trunk",
+  activeChangePackageNames: ["sentrux-v22-rules-alignment"],
+  changedFiles: [
+    ".sentrux/rules.toml",
+    "changes/active/sentrux-v22-rules-alignment/proposal.md",
+    "changes/active/sentrux-v22-rules-alignment/spec-delta.md",
+    "changes/active/sentrux-v22-rules-alignment/eval-plan.md",
+    "changes/active/sentrux-v22-rules-alignment/closeout.md",
+    "tests/contract/contract-test-v22-sentrux-rules-alignment-boundary.mjs",
+  ],
+});
+assert.equal(reviewWithAuthorizedSentruxRulesAlignment.ok, true, "authorized_sentrux_rules_alignment_must_be_ok");
+assert.deepEqual(reviewWithAuthorizedSentruxRulesAlignment.forbiddenPaths, [], "authorized_sentrux_rules_alignment_forbidden_paths_must_be_empty");
+
 const reviewWithTokenNamedSmoke = evaluateReview({
   base: "recovery/platform-v22-trunk",
   changedFiles: [

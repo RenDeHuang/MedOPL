@@ -17,6 +17,10 @@ function urlEnv(name, fallback = "") {
   return stringEnv(name, fallback).replace(/\/$/, "");
 }
 
+export function isWebuiRuntimeMode(value = process.env.OPL_RUNTIME_MODE) {
+  return String(value || "").trim().toLowerCase() === "webui";
+}
+
 function normalizeProductRuntimeMode(value = "", fallback = "platform_provisioned") {
   const normalized = String(value || fallback).trim().toLowerCase();
   if (!normalized) return fallback;
@@ -26,17 +30,24 @@ function normalizeProductRuntimeMode(value = "", fallback = "platform_provisione
 
 export function readConfig() {
   const port = Number(cleanEnv("PORT", "8788"));
+  const webuiMode = isWebuiRuntimeMode(cleanEnv("OPL_RUNTIME_MODE", "unknown"));
   return {
     port,
     baseUrl: urlEnv("PORTAL_RUNTIME_BRIDGE_PUBLIC_URL", `http://127.0.0.1:${port}`),
     launchSecret: cleanEnv("OPL_LAUNCH_SECRET", "dev-opl-launch-secret-change-me"),
+    runnerImage: cleanEnv("MED_AUTOSCIENCE_RUNNER_IMAGE"),
+    k8sNamespace: cleanEnv("K8S_NAMESPACE", "med-agent-demo"),
     nodeEnv: cleanEnv("NODE_ENV", "development").toLowerCase(),
     buildSha: cleanEnv("BUILD_SHA", "dev"),
     buildTime: cleanEnv("BUILD_TIME", "unknown"),
     runtimeMode: cleanEnv("OPL_RUNTIME_MODE", "unknown"),
+    webuiProviderMessageEnabled: webuiMode && cleanEnv("OPL_WEBUI_PROVIDER_MESSAGE_ENABLED") === "1",
     oplWebUrl: urlEnv("OPL_WEB_URL"),
+    runnerUrl: urlEnv("MED_AUTOSCIENCE_RUNNER_URL"),
     portalInternalBaseUrl: urlEnv("PORTAL_INTERNAL_BASE_URL"),
     portalInternalAuthToken: cleanEnv("PORTAL_INTERNAL_AUTH_TOKEN"),
+    localFakeRuntimeRelay: cleanEnv("OPL_RUNTIME_BRIDGE_LOCAL_FAKE_RUNTIME") === "1",
+    runtimeAgentRelayMode: cleanEnv("OPL_RUNTIME_AGENT_RELAY_MODE"),
     productRuntimeMode: normalizeProductRuntimeMode(cleanEnv("PRODUCT_RUNTIME_MODE", "platform_provisioned")),
   };
 }
@@ -55,6 +66,10 @@ export function sendRetired(res, message, replacement = "") {
   });
 }
 
+export function buildLaunchCookie(launchToken = "") {
+  return `opl_portal_launch=${encodeURIComponent(String(launchToken || ""))}; Path=/; HttpOnly; SameSite=Lax; Max-Age=900`;
+}
+
 export async function readBody(req) {
   const chunks = [];
   for await (const chunk of req) {
@@ -71,6 +86,14 @@ export function launchTokenHash(token = "") {
 
 export function messageIdFromInput(input = {}) {
   return input.messageId || input.message_id || input.runId || input.run_id || randomUUID();
+}
+
+export function runIdFromInput(input = {}) {
+  return input.runId || input.run_id || randomUUID();
+}
+
+export function traceIdFromInput(input = {}) {
+  return input.traceId || input.trace_id || `trace-${randomUUID()}`;
 }
 
 export function operationModeFrom(record = {}) {

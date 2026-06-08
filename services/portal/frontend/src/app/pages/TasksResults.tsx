@@ -1,23 +1,5 @@
 import { useState, type MouseEvent } from "react";
-import { Button } from "../components/ui/button";
-import { Card } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Input } from "../components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../components/ui/table";
+import { Badge, Button, Card, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/core";
 import {
   PlayCircle,
   CheckCircle2,
@@ -31,7 +13,7 @@ import {
   Filter,
   ArrowRight
 } from "lucide-react";
-import { loadTasksResultsModel, usePortalQuery, type OplArtifactView, type TaskItem } from "../data/portalAdapters";
+import { useTasksResultsModel, type OplArtifactView, type TaskItem } from "../data/portalTasksResultsModel";
 import { Link, useNavigate } from "react-router";
 
 type TaskStatus = "running" | "completed" | "failed" | "waiting";
@@ -75,7 +57,7 @@ function getStatusBadge(status: TaskStatus) {
 
 export function TasksResults() {
   const navigate = useNavigate();
-  const query = usePortalQuery(loadTasksResultsModel, []);
+  const query = useTasksResultsModel();
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedWorkspace, setSelectedWorkspace] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");

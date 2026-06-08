@@ -15,10 +15,35 @@ Runtime specs define Portal -> Gateway -> clean OPL upstream -> Runtime Bridge /
 | `runtime:bridge-projection` | Runtime | `services/opl-runtime-bridge` | `node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs` | local smoke evidence | Local bridge proof is production runtime readiness. |
 | `runtime:local-rc-provider-bound-message-backflow` | Integration + Runtime | `services/portal/frontend`, `services/medopl-go-backend`, `services/opl-web-gateway`, `services/opl-runtime-bridge` | `node tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs`; `node tests/contract/contract-test-v22-precloud-deployable-rc.mjs` | local deterministic proof | Local RC evidence is production provider, real WebUI provider reply, real cloud, deploy or billing readiness. |
 | `runtime:opl-entry-real-preflight-launch` | Product + Integration + Runtime | `services/portal/frontend/src/app/pages`, `services/portal/frontend/src/app/data`, `services/medopl-go-backend`, `services/opl-web-gateway` | `node tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs`; `node tests/regression/opl/regression-test-v22-opl-web-gateway-launch.mjs` | local regression proof | OPL entry local projection is live provider evidence, real cloud authorization, deploy readiness or production WebUI provider reply evidence. |
-| `runtime:portal-opl-entry-alias-preflight` | Product + Integration | `services/portal/frontend/src/app/routes.tsx`, `services/portal/frontend/src/app/data/portalAdapters.ts`, `services/portal/frontend/src/api/portal/opl.ts`, `changes/archive/2026-05-28-portal-opl-refund-api-fix` | `node tests/regression/portal/regression-test-v22-portal-local-api-action-browser.mjs`; `npm --prefix services/portal/frontend run typecheck` | local regression proof | Portal OPL alias/preflight proof is real upstream OPL production behavior, live provider, real cloud, production runtime or deploy readiness. |
+| `runtime:portal-opl-entry-alias-preflight` | Product + Integration | `services/portal/frontend/src/app/routes.tsx`, `services/portal/frontend/src/app/data/portalOplEntryModel.ts`, `services/portal/frontend/src/app/data/portalQuery.ts`, `services/portal/frontend/src/api/portal/opl.ts`, `changes/archive/2026-05-28-portal-opl-refund-api-fix` | `node tests/regression/portal/regression-test-v22-portal-local-api-action-browser.mjs`; `npm --prefix services/portal/frontend run typecheck` | local regression proof | Portal OPL alias/preflight proof is real upstream OPL production behavior, live provider, real cloud, production runtime or deploy readiness. |
 | `runtime:go-control-plane-mvp-api` | Product + Runtime | `services/medopl-go-backend`, `services/portal/frontend/src/api/portal/**`, `docs/runtime/README.md` | `node tests/contract/contract-test-v22-go-backend-service-surface.mjs`; `go test ./...` from `services/medopl-go-backend`; `npm --prefix services/portal/frontend run typecheck` | local backend proof | Go local MVP typed API proof is production backend replacement, real cloud readiness or live provider evidence. |
 | `runtime:go-local-rc-parity` | Product + Runtime + Operations | `services/medopl-go-backend`, `services/portal/frontend/src/api/portal/**`, `docs/runtime/README.md` | `node tests/contract/contract-test-v22-go-backend-service-surface.mjs`; `node tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs`; `node tests/contract/contract-test-v22-precloud-deployable-rc.mjs`; `go test ./...` from `services/medopl-go-backend` | local deterministic RC proof | Go local RC parity is live provider, real OPL upstream, production secret storage, real cloud, deploy, kubectl, build/push, production billing or production runtime evidence. |
 | `runtime:precloud-deployable-rc` | Product + Runtime + Operations | `services/medopl-go-backend`, `services/portal/frontend`, `services/opl-web-gateway`, `services/opl-runtime-bridge` | `node tests/contract/contract-test-v22-precloud-deployable-rc.mjs`; `go test ./...` from `services/medopl-go-backend`; `npm --prefix services/portal/frontend run typecheck` | local pre-cloud deployable proof | Local pre-cloud deployable proof is real-cloud, deploy, kubectl, build/push, live provider, production billing or production runtime evidence. |
 | `runtime:local-clean-opl-delivery-rc` | Product + Integration + Runtime | `services/medopl-go-backend`, `services/opl-web-gateway`, `services/opl-runtime-bridge`, `changes/archive/2026-05-27-local-portal-opl-delivery-rc` | `node tests/regression/opl/regression-test-v22-local-portal-gateway-runtime-rc.mjs`; `npm run verify:local-release-candidate -- --json` | local integration proof | Local clean OPL delivery RC is real upstream OPL production behavior, live provider, real cloud, production runtime or production billing evidence. |
+| `runtime:ai-runtime-contract` | Runtime | `services/opl-runtime-bridge`, `docs/runtime/README.md`, `docs/framework/README.md`, `docs/specs/README.md`, `changes/active/ai-runtime-contract` | `node tests/contract/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs`; `node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs` | local contract proof | AI Runtime Contract proof is production runtime readiness, live provider evidence, real cloud authorization, deploy, kubectl, build/push, live-test or production MCP server readiness. |
+| `runtime:mcp-compatible-boundary` | Runtime | `services/opl-runtime-bridge/src/runtime-bridge-mcp-compatible-shapes.mjs`, `specs/runtime/spec.md`, `docs/framework/README.md` | `node tests/contract/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs` | local contract proof | MCP-compatible boundary authorizes external MCP clients, production MCP server, secret reads, real cloud, deploy, kubectl, build/push or live-test. |
 
 Related evidence anchor: `evidence:local-provider-bound-message-proof`.
+
+## AI Runtime Contract
+
+AI Runtime Contract is MedOPL's Runtime Bridge AI runtime adapter layer. It keeps Portal, Gateway, clean OPL upstream, OPL ACP runtime, Runtime Agent HTTP API and future tool/resource adapters behind one Runtime Bridge contract rather than making LangGraph, OpenAI Agents SDK, MCP, A2A or upstream internals the platform owner.
+
+Stable contract objects:
+
+- runtimeSession
+- runtimeTool
+- runtimeResource
+- runtimeRun
+- runtimeArtifact
+- runtimeApproval
+
+MCP-compatible boundary means tools / resources / prompts / artifacts / approval shape compatibility. The source-owned local projection is `services/opl-runtime-bridge/src/runtime-bridge-mcp-compatible-shapes.mjs`; it emits shape-only runtimeTool, runtimeResource, runtimeRun, runtimeArtifact and runtimeApproval metadata for contract tests. It does not start a production MCP server, authorize external MCP clients, grant secret access, grant real cloud access, deploy, kubectl, build/push or live-test authorization.
+
+`providerKeyRef` may cross the boundary as a reference. Raw provider key, bearer token, launchToken, runtimeToken, objectKey, localPath, signedUrl and presignedUrl must not enter public state, tool/resource response, artifact projection, evidence, logs or git.
+
+Verification entry:
+
+```bash
+node tests/contract/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs
+```

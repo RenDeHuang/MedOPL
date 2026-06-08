@@ -1,9 +1,5 @@
 import { useRef, useState } from "react";
-import { Button } from "../components/ui/button";
-import { Card } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { Progress } from "../components/ui/progress";
+import { Badge, Button, Card, Input, Progress, Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/core";
 import {
   FolderOpen,
   Upload,
@@ -20,8 +16,7 @@ import {
   CheckCircle2,
   ExternalLink,
 } from "lucide-react";
-import { Input } from "../components/ui/input";
-import { loadWorkspaceModel, usePortalQuery, type FileItem } from "../data/portalAdapters";
+import { buildWorkspaceViewState, useWorkspaceModel, type FileItem } from "../data/portalWorkspaceModel";
 import { Link } from "react-router";
 
 type PageState = "ready" | "empty-inputs" | "empty-outputs" | "file-space-unavailable" | "archived";
@@ -34,7 +29,7 @@ function getFileIcon(type: string) {
 
 export function Workspace() {
   const [refreshVersion, setRefreshVersion] = useState(0);
-  const query = usePortalQuery(loadWorkspaceModel, [refreshVersion]);
+  const query = useWorkspaceModel(refreshVersion);
   const [searchQuery, setSearchQuery] = useState("");
   const [actionMessage, setActionMessage] = useState("");
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -58,14 +53,11 @@ export function Workspace() {
 
   const model = query.data;
   const pageState = model.pageState as PageState;
-
-  const filteredInputFiles = model.inputFiles.filter((file) =>
-    file.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredOutputFiles = model.outputFiles.filter((file) =>
-    file.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const viewState = buildWorkspaceViewState({
+    inputFiles: model.inputFiles,
+    outputFiles: model.outputFiles,
+    searchQuery,
+  });
 
   const openTransfer = (url: string) => {
     window.location.assign(url);
@@ -115,15 +107,14 @@ export function Workspace() {
   }
 
   async function handleDownloadAllResults() {
-    const downloadable = model.outputFiles.filter((file) => file.canDownload);
-    if (downloadable.length === 0) {
+    if (viewState.downloadableOutputFiles.length === 0) {
       setActionMessage(model.fileSpaceActionMessage || "当前没有可下载的结果文件。");
       return;
     }
     setActionMessage("");
     setPendingAction("download-all");
     try {
-      for (const file of downloadable) {
+      for (const file of viewState.downloadableOutputFiles) {
         const intent = await model.createDownloadIntent(file);
         const anchor = document.createElement("a");
         anchor.href = intent.url;
@@ -133,7 +124,7 @@ export function Workspace() {
         anchor.click();
         anchor.remove();
       }
-      setActionMessage(`已创建 ${downloadable.length} 个结果文件下载通道。`);
+      setActionMessage(`已创建 ${viewState.downloadableOutputFiles.length} 个结果文件下载通道。`);
     } catch {
       setActionMessage("部分结果文件下载通道暂不可用，请稍后重试。");
     } finally {
@@ -398,7 +389,7 @@ export function Workspace() {
             <Button
               variant="outline"
               onClick={handleDownloadAllResults}
-              disabled={!model.outputFiles.some((file) => file.canDownload) || pendingAction === "download-all"}
+              disabled={!viewState.hasDownloadableOutputFiles || pendingAction === "download-all"}
               title={model.fileSpaceActionMessage || "创建全部结果下载通道"}
             >
               <Download className="w-4 h-4 mr-2" />
@@ -505,7 +496,7 @@ export function Workspace() {
                 共 {model.inputFiles.length} 个文件，占用 {model.fileSpaceUsed} · {model.fileSpaceSelectionLabel}
               </div>
               <div className="space-y-2">
-                {filteredInputFiles.map((file) => (
+                {viewState.filteredInputFiles.map((file) => (
                   <div
                     key={file.id}
                     className="flex items-center justify-between gap-3 p-3 rounded-md border border-neutral-200 hover:bg-neutral-50 transition-colors"
@@ -561,7 +552,7 @@ export function Workspace() {
                 共 {model.outputFiles.length} 个结果文件 · {model.fileSpaceRetentionLabel}
               </div>
               <div className="space-y-2">
-                {filteredOutputFiles.map((file) => (
+                {viewState.filteredOutputFiles.map((file) => (
                   <div
                     key={file.id}
                     className="flex items-center justify-between gap-3 p-3 rounded-md border border-neutral-200 hover:bg-neutral-50 transition-colors"

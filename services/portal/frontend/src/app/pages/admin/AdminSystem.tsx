@@ -1,16 +1,12 @@
 import { useEffect, useState } from "react";
+import { Alert, AlertDescription, Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Separator, Switch } from "../../components/ui/core";
 import { Save, AlertCircle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
-import { Label } from "../../components/ui/label";
-import { Switch } from "../../components/ui/switch";
-import { Separator } from "../../components/ui/separator";
-import { Badge } from "../../components/ui/badge";
-import { Alert, AlertDescription } from "../../components/ui/alert";
 import { Link } from "react-router";
-import { normalizePortalAdminActionError, updateAdminSiteSettings } from "../../../api/portal/admin";
-import { loadAdminSystemModel, usePortalQuery } from "../../data/portalAdapters";
+import {
+  normalizePortalAdminActionError,
+  updateAdminSiteSettings,
+  useAdminSystemModel,
+} from "../../data/portalAdminOpsModel";
 
 export function AdminSystem() {
   const [refreshVersion, setRefreshVersion] = useState(0);
@@ -21,7 +17,7 @@ export function AdminSystem() {
   const [actionError, setActionError] = useState("");
   const [actionSuccess, setActionSuccess] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const query = usePortalQuery(loadAdminSystemModel, [refreshVersion]);
+  const query = useAdminSystemModel(refreshVersion);
 
   useEffect(() => {
     if (query.status !== "ready") return;

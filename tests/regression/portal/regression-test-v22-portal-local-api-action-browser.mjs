@@ -103,6 +103,10 @@ async function waitReady(page, loadingText) {
   await page.waitForLoadState("domcontentloaded");
   if (loadingText) {
     await page.waitForFunction(
+      () => document.body.innerText.trim().length > 0,
+      { timeout: 30000 },
+    );
+    await page.waitForFunction(
       (text) => !document.body.innerText.includes(text),
       loadingText,
       { timeout: 30000 },

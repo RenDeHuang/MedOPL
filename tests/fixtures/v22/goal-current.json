@@ -157,6 +157,7 @@
     "problem": "Real-cloud work is blocked until explicit authorization names operation class, target environment, evidence sink and rollback owner. This leaf only verifies repo-native authorization boundary and local golden-path health.",
     "verification_commands": [
       "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
+      "node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs",
       "node tests/contract/contract-test-v22-change-package-lifecycle.mjs",
       "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
       "node tests/contract/contract-test-v22-current-development-lines.mjs",
@@ -172,6 +173,8 @@
       "node tests/contract/contract-test-v22-test-lane-registry.mjs",
       "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
       "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
+      "node tests/contract/contract-test-v22-real-cloud-authorization-boundary.mjs",
+      "node tests/contract/contract-test-v22-sentrux-rules-alignment-boundary.mjs",
       "node tests/contract/contract-test-v22-local-service-orchestration.mjs",
       "node tests/contract/contract-test-v22-local-saas-backend-rc.mjs",
       "node scripts/v22-local-services.mjs verify --dry-run --json",
@@ -263,8 +266,39 @@
       "canary / QA / status update"
     ]
   },
+  "ai_mvp_readiness_state": {
+    "status": "local_readiness_audited",
+    "after_six_steps_claim": "local_ai_mvp_readiness_only",
+    "cloud_online_ready": false,
+    "six_step_sequence": [
+      "current_fix_branch_closeout",
+      "portal_structure_quality_recovery",
+      "e2e_mvp_verification",
+      "ai_runtime_contract",
+      "runtime_bridge_ai_runtime_layer",
+      "mcp_compatible_boundary_design"
+    ],
+    "post_six_step_cloud_gate": [
+      "real-cloud authorization boundary",
+      "mock/snapshot provider",
+      "readonly quote",
+      "dry-run plan",
+      "readonly inventory",
+      "authorized create/release",
+      "authorized deploy",
+      "canary / QA / status update"
+    ],
+    "cannot_claim_after_six_steps": [
+      "real_cloud_ready",
+      "production_online",
+      "deploy_ready",
+      "secret_authorized",
+      "live_test_authorized"
+    ]
+  },
   "verification_commands": [
     "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
+    "node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs",
     "node tests/contract/contract-test-v22-change-package-lifecycle.mjs",
     "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
     "node tests/contract/contract-test-v22-current-development-lines.mjs",
@@ -280,6 +314,8 @@
     "node tests/contract/contract-test-v22-test-lane-registry.mjs",
     "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
     "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
+    "node tests/contract/contract-test-v22-real-cloud-authorization-boundary.mjs",
+    "node tests/contract/contract-test-v22-sentrux-rules-alignment-boundary.mjs",
     "node tests/contract/contract-test-v22-local-saas-backend-rc.mjs",
     "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
     "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",

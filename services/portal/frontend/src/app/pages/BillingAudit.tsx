@@ -1,23 +1,5 @@
 import { useState } from "react";
-import { Button } from "../components/ui/button";
-import { Card } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Progress } from "../components/ui/progress";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../components/ui/table";
+import { Badge, Button, Card, Progress, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/core";
 import {
   Wallet,
   TrendingDown,
@@ -34,7 +16,7 @@ import {
   PlayCircle,
   XCircle,
 } from "lucide-react";
-import { loadBillingAuditModel, usePortalQuery } from "../data/portalAdapters";
+import { useBillingAuditModel } from "../data/portalBillingAuditModel";
 
 type PageState = "ready" | "empty-ledger" | "no-current-cost";
 
@@ -88,7 +70,7 @@ function triggerCsvDownload(url: string) {
 }
 
 export function BillingAudit() {
-  const query = usePortalQuery(loadBillingAuditModel, []);
+  const query = useBillingAuditModel();
   const [timeRange, setTimeRange] = useState("7days");
   const [exportNotice, setExportNotice] = useState("");
 

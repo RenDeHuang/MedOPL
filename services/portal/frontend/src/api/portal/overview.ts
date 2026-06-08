@@ -1,7 +1,6 @@
 import { goControlPlaneClient } from "../client";
 import type { PortalPagination, PortalQueryValue } from "./common";
-import type { CommercialProfile, OnboardingPayload } from "./commercial";
-import type { SelectedServerPlan, ServerPlansSummary } from "./server-plans";
+import type { CommercialProfile, OnboardingPayload, SelectedServerPlan, ServerPlansSummary } from "./types";
 
 export interface OverviewQuery {
   tasks_page?: PortalQueryValue;

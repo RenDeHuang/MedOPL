@@ -6,6 +6,14 @@ export function firstString(values = []) {
   return "";
 }
 
+export function usableServerPlanId(...values) {
+  for (const value of values) {
+    const normalized = String(value || "").trim();
+    if (normalized && normalized !== "default") return normalized;
+  }
+  return "";
+}
+
 export function tenantIdFrom(detail = {}) {
   return firstString([detail.tenantId, detail.tenant_id, detail.portalUserId, detail.portal_user_id]);
 }

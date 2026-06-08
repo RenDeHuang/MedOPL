@@ -1,11 +1,46 @@
 import {
   bindOplSession,
+  bindProviderKeyForOplEntry,
   createOplLaunch,
   fetchOplBootstrap,
   fetchOplEntryPreflight,
 } from "../../api/portal/opl";
 import { fetchOplLaunchStatus } from "../../api/portal/resources";
 import { OPL_GATEWAY_UNAVAILABLE_MESSAGE, PortalDisplayError } from "./portalDisplayErrors";
+import { usePortalQuery } from "./portalQuery";
+
+export type OplEntryPageState =
+  | "preparing"
+  | "ready"
+  | "failed"
+  | "blocked_by_provider_key"
+  | "blocked_by_runtime"
+  | "workspace_required"
+  | "balance_insufficient"
+  | "service_unavailable"
+  | "capability_not_supported"
+  | "opl_upstream_url_required"
+  | "retrying";
+
+export type OplEntryLaunchStep = {
+  id: string;
+  label: string;
+  status: "completed" | "in_progress" | "waiting" | "failed";
+  detail?: string;
+};
+
+export type OplEntryViewState = {
+  pageState: OplEntryPageState;
+  steps: OplEntryLaunchStep[];
+  failurePanel: null | {
+    message: string;
+    suggestions: string[];
+  };
+  providerStepDetail: string;
+  providerStepStatus: OplEntryLaunchStep["status"];
+  gatewayStepDetail: string;
+  gatewayStepStatus: OplEntryLaunchStep["status"];
+};
 
 function blockedByProviderKey(input: {
   workspaceId?: string;
@@ -28,6 +63,205 @@ function blockedByProviderKey(input: {
     stages: [],
     workspaceId: input.workspaceId || "workspace-local-rc",
   } as const;
+}
+
+function providerStep(input: {
+  providerBound?: boolean;
+  providerKeyRef?: string;
+  blockingUser?: boolean;
+  pageState?: string;
+  currentStage?: string;
+}) {
+  const providerStepDetail = input.providerBound
+    ? `已绑定${input.providerKeyRef ? `：${input.providerKeyRef}` : ""}`
+    : "未绑定";
+  const providerStepStatus = input.providerBound
+    ? "completed"
+    : input.blockingUser || input.pageState === "blocked_by_provider_key"
+      ? "failed"
+      : input.currentStage === "provider_key_bound"
+        ? "in_progress"
+        : "waiting";
+  return { providerStepDetail, providerStepStatus: providerStepStatus as OplEntryLaunchStep["status"] };
+}
+
+function gatewayStep(input: {
+  gatewayReady?: boolean;
+  gatewayState?: string;
+  blockingUser?: boolean;
+  pageState?: string;
+  currentStage?: string;
+}) {
+  const gatewayStepDetail = input.gatewayState || (input.gatewayReady ? "OPL 网关已准备" : "等待后端网关投影");
+  const gatewayCompleted = input.gatewayReady || input.currentStage === "opl_opening";
+  const gatewayStepStatus = gatewayCompleted
+    ? "completed"
+    : input.blockingUser || ["service_unavailable", "capability_not_supported", "opl_upstream_url_required", "failed"].includes(input.pageState || "")
+      ? "failed"
+      : input.currentStage === "gateway_ready" || input.pageState === "retrying"
+        ? "in_progress"
+        : "waiting";
+  return { gatewayStepDetail, gatewayStepStatus: gatewayStepStatus as OplEntryLaunchStep["status"] };
+}
+
+export function buildOplEntryLaunchSteps(input: {
+  pageState: OplEntryPageState;
+  providerStepStatus: OplEntryLaunchStep["status"];
+  providerStepDetail: string;
+  gatewayStepStatus: OplEntryLaunchStep["status"];
+  gatewayStepDetail: string;
+  currentStage?: string;
+}): OplEntryLaunchStep[] {
+  const { pageState, providerStepStatus, providerStepDetail, gatewayStepStatus, gatewayStepDetail, currentStage = "" } = input;
+  if (pageState === "ready") {
+    return [
+      { id: "workspace", label: "准备工作空间", status: "completed" },
+      { id: "key", label: "确认密钥绑定状态", status: providerStepStatus, detail: providerStepDetail },
+      { id: "session", label: "创建 OPL 会话", status: currentStage === "provider_key_bound" ? "in_progress" : "completed" },
+      { id: "gateway", label: "确认 OPL 网关", status: gatewayStepStatus, detail: gatewayStepDetail },
+      { id: "open", label: "打开 OPL", status: "in_progress" },
+    ];
+  }
+  if (pageState === "preparing") {
+    return [
+      { id: "workspace", label: "准备工作空间", status: "completed" },
+      { id: "key", label: "确认密钥绑定状态", status: providerStepStatus, detail: providerStepDetail },
+      { id: "session", label: "创建 OPL 会话", status: "in_progress" },
+      { id: "gateway", label: "确认 OPL 网关", status: gatewayStepStatus, detail: gatewayStepDetail },
+      { id: "open", label: "打开 OPL", status: "waiting" },
+    ];
+  }
+  if (pageState === "retrying") {
+    return [
+      { id: "workspace", label: "准备工作空间", status: "completed" },
+      { id: "key", label: "确认密钥绑定状态", status: providerStepStatus, detail: providerStepDetail },
+      { id: "session", label: "创建 OPL 会话", status: "completed" },
+      { id: "gateway", label: "确认 OPL 网关", status: gatewayStepStatus, detail: gatewayStepDetail },
+      { id: "open", label: "打开 OPL", status: "waiting" },
+    ];
+  }
+  if (pageState === "blocked_by_provider_key") {
+    return [
+      { id: "workspace", label: "准备工作空间", status: "completed" },
+      { id: "key", label: "确认密钥绑定状态", status: providerStepStatus, detail: providerStepDetail },
+      { id: "session", label: "创建 OPL 会话", status: "waiting" },
+      { id: "gateway", label: "确认 OPL 网关", status: gatewayStepStatus, detail: gatewayStepDetail },
+      { id: "open", label: "打开 OPL", status: "waiting" },
+    ];
+  }
+  if (pageState === "blocked_by_runtime") {
+    return blockedLaunchSteps("运行环境未就绪");
+  }
+  if (pageState === "workspace_required") {
+    return blockedLaunchSteps("工作空间不可用");
+  }
+  if (pageState === "balance_insufficient") {
+    return blockedLaunchSteps("余额不足或冻结金额不够");
+  }
+  if (["service_unavailable", "capability_not_supported", "opl_upstream_url_required"].includes(pageState)) {
+    return [
+      { id: "workspace", label: "准备工作空间", status: "completed" },
+      { id: "key", label: "确认密钥绑定状态", status: providerStepStatus, detail: providerStepDetail },
+      { id: "session", label: "创建 OPL 会话", status: "completed" },
+      { id: "gateway", label: "确认 OPL 网关", status: gatewayStepStatus, detail: gatewayStepDetail },
+      { id: "open", label: "打开 OPL", status: "waiting" },
+    ];
+  }
+  return [
+    { id: "workspace", label: "准备工作空间", status: "completed" },
+    { id: "key", label: "确认密钥绑定状态", status: providerStepStatus, detail: providerStepDetail },
+    { id: "session", label: "创建 OPL 会话", status: "failed", detail: "会话创建失败" },
+    { id: "gateway", label: "确认 OPL 网关", status: gatewayStepStatus, detail: gatewayStepDetail },
+    { id: "open", label: "打开 OPL", status: "waiting" },
+  ];
+}
+
+function blockedLaunchSteps(workspaceDetail: string): OplEntryLaunchStep[] {
+  return [
+    { id: "workspace", label: "准备工作空间", status: "failed", detail: workspaceDetail },
+    { id: "key", label: "确认密钥绑定状态", status: "waiting" },
+    { id: "session", label: "创建 OPL 会话", status: "waiting" },
+    { id: "gateway", label: "确认 OPL 网关", status: "waiting" },
+    { id: "open", label: "打开 OPL", status: "waiting" },
+  ];
+}
+
+export function buildOplEntryFailurePanel(pageState: OplEntryPageState): OplEntryViewState["failurePanel"] {
+  if (["ready", "preparing", "retrying"].includes(pageState)) return null;
+  if (pageState === "blocked_by_provider_key") {
+    return {
+      message: "当前模型调用密钥状态未满足进入条件。gflabtoken 模型调用密钥需要处于已绑定状态才能进入 OPL。",
+      suggestions: ["请先在 OPL 入口确认或完成绑定", "或返回总览页面查看服务状态"],
+    };
+  }
+  if (pageState === "blocked_by_runtime") {
+    return {
+      message: "当前运行环境尚未准备好。请前往运行环境页面确认计算资源已正常开通并启动。",
+      suggestions: ["检查套餐是否已选择", "确认计算资源是否已激活", "查看是否有余额或冻结金额不足的问题"],
+    };
+  }
+  if (pageState === "workspace_required") {
+    return {
+      message: "工作空间当前不可用。请前往工作空间页面确认文件空间状态和工作空间配置。",
+      suggestions: ["检查文件空间是否可用", "确认工作空间是否已正确配置", "查看文件空间是否处于保护期或受限状态"],
+    };
+  }
+  if (pageState === "balance_insufficient") {
+    return {
+      message: "当前余额不足或冻结金额不够。进入 OPL 需要足够的可用余额和冻结金额来支持工作台运行。",
+      suggestions: ["前往账单页面查看余额和冻结金额状态", "如需充值，请联系管理员或使用充值功能", "确认是否有未处理的账单问题"],
+    };
+  }
+  if (pageState === "service_unavailable") {
+    return {
+      message: "OPL 网关暂时不可用。这可能是临时性问题，建议稍后重试。",
+      suggestions: ["等待 1-2 分钟后重试", "如问题持续，请检查运行环境状态", "或联系技术支持获取帮助"],
+    };
+  }
+  if (pageState === "capability_not_supported") {
+    return {
+      message: "当前能力暂不可用。请稍后重试或返回上一步。",
+      suggestions: ["稍后重试进入 OPL", "返回工作空间检查配置", "或前往运行环境页面查看状态"],
+    };
+  }
+  if (pageState === "opl_upstream_url_required") {
+    return {
+      message: "当前 OPL 服务入口暂不可用。请稍后重试或联系平台。",
+      suggestions: ["等待几分钟后重试", "返回工作空间", "或联系技术支持"],
+    };
+  }
+  return {
+    message: "启动过程遇到未预期的问题。建议先重试，如果问题持续，请检查相关配置或联系支持。",
+    suggestions: ["尝试重新进入 OPL", "检查运行环境和工作空间状态", "查看账单和余额是否正常"],
+  };
+}
+
+export function buildOplEntryViewState(input: {
+  pageState?: string;
+  providerBound?: boolean;
+  providerKeyRef?: string;
+  gatewayReady?: boolean;
+  gatewayState?: string;
+  currentStage?: string;
+  blockingUser?: boolean;
+}): OplEntryViewState {
+  const pageState = (input.pageState || "preparing") as OplEntryPageState;
+  const provider = providerStep({ ...input, pageState });
+  const gateway = gatewayStep({ ...input, pageState });
+  return {
+    pageState,
+    ...provider,
+    ...gateway,
+    steps: buildOplEntryLaunchSteps({
+      pageState,
+      providerStepStatus: provider.providerStepStatus,
+      providerStepDetail: provider.providerStepDetail,
+      gatewayStepStatus: gateway.gatewayStepStatus,
+      gatewayStepDetail: gateway.gatewayStepDetail,
+      currentStage: input.currentStage,
+    }),
+    failurePanel: buildOplEntryFailurePanel(pageState),
+  };
 }
 
 export async function loadOplEntryModel() {
@@ -77,4 +311,12 @@ export async function loadOplEntryModel() {
     }
     throw new PortalDisplayError(OPL_GATEWAY_UNAVAILABLE_MESSAGE);
   }
+}
+
+export async function bindOplEntryProviderKey(input: { workspaceId?: string; apiKey: string }) {
+  return bindProviderKeyForOplEntry(input);
+}
+
+export function useOplEntryModel() {
+  return usePortalQuery(loadOplEntryModel, []);
 }

@@ -1,12 +1,10 @@
 import { Users, FolderOpen, ListChecks, AlertCircle, DollarSign, Activity } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Button } from "../../components/ui/button";
-import { Badge } from "../../components/ui/badge";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from "../../components/ui/core";
 import { Link } from "react-router";
-import { loadAdminDashboardModel, usePortalQuery } from "../../data/portalAdapters";
+import { useAdminDashboardModel } from "../../data/portalAdminOpsModel";
 
 export function AdminDashboard() {
-  const query = usePortalQuery(loadAdminDashboardModel, []);
+  const query = useAdminDashboardModel();
 
   const getSeverityBadge = (severity: string) => {
     switch (severity) {

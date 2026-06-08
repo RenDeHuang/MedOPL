@@ -1,5 +1,24 @@
-import { addArtifactRecord, addSessionLedgerEntry, createRunRecord, updateRunStatus } from "./state-store.mjs";
+import { addArtifactRecord } from "./state-store-artifact-trace-mutations.mjs";
+import { addSessionLedgerEntry } from "./state-store-session-ledger.mjs";
+import { addEvent } from "./state-store-events.mjs";
+import { nowIso } from "./state-store-record-time.mjs";
+import { buildRunRecord } from "./state-store-run-records.mjs";
 import { providerKeyRefFrom } from "./runtime-bridge-launch-scope.mjs";
+import { publicRunArtifact } from "./runtime-bridge-public-artifacts.mjs";
+import {
+  isWebuiRuntimeMode,
+  launchTokenFrom,
+  readBody,
+  runIdFromInput,
+  sendJson,
+  traceIdFromInput,
+} from "./runtime-bridge-routes-http.mjs";
+import { runBelongsToLaunch } from "./runtime-bridge-launch-lookup.mjs";
+import {
+  publicGatedRun,
+  runtimeRunMetadataRefs,
+} from "./runtime-bridge-contract-payloads.mjs";
+import { mapRunError } from "./run-error-mapper.mjs";
 
 export const RUN_API_RUNTIME_MODES = Object.freeze({
   PLATFORM_PROVISIONED: "platform_provisioned",
@@ -113,23 +132,6 @@ function runtimeMetadataRefsFromLedgerEntries(entries = []) {
   return refs;
 }
 
-export function publicRunArtifact(artifact = {}, run = {}, runtimeSession = {}) {
-  const artifactId = String(artifact.artifactId || artifact.artifact_id || "").trim();
-  return {
-    artifactId,
-    artifactRef: artifactId,
-    runId: String(artifact.runId || artifact.run_id || run.runId || "").trim(),
-    workspaceId: String(artifact.workspaceId || artifact.workspace_id || run.workspaceId || runtimeSession.workspaceId || "").trim(),
-    resourceBindingId: String(artifact.resourceBindingId || artifact.resource_binding_id || run.resourceBindingId || runtimeSession.resourceBindingId || "").trim(),
-    providerKeyRef: providerKeyRefFrom(artifact) || providerKeyRefFrom(run) || providerKeyRefFrom(runtimeSession),
-    kind: String(artifact.kind || "outputs").trim() || "outputs",
-    name: String(artifact.name || "").trim(),
-    relativePath: String(artifact.relativePath || "").trim(),
-    sizeBytes: Number(artifact.sizeBytes || 0),
-    contentType: String(artifact.contentType || "application/octet-stream").trim() || "application/octet-stream",
-  };
-}
-
 function publicRuntimeClaims(claims = {}, run = {}, runtimeSession = {}) {
   if (!claims || typeof claims !== "object") return null;
   return {
@@ -166,6 +168,24 @@ function runtimeLedgerEntryInput(ledgerEntry = {}, { runtimeSession = {}, run = 
   };
 }
 
+function createRunRecord(state, input = {}) {
+  const run = buildRunRecord(input);
+  state.runs.push(run);
+  addEvent(state, "runner_run_submitted", run);
+  return run;
+}
+
+function updateRunStatus(state, runId, patch = {}) {
+  const run = state.runs.find((item) => item.runId === runId);
+  if (!run) return null;
+  Object.assign(run, {
+    ...patch,
+    updatedAt: nowIso(),
+  });
+  addEvent(state, "runner_run_status_synced", run);
+  return run;
+}
+
 function fullRuntimeScope(runtimeSession = {}, input = {}) {
   return {
     mode: String(input.mode || runtimeSession.mode || "api_only").trim().toLowerCase() === "full_runtime" ? "full_runtime" : "api_only",
@@ -177,9 +197,37 @@ function fullRuntimeScope(runtimeSession = {}, input = {}) {
   };
 }
 
+function runnerFailureEvent(runtimeSession = {}, mapped = {}) {
+  return {
+    ...runtimeSession,
+    correlationId: mapped.correlationId,
+    code: mapped.code,
+    stage: mapped.stage,
+    retryable: mapped.retryable,
+    error: mapped.message,
+    details: mapped.details,
+  };
+}
+
+function runtimeAgentRequiredByContract(error) {
+  return [
+    "RUNTIME_AGENT_RELAY_NOT_IMPLEMENTED",
+    "PLATFORM_PROVISIONED_RUNTIME_AGENT_REQUIRED",
+  ].includes(String(error?.code || ""));
+}
+
+function runStatusUrlFor(runId = "") {
+  return `/api/opl/runs/${encodeURIComponent(String(runId || ""))}/status`;
+}
+
 export function createRunApi({
   productRuntimeMode = process.env.PRODUCT_RUNTIME_MODE || RUN_API_RUNTIME_MODES.PLATFORM_PROVISIONED,
+  config = {},
+  eventApi = null,
+  launchApi = null,
+  readLaunchRuntimeSession = null,
   runtimeAgentRelay = null,
+  updateState: updateRuntimeState = null,
 }) {
   const runtimeMode = normalizeRuntimeMode(productRuntimeMode);
 
@@ -280,8 +328,119 @@ export function createRunApi({
     };
   }
 
+  async function handleRunStatus(req, res, url, match) {
+    const launchToken = launchTokenFrom({}, url, req);
+    const launch = launchApi?.verifyLaunchToken?.(launchToken);
+    if (!launch) {
+      sendJson(res, 401, { ok: false, error: "launch_token_invalid" });
+      return;
+    }
+    let status = 200;
+    let payload = null;
+    if (typeof updateRuntimeState !== "function") {
+      sendJson(res, 500, { ok: false, error: "runtime_state_store_missing" });
+      return;
+    }
+    await updateRuntimeState(async (state) => {
+      const run = state.runs.find((item) => item.runId === match[1]);
+      if (!run || !runBelongsToLaunch(run, launch)) {
+        status = 404;
+        payload = { ok: false, error: "run_not_found" };
+        return;
+      }
+      const synced = await syncRunnerRun(state, run);
+      payload = { ok: true, run: synced || run };
+    });
+    sendJson(res, status, payload);
+  }
+
+  async function handleRuntimeRunInput(input, req, res, url, { successStatus = 200 } = {}) {
+    const resolved = await readLaunchRuntimeSession(input, url, req, res);
+    if (!resolved) return;
+    const { runtimeSession } = resolved;
+    let status = successStatus;
+    let payload = null;
+    await updateRuntimeState(async (state) => {
+      const activeRuntimeSession = state.runtimeSessions.find((item) => item.runtimeSessionId === runtimeSession.runtimeSessionId) || runtimeSession;
+      try {
+        const run = await submitRuntimeRun(state, activeRuntimeSession, input, req);
+        await eventApi.publishTraceEvent(state, {
+          ...activeRuntimeSession,
+          runId: run.runId,
+          traceId: run.traceId,
+          ...runtimeRunMetadataRefs(run),
+          artifactRefs: (run.artifacts || []).map((artifact) => artifact.artifactRef).filter(Boolean),
+          eventType: "runtime_run",
+          traceName: "OPL runtime run",
+          status: run.status || "recorded",
+          model: input.model || activeRuntimeSession.model || "opl-runtime",
+          tokenCount: Number(input.tokenCount || input.token_count || 0),
+          userAgent: req?.headers?.["user-agent"] || "",
+        });
+        payload = { ok: true, run, artifacts: run.artifacts || [] };
+      } catch (error) {
+        if (isWebuiRuntimeMode(config.runtimeMode) && runtimeAgentRequiredByContract(error)) {
+          const run = createRunRecord(state, {
+            ...activeRuntimeSession,
+            ...input,
+            runId: input.runId || input.run_id || runIdFromInput(input),
+            traceId: input.traceId || input.trace_id || activeRuntimeSession.traceId || "",
+            status: "gated",
+            error: "requires_runtime_agent",
+            kind: input.kind || "opl-runtime",
+            toolName: input.toolName || input.tool_name || "opl-runtime",
+            resourceBindingId: activeRuntimeSession.resourceBindingId || input.resourceBindingId || input.resource_binding_id || "",
+            providerKeyRef: activeRuntimeSession.providerKeyRef || input.providerKeyRef || input.provider_key_ref || "",
+          });
+          eventApi.recordEvent(state, "downstream_runtime_gate_evaluated", {
+            ...activeRuntimeSession,
+            runId: run.runId,
+            traceId: run.traceId,
+            status: "gated",
+            error: "requires_runtime_agent",
+            gate: "run_not_observed",
+            code: error.code || "",
+          });
+          status = 409;
+          payload = {
+            ok: false,
+            error: "requires_runtime_agent",
+            gate: "run_not_observed",
+            status: "gated",
+            run: publicGatedRun(run),
+            statusUrl: runStatusUrlFor(run.runId),
+          };
+          return;
+        }
+        status = 502;
+        const mapped = mapRunError(error, { correlationId: input?.correlationId || input?.correlation_id || "" });
+        eventApi.recordEvent(state, "runner_run_failed", runnerFailureEvent(activeRuntimeSession, mapped));
+        payload = { ok: false, error: mapped };
+      }
+    });
+    sendJson(res, status, payload);
+  }
+
+  async function handleRuntimeRun(req, res, url) {
+    await handleRuntimeRunInput(await readBody(req), req, res, url);
+  }
+
+  async function handleRuntimeBridgeRun(req, res, url) {
+    const input = await readBody(req);
+    Object.assign(input, {
+      mode: input.mode || "full_runtime",
+      runId: runIdFromInput(input),
+      traceId: traceIdFromInput(input),
+    });
+    await handleRuntimeRunInput(input, req, res, url, { successStatus: 201 });
+  }
+
   return {
     cancelRuntimeRun,
+    handleRuntimeBridgeRun,
+    handleRuntimeRun,
+    handleRuntimeRunInput,
+    handleRunStatus,
     runtimeMode,
     submitRuntimeRun,
     syncRunnerRun,

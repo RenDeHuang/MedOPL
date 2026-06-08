@@ -1,5 +1,5 @@
-import type { LabPackagePlan } from "../../api/portal/lab";
-import type { PlatformProvisionedResourcesPayload } from "../../api/portal/resources";
+import type { LabPackagePlan } from "../../api/portal/types";
+import type { PlatformProvisionedResourcesPayload } from "../../api/portal/types";
 
 function numberValue(value: unknown, fallback = 0) {
   const parsed = Number(value);

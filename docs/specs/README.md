@@ -36,6 +36,7 @@ Node Portal backend physical removal: `services/portal/src` 已物理清退；�
 | Anchor | Former leaf id |
 | --- | --- |
 | [spec:v22-admin-ops-console-boundary](#spec-v22-admin-ops-console-boundary) | `v22-admin-ops-console-boundary` |
+| [spec:v22-ai-runtime-contract-boundary](#spec-v22-ai-runtime-contract-boundary) | `v22-ai-runtime-contract-boundary` |
 | [spec:v22-authorized-tencent-create-release-boundary](#spec-v22-authorized-tencent-create-release-boundary) | `v22-authorized-tencent-create-release-boundary` |
 | [spec:v22-authorized-tencent-create-release-execution-boundary](#spec-v22-authorized-tencent-create-release-execution-boundary) | `v22-authorized-tencent-create-release-execution-boundary` |
 | [spec:v22-authorized-tencent-create-release-implementation-boundary](#spec-v22-authorized-tencent-create-release-implementation-boundary) | `v22-authorized-tencent-create-release-implementation-boundary` |
@@ -150,6 +151,7 @@ Node Portal backend physical removal: `services/portal/src` 已物理清退；�
 - real resource contract alignment smoke: [../../tests/future-authorized/cloud/future-authorized-test-v22-real-resource-contract-alignment.mjs](../../tests/future-authorized/cloud/future-authorized-test-v22-real-resource-contract-alignment.mjs)。该 smoke 守住基础套餐、Pro 套餐、自定义规格、任务并发、计算资源和存储资源生命周期分离，以及普通用户主语言边界，防止真实资源接入前恢复旧口径。
 - billing freeze/preauth: [spec:v22-billing-freeze-boundary](#spec-v22-billing-freeze-boundary), [spec:v22-release-stop-billing-audit-boundary](#spec-v22-release-stop-billing-audit-boundary)
 - trace metadata: [spec:v22-trace-metadata-boundary](#spec-v22-trace-metadata-boundary), [spec:v22-portal-files-billing-trace-boundary](#spec-v22-portal-files-billing-trace-boundary), [spec:v22-langfuse-observability-metadata-boundary](#spec-v22-langfuse-observability-metadata-boundary)
+- AI Runtime Contract: [spec:v22-ai-runtime-contract-boundary](#spec-v22-ai-runtime-contract-boundary)。该合同把 Runtime Bridge 固定为 AI runtime adapter owner，定义 runtimeSession / runtimeTool / runtimeResource / runtimeRun / runtimeArtifact / runtimeApproval，并把 MCP-compatible boundary 限定为 tools / resources / prompts / artifacts / approval shape compatibility；不授权真实云、secret、deploy、kubectl、build/push 或 live-test，也不授权 production MCP server 或外部 MCP client。
 - Langfuse 观测附件: [spec:v22-langfuse-observability-metadata-boundary](#spec-v22-langfuse-observability-metadata-boundary)。该合同只定义 sanitized trace/session metadata 边界，不代表 Langfuse 部署、ClickHouse、真实 API key 或真实 trace source 已接入。
 - runtime bridge session/run/file/providerKeyRef: [spec:v22-runtime-bridge-session-run-file-provider-keyref-boundary](#spec-v22-runtime-bridge-session-run-file-provider-keyref-boundary)
 - Portal-OPL connection: [spec:v22-portal-opl-connection-boundary](#spec-v22-portal-opl-connection-boundary)。Portal 发起进入 OPL、Gateway bootstrap、OPL session bind、message/file/run、artifact projection、workspace/session/run 归属、token 不进 URL/browser state 和 clean upstream 边界由该合同统一固定。它不修改 one-person-lab upstream，不读取 secret，不调用真实云。
@@ -205,7 +207,7 @@ Node Portal backend physical removal: `services/portal/src` 已物理清退；�
 - [spec:v22-portal-admin-ops-surface-boundary](#spec-v22-portal-admin-ops-surface-boundary)
 - [spec:v22-portal-files-billing-trace-boundary](#spec-v22-portal-files-billing-trace-boundary)
 - [spec:v22-portal-structure-failure-isolation-boundary](#spec-v22-portal-structure-failure-isolation-boundary)
-- [spec:v22-portal-workbench-management-ui-composition-boundary](#spec-v22-portal-workbench-management-ui-composition-boundary): Portal UI composition 合同只管产品边界、UI 分层、禁词、Figma Make ZIP source、Portal API adapter 和统一验证入口；具体 route、surface、layout 和 API wiring 由 `services/portal/frontend/src/app/**`、`services/portal/frontend/src/app/data/portalAdapters.ts` 和 surface smoke 承接。
+- [spec:v22-portal-workbench-management-ui-composition-boundary](#spec-v22-portal-workbench-management-ui-composition-boundary): Portal UI composition 合同只管产品边界、UI 分层、禁词、Figma Make ZIP source、Portal data model 和统一验证入口；具体 route、surface、layout 和 API wiring 由 `services/portal/frontend/src/app/**`、`services/portal/frontend/src/app/data/portal*Model.ts`、`services/portal/frontend/src/app/data/portalQuery.ts` 和 surface smoke 承接。
 - [spec:v22-portal-ui-design-quality-audit-boundary](#spec-v22-portal-ui-design-quality-audit-boundary): UI design quality audit 合同只管边界、评价标准、audit evidence schema 和后续 UI implementation leaf handoff，不替代 UI composition 合同，不冻结具体布局、配色、字体、圆角或组件库；它审计 Portal 是否回答用户买了什么、能不能用、缺什么、下一步点哪里、结果在哪里和费用是否正常。审计证据路径固定为 `.runtime/portal-ui-design-quality/report.json` 且不进 git；当前 React/Figma Make implementation leaf 已在 `services/portal/frontend/**` 落地普通用户 6 个路由、服务摘要、状态驱动下一步、Portal/OPL runtime 职责边界、环境/套餐/算力/存储/释放状态和文件/任务/结果链路，并同步 React route/surface eval、typecheck 和 build 验证。
 - [spec:v22-portal-figma-make-ui-implementation-boundary](#spec-v22-portal-figma-make-ui-implementation-boundary): 当前 Portal frontend implementation leaf，授权 Portal 全体前端栈收敛为 React + Vite + TypeScript + react-router + shadcn/Radix + lucide，并以 Figma Make ZIP 作为唯一 Portal UI source-of-truth，吸收普通用户路由 `/overview`、`/resources`、`/workspace`、`/trace`、`/billing`、`/opl-launch` 和管理员路由 `/admin/dashboard`、`/admin/users`、`/admin/alerts`、`/admin/billing-ops`、`/admin/audit`、`/admin/system`、`/admin/ops`；retired frontend surface gate 已证明旧管理员 console residue 物理清退，管理员导航显示由后端角色投影控制，真实权限仍由 `/api/admin/*` 后端校验；`/admin/ops` 默认后端可返回 `404 ops_surface_disabled`，前端必须展示“平台托管运维入口未启用”的产品态。
 - [../../DESIGN.md](../../DESIGN.md): Portal UI 重构设计执行源，用于指导当前 React implementation 的产品气质、信息架构、组件使用、文案、视觉规则和 Figma Make ZIP 吸收流程；它不替代本合同包、不替代 Figma Make ZIP source-of-truth、不替代 smoke，也不授权修改后端、真实云、deploy、upstream 或 secret 边界。
@@ -250,10 +252,28 @@ node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-ali
 - [spec:v22-portal-opl-connection-boundary](#spec-v22-portal-opl-connection-boundary)
 - [spec:v22-portal-opl-context-backflow-boundary](#spec-v22-portal-opl-context-backflow-boundary)
 - [spec:v22-runtime-bridge-session-run-file-provider-keyref-boundary](#spec-v22-runtime-bridge-session-run-file-provider-keyref-boundary)
+- [spec:v22-ai-runtime-contract-boundary](#spec-v22-ai-runtime-contract-boundary)
 - [spec:v22-opl-work-message-file-run-boundary](#spec-v22-opl-work-message-file-run-boundary)
 - [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary)
 - [spec:v22-trace-metadata-boundary](#spec-v22-trace-metadata-boundary)
 - [../history/README.md](../history/README.md)
+
+### spec:v22-ai-runtime-contract-boundary
+
+AI Runtime Contract 是 MedOPL v22 的 Runtime Bridge AI runtime adapter layer 合同。它把 Portal/Gateway/Runtime Bridge 到 OPL ACP runtime、Runtime Agent HTTP API 和未来 MCP-compatible tools/resources 的边界收敛为同一 adapter contract，不把 LangGraph、OpenAI Agents SDK、MCP、A2A 或 upstream OPL 内部状态变成 MedOPL 平台框架 owner。
+
+合同对象为 runtimeSession、runtimeTool、runtimeResource、runtimeRun、runtimeArtifact 和 runtimeApproval。MCP-compatible boundary 只表示 tools / resources / prompts / artifacts / approval shape compatibility；当前 machine boundary 是 `services/opl-runtime-bridge/src/runtime-bridge-mcp-compatible-shapes.mjs` 的本地 shape-only projection，不授权真实云、secret、deploy、kubectl、build/push 或 live-test，不声明 production MCP server 已运行，不授权外部 MCP client，不读取 raw provider key、bearer token、launchToken、runtimeToken、objectKey、localPath、signedUrl 或 presignedUrl。
+
+验收入口：
+
+```bash
+node tests/contract/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs
+node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs
+```
+
+AI MVP readiness audit 只汇总本地 readiness 证据边界：MVP contract suite、pre-cloud deployable RC、local Portal/OPL delivery RC、AI Runtime Contract、Runtime Bridge session/run/file/providerKeyRef smoke、Runtime Bridge local fake probe、MCP-compatible shape-only projection、real-cloud authorization blocker 和 Sentrux structure gate 状态。它不能把本地 proof 升级成真实云、production MCP server、external MCP client、deploy、kubectl、build/push、live-test、secret read 或 production runtime readiness。
+
+six-step AI MVP readiness 完成后的唯一可声明状态是 `local_ai_mvp_readiness_only`：当前修复分支收口、Portal 结构质量恢复、E2E MVP 验证、AI Runtime Contract、Runtime Bridge AI runtime layer 和 MCP-compatible boundary design 都只能证明本地端到端 MVP readiness。六步之后仍必须进入 real-cloud authorization boundary、mock/snapshot provider、readonly quote、dry-run plan、readonly inventory、authorized create/release、authorized deploy、canary / QA / status update。未完成这些云门禁前，不能声明 real_cloud_ready、production_online、deploy_ready、secret_authorized 或 live_test_authorized。
 
 ### Portal-OPL Context Backflow 合同包
 
@@ -6380,7 +6400,8 @@ Portal 必须按低耦合目标治理：
         "services/portal/frontend/src/app/pages/OPLEntry.tsx"
       ],
       "currentComposableFiles": [
-        "services/portal/frontend/src/app/data/portalAdapters.ts",
+        "services/portal/frontend/src/app/data/portal*Model.ts",
+        "services/portal/frontend/src/app/data/portalQuery.ts",
         "services/portal/frontend/src/app/components/ui/utils.ts"
       ],
       "coreViewComposableImports": [
@@ -6555,7 +6576,7 @@ Portal 是 OPL 的 SaaS 控制面。UI design quality audit 要审计 Portal 是
 - `trace`: 展示任务运行轨迹、输出回流和费用关联，不暴露外部 trace 直链。
 - `billing`: 展示余额、冻结金额、运行费用和账本审计。
 - `opl-launch`: 展示 OPL 启动阶段，不暴露 providerKeyRef、runtime token 或 raw key。
-- `services/portal/frontend/src/app/**` 已按 Figma Make ZIP 复制为 React user Portal route 和 surface source；`services/portal/frontend/src/app/data/portalAdapters.ts` 已接现有 `/api/*`。
+- `services/portal/frontend/src/app/**` 已按 Figma Make ZIP 复制为 React user Portal route 和 surface source；`services/portal/frontend/src/app/data/portal*Model.ts` 与 `services/portal/frontend/src/app/data/portalQuery.ts` 已接现有 `/api/*`。
 
 仍不属于本 leaf 的后续事项：Portal backend services、Node 22 ESM layering、billing preauth/ledger/release T+1 后端闭环、真实云、release readiness、deploy、build/push/kubectl、live-test、secret-backed canary 和 upstream OPL 修改。B 吸收本分支后，cursor 是否推进到 `backend-product-node22-esm-layering` 必须继续由 `tests/fixtures/v22/goal-current.json`、gap matrix 和 B review 规则决定；本实现分支不提前声明全局 cursor 完成。
 
@@ -6979,16 +7000,16 @@ Former title: v22 Portal Workbench Management UI Composition Boundary
 
 本合同固定 Portal UI 的产品边界、分层规则、禁词、Figma Make ZIP surface gate 和统一验证入口。它不替代 role surface 合同和结构治理合同，也不继续承载每个页面、组件和 API shape 的细节。
 
-本合同 v11 的核心变化是继续瘦身并收敛到当前 Figma Make ZIP 普通用户和管理员 Portal：页面结构和组件实现以 ZIP 源码为准，API shape 由 `src/app/data/portalAdapters.ts` 和 `src/api/portal/*` 承接，surface smoke 读取 ZIP 文件树、active routes、layout、API adapter 和旧文件物理删除状态执行检查。历史 UI evidence 不再是当前完成证据；旧路径防回归统一由 retired frontend surface gate 承接。
+本合同 v12 的核心变化是继续瘦身并收敛到当前 Figma Make ZIP 普通用户和管理员 Portal：页面结构和组件实现以 ZIP 源码为准，API shape 由 `src/app/data/portal*Model.ts`、`src/app/data/portalQuery.ts` 和 `src/api/portal/*` 承接，surface smoke 读取 ZIP 文件树、active routes、layout、data model/API wiring 和旧文件物理删除状态执行检查。历史 UI evidence 不再是当前完成证据；旧路径防回归统一由 retired frontend surface gate 承接。
 
-`leaf-portal-figma-make-react-ui-implementation` 把当前普通用户和管理员 Portal 的可执行 UI truth 收敛到 Figma Make ZIP：6 个用户路由必须回答“用户买了什么托管科研工作台服务、当前能不能进入 OPL、环境套餐算力存储释放状态、文件任务结果在哪里以及下一步点哪里”；7 个管理员路由必须展示管理总览、用户管理、公告与待处理事项、账单处理、审计记录、站点设置和服务状态。对应 route、surface、页面结构和 primitive 由 `services/portal/frontend/src/app/**` 承接；API 接入由 `services/portal/frontend/src/app/data/portalAdapters.ts` 和 `services/portal/frontend/src/api/portal/*` 承接。`/admin/users` 和 `/admin/alerts` 允许接入现有本地 Portal 管理动作；`/admin/ops` 是已挂载服务状态页面，但后端默认可返回 `404 ops_surface_disabled`；前端必须展示明确 disabled 产品态，不能渲染 generic error 或伪成功。
+`leaf-portal-figma-make-react-ui-implementation` 把当前普通用户和管理员 Portal 的可执行 UI truth 收敛到 Figma Make ZIP：6 个用户路由必须回答“用户买了什么托管科研工作台服务、当前能不能进入 OPL、环境套餐算力存储释放状态、文件任务结果在哪里以及下一步点哪里”；7 个管理员路由必须展示管理总览、用户管理、公告与待处理事项、账单处理、审计记录、站点设置和服务状态。对应 route、surface、页面结构和 primitive 由 `services/portal/frontend/src/app/**` 承接；API 接入由 per-surface `services/portal/frontend/src/app/data/portal*Model.ts`、`services/portal/frontend/src/app/data/portalQuery.ts` 和 `services/portal/frontend/src/api/portal/*` 承接。`/admin/users` 和 `/admin/alerts` 允许接入现有本地 Portal 管理动作；`/admin/ops` 是已挂载服务状态页面，但后端默认可返回 `404 ops_surface_disabled`；前端必须展示明确 disabled 产品态，不能渲染 generic error 或伪成功。
 
 ## 合同职责
 
 本合同只负责：
 
 - 产品边界：Portal 是工作台和管理台，不是云资源控制台。
-- UI 分层规则：route entry、page shell、layout、ZIP page component、Portal API adapter、API module、ZIP surface smoke。
+- UI 分层规则：route entry、page shell、layout、ZIP page component、Portal data model、API module、ZIP surface smoke。
 - 禁词和主叙事：工作台、管理台、账单、余额、冻结金额、累计消费、今日消费、计算资源、文件空间、任务执行、运行轨迹。
 - Figma Make ZIP app root：`services/portal/frontend/src/app`。
 - 统一验证入口：`node tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs`。
@@ -7021,7 +7042,7 @@ Portal UI 必须按以下层级落到代码和 eval：
 - page shell：`src/app/components/Layout.tsx` 只负责应用壳、导航、顶部栏和滚动边界。
 - ZIP page component：`src/app/pages/*` 保持 Figma Make 页面结构，并只增加必要的 Portal API query wiring。
 - shared UI component：`src/app/components/ui/*` 保持 Figma Make / shadcn-Radix primitives。
-- Portal API adapter：`src/app/data/portalAdapters.ts` 承担 loader、query、formatter 和 API payload 到页面 model 的映射。
+- Portal data model：`src/app/data/portal*Model.ts` 承担 per-surface loader、formatter 和 API payload 到页面 model 的映射；`src/app/data/portalQuery.ts` 承担统一 query/error boundary。
 - API module：`src/api/portal/*` 只承担 HTTP 和类型映射。
 - ZIP surface smoke：`tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs` 固定 ZIP 文件树、route、layout、API adapter、禁词、secret hygiene 和旧文件清退。
 
@@ -7033,17 +7054,18 @@ Portal UI 的可执行事实源是 Figma Make ZIP 与复制后的 app root：
 /mnt/c/Users/Administrator/Downloads/MedOPL+Portal+UI+Design+(1).zip
 /tmp/medopl-figma-make-source-admin
 services/portal/frontend/src/app
-services/portal/frontend/src/app/data/portalAdapters.ts
+services/portal/frontend/src/app/data/portal*Model.ts
+services/portal/frontend/src/app/data/portalQuery.ts
 ```
 
 surface smoke 必须检查：
 
-- `src/app` 文件树与 ZIP `src/app` 一致，只允许额外存在 `data/portalAdapters.ts`，并按 retired frontend surface gate 排除已退役 ZIP residue。
+- `src/app` 文件树与 ZIP `src/app` 一致，只允许额外存在当前 Portal data model/query 文件，并按 retired frontend surface gate 排除已退役 ZIP residue。
 - `src/styles` 文件树与 ZIP `src/styles` 一致。
 - active routes 包含 `/overview`、`/resources`、`/workspace`、`/trace`、`/billing`、`/opl-launch` 和 `/admin/dashboard`、`/admin/users`、`/admin/alerts`、`/admin/billing-ops`、`/admin/audit`、`/admin/system`、`/admin/ops`。
 - 已退役管理员 console residue 不得存在于 active frontend。
 - 每个 active page 通过 `usePortalQuery` 调用对应 `load*Model`。
-- `portalAdapters.ts` 调用现有 `/api/*` adapter。
+- per-surface Portal data model 调用现有 `/api/*` adapter，页面通过 `usePortalQuery` 消费对应 `load*Model`。
 - `/admin/ops` 对 `ops_surface_disabled` 有明确产品态映射。
 - retired frontend surface gate 证明历史 UI 路径、旧 harness 入口和上一轮根级 React shell 物理不存在。
 - 当前实现 leaf 的视觉验收由 React route DOM 锚点、typecheck、build 和本地预览承接；Playwright 默认预览入口必须指向当前 React route；任何截图类回归重新启用都必须另开 leaf 并写明 design quality audit evidence。

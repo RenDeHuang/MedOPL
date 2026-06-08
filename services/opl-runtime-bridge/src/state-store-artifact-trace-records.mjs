@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
+import { providerKeyRefFields } from "./state-store-provider-key-ref.mjs";
 import { ownerIdFrom, storageOwnerIdFrom, tenantIdFrom } from "./state-store-identity.mjs";
-import { providerKeyRefFields } from "./state-store-record-field-groups.mjs";
 import { nowIso } from "./state-store-record-time.mjs";
 
 export function buildArtifactRecord(input = {}) {

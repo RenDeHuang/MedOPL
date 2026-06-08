@@ -1,21 +1,29 @@
 import { createContext, type ReactNode, useContext, useEffect, useState } from "react";
-import { fetchCurrentUser, type CurrentUserPayload } from "../../api/portal/commercial";
 
 type UserRole = "user" | "admin";
 
+interface RoleUserPayload {
+  role: string;
+}
+
 interface RoleContextType {
   role: UserRole;
-  user: CurrentUserPayload | null;
+  user: RoleUserPayload | null;
   status: "loading" | "ready" | "error";
 }
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
 
+interface RoleProviderProps {
+  children: ReactNode;
+  loadCurrentUser: () => Promise<RoleUserPayload>;
+}
+
 function normalizedRole(role: string | undefined): UserRole {
   return role === "admin" ? "admin" : "user";
 }
 
-export function RoleProvider({ children }: { children: ReactNode }) {
+export function RoleProvider({ children, loadCurrentUser }: RoleProviderProps) {
   const [state, setState] = useState<RoleContextType>({
     role: "user",
     user: null,
@@ -24,7 +32,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetchCurrentUser()
+    loadCurrentUser()
       .then((user) => {
         if (cancelled) return;
         setState({
@@ -44,7 +52,7 @@ export function RoleProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [loadCurrentUser]);
 
   return (
     <RoleContext.Provider value={state}>

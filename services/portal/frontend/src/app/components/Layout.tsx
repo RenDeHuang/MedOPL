@@ -17,17 +17,14 @@ import {
   ChevronDown,
   ChevronUp
 } from "lucide-react";
-import { cn } from "./ui/utils";
+import { Button, Separator, cn } from "./ui/core";
 import { UserMenu } from "./UserMenu";
 import { AnnouncementButton } from "./AnnouncementButton";
-import { Button } from "./ui/button";
-import { Separator } from "./ui/separator";
 import { useRole } from "../contexts/RoleContext";
 import {
-  loadAnnouncementModel,
-  loadCurrentUserModel,
-  usePortalQuery,
-} from "../data/portalAdapters";
+  useAnnouncementModel,
+  useCurrentUserModel,
+} from "../data/portalLayoutModel";
 
 // 普通用户导航
 const userNavigation = [
@@ -54,8 +51,8 @@ export function Layout() {
   const location = useLocation();
   const [adminExpanded, setAdminExpanded] = useState(true);
   const { role: userRole } = useRole();
-  const currentUser = usePortalQuery(loadCurrentUserModel, []);
-  const announcements = usePortalQuery(loadAnnouncementModel, []);
+  const currentUser = useCurrentUserModel();
+  const announcements = useAnnouncementModel();
   const isAdmin = userRole === "admin";
 
   return (

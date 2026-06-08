@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { isSmokeClassifiedIn } from "../../../scripts/v22-test-classification.mjs";
 
 const resourcesViewPath = "services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx";
-const resourcesSurfacePath = "services/portal/frontend/src/app/data/portalAdapters.ts";
+const resourcesSurfacePath = "services/portal/frontend/src/app/data/portalRuntimeEnvironmentModel.ts";
 const resourcesLifecyclePath = "services/portal/frontend/src/app/data/portalRuntimeEnvironmentLifecycle.ts";
 
 const resourcesView = await readFile(resourcesViewPath, "utf8");

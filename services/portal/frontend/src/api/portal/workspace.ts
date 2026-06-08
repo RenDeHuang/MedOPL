@@ -1,6 +1,6 @@
 import { goControlPlaneClient } from "../client";
 import type { PortalPagination, PortalQueryValue } from "./common";
-import type { SelectedServerPlan } from "./server-plans";
+import type { SelectedServerPlan } from "./types";
 
 export interface WorkspaceQuery {
   task?: PortalQueryValue;

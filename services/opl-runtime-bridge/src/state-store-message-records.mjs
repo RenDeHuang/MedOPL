@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 
+import { providerKeyRefFields } from "./state-store-provider-key-ref.mjs";
+import { runtimeDispatchFields } from "./state-store-runtime-dispatch-fields.mjs";
 import { ownerIdFrom, storageOwnerIdFrom, tenantIdFrom } from "./state-store-identity.mjs";
-import { providerKeyRefFrom } from "./runtime-bridge-scope-identity.mjs";
-import { runtimeDispatchFields } from "./state-store-record-field-groups.mjs";
 import { nowIso } from "./state-store-record-time.mjs";
 
 export function buildMessageRequestRecord(input = {}) {
@@ -47,7 +47,7 @@ function messageRequestScope(input = {}) {
     workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
     runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || "",
     oplSessionId: input.oplSessionId || input.opl_session_id || input.sessionId || input.session_id || "",
-    providerKeyRef: providerKeyRefFrom(input),
+    ...providerKeyRefFields(input),
     promptPreview: input.promptPreview || input.prompt_preview || "",
   };
 }
@@ -88,7 +88,7 @@ export function buildMessageReplyRecord(input = {}) {
     workspaceId: input.workspaceId || input.workspace_id || "",
     workspaceSessionId: input.workspaceSessionId || input.workspace_session_id || "",
     runtimeSessionId: input.runtimeSessionId || input.runtime_session_id || "",
-    providerKeyRef: providerKeyRefFrom(input),
+    ...providerKeyRefFields(input),
     ...runtimeDispatchFields(input),
     promptPreview: input.promptPreview || input.prompt_preview || "",
     reply: input.reply || "",

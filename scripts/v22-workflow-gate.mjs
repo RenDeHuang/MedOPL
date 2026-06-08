@@ -310,6 +310,14 @@ function isForbiddenPath(filePath) {
   return forbiddenPathPatterns.some((pattern) => pattern.test(normalized));
 }
 
+function isAuthorizedSentruxRulesAlignment(filePath, changedFiles) {
+  const normalized = normalizePath(filePath);
+  if (normalized !== ".sentrux/rules.toml") return false;
+  return changedFiles.map(normalizePath).some((file) =>
+    file.startsWith("changes/active/sentrux-v22-rules-alignment/")
+    || /^changes\/archive\/\d{4}-\d{2}-\d{2}-sentrux-v22-rules-alignment\//u.test(file));
+}
+
 function isSecretLikePath(filePath) {
   const normalized = normalizePath(filePath);
   return secretLikePathPatterns.some((pattern) => pattern.test(normalized));
@@ -658,7 +666,9 @@ export function evaluateReview({
   const authorizedCleanupDeletions = normalizedFiles.filter((file) =>
     isStrictMonolithCleanupAuthorizedDelete(file, changedStatuses.get(file), branchName));
   const forbiddenPaths = normalizedFiles.filter((file) =>
-    isForbiddenPath(file) && !isStrictMonolithCleanupAuthorizedDelete(file, changedStatuses.get(file), branchName));
+    isForbiddenPath(file)
+    && !isStrictMonolithCleanupAuthorizedDelete(file, changedStatuses.get(file), branchName)
+    && !isAuthorizedSentruxRulesAlignment(file, normalizedFiles));
   const secretLikePaths = normalizedFiles.filter((file) =>
     isSecretLikePath(file) && !isV22EvalPath(file) && !isStrictMonolithCleanupAuthorizedDelete(file, changedStatuses.get(file), branchName));
   const secretLikeAddedLines = secretLikeAddedLinesFrom(addedLines);

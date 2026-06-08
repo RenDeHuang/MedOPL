@@ -1,37 +1,9 @@
 import { goControlPlaneClient } from "../client";
 import { normalizePortalBusinessError } from "./common";
 import type { PortalQueryValue } from "./common";
+import type { LabPackagePlan } from "./types";
 
-export interface LabPackagePlan {
-  id: string;
-  name: string;
-  headline?: string;
-  backingServerPlanId?: string;
-  compute?: {
-    cores?: number;
-    memoryGb?: number;
-    maxConcurrentRuns?: number;
-  };
-  storage?: {
-    includedGb?: number;
-    warningRatio?: number;
-  };
-  billing?: {
-    basePrice: null;
-    pendingProductApproval: boolean;
-    priceLabel?: string;
-    freezeDays?: number;
-  };
-  computePower: string;
-  storageCapacityGb: number;
-  basePrice: null;
-  pendingProductApproval: boolean;
-  priceLabel?: string;
-  gracePeriodDays: number;
-  currency: string;
-  planSummary?: string;
-  memoryGb?: number;
-}
+export type { LabPackagePlan } from "./types";
 
 export interface LabPackagesPayload {
   items: LabPackagePlan[];

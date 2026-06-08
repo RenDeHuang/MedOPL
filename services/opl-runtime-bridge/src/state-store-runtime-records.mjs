@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
 
 import { ownerIdFrom } from "./state-store-identity.mjs";
+import { runtimeDispatchFields } from "./state-store-runtime-dispatch-fields.mjs";
 import {
   providerConfigFields,
-  runtimeDispatchFields,
   runtimeOwnershipFields,
   runtimeResourceFields,
   workspaceSessionScopeFields,

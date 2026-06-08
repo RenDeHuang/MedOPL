@@ -1,15 +1,6 @@
 import { Activity, CheckCircle, AlertCircle, XCircle, Server, Database, Cpu } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
-import { Badge } from "../../components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../../components/ui/table";
-import { loadAdminOpsModel, usePortalQuery } from "../../data/portalAdapters";
+import { Badge, Card, CardContent, CardHeader, CardTitle, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/core";
+import { useAdminOpsModel } from "../../data/portalAdminOpsModel";
 
 interface ServiceStatus {
   rowKey: string;
@@ -45,7 +36,7 @@ interface FutureAuthorizedAction {
 }
 
 export function AdminOps() {
-  const query = usePortalQuery(loadAdminOpsModel, []);
+  const query = useAdminOpsModel();
 
   const getStatusBadge = (status: string) => {
     switch (status) {

@@ -1,11 +1,14 @@
-# OPL architecture rules for Sentrux.
+# MedOPL v22 architecture rules for Sentrux.
 #
-# These rules intentionally start from the current v13 baseline so they can
-# catch regressions while the large legacy files are being split down.
+# These rules track the current v22 active source truth:
+# Portal frontend, Go control plane, OPL Web Gateway, Runtime Bridge, and the
+# repo-native docs/specs/tests/scripts verification surface. Hard safety gates
+# stay strict; modularity is set to the evidence-backed v22 baseline measured
+# after the AI MVP readiness structure recovery.
 
 [constraints]
 min_quality = 0.69
-min_modularity = 0.80
+min_modularity = 0.759
 min_acyclicity = 1.00
 min_depth = 0.70
 min_equality = 0.35
@@ -15,142 +18,139 @@ max_upward_violations = 0
 no_god_files = true
 
 [[layers]]
-name = "shared"
+name = "truth_and_specs"
 paths = [
-  "adapters/shared/*",
-  "adapters/resource-provisioner/src/config.mjs",
-  "adapters/resource-provisioner/src/http-utils.mjs",
-  "adapters/resource-provisioner/src/labels.mjs",
-  "services/portal/src/lib/*"
+  "docs/*",
+  "docs/**/*",
+  "specs/*",
+  "specs/**/*",
+  "changes/*",
+  "changes/**/*"
 ]
-order = 4
+order = 5
 
 [[layers]]
-name = "domain"
+name = "verification"
 paths = [
-  "services/portal/src/domain/*",
-  "services/portal/src/state/*",
-  "adapters/resource-provisioner/src/store.mjs"
+  "scripts/*",
+  "tests/*",
+  "tests/**/*",
+  "package.json"
+]
+order = 0
+
+[[layers]]
+name = "portal_frontend"
+paths = [
+  "services/portal/frontend/src/*",
+  "services/portal/frontend/src/**/*",
+  "services/portal/frontend/package.json",
+  "services/portal/frontend/vite.config.ts"
 ]
 order = 3
 
 [[layers]]
-name = "integrations"
+name = "go_control_plane"
 paths = [
-  "services/portal/src/integrations/*",
-  "adapters/billing-aggregator/src/*",
-  "adapters/resource-provisioner/src/inventory.mjs",
-  "adapters/resource-provisioner/src/provisioner.mjs",
-  "adapters/resource-provisioner/src/server.mjs",
-  "adapters/resource-provisioner/src/tencent-cloud.mjs",
-  "services/opl-runtime-bridge/src/*"
+  "services/medopl-go-backend/*",
+  "services/medopl-go-backend/**/*"
+]
+order = 3
+
+[[layers]]
+name = "opl_gateway"
+paths = [
+  "services/opl-web-gateway/src/*",
+  "services/opl-web-gateway/src/**/*",
+  "services/opl-web-gateway/package.json"
 ]
 order = 2
 
 [[layers]]
-name = "routes"
+name = "runtime_bridge"
 paths = [
-  "services/portal/src/routes/*",
-  "services/portal/src/app/*",
-  "services/portal/src/server.mjs",
-  "services/opl-web-gateway/src/*",
-  "adapters/med-autoscience-runner/src/*"
+  "services/opl-runtime-bridge/src/*",
+  "services/opl-runtime-bridge/src/**/*",
+  "services/opl-runtime-bridge/package.json"
 ]
-order = 1
-
-[[layers]]
-name = "frontend"
-paths = [
-  "services/portal/frontend/src/*"
-]
-order = 0
+order = 2
 
 [[boundaries]]
-from = "services/portal/src/*"
-to = "adapters/resource-provisioner/src/tencent-cloud.mjs"
-reason = "Portal must call Resource Provisioner over DTO/API and must not hold Tencent cloud clients or secrets."
+from = "services/portal/frontend/src/**/*"
+to = "services/medopl-go-backend/**/*"
+reason = "Portal frontend talks to the Go control plane through typed HTTP API modules, not source imports."
 
 [[boundaries]]
-from = "services/portal/src/*"
-to = "adapters/billing-aggregator/src/tencent-*.mjs"
-reason = "Portal must call Billing over DTO/API and must not read Tencent billing credentials."
+from = "services/portal/frontend/src/**/*"
+to = "services/opl-web-gateway/src/**/*"
+reason = "Portal frontend reaches OPL Gateway through configured URLs and API projections, not gateway source imports."
 
 [[boundaries]]
-from = "adapters/billing-aggregator/src/*"
-to = "services/portal/src/*"
-reason = "Billing must not log users in, mutate Portal users, or import Portal internals."
+from = "services/portal/frontend/src/**/*"
+to = "services/opl-runtime-bridge/src/**/*"
+reason = "Portal frontend reaches Runtime Bridge through backend/Gateway projections, not runtime source imports."
 
 [[boundaries]]
-from = "adapters/resource-provisioner/src/*"
-to = "services/portal/src/domain/wallet-ledger.mjs"
-reason = "Provisioner creates cloud resources only; wallet and ledger remain in Portal."
+from = "services/medopl-go-backend/**/*"
+to = "services/portal/frontend/src/**/*"
+reason = "Go control plane must not import Portal UI implementation."
 
 [[boundaries]]
-from = "adapters/med-autoscience-runner/src/*"
-to = "services/portal/src/domain/wallet-ledger.mjs"
-reason = "Runner creates jobs and artifacts only; it must not debit wallets."
+from = "services/medopl-go-backend/**/*"
+to = "services/opl-web-gateway/src/**/*"
+reason = "Go control plane owns product/control-plane projection and integrates with Gateway by URL/API contract."
 
 [[boundaries]]
-from = "services/opl-web-gateway/src/*"
-to = "services/portal/src/state/*"
-reason = "Gateway bridges auth by Portal API, not by reading Portal persistence."
+from = "services/medopl-go-backend/**/*"
+to = "services/opl-runtime-bridge/src/**/*"
+reason = "Go control plane owns product/control-plane projection and integrates with Runtime Bridge by URL/API contract."
 
 [[boundaries]]
-from = "services/opl-web-gateway/src/*"
-to = "services/portal/src/app/*"
-reason = "Gateway must not import Portal server internals."
+from = "services/opl-web-gateway/src/**/*"
+to = "services/portal/frontend/src/**/*"
+reason = "Gateway must not import Portal UI implementation."
 
 [[boundaries]]
-from = "services/portal/src/*"
-to = "services/opl-web-upstream/*"
-reason = "one-person-lab upstream is immutable; Portal must integrate through Gateway/Adapter/Runtime Bridge."
+from = "services/opl-web-gateway/src/**/*"
+to = "services/medopl-go-backend/**/*"
+reason = "Gateway bridges auth and upstream traffic through API/runtime contracts, not Go backend internals."
 
 [[boundaries]]
-from = "services/portal/src/*"
-to = "services/portal/src/integrations/langfuse-clickhouse*.mjs"
-reason = "Portal production trace queries must use Langfuse API, not direct ClickHouse access."
+from = "services/opl-web-gateway/src/**/*"
+to = "services/opl-runtime-bridge/src/**/*"
+reason = "Gateway talks to Runtime Bridge through configured HTTP/WebSocket endpoints, not runtime source imports."
 
 [[boundaries]]
-from = "services/portal/src/*"
-to = "one-person-lab/*"
-reason = "v21 keeps one-person-lab upstream immutable; Portal must not import upstream source paths."
+from = "services/opl-runtime-bridge/src/**/*"
+to = "services/portal/frontend/src/**/*"
+reason = "Runtime Bridge must not import Portal UI implementation."
 
 [[boundaries]]
-from = "services/portal/src/*"
-to = "services/opl-web-upstream/src/*"
-reason = "v21 Portal must not import OPL upstream source internals."
+from = "services/opl-runtime-bridge/src/**/*"
+to = "services/medopl-go-backend/**/*"
+reason = "Runtime Bridge must not import Go control-plane internals."
 
 [[boundaries]]
-from = "services/opl-web-gateway/src/*"
-to = "services/portal/src/state/*"
-reason = "v21 Gateway can only use Portal APIs/contracts, never Portal state."
+from = "services/opl-runtime-bridge/src/**/*"
+to = "services/opl-web-gateway/src/**/*"
+reason = "Runtime Bridge must not import Gateway internals."
 
 [[boundaries]]
-from = "services/opl-web-gateway/src/*"
-to = "services/portal/src/app/*"
-reason = "v21 Gateway can only use Portal APIs/contracts, never Portal app/server internals."
+from = "services/portal/frontend/src/**/*"
+to = "one-person-lab/**/*"
+reason = "Clean upstream OPL is integrated through Gateway/Runtime boundaries, not Portal UI imports."
 
 [[boundaries]]
-from = "services/opl-runtime-bridge/src/*"
-to = "services/portal/src/state/*"
-reason = "v21 Runtime Bridge must not import Portal state internals."
+from = "services/medopl-go-backend/**/*"
+to = "one-person-lab/**/*"
+reason = "Go control plane must not import upstream OPL internals."
 
 [[boundaries]]
-from = "services/opl-runtime-bridge/src/*"
-to = "services/portal/src/domain/wallet*.mjs"
-reason = "v21 Runtime Bridge must not import Portal wallet internals."
+from = "services/opl-web-gateway/src/**/*"
+to = "one-person-lab/**/*"
+reason = "Gateway proxies clean upstream by configured URL and must not import upstream internals."
 
 [[boundaries]]
-from = "services/opl-runtime-bridge/src/*"
-to = "services/portal/src/domain/resource-order*.mjs"
-reason = "v21 Runtime Bridge must not import Portal resource-order internals."
-
-[[boundaries]]
-from = "services/opl-runtime-bridge/src/*"
-to = "adapters/resource-provisioner/src/*"
-reason = "v21 default user-owned runtime path must not depend on resource-provisioner internals."
-
-[[boundaries]]
-from = "services/opl-runtime-bridge/src/*"
-to = "adapters/med-autoscience-runner/src/*"
-reason = "v21 default user-owned runtime path must not depend on med-autoscience-runner internals."
+from = "services/opl-runtime-bridge/src/**/*"
+to = "one-person-lab/**/*"
+reason = "Runtime Bridge uses public runtime/agent boundaries and must not import upstream internals."

@@ -1,8 +1,5 @@
-import { Button } from "../components/ui/button";
-import { Card } from "../components/ui/card";
-import { Badge } from "../components/ui/badge";
-import { Progress } from "../components/ui/progress";
-import { loadOverviewModel, usePortalQuery } from "../data/portalAdapters";
+import { useOverviewModel } from "../data/portalOverviewModel";
+import { Badge, Button, Card, Progress } from "../components/ui/core";
 import { Link } from "react-router";
 import {
   CheckCircle2,
@@ -26,7 +23,7 @@ import {
 type ServiceStatus = "ready" | "restricted" | "unprovisioned" | "degraded";
 
 export function Overview() {
-  const query = usePortalQuery(loadOverviewModel, []);
+  const query = useOverviewModel();
 
   if (query.status === "loading") {
     return (

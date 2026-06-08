@@ -1,10 +1,10 @@
-import { usableServerPlanId } from "./server-plan-ids.mjs";
 import {
   firstString,
   objectMapFrom,
   storageOwnerIdFrom,
   tenantIdFrom,
   tolerationsFrom,
+  usableServerPlanId,
 } from "./state-store-identity.mjs";
 import { nowIso } from "./state-store-record-time.mjs";
 
@@ -124,28 +124,6 @@ export function providerConfigFields(input = {}) {
   };
 }
 
-export function providerKeyRefFields(input = {}) {
-  return {
-    providerKeyRef: firstString([
-      input.providerKeyRef,
-      input.provider_key_ref,
-      input.providerConfigSecretRef,
-      input.provider_config_secret_ref,
-    ]),
-  };
-}
-
-export function runtimeDispatchFields(input = {}) {
-  return {
-    mode: normalizeLaunchMode(input),
-    resourceBindingId: firstString([input.resourceBindingId, input.resource_binding_id]),
-    computeInstanceId: firstString([input.computeInstanceId, input.compute_instance_id]),
-    storageBucketId: firstString([input.storageBucketId, input.storage_bucket_id]),
-    runtimeAgentId: firstString([input.runtimeAgentId, input.runtime_agent_id]),
-    runtimeAgentEndpoint: firstString([input.runtimeAgentEndpoint, input.runtime_agent_endpoint]).replace(/\/$/, ""),
-  };
-}
-
 export function runExecutionFields(input = {}) {
   return {
     status: input.status || "submitted",
@@ -158,9 +136,4 @@ export function runExecutionFields(input = {}) {
     userAgent: input.userAgent || input.user_agent || "",
     error: input.error || "",
   };
-}
-
-function normalizeLaunchMode(input = {}) {
-  const mode = firstString([input.mode, input.runtimeSessionMode, input.runtime_session_mode]).toLowerCase();
-  return mode === "full_runtime" ? "full_runtime" : "api_only";
 }

@@ -1,144 +1,28 @@
 import { goControlPlaneClient } from "../client";
+import type {
+  ManagedComputeResource,
+  ManagedEnvironmentProtection,
+  ManagedEnvironmentResource,
+  OplLaunchStatusPayload,
+  PlatformProvisionedResourcesPayload,
+  PlatformProvisionedResourcesSummary,
+  ManagedFileSpaceResource,
+} from "./types";
 
-export interface ManagedComputeResource {
-  region: string;
-  zone?: string;
-  instanceType: string;
-  healthStatus?: string;
-  status: string;
-  billingStartedAt?: string;
-  billingStoppedAt?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface ManagedFileSpaceResource {
-  region: string;
-  storageCapacityGb?: number;
-  status: string;
-  billingStartedAt?: string;
-  billingStoppedAt?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface ManagedEnvironmentProtection {
-  workspaceId: string;
-  usageMode: string;
-  windowStartAt: string;
-  windowEndAt: string;
-  weeklyAmount: number;
-  frozenAmount: number;
-  consumedAmount: number;
-  remainingAmount: number;
-  releasedAmount: number;
-  reconcile120MinStatus: string;
-  tPlus1AuditStatus: string;
-  status: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface WorkspaceBindingAccessGate {
-  bindingRequired: boolean;
-  allowed: boolean;
-  reason: string;
-}
-
-export interface WorkspaceBindingAccess {
-  oplLite: WorkspaceBindingAccessGate;
-  fullRuntime: WorkspaceBindingAccessGate;
-  workspaceFiles: WorkspaceBindingAccessGate;
-  workspaceTasks: WorkspaceBindingAccessGate;
-  workspaceOutputs: WorkspaceBindingAccessGate;
-}
-
-export interface ManagedEnvironmentReleasePolicy {
-  status: string;
-  releasedAt?: string;
-  billingStopConfirmBy?: string;
-  stopBillingConfirmWithinMinutes: number;
-  protection: string;
-}
-
-export interface ManagedEnvironmentStopBilling {
-  status: string;
-  billingStoppedAt?: string;
-  billingStopConfirmBy?: string;
-  confirmWithinMinutes: number;
-}
-
-export interface ManagedEnvironmentAuditStatus {
-  status: string;
-  auditReadyAt?: string;
-  policy: string;
-}
-
-export interface ManagedEnvironmentResource {
-  workspaceId: string;
-  status: string;
-  bindingAccess: WorkspaceBindingAccess;
-  computeResource?: ManagedComputeResource | null;
-  fileSpace?: ManagedFileSpaceResource | null;
-  protection?: ManagedEnvironmentProtection | null;
-  releasePolicy?: ManagedEnvironmentReleasePolicy | null;
-  stopBilling?: ManagedEnvironmentStopBilling | null;
-  auditStatus?: ManagedEnvironmentAuditStatus | null;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface PlatformProvisionedResourcesSummary {
-  computeResources: number;
-  fileSpaces: number;
-  activeEnvironments: number;
-  inactiveEnvironments: number;
-  activeProtections: number;
-  frozenAmount: number;
-  consumedAmount: number;
-  remainingAmount: number;
-  releasedProtectionAmount: number;
-  computeResourceCount: number;
-  fileSpaceCount: number;
-  environmentCount: number;
-  protectionCount: number;
-}
-
-export interface PlatformProvisionedResourcesPayload {
-  ok: boolean;
-  source: string;
-  computeResources: ManagedComputeResource[];
-  fileSpaces: ManagedFileSpaceResource[];
-  protections: ManagedEnvironmentProtection[];
-  items: ManagedEnvironmentResource[];
-  summary: PlatformProvisionedResourcesSummary;
-}
-
-export interface OplLaunchStatusPayload {
-  ok: boolean;
-  launchId: string;
-  workspaceId: string;
-  status: "preparing" | "ready" | "failed" | string;
-  currentStage: string;
-  userVisibleState: string;
-  blockingUser: boolean;
-  providerBound: boolean;
-  providerKeyRef: string;
-  gatewayReady: boolean;
-  gatewayState: string;
-  oplWebUrl: string;
-  error?: string;
-  message?: string;
-  stages: Array<{
-    stage: string;
-    ok: boolean;
-    blockingUser: boolean;
-    userVisibleState: string;
-    startedAt: string;
-    endedAt: string;
-    latencyMs: number;
-  }>;
-}
+export type {
+  ManagedComputeResource,
+  ManagedEnvironmentProtection,
+  ManagedEnvironmentResource,
+  ManagedFileSpaceResource,
+  OplLaunchStatusPayload,
+  PlatformProvisionedResourcesPayload,
+  PlatformProvisionedResourcesSummary,
+  WorkspaceBindingAccess,
+  WorkspaceBindingAccessGate,
+  ManagedEnvironmentAuditStatus,
+  ManagedEnvironmentReleasePolicy,
+  ManagedEnvironmentStopBilling,
+} from "./types";
 
 const PLATFORM_PROVISIONED_RESOURCES_PATH = "/platform-provisioned-resources";
 

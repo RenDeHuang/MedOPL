@@ -23,17 +23,6 @@ export interface CurrentUserPayload {
   };
 }
 
-export interface OnboardingPayload {
-  nextStepId: string;
-  items: Array<{
-    id: string;
-    title: string;
-    state: string;
-    href: string;
-    description: string;
-  }>;
-}
-
 export async function fetchCurrentUser() {
   const { data } = await goControlPlaneClient.get<CurrentUserPayload>("/me");
   return data;

@@ -24,7 +24,6 @@ const baseline = JSON.parse(baselineSource);
 
 assert.equal(baseline.default_limit, 1000, "line_budget_default_limit_mismatch");
 for (const expected of [
-  "services/opl-runtime-bridge/src/runtime-bridge-routes.mjs",
   "services/opl-web-gateway/src/launch-client-script.mjs",
 ]) {
   assert(Number.isInteger(baseline.files[expected]), `line_budget_baseline_missing:${expected}`);

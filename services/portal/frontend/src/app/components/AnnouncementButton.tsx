@@ -1,16 +1,16 @@
 import { useState } from "react";
-import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
 import {
+  Badge,
+  Button,
+  ScrollArea,
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "./ui/sheet";
+} from "./ui/core";
 import { Bell, Pin } from "lucide-react";
-import { ScrollArea } from "./ui/scroll-area";
 
 interface Announcement {
   id: string;

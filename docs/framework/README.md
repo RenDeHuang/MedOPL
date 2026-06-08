@@ -166,9 +166,11 @@ Active surface:
 - `services/opl-runtime-bridge`
 - Runtime Bridge state store, launch/session/run/message/file/artifact/trace routes
 - Runtime Agent relay boundary
+- AI Runtime Contract and MCP-compatible boundary
 
 Contract package:
 
+- `spec:v22-ai-runtime-contract-boundary`
 - `spec:v22-runtime-bridge-session-run-file-provider-keyref-boundary`
 - `spec:v22-opl-work-message-file-run-boundary`
 - `spec:v22-portal-opl-context-backflow-boundary`
@@ -185,6 +187,8 @@ Canonical source:
 Public projection:
 
 - Portal sees sanitized session, run, message, artifact, output file and trace metadata.
+- AI Runtime Contract projects runtimeSession, runtimeTool, runtimeResource, runtimeRun, runtimeArtifact and runtimeApproval through the Runtime Bridge / Runtime Agent projection boundary.
+- MCP-compatible boundary is tools / resources / prompts / artifacts / approval shape compatibility only; current source proof is `runtime-bridge-mcp-compatible-shapes.mjs`, not a production MCP server.
 - Raw prompt, raw provider key, bearer token, launch token, runtime token, object key, local path and signed URL stay outside public projection, logs, evidence and git.
 
 Evidence requirement:
@@ -202,6 +206,7 @@ Cannot claim:
 Smoke/eval gate:
 
 - `node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs`
+- `node tests/contract/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs`
 - `node tests/contract/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs`
 - `node tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs`
 - `node tests/regression/opl/regression-test-v22-real-opl-file-run-artifact-gates.mjs`
