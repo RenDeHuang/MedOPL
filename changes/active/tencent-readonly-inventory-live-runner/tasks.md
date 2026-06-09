@@ -10,5 +10,5 @@ Machine boundary: Task completion is verified by repo-native commands.
 - [x] Register the local gate in `real-cloud-readiness`.
 - [x] Run `npm run test:real-cloud-readiness`.
 - [x] Attempt authorized official SDK mode with the provided readonly env and record sanitized blocker output.
-- [ ] Run `npm run gate:review` after change package is complete.
-- [ ] Commit and push the runner branch after verification.
+- [x] Run `npm run gate:review` after change package is complete.
+- [x] Commit and push the runner branch after verification.

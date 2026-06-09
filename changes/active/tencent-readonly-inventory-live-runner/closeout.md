@@ -22,7 +22,9 @@ Verification:
 
 - `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-live-runner-local-gate.mjs`: pass.
 - `npm run test:real-cloud-readiness`: pass.
+- `npm run gate:review`: pass.
 - authorized official SDK mode: produced redacted blocker report because SDK packages are missing.
+- authorized fake readonly mode with `/home/dev/.secrets/medopl/v22/readonly-inventory.env`: pass, wrote redacted `.runtime` report and proved no mutation, COS object body read, kubectl, build or push.
 
 ## Cannot Claim
 
