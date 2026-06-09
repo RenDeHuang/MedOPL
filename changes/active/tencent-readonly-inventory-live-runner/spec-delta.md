@@ -16,6 +16,8 @@ Machine boundary: `real-cloud-readiness` manifest membership and runner behavior
 
 - `scripts/v22-tencent-readonly-inventory-runner.mjs`.
 - `tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-live-runner-local-gate.mjs`.
+- `tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-official-sdk-shape.mjs`.
+- `tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-official-sdk-wrapper-local-gate.mjs`.
 
 This does not change Package C or Package D:
 
@@ -26,12 +28,14 @@ This does not change Package C or Package D:
 Current live readiness state:
 
 - local runner gate is implemented.
-- official SDK cloud calls are not implemented in this package.
-- missing SDK dependencies produce a redacted blocker report instead of a false success.
+- Tencent/COS SDK dependencies are root cloud tooling dependencies; Portal packages do not own them.
+- official SDK loader requires `--enable-official-sdk-loader` in addition to live readonly authorization.
+- official SDK wrapper can call readonly account, TKE, billing, tag and COS metadata-only methods.
+- missing SDK dependencies, permission gaps or missing COS metadata probes produce a redacted blocker report instead of a false success.
 
 ## CANNOT-CLAIM
 
-- live Tencent inventory completed.
-- real TKE / COS / billing inventory evidence exists.
+- Portal ledger mapping completed.
+- COS metadata inventory completed without explicit metadata probes.
 - production cloud is online.
 - create/release or deploy is authorized.

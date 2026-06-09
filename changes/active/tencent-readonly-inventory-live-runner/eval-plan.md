@@ -14,6 +14,7 @@ Run:
 
 ```bash
 node tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-live-runner-local-gate.mjs
+node tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-official-sdk-wrapper-local-gate.mjs
 npm run test:real-cloud-readiness
 npm run gate:review
 ```
@@ -24,14 +25,16 @@ Authorized readonly attempt:
 node scripts/v22-tencent-readonly-inventory-runner.mjs \
   --live-readonly \
   --confirm-current-session-authorization \
+  --enable-official-sdk-loader \
   --sdk-mode tencent-official-sdk-readonly \
   --secret-file /home/dev/.secrets/medopl/v22/readonly-inventory.env \
   --report-dir .runtime/v22-tencent-readonly-inventory
 ```
 
-Expected current result if SDK packages are absent:
+Expected current result:
 
-- no cloud call.
+- official SDK packages load only after `--enable-official-sdk-loader`.
+- readonly SDK calls may run only for Describe/List/Get/Head style APIs after allowlist validation.
 - no mutation.
-- redacted blocker report with `tencentcloud_sdk_missing` and/or `cos_sdk_missing`.
+- redacted blocker report if SDK packages, readonly API permission, TKE/COS/billing/tag access or COS metadata probe evidence is incomplete.
 - report remains under `.runtime` and out of git.

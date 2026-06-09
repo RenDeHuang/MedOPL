@@ -96,6 +96,23 @@ try {
   assert.notEqual(mutationVerb.status, 0, "runner_must_reject_mutation_api_allowlist");
   assert(mutationVerb.stderr.includes("readonly_allowed_api_contains_forbidden_verb:CreateCluster"), "mutation_verb_reason");
 
+  const officialWithoutLoader = run([
+    "--live-readonly",
+    "--confirm-current-session-authorization",
+    "--sdk-mode",
+    "tencent-official-sdk-readonly",
+    "--secret-file",
+    envFile,
+    "--report-dir",
+    reportDir,
+  ]);
+  assert.notEqual(officialWithoutLoader.status, 0, "official_sdk_mode_must_fail_without_explicit_loader_enable");
+  assert(
+    officialWithoutLoader.stderr.includes("readonly_official_sdk_loader_explicit_enable_required"),
+    "official_loader_gate_reason",
+  );
+  assertNoSensitiveOutput(officialWithoutLoader.stdout + officialWithoutLoader.stderr, "official_without_loader_output");
+
   const accepted = run([
     "--live-readonly",
     "--confirm-current-session-authorization",

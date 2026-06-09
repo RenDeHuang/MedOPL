@@ -4,6 +4,8 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 
 const repoRoot = path.resolve(".");
+const rootPackagePath = path.join(repoRoot, "package.json");
+const rootLockPath = path.join(repoRoot, "package-lock.json");
 const portalRoot = path.join(repoRoot, "services", "portal");
 const portalPackagePath = path.join(portalRoot, "package.json");
 const portalLockPath = path.join(portalRoot, "package-lock.json");
@@ -51,29 +53,47 @@ function hasFunction(value, methodName) {
   return typeof value?.prototype?.[methodName] === "function";
 }
 
+const rootPackage = JSON.parse(await readFile(rootPackagePath, "utf8"));
+const rootLock = JSON.parse(await readFile(rootLockPath, "utf8"));
 const portalPackage = JSON.parse(await readFile(portalPackagePath, "utf8"));
-const lock = JSON.parse(await readFile(portalLockPath, "utf8"));
+const portalLock = JSON.parse(await readFile(portalLockPath, "utf8"));
+assert.equal(rootPackage.dependencies?.[tencentSdkPackageName], "^4.1.245", "root_cloud_tooling_must_own_tencentcloud_sdk_nodejs_dependency");
+assert.equal(rootPackage.dependencies?.[cosSdkPackageName], "^2.15.4", "root_cloud_tooling_must_own_cos_nodejs_sdk_v5_dependency");
+assert.equal(
+  rootLock.packages?.[""]?.dependencies?.[tencentSdkPackageName],
+  "^4.1.245",
+  "root_lock_must_record_tencentcloud_sdk_nodejs_dependency",
+);
+assert.equal(
+  rootLock.packages?.[""]?.dependencies?.[cosSdkPackageName],
+  "^2.15.4",
+  "root_lock_must_record_cos_nodejs_sdk_v5_dependency",
+);
+assert.equal(rootLock.packages?.[`node_modules/${tencentSdkPackageName}`]?.version, "4.1.245", "root_lock_must_pin_tencentcloud_sdk_nodejs_shape");
+assert.equal(rootLock.packages?.[`node_modules/${cosSdkPackageName}`]?.version, "2.15.4", "root_lock_must_pin_cos_nodejs_sdk_v5_shape");
 assert.equal(portalPackage.dependencies?.[tencentSdkPackageName], undefined, "portal_package_must_not_own_tencentcloud_sdk_nodejs");
 assert.equal(portalPackage.devDependencies?.[tencentSdkPackageName], undefined, "portal_dev_package_must_not_own_tencentcloud_sdk_nodejs");
 assert.equal(portalPackage.dependencies?.[cosSdkPackageName], undefined, "portal_package_must_not_own_cos_nodejs_sdk_v5");
 assert.equal(portalPackage.devDependencies?.[cosSdkPackageName], undefined, "portal_dev_package_must_not_own_cos_nodejs_sdk_v5");
+assert.equal(portalLock.packages?.[""]?.dependencies?.[tencentSdkPackageName], undefined, "portal_lock_must_not_own_tencentcloud_sdk_nodejs_dependency");
+assert.equal(portalLock.packages?.[""]?.dependencies?.[cosSdkPackageName], undefined, "portal_lock_must_not_own_cos_nodejs_sdk_v5_dependency");
 
 let tencentSdkRoot;
 let cosSdkRoot;
 let tencentInstalled = false;
 let cosInstalled = false;
-let tencentPackageVersion = lock.packages[`node_modules/${tencentSdkPackageName}`]?.version || "";
-let cosPackageVersion = lock.packages[`node_modules/${cosSdkPackageName}`]?.version || "";
+let tencentPackageVersion = rootLock.packages[`node_modules/${tencentSdkPackageName}`]?.version || "";
+let cosPackageVersion = rootLock.packages[`node_modules/${cosSdkPackageName}`]?.version || "";
 try {
-  const requireFromPortal = createRequire(path.join(portalRoot, "package.json"));
-  tencentSdkRoot = moduleRoot(requireFromPortal(tencentSdkPackageName));
+  const requireFromRoot = createRequire(rootPackagePath);
+  tencentSdkRoot = moduleRoot(requireFromRoot(tencentSdkPackageName));
   tencentInstalled = true;
-  const installedTencentPackage = requireFromPortal(`${tencentSdkPackageName}/package.json`);
+  const installedTencentPackage = requireFromRoot(`${tencentSdkPackageName}/package.json`);
   tencentPackageVersion = installedTencentPackage.version || tencentPackageVersion;
 
-  cosSdkRoot = moduleRoot(requireFromPortal(cosSdkPackageName));
+  cosSdkRoot = moduleRoot(requireFromRoot(cosSdkPackageName));
   cosInstalled = true;
-  const installedCosPackage = requireFromPortal(`${cosSdkPackageName}/package.json`);
+  const installedCosPackage = requireFromRoot(`${cosSdkPackageName}/package.json`);
   cosPackageVersion = installedCosPackage.version || cosPackageVersion;
 } catch (error) {
   if (error?.code !== "MODULE_NOT_FOUND") {
@@ -127,10 +147,14 @@ const result = {
     },
   },
   checked: [
+    "root_cloud_tooling_owns_tencentcloud_sdk_nodejs",
+    "root_cloud_tooling_owns_cos_nodejs_sdk_v5",
     "portal_package_does_not_own_tencentcloud_sdk_nodejs",
     "portal_package_does_not_own_cos_nodejs_sdk_v5",
-    lock.packages?.[`node_modules/${tencentSdkPackageName}`] ? "portal_lock_still_has_tencentcloud_sdk_shape_for_cleanup_lane" : "portal_lock_has_no_tencentcloud_sdk_shape",
-    lock.packages?.[`node_modules/${cosSdkPackageName}`] ? "portal_lock_still_has_cos_sdk_shape_for_cleanup_lane" : "portal_lock_has_no_cos_sdk_shape",
+    "portal_lock_does_not_own_tencentcloud_sdk_nodejs",
+    "portal_lock_does_not_own_cos_nodejs_sdk_v5",
+    "root_lock_has_tencentcloud_sdk_shape",
+    "root_lock_has_cos_sdk_shape",
     "does_not_read_secret_or_call_cloud",
     tencentInstalled ? "sts_cvm_tke_billing_tag_client_shape_present" : "tencent_sdk_package_not_installed_in_this_worktree",
     tencentInstalled ? "tag_v20180813_get_resources_present" : "tag_method_shape_deferred_until_local_dependency_install",

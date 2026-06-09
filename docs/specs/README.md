@@ -2521,8 +2521,8 @@ Cloud 路径必须同时满足双门禁：
 - 是否允许读 secret: 否。
 - 是否允许真实云: 否。
 - required contracts: `spec:v22-tencent-readonly-inventory-boundary`
-- required smoke: `future-authorized-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs`
-- success status: official SDK wrapper shell merged with static smoke
+- required smoke: `future-authorized-test-v22-tencent-readonly-inventory-official-sdk-wrapper-local-gate.mjs`
+- success status: official SDK wrapper merged with dependency-injected local gate
 - blocker 回流到谁: A 修 wrapper，B 审查 raw SDK exposure
 - 什么时候必须停下来问用户: 需要安装依赖、读取 secret、启用真实 SDK fetch、或改变 create/release mutation 边界
 
@@ -2536,8 +2536,8 @@ Cloud 路径必须同时满足双门禁：
 - 是否允许读 secret: 否。
 - 是否允许真实云: 否。
 - required contracts: `spec:v22-tencent-readonly-inventory-boundary`
-- required smoke: `future-authorized-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs`
-- success status: dependency loader contract/smoke merged; loader fail-closed by default
+- required smoke: `future-authorized-test-v22-tencent-readonly-inventory-live-runner-local-gate.mjs`, `future-authorized-test-v22-tencent-readonly-inventory-official-sdk-shape.mjs`
+- success status: dependency loader contract/smoke merged; loader fail-closed by default unless `--enable-official-sdk-loader` is explicit
 - blocker 回流到谁: A 修 loader，B 审查 package diff 和默认 gate
 - 什么时候必须停下来问用户: 需要新增或升级 npm 依赖、修改 lockfile、加载真实 SDK package、或启用 live readonly
 
@@ -2551,7 +2551,7 @@ Cloud 路径必须同时满足双门禁：
 - 是否允许读 secret: 否。
 - 是否允许真实云: 否。
 - required contracts: `spec:v22-tencent-readonly-inventory-boundary`, `spec:v22-cloud-onboarding-workflow-boundary`
-- required smoke: `future-authorized-test-v22-tencent-readonly-inventory-boundary.mjs`, `future-authorized-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs`
+- required smoke: `future-authorized-test-v22-tencent-readonly-inventory-boundary.mjs`, `future-authorized-test-v22-tencent-readonly-inventory-live-runner-local-gate.mjs`
 - success status: check-config blocks missing RUN gate, mutation API, read-all secret, and non-redacted output
 - blocker 回流到谁: A 修 check-config，B 审查 gate
 - 什么时候必须停下来问用户: 静态检查需要读取真实 secret 文件、source env、调用真实云或修改 deploy
@@ -2566,7 +2566,7 @@ Cloud 路径必须同时满足双门禁：
 - 是否允许读 secret: 否。
 - 是否允许真实云: 否。
 - required contracts: `spec:v22-tencent-readonly-inventory-boundary`, `spec:v22-tencent-tc3-diagnostic-cleanup-plan`
-- required smoke: `future-authorized-test-v22-tencent-readonly-inventory-official-sdk-wrapper.mjs`, `future-authorized-test-v22-tencent-readonly-inventory-official-sdk-loader.mjs`, `future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs`
+- required smoke: `future-authorized-test-v22-tencent-readonly-inventory-official-sdk-wrapper-local-gate.mjs`, `future-authorized-test-v22-tencent-readonly-inventory-live-runner-local-gate.mjs`, `future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs`
 - success status: default gate confirms official SDK wrapper path is default and all live paths are opt-in
 - blocker 回流到谁: B blocks; A fixes default gate or wrapper
 - 什么时候必须停下来问用户: default behavior would read secret, call cloud, install dependency, push, merge, or change deploy
@@ -2581,7 +2581,7 @@ Cloud 路径必须同时满足双门禁：
 - 是否允许读 secret: 是，但仅限用户授权的 readonly secret allowlist。
 - 是否允许真实云: 是，但仅限用户授权的 readonly live。
 - required contracts: `spec:v22-tencent-readonly-inventory-boundary`, `spec:v22-production-cloud-topology-boundary`
-- required smoke: `future-authorized-test-v22-tencent-readonly-inventory-bridge-local-gate.mjs`, check-config output；真实 readonly inventory live runner 已退出 active repo executable surface，后续真实云 readonly 必须重新开 future-authorized boundary。
+- required smoke: `future-authorized-test-v22-tencent-readonly-inventory-live-runner-local-gate.mjs`, check-config output；真实 readonly inventory live runner 只允许在当前会话显式授权后运行，证据只写 `.runtime`。
 - success status: redacted readonly inventory report generated outside git
 - blocker 回流到谁: user decides retry/stop; A fixes config-only blockers; B reviews safety blockers
 - 什么时候必须停下来问用户: before reading secret, before real cloud call, before changing region/API allowlist, on permission/limit/account mismatch, before sharing report contents
@@ -10235,21 +10235,21 @@ official SDK wrapper 仍必须 obey readonly allowlist、secret allowlist、reda
 
 禁止 raw SDK client 泄露到业务层。禁止通用 call(apiName, params)。禁止 mutation API。SDK raw response 不得进入 stdout/report/Portal payload。
 
-新增或升级 tencentcloud-sdk-nodejs / cos-nodejs-sdk-v5 依赖必须有用户授权，并由 B 审查 package diff。Package A SDK dependency diff 属于 cloud-lane candidate 事实，不得写成 trunk 当前默认可执行事实；默认合同 smoke 不加载真实 SDK package、不读 secret、不打云。
+新增或升级 tencentcloud-sdk-nodejs / cos-nodejs-sdk-v5 依赖必须有用户授权，并由 B 审查 package diff。Package A SDK dependency diff 属于 cloud-lane candidate 事实，不得写成 trunk 默认会自动打云的事实；默认合同 smoke 不读 secret、不打云。当前 cloud-lane candidate 将 SDK 放在 repo root cloud tooling 依赖，Portal package 不拥有 Tencent/COS SDK。
 
 ## Implementation Note: Official SDK Dependency Loader
 
-official SDK dependency loader 属于 readonly inventory 实现层，只负责把 `tencentcloud-sdk-nodejs` package shape 包成 `createTencentReadonlyInventoryOfficialSdkModules` 可消费的 factories。
+official SDK dependency loader 属于 readonly inventory 实现层，只负责把 `tencentcloud-sdk-nodejs` / `cos-nodejs-sdk-v5` package shape 包成 `createTencentReadonlyInventoryOfficialSdkModules` 可消费的 factories。
 
-loader 不读取 process.env，不读取 secret 文件，不 source env，不调用真实腾讯云。runner 只有在 `--live-readonly`、`--sdk-mode tencent-official-sdk-readonly`、`--enable-official-sdk-loader`、RUN gate 开启、regions 非空且 readonly API allowlist 通过后，才允许加载 official SDK package。默认未显式开启时必须 fail-closed，不加载 SDK package，不打云。
+loader 不读取 process.env，不 source env，不暴露 raw SDK client。runner 只有在 `--live-readonly`、`--confirm-current-session-authorization`、`--sdk-mode tencent-official-sdk-readonly`、`--enable-official-sdk-loader`、RUN gate 开启、regions 非空且 readonly API allowlist 通过后，才允许读取用户授权的 readonly secret 文件、加载 official SDK package 并调用真实只读 SDK。默认未显式开启时必须 fail-closed，不加载 SDK package，不打云。
 
 loader 不暴露 raw SDK client，不暴露通用 call(apiName, params)，不暴露 Create/Delete/Modify/Run/Terminate/Put/Update/Attach/Detach/Tag mutation。SDK raw response、endpoint、authorization header、SecretId/SecretKey、token、objectKey/storageKey/cosPrefix/signedUrl 不得进入 stdout、report、Portal payload 或 evidence。
 
-Implementation shape note: `tencentcloud-sdk-nodejs` covers the readonly account/CVM/TKE/billing/tag client shapes used by this inventory path, but does not provide COS bucket/object metadata access. Full cloud connection therefore requires `cos-nodejs-sdk-v5` or a dedicated COS implementation path. Non-COS readonly allowlists must not initialize or be blocked by COS client shape, while COS-enabled allowlists must fail closed with a sanitized diagnostic if the COS SDK shape is missing.
+Implementation shape note: `tencentcloud-sdk-nodejs` covers the readonly account/CVM/TKE/billing/tag client shapes used by this inventory path, but does not provide COS bucket/object metadata access. Full cloud connection therefore requires `cos-nodejs-sdk-v5` or a dedicated COS implementation path. COS bucket list is metadata-only; COS object metadata HEAD requires explicit metadata probes and must fail closed with sanitized blockers when probes are missing. The runner never reads COS object bodies.
 
 ## COS SDK Dependency Decision
 
-`cos-nodejs-sdk-v5` is part of the future authorized SDK dependency package for the cloud connection loop. Package A installation is cloud-lane candidate evidence, not a current trunk executable default.
+`cos-nodejs-sdk-v5` is part of the future authorized SDK dependency package for the cloud connection loop. Package A root dependency installation is cloud-lane candidate evidence, not a default unauthorized live execution path.
 
 Before a full readonly cloud report can be accepted, shape smoke must prove:
 
@@ -10258,7 +10258,7 @@ Before a full readonly cloud report can be accepted, shape smoke must prove:
 - COS object bodies are not read.
 - bucket policy, objectKey, storageKey, cosPrefix and signedUrl do not enter stdout, report, Portal payload, evidence or git.
 
-If `cos-nodejs-sdk-v5` is not installed or COS shape is unavailable, the official readonly path can still run a non-COS account/TKE/billing/tag report, but it cannot mark the full storage/file-space connection complete.
+If `cos-nodejs-sdk-v5` is not installed, COS shape is unavailable, or explicit metadata probes are missing, the official readonly path can still run a non-COS account/TKE/billing/tag report, but it cannot mark the full storage/file-space connection complete.
 
 cleanup 策略：
 
@@ -10267,7 +10267,7 @@ cleanup 策略：
 - TC3 可保留为 isolated diagnostic fixture。
 - TC3 不能作为 create/release 或默认 readonly live 主路径。
 
-cloud-lane candidate 已记录 SDK dependency / loader / readonly client 连接形状；当前 trunk 默认状态是 `defaultExecutable=false`、`readsSecretNow=false`、`implementsRealCloudCallNow=false`。调用真实 readonly 云 API 只能发生在用户当前会话显式授权的 live readonly 路径中，且只证明 readonly connection 可生成脱敏审计摘要；它不证明 Portal canonical mapping 已完成，不允许 mutation 自动推进。本合同不删除 TC3、不改 create/release mutation 边界、不读取 mutation secret、不执行 mutation、不改 deploy、不 kubectl、不 merge、不 push。
+cloud-lane candidate 已记录 SDK dependency / loader / readonly client 连接形状；默认未授权状态仍是 `defaultExecutable=false`、`readsSecretNow=false`。调用真实 readonly 云 API 只能发生在用户当前会话显式授权的 live readonly 路径中，且只证明 readonly connection 可生成脱敏审计摘要；它不证明 Portal canonical mapping 已完成，不允许 mutation 自动推进。本合同不删除 TC3、不改 create/release mutation 边界、不读取 mutation secret、不执行 mutation、不改 deploy、不 kubectl、不 merge、不 push。
 
 ## Live Readonly Authorization Note
 
@@ -10311,7 +10311,7 @@ Live Bridge 是 readonly inventory 的授权运行入口，默认关闭。runner
   "installedSdkDependencies": [
     {
       "name": "tencentcloud-sdk-nodejs",
-      "version": "4.1.227"
+      "version": "4.1.245"
     },
     {
       "name": "cos-nodejs-sdk-v5",

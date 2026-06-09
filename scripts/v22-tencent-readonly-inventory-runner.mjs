@@ -2,6 +2,11 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
+import {
+  createTencentReadonlyInventoryOfficialSdkModules,
+  runTencentReadonlyInventoryOfficialSdk,
+} from "./lib/v22-tencent-readonly-inventory-official-sdk.mjs";
+
 const ALLOWED_SECRET_KEYS = new Set([
   "RUN_TENCENT_READONLY_INVENTORY",
   "TENCENT_READONLY_SECRET_ID",
@@ -44,6 +49,7 @@ function parseArgs(argv = process.argv.slice(2)) {
   const options = {
     liveReadonly: false,
     confirmAuthorization: false,
+    enableOfficialSdkLoader: false,
     sdkMode: "check-config",
     secretFile: "",
     reportDir: path.join(".runtime", "v22-tencent-readonly-inventory"),
@@ -55,6 +61,8 @@ function parseArgs(argv = process.argv.slice(2)) {
       options.liveReadonly = true;
     } else if (arg === "--confirm-current-session-authorization") {
       options.confirmAuthorization = true;
+    } else if (arg === "--enable-official-sdk-loader") {
+      options.enableOfficialSdkLoader = true;
     } else if (arg === "--sdk-mode") {
       options.sdkMode = argv[++index] || "";
     } else if (arg === "--secret-file") {
@@ -77,11 +85,12 @@ function usage() {
     "Usage:",
     "  node scripts/v22-tencent-readonly-inventory-runner.mjs --secret-file <path>",
     "  node scripts/v22-tencent-readonly-inventory-runner.mjs --live-readonly --confirm-current-session-authorization --sdk-mode fake-readonly --secret-file <path>",
+    "  node scripts/v22-tencent-readonly-inventory-runner.mjs --live-readonly --confirm-current-session-authorization --enable-official-sdk-loader --sdk-mode tencent-official-sdk-readonly --secret-file <path>",
     "",
     "Modes:",
     "  check-config                     default; never reads secrets or calls cloud",
     "  fake-readonly                    local gate; reads allowlisted env file and writes redacted report",
-    "  tencent-official-sdk-readonly    optional live path; fail-closed when SDK modules are unavailable",
+    "  tencent-official-sdk-readonly    optional live path; requires explicit official SDK loader enable",
   ].join("\n");
 }
 
@@ -207,6 +216,10 @@ function fakeResources(regions = []) {
 }
 
 async function officialSdkResources({ regions }) {
+  throw new Error("readonly_official_sdk_loader_explicit_enable_required");
+}
+
+async function officialSdkLoaderResources({ env, regions, allowedApis }) {
   let tencentRoot;
   let cosRoot;
   const blockers = [];
@@ -227,26 +240,27 @@ async function officialSdkResources({ regions }) {
     });
   }
   if (blockers.length) return { resources: [], blockers };
-  return {
-    resources: regions.flatMap((region) => [
-      {
-        region,
-        resourceType: "officialSdkShapeSummary",
-        resourceStatus: "sdk_modules_available",
-        tagCompleteness: "not_checked_without_live_client_call",
-        portalMappingStatus: "not_checked_without_portal_ledger",
-        tencentSdkLoaded: Boolean(tencentRoot),
-        cosSdkLoaded: Boolean(cosRoot),
-        readsObjectBody: false,
-      },
-    ]),
-    blockers: [
-      {
-        code: "official_live_client_not_implemented",
-        message: "official SDK modules are available, but this runner still requires a reviewed client wrapper before real cloud calls",
-      },
-    ],
-  };
+  const modules = createTencentReadonlyInventoryOfficialSdkModules({
+    tencentSdkRoot: tencentRoot,
+    cosSdkRoot: cosRoot,
+    defaultRegion: regions[0],
+    credentials: {
+      secretId: value(env, "TENCENT_READONLY_SECRET_ID"),
+      secretKey: value(env, "TENCENT_READONLY_SECRET_KEY"),
+    },
+  });
+  return runTencentReadonlyInventoryOfficialSdk({
+    modules,
+    regions,
+    expectedAccountId: value(env, "TENCENT_READONLY_ACCOUNT_ID"),
+    billingMonth: new Date().toISOString().slice(0, 7),
+    cosMetadataProbes: cosMetadataProbesFromAllowlist(allowedApis),
+  });
+}
+
+function cosMetadataProbesFromAllowlist(allowedApis = []) {
+  if (!allowedApis.includes("HeadObject")) return [];
+  return [];
 }
 
 async function main() {
@@ -266,7 +280,11 @@ async function main() {
   if (options.sdkMode === "fake-readonly") {
     resources = fakeResources(regions);
   } else if (options.sdkMode === "tencent-official-sdk-readonly") {
-    ({ resources, blockers } = await officialSdkResources({ regions }));
+    if (!options.enableOfficialSdkLoader) {
+      ({ resources, blockers } = await officialSdkResources({ regions }));
+    } else {
+      ({ resources, blockers } = await officialSdkLoaderResources({ env, regions, allowedApis }));
+    }
   } else {
     throw new Error(`readonly_sdk_mode_unsupported:${options.sdkMode}`);
   }

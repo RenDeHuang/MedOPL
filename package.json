@@ -1,4 +1,5 @@
 {
+  "name": "platform-v22",
   "private": true,
   "type": "module",
   "scripts": {
@@ -35,5 +36,9 @@
     "local:services:status": "node scripts/v22-local-services.mjs status --json",
     "local:services:logs": "node scripts/v22-local-services.mjs logs --json",
     "local:services:verify": "node scripts/v22-local-services.mjs verify --dry-run --json"
+  },
+  "dependencies": {
+    "cos-nodejs-sdk-v5": "^2.15.4",
+    "tencentcloud-sdk-nodejs": "^4.1.245"
   }
 }
