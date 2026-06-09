@@ -1662,6 +1662,7 @@
       "commands": [
         "node tests/future-authorized/cloud/future-authorized-test-v22-tencent-official-sdk-provider-strategy-contract.mjs",
         "node tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-boundary.mjs",
+        "node tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-live-runner-local-gate.mjs",
         "node tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-official-sdk-shape.mjs",
         "node tests/future-authorized/cloud/future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs"
       ]
