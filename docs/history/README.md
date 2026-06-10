@@ -3925,7 +3925,7 @@ next_cursor: `real-cloud-authorization-boundary`
 
 ### 2026-06-10 cleanup/v22-governance-closeout
 
-Status: `authoring / local-gated`
+Status: `landed / pushed / post-push verified`
 
 Branch: `cleanup/v22-governance-closeout`
 
@@ -3979,6 +3979,69 @@ Can-claim:
 Cannot-claim:
 
 - Production readiness, real-cloud readiness, Package C live create/release, TKE/NAT/CBS/COS/PostgreSQL creation, workload deployment, production billing readiness, secret read, provider operation, deploy, kubectl, build/push or live-test authorization.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+landed_commit: `d1d5f2c9edf6beadf263ad2b7cd91ae59775bf56`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `d1d5f2c9edf6beadf263ad2b7cd91ae59775bf56`.
+- `npm run verify`: pass before post-merge closeout; post-merge closeout then updated this history and machine cursor to the landed governance commit.
+- `npm run gate:review`: pass.
+- `npm run verify:repo-hygiene`: pass.
+- `sentrux check .`: pass with quality `7171`.
+- `sentrux gate .`: pass with quality `6486 -> 7171`, cycles `0 -> 0`, god files `0 -> 0`.
+- No secret read, real cloud operation, live provider call, deploy, kubectl, build/push, live-test or upstream modification was performed.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-10 post-merge/v22-governance-closeout-closeout
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `post-merge/v22-governance-closeout-closeout`
+
+Base trunk HEAD: `d1d5f2c9edf6beadf263ad2b7cd91ae59775bf56`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Closed the post-merge cursor after landing `cleanup/v22-governance-closeout`.
+- Synced `docs/active/README.md`, `docs/delivery/README.md`, this history section and `tests/fixtures/v22/goal-current.json` to the landed governance commit.
+- Kept the execution cursor at `real-cloud-authorization-boundary`.
+
+Verification:
+
+- `npm run closeout:check`: pass before this closeout commit.
+- `node tests/contract/contract-test-v22-current-state-index-loop.mjs`: pass before this closeout commit.
+
+Can-claim:
+
+- Governance closeout landed on `origin/recovery/platform-v22-trunk`.
+- Post-merge closeout fields now point at the landed governance commit.
+
+Cannot-claim:
+
+- Production readiness, real-cloud readiness, Package C live create/release, secret read, provider operation, deploy, kubectl, build/push or live-test authorization.
+
+landed_commit: `d1d5f2c9edf6beadf263ad2b7cd91ae59775bf56`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `d1d5f2c9edf6beadf263ad2b7cd91ae59775bf56`.
+- `npm run closeout:check`: pass.
+- `node tests/contract/contract-test-v22-current-state-index-loop.mjs`: pass.
+- No secret read, real cloud operation, live provider call, deploy, kubectl, build/push, live-test or upstream modification was performed.
+
+post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 

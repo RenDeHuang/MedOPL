@@ -9,7 +9,7 @@ Status: archived
 
 ## Commits
 
-- pending landing commit on `cleanup/v22-governance-closeout`
+- `d1d5f2c9edf6beadf263ad2b7cd91ae59775bf56` `cleanup: close repo governance surface`
 
 ## Verification
 
