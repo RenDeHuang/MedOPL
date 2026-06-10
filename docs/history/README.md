@@ -3866,4 +3866,45 @@ post_merge_closeout: `completed`
 next_cursor: `real-cloud-authorization-boundary`
 
 
+### 2026-06-10 feat/v22-tke-bootstrap-preflight
+
+Status: `ready_for_landing_review`
+
+Branch: `feat/v22-tke-bootstrap-preflight`
+
+Base trunk HEAD: `97a484285b40d09722b8eb1769b20b61fbb8d91b`
+
+Model: `gpt-5.4`
+
+Active change package: `changes/active/tke-bootstrap-preflight`
+
+Scope:
+
+- Added local-only TKE bootstrap preflight after Package C dry-run and before any Package C live mutation.
+- Added `scripts/v22-tke-bootstrap-preflight-plan.mjs` and a local gate proving no secret read, no Tencent Cloud call, no kubectl, no deploy, no build/push and no production readiness claim.
+- Registered the preflight gate in `cloud-future-authorized`.
+- Updated durable specs to keep the cloud shape as shared cluster + layered isolation + premium dedicated pool future phase, with PostgreSQL / COS / CBS as required data plane and Redis non-required.
+- Kept Package C live create/release blocked until TKE foundation is created, readonly inventory observes cluster/node pool identifiers and the user explicitly authorizes live mutation.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-tke-bootstrap-preflight-local-gate.mjs`: pass.
+- `npm run test:cloud-future-authorized`: pass.
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: pass.
+- `node tests/contract/contract-test-v22-spec-eval-traceability.mjs`: pass.
+- `npm run gate:review`: pass.
+- `npm run closeout:check`: pass.
+- `git diff --check -- docs specs changes tests scripts package.json package-lock.json`: pass.
+
+Can-claim:
+
+- The repo has a local TKE bootstrap preflight authoring branch ready for landing review.
+- The preflight states the first cloud foundation checklist and exact Package C env fields: `TENCENT_MUTATION_TKE_CLUSTER_ID` and `TENCENT_MUTATION_TKE_NODE_POOL_ID`.
+
+Cannot-claim:
+
+- TKE, NAT, CBS, COS, PostgreSQL, namespaces, workloads or node pools have been created.
+- Package C live mutation is authorized.
+- Production cloud, production runtime, production billing, deploy, kubectl, build/push or live-test is complete.
+
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。

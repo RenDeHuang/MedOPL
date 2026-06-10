@@ -21,9 +21,10 @@
   "current_blockers": [
     "real_cloud_authorization_boundary_requires_explicit_user_authorization_before_secret_provider_cloud_deploy_kubectl_build_push_or_live_test",
     "precloud_deployable_rc_and_node_backend_physical_removal_are_local_precloud_evidence_not_production_or_real_cloud_evidence",
-    "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation"
+    "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
+    "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_node_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package B readonly inventory, TC3 diagnostic cleanup and Package C dry-run create/release plan have landed and pushed at a3f78871f4a8310ee4b571ff47579137728f362a. The repo now has a local dry-run Package C plan under cloud-future-authorized, but Package C live create/release remains blocked: mutation execution is not authorized and package-c mutation env still lacks TKE cluster/node pool identifiers. The current cursor remains real-cloud-authorization-boundary and does not authorize secret/provider/cloud/deploy/kubectl/build-push/live-test work.",
+  "current_problem": "Package B readonly inventory, TC3 diagnostic cleanup and Package C dry-run create/release plan have landed and pushed at a3f78871f4a8310ee4b571ff47579137728f362a. The repo now has a local dry-run Package C plan under cloud-future-authorized, but Package C live create/release remains blocked: mutation execution is not authorized, TKE foundation has not been created/observed, and package-c mutation env still lacks TKE cluster/node pool identifiers. The current authoring package tke-bootstrap-preflight adds a local-only checklist for this gap and does not authorize secret/provider/cloud/deploy/kubectl/build-push/live-test work.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -159,7 +160,7 @@
         "local-portal-opl-delivery-rc",
         "real-cloud-authorization-boundary"
       ],
-      "history_summary": "Local AI MVP baseline, real-cloud vision docs, real-cloud readiness lane, legacy runtime cloud cleanup, Package B readonly inventory, TC3 diagnostic cleanup and Package C dry-run create/release plan landed as pre-cloud / scoped local evidence. Package C live create/release remains authorization-required.",
+      "history_summary": "Local AI MVP baseline, real-cloud vision docs, real-cloud readiness lane, legacy runtime cloud cleanup, Package B readonly inventory, TC3 diagnostic cleanup and Package C dry-run create/release plan landed as pre-cloud / scoped local evidence. The current tke-bootstrap-preflight authoring package keeps missing TKE foundation local-only; Package C live create/release remains authorization-required.",
       "closed_at": "2026-06-08",
       "landed_commit": "a3f78871f4a8310ee4b571ff47579137728f362a"
     }
@@ -198,6 +199,8 @@
       "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
       "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
       "node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk --json",
+      "node tests/future-authorized/cloud/future-authorized-test-v22-tke-bootstrap-preflight-local-gate.mjs",
+      "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json",
       "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
       "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
       "git diff --check -- docs specs changes tests scripts package.json",
@@ -209,6 +212,7 @@
       "docs/**/*.md",
       "specs/**/*.md",
       "changes/active/real-cloud-authorization-boundary/**",
+      "changes/active/tke-bootstrap-preflight/**",
       "changes/archive/**",
       "tests/**/*.mjs",
       "tests/fixtures/v22/*.json",

@@ -79,6 +79,7 @@ Node Portal backend physical removal: `services/portal/src` 已物理清退；�
 | [spec:v22-tencent-readonly-inventory-boundary](#spec-v22-tencent-readonly-inventory-boundary) | `v22-tencent-readonly-inventory-boundary` |
 | [spec:v22-tencent-readonly-quote-provider-boundary](#spec-v22-tencent-readonly-quote-provider-boundary) | `v22-tencent-readonly-quote-provider-boundary` |
 | [spec:v22-tencent-tc3-diagnostic-cleanup-plan](#spec-v22-tencent-tc3-diagnostic-cleanup-plan) | `v22-tencent-tc3-diagnostic-cleanup-plan` |
+| [spec:v22-tke-bootstrap-preflight-boundary](#spec-v22-tke-bootstrap-preflight-boundary) | `v22-tke-bootstrap-preflight-boundary` |
 | [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary) | `v22-token-provider-boundary` |
 | [spec:v22-trace-metadata-boundary](#spec-v22-trace-metadata-boundary) | `v22-trace-metadata-boundary` |
 | [spec:v22-upstream-opl-boundary](#spec-v22-upstream-opl-boundary) | `v22-upstream-opl-boundary` |
@@ -135,12 +136,13 @@ Node Portal backend physical removal: `services/portal/src` 已物理清退；�
 - token/provider key: [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary), [spec:v22-user-credit-provider-boundary](#spec-v22-user-credit-provider-boundary), [spec:v22-opl-entry-preflight-auth-boundary](#spec-v22-opl-entry-preflight-auth-boundary)。每个用户使用自己的 gflabtoken API Key 作为模型调用凭证；Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普通登录字段；gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。
 - resource plan: [spec:v22-resource-plan-boundary](#spec-v22-resource-plan-boundary)。用户购买的是计算资源套餐和工作台能力，不是节点、节点池或云控制台资源；默认套餐使用 `shared_quota`，高级隔离套餐可使用 `dedicated_node_pool` 或 `dedicated_node`。
 - tenant/resource binding: [spec:v22-tenant-resource-binding-boundary](#spec-v22-tenant-resource-binding-boundary), [spec:v22-managed-environment-open-boundary](#spec-v22-managed-environment-open-boundary)
-- managed resource binding plan / mock snapshot: [spec:v22-managed-environment-open-boundary](#spec-v22-managed-environment-open-boundary)。当前只展示托管运行环境计划摘要，不代表真实资源已创建；后续真实腾讯云接入路线为 `mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> readonly/tencent inventory provider -> authorized/tencent create/release provider -> authorized/tencent deploy provider -> canary / QA / status update`，真实接入另开 feat/* 并单独授权。
+- managed resource binding plan / mock snapshot: [spec:v22-managed-environment-open-boundary](#spec-v22-managed-environment-open-boundary)。当前只展示托管运行环境计划摘要，不代表真实资源已创建；后续真实腾讯云接入路线为 `mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> TKE bootstrap preflight when no TKE foundation exists -> readonly/tencent inventory provider -> authorized/tencent create/release provider -> authorized/tencent deploy provider -> canary / QA / status update`，真实接入另开 feat/* 并单独授权。
 - readonly/tencent quote provider: [spec:v22-tencent-readonly-quote-provider-boundary](#spec-v22-tencent-readonly-quote-provider-boundary)。当前只定义 interface 和 mock adapter，输出 `regionLabel`、`planSpec`、`estimatedCost`、`quoteSource`、`quoteStatus`、`quoteSnapshotId`，不读取 secret，不调用真实腾讯云 API。
 - dry-run/tencent resource plan provider: [spec:v22-tencent-dry-run-resource-plan-provider-boundary](#spec-v22-tencent-dry-run-resource-plan-provider-boundary)。当前只基于 readonly quote 和 managed resource binding plan 生成不会执行的资源创建计划，输出 `resourcePlanId`、`resourceBindingId`、`planMode`、`resourceSteps`、`approvalRequired`、`releasePolicy`、`auditStatus`、`riskNotes` 等业务字段；`realResourceCreated` 和 `chargeApplied` 不属于 `resourcePlan` 顶层字段。
+- TKE bootstrap preflight: [spec:v22-tke-bootstrap-preflight-boundary](#spec-v22-tke-bootstrap-preflight-boundary)。当前只生成云底座 checklist，说明缺 TKE 时先创建/选择 VPC、私有子网、一个共享 TKE 集群、platform service pool、shared user compute pool，并把 premium dedicated pool 作为后续高级套餐隔离阶段；它不读取 secret、不调用真实云、不 kubectl、不 deploy、不 build/push、不创建资源。PostgreSQL / COS / CBS 是当前必需数据面，Redis 不进入必需项。
 - readonly/tencent inventory: [spec:v22-tencent-readonly-inventory-boundary](#spec-v22-tencent-readonly-inventory-boundary)。当前只定义真实云只读盘点合同，用来验证云上事实和 Portal 账本是否一致；未来 secret 文件只能 allowlist_only 读取 readonly inventory keys，不允许“一读全读”；仅允许 Describe/List/Get/Head 类只读 API，不读取 COS 对象正文，不调用 mutation API，不创建、删除、释放、扩缩容或改标签。
 - production cloud topology: [spec:v22-production-cloud-topology-boundary](#spec-v22-production-cloud-topology-boundary)。当前只是合同，定义 CLB / TKE / COS / CBS / NAT / PostgreSQL 在 MedOPL v22 生产拓扑中的角色，并区分 platform service node pool、shared user compute pool、dedicated user compute pool；不代表已部署、已接入或已验证，不读取 secret，不调用真实云，不改 deploy，不 kubectl，不 build/push，不创建/删除资源。普通用户产品语言不展示这些云资源名；region/VPC/subnet/security group/resource tag/cost allocation 后续进入 readonly inventory 和 deploy plan。
-- cloud onboarding workflow: [spec:v22-cloud-onboarding-workflow-boundary](#spec-v22-cloud-onboarding-workflow-boundary)。该 repo-tracked cloud onboarding workflow 合同把 official SDK provider strategy、wrapper、dependency loader、check-config、default gate、user-authorized readonly live、report review、TC3 cleanup、dry-run create/release、mutation wrapper、authorized live、deploy、Portal production integration 和 canary/QA/status update 定成业务推进顺序；它不替代 AGENTS.md，AGENTS.md 管 A/B/C/D 纪律和授权红线，本合同管业务推进顺序、阶段状态、blocker 回流和下一步任务包。
+- cloud onboarding workflow: [spec:v22-cloud-onboarding-workflow-boundary](#spec-v22-cloud-onboarding-workflow-boundary)。该 repo-tracked cloud onboarding workflow 合同把 official SDK provider strategy、wrapper、dependency loader、check-config、default gate、user-authorized readonly live、report review、TC3 cleanup、dry-run create/release、TKE bootstrap preflight、mutation wrapper、authorized live、deploy、Portal production integration 和 canary/QA/status update 定成业务推进顺序；它不替代 AGENTS.md，AGENTS.md 管 A/B/C/D 纪律和授权红线，本合同管业务推进顺序、阶段状态、blocker 回流和下一步任务包。
 - authorized/tencent create/release: [spec:v22-authorized-tencent-create-release-boundary](#spec-v22-authorized-tencent-create-release-boundary)。当前只定义真实创建/释放前的授权边界，覆盖基础套餐、Pro 套餐、自定义规格、共享 TKE 集群、共享用户计算池 + 硬 quota、namespace/quota、node pool class、COS 文件空间、7 天保护期、文件夹管理、T+1 分账标签和失败审计；标准套餐不是一用户一个 node pool，高级隔离套餐可以映射 `dedicated_node_pool`；7 天保护期只由存储资源 / 文件空间删除或独立欠费保留策略触发；不读取 secret，不调用真实腾讯云 API，不创建或释放真实资源。
 - authorized/tencent create/release implementation: [spec:v22-authorized-tencent-create-release-implementation-boundary](#spec-v22-authorized-tencent-create-release-implementation-boundary)。当前只定义后续真实 create/release implementation 前的授权、风控、失败回滚、费用保护和审计合同；默认风控上限不是默认开通规格，计算资源和存储资源生命周期分离，且风控可由 Portal 管理员按账号修改；不读取 secret，不调用真实腾讯云 API，不创建或释放真实资源。
 - authorized/tencent create/release execution: [spec:v22-authorized-tencent-create-release-execution-boundary](#spec-v22-authorized-tencent-create-release-execution-boundary)。当前只收敛真实变更资源执行前的 gate、mutation secret allowlist、资源生命周期、Portal ledger + 云标签双重校验、风控 override、冻结金额、120 分钟核对、T+1 COS 对账、回滚和 admin 审计边界；Package C 必须先写 compute allocation，再写 ResourceQuota / LimitRange / admission policy，超过 allocation 必须 fail-closed；readonly inventory 与 create/release mutation gate、secret 和 runner/bridge 必须分离；本合同不读取 mutation secret，不调用真实云，不执行真实 create/release。
@@ -403,7 +405,7 @@ six-step AI MVP readiness 完成后的唯一可声明状态是 `local_ai_mvp_rea
 
 ### Tencent Provider 合同包
 
-适用于 readonly/tencent quote provider、dry-run/tencent resource plan provider、readonly/tencent inventory、authorized/tencent create/release boundary、mock adapter、套餐估算、quote snapshot、不会执行的资源创建计划、真实云只读盘点和后续真实腾讯云接入前的授权边界。阶段路线：`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> readonly/tencent inventory -> authorized/tencent create/release -> authorized/tencent deploy -> canary / QA / status update`。Package C 负责计算/存储生命周期；Package D 不授权 Package C 的资源生命周期动作。
+适用于 readonly/tencent quote provider、dry-run/tencent resource plan provider、TKE bootstrap preflight、readonly/tencent inventory、authorized/tencent create/release boundary、mock adapter、套餐估算、quote snapshot、不会执行的资源创建计划、真实云只读盘点和后续真实腾讯云接入前的授权边界。阶段路线：`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> TKE bootstrap preflight when no TKE foundation exists -> readonly/tencent inventory -> authorized/tencent create/release -> authorized/tencent deploy -> canary / QA / status update`。Package C 负责计算/存储生命周期；Package D 不授权 Package C 的资源生命周期动作。
 
 订阅：
 
@@ -2631,7 +2633,22 @@ Cloud 路径必须同时满足双门禁：
 - blocker 回流到谁: A fixes plan, B reviews mutation leakage
 - 什么时候必须停下来问用户: dry-run plan wants to call real cloud, read mutation secret, alter ledger, or expose cloud console language to ordinary users
 
-### 10. mutation SDK wrapper
+### 10. TKE bootstrap preflight
+
+目标：当 Package C mutation env 缺少 TKE cluster/node pool identifiers 时，先把 operator 需要创建或选择的 TKE foundation 转成 local-only checklist，而不是填假值或直接执行 live mutation。
+
+- owner: A
+- 是否可并发: 是，可与 mutation wrapper contract 和 report review 并行；不得与真实云副作用并发。
+- 是否必须独立 worktree: 是。
+- 是否允许读 secret: 否。
+- 是否允许真实云: 否。
+- required contracts: `spec:v22-tke-bootstrap-preflight-boundary`, `spec:v22-production-cloud-topology-boundary`, `spec:v22-authorized-tencent-create-release-boundary`
+- required smoke: `future-authorized-test-v22-tke-bootstrap-preflight-local-gate.mjs`
+- success status: local preflight names target region/VPC, one shared TKE cluster, platform service pool, shared user compute pool, future premium dedicated pool, PostgreSQL / COS / CBS data plane and the exact Package C env fields to fill after readonly observation
+- blocker 回流到谁: A fixes preflight contract/code; user creates or authorizes creation of the cloud foundation; B reviews side-effect boundary
+- 什么时候必须停下来问用户: preflight would read secret, call real cloud, create/modify resource, run kubectl/deploy/build-push/live-test, or claim production readiness
+
+### 11. mutation SDK wrapper
 
 目标：定义 mutation SDK wrapper 的最小接口、独立 RUN gate、独立 mutation secret allowlist、operation budget 和 fail-closed behavior。
 
@@ -2646,7 +2663,7 @@ Cloud 路径必须同时满足双门禁：
 - blocker 回流到谁: A fixes wrapper, B reviews side-effect boundary
 - 什么时候必须停下来问用户: need mutation secret, real API, SDK dependency change, build/push, kubectl, or deploy change
 
-### 11. minimal authorized create/release live
+### 12. minimal authorized create/release live
 
 目标：在用户明确授权后，对最小资源集合执行真实 create/release live，并按 Portal ledger + cloud tags 双重校验、预算和回滚策略执行。
 
@@ -2661,7 +2678,7 @@ Cloud 路径必须同时满足双门禁：
 - blocker 回流到谁: user decides stop/retry; A fixes implementation; B reviews evidence before further mutation
 - 什么时候必须停下来问用户: before reading mutation secret, before each real mutation, on budget/ownership/tag mismatch, before retry, before rollback with side effect, before expanding scope
 
-### 12. production deploy execution
+### 13. production deploy execution
 
 目标：在用户明确授权后执行 production deploy/build/push/kubectl 路径，且只按已审查 deploy plan 执行。
 
@@ -2680,7 +2697,7 @@ Package D production deploy execution 必须订阅 `spec:v22-authorized-tencent-
 
 Package D 不授权 Package C 的资源生命周期动作：不得创建、删除、释放或扩缩容 TKE node pool，不得创建、删除、清空或扩容 COS bucket / prefix / object。Package D 禁止 `kubectl delete`，禁止 `DeleteNodePool`，禁止 `CreateNodePool`、`ScaleNodePool`、`ModifyNodePoolDesiredCapacityAboutAsg`，禁止删除 bucket/prefix/object，禁止跨 namespace 或 cluster-wide mutation。
 
-### 13. Portal production integration
+### 14. Portal production integration
 
 目标：将 Portal 生产路径接入已授权云事实，但普通用户仍只看到工作台资源、文件空间、预计费用、释放策略和审计状态。
 
@@ -3200,6 +3217,28 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
       "mustStopAndAskUserWhen": [
         "dry-run plan wants to call real cloud or read mutation secret",
         "dry-run plan would alter ledger or expose cloud console language to ordinary users"
+      ]
+    },
+    {
+      "name": "TKE bootstrap preflight",
+      "owner": "A",
+      "parallelizable": true,
+      "requiresIndependentWorktree": true,
+      "readsSecretAllowed": false,
+      "realCloudAllowed": false,
+      "requiredContracts": [
+        "docs/specs/README.md",
+        "docs/specs/README.md",
+        "docs/specs/README.md"
+      ],
+      "requiredSmoke": [
+        "tests/future-authorized/cloud/future-authorized-test-v22-tke-bootstrap-preflight-local-gate.mjs"
+      ],
+      "successStatus": "local preflight names TKE foundation and required Package C env fields without mutation",
+      "blockerReturnsTo": "A fixes preflight contract/code; user creates or authorizes cloud foundation; B reviews side-effect boundary",
+      "mustStopAndAskUserWhen": [
+        "preflight wants to read secret or call real cloud",
+        "preflight would create/modify resources, run kubectl/deploy/build-push/live-test, or claim production readiness"
       ]
     },
     {
@@ -3756,9 +3795,9 @@ Portal 工作空间可以展示 `managed resource binding plan / mock snapshot`�
 
 后续真实腾讯云接入路线必须按阶段推进：
 
-`mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> readonly/tencent inventory provider -> authorized/tencent create/release provider -> authorized/tencent deploy provider -> canary / QA / status update`
+`mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> TKE bootstrap preflight when no TKE foundation exists -> readonly/tencent inventory provider -> authorized/tencent create/release provider -> authorized/tencent deploy provider -> canary / QA / status update`
 
-等价 provider 路线：`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> readonly/tencent inventory -> authorized/tencent create/release -> authorized/tencent deploy -> canary / QA / status update`。
+等价 provider 路线：`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> TKE bootstrap preflight when no TKE foundation exists -> readonly/tencent inventory -> authorized/tencent create/release -> authorized/tencent deploy -> canary / QA / status update`。
 
 真实接入另开 feat/* 并单独授权。替换点是 provider adapter，不重做 Portal 用户闭环；真实创建、释放、报价、Ingress/TLS、kubeconfig、SecretId/SecretKey、token 和真实云资源操作均不属于当前合同层级。
 
@@ -7497,6 +7536,8 @@ TKE 内部节点池必须区分资源角色：
 
 production cloud topology 只定义“资源类别与职责”。readonly inventory 定义“如何只读盘点并脱敏输出”。authorized create/release 定义“何时允许真实创建或释放”。三者必须分离。
 
+TKE bootstrap preflight 位于 production cloud topology 和 Package C live mutation 之间。它只把缺失的 TKE foundation 转成 operator checklist 和后续需要回填的 env 字段，不替代 readonly inventory、deploy plan 或 authorized create/release。
+
 ## Non-Goals
 
 本合同明确非目标：
@@ -7582,6 +7623,81 @@ production cloud topology 只定义“资源类别与职责”。readonly invent
 }
 ```
 <!-- v22-production-cloud-topology-contract:end -->
+
+### spec:v22-tke-bootstrap-preflight-boundary
+
+Former leaf id: `v22-tke-bootstrap-preflight-boundary`
+Former title: v22 TKE Bootstrap Preflight Boundary
+
+本合同定义 Package C live create/release 之前的 TKE bootstrap preflight。当前只是本地 dry-run checklist，不代表 TKE、NAT、CBS、COS、PostgreSQL、namespace、workload 或 node pool 已创建。
+
+## Purpose
+
+TKE bootstrap preflight 用于回答“当前没有 TKE 时，下一步应该先开哪些云底座，以及开完后哪些字段可以进入 Package C mutation env”。
+
+Runner:
+
+- `scripts/v22-tke-bootstrap-preflight-plan.mjs`
+- `tests/future-authorized/cloud/future-authorized-test-v22-tke-bootstrap-preflight-local-gate.mjs`
+
+该 runner 只允许在 `--dry-run --confirm-no-real-cloud` 下生成 `.runtime/v22-cloud-bootstrap/<operation-id>-preflight.json`。它拒绝 `--secret-file`、`--live`、`--execute`、`--apply`、`--mutate`、`--deploy`、`--kubectl`、`--build` 和 `--push`。当前 runner 不读取 `package-c-mutation.env`，不读取 mutation secret，不调用腾讯云，不写 Portal ledger，不扣费，不读取 COS object body。
+
+## Required Foundation Shape
+
+- one TKE cluster in the target region and VPC.
+- platform service node pool for Portal, Gateway, Runtime Bridge, worker and platform services.
+- shared user compute pool for standard workspace runtime workload.
+- premium dedicated pool is a later paid isolation phase, not required for the first canary.
+- PostgreSQL / COS / CBS are the required data plane for Portal canonical store, file space and node or volume storage.
+- Redis is not required by the current production data plane.
+
+Kubernetes controls must include Namespace, RBAC, ResourceQuota, LimitRange, NetworkPolicy, Pod Security, admission policy, taints/tolerations, node selector and labels. The preflight follows the Kubernetes official multi-tenancy model as a local contract lower bound; it does not create those controls.
+
+## Required Env Outputs
+
+After TKE is created and readonly inventory observes the cluster/node pool, the operator may fill only these Package C mutation fields for the next authorization request:
+
+- `TENCENT_MUTATION_TKE_CLUSTER_ID`
+- `TENCENT_MUTATION_TKE_NODE_POOL_ID`
+
+Filling these fields does not authorize live mutation. Package C live create/release still requires explicit current-session authorization, mutation secret allowlist, API allowlist, budget, evidence sink and rollback owner.
+
+## Contract Data
+
+<!-- v22-tke-bootstrap-preflight-contract:start -->
+```json
+{
+  "contract": "v22_tke_bootstrap_preflight_boundary",
+  "version": 1,
+  "planMode": "dry_run",
+  "productionReady": false,
+  "callsRealCloud": false,
+  "readsSecret": false,
+  "usesKubectl": false,
+  "runsDeploy": false,
+  "runsBuildPush": false,
+  "createsOrDeletesResources": false,
+  "clusterModel": "shared_cluster_layered_isolation",
+  "requiredNodePools": [
+    "platform_service_pool",
+    "shared_user_compute_pool"
+  ],
+  "futureNodePools": [
+    "premium_dedicated_pool"
+  ],
+  "requiredDataPlane": [
+    "PostgreSQL",
+    "COS",
+    "CBS"
+  ],
+  "redisRequired": false,
+  "requiredMutationEnvFields": [
+    "TENCENT_MUTATION_TKE_CLUSTER_ID",
+    "TENCENT_MUTATION_TKE_NODE_POOL_ID"
+  ]
+}
+```
+<!-- v22-tke-bootstrap-preflight-contract:end -->
 
 ### spec:v22-real-opl-capability-canary-boundary
 
@@ -10040,7 +10156,7 @@ Provider response 和 Portal payload 不得包含：
 
 后续真实腾讯云接入路线保持：
 
-`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> readonly/tencent inventory -> authorized/tencent create/release -> authorized/tencent deploy -> canary / QA / status update`
+`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> TKE bootstrap preflight when no TKE foundation exists -> readonly/tencent inventory -> authorized/tencent create/release -> authorized/tencent deploy -> canary / QA / status update`
 
 真实腾讯云 SDK、真实 SecretId/SecretKey、真实报价、真实创建、真实绑定、真实释放、真实扣费、真实账单核对、deploy、build/push、kubectl 和 live-test 必须另开 feat/* 并单独授权。
 
@@ -10053,7 +10169,7 @@ Former title: v22 Tencent Readonly Inventory Boundary
 
 该合同属于 Tencent Provider 合同包，阶段位置是：
 
-`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> readonly/tencent inventory -> authorized/tencent create/release -> authorized/tencent deploy -> canary / QA / status update`
+`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> TKE bootstrap preflight when no TKE foundation exists -> readonly/tencent inventory -> authorized/tencent create/release -> authorized/tencent deploy -> canary / QA / status update`
 
 ## 阶段边界
 
@@ -10501,9 +10617,9 @@ Provider response 不得包含：
 
 后续真实腾讯云接入路线保持：
 
-`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> readonly/tencent inventory -> authorized/tencent create/release -> authorized/tencent deploy -> canary / QA / status update`
+`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> TKE bootstrap preflight when no TKE foundation exists -> readonly/tencent inventory -> authorized/tencent create/release -> authorized/tencent deploy -> canary / QA / status update`
 
-等价阶段名：`mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> readonly/tencent inventory provider -> authorized/tencent create/release provider -> authorized/tencent deploy provider -> canary / QA / status update`
+等价阶段名：`mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> TKE bootstrap preflight when no TKE foundation exists -> readonly/tencent inventory provider -> authorized/tencent create/release provider -> authorized/tencent deploy provider -> canary / QA / status update`
 
 真实腾讯云 readonly 接入、SDK 选择、API 凭据读取、限流、重试、审计日志和真实 quote source 均必须另开 feat/* 并单独授权。
 

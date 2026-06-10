@@ -7,7 +7,7 @@ Machine boundary: 本文是人读交付入口。当前执行 cursor、branch ove
 
 ## Current Cursor
 
-当前 product cursor 是 `real-cloud-authorization-boundary`，状态是 authorization-required / before real-cloud readiness。pre-cloud 9 个 product slides、本地 RC、golden-path-first-class、golden-path-productization-roadmap、Figma Portal UI absorption、provider key reuse、Portal typed API contract、OPL entry real preflight / launch projection、local control-plane hardening、Go control-plane MVP takeover、precloud-deployable-rc、local SaaS backend RC、local Portal/OPL delivery RC、local AI MVP baseline、real-cloud readiness lane、real-cloud vision docs、legacy runtime cloud cleanup、Package B readonly inventory、TC3 diagnostic cleanup 和 Package C dry-run create/release plan 已完成本地闭环。最新 landed repo closeout 是 `feat/v22-package-c-dry-run-create-release-plan` / `a3f78871f4a8310ee4b571ff47579137728f362a`。本 closeout 不读取 mutation secret、不调用真实云、不执行 deploy/kubectl/build-push/live-test。current verify 继续先暴露 golden path health，再运行治理护栏。真实云、secret、deploy、kubectl、build/push 和 live-test 仍是单独授权边界；Package C live create/release 还需要明确授权并补齐 TKE cluster/node pool mutation env。
+当前 product cursor 是 `real-cloud-authorization-boundary`，状态是 authorization-required / before real-cloud readiness。pre-cloud 9 个 product slides、本地 RC、golden-path-first-class、golden-path-productization-roadmap、Figma Portal UI absorption、provider key reuse、Portal typed API contract、OPL entry real preflight / launch projection、local control-plane hardening、Go control-plane MVP takeover、precloud-deployable-rc、local SaaS backend RC、local Portal/OPL delivery RC、local AI MVP baseline、real-cloud readiness lane、real-cloud vision docs、legacy runtime cloud cleanup、Package B readonly inventory、TC3 diagnostic cleanup 和 Package C dry-run create/release plan 已完成本地闭环。最新 landed repo closeout 是 `feat/v22-package-c-dry-run-create-release-plan` / `a3f78871f4a8310ee4b571ff47579137728f362a`。当前 authoring package 是 `tke-bootstrap-preflight`，只把“还没有 TKE”转成可验证的本地云底座 checklist，不读取 mutation secret、不调用真实云、不执行 deploy/kubectl/build-push/live-test、不创建资源。current verify 继续先暴露 golden path health，再运行治理护栏。真实云、secret、deploy、kubectl、build/push 和 live-test 仍是单独授权边界；Package C live create/release 还需要明确授权、创建/观察 TKE foundation 并补齐 TKE cluster/node pool mutation env。
 
 最近 landed 的 `feat/v22-slide-09-precloud-readiness` 已关闭 pre-cloud readiness 本地闭环，并把临时 slide baton 折叠为 history summary；默认 current bundle 仍保留 slide-01 storage regression、slide-02 runtime real API regression、slide-03 account/wallet/billing regression、slide-04 workspace/files regression、slide-05 resource lifecycle regression、slide-06 OPL entry runtime regression、slide-07 run/artifact/trace regression 和 slide-08 admin ops regression 作为防回归命令。
 
@@ -64,6 +64,7 @@ Cloud delivery must keep this order:
 mock/snapshot provider
 -> readonly quote
 -> dry-run plan
+-> TKE bootstrap preflight when no TKE foundation exists
 -> readonly inventory
 -> authorized create/release
 -> authorized deploy
