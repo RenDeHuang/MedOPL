@@ -212,7 +212,6 @@
       "docs/**/*.md",
       "specs/**/*.md",
       "changes/active/real-cloud-authorization-boundary/**",
-      "changes/archive/2026-06-10-tke-bootstrap-preflight/**",
       "changes/archive/**",
       "tests/**/*.mjs",
       "tests/fixtures/v22/*.json",

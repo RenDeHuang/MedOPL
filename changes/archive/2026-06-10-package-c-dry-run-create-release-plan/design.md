@@ -36,7 +36,7 @@ CLI dry-run args
 
 ## Surface Impact
 
-- source: `scripts/v22-tencent-create-release-dry-run-plan.mjs`.
+- source: `tests/support/cloud-prework/v22-tencent-create-release-dry-run-plan.js`.
 - docs: `docs/specs/README.md` and this change package.
 - specs: `specs/operations/spec.md`, `specs/runtime/spec.md`.
 - tests: `tests/future-authorized/cloud/future-authorized-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs`.

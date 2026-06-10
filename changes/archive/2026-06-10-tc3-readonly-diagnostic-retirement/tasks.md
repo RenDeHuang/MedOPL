@@ -1,6 +1,6 @@
 Owner: `MedOPL`
 Purpose: `tasks`
-State: `active_change`
+State: `archived_change`
 Machine boundary: Task completion is verified by repo-native commands.
 
 # Tasks

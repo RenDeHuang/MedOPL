@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import {
   createTencentReadonlyInventoryOfficialSdkModules,
   runTencentReadonlyInventoryOfficialSdk,
-} from "./lib/v22-tencent-readonly-inventory-official-sdk.mjs";
+} from "./lib/tencent-readonly-inventory-official-sdk-support.js";
 
 const ALLOWED_SECRET_KEYS = new Set([
   "RUN_TENCENT_READONLY_INVENTORY",
@@ -94,9 +94,9 @@ function parseArgs(argv = process.argv.slice(2)) {
 function usage() {
   return [
     "Usage:",
-    "  node scripts/v22-tencent-readonly-inventory-runner.mjs --secret-file <path>",
-    "  node scripts/v22-tencent-readonly-inventory-runner.mjs --live-readonly --confirm-current-session-authorization --sdk-mode fake-readonly --secret-file <path>",
-    "  node scripts/v22-tencent-readonly-inventory-runner.mjs --live-readonly --confirm-current-session-authorization --enable-official-sdk-loader --sdk-mode tencent-official-sdk-readonly --secret-file <path>",
+    "  node tests/support/cloud-prework/tencent-readonly-inventory-support.js --secret-file <path>",
+    "  node tests/support/cloud-prework/tencent-readonly-inventory-support.js --live-readonly --confirm-current-session-authorization --sdk-mode fake-readonly --secret-file <path>",
+    "  node tests/support/cloud-prework/tencent-readonly-inventory-support.js --live-readonly --confirm-current-session-authorization --enable-official-sdk-loader --sdk-mode tencent-official-sdk-readonly --secret-file <path>",
     "",
     "Modes:",
     "  check-config                     default; never reads secrets or calls cloud",

@@ -1,20 +1,23 @@
 Owner: `MedOPL`
 Purpose: `spec_delta`
-State: `active_change`
-Machine boundary: `real-cloud-readiness` manifest membership and runner behavior are machine-readable.
+State: `archived_change`
+Machine boundary: `real-cloud-readiness` manifest membership, `specs/operations/spec.md` and runner behavior are machine-readable.
 
 # Spec Delta
 
-## Target Specs
+Target specs:
 
-- `spec:v22-tencent-readonly-inventory-boundary`
-- `spec:v22-production-cloud-topology-boundary`
 - `specs/operations/spec.md`
-- `specs/runtime/spec.md`
 
-`spec:v22-tencent-readonly-inventory-boundary` gains a minimal active runner local gate:
+## ADDED
 
-- `scripts/v22-tencent-readonly-inventory-runner.mjs`.
+- `operations:tencent-readonly-inventory-boundary`: authorized readonly inventory is a separate operations boundary from Package C mutation, deploy, kubectl, build/push and live-test.
+
+## MODIFIED
+
+`operations:tencent-readonly-inventory-boundary` records the accepted readonly runner local gate:
+
+- `tests/support/cloud-prework/tencent-readonly-inventory-support.js`.
 - `tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-live-runner-local-gate.mjs`.
 - `tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-official-sdk-shape.mjs`.
 - `tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-official-sdk-wrapper-local-gate.mjs`.
@@ -36,6 +39,10 @@ Current live readiness state:
 - authorized official SDK readonly mode has passed with explicit COS metadata probe evidence, `blockers: []`, `callsMutationApi=false` and `readsCosObjectBody=false`.
 - live stdout blocker output is restricted to `code`, `operation` and optional `region`; raw provider messages and raw cloud identifiers must not be emitted.
 
+## REMOVED
+
+- No durable requirement removed; mutation/deploy secrets remain forbidden in the readonly runner.
+
 ## CANNOT-CLAIM
 
 - Portal ledger mapping completed.
@@ -43,3 +50,9 @@ Current live readiness state:
 - TKE node pool / namespace / workload inventory completed unless a future readonly report observes those resources.
 - production cloud is online.
 - create/release or deploy is authorized.
+
+## EVALS
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-live-runner-local-gate.mjs`
+- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-official-sdk-wrapper-local-gate.mjs`
+- `npm run test:real-cloud-readiness`

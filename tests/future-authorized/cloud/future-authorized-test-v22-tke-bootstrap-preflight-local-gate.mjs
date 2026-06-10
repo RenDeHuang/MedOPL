@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
-const runner = "scripts/v22-tke-bootstrap-preflight-plan.mjs";
+const runner = "tests/support/cloud-prework/v22-tke-bootstrap-preflight-plan.js";
 const selfFile = "tests/future-authorized/cloud/future-authorized-test-v22-tke-bootstrap-preflight-local-gate.mjs";
 
 function commandFiles(commands = []) {

@@ -19,6 +19,7 @@ Go / pre-cloud deployment surface：
 - `services/medopl-go-backend` is the local pre-cloud SaaS backend deployment surface before real-cloud readiness.
 - `services/portal/frontend` is the Portal frontend deployment surface.
 - `scripts/v22-local-services.mjs` owns the repo-native local service plan, start/stop/status/logs lifecycle, local URL health probe and dry-run RC verification for Portal frontend, Go backend, OPL Web Gateway, Runtime Bridge and external clean OPL WebUI. PID and logs stay under `.runtime/local-services`; clean OPL WebUI is only an external endpoint and is never started or stopped by MedOPL. It does not read secrets, deploy, kubectl, build/push or call real cloud.
+- `tests/support/cloud-prework` owns bounded Tencent/TKE pre-cloud test support for readonly inventory, Package C dry-run planning and TKE bootstrap preflight. These support modules are not default `scripts/` control-plane entrypoints; they remain guarded by future-authorized tests, explicit authorization flags and `.runtime` evidence sinks.
 
 `services/medopl-go-backend` 必须通过 source、tests、fixtures、manifest、workflow review、package verification 和 pre-cloud deployable RC 进入 real-cloud-readiness；不能只靠目录存在或 prose claim 成为 production truth。当前 authoring branch 的 pre-cloud deployable RC 只覆盖 Portal frontend -> Go `/api`、provider/preflight/launch、workspace/file/run/artifact、billing/audit、resource projection、release/stop-billing 和 cloud connector fail-closed 的 deterministic local proof，不证明 live provider、真实 upstream OPL、real cloud 或 production billing。
 
@@ -72,6 +73,7 @@ Current docs / eval surface during migration：
 - `scripts/v22-verify.mjs`
 - `scripts/v22-test-classification.mjs`
 - `scripts/v22-workflow-gate.mjs`
+- `tests/support/cloud-prework/*` only when a subscribed cloud-prework test or explicit authorization package names the support module.
 
 ## Forbidden Without Authorization
 

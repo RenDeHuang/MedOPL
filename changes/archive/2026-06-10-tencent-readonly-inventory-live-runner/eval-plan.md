@@ -10,7 +10,7 @@ Target specs:
 - `spec:v22-tencent-readonly-inventory-boundary`
 - `spec:v22-production-cloud-topology-boundary`
 
-Run:
+## Required Commands
 
 ```bash
 node tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-live-runner-local-gate.mjs
@@ -23,7 +23,7 @@ git diff --check -- scripts tests package.json package-lock.json docs changes
 Authorized readonly attempt:
 
 ```bash
-node scripts/v22-tencent-readonly-inventory-runner.mjs \
+node tests/support/cloud-prework/tencent-readonly-inventory-support.js \
   --live-readonly \
   --confirm-current-session-authorization \
   --enable-official-sdk-loader \
@@ -32,7 +32,12 @@ node scripts/v22-tencent-readonly-inventory-runner.mjs \
   --report-dir .runtime/v22-tencent-readonly-inventory
 ```
 
-Expected current result:
+## Evidence Level
+
+- local contract proof
+- authorized readonly evidence outside git when explicitly run
+
+## Can Claim
 
 - official SDK packages load only after `--enable-official-sdk-loader`.
 - readonly SDK calls may run only for Describe/List/Get/Head style APIs after allowlist validation.
@@ -41,3 +46,9 @@ Expected current result:
 - with an explicit COS metadata probe, the authorized run may complete with `ok: true`, `blockers: []` and sanitized resource type summaries only.
 - stdout blocker summaries must expose only `code`, `operation` and optional `region`; raw provider error messages, COS bucket names and object keys stay out of stdout.
 - report remains under `.runtime` and out of git.
+
+## Cannot Claim
+
+- Production cloud is online.
+- Create/release or deploy is authorized.
+- Portal ledger mapping is complete.

@@ -11,7 +11,9 @@ const selfFile = "tests/contract/contract-test-v22-real-cloud-readiness-lane.mjs
 const readinessFiles = [
   "tests/future-authorized/cloud/future-authorized-test-v22-tencent-official-sdk-provider-strategy-contract.mjs",
   "tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-boundary.mjs",
+  "tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-live-runner-local-gate.mjs",
   "tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-official-sdk-shape.mjs",
+  "tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-official-sdk-wrapper-local-gate.mjs",
   "tests/future-authorized/cloud/future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs",
 ];
 

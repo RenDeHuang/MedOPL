@@ -1,14 +1,19 @@
 Owner: `MedOPL`
 Purpose: `closeout`
-State: `active_change`
-Machine boundary: This is not post-merge closeout until branch lands.
+State: `archived_change`
+Machine boundary: Runner behavior, `real-cloud-readiness` suite membership, `.runtime` redacted evidence and `specs/operations/spec.md` define the closed readonly inventory truth.
 
 # Closeout
 
+Status: archived
+
+## Commits
+
+- Package B readonly inventory landed before this governance closeout; the repo-governance closeout archives this lifecycle package and keeps current truth unchanged.
+
 ## Target Specs
 
-- `spec:v22-tencent-readonly-inventory-boundary`
-- `spec:v22-production-cloud-topology-boundary`
+- `operations:tencent-readonly-inventory-boundary`
 
 Implemented:
 
@@ -35,6 +40,8 @@ Verification:
 
 Package B closeout:
 
+## Can Claim
+
 - The readonly inventory runner is closed for the current authoring branch.
 - The accepted evidence proves the authorized readonly cloud connection can generate a redacted audit summary.
 - The accepted evidence does not become production truth and does not authorize Package C mutation, Package D deploy, kubectl, build/push or live-test.
@@ -54,3 +61,7 @@ Next cursor:
 - create/release authorized.
 - deploy/kubectl/build/push authorized.
 - production cloud is online.
+
+## Archive Target
+
+- `changes/archive/2026-06-10-tencent-readonly-inventory-live-runner`

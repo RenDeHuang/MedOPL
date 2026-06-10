@@ -80,7 +80,7 @@ truth -> changes/active/<change-id> -> spec delta -> eval plan -> implementation
 - `docs/history/README.md` 是唯一 agent-run / landing gate / cleanup closeout 摘要入口；不得恢复旧 recovery 目录或旧 agent-run 文件树。
 - `tests/fixtures/v22/goal-current.json` 是唯一机器 cursor；`tests/fixtures/v22/agent-verify-manifest.json` 是唯一 verify manifest。
 - 新增 repo-local eval 必须进入 `tests/{health,smoke,contract,regression,future-authorized}`；不得新增 `scripts/smoke-test-*`。
-- `scripts/` 只保 runner、classifier 和 workflow gate；service sync helper 不得作为 active script surface 恢复。
+- `scripts/` 只保长期 v22 control-plane runner、classifier、workflow gate、repo hygiene、bloat、line budget、closeout 和 local service orchestration；cloud prework executable support must live outside `scripts/` and be exercised through registered tests or explicit authorization packages.
 - 已通过 landing gate 并 push 的 leaf 不能长期保持 `ready_for_landing_review`；必须执行 post-merge closeout。
 - current cursor 不能停在已完成 leaf，也不能把 `future-authorized`、真实云、deploy、live-test 或 release readiness 标成 cursor-eligible，除非用户单独授权。
 - slide 可以有组件、API、数据、UI 或测试子任务，但这些子任务只能存在于代码、tests、fixtures、manifest 或 history closeout 摘要中；不得新增 per-slide docs、subslide docs、shadow archive 或未注册测试。
@@ -98,3 +98,4 @@ truth -> changes/active/<change-id> -> spec delta -> eval plan -> implementation
 - `scripts/v22-verify.mjs`
 - `scripts/v22-test-classification.mjs`
 - `scripts/v22-workflow-gate.mjs`
+- `tests/support/cloud-prework/*` only as explicitly subscribed cloud-prework support, never as default current verification.

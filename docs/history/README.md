@@ -3923,4 +3923,63 @@ post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 
+### 2026-06-10 cleanup/v22-governance-closeout
+
+Status: `authoring / local-gated`
+
+Branch: `cleanup/v22-governance-closeout`
+
+Base trunk HEAD: `0e5fe7a202264828b75471de538267a3d32cc498`
+
+Model: `gpt-5.4`
+
+Subagents and model:
+
+- `Goodall`: `gpt-5.4`, read-only sidecar reviewer.
+
+Archived change packages:
+
+- `changes/archive/2026-06-10-repo-governance-closeout`
+- `changes/archive/2026-06-10-tencent-readonly-inventory-live-runner`
+- `changes/archive/2026-06-10-tc3-readonly-diagnostic-retirement`
+
+Scope:
+
+- Contracted `scripts/` back to the long-lived v22 control-plane surface.
+- Moved Package B/C/TKE cloud-prework support to `tests/support/cloud-prework/`.
+- Kept readonly inventory, TC3 cleanup, Package C dry-run and TKE preflight locally gated through registered test lanes.
+- Archived Package B readonly inventory and TC3 diagnostic cleanup lifecycle packages to match current truth.
+- Synced durable operations/framework/runtime specs and current manifest commands after cloud-prework support relocation.
+
+Verification:
+
+- `node tests/contract/contract-test-v22-current-state-index-loop.mjs`: pass after manifest/current cursor sync.
+- `node tests/contract/contract-test-v22-change-package-lifecycle.mjs`: pass before archive sync.
+- `node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs`: pass before archive sync.
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: pass.
+- `node tests/contract/contract-test-v22-real-cloud-readiness-lane.mjs`: pass.
+- `npm run repo:bloat`: pass with `scriptsFiles=8`.
+- `npm run line:budget`: pass with only the existing `services/opl-web-gateway/src/launch-client-script.mjs` baseline exception.
+- `npm run test:real-cloud-readiness`: pass.
+- `npm run test:cloud-future-authorized`: pass.
+- `npm run verify`: pass after archive sync and cloud-prework support rename.
+- `npm run gate:review`: pass after archive sync.
+- `npm run verify:repo-hygiene`: pass after archive sync.
+- `sentrux check .`: pass with quality `7171`.
+- `sentrux gate .`: pass with quality `6486 -> 7171`, cycles `0 -> 0`, god files `0 -> 0`.
+- `git diff --check -- docs specs changes tests scripts package.json package-lock.json`: pass.
+
+Can-claim:
+
+- `scripts/` no longer contains temporary Tencent/TKE cloud-prework executables.
+- Cloud-prework support remains available under `tests/support/cloud-prework/` and is consumed by registered future-authorized tests.
+- Package B readonly inventory and TC3 diagnostic cleanup lifecycle packages no longer contradict current truth by staying active.
+- The current cursor remains `real-cloud-authorization-boundary`.
+
+Cannot-claim:
+
+- Production readiness, real-cloud readiness, Package C live create/release, TKE/NAT/CBS/COS/PostgreSQL creation, workload deployment, production billing readiness, secret read, provider operation, deploy, kubectl, build/push or live-test authorization.
+
+next_cursor: `real-cloud-authorization-boundary`
+
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。

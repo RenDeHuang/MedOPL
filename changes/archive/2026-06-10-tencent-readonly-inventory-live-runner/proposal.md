@@ -1,11 +1,31 @@
 Owner: `MedOPL`
 Purpose: `proposal`
-State: `active_change`
-Machine boundary: `scripts/v22-tencent-readonly-inventory-runner.mjs` and `tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-live-runner-local-gate.mjs` define the runnable local gate. Real cloud evidence remains outside git under `.runtime`.
+State: `archived_change`
+Machine boundary: `tests/support/cloud-prework/tencent-readonly-inventory-support.js` and `tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-live-runner-local-gate.mjs` define the runnable local gate. Real cloud evidence remains outside git under `.runtime`.
 
 # Tencent Readonly Inventory Live Runner Proposal
 
+Status: archived
+Branch: feat/v22-readonly-inventory-live-runner
+Base trunk: origin/recovery/platform-v22-trunk
+Owner: MedOPL Operations
+Affected plane: Operations
+
 Add a minimal authorized readonly inventory runner for the current `real-cloud-readiness` lane.
+
+## Non-Goals
+
+- Do not authorize create/release.
+- Do not authorize deploy, kubectl, build/push or live-test.
+- Do not read COS object bodies.
+- Do not output raw provider responses.
+- Do not claim production cloud is online.
+
+## Golden Path Impact
+
+- preserves: readonly inventory affects cloud prework only.
+- affected steps: real-cloud readiness and future authorized inventory evidence.
+- required golden path eval: `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json`.
 
 ## Authorization Boundary
 
@@ -15,8 +35,7 @@ Add a minimal authorized readonly inventory runner for the current `real-cloud-r
 
 ## Target Specs
 
-- `spec:v22-tencent-readonly-inventory-boundary`
-- `spec:v22-production-cloud-topology-boundary`
+- `operations:tencent-readonly-inventory-boundary`
 
 The runner must:
 

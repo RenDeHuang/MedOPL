@@ -7637,7 +7637,7 @@ TKE bootstrap preflight 用于回答“当前没有 TKE 时，下一步应该先
 
 Runner:
 
-- `scripts/v22-tke-bootstrap-preflight-plan.mjs`
+- `tests/support/cloud-prework/v22-tke-bootstrap-preflight-plan.js`
 - `tests/future-authorized/cloud/future-authorized-test-v22-tke-bootstrap-preflight-local-gate.mjs`
 
 该 runner 只允许在 `--dry-run --confirm-no-real-cloud` 下生成 `.runtime/v22-cloud-bootstrap/<operation-id>-preflight.json`。它拒绝 `--secret-file`、`--live`、`--execute`、`--apply`、`--mutate`、`--deploy`、`--kubectl`、`--build` 和 `--push`。当前 runner 不读取 `package-c-mutation.env`，不读取 mutation secret，不调用腾讯云，不写 Portal ledger，不扣费，不读取 COS object body。
@@ -10066,7 +10066,7 @@ dry-run provider 用于把 readonly quote 的区域、规格和预计费用，�
 
 Package C dry-run runner:
 
-- `scripts/v22-tencent-create-release-dry-run-plan.mjs`
+- `tests/support/cloud-prework/v22-tencent-create-release-dry-run-plan.js`
 - `tests/future-authorized/cloud/future-authorized-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs`
 
 该 runner 只允许在 `--dry-run --confirm-no-real-cloud` 下生成 `.runtime/v22-cloud-lifecycle/<operation-id>-dry-run.json`。它拒绝 `--secret-file`、`--live`、`--execute`、`--apply`、`--mutate`、`--deploy`、`--kubectl`、`--build` 和 `--push`。当前 runner 不读取 `package-c-mutation.env`，不读取 mutation secret，不调用腾讯云，不写 Portal ledger，不扣费，不读取 COS object body。

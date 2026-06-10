@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
-const runner = "scripts/v22-tencent-create-release-dry-run-plan.mjs";
+const runner = "tests/support/cloud-prework/v22-tencent-create-release-dry-run-plan.js";
 
 function run(args = []) {
   return spawnSync(process.execPath, [runner, ...args], {

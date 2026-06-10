@@ -5,7 +5,7 @@ Machine boundary: The runner and local gate test are the executable design bound
 
 # Design
 
-`scripts/v22-tencent-readonly-inventory-runner.mjs` is a repo-local executable boundary for Package B readonly inventory.
+`tests/support/cloud-prework/tencent-readonly-inventory-support.js` is a repo-local executable boundary for Package B readonly inventory.
 
 Inputs:
 
@@ -29,7 +29,7 @@ SDK ownership:
 
 - `tencentcloud-sdk-nodejs` and `cos-nodejs-sdk-v5` are root cloud tooling dependencies.
 - Portal packages must not own Tencent/COS SDK dependencies.
-- `scripts/lib/v22-tencent-readonly-inventory-official-sdk.mjs` owns the dependency-injected wrapper.
+- `tests/support/cloud-prework/lib/tencent-readonly-inventory-official-sdk-support.js` owns the dependency-injected wrapper.
 
 Current implementation note:
 

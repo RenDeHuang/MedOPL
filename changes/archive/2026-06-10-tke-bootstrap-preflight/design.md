@@ -36,7 +36,7 @@ CLI dry-run args
 
 ## Surface Impact
 
-- source: `scripts/v22-tke-bootstrap-preflight-plan.mjs`.
+- source: `tests/support/cloud-prework/v22-tke-bootstrap-preflight-plan.js`.
 - docs: `docs/specs/README.md`, `docs/active/README.md`, `docs/delivery/README.md` and this change package.
 - specs: `specs/operations/spec.md`, `specs/runtime/spec.md`.
 - tests: `tests/future-authorized/cloud/future-authorized-test-v22-tke-bootstrap-preflight-local-gate.mjs`.

@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 const contractPath = "docs/specs/README.md";
 const manifestPath = "tests/fixtures/v22/agent-verify-manifest.json";
 const readmePath = "docs/specs/README.md";
-const runnerPath = "scripts/v22-tencent-readonly-inventory-runner.mjs";
+const runnerPath = "tests/support/cloud-prework/tencent-readonly-inventory-support.js";
 const selfFile = "tests/future-authorized/cloud/future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs";
 const smokePath = "tests/future-authorized/cloud/future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs";
 

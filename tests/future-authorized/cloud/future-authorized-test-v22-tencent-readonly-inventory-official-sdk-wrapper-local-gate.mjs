@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   createTencentReadonlyInventoryOfficialSdkModules,
   runTencentReadonlyInventoryOfficialSdk,
-} from "../../../scripts/lib/v22-tencent-readonly-inventory-official-sdk.mjs";
+} from "../../../tests/support/cloud-prework/lib/tencent-readonly-inventory-official-sdk-support.js";
 
 const calls = [];
 

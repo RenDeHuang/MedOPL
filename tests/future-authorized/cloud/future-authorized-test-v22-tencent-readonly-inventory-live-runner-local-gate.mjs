@@ -6,9 +6,9 @@ import { spawnSync } from "node:child_process";
 
 import {
   sanitizeBlockersForStdout,
-} from "../../../scripts/v22-tencent-readonly-inventory-runner.mjs";
+} from "../../../tests/support/cloud-prework/tencent-readonly-inventory-support.js";
 
-const runner = "scripts/v22-tencent-readonly-inventory-runner.mjs";
+const runner = "tests/support/cloud-prework/tencent-readonly-inventory-support.js";
 
 function run(args = []) {
   return spawnSync(process.execPath, [runner, ...args], {

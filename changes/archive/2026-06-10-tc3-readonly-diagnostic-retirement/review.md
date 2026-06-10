@@ -1,6 +1,6 @@
 Owner: `MedOPL`
 Purpose: `review`
-State: `active_change`
+State: `archived_change`
 Machine boundary: Review outcome is backed by `gate:review` and static runner checks.
 
 # Review

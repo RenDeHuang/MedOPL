@@ -7,7 +7,7 @@ Machine boundary: The cleanup is enforced by static contract tests and runner so
 
 The cleanup is intentionally static and narrow.
 
-`scripts/v22-tencent-readonly-inventory-runner.mjs` already supports only:
+`tests/support/cloud-prework/tencent-readonly-inventory-support.js` already supports only:
 
 - `fake-readonly`
 - `tencent-official-sdk-readonly`
