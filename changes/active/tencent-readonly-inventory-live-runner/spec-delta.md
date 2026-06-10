@@ -31,6 +31,7 @@ Current live readiness state:
 - Tencent/COS SDK dependencies are root cloud tooling dependencies; Portal packages do not own them.
 - official SDK loader requires `--enable-official-sdk-loader` in addition to live readonly authorization.
 - official SDK wrapper can call readonly account, TKE, billing, tag and COS metadata-only methods.
+- optional `TENCENT_READONLY_COS_METADATA_PROBES` is allowed in the readonly env and is used only as `headObject` input; report/stdout must not emit bucket names or object keys.
 - missing SDK dependencies, permission gaps or missing COS metadata probes produce a redacted blocker report instead of a false success.
 
 ## CANNOT-CLAIM

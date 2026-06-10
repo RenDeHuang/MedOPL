@@ -10083,6 +10083,7 @@ inventory 结果只能进入管理员 / 运维审计和后续授权评估，不�
 - TENCENT_READONLY_SECRET_KEY
 - TENCENT_READONLY_REGIONS
 - TENCENT_READONLY_ALLOWED_APIS
+- TENCENT_READONLY_COS_METADATA_PROBES（optional，格式为 `region:bucket:object-key`，仅用于 metadata-only HEAD）
 - TENCENT_READONLY_ACCOUNT_ID 或等价只读账号标识
 
 明确禁止读取或使用：
@@ -10137,6 +10138,8 @@ readonly inventory 不读取 COS 对象正文，不下载用户文件，不打�
 允许读取 bucket / prefix / object metadata、用量摘要、账单明细和资源标签，用于归属校验、文件存在性校验和 T+1 对账。
 
 objectKey、storageKey、cosPrefix、signedUrl 不得进入普通用户 payload、日志或 evidence。管理员 / 运维输出也只能看到脱敏摘要、计数、状态和审计队列项，不能看到可直接定位或下载用户文件的内部存储字段。
+
+`TENCENT_READONLY_COS_METADATA_PROBES` 只能作为 git 外 readonly env 的输入参数使用。runner 可以用它调用 `headObject` 证明对象 metadata 可读，但 report/stdout/evidence 只能输出 `cos-metadata-probe-N` 这类引用、metadata 是否观察到、是否读取正文=false；不得输出 bucket、object key、prefix 或 signed URL。
 
 ## 输出边界
 

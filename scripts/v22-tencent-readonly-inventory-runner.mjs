@@ -14,6 +14,16 @@ const ALLOWED_SECRET_KEYS = new Set([
   "TENCENT_READONLY_ACCOUNT_ID",
   "TENCENT_READONLY_REGIONS",
   "TENCENT_READONLY_ALLOWED_APIS",
+  "TENCENT_READONLY_COS_METADATA_PROBES",
+]);
+
+const REQUIRED_SECRET_KEYS = new Set([
+  "RUN_TENCENT_READONLY_INVENTORY",
+  "TENCENT_READONLY_SECRET_ID",
+  "TENCENT_READONLY_SECRET_KEY",
+  "TENCENT_READONLY_ACCOUNT_ID",
+  "TENCENT_READONLY_REGIONS",
+  "TENCENT_READONLY_ALLOWED_APIS",
 ]);
 
 const FORBIDDEN_SECRET_KEYS = new Set([
@@ -125,8 +135,22 @@ function splitCsv(text = "") {
     .filter(Boolean);
 }
 
+function parseCosMetadataProbes(text = "") {
+  return splitCsv(text).map((item, index) => {
+    const parts = item.split(":");
+    if (parts.length < 3) throw new Error(`readonly_cos_metadata_probe_invalid:${index + 1}`);
+    const [region, bucket, ...keyParts] = parts;
+    const key = keyParts.join(":");
+    if (!region || !bucket || !key) throw new Error(`readonly_cos_metadata_probe_invalid:${index + 1}`);
+    for (const value of [region, bucket, key]) {
+      if (/[\r\n]/u.test(value)) throw new Error(`readonly_cos_metadata_probe_invalid:${index + 1}`);
+    }
+    return { region, bucket, key };
+  });
+}
+
 function validateReadonlyEnv(env) {
-  for (const key of ALLOWED_SECRET_KEYS) {
+  for (const key of REQUIRED_SECRET_KEYS) {
     if (!value(env, key)) throw new Error(`readonly_secret_required:${key}`);
   }
   if (!["1", "true", "yes"].includes(value(env, "RUN_TENCENT_READONLY_INVENTORY").toLowerCase())) {
@@ -145,7 +169,8 @@ function validateReadonlyEnv(env) {
   if (!allowedApis.every((api) => /^(?:Describe|List|Get|Head)[A-Za-z0-9*]*$/u.test(api))) {
     throw new Error("readonly_allowed_apis_must_be_describe_list_get_head");
   }
-  return { regions, allowedApis };
+  const cosMetadataProbes = parseCosMetadataProbes(value(env, "TENCENT_READONLY_COS_METADATA_PROBES"));
+  return { regions, allowedApis, cosMetadataProbes };
 }
 
 function maskAccount(accountId = "") {
@@ -219,7 +244,7 @@ async function officialSdkResources({ regions }) {
   throw new Error("readonly_official_sdk_loader_explicit_enable_required");
 }
 
-async function officialSdkLoaderResources({ env, regions, allowedApis }) {
+async function officialSdkLoaderResources({ env, regions, cosMetadataProbes }) {
   let tencentRoot;
   let cosRoot;
   const blockers = [];
@@ -254,13 +279,8 @@ async function officialSdkLoaderResources({ env, regions, allowedApis }) {
     regions,
     expectedAccountId: value(env, "TENCENT_READONLY_ACCOUNT_ID"),
     billingMonth: new Date().toISOString().slice(0, 7),
-    cosMetadataProbes: cosMetadataProbesFromAllowlist(allowedApis),
+    cosMetadataProbes,
   });
-}
-
-function cosMetadataProbesFromAllowlist(allowedApis = []) {
-  if (!allowedApis.includes("HeadObject")) return [];
-  return [];
 }
 
 async function main() {
@@ -274,7 +294,7 @@ async function main() {
     throw new Error("readonly_live_authorization_required");
   }
   const env = parseEnv(await readFile(options.secretFile, "utf8"));
-  const { regions, allowedApis } = validateReadonlyEnv(env);
+  const { regions, allowedApis, cosMetadataProbes } = validateReadonlyEnv(env);
   let resources = [];
   let blockers = [];
   if (options.sdkMode === "fake-readonly") {
@@ -283,7 +303,7 @@ async function main() {
     if (!options.enableOfficialSdkLoader) {
       ({ resources, blockers } = await officialSdkResources({ regions }));
     } else {
-      ({ resources, blockers } = await officialSdkLoaderResources({ env, regions, allowedApis }));
+      ({ resources, blockers } = await officialSdkLoaderResources({ env, regions, cosMetadataProbes }));
     }
   } else {
     throw new Error(`readonly_sdk_mode_unsupported:${options.sdkMode}`);

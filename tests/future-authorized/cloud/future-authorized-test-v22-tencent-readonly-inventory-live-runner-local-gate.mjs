@@ -27,6 +27,8 @@ function assertNoSensitiveOutput(text = "", label = "output") {
     "objectKey",
     "storageKey",
     "cosPrefix",
+    "medopl-proof-bucket",
+    "readonly-probe.txt",
   ]) {
     assert.equal(text.includes(forbidden), false, `${label}_must_not_include:${forbidden}`);
   }
@@ -43,6 +45,7 @@ try {
     "TENCENT_READONLY_ACCOUNT_ID=100000000001",
     "TENCENT_READONLY_REGIONS=na-siliconvalley,ap-guangzhou",
     "TENCENT_READONLY_ALLOWED_APIS=Describe*,List*,Get*,Head*",
+    "TENCENT_READONLY_COS_METADATA_PROBES=na-siliconvalley:medopl-proof-bucket:readonly-probe.txt",
   ].join("\n"));
 
   const unauthorized = run(["--secret-file", envFile, "--report-dir", reportDir]);
@@ -145,6 +148,8 @@ try {
   assert.equal(report.boundary.readsCosObjectBody, false, "report_no_cos_body");
   assert.equal(report.resources.some((item) => item.resourceType === "tkeClusterSummary"), true, "report_has_tke_summary");
   assert.equal(report.resources.some((item) => item.resourceType === "cosStorageSummary"), true, "report_has_cos_summary");
+  assert.equal(JSON.stringify(report).includes("medopl-proof-bucket"), false, "report_must_not_include_probe_bucket");
+  assert.equal(JSON.stringify(report).includes("readonly-probe.txt"), false, "report_must_not_include_probe_key");
   assertNoSensitiveOutput(JSON.stringify(report), "report");
 } finally {
   await rm(tmp, { recursive: true, force: true });
