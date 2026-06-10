@@ -59,8 +59,6 @@ landed 后的记录还必须补齐：
 
 ## Current Run Summaries
 
-详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
-
 ### 2026-05-28 changes/archive/2026-05-28-portal-opl-refund-api-fix
 
 Status: `archived / local-gated`
@@ -3808,3 +3806,64 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-10 feat/v22-package-c-dry-run-create-release-plan
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `feat/v22-package-c-dry-run-create-release-plan`
+
+Base trunk HEAD: `0e9820a1db0036949f27ebc14076d0832cfcc2c9`
+
+Model: `gpt-5.4`
+
+Archived change package: `changes/archive/2026-06-10-package-c-dry-run-create-release-plan`
+
+Scope:
+
+- Landed Package C dry-run create/release planning after Package B readonly inventory and TC3 cleanup.
+- Added `scripts/v22-tencent-create-release-dry-run-plan.mjs` and a local gate for deterministic dry-run plan output.
+- Registered `test:cloud-future-authorized` and the Package C gate in the future-authorized suite.
+- Added durable Operations/Runtime spec trace for Package C dry-run and WebUI future-authorized authorization-required behavior.
+- Kept Package C live create/release blocked: no mutation secret read, no real cloud mutation, no Portal ledger write, no deploy, no kubectl, no build/push and no live-test.
+
+Verification:
+
+- `npm run test:cloud-future-authorized`: pass before and after ff-only landing.
+- `npm run gate:review`: pass before and after ff-only landing.
+- `git diff --check -- docs tests scripts changes package.json package-lock.json specs`: pass before landing.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs`: pass on authoring branch.
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: pass on authoring branch.
+- `node tests/contract/contract-test-v22-spec-eval-traceability.mjs`: pass on authoring branch.
+
+Can-claim:
+
+- Package C has a local dry-run create/release plan runner and gate on the recovery trunk lineage.
+- The dry-run plan covers workspace file space, workspace compute allocation, layered Kubernetes isolation controls, freeze-only billing and premium dedicated pool support at planning level.
+- The runner rejects secret-file, live mutation, deploy, kubectl, build and push arguments.
+- The future-authorized WebUI gate returns `authorization_required` unless an explicit WebUI source is provided.
+
+Cannot-claim:
+
+- Package C live create/release is authorized.
+- Mutation secrets have been read.
+- Real Tencent Cloud resources have been created, resized, bound or released.
+- Portal ledger, billing charge, stop-billing mutation, kubectl, deploy, build/push or live-test has run.
+- Production cloud is online.
+
+landed_commit: `a3f78871f4a8310ee4b571ff47579137728f362a`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `a3f78871f4a8310ee4b571ff47579137728f362a`.
+- `package-c-mutation.env` redacted readiness check found the file and all expected keys, but `TENCENT_MUTATION_TKE_CLUSTER_ID` and `TENCENT_MUTATION_TKE_NODE_POOL_ID` remain empty.
+- No mutation secret value was printed, no raw provider response was written, and no real cloud, deploy, kubectl, build/push or live-test operation was performed.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
+
+详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。

@@ -1,15 +1,15 @@
 Owner: `MedOPL`
 Purpose: `closeout`
-State: `active_change`
-Machine boundary: This is not post-merge closeout until branch lands.
+State: `archived_change`
+Machine boundary: Git commit `a3f78871f4a8310ee4b571ff47579137728f362a`, runner behavior and test lane registry define the closed Package C dry-run truth.
 
 # Package C Dry-Run Create Release Plan Closeout
 
-Status: ready_for_landing_review
+Status: archived
 
 ## Commits
 
-- pending
+- `a3f78871f4a8310ee4b571ff47579137728f362a` `feat: add package c dry-run create release plan`
 
 ## Verification
 
@@ -42,7 +42,7 @@ Status: ready_for_landing_review
 
 ## History Handoff
 
-- pending landing.
+- `docs/history/README.md`
 
 ## Next Owner
 

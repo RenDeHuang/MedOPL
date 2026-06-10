@@ -1,6 +1,6 @@
 Owner: `MedOPL`
 Purpose: `spec_delta`
-State: `active_change`
+State: `archived_change`
 Machine boundary: `cloud-future-authorized` manifest membership and the Package C dry-run runner behavior are machine-readable.
 
 # Package C Dry-Run Create Release Plan Spec Delta

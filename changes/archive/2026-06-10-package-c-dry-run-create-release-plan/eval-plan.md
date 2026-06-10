@@ -1,6 +1,6 @@
 Owner: `MedOPL`
 Purpose: `eval_plan`
-State: `active_change`
+State: `archived_change`
 Machine boundary: Commands below are the verification entrypoints.
 
 # Package C Dry-Run Create Release Plan Eval Plan

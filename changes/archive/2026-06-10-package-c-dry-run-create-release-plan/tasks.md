@@ -1,6 +1,6 @@
 Owner: `MedOPL`
 Purpose: `tasks`
-State: `active_change`
+State: `archived_change`
 Machine boundary: Task completion is verified by the eval commands and git diff.
 
 # Package C Dry-Run Create Release Plan Tasks
@@ -13,4 +13,4 @@ Machine boundary: Task completion is verified by the eval commands and git diff.
 - [x] Step 5: add repo-native change package lifecycle files.
 - [x] Step 6: run Package C local gate, `cloud-future-authorized`, review gate and whitespace check.
 - [x] Step 7: self-review and independent read-only review.
-- [ ] Step 8: commit and git push the authoring branch.
+- [x] Step 8: commit and git push the authoring branch.

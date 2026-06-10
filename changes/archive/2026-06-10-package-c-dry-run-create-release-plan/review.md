@@ -1,6 +1,6 @@
 Owner: `MedOPL`
 Purpose: `review`
-State: `active_change`
+State: `archived_change`
 Machine boundary: Review findings are advisory; gates and source/tests remain machine truth.
 
 # Package C Dry-Run Create Release Plan Review
