@@ -19,6 +19,23 @@ const RESOURCE_BINDING_ID = "resource-binding-real-webui-runtime-bridge";
 const PROVIDER_KEY_REF = "provider-key-ref-real-webui-runtime-bridge";
 const RUNTIME_AGENT_ID = "runtime-agent-real-webui-runtime-bridge";
 
+if (!providedWebuiUrl && !configuredWebuiDir) {
+  console.log(JSON.stringify({
+    ok: true,
+    contract: "v22_real_opl_webui_runtime_bridge_flow",
+    status: "authorization_required",
+    executed: false,
+    reason: "OPL_REAL_WEBUI_DIR_or_OPL_REAL_WEBUI_URL_required",
+    realWebuiStarted: false,
+    secretRead: false,
+    liveCloudCall: false,
+    deploy: false,
+    kubectl: false,
+    buildOrPush: false,
+  }, null, 2));
+  process.exit(0);
+}
+
 function assertNoSecretLeak(value, label) {
   const serialized = typeof value === "string" ? value : JSON.stringify(value || {});
   assert.equal(
