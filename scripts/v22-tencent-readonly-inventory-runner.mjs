@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import {
   createTencentReadonlyInventoryOfficialSdkModules,
@@ -179,6 +180,23 @@ function maskAccount(accountId = "") {
   return `${text.slice(0, 4)}...${text.slice(-4)}`;
 }
 
+function safeStdoutField(value = "", fallback = "") {
+  const text = String(value || "").replace(/[^A-Za-z0-9_.:-]/gu, "_").slice(0, 96);
+  return text || fallback;
+}
+
+export function sanitizeBlockersForStdout(blockers = []) {
+  return (Array.isArray(blockers) ? blockers : []).map((blocker = {}) => {
+    const safe = {
+      code: safeStdoutField(blocker.code, "readonly_blocker"),
+      operation: safeStdoutField(blocker.operation, "readonly_operation"),
+    };
+    const region = safeStdoutField(blocker.region);
+    if (region) safe.region = region;
+    return safe;
+  });
+}
+
 function redactedReport({ env, regions, allowedApis, sdkMode, runId, resources = [], blockers = [] }) {
   return {
     ok: blockers.length === 0,
@@ -327,12 +345,14 @@ async function main() {
     reportPath,
     callsMutationApi: false,
     readsCosObjectBody: false,
-    blockers,
+    blockers: sanitizeBlockersForStdout(blockers),
   }, null, 2));
   if (!report.ok) process.exitCode = 2;
 }
 
-main().catch((error) => {
-  console.error(String(error?.message || "readonly_runner_failed"));
-  process.exitCode = 1;
-});
+if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
+  main().catch((error) => {
+    console.error(String(error?.message || "readonly_runner_failed"));
+    process.exitCode = 1;
+  });
+}

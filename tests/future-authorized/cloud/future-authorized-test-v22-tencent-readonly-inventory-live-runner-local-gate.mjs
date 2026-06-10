@@ -4,6 +4,10 @@ import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 
+import {
+  sanitizeBlockersForStdout,
+} from "../../../scripts/v22-tencent-readonly-inventory-runner.mjs";
+
 const runner = "scripts/v22-tencent-readonly-inventory-runner.mjs";
 
 function run(args = []) {
@@ -151,6 +155,30 @@ try {
   assert.equal(JSON.stringify(report).includes("medopl-proof-bucket"), false, "report_must_not_include_probe_bucket");
   assert.equal(JSON.stringify(report).includes("readonly-probe.txt"), false, "report_must_not_include_probe_key");
   assertNoSensitiveOutput(JSON.stringify(report), "report");
+
+  const stdoutBlockers = sanitizeBlockersForStdout([
+    {
+      code: "ForbiddenOperation",
+      operation: "headObject",
+      region: "na-siliconvalley",
+      message: "provider leaked medopl-proof-bucket readonly-probe.txt secret-key-proof rawResponse",
+      bucket: "medopl-proof-bucket",
+      key: "readonly-probe.txt",
+      rawResponse: {
+        headers: {
+          authorization: "secret-key-proof",
+        },
+      },
+    },
+  ]);
+  assert.deepEqual(stdoutBlockers, [
+    {
+      code: "ForbiddenOperation",
+      operation: "headObject",
+      region: "na-siliconvalley",
+    },
+  ], "stdout_blockers_must_keep_only_safe_fields");
+  assertNoSensitiveOutput(JSON.stringify(stdoutBlockers), "stdout_blockers");
 } finally {
   await rm(tmp, { recursive: true, force: true });
 }
