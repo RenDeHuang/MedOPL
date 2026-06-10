@@ -69,10 +69,9 @@ assertIncludesAll(contract, [
 ], "official_sdk_strategy_dependency_policy");
 
 assertIncludesAll(contract, [
-  "official SDK readonly live 跑通前，不删除 TC3",
-  "official SDK readonly live 跑通并由 B 接受后，另开 cleanup 分支",
-  "TC3 从 future authorized default candidate 退场",
-  "TC3 可保留为 isolated diagnostic fixture",
+  "official SDK readonly live 已跑通并由 B closeout 接受",
+  "TC3 已从 future authorized default candidate 退场",
+  "TC3 只可保留为 isolated diagnostic / provenance reference",
   "不能作为 create/release 或默认 readonly live 主路径",
 ], "official_sdk_strategy_cleanup_policy");
 
@@ -82,7 +81,6 @@ assertIncludesAll(contract, [
   "`readsSecretNow=false`",
   "`implementsRealCloudCallNow=false`",
   "调用真实 readonly 云 API",
-  "不删除 TC3",
   "不改 create/release mutation 边界",
 ], "official_sdk_strategy_non_goals");
 

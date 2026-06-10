@@ -429,7 +429,7 @@ readonly inventory 的 official Tencent SDK wrapper 是 future authorized provid
 
 Cloud resource isolation 不再保留旧 scoped aggregate wrapper。future-authorized cloud 边界必须以 `tests/future-authorized/cloud/*.mjs` active registered 原子 gate 表达，并由 `scripts/v22-test-classification.mjs` 的 `future-authorized` lane、`ownerSurface` 和 `lifecycleRole=future-authorized-boundary` 约束；任何旧 alias、compat-only wrapper 或只包装历史路径的 suite-wrapper 迁完 caller 后直接删除。该边界不替代 `node tests/contract/contract-test-v22-mvp-contract-suite.mjs`，也不读取 secret、不调用真实云、不 build/push/kubectl。
 
-[spec:v22-tencent-tc3-diagnostic-cleanup-plan](#spec-v22-tencent-tc3-diagnostic-cleanup-plan) 是 TC3 diagnostic cleanup plan。它规定 official SDK wrapper 合并、official SDK 依赖合并、official SDK readonly live 成功生成脱敏 report、B 审查确认 future authorized provider candidate 不再依赖 TC3 之后，才能另开 cleanup 分支让 runner future authorized default candidate 不再使用 `tencent-tc3-readonly`，并将 TC3 smoke 改为 diagnostic fixture 或删除、让 TC3 live bridge 从生产路径退场。本计划当前不删除 TC3、不读 secret、不调用真实云、不改 official SDK implementation、不改 create/release。
+[spec:v22-tencent-tc3-diagnostic-cleanup-plan](#spec-v22-tencent-tc3-diagnostic-cleanup-plan) 是 TC3 diagnostic cleanup closeout。official SDK wrapper、official SDK dependencies、authorized readonly live redacted report 和 B closeout 已满足启动条件；runner 不支持 `tencent-tc3-readonly` 或 `--enable-real-fetch`，TC3 live bridge 不在 production path 或 future authorized default path。该 cleanup 不读 secret、不调用真实云、不改 official SDK implementation、不改 create/release；历史 TC3 只保留为 provenance / static diagnostic contract。
 
 ### Cleanup 合同包
 
@@ -10223,7 +10223,7 @@ SDK wrapper 仍必须遵守 allowlist_only、Describe/List/Get/Head only、COS m
 
 readonly inventory 的 future authorized provider candidate = Tencent official SDK wrapper。当前 trunk 默认路径仍是合同级、本地 smoke 和 fail-closed gate；业务层只允许依赖 v22 自己的 readonly inventory interface，不直接依赖 Tencent SDK raw client。
 
-hand-rolled TC3 = diagnostic/reference only, not future authorized default readonly live path。TC3 暂不删除，但不能作为 create/release provider，也不能扩大 mutation 权限。
+hand-rolled TC3 = diagnostic/reference only, not future authorized default readonly live path。TC3 production/default path 已退场；当前 runner 不支持 `tencent-tc3-readonly` sdk-mode，不支持 `--enable-real-fetch`，不能作为 create/release provider，也不能扩大 mutation 权限。
 
 official SDK wrapper 仍必须 obey readonly allowlist、secret allowlist、redaction、RUN gate、no raw SDK exposure。它只能暴露现有语义接口：
 
@@ -10265,12 +10265,12 @@ If `cos-nodejs-sdk-v5` is not installed, COS shape is unavailable, or explicit m
 
 cleanup 策略：
 
-- official SDK readonly live 跑通前，不删除 TC3。
-- official SDK readonly live 跑通并由 B 接受后，另开 cleanup 分支将 TC3 从 future authorized default candidate 退场。
-- TC3 可保留为 isolated diagnostic fixture。
+- official SDK readonly live 已跑通并由 B closeout 接受。
+- TC3 已从 future authorized default candidate 退场。
+- TC3 只可保留为 isolated diagnostic / provenance reference。
 - TC3 不能作为 create/release 或默认 readonly live 主路径。
 
-cloud-lane candidate 已记录 SDK dependency / loader / readonly client 连接形状；默认未授权状态仍是 `defaultExecutable=false`、`readsSecretNow=false`。调用真实 readonly 云 API 只能发生在用户当前会话显式授权的 live readonly 路径中，且只证明 readonly connection 可生成脱敏审计摘要；它不证明 Portal canonical mapping 已完成，不允许 mutation 自动推进。本合同不删除 TC3、不改 create/release mutation 边界、不读取 mutation secret、不执行 mutation、不改 deploy、不 kubectl、不 merge、不 push。
+cloud-lane candidate 已记录 SDK dependency / loader / readonly client 连接形状；默认未授权状态仍是 `defaultExecutable=false`、`readsSecretNow=false`。调用真实 readonly 云 API 只能发生在用户当前会话显式授权的 live readonly 路径中，且只证明 readonly connection 可生成脱敏审计摘要；它不证明 Portal canonical mapping 已完成，不允许 mutation 自动推进。本合同不改 create/release mutation 边界、不读取 mutation secret、不执行 mutation、不改 deploy、不 kubectl、不 merge、不 push。
 
 ## Live Readonly Authorization Note
 
@@ -10286,9 +10286,7 @@ Package B authorized readonly evidence can close only when explicit COS metadata
 
 `--sdk-mode tencent-real-readonly` 只保留为 dependency-injected SDK modules 的兼容测试入口，用来证明 runner 的 readonly gate、regions、API allowlist、redaction 和 mutation rejection；它不能作为 future authorized provider candidate，不能加载 raw SDK package，不能绕过 official SDK dependency loader 合同。
 
-TC3 readonly modules 属于 readonly inventory live client implementation，不是 create/release，不扩大 mutation 权限。TC3 modules 只能通过注入 fetch 和 readonly credentials 生成 Describe/List/Get/Head 请求，不读取 secret 文件、不 source env、不暴露 raw client 或通用 call(apiName, params)。
-
-Live Bridge 是 readonly inventory 的授权运行入口，默认关闭。runner 只有在 `--live-readonly`、`--sdk-mode tencent-tc3-readonly`、`--enable-real-fetch`、`RUN_TENCENT_READONLY_INVENTORY=1`、regions 非空、allowlist 通过且用户在当前会话单独授权执行时，才允许把 `globalThis.fetch` 注入 TC3 readonly modules；未显式开启时必须 fail-closed。Live Bridge 不扩大 create/release，不支持 mutation API，不改变输出脱敏边界，默认 smoke 和 CI 不运行真实云。
+TC3 readonly modules 不再是 readonly inventory live client implementation。runner 不支持 `tencent-tc3-readonly` sdk-mode，不支持 `--enable-real-fetch`，也不会把 `globalThis.fetch` 注入 TC3 modules。历史 TC3 只能作为 provenance / diagnostic reference，不能进入 production path、future authorized default path 或 create/release provider。
 
 ## Contract Data
 
@@ -10507,7 +10505,7 @@ Provider response 不得包含：
 Former leaf id: `v22-tencent-tc3-diagnostic-cleanup-plan`
 Former title: v22 Tencent TC3 Diagnostic Cleanup Plan
 
-本计划只定义 hand-rolled TC3 的后续 cleanup 条件和步骤，不删除代码、不修改 runner、不读取 secret、不调用真实云。
+本记录定义 hand-rolled TC3 的 cleanup closeout：TC3 production/default path 已退场，只保留静态 diagnostic / provenance 角色；本 cleanup 不读取 secret、不调用真实云、不修改 official SDK implementation、不改 create/release。
 
 ## 背景
 
@@ -10515,56 +10513,55 @@ v22 provider strategy 的 future authorized provider candidate 是 Tencent offic
 
 hand-rolled TC3 当前降级为 diagnostic/reference only。它可以继续作为诊断和参考实现存在，但不能重新成为 future authorized default readonly live path，不能成为 create/release provider，也不能扩大 mutation 权限。
 
-official SDK readonly live 跑通前，不删除 TC3。
+official SDK readonly live 已跑通并由 B closeout 接受。
 
-official SDK readonly live 跑通后，需要 cleanup TC3 production path。
+TC3 production path cleanup 已执行：runner 不支持 `tencent-tc3-readonly` sdk-mode，也不支持 `--enable-real-fetch`。
 
 ## 退场条件
 
-TC3 production path cleanup 必须等以下条件全部满足后才能启动：
+TC3 production path cleanup 启动条件已满足：
 
 - official SDK wrapper 合并。
 - official SDK 依赖合并。
 - official SDK readonly live 成功生成脱敏 report。
 - B 审查确认 future authorized provider candidate 不再依赖 TC3。
 
-任何条件不满足时，TC3 只能保持 diagnostic/reference only，不能删除，也不能把 cleanup 当作已完成。
+cleanup 后，TC3 只能保持 diagnostic/reference only，不能删除，也不能把它恢复为 future authorized default readonly live path。
 
 ## Cleanup 内容
 
-后续 cleanup 分支需要处理以下内容：
+本 cleanup 分支处理以下内容：
 
-- runner future authorized default candidate 不再使用 tencent-tc3-readonly。
-- TC3 smoke 改为 diagnostic fixture 或删除。
-- TC3 live bridge 从生产路径退场。
-- 保留/删除策略由 cleanup 分支决定。
+- runner 不支持 tencent-tc3-readonly sdk-mode。
+- TC3 smoke 已退为静态 diagnostic contract。
+- TC3 live bridge 不在生产路径或 future authorized default path。
+- 历史 TC3 只保留为 provenance / diagnostic reference。
 
 cleanup 分支必须证明 future authorized provider candidate 仍是 Tencent official SDK wrapper，业务层仍只依赖 v22 readonly inventory interface，TC3 没有被 create/release 或默认 readonly live 主路径继续引用。
 
 ## 保留 / 删除策略
 
-cleanup 分支可以选择：
+后续保留策略：
 
-- 保留 TC3 为 isolated diagnostic fixture，用于离线签名形状、readonly allowlist 和脱敏 report fixture 检查。
-- 删除 TC3 live bridge 和相关 production path，只保留合同历史。
-- 删除全部 TC3 诊断实现，但必须先证明 official SDK readonly live 已覆盖当前诊断价值。
+- 保留静态 TC3 diagnostic contract，用于防止 TC3 回到 default path。
+- 不保留 TC3 live bridge 或相关 production path。
+- 若后续删除全部 TC3 诊断引用，必须另开 cleanup 分支并证明 official SDK readonly live 已覆盖当前诊断价值。
 
-具体选择必须在 cleanup 分支中由 B 审查确认，不能在本计划分支提前决定。
+具体删除历史/诊断引用仍需另开 cleanup 分支；本分支只关闭 production/default path。
 
 ## 非目标
 
-- 当前不删除 TC3。
 - 不读 secret。
 - 不调用真实云。
 - 不改 official SDK implementation。
 - 不改 create/release。
 - 不安装 SDK 依赖。
-- 不修改 runner future authorized default candidate。
-- 不修改 TC3 live bridge。
+- 不删除历史/provenance 文字。
+- 不删除静态 TC3 diagnostic contract。
 
 ## 验收
 
-本计划分支只通过静态合同 smoke 验收：
+本 cleanup 分支只通过静态合同 smoke 验收：
 
 ```bash
 node tests/future-authorized/cloud/future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs
@@ -10580,19 +10577,15 @@ git diff --check -- docs/specs scripts
   "contract": "v22_tencent_tc3_diagnostic_cleanup_plan",
   "version": 1,
   "tc3CurrentRole": "diagnostic_reference_only",
-  "deleteTc3Now": false,
+  "cleanupExecuted": true,
+  "tc3ProductionPathRetired": true,
+  "runnerSupportsTencentTc3Readonly": false,
+  "tc3SmokePolicy": "static_diagnostic_contract",
   "callRealCloudNow": false,
   "readSecretNow": false,
   "changesOfficialSdkImplementation": false,
   "changesCreateRelease": false,
-  "cleanupRequiresOfficialSdkWrapperMerged": true,
-  "cleanupRequiresOfficialSdkDependencyMerged": true,
-  "cleanupRequiresOfficialSdkReadonlyLiveRedactedReport": true,
-  "cleanupRequiresBAuditProductionDefaultNoTc3": true,
-  "runnerProductionDefaultMustNotUseTencentTc3ReadonlyAfterCleanup": true,
-  "tc3SmokePolicy": "diagnostic_fixture_or_delete",
-  "tc3LiveBridgeProductionPathAfterCleanup": "retired",
-  "retainOrDeleteDecisionOwner": "cleanup_branch"
+  "futureAuthorizedProviderCandidate": "tencent_official_sdk_wrapper"
 }
 ```
 <!-- v22-tencent-tc3-diagnostic-cleanup-plan:end -->

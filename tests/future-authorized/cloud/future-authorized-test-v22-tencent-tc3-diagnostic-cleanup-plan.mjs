@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 const contractPath = "docs/specs/README.md";
 const manifestPath = "tests/fixtures/v22/agent-verify-manifest.json";
 const readmePath = "docs/specs/README.md";
+const runnerPath = "scripts/v22-tencent-readonly-inventory-runner.mjs";
 const selfFile = "tests/future-authorized/cloud/future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs";
 const smokePath = "tests/future-authorized/cloud/future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs";
 
@@ -29,14 +30,15 @@ function assertNotIncludesAny(source, phrases, label) {
 const contract = await readFile(contractPath, "utf8");
 const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 const readme = await readFile(readmePath, "utf8");
+const runner = await readFile(runnerPath, "utf8");
 const smoke = await readFile(smokePath, "utf8");
 const realCloudReadinessFiles = commandFiles(manifest.suites.find((suite) => suite.id === "real-cloud-readiness")?.commands || []);
 
 assertIncludesAll(contract, [
   "TC3 Diagnostic Cleanup Plan",
   "hand-rolled TC3 当前降级为 diagnostic/reference only",
-  "official SDK readonly live 跑通前，不删除 TC3",
-  "official SDK readonly live 跑通后，需要 cleanup TC3 production path",
+  "official SDK readonly live 已跑通并由 B closeout 接受",
+  "TC3 production path cleanup 已执行",
 ], "tc3_cleanup_plan_scope");
 
 assertIncludesAll(contract, [
@@ -47,14 +49,13 @@ assertIncludesAll(contract, [
 ], "tc3_cleanup_exit_conditions");
 
 assertIncludesAll(contract, [
-  "runner future authorized default candidate 不再使用 tencent-tc3-readonly",
-  "TC3 smoke 改为 diagnostic fixture 或删除",
-  "TC3 live bridge 从生产路径退场",
-  "保留/删除策略由 cleanup 分支决定",
+  "runner 不支持 tencent-tc3-readonly sdk-mode",
+  "TC3 smoke 已退为静态 diagnostic contract",
+  "TC3 live bridge 不在生产路径或 future authorized default path",
+  "历史 TC3 只保留为 provenance / diagnostic reference",
 ], "tc3_cleanup_contents");
 
 assertIncludesAll(contract, [
-  "当前不删除 TC3",
   "不读 secret",
   "不调用真实云",
   "不改 official SDK implementation",
@@ -64,38 +65,40 @@ assertIncludesAll(contract, [
 assertIncludesAll(contract, [
   "\"contract\": \"v22_tencent_tc3_diagnostic_cleanup_plan\"",
   "\"tc3CurrentRole\": \"diagnostic_reference_only\"",
-  "\"deleteTc3Now\": false",
+  "\"cleanupExecuted\": true",
+  "\"tc3ProductionPathRetired\": true",
+  "\"runnerSupportsTencentTc3Readonly\": false",
+  "\"tc3SmokePolicy\": \"static_diagnostic_contract\"",
   "\"callRealCloudNow\": false",
   "\"readSecretNow\": false",
   "\"changesOfficialSdkImplementation\": false",
   "\"changesCreateRelease\": false",
-  "\"cleanupRequiresOfficialSdkWrapperMerged\": true",
-  "\"cleanupRequiresOfficialSdkDependencyMerged\": true",
-  "\"cleanupRequiresOfficialSdkReadonlyLiveRedactedReport\": true",
-  "\"cleanupRequiresBAuditProductionDefaultNoTc3\": true",
-  "\"runnerProductionDefaultMustNotUseTencentTc3ReadonlyAfterCleanup\": true",
-  "\"tc3SmokePolicy\": \"diagnostic_fixture_or_delete\"",
-  "\"tc3LiveBridgeProductionPathAfterCleanup\": \"retired\"",
-  "\"retainOrDeleteDecisionOwner\": \"cleanup_branch\"",
+  "\"futureAuthorizedProviderCandidate\": \"tencent_official_sdk_wrapper\"",
 ], "tc3_cleanup_contract_data");
 
 assertIncludesAll(readme, [
   "spec:v22-tencent-tc3-diagnostic-cleanup-plan",
-  "TC3 diagnostic cleanup plan",
+  "TC3 diagnostic cleanup closeout",
   "official SDK readonly live 成功生成脱敏 report",
 ], "tc3_cleanup_readme");
 
 assert(realCloudReadinessFiles.includes(selfFile), "real_cloud_readiness_suite_must_include_tc3_cleanup_plan_contract");
 
 assertNotIncludesAny(contract, [
-  "\"deleteTc3Now\": true",
   "\"callRealCloudNow\": true",
   "\"readSecretNow\": true",
   "\"changesOfficialSdkImplementation\": true",
   "\"changesCreateRelease\": true",
-  "TC3 当前删除",
-  "当前删除 TC3",
+  "\"runnerSupportsTencentTc3Readonly\": true",
+  "当前不修改 TC3 live bridge",
+  "不修改 TC3 live bridge",
 ], "tc3_cleanup_forbidden_claims");
+
+assertNotIncludesAny(runner, [
+  "tencent-tc3-readonly",
+  "--enable-real-fetch",
+  "enableRealFetch",
+], "tc3_cleanup_runner_must_not_expose_tc3_live_bridge");
 
 assertNotIncludesAny(smoke, [
   ["process", "env"].join("."),
