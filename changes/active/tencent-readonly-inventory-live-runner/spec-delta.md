@@ -33,10 +33,13 @@ Current live readiness state:
 - official SDK wrapper can call readonly account, TKE, billing, tag and COS metadata-only methods.
 - optional `TENCENT_READONLY_COS_METADATA_PROBES` is allowed in the readonly env and is used only as `headObject` input; report/stdout must not emit bucket names or object keys.
 - missing SDK dependencies, permission gaps or missing COS metadata probes produce a redacted blocker report instead of a false success.
+- authorized official SDK readonly mode has passed with explicit COS metadata probe evidence, `blockers: []`, `callsMutationApi=false` and `readsCosObjectBody=false`.
+- live stdout blocker output is restricted to `code`, `operation` and optional `region`; raw provider messages and raw cloud identifiers must not be emitted.
 
 ## CANNOT-CLAIM
 
 - Portal ledger mapping completed.
-- COS metadata inventory completed without explicit metadata probes.
+- complete COS file-space inventory beyond explicit metadata probes.
+- TKE node pool / namespace / workload inventory completed unless a future readonly report observes those resources.
 - production cloud is online.
 - create/release or deploy is authorized.

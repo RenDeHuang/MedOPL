@@ -10282,6 +10282,8 @@ live readonly 不创建、不删除、不释放、不扩缩容、不改标签、
 
 runner 只有在 `--sdk-mode tencent-official-sdk-readonly`、`--enable-official-sdk-loader`、`RUN_TENCENT_READONLY_INVENTORY=1`、allowlist 通过、用户单独授权执行时，才允许加载 official SDK package 并调用真实只读 SDK。默认 smoke 和 CI 不运行真实云。
 
+Package B authorized readonly evidence can close only when explicit COS metadata probes are configured, the official SDK run returns `ok: true`, stdout/report remain redacted, blockers are empty, and boundary flags prove `callsMutationApi=false` and `readsCosObjectBody=false`. This evidence remains a readonly connection audit summary only; it does not complete Portal ledger mapping, does not inventory every COS object, does not authorize create/release, and does not prove production cloud is online.
+
 `--sdk-mode tencent-real-readonly` 只保留为 dependency-injected SDK modules 的兼容测试入口，用来证明 runner 的 readonly gate、regions、API allowlist、redaction 和 mutation rejection；它不能作为 future authorized provider candidate，不能加载 raw SDK package，不能绕过 official SDK dependency loader 合同。
 
 TC3 readonly modules 属于 readonly inventory live client implementation，不是 create/release，不扩大 mutation 权限。TC3 modules 只能通过注入 fetch 和 readonly credentials 生成 Describe/List/Get/Head 请求，不读取 secret 文件、不 source env、不暴露 raw client 或通用 call(apiName, params)。
@@ -10348,6 +10350,7 @@ Live Bridge 是 readonly inventory 的授权运行入口，默认关闭。runner
     "TENCENT_READONLY_SECRET_KEY",
     "TENCENT_READONLY_REGIONS",
     "TENCENT_READONLY_ALLOWED_APIS",
+    "TENCENT_READONLY_COS_METADATA_PROBES",
     "TENCENT_READONLY_ACCOUNT_ID"
   ],
   "forbiddenSecretKeys": [

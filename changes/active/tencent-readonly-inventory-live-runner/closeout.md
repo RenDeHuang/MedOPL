@@ -19,6 +19,7 @@ Implemented:
 - root cloud tooling dependencies for `tencentcloud-sdk-nodejs` and `cos-nodejs-sdk-v5`; Portal packages do not own SDK dependencies.
 - official SDK loader gate via `--enable-official-sdk-loader`.
 - dependency-injected official SDK readonly wrapper for account, TKE, billing, tag and COS metadata-only inventory.
+- stdout blocker sanitization so live provider failure summaries only expose `code`, `operation` and optional `region`.
 - `real-cloud-readiness` suite registration.
 
 Verification:
@@ -27,13 +28,29 @@ Verification:
 - `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-official-sdk-wrapper-local-gate.mjs`: pass.
 - `npm run test:real-cloud-readiness`: pass.
 - `npm run gate:review`: pass.
-- authorized official SDK mode with `/home/dev/.secrets/medopl/v22/readonly-inventory.env`: loaded root SDK dependencies, called readonly account/TKE/billing/tag/COS bucket APIs, wrote redacted `.runtime` report, and left `cos_metadata_probe_not_configured` as the only blocker.
-- authorized fake readonly mode with `/home/dev/.secrets/medopl/v22/readonly-inventory.env`: pass, wrote redacted `.runtime` report and proved no mutation, COS object body read, kubectl, build or push.
+- `git diff --check -- scripts tests package.json package-lock.json docs changes`: pass.
+- authorized official SDK mode with `/home/dev/.secrets/medopl/v22/readonly-inventory.env`: pass after explicit COS metadata probe configuration; wrote redacted `.runtime/v22-tencent-readonly-inventory/<authorized-run-id>.json`.
+- authorized official SDK mode observed only sanitized resource types: `accountSummary`, `billingSummary`, `billingTagSummary`, `cosObjectMetadataSummary`, `cosStorageSummary` and `tkeClusterSummary`.
+- authorized official SDK mode produced `blockers: []` and kept `callsMutationApi=false`, `readsCosObjectBody=false`, `callsKubectl=false`, `buildsOrPushesImage=false`.
+
+Package B closeout:
+
+- The readonly inventory runner is closed for the current authoring branch.
+- The accepted evidence proves the authorized readonly cloud connection can generate a redacted audit summary.
+- The accepted evidence does not become production truth and does not authorize Package C mutation, Package D deploy, kubectl, build/push or live-test.
+- Raw provider responses, raw secrets, COS bucket names, object keys and object body content remain outside git.
+
+Next cursor:
+
+- Package C must start as dry-run create/release planning only.
+- Package C must keep a separate env file, secret allowlist, API allowlist, operation cap, budget cap and explicit user authorization.
+- TC3 cleanup can be handled in a separate cleanup branch after this Package B branch is accepted; TC3 must remain diagnostic/reference only and cannot be create/release provider.
 
 ## Cannot Claim
 
 - Portal ledger mapping completed.
-- COS metadata inventory completed without explicit metadata probes.
+- complete COS file-space inventory beyond explicit metadata probes.
+- TKE node pool, namespace, workload or runtime deployment inventory completed.
 - create/release authorized.
 - deploy/kubectl/build/push authorized.
 - production cloud is online.

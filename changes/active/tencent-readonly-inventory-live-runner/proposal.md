@@ -29,9 +29,12 @@ The runner must:
 
 This package does not authorize create/release, deploy, kubectl, build/push, COS object body reads, or production completion claims.
 
+After authorized readonly execution passes, this package may claim only a redacted readonly cloud connection audit summary for the observed resource types.
+
 ## Cannot Claim
 
-- live Tencent inventory completed.
-- real TKE / COS / billing inventory evidence exists.
 - production cloud is online.
+- Portal ledger mapping completed.
+- complete TKE node pool / namespace / workload inventory completed.
+- complete COS file-space inventory beyond explicit metadata probes.
 - create/release or deploy is authorized.

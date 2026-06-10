@@ -13,5 +13,8 @@ Machine boundary: Task completion is verified by repo-native commands.
 - [x] Register the local gate in `real-cloud-readiness`.
 - [x] Run `npm run test:real-cloud-readiness`.
 - [x] Attempt authorized official SDK mode with the provided readonly env and record sanitized report/blocker output.
+- [x] Add explicit COS metadata probe support and keep bucket/object keys out of stdout, report and git.
+- [x] Complete authorized official SDK readonly inventory with `ok: true`, `blockers: []`, no mutation and no COS object body reads.
+- [x] Sanitize live stdout blockers to safe fields only.
 - [x] Run `npm run gate:review` after change package is complete.
 - [x] Commit and push the runner branch after verification.
