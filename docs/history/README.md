@@ -3868,7 +3868,7 @@ next_cursor: `real-cloud-authorization-boundary`
 
 ### 2026-06-10 feat/v22-tke-bootstrap-preflight
 
-Status: `ready_for_landing_review`
+Status: `landed / pushed / post-push verified`
 
 Branch: `feat/v22-tke-bootstrap-preflight`
 
@@ -3876,7 +3876,7 @@ Base trunk HEAD: `97a484285b40d09722b8eb1769b20b61fbb8d91b`
 
 Model: `gpt-5.4`
 
-Active change package: `changes/active/tke-bootstrap-preflight`
+Archived change package: `changes/archive/2026-06-10-tke-bootstrap-preflight`
 
 Scope:
 
@@ -3898,7 +3898,7 @@ Verification:
 
 Can-claim:
 
-- The repo has a local TKE bootstrap preflight authoring branch ready for landing review.
+- The repo has a local TKE bootstrap preflight runner and gate on the recovery trunk lineage.
 - The preflight states the first cloud foundation checklist and exact Package C env fields: `TENCENT_MUTATION_TKE_CLUSTER_ID` and `TENCENT_MUTATION_TKE_NODE_POOL_ID`.
 
 Cannot-claim:
@@ -3906,5 +3906,21 @@ Cannot-claim:
 - TKE, NAT, CBS, COS, PostgreSQL, namespaces, workloads or node pools have been created.
 - Package C live mutation is authorized.
 - Production cloud, production runtime, production billing, deploy, kubectl, build/push or live-test is complete.
+
+landed_commit: `0e5fe7a202264828b75471de538267a3d32cc498`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `0e5fe7a202264828b75471de538267a3d32cc498`.
+- `npm run test:cloud-future-authorized`: pass after landing.
+- `npm run gate:review`: pass after landing.
+- `npm run closeout:check`: pass after landing closeout.
+- No mutation secret value was printed, no raw provider response was written, and no real cloud, deploy, kubectl, build/push or live-test operation was performed.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。

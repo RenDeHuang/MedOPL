@@ -1,6 +1,6 @@
 Owner: `MedOPL`
 Purpose: `eval_plan`
-State: `active_change`
+State: `archived_change`
 Machine boundary: Eval commands below are the acceptance boundary for this package.
 
 # TKE Bootstrap Preflight Eval Plan

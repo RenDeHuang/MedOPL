@@ -1,6 +1,6 @@
 Owner: `MedOPL`
 Purpose: `spec_delta`
-State: `active_change`
+State: `archived_change`
 Machine boundary: Accepted deltas must be synchronized into `specs/operations/spec.md`, `specs/runtime/spec.md` and `docs/specs/README.md`.
 
 # TKE Bootstrap Preflight Spec Delta

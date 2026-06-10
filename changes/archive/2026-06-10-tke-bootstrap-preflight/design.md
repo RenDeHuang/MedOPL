@@ -1,6 +1,6 @@
 Owner: `MedOPL`
 Purpose: `design`
-State: `active_change`
+State: `archived_change`
 Machine boundary: Runnable behavior lives in the runner, local gate, test classification registry and verify manifest.
 
 # TKE Bootstrap Preflight Design

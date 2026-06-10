@@ -1,6 +1,6 @@
 Owner: `MedOPL`
 Purpose: `tasks`
-State: `active_change`
+State: `archived_change`
 Machine boundary: Task completion is verified by eval commands and git diff.
 
 # TKE Bootstrap Preflight Tasks
@@ -12,4 +12,4 @@ Machine boundary: Task completion is verified by eval commands and git diff.
 - [x] Step 4: sync durable specs and docs truth.
 - [x] Step 5: run TKE preflight local gate, `cloud-future-authorized`, review gate and whitespace check.
 - [x] Step 6: self-review.
-- [ ] Step 7: commit, push, land to trunk and run post-merge closeout.
+- [x] Step 7: commit, push, land to trunk and run post-merge closeout.

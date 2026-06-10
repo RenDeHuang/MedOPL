@@ -1,15 +1,15 @@
 Owner: `MedOPL`
 Purpose: `closeout`
-State: `active_change`
-Machine boundary: Final closeout is valid only after landing and post-push verification.
+State: `archived_change`
+Machine boundary: Git commit 0e5fe7a202264828b75471de538267a3d32cc498, runner behavior and test lane registry define the closed TKE bootstrap preflight truth.
 
 # TKE Bootstrap Preflight Closeout
 
-Status: ready_for_landing_review
+Status: landed
 
 ## Commits
 
-- pending authoring commit
+- 0e5fe7a202264828b75471de538267a3d32cc498 feat: add tke bootstrap preflight
 
 ## Verification
 
@@ -37,7 +37,7 @@ Known repo hygiene note: `node tests/contract/contract-test-v22-change-package-l
 
 ## Archive Target
 
-- changes/archive/YYYY-MM-DD-tke-bootstrap-preflight
+- changes/archive/2026-06-10-tke-bootstrap-preflight
 
 ## History Handoff
 

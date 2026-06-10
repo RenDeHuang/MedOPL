@@ -1,11 +1,11 @@
 Owner: `MedOPL`
 Purpose: `proposal`
-State: `active_change`
+State: `archived_change`
 Machine boundary: `scripts/v22-tke-bootstrap-preflight-plan.mjs`, `tests/future-authorized/cloud/future-authorized-test-v22-tke-bootstrap-preflight-local-gate.mjs`, `scripts/v22-test-classification.mjs` and `tests/fixtures/v22/agent-verify-manifest.json` define the runnable local gate. `.runtime` reports are local evidence and stay out of git.
 
 # TKE Bootstrap Preflight Proposal
 
-Status: authoring
+Status: archived
 Branch: `feat/v22-tke-bootstrap-preflight`
 Base trunk: `origin/recovery/platform-v22-trunk`
 Affected plane: Operations

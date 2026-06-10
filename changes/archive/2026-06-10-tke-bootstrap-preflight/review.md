@@ -1,6 +1,6 @@
 Owner: `MedOPL`
 Purpose: `review`
-State: `active_change`
+State: `archived_change`
 Machine boundary: Review conclusions are subordinate to eval output and git diff.
 
 # TKE Bootstrap Preflight Review
