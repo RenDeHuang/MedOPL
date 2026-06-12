@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const FORBIDDEN_ARGS = new Set([
@@ -14,10 +14,38 @@ const FORBIDDEN_ARGS = new Set([
   "--push",
 ]);
 
+const FOUNDATION_ENV_KEYS = new Set([
+  "TENCENT_MUTATION_TKE_CLUSTER_ID",
+  "TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID",
+  "TENCENT_MUTATION_COS_BUCKET",
+  "TENCENT_MUTATION_COS_REGION",
+  "TENCENT_MUTATION_WORKSPACE_PREFIX_ROOT",
+]);
+
+const FORBIDDEN_FOUNDATION_ENV_KEYS = new Set([
+  "RUN_TENCENT_CREATE_RELEASE_EXECUTION",
+  "TENCENT_MUTATION_SECRET_ID",
+  "TENCENT_MUTATION_SECRET_KEY",
+  "RUN_TENCENT_READONLY_INVENTORY",
+  "TENCENT_READONLY_SECRET_ID",
+  "TENCENT_READONLY_SECRET_KEY",
+  "RUN_TENCENT_DEPLOY_EXECUTION",
+  "TCR_ID",
+  "TCR_SECRET",
+  "TENCENT_DEPLOY_KUBECONFIG_REF",
+  "TENCENT_DEPLOY_CLUSTER_ID",
+  "KUBECONFIG",
+  "GITHUB_TOKEN",
+  "DATABASE_URL",
+  "LANGFUSE_SECRET_KEY",
+  "SSH_PRIVATE_KEY",
+]);
+
 function parseArgs(argv = process.argv.slice(2)) {
   const options = {
     dryRun: false,
     confirmNoRealCloud: false,
+    foundationEnvFile: "",
     reportDir: path.join(".runtime", "v22-cloud-lifecycle"),
     operationId: "",
     accountId: "",
@@ -34,6 +62,8 @@ function parseArgs(argv = process.argv.slice(2)) {
       options.dryRun = true;
     } else if (arg === "--confirm-no-real-cloud") {
       options.confirmNoRealCloud = true;
+    } else if (arg === "--foundation-env-file") {
+      options.foundationEnvFile = argv[++index] || "";
     } else if (arg === "--report-dir") {
       options.reportDir = argv[++index] || "";
     } else if (arg === "--operation-id") {
@@ -55,6 +85,44 @@ function parseArgs(argv = process.argv.slice(2)) {
     }
   }
   return options;
+}
+
+function parseFoundationEnv(content = "") {
+  const env = new Map();
+  for (const [lineIndex, line] of String(content).split(/\r?\n/u).entries()) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const normalized = trimmed.startsWith("export ") ? trimmed.slice("export ".length).trim() : trimmed;
+    const equalsIndex = normalized.indexOf("=");
+    if (equalsIndex <= 0) throw new Error(`package_c_foundation_env_line_invalid:${lineIndex + 1}`);
+    const key = normalized.slice(0, equalsIndex).trim();
+    let value = normalized.slice(equalsIndex + 1).trim();
+    if ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+    if (FORBIDDEN_FOUNDATION_ENV_KEYS.has(key)) throw new Error(`package_c_foundation_env_forbidden_key:${key}`);
+    if (!FOUNDATION_ENV_KEYS.has(key)) throw new Error(`package_c_foundation_env_non_allowlist_key:${key}`);
+    env.set(key, value);
+  }
+  return env;
+}
+
+function envValue(env, key) {
+  return String(env.get(key) || "").trim();
+}
+
+function foundationFromEnv(env) {
+  for (const key of FOUNDATION_ENV_KEYS) {
+    if (!envValue(env, key)) throw new Error(`package_c_foundation_env_missing:${key}`);
+  }
+  return {
+    clusterRef: envValue(env, "TENCENT_MUTATION_TKE_CLUSTER_ID"),
+    platformServiceNodePoolRef: envValue(env, "TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID"),
+    platformServicePoolProtected: true,
+    cosBucketRef: envValue(env, "TENCENT_MUTATION_COS_BUCKET"),
+    cosRegion: envValue(env, "TENCENT_MUTATION_COS_REGION"),
+    workspacePrefixRoot: envValue(env, "TENCENT_MUTATION_WORKSPACE_PREFIX_ROOT"),
+  };
 }
 
 function requireValue(options, key) {
@@ -79,7 +147,7 @@ function validate(options) {
   }
 }
 
-function planFor(options) {
+function planFor(options, foundation) {
   return {
     ok: true,
     package: "C",
@@ -100,6 +168,7 @@ function planFor(options) {
       buildsOrPushesImage: false,
       chargeApplied: false,
     },
+    ...(foundation ? { foundation } : {}),
     storagePlan: {
       resourceType: "workspace_file_space",
       action: "plan_create_or_expand",
@@ -162,7 +231,10 @@ function planFor(options) {
 async function main() {
   const options = parseArgs();
   validate(options);
-  const report = planFor(options);
+  const foundation = options.foundationEnvFile
+    ? foundationFromEnv(parseFoundationEnv(await readFile(options.foundationEnvFile, "utf8")))
+    : null;
+  const report = planFor(options, foundation);
   await mkdir(options.reportDir, { recursive: true });
   const reportPath = path.join(options.reportDir, `${options.operationId}-dry-run.json`);
   await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`);

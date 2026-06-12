@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -17,10 +17,7 @@ function assertNoSensitiveOutput(text = "", label = "output") {
   for (const forbidden of [
     "SecretId",
     "SecretKey",
-    "TENCENT_MUTATION_SECRET_ID",
-    "TENCENT_MUTATION_SECRET_KEY",
-    "TENCENT_READONLY_SECRET_ID",
-    "TENCENT_READONLY_SECRET_KEY",
+    "must-not-read",
     "kubeconfig",
     "KUBECONFIG",
     "signedUrl",
@@ -71,11 +68,48 @@ try {
   assert(forbiddenSecretFile.stderr.includes("package_c_dry_run_forbidden_arg:--secret-file"), "secret_file_forbidden_reason");
   assertNoSensitiveOutput(forbiddenSecretFile.stdout + forbiddenSecretFile.stderr, "secret_file_output");
 
+  const foundationEnvFile = path.join(tmp, "package-c-foundation.env");
+  await writeFile(foundationEnvFile, [
+    "TENCENT_MUTATION_TKE_CLUSTER_ID=cls-proof",
+    "TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID=np-platform-proof",
+    "TENCENT_MUTATION_COS_BUCKET=opl-proof",
+    "TENCENT_MUTATION_COS_REGION=na-siliconvalley",
+    "TENCENT_MUTATION_WORKSPACE_PREFIX_ROOT=medopl-v22/workspaces/",
+    "",
+  ].join("\n"));
+
+  const forbiddenFoundationSecret = path.join(tmp, "package-c-foundation-secret.env");
+  await writeFile(forbiddenFoundationSecret, [
+    "TENCENT_MUTATION_TKE_CLUSTER_ID=cls-proof",
+    "TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID=np-platform-proof",
+    "TENCENT_MUTATION_SECRET_ID=must-not-read",
+    "",
+  ].join("\n"));
+
+  const missingFoundation = path.join(tmp, "package-c-foundation-missing.env");
+  await writeFile(missingFoundation, [
+    "TENCENT_MUTATION_TKE_CLUSTER_ID=cls-proof",
+    "TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID=np-platform-proof",
+    "TENCENT_MUTATION_COS_BUCKET=opl-proof",
+    "TENCENT_MUTATION_COS_REGION=na-siliconvalley",
+    "",
+  ].join("\n"));
+
+  const forbiddenFoundation = run([...commonArgs, "--foundation-env-file", forbiddenFoundationSecret]);
+  assert.notEqual(forbiddenFoundation.status, 0, "runner_must_reject_foundation_secret_keys");
+  assert(forbiddenFoundation.stderr.includes("package_c_foundation_env_forbidden_key:TENCENT_MUTATION_SECRET_ID"), "foundation_secret_forbidden_reason");
+  assertNoSensitiveOutput(forbiddenFoundation.stdout + forbiddenFoundation.stderr, "foundation_secret_output");
+
+  const missingFoundationResult = run([...commonArgs, "--foundation-env-file", missingFoundation]);
+  assert.notEqual(missingFoundationResult.status, 0, "runner_must_reject_incomplete_foundation_env");
+  assert(missingFoundationResult.stderr.includes("package_c_foundation_env_missing:TENCENT_MUTATION_WORKSPACE_PREFIX_ROOT"), "foundation_missing_reason");
+  assertNoSensitiveOutput(missingFoundationResult.stdout + missingFoundationResult.stderr, "foundation_missing_output");
+
   const forbiddenExecute = run([...commonArgs, "--execute"]);
   assert.notEqual(forbiddenExecute.status, 0, "runner_must_reject_execute");
   assert(forbiddenExecute.stderr.includes("package_c_dry_run_forbidden_arg:--execute"), "execute_forbidden_reason");
 
-  const accepted = run(commonArgs);
+  const accepted = run([...commonArgs, "--foundation-env-file", foundationEnvFile]);
   assert.equal(accepted.status, 0, `runner_should_pass_dry_run:${accepted.stderr}`);
   const summary = JSON.parse(accepted.stdout);
   assert.equal(summary.ok, true, "summary_ok");
@@ -117,6 +151,14 @@ try {
     "labels",
   ], "compute_kubernetes_controls");
   assert.equal(report.computePlan.platformServicePoolPreserved, true, "platform_service_pool_preserved");
+  assert.deepEqual(report.foundation, {
+    clusterRef: "cls-proof",
+    platformServiceNodePoolRef: "np-platform-proof",
+    platformServicePoolProtected: true,
+    cosBucketRef: "opl-proof",
+    cosRegion: "na-siliconvalley",
+    workspacePrefixRoot: "medopl-v22/workspaces/",
+  }, "foundation_mapping");
   assert.equal(report.computePlan.sharedUserComputePoolUsed, false, "shared_user_pool_not_used");
   assert.equal(Object.hasOwn(report.computePlan, "standardPlanUsesSharedPool"), false, "old_standard_shared_pool_field_removed");
   assert.equal(Object.hasOwn(report.computePlan, "premiumDedicatedPoolSupported"), false, "old_premium_pool_field_removed");
