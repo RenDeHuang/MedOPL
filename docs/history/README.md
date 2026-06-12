@@ -4206,4 +4206,56 @@ post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 
+### 2026-06-13 recovery/platform-v22-trunk
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `4401f8862b069251e28929bfba8139344a070f41`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Added Package C live canary readiness as a prepare-only local gate before any authorized live create/release mutation.
+- The runner rejects live mutation, deploy, kubectl, build/push and kubeconfig arguments and requires `RUN_TENCENT_CREATE_RELEASE_EXECUTION=0`.
+- The gate validates the exact Tencent API allowlist, secret allowlist, cluster `cls-fi097sy4`, protected platform node pool `np-cbk784r8`, tenant pool prefix `medopl-tenant-`, evidence sink and expected create/release plan.
+- Authorizable inputs generate only `.runtime` readiness evidence and a live canary authorization pack; blocked inputs generate blocked evidence only.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-c-live-canary-readiness-local-gate.mjs`: pass.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: pass.
+- `npm run verify`: pass.
+
+Can-claim:
+
+- `origin/recovery/platform-v22-trunk` includes Package C live canary readiness gate at `dd146022918249daddd0927787a7c9e8ecc5fd1c`.
+- The repo can generate a prepare-only Package C live canary authorization pack without real cloud mutation.
+- Protected platform node pool `np-cbk784r8`, cluster `cls-fi097sy4` and tenant node pool prefix `medopl-tenant-` are enforced by local tests.
+
+Cannot-claim:
+
+- Real Package C create/release mutation is authorized or executed.
+- `RUN_TENCENT_CREATE_RELEASE_EXECUTION` may be changed from `0`.
+- Deploy, kubectl, build/push, live-test, production billing readiness or production runtime readiness is complete.
+
+landed_commit: `dd146022918249daddd0927787a7c9e8ecc5fd1c`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `dd146022918249daddd0927787a7c9e8ecc5fd1c`.
+- `npm run closeout:check -- --trunk-ref HEAD --json`: pass before this closeout commit.
+- `node tests/contract/contract-test-v22-current-state-index-loop.mjs`: pass.
+- `npm run verify`: pass.
+- No real Tencent mutation, deploy, kubectl, build/push, live-test, kubeconfig read or secret write to git was performed.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。

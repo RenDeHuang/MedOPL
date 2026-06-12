@@ -5,15 +5,15 @@
   "human_truth": "docs/active/README.md",
   "spec_truth": "docs/specs/README.md",
   "verify_manifest": "tests/fixtures/v22/agent-verify-manifest.json",
-  "last_updated_at": "2026-06-10",
+  "last_updated_at": "2026-06-13",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "5122808d36c8e0eca54aa455ff368ab6a750215f",
+  "base_trunk_head": "dd146022918249daddd0927787a7c9e8ecc5fd1c",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "5122808d36c8e0eca54aa455ff368ab6a750215f",
+  "last_landed_commit": "dd146022918249daddd0927787a7c9e8ecc5fd1c",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package C dry-run foundation mapping validation landed and pushed at 5122808d36c8e0eca54aa455ff368ab6a750215f as local code/test evidence. The dry-run can consume only allowlisted non-secret foundation fields for TKE cluster, protected platform service node pool and COS workspace root; it rejects mutation secret, deploy, kubeconfig and token keys. Package C live create/release remains blocked: mutation execution is not authorized, platform service node pool role classification still depends on accepted operator mapping or visible readonly API metadata, and tenant node pools must be created by Package C per tenant or workspace as tenant-scoped lifecycle resources. The current cursor remains real-cloud-authorization-boundary and does not authorize secret mutation/provider mutation/deploy/kubectl/build-push/live-test work.",
+  "current_problem": "Package C live canary readiness gate landed at dd146022918249daddd0927787a7c9e8ecc5fd1c as local prepare-only code/test evidence. The runner rejects live mutation, deploy, kubectl, build/push and kubeconfig arguments; requires RUN_TENCENT_CREATE_RELEASE_EXECUTION=0; validates the Tencent API allowlist, secret allowlist, cluster cls-fi097sy4, protected platform node pool np-cbk784r8, tenant node pool prefix medopl-tenant-, evidence sink and expected create/release plan; and writes only .runtime readiness evidence plus an authorization pack for authorizable inputs. Real Package C create/release remains blocked: mutation execution is not authorized, shared user compute pool is forbidden, tenant node pools must be created by Package C per tenant or workspace, and current mutation env inputs must pass the readiness gate before any separately authorized live run. The current cursor remains real-cloud-authorization-boundary and does not authorize secret mutation/provider mutation/deploy/kubectl/build-push/live-test work.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -160,9 +160,9 @@
         "local-portal-opl-delivery-rc",
         "real-cloud-authorization-boundary"
       ],
-      "history_summary": "Local AI MVP baseline, real-cloud vision docs, real-cloud readiness lane, legacy runtime cloud cleanup, Package B readonly inventory, TC3 diagnostic cleanup, Package C dry-run create/release plan, TKE bootstrap preflight and repo governance closeout landed as pre-cloud / scoped local evidence. Package C live create/release remains authorization-required; tenant node pools are created by Package C per tenant or workspace.",
-      "closed_at": "2026-06-10",
-      "landed_commit": "d1d5f2c9edf6beadf263ad2b7cd91ae59775bf56"
+      "history_summary": "Local AI MVP baseline, real-cloud vision docs, real-cloud readiness lane, legacy runtime cloud cleanup, Package B readonly inventory, TC3 diagnostic cleanup, Package C dry-run create/release plan, TKE bootstrap preflight, repo governance closeout and Package C live canary readiness gate landed as pre-cloud / scoped local evidence. Package C live create/release remains authorization-required; tenant node pools are created by Package C per tenant or workspace.",
+      "closed_at": "2026-06-13",
+      "landed_commit": "dd146022918249daddd0927787a7c9e8ecc5fd1c"
     }
   ],
   "current_leaf": {
@@ -284,7 +284,7 @@
       "authorized deploy",
       "canary / QA / status update"
     ],
-    "latest_local_evidence": "package-c-dry-run-create-release-plan"
+    "latest_local_evidence": "package-c-live-canary-readiness-gate"
   },
   "ai_mvp_readiness_state": {
     "status": "local_readiness_audited",
@@ -370,7 +370,7 @@
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
   "last_landed_branch": "recovery/platform-v22-trunk",
-  "last_landed_at": "2026-06-12",
+  "last_landed_at": "2026-06-13",
   "history_latest_branch": "recovery/platform-v22-trunk",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
