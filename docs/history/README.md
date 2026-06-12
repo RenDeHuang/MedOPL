@@ -4052,4 +4052,56 @@ post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 
+### 2026-06-12 feat/v22-tenant-node-pool-lifecycle
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `feat/v22-tenant-node-pool-lifecycle`
+
+Base trunk HEAD: `14848603807f8f0170d299fccf3f0da17f33f288`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Replaced the active cloud tenancy model with one unified TKE cluster, one platform service node pool and Package C-created tenant node pools per tenant or workspace.
+- Removed active shared user compute pool, premium pool and trial/free entitlement narratives from docs, contracts, pricing snapshot, Portal API types and Package C/TKE support.
+- Updated Package C dry-run, TKE bootstrap preflight, readonly inventory classification and cleanup gates around tenant node pool lifecycle.
+- Kept old shared/premium pool wording only as history provenance and future-authorized forbidden assertions.
+
+Verification:
+
+- `npm run verify`: pass before ff-only landing.
+- `npm run verify`: pass after ff-only landing on `recovery/platform-v22-trunk`.
+- `npm run gate:review`: pass before landing.
+- `npm run closeout:check`: failed after landing with expected `non_closeout_commits_after_latest_landed`, then this closeout commit reconciled history and machine cursor state.
+- `git diff --check -- docs specs changes tests services package.json compose.product.yaml`: pass before landing.
+
+Can-claim:
+
+- `origin/recovery/platform-v22-trunk` contains the tenant node pool lifecycle contract at `28dad14c5b0ef6a793ffd86c600171335f33f040`.
+- Active truth now says MedOPL platform services use the platform service node pool, while Package C creates tenant node pools for tenant/workspace runtime workload.
+- Pricing and cloud future-authorized gates now reject the old shared quota / shared user compute pool route.
+
+Cannot-claim:
+
+- TKE, NAT, CBS, COS, PostgreSQL, namespaces, workloads or tenant node pools have been created by MedOPL automation.
+- Package C live mutation is authorized.
+- Secret read, true cloud execution, deploy, kubectl, build/push, live-test, production billing readiness or production runtime readiness is complete.
+
+landed_commit: `28dad14c5b0ef6a793ffd86c600171335f33f040`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `28dad14c5b0ef6a793ffd86c600171335f33f040`.
+- `npm run verify`: pass after landing.
+- `npm run closeout:check`: expected closeout gap detected before this closeout commit.
+- No secret read, real cloud operation, live provider call, deploy, kubectl, build/push, live-test or upstream modification was performed.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。

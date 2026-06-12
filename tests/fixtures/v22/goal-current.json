@@ -8,12 +8,12 @@
   "last_updated_at": "2026-06-10",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "d1d5f2c9edf6beadf263ad2b7cd91ae59775bf56",
+  "base_trunk_head": "28dad14c5b0ef6a793ffd86c600171335f33f040",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "d1d5f2c9edf6beadf263ad2b7cd91ae59775bf56",
+  "last_landed_commit": "28dad14c5b0ef6a793ffd86c600171335f33f040",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Repo governance closeout landed and pushed at d1d5f2c9edf6beadf263ad2b7cd91ae59775bf56 as local structural/lifecycle evidence. Package C live create/release remains blocked: mutation execution is not authorized, TKE foundation still must be created and observed by readonly inventory, package-c mutation env still needs TKE cluster / platform service node pool identifiers, and tenant node pools must be created by Package C per tenant or workspace as tenant-scoped lifecycle resources. The current cursor remains real-cloud-authorization-boundary and does not authorize secret/provider/cloud/deploy/kubectl/build-push/live-test work.",
+  "current_problem": "Tenant node pool lifecycle landed and pushed at 28dad14c5b0ef6a793ffd86c600171335f33f040 as local contract/source/test evidence. Package C live create/release remains blocked: mutation execution is not authorized, TKE foundation still must be created and observed by readonly inventory, package-c mutation env still needs TKE cluster / platform service node pool identifiers, and tenant node pools must be created by Package C per tenant or workspace as tenant-scoped lifecycle resources. The current cursor remains real-cloud-authorization-boundary and does not authorize secret/provider/cloud/deploy/kubectl/build-push/live-test work.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -369,9 +369,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "post-merge/v22-governance-closeout-closeout",
-  "last_landed_at": "2026-06-10",
-  "history_latest_branch": "post-merge/v22-governance-closeout-closeout",
+  "last_landed_branch": "feat/v22-tenant-node-pool-lifecycle",
+  "last_landed_at": "2026-06-12",
+  "history_latest_branch": "feat/v22-tenant-node-pool-lifecycle",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
