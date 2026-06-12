@@ -1,6 +1,7 @@
 const TENCENT_CLIENTS = Object.freeze({
   sts: ["sts", "v20180813"],
   tke: ["tke", "v20180525"],
+  tkeNative: ["tke", "v20220501"],
   billing: ["billing", "v20180709"],
   tag: ["tag", "v20180813"],
 });
@@ -109,6 +110,7 @@ export function createTencentReadonlyInventoryOfficialSdkModules({ clients, tenc
       describeAccount: (req = null) => clients.sts.GetCallerIdentity(req),
       describeTkeClusters: (region, req = {}) => clients.tkeByRegion[region].DescribeClusters(req),
       describeTkeNodePools: (region, req = {}) => clients.tkeByRegion[region].DescribeClusterNodePools(req),
+      describeTkeNativeNodePools: (region, req = {}) => clients.tkeByRegion[region].DescribeNodePools(req),
       describeBillingBalance: (req = {}) => clients.billing.DescribeAccountBalance(req),
       describeBillingSummary: (req = {}) => clients.billing.DescribeBillSummary(req),
       describeTagResources: (req = {}) => clients.tag.GetResources(req),
@@ -153,6 +155,7 @@ export function createTencentReadonlyInventoryOfficialSdkModules({ clients, tenc
     describeAccount: (req = null) => tencentClient("sts", defaultRegion).GetCallerIdentity(req),
     describeTkeClusters: (region, req = {}) => tencentClient("tke", region).DescribeClusters(req),
     describeTkeNodePools: (region, req = {}) => tencentClient("tke", region).DescribeClusterNodePools(req),
+    describeTkeNativeNodePools: (region, req = {}) => tencentClient("tkeNative", region).DescribeNodePools(req),
     describeBillingBalance: (req = {}) => tencentClient("billing").DescribeAccountBalance(req),
     describeBillingSummary: (req = {}) => tencentClient("billing").DescribeBillSummary(req),
     describeTagResources: (req = {}) => tencentClient("tag").GetResources(req),
@@ -213,16 +216,23 @@ export async function runTencentReadonlyInventoryOfficialSdk({
       }
       const nodePoolResponse = await capture(blockers, "DescribeClusterNodePools", region, () => modules.describeTkeNodePools(region, { ClusterId: cluster.ClusterId }));
       const nodePools = Array.isArray(nodePoolResponse?.NodePoolSet) ? nodePoolResponse.NodePoolSet : [];
-      if (nodePoolResponse) {
-        const roleCounts = nodePoolRoleCounts(nodePools);
+      const nativeNodePoolResponse = await capture(blockers, "DescribeNodePools", region, () => modules.describeTkeNativeNodePools(region, { ClusterId: cluster.ClusterId }));
+      const nativeNodePools = Array.isArray(nativeNodePoolResponse?.NodePools)
+        ? nativeNodePoolResponse.NodePools
+        : (Array.isArray(nativeNodePoolResponse?.NodePoolSet) ? nativeNodePoolResponse.NodePoolSet : []);
+      if (nodePoolResponse || nativeNodePoolResponse) {
+        const allNodePools = [...nodePools, ...nativeNodePools];
+        const roleCounts = nodePoolRoleCounts(allNodePools);
         resources.push({
           region,
           resourceType: "tkeNodePoolSummary",
           resourceStatus: "observed",
           clusterRef: `cluster-${clusterIndex + 1}`,
-          totalCount: normalizeNumber(nodePoolResponse.TotalCount ?? nodePools.length),
-          nodePoolCount: nodePools.length,
-          lifeStateCounts: countBy(nodePools, ["LifeState", "Status"]),
+          totalCount: normalizeNumber((nodePoolResponse?.TotalCount ?? nodePools.length) + (nativeNodePoolResponse?.TotalCount ?? nativeNodePools.length)),
+          nodePoolCount: allNodePools.length,
+          classicNodePoolCount: nodePools.length,
+          nativeNodePoolCount: nativeNodePools.length,
+          lifeStateCounts: countBy(allNodePools, ["LifeState", "Status"]),
           nodePoolRoleCounts: roleCounts,
           platformServicePoolObserved: roleCounts.platform_service > 0,
           tenantNodePoolCount: roleCounts.tenant,

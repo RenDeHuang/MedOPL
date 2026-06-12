@@ -42,13 +42,8 @@ const fakeClients = {
       async DescribeClusterNodePools(req) {
         record("DescribeClusterNodePools", req);
         return {
-          TotalCount: 2,
+          TotalCount: 1,
           NodePoolSet: [
-            {
-              NodePoolId: "np-platform",
-              LifeState: "normal",
-              Tags: [{ Key: "medopl.io/pool", Value: "platform" }],
-            },
             {
               NodePoolId: "np-tenant-ws-proof",
               LifeState: "normal",
@@ -56,6 +51,20 @@ const fakeClients = {
             },
           ],
           RequestId: "request-node-pools-proof",
+        };
+      },
+      async DescribeNodePools(req) {
+        record("DescribeNodePools", req);
+        return {
+          TotalCount: 1,
+          NodePools: [
+            {
+              NodePoolId: "np-platform-native",
+              LifeState: "normal",
+              Tags: [{ Key: "medopl.io/role", Value: "platform_service" }],
+            },
+          ],
+          RequestId: "request-native-node-pools-proof",
         };
       },
     },
@@ -134,6 +143,7 @@ assert.equal(resources.some((resource) => resource.resourceType === "billingTagS
 const nodePoolSummary = resources.find((resource) => resource.resourceType === "tkeNodePoolSummary");
 assert.equal(nodePoolSummary?.platformServicePoolObserved, true, "platform_service_pool_observed");
 assert.equal(nodePoolSummary?.tenantNodePoolCount, 1, "tenant_node_pool_count");
+assert.equal(nodePoolSummary?.nativeNodePoolCount, 1, "native_node_pool_count");
 assert.equal(nodePoolSummary?.sharedUserComputePoolObserved, false, "shared_user_pool_must_not_be_observed");
 assert.equal(nodePoolSummary?.nodePoolRoleCounts?.shared_user_compute_forbidden, 0, "shared_role_count_must_be_zero");
 
@@ -147,6 +157,7 @@ assert.equal(calls.some((call) => call.method === "getObject"), false, "cos_obje
 assert.equal(calls.some((call) => call.method === "putObject"), false, "cos_object_must_not_be_written");
 assert.equal(calls.some((call) => call.method === "deleteObject"), false, "cos_object_must_not_be_deleted");
 assert.equal(calls.find((call) => call.method === "GetCallerIdentity")?.req, null, "sts_get_caller_identity_request_must_be_null");
+assert.equal(calls.some((call) => call.method === "DescribeNodePools"), true, "native_node_pool_readonly_api_must_be_called");
 assert.equal(calls.find((call) => call.method === "DescribeBillSummary")?.req?.GroupType, "business", "billing_summary_group_type_must_not_require_tag_key");
 
 const serialized = JSON.stringify({ resources, blockers, calls });
