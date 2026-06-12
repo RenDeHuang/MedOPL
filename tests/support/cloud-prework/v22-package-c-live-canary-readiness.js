@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   REQUIRED_CLOUD_PARAMETER_KEYS,
   parseCloudParameters,
@@ -20,7 +21,7 @@ const FORBIDDEN_ARGS = new Set([
   "--kubeconfig",
 ]);
 
-const SECRET_ALLOWLIST = [
+export const PACKAGE_C_LIVE_CANARY_SECRET_ALLOWLIST = [
   "RUN_TENCENT_CREATE_RELEASE_EXECUTION",
   "TENCENT_MUTATION_SECRET_ID",
   "TENCENT_MUTATION_SECRET_KEY",
@@ -37,9 +38,9 @@ const SECRET_ALLOWLIST = [
   "TENCENT_MUTATION_WORKSPACE_PREFIX_ROOT",
 ];
 
-const SECRET_ALLOWLIST_SET = new Set(SECRET_ALLOWLIST);
+const SECRET_ALLOWLIST_SET = new Set(PACKAGE_C_LIVE_CANARY_SECRET_ALLOWLIST);
 
-const API_ALLOWLIST = [
+export const PACKAGE_C_LIVE_CANARY_API_ALLOWLIST = [
   "GetCallerIdentity",
   "DescribeClusters",
   "DescribeNodePools",
@@ -50,9 +51,9 @@ const API_ALLOWLIST = [
   "TagResources",
 ];
 
-const API_ALLOWLIST_SET = new Set(API_ALLOWLIST);
+const API_ALLOWLIST_SET = new Set(PACKAGE_C_LIVE_CANARY_API_ALLOWLIST);
 
-function parseArgs(argv = process.argv.slice(2)) {
+export function parseArgs(argv = process.argv.slice(2)) {
   const options = {
     prepareOnly: false,
     confirmNoRealCloud: false,
@@ -113,7 +114,7 @@ function parseArgs(argv = process.argv.slice(2)) {
   return options;
 }
 
-function parseEnv(content = "") {
+export function parseEnv(content = "") {
   const env = new Map();
   for (const [lineIndex, line] of String(content).split(/\r?\n/u).entries()) {
     const trimmed = line.trim();
@@ -132,11 +133,11 @@ function parseEnv(content = "") {
   return env;
 }
 
-function value(env, key) {
+export function value(env, key) {
   return String(env.get(key) || "").trim();
 }
 
-function splitCsv(text = "") {
+export function splitCsv(text = "") {
   return String(text)
     .split(",")
     .map((item) => item.trim())
@@ -147,7 +148,7 @@ function requireOption(options, key) {
   if (!String(options[key] || "").trim()) throw new Error(`package_c_live_canary_readiness_missing:${key}`);
 }
 
-function validateOptions(options) {
+export function validateOptions(options) {
   if (!options.prepareOnly || !options.confirmNoRealCloud) {
     throw new Error("package_c_live_canary_readiness_prepare_confirmation_required");
   }
@@ -178,8 +179,8 @@ function validateOptions(options) {
   }
 }
 
-function validateEnv(env, options) {
-  for (const key of SECRET_ALLOWLIST) {
+export function validateEnv(env, options) {
+  for (const key of PACKAGE_C_LIVE_CANARY_SECRET_ALLOWLIST) {
     if (!value(env, key)) throw new Error(`package_c_live_canary_readiness_secret_missing:${key}`);
   }
   if (value(env, "RUN_TENCENT_CREATE_RELEASE_EXECUTION") !== "0") {
@@ -203,7 +204,7 @@ function validateEnv(env, options) {
   for (const api of apis) {
     if (!API_ALLOWLIST_SET.has(api)) throw new Error(`package_c_live_canary_readiness_api_not_allowed:${api}`);
   }
-  for (const api of API_ALLOWLIST) {
+  for (const api of PACKAGE_C_LIVE_CANARY_API_ALLOWLIST) {
     if (!apis.includes(api)) throw new Error(`package_c_live_canary_readiness_api_missing:${api}`);
   }
   if (Number(value(env, "TENCENT_MUTATION_MAX_OPERATION_COUNT")) !== 1) {
@@ -224,7 +225,7 @@ function planAction(action, api, targetNodePoolId = "") {
   };
 }
 
-function expectedCreateReleasePlan(options) {
+export function expectedCreateReleasePlan(options) {
   const tenantNodePoolRef = `${options.tenantNodePoolPrefix}${options.resourceBindingId}`;
   return [
     planAction("validate_run_gate_disabled", "local_validator"),
@@ -289,8 +290,8 @@ function reportFor(options, env, validation, cloudParameters = null) {
       tenantNodePoolPrefix: options.tenantNodePoolPrefix,
       sharedUserComputePoolAllowed: false,
     },
-    secretAllowlist: SECRET_ALLOWLIST,
-    apiAllowlist: API_ALLOWLIST,
+    secretAllowlist: PACKAGE_C_LIVE_CANARY_SECRET_ALLOWLIST,
+    apiAllowlist: PACKAGE_C_LIVE_CANARY_API_ALLOWLIST,
     requiredMissingCloudParameters: cloudParameters ? [] : REQUIRED_CLOUD_PARAMETER_KEYS,
     cloudParametersSource,
     ...(cloudParameters ? { cloudParameters } : {}),
@@ -438,22 +439,24 @@ async function main() {
   }, null, 2));
 }
 
-main().catch((error) => {
-  const message = String(error?.message || "package_c_live_canary_readiness_failed");
-  const options = (() => {
-    try {
-      return parseArgs();
-    } catch {
-      return {};
-    }
-  })();
-  if (options.allowBlockedEvidence && options.prepareOnly && options.confirmNoRealCloud) {
-    writeBlockedEvidence(options, [message]).catch((writeError) => {
-      console.error(String(writeError?.message || message));
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    const message = String(error?.message || "package_c_live_canary_readiness_failed");
+    const options = (() => {
+      try {
+        return parseArgs();
+      } catch {
+        return {};
+      }
+    })();
+    if (options.allowBlockedEvidence && options.prepareOnly && options.confirmNoRealCloud) {
+      writeBlockedEvidence(options, [message]).catch((writeError) => {
+        console.error(String(writeError?.message || message));
+        process.exitCode = 1;
+      });
+    } else {
+      console.error(message);
       process.exitCode = 1;
-    });
-  } else {
-    console.error(message);
-    process.exitCode = 1;
-  }
-});
+    }
+  });
+}
