@@ -4104,4 +4104,56 @@ post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 
+### 2026-06-12 fix/v22-native-tke-nodepool-inventory
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `fix/v22-native-tke-nodepool-inventory`
+
+Base trunk HEAD: `95ff691ce35142c04616a2279a4101041ef9f7f2`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Added readonly inventory support for Tencent TKE native node pools via TKE `2022-05-01` `DescribeNodePools`.
+- Kept existing classic node pool readonly path through TKE `2018-05-25` `DescribeClusterNodePools`.
+- Updated the official SDK wrapper local gate to prove native node pools can be counted and classified without mutation APIs.
+- Re-ran authorized readonly inventory and observed one native TKE node pool; role remained unclassified because the returned node pool payload did not expose the expected platform role tag.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-official-sdk-wrapper-local-gate.mjs`: pass.
+- `node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: pass.
+- `npm run verify`: pass before landing.
+- Authorized readonly inventory run `readonly-2026-06-12-native-nodepool-rerun`: pass with `callsMutationApi=false`, `readsCosObjectBody=false`, `blockers=[]`.
+
+Can-claim:
+
+- `origin/recovery/platform-v22-trunk` includes native TKE node pool readonly observation support at `df15ed652228ceffc73f46b5f58843a9371d41c6`.
+- The cloud account currently exposes one running TKE cluster and one native node pool to readonly inventory.
+- The native node pool is observed without mutation, kubectl, deploy, build/push or live-test.
+
+Cannot-claim:
+
+- The observed native node pool is classified as `platform_service`; its returned payload is still `unclassified` until an accepted tag/label source is visible to the readonly API or the operator foundation mapping is explicitly consumed.
+- Package C live mutation is authorized.
+- Secret mutation, deploy, kubectl, build/push, live-test, production billing readiness or production runtime readiness is complete.
+
+landed_commit: `df15ed652228ceffc73f46b5f58843a9371d41c6`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `df15ed652228ceffc73f46b5f58843a9371d41c6`.
+- `npm run verify`: pass before push.
+- `npm run closeout:check`: expected closeout gap detected before this closeout commit.
+- No mutation, deploy, kubectl, build/push, live-test or upstream modification was performed.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
