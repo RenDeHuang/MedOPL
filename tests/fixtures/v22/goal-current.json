@@ -8,12 +8,12 @@
   "last_updated_at": "2026-06-13",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "dd146022918249daddd0927787a7c9e8ecc5fd1c",
+  "base_trunk_head": "91d7b6e5061911762bf75347b42cc91e721354b9",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "dd146022918249daddd0927787a7c9e8ecc5fd1c",
+  "last_landed_commit": "91d7b6e5061911762bf75347b42cc91e721354b9",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -162,7 +162,7 @@
       ],
       "history_summary": "Local AI MVP baseline, real-cloud vision docs, real-cloud readiness lane, legacy runtime cloud cleanup, Package B readonly inventory, TC3 diagnostic cleanup, Package C dry-run create/release plan, TKE bootstrap preflight, repo governance closeout, Package C live canary readiness gate and Package C non-secret cloud parameters input contract landed as pre-cloud / scoped local evidence. Package C live create/release remains authorization-required; tenant node pools are created by Package C per tenant or workspace.",
       "closed_at": "2026-06-13",
-      "landed_commit": "dd146022918249daddd0927787a7c9e8ecc5fd1c"
+      "landed_commit": "91d7b6e5061911762bf75347b42cc91e721354b9"
     }
   ],
   "current_leaf": {

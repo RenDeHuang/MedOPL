@@ -4258,4 +4258,57 @@ post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 
+### 2026-06-13 recovery/platform-v22-trunk
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `bc62954b092bac9646d4ef74ea4a9f854b344a90`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Added Package C live canary non-secret cloud parameters input contract.
+- Kept worker subnet, security group, instance type, disk, billing mode, public IP, AZ, image/runtime and login policy out of `package-c-mutation.env`.
+- Added schema validation and redacted `CreateNodePool` request evidence for prepare-only readiness.
+- Fixed public IP to disabled, cluster to `cls-fi097sy4`, protected platform node pool to `np-cbk784r8`, worker subnet to `subnet-a1fldajw`, security group to `sg-6671l5we` and tenant node pool prefix to `medopl-tenant-`.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-c-live-canary-readiness-local-gate.mjs`: pass.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-authorized-tencent-create-release-execution-contract.mjs`: pass.
+- `node tests/contract/contract-test-v22-current-state-index-loop.mjs`: pass.
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: pass.
+- `npm run verify`: pass.
+- Prepare-only rerun with the real mutation env and a `.runtime` non-secret cloud params file generated readiness evidence, authorization pack and redacted `CreateNodePool` request with no live execution.
+
+Can-claim:
+
+- `origin/recovery/platform-v22-trunk` includes Package C live canary cloud params input contract at `91d7b6e5061911762bf75347b42cc91e721354b9`.
+- Package C readiness can validate a separate non-secret cloud params JSON and produce redacted local evidence.
+
+Cannot-claim:
+
+- Real Package C create/release mutation is authorized or executed.
+- `RUN_TENCENT_CREATE_RELEASE_EXECUTION` may be changed from `0`.
+- Deploy, kubectl, build/push, Package D, live-test, production billing readiness or production runtime readiness is complete.
+
+landed_commit: `91d7b6e5061911762bf75347b42cc91e721354b9`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `91d7b6e5061911762bf75347b42cc91e721354b9`.
+- `npm run verify`: pass before push.
+- `npm run closeout:check -- --json`: expected closeout gap detected after the implementation commit reached trunk; this closeout records it.
+- No real Tencent mutation, deploy, kubectl, build/push, Package D, live-test, kubeconfig read or secret write to git was performed.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
