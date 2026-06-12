@@ -1016,6 +1016,22 @@ mutation secret allowlist 必须独立于 readonly secret allowlist：
 
 mutation secret 不得进入 Portal payload、前端状态、URL、日志、evidence、git、GitHub、one-person-lab upstream 或普通用户可见界面。
 
+## Package C Live Canary Non-Secret Cloud Parameters
+
+Package C live canary readiness 需要独立的 non-secret cloud parameters JSON 输入；worker subnet、安全组、实例规格、系统盘、计费模式、public IP、AZ、镜像/runtime 和登录策略不得写入 `package-c-mutation.env`，也不得进入 mutation secret allowlist。
+
+当前 prepare-only input contract 固定：
+
+- cluster：`cls-fi097sy4`
+- protected platform node pool：`np-cbk784r8`
+- worker subnet：`subnet-a1fldajw`
+- security group：`sg-6671l5we`
+- tenant node pool prefix：`medopl-tenant-`
+- public IP：disabled
+- `RUN_TENCENT_CREATE_RELEASE_EXECUTION`：`0`
+
+readiness runner 只校验 schema、固定值、redaction 和 evidence sink，输出 `.runtime` readiness evidence、redacted `CreateNodePool` request 和 authorization pack；它不执行 `CreateNodePool`、`ScaleNodePool`、`DeleteNodePool`，不调用 Tencent mutation，不读取 kubeconfig，不执行 kubectl、deploy、build/push 或 Package D。
+
 ## 资源生命周期分离
 
 工作空间、计算资源和文件空间生命周期必须分离：

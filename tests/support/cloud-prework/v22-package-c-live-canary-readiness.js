@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import {
+  REQUIRED_CLOUD_PARAMETER_KEYS,
+  parseCloudParameters,
+  redactedCreateNodePoolRequest,
+  validateCloudParameters,
+} from "./package-c-live-canary-cloud-params.js";
 
 const FORBIDDEN_ARGS = new Set([
   "--live",
@@ -46,23 +52,13 @@ const API_ALLOWLIST = [
 
 const API_ALLOWLIST_SET = new Set(API_ALLOWLIST);
 
-const REQUIRED_MISSING_CLOUD_PARAMETERS = [
-  "workerSubnetId",
-  "availabilityZone",
-  "instanceType",
-  "systemDisk",
-  "securityGroupId",
-  "nodeImageOrRuntimeConfig",
-  "billingMode",
-  "loginOrKeyPolicy",
-];
-
 function parseArgs(argv = process.argv.slice(2)) {
   const options = {
     prepareOnly: false,
     confirmNoRealCloud: false,
     allowBlockedEvidence: false,
     secretFile: "",
+    cloudParamsFile: "",
     reportDir: path.join(".runtime", "v22-cloud-lifecycle"),
     operationId: "",
     accountId: "",
@@ -86,6 +82,8 @@ function parseArgs(argv = process.argv.slice(2)) {
       options.allowBlockedEvidence = true;
     } else if (arg === "--secret-file") {
       options.secretFile = argv[++index] || "";
+    } else if (arg === "--cloud-params-file") {
+      options.cloudParamsFile = argv[++index] || "";
     } else if (arg === "--report-dir") {
       options.reportDir = argv[++index] || "";
     } else if (arg === "--operation-id") {
@@ -244,8 +242,21 @@ function expectedCreateReleasePlan(options) {
   ];
 }
 
-function reportFor(options, env, validation) {
+function reportFor(options, env, validation, cloudParameters = null) {
   const evidenceRoot = path.join(options.reportDir, options.operationId);
+  const cloudParametersSource = cloudParameters
+    ? {
+        kind: "non_secret_json_file",
+        path: options.cloudParamsFile,
+        secretFile: false,
+        mutationEnv: false,
+      }
+    : {
+        kind: "not_provided",
+        path: "",
+        secretFile: false,
+        mutationEnv: false,
+      };
   return {
     ok: true,
     package: "C",
@@ -280,7 +291,9 @@ function reportFor(options, env, validation) {
     },
     secretAllowlist: SECRET_ALLOWLIST,
     apiAllowlist: API_ALLOWLIST,
-    requiredMissingCloudParameters: REQUIRED_MISSING_CLOUD_PARAMETERS,
+    requiredMissingCloudParameters: cloudParameters ? [] : REQUIRED_CLOUD_PARAMETER_KEYS,
+    cloudParametersSource,
+    ...(cloudParameters ? { cloudParameters } : {}),
     expectedCreateReleasePlan: expectedCreateReleasePlan(options),
     evidenceSink: {
       root: evidenceRoot,
@@ -331,6 +344,9 @@ function authorizationPackFrom(report) {
     evidenceSink: report.evidenceSink,
     rollbackOwner: report.rollback.owner,
     rollback: report.rollback,
+    requiredMissingCloudParameters: report.requiredMissingCloudParameters,
+    cloudParametersSource: report.cloudParametersSource,
+    ...(report.cloudParameters ? { cloudParameters: report.cloudParameters } : {}),
     expectedCreateReleasePlan: report.expectedCreateReleasePlan,
     authorizationRequiredBeforeLiveMutation: true,
     currentRunGateMustRemainZero: true,
@@ -391,11 +407,18 @@ async function main() {
   validateOptions(options);
   const env = parseEnv(await readFile(options.secretFile, "utf8"));
   const validation = validateEnv(env, options);
-  const report = reportFor(options, env, validation);
+  const cloudParameters = options.cloudParamsFile
+    ? validateCloudParameters(parseCloudParameters(await readFile(options.cloudParamsFile, "utf8")), options)
+    : null;
+  const report = reportFor(options, env, validation, cloudParameters);
   const pack = authorizationPackFrom(report);
   await mkdir(report.evidenceSink.root, { recursive: true });
   const reportPath = path.join(report.evidenceSink.root, `${options.operationId}-readiness.json`);
   const authorizationPackPath = path.join(report.evidenceSink.root, `${options.operationId}-authorization-pack.json`);
+  if (cloudParameters) {
+    const createRequestPath = path.join(report.evidenceSink.root, "create-request-redacted.json");
+    await writeFile(createRequestPath, `${JSON.stringify(redactedCreateNodePoolRequest(cloudParameters, options), null, 2)}\n`);
+  }
   await writeFile(reportPath, `${JSON.stringify(report, null, 2)}\n`);
   await writeFile(authorizationPackPath, `${JSON.stringify(pack, null, 2)}\n`);
   console.log(JSON.stringify({
