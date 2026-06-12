@@ -4156,4 +4156,54 @@ post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 
+### 2026-06-12 recovery/platform-v22-trunk
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `26790f289c8fdf28b6ef39153b3535ef98af1d51`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Added Package C dry-run support for an optional `--foundation-env-file` that reads only allowlisted non-secret foundation fields.
+- The accepted foundation mapping records TKE cluster, protected platform service node pool and COS workspace root references in the dry-run report.
+- The runner rejects mutation secret, readonly secret, deploy, kubeconfig, token and other non-allowlist keys, and fails closed when required foundation fields are missing.
+- No real cloud mutation, provider operation, deploy, kubectl, build/push, live-test or raw secret read was performed.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs`: pass.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: pass.
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: expected closeout gap detected after the implementation commit reached trunk; this closeout records it.
+
+Can-claim:
+
+- `origin/recovery/platform-v22-trunk` includes Package C dry-run foundation mapping validation at `5122808d36c8e0eca54aa455ff368ab6a750215f`.
+- Package C dry-run can prove the protected platform service node pool mapping without reading mutation secrets or calling cloud APIs.
+
+Cannot-claim:
+
+- Real Package C create/release mutation is authorized or executed.
+- Deploy, kubectl, build/push, live-test, production billing readiness or production runtime readiness is complete.
+
+landed_commit: `5122808d36c8e0eca54aa455ff368ab6a750215f`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `5122808d36c8e0eca54aa455ff368ab6a750215f`.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs`: pass.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: pass.
+- `npm run verify`: pass.
+- No secret read, real cloud operation, live provider call, deploy, kubectl, build/push, live-test or upstream modification was performed.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。

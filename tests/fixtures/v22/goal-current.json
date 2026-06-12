@@ -8,12 +8,12 @@
   "last_updated_at": "2026-06-10",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "df15ed652228ceffc73f46b5f58843a9371d41c6",
+  "base_trunk_head": "5122808d36c8e0eca54aa455ff368ab6a750215f",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "df15ed652228ceffc73f46b5f58843a9371d41c6",
+  "last_landed_commit": "5122808d36c8e0eca54aa455ff368ab6a750215f",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Native TKE node pool readonly inventory support landed and pushed at df15ed652228ceffc73f46b5f58843a9371d41c6 as local code/test evidence plus authorized readonly report evidence. Package C live create/release remains blocked: mutation execution is not authorized, platform service node pool role classification is still unclassified in the readonly API payload until an accepted tag/label source or explicit operator mapping is consumed, package-c mutation env still needs verified cluster / platform service node pool identifiers, and tenant node pools must be created by Package C per tenant or workspace as tenant-scoped lifecycle resources. The current cursor remains real-cloud-authorization-boundary and does not authorize secret mutation/provider mutation/deploy/kubectl/build-push/live-test work.",
+  "current_problem": "Package C dry-run foundation mapping validation landed and pushed at 5122808d36c8e0eca54aa455ff368ab6a750215f as local code/test evidence. The dry-run can consume only allowlisted non-secret foundation fields for TKE cluster, protected platform service node pool and COS workspace root; it rejects mutation secret, deploy, kubeconfig and token keys. Package C live create/release remains blocked: mutation execution is not authorized, platform service node pool role classification still depends on accepted operator mapping or visible readonly API metadata, and tenant node pools must be created by Package C per tenant or workspace as tenant-scoped lifecycle resources. The current cursor remains real-cloud-authorization-boundary and does not authorize secret mutation/provider mutation/deploy/kubectl/build-push/live-test work.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -369,9 +369,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "fix/v22-native-tke-nodepool-inventory",
+  "last_landed_branch": "recovery/platform-v22-trunk",
   "last_landed_at": "2026-06-12",
-  "history_latest_branch": "fix/v22-native-tke-nodepool-inventory",
+  "history_latest_branch": "recovery/platform-v22-trunk",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
