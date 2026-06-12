@@ -134,18 +134,18 @@ Node Portal backend physical removal: `services/portal/src` 已物理清退；�
 - smoke / eval 分层: [spec:v22-smoke-eval-boundary](#spec-v22-smoke-eval-boundary)。`tests/**/*.mjs` 是 repo-local eval gate 文件族，不全等于 smoke；只有 `health-check` 和 `smoke-golden` 两层可以称为 smoke。`suite smoke` 只跑小型关键路径；`suite local-contract` 和 `suite local-regression` 承接更宽的本地 deterministic gate；`suite real-cloud-readiness` 独立覆盖 mock/snapshot、readonly quote、dry-run plan 和 readonly inventory 的本地 readiness gate；`suite cloud-future-authorized` 只标记 mutation/deploy/live/canary 等未来授权边界，不授权真实云、deploy、kubectl、live-test 或 secret 读取。
 - truth freeze: [../history/README.md](../history/README.md)。该文件是当前业务、架构、数据、云和 AI 开发治理的单页真相冻结入口；它不替代长期合同，只防止阶段性合同和旧叙事继续作为当前事实源。
 - token/provider key: [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary), [spec:v22-user-credit-provider-boundary](#spec-v22-user-credit-provider-boundary), [spec:v22-opl-entry-preflight-auth-boundary](#spec-v22-opl-entry-preflight-auth-boundary)。每个用户使用自己的 gflabtoken API Key 作为模型调用凭证；Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普通登录字段；gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。
-- resource plan: [spec:v22-resource-plan-boundary](#spec-v22-resource-plan-boundary)。用户购买的是计算资源套餐和工作台能力，不是节点、节点池或云控制台资源；默认套餐使用 `shared_quota`，高级隔离套餐可使用 `dedicated_node_pool` 或 `dedicated_node`。
+- resource plan: [spec:v22-resource-plan-boundary](#spec-v22-resource-plan-boundary)。用户购买的是计算资源套餐和工作台能力，不是节点、节点池或云控制台资源；后台实现必须为每个租户或工作台创建并绑定独立 tenant node pool。
 - tenant/resource binding: [spec:v22-tenant-resource-binding-boundary](#spec-v22-tenant-resource-binding-boundary), [spec:v22-managed-environment-open-boundary](#spec-v22-managed-environment-open-boundary)
 - managed resource binding plan / mock snapshot: [spec:v22-managed-environment-open-boundary](#spec-v22-managed-environment-open-boundary)。当前只展示托管运行环境计划摘要，不代表真实资源已创建；后续真实腾讯云接入路线为 `mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> TKE bootstrap preflight when no TKE foundation exists -> readonly/tencent inventory provider -> authorized/tencent create/release provider -> authorized/tencent deploy provider -> canary / QA / status update`，真实接入另开 feat/* 并单独授权。
 - readonly/tencent quote provider: [spec:v22-tencent-readonly-quote-provider-boundary](#spec-v22-tencent-readonly-quote-provider-boundary)。当前只定义 interface 和 mock adapter，输出 `regionLabel`、`planSpec`、`estimatedCost`、`quoteSource`、`quoteStatus`、`quoteSnapshotId`，不读取 secret，不调用真实腾讯云 API。
 - dry-run/tencent resource plan provider: [spec:v22-tencent-dry-run-resource-plan-provider-boundary](#spec-v22-tencent-dry-run-resource-plan-provider-boundary)。当前只基于 readonly quote 和 managed resource binding plan 生成不会执行的资源创建计划，输出 `resourcePlanId`、`resourceBindingId`、`planMode`、`resourceSteps`、`approvalRequired`、`releasePolicy`、`auditStatus`、`riskNotes` 等业务字段；`realResourceCreated` 和 `chargeApplied` 不属于 `resourcePlan` 顶层字段。
-- TKE bootstrap preflight: [spec:v22-tke-bootstrap-preflight-boundary](#spec-v22-tke-bootstrap-preflight-boundary)。当前只生成云底座 checklist，说明缺 TKE 时先创建/选择 VPC、私有子网、一个共享 TKE 集群、platform service pool、shared user compute pool，并把 premium dedicated pool 作为后续高级套餐隔离阶段；它不读取 secret、不调用真实云、不 kubectl、不 deploy、不 build/push、不创建资源。PostgreSQL / COS / CBS 是当前必需数据面，Redis 不进入必需项。
+- TKE bootstrap preflight: [spec:v22-tke-bootstrap-preflight-boundary](#spec-v22-tke-bootstrap-preflight-boundary)。当前只生成云底座 checklist，说明缺 TKE 时先创建/选择 VPC、私有子网、统一 TKE 集群和 platform service node pool；tenant node pool 由 Package C 在租户或工作台开通时创建和释放。它不读取 secret、不调用真实云、不 kubectl、不 deploy、不 build/push、不创建资源。PostgreSQL / COS / CBS 是当前必需数据面，Redis 不进入必需项。
 - readonly/tencent inventory: [spec:v22-tencent-readonly-inventory-boundary](#spec-v22-tencent-readonly-inventory-boundary)。当前只定义真实云只读盘点合同，用来验证云上事实和 Portal 账本是否一致；未来 secret 文件只能 allowlist_only 读取 readonly inventory keys，不允许“一读全读”；仅允许 Describe/List/Get/Head 类只读 API，不读取 COS 对象正文，不调用 mutation API，不创建、删除、释放、扩缩容或改标签。
-- production cloud topology: [spec:v22-production-cloud-topology-boundary](#spec-v22-production-cloud-topology-boundary)。当前只是合同，定义 CLB / TKE / COS / CBS / NAT / PostgreSQL 在 MedOPL v22 生产拓扑中的角色，并区分 platform service node pool、shared user compute pool、dedicated user compute pool；不代表已部署、已接入或已验证，不读取 secret，不调用真实云，不改 deploy，不 kubectl，不 build/push，不创建/删除资源。普通用户产品语言不展示这些云资源名；region/VPC/subnet/security group/resource tag/cost allocation 后续进入 readonly inventory 和 deploy plan。
+- production cloud topology: [spec:v22-production-cloud-topology-boundary](#spec-v22-production-cloud-topology-boundary)。当前只是合同，定义 CLB / TKE / COS / CBS / NAT / PostgreSQL 在 MedOPL v22 生产拓扑中的角色，并区分 platform service node pool 与每个租户或工作台的 tenant node pool；不代表已部署、已接入或已验证，不读取 secret，不调用真实云，不改 deploy，不 kubectl，不 build/push，不创建/删除资源。普通用户产品语言不展示这些云资源名；region/VPC/subnet/security group/resource tag/cost allocation 后续进入 readonly inventory 和 deploy plan。
 - cloud onboarding workflow: [spec:v22-cloud-onboarding-workflow-boundary](#spec-v22-cloud-onboarding-workflow-boundary)。该 repo-tracked cloud onboarding workflow 合同把 official SDK provider strategy、wrapper、dependency loader、check-config、default gate、user-authorized readonly live、report review、TC3 cleanup、dry-run create/release、TKE bootstrap preflight、mutation wrapper、authorized live、deploy、Portal production integration 和 canary/QA/status update 定成业务推进顺序；它不替代 AGENTS.md，AGENTS.md 管 A/B/C/D 纪律和授权红线，本合同管业务推进顺序、阶段状态、blocker 回流和下一步任务包。
-- authorized/tencent create/release: [spec:v22-authorized-tencent-create-release-boundary](#spec-v22-authorized-tencent-create-release-boundary)。当前只定义真实创建/释放前的授权边界，覆盖基础套餐、Pro 套餐、自定义规格、共享 TKE 集群、共享用户计算池 + 硬 quota、namespace/quota、node pool class、COS 文件空间、7 天保护期、文件夹管理、T+1 分账标签和失败审计；标准套餐不是一用户一个 node pool，高级隔离套餐可以映射 `dedicated_node_pool`；7 天保护期只由存储资源 / 文件空间删除或独立欠费保留策略触发；不读取 secret，不调用真实腾讯云 API，不创建或释放真实资源。
+- authorized/tencent create/release: [spec:v22-authorized-tencent-create-release-boundary](#spec-v22-authorized-tencent-create-release-boundary)。当前只定义真实创建/释放前的授权边界，覆盖基础套餐、Pro 套餐、自定义规格、统一 TKE 集群、tenant node pool create/release、namespace/quota、node pool class、COS 文件空间、7 天保护期、文件夹管理、T+1 分账标签和失败审计；标准套餐也必须由 MedOPL 创建并绑定独立 tenant node pool；7 天保护期只由存储资源 / 文件空间删除或独立欠费保留策略触发；不读取 secret，不调用真实腾讯云 API，不创建或释放真实资源。
 - authorized/tencent create/release implementation: [spec:v22-authorized-tencent-create-release-implementation-boundary](#spec-v22-authorized-tencent-create-release-implementation-boundary)。当前只定义后续真实 create/release implementation 前的授权、风控、失败回滚、费用保护和审计合同；默认风控上限不是默认开通规格，计算资源和存储资源生命周期分离，且风控可由 Portal 管理员按账号修改；不读取 secret，不调用真实腾讯云 API，不创建或释放真实资源。
-- authorized/tencent create/release execution: [spec:v22-authorized-tencent-create-release-execution-boundary](#spec-v22-authorized-tencent-create-release-execution-boundary)。当前只收敛真实变更资源执行前的 gate、mutation secret allowlist、资源生命周期、Portal ledger + 云标签双重校验、风控 override、冻结金额、120 分钟核对、T+1 COS 对账、回滚和 admin 审计边界；Package C 必须先写 compute allocation，再写 ResourceQuota / LimitRange / admission policy，超过 allocation 必须 fail-closed；readonly inventory 与 create/release mutation gate、secret 和 runner/bridge 必须分离；本合同不读取 mutation secret，不调用真实云，不执行真实 create/release。
+- authorized/tencent create/release execution: [spec:v22-authorized-tencent-create-release-execution-boundary](#spec-v22-authorized-tencent-create-release-execution-boundary)。当前只收敛真实变更资源执行前的 gate、mutation secret allowlist、资源生命周期、Portal ledger + 云标签双重校验、风控 override、冻结金额、120 分钟核对、T+1 COS 对账、回滚和 admin 审计边界；Package C 必须为租户或工作台创建 tenant node pool，再写 compute allocation、namespace、ResourceQuota / LimitRange / admission policy，超过 allocation 必须 fail-closed；readonly inventory 与 create/release mutation gate、secret 和 runner/bridge 必须分离；本合同不读取 mutation secret，不调用真实云，不执行真实 create/release。
 - authorized/tencent deploy execution: [spec:v22-authorized-tencent-deploy-execution-boundary](#spec-v22-authorized-tencent-deploy-execution-boundary)。Package D 合同，定义 TCR 镜像、push 唯一 test tag、digest verify、kubectl deploy dry-run、指定 namespace/workload/container rollout、runtime smoke 和 rollback evidence 边界；Package D 不授权 Package C 的资源生命周期动作，不创建、删除、释放或扩缩容 TKE node pool，不创建、删除、清空或扩容 COS bucket/prefix/object，不允许误删、误停或误改别人的节点和存储。
 - OPL deployment ownership release plan: [spec:v22-opl-deployment-ownership-release-plan-boundary](#spec-v22-opl-deployment-ownership-release-plan-boundary)。Package D 的 Level 4 子合同，定义 `platform_service_target` 与 `workspace_runtime_target` 的 release plan owner guard。平台服务 target 需要 `ownerRef/operationId`，不强制 `workspaceId/resourceBindingId`；workspace runtime target 必须绑定 `workspaceId/resourceBindingId`。该合同只证明 release plan ownership gate，不授权 build/push/kubectl，也不把 OPL lane 扩权成 deploy lane。
 - Package D image push gate: [spec:v22-authorized-tencent-deploy-execution-boundary](#spec-v22-authorized-tencent-deploy-execution-boundary) 的 R-14/R-15 子链路。`build-push` 必须先有已审查的 TCR preflight evidence，并显式传入 `acceptedPreflightId`；缺失时 runner fail-closed。cloud-lane 分支可长期保存 D1/D2/D3 stacked evidence，但不得把 fake-live 或未授权真实 push 当作 production deploy 完成。
@@ -389,7 +389,7 @@ six-step AI MVP readiness 完成后的唯一可声明状态是 `local_ai_mvp_rea
 
 ### Resource / Billing / Audit 合同包
 
-适用于套餐、托管环境开通、资源绑定、预扣费、冻结金额、释放停止计费、审计状态。默认资源模型是共享用户计算池 + 硬 quota；高级隔离套餐可使用 `dedicated_node_pool`，但普通用户仍购买专属计算资源/工作台能力，不购买节点池。
+适用于套餐、托管环境开通、资源绑定、预扣费、冻结金额、释放停止计费、审计状态。默认资源模型是平台统一 TKE 集群 + platform service node pool + Package C 为每个租户或工作台创建的 tenant node pool；普通用户仍购买专属计算资源/工作台能力，不购买节点池。
 
 订阅：
 
@@ -751,18 +751,18 @@ Former title: v22 Authorized Tencent Create/Release Boundary
 
 内部真实执行阶段可以把工作台资源映射到：
 
-- TKE shared cluster。
+- unified TKE cluster。
+- platform service node pool，仅承载 Portal、Gateway、Runtime Bridge、worker、trace、billing 和 system。
+- tenant node pool，由 Package C 在租户或工作台开通时创建并绑定。
 - namespace / quota。
 - node pool class。
 - COS 文件空间。
 - COS prefix 是内部实现。
 - 可选 CBS / CFS / pod ephemeral scratch，仅作为运行时内部实现，不作为用户购买的文件空间主叙事。
 
-MVP 默认使用已有平台共享 TKE 集群，不默认创建新 TKE 集群。多租户通过 namespace、quota、labels、network policy 和资源标签隔离。普通 CPU 任务可以共享通用 node pool class；GPU 或高规格环境可映射到独立 node pool class；专属节点池属于后续高级隔离套餐。
+MVP 默认使用统一 TKE 集群，不默认为每个租户创建独立集群。多租户通过 tenant node pool、namespace、quota、labels、network policy、admission policy、taint、nodeSelector、toleration、resource binding 和资源标签隔离。`starter_2c4g_10gb`、`pro_8c16g_100gb` 和后续叠加计算都必须由 Package C 创建或绑定该租户/工作台自己的 tenant node pool；用户 A 和用户 B 不得共享同一个用户计算池。超过 compute allocation 的 workload 必须 fail-closed，不得自动扩容并由平台垫付，也不得借用其他用户 allocation。
 
-标准套餐使用共享用户计算池 + workspace namespace ResourceQuota / LimitRange / admission policy。`starter_2c4g_10gb`、`pro_8c16g_100gb` 和叠加计算默认都是 `shared_quota`：用户 A 和用户 B 可以在同一个共享用户计算池运行 workload，但必须落在各自 namespace、resourceBinding、quota、limit 和 admission policy 内。超过 compute allocation 的 workload 必须 fail-closed，不得自动扩容并由平台垫付，也不得借用其他用户 allocation。
-
-计算升级必须先完成 Portal 套餐变更、冻结金额或余额校验、cloud operation 和审计记录，然后 Package C 才能更新 compute allocation、ResourceQuota / LimitRange / admission policy，并在需要时做池级容量补足。高级客户需要更强隔离时，专属计算池属于高级隔离套餐，内部 isolation mode 可以是 `dedicated_node_pool` 或 `dedicated_node`；普通用户仍看到“专属计算资源 / 高级隔离套餐”，不是节点池。
+计算升级必须先完成 Portal 套餐变更、冻结金额或余额校验、cloud operation 和审计记录，然后 Package C 才能更新 compute allocation、ResourceQuota / LimitRange / admission policy，并调整对应 tenant node pool desired capacity 或绑定更高 workload class。普通用户仍看到“计算资源 / 套餐 / 任务并发 / 状态”，不是节点池。
 
 “加计算”必须明确为以下一种或多种授权动作，不能隐式推断：
 
@@ -1009,7 +1009,7 @@ mutation secret allowlist 必须独立于 readonly secret allowlist：
 - `TENCENT_MUTATION_DAILY_BUDGET_CNY`
 - `TENCENT_MUTATION_MAX_OPERATION_COUNT`
 - `TENCENT_MUTATION_TKE_CLUSTER_ID`
-- `TENCENT_MUTATION_TKE_NODE_POOL_ID`
+- `TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID`
 - `TENCENT_MUTATION_COS_BUCKET`
 - `TENCENT_MUTATION_COS_REGION`
 - `TENCENT_MUTATION_WORKSPACE_PREFIX_ROOT`
@@ -1034,25 +1034,25 @@ mutation secret 不得进入 Portal payload、前端状态、URL、日志、evid
 
 MVP compute execution 默认使用已有 TKE 集群，不默认创建新集群。
 
-标准套餐不是一用户一个 node pool。Package C 必须先写 compute allocation，再写 ResourceQuota / LimitRange / admission policy。共享用户计算池只能做池级容量补足；它不能把某个用户的套餐直接解释成独占节点池，也不能因单个 workspace 超 allocation 自动扩容并让平台垫付。超过 allocation 的 workload 必须 fail-closed，回到 Portal 套餐升级、余额/冻结校验、cloud operation 和审计链路。
+每个租户或工作台必须拥有由 MedOPL 创建并绑定的 tenant node pool。Package C 必须先创建 tenant node pool，再写 compute allocation、namespace、quota、labels、network policy 和 admission policy。平台服务池只承载平台服务，不承载租户 workload。超过 allocation 的 workload 必须 fail-closed，回到 Portal 套餐升级、余额/冻结校验、cloud operation 和审计链路。
 
-TKE 节点池必须先分型再 mutation。普通节点池可以走 TKE `2018-05-25` 的 `DescribeClusterNodePools` / `ModifyNodePoolDesiredCapacityAboutAsg` 旧接口；原生节点池必须走 TKE `2022-05-01` 的 `DescribeNodePools` / `ScaleNodePool`。授权计算开通和释放默认映射为 compute allocation、namespace quota、workload class 和 admission policy 的状态变化；节点池扩缩容只用于共享池池级容量补足、空闲测试池 canary 或高级专属计算池。`DescribeNodePools` 返回 `Native` 时，不得用旧 `ModifyNodePoolDesiredCapacityAboutAsg` 判定节点池不存在。
+TKE 节点池必须先分型再 mutation。Package C 创建 tenant node pool 时必须使用匹配节点池形态的腾讯云 API：普通节点池可通过 TKE `2018-05-25` 的 `DescribeClusterNodePools` 观察，原生节点池通过 TKE `2022-05-01` 的 `DescribeNodePools` / `CreateNodePool` / `ScaleNodePool` / `DeleteNodePool` 管理。授权计算开通和释放默认映射为 tenant node pool create/release、compute allocation、namespace quota、workload class 和 admission policy 的状态变化。`DescribeNodePools` 返回 `Native` 时，不得用旧 `ModifyNodePoolDesiredCapacityAboutAsg` 判定 tenant node pool 不存在。
 
 计算资源生命周期映射为：
 
-- create compute：创建或更新 namespace、quota、labels、network policy、workload class 绑定和 compute allocation。
-- expand compute：提高 namespace quota、调整已授权 node pool desired capacity，或绑定更高 workload class。
-- release compute：停止新任务、解除 compute allocation、释放或降低 quota，停止计算计费。
+- create compute：创建 tenant node pool，创建或更新 namespace、quota、labels、network policy、workload class 绑定和 compute allocation。
+- expand compute：提高 namespace quota、调整对应 tenant node pool desired capacity，或绑定更高 workload class。
+- release compute：停止新任务、解除 compute allocation、释放或删除对应 tenant node pool，停止计算计费。
 
 release compute 不删除文件空间，不触发文件空间 7 天保护期。
 
 node pool 扩缩容、namespace/quota 变更、kubectl、deploy 都必须由用户在当前会话明确授权，并且必须有 dry-run diff、预算上限和回滚策略。
 
-MVP 可以使用平台级共享授权节点池。Portal 后台必须能通过 PostgreSQL canonical `compute_allocation` 追踪每个用户 / 工作空间 / `resourceBindingId` 绑定到哪个授权资源池：`nodePoolRef` 是后台审计字段，不是普通用户产品概念，也不表示“一用户一个节点池”。同一个平台节点池可以承载多个用户的计算分配；普通用户只看到“计算资源 / 套餐 / 任务并发 / 状态”，管理员和审计路径可以查看脱敏 `nodePoolRef`、`clusterRef`、`namespaceRef`、quota 和 workload class。
+Portal 后台必须能通过 PostgreSQL canonical `compute_allocation` 追踪每个用户 / 工作空间 / `resourceBindingId` 绑定到哪个 tenant node pool：`nodePoolRef` 是后台审计字段，不是普通用户产品概念，但它必须指向该租户或工作台的专属运行池。同一个 tenant node pool 不得承载无关用户的计算分配；普通用户只看到“计算资源 / 套餐 / 任务并发 / 状态”，管理员和审计路径可以查看脱敏 `nodePoolRef`、`clusterRef`、`namespaceRef`、quota 和 workload class。
 
-专属 node pool 只能绑定到一个 resourceBindingId 或一个明确的账号组。专属池必须使用 taint / label / nodeSelector / toleration 防止平台服务和其他用户调度进入。平台服务不得依赖专属用户池，其他用户 workload 也不得通过共享 toleration 进入该专属池。
+tenant node pool 只能绑定到一个 resourceBindingId 或一个明确的租户/账号组。tenant pool 必须使用 taint / label / nodeSelector / toleration 防止平台服务和其他用户调度进入。平台服务不得依赖 tenant 用户池，其他用户 workload 也不得通过共享 toleration 进入该 tenant pool。
 
-当前混跑 Portal/OPL/trace/billing/system 的节点池不得缩到 0。replicas_0_1_0 只允许用于空闲测试池或专属计算池的闭环 canary；它不能作为混跑平台服务节点池的默认 cleanup 或 release compute 语义。
+当前承载 Portal/OPL/trace/billing/system 的 platform service node pool 不得缩到 0。replicas_0_1_0 只允许用于 tenant node pool 的闭环 canary；它不能作为平台服务节点池的默认 cleanup 或 release compute 语义。
 
 ## Portal Operation Truth
 
@@ -1221,7 +1221,7 @@ release 分阶段执行：
     "TENCENT_MUTATION_DAILY_BUDGET_CNY",
     "TENCENT_MUTATION_MAX_OPERATION_COUNT",
     "TENCENT_MUTATION_TKE_CLUSTER_ID",
-    "TENCENT_MUTATION_TKE_NODE_POOL_ID",
+    "TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID",
     "TENCENT_MUTATION_COS_BUCKET",
     "TENCENT_MUTATION_COS_REGION",
     "TENCENT_MUTATION_WORKSPACE_PREFIX_ROOT"
@@ -1240,17 +1240,23 @@ release 分阶段执行：
     "storageDeleteTriggersRetentionDays": 7,
     "computeReleasedWithFileSpaceRetainedIsValid": true,
     "usesExistingTkeClusterByDefault": true,
-    "computeCreateUsesNamespaceQuotaWorkloadClass": true,
-    "computeExpandMayAdjustAuthorizedNodePoolCapacity": true,
+    "tenantNodePoolRequiredPerWorkspace": true,
+    "computeCreateUsesTenantNodePoolNamespaceQuotaWorkloadClass": true,
+    "computeExpandMayAdjustTenantNodePoolCapacity": true,
     "tkeNodePoolShapeMustBeDetectedBeforeMutation": true,
     "nativeNodePoolReadApi": "DescribeNodePools",
     "nativeNodePoolMutationApi": "ScaleNodePool",
-    "legacyRegularNodePoolMutationApi": "ModifyNodePoolDesiredCapacityAboutAsg",
-    "nativeNodePoolCanaryLoop": "replicas_0_1_0_only_for_idle_canary_or_dedicated_pool",
-    "standardPlansUseSharedUserComputePool": true,
+    "nativeNodePoolCreateApi": "CreateNodePool",
+    "nativeNodePoolDeleteApi": "DeleteNodePool",
+    "nativeNodePoolCanaryLoop": "replicas_0_1_0_only_for_tenant_node_pool",
+    "standardPlansUseSharedUserComputePool": false,
+    "sharedUserComputePoolSupported": false,
     "standardPlansRequireNamespaceQuota": true,
     "overAllocationMustFailClosed": true,
-    "dedicatedNodePoolSupportedAsAdvancedIsolation": true
+    "platformServicePoolProtected": true,
+    "packageCCreatesTenantNodePool": true,
+    "packageCReleasesTenantNodePool": true,
+    "singleMutationNodePoolEnvForbidden": true
   },
   "portalCanonicalTruth": {
     "store": "PostgreSQL",
@@ -2629,13 +2635,13 @@ Cloud 路径必须同时满足双门禁：
 - 是否允许真实云: 否。
 - required contracts: `spec:v22-tencent-dry-run-resource-plan-provider-boundary`, `spec:v22-authorized-tencent-create-release-boundary`, `spec:v22-production-cloud-topology-boundary`
 - required smoke: `future-authorized-test-v22-authorized-tencent-create-release-contract.mjs`, `future-authorized-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs`
-- success status: dry-run create/release plan produces no mutation and no charge
+- success status: dry-run create/release plan produces tenant node pool lifecycle plan with no mutation and no charge
 - blocker 回流到谁: A fixes plan, B reviews mutation leakage
 - 什么时候必须停下来问用户: dry-run plan wants to call real cloud, read mutation secret, alter ledger, or expose cloud console language to ordinary users
 
 ### 10. TKE bootstrap preflight
 
-目标：当 Package C mutation env 缺少 TKE cluster/node pool identifiers 时，先把 operator 需要创建或选择的 TKE foundation 转成 local-only checklist，而不是填假值或直接执行 live mutation。
+目标：当 Package C mutation env 缺少 TKE cluster / platform service node pool identifiers 时，先把 operator 需要创建或选择的 TKE foundation 转成 local-only checklist，而不是填假值或直接执行 live mutation。tenant node pool 不由 foundation 预置，必须由 Package C 在租户或工作台开通时创建。
 
 - owner: A
 - 是否可并发: 是，可与 mutation wrapper contract 和 report review 并行；不得与真实云副作用并发。
@@ -2644,7 +2650,7 @@ Cloud 路径必须同时满足双门禁：
 - 是否允许真实云: 否。
 - required contracts: `spec:v22-tke-bootstrap-preflight-boundary`, `spec:v22-production-cloud-topology-boundary`, `spec:v22-authorized-tencent-create-release-boundary`
 - required smoke: `future-authorized-test-v22-tke-bootstrap-preflight-local-gate.mjs`
-- success status: local preflight names target region/VPC, one shared TKE cluster, platform service pool, shared user compute pool, future premium dedicated pool, PostgreSQL / COS / CBS data plane and the exact Package C env fields to fill after readonly observation
+- success status: local preflight names target region/VPC, one unified TKE cluster, platform service pool, tenant node pool creation strategy, PostgreSQL / COS / CBS data plane and the exact Package C env fields to fill after readonly observation
 - blocker 回流到谁: A fixes preflight contract/code; user creates or authorizes creation of the cloud foundation; B reviews side-effect boundary
 - 什么时候必须停下来问用户: preflight would read secret, call real cloud, create/modify resource, run kubectl/deploy/build-push/live-test, or claim production readiness
 
@@ -7355,17 +7361,18 @@ Former title: v22 Pricing Snapshot Boundary Contract
 {
   "contract": "v22_pricing_snapshot_boundary",
   "version": 1,
-  "advancedIsolationModes": [
-    "dedicated_node_pool",
-    "dedicated_node"
-  ],
+  "computeProvisioningModel": {
+    "tenantNodePoolCreatedByPackageC": true,
+    "sharedUserComputePoolSupported": false,
+    "userBuysNodePool": false
+  },
   "plans": [
     {
       "id": "starter_2c4g_10gb",
       "compute": {
         "cpuCores": 2,
         "memoryGb": 4,
-        "isolationMode": "shared_quota",
+        "isolationMode": "tenant_node_pool",
         "userBuysNodePool": false
       },
       "storage": {
@@ -7396,7 +7403,7 @@ Former title: v22 Pricing Snapshot Boundary Contract
       "compute": {
         "cpuCores": 8,
         "memoryGb": 16,
-        "isolationMode": "shared_quota",
+        "isolationMode": "tenant_node_pool",
         "userBuysNodePool": false
       },
       "storage": {
@@ -7475,10 +7482,9 @@ production cloud topology contract 只回答：
 TKE 内部节点池必须区分资源角色：
 
 - platform service node pool：承载 Portal、OPL Gateway、Runtime Bridge、trace、billing、system 等平台服务。
-- shared user compute pool：承载标准套餐 workspace workload，通过 namespace quota、limit 和 admission policy 隔离。
-- dedicated user compute pool：承载高级隔离套餐绑定的 workspace runtime 或账号组 runtime。
+- tenant node pool：由 MedOPL 在租户或工作台开通时创建并绑定，只承载该租户、工作台或明确账号组 runtime。
 
-平台服务不得调度到 dedicated user compute pool。用户 workload 不得调度到 platform service node pool。shared user compute pool 可以承载多个用户的 workload，但必须参考 Kubernetes 官方多租户模型，用 Namespace、RBAC、ResourceQuota、LimitRange、NetworkPolicy、Pod Security、admission policy 和 Portal resource binding 硬隔离。高级套餐专属池必须用 taint、label、nodeSelector、toleration 和 resourceBindingId / account group binding 防止平台服务或其他用户调度进入。
+平台服务不得调度到 tenant node pool。用户 workload 不得调度到 platform service node pool。tenant node pool 必须参考 Kubernetes 官方多租户模型，用 Namespace、RBAC、ResourceQuota、LimitRange、NetworkPolicy、Pod Security、admission policy、taint、label、nodeSelector、toleration 和 Portal resource binding 硬隔离。
 
 ## User Product Language Boundary
 
@@ -7582,15 +7588,15 @@ TKE bootstrap preflight 位于 production cloud topology 和 Package C live muta
     "NAT": "TKE 私网出公网、拉镜像、访问模型/API/云 API",
     "PostgreSQL": "Portal canonical store、账本、资源绑定、审计、文件索引",
     "platform service node pool": "Portal/OPL Gateway/Runtime Bridge/trace/billing/system 平台服务池",
-    "shared user compute pool": "标准套餐 workspace workload 共享池，必须由 quota/limit/admission 隔离",
-    "dedicated user compute pool": "高级隔离套餐专属池，只能由绑定 resourceBindingId 或账号组调度"
+    "tenant node pool": "租户或工作台开通时由 MedOPL 创建并绑定，只能由绑定 resourceBindingId 或账号组调度"
   },
   "schedulingIsolation": {
-    "platformServicesMustNotScheduleToDedicatedUserComputePool": true,
+    "platformServicesMustNotScheduleToTenantNodePool": true,
     "userWorkloadMustNotScheduleToPlatformServiceNodePool": true,
-    "sharedUserComputePoolRequiresQuotaLimitAdmission": true,
-    "sharedUserComputePoolRequiresNamespaceRbacResourceQuotaLimitRangeNetworkPolicyPodSecurity": true,
-    "dedicatedUserComputePoolRequiresTaintLabelNodeSelectorToleration": true
+    "tenantNodePoolRequiredPerWorkspace": true,
+    "tenantNodePoolRequiresNamespaceRbacResourceQuotaLimitRangeNetworkPolicyPodSecurity": true,
+    "tenantNodePoolRequiresTaintLabelNodeSelectorToleration": true,
+    "sharedUserComputePoolSupported": false
   },
   "ordinaryUserProductLanguageHides": [
     "CLB",
@@ -7646,8 +7652,7 @@ Runner:
 
 - one TKE cluster in the target region and VPC.
 - platform service node pool for Portal, Gateway, Runtime Bridge, worker and platform services.
-- shared user compute pool for standard workspace runtime workload.
-- premium dedicated pool is a later paid isolation phase, not required for the first canary.
+- tenant node pools are created by Package C per tenant or workspace during authorized lifecycle execution.
 - PostgreSQL / COS / CBS are the required data plane for Portal canonical store, file space and node or volume storage.
 - Redis is not required by the current production data plane.
 
@@ -7655,10 +7660,10 @@ Kubernetes controls must include Namespace, RBAC, ResourceQuota, LimitRange, Net
 
 ## Required Env Outputs
 
-After TKE is created and readonly inventory observes the cluster/node pool, the operator may fill only these Package C mutation fields for the next authorization request:
+After TKE is created and readonly inventory observes the cluster and platform service node pool, the operator may fill only these Package C mutation fields for the next authorization request:
 
 - `TENCENT_MUTATION_TKE_CLUSTER_ID`
-- `TENCENT_MUTATION_TKE_NODE_POOL_ID`
+- `TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID`
 
 Filling these fields does not authorize live mutation. Package C live create/release still requires explicit current-session authorization, mutation secret allowlist, API allowlist, budget, evidence sink and rollback owner.
 
@@ -7677,14 +7682,13 @@ Filling these fields does not authorize live mutation. Package C live create/rel
   "runsDeploy": false,
   "runsBuildPush": false,
   "createsOrDeletesResources": false,
-  "clusterModel": "shared_cluster_layered_isolation",
+  "clusterModel": "unified_tke_cluster_with_tenant_node_pools",
   "requiredNodePools": [
-    "platform_service_pool",
-    "shared_user_compute_pool"
+    "platform_service_pool"
   ],
-  "futureNodePools": [
-    "premium_dedicated_pool"
-  ],
+  "tenantNodePools": "created_by_package_c_per_tenant_or_workspace",
+  "sharedUserComputePoolRequired": false,
+  "premiumDedicatedPoolRequired": false,
   "requiredDataPlane": [
     "PostgreSQL",
     "COS",
@@ -7693,7 +7697,7 @@ Filling these fields does not authorize live mutation. Package C live create/rel
   "redisRequired": false,
   "requiredMutationEnvFields": [
     "TENCENT_MUTATION_TKE_CLUSTER_ID",
-    "TENCENT_MUTATION_TKE_NODE_POOL_ID"
+    "TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID"
   ]
 }
 ```
@@ -9157,11 +9161,9 @@ MVP active surface 仅开放两档标准套餐。以下扩展能力属于 future
 
 资源套餐必须显式声明 `isolationMode`：
 
-- `shared_quota`：默认套餐使用 `shared_quota`。多个用户可以共享同一个用户计算池，但每个 workspace 必须有独立 namespace、ResourceQuota、LimitRange、admission policy、resourceBinding 和审计标签。超过 allocation 的 workload 必须 fail-closed。
-- `dedicated_node_pool`：高级套餐可以使用 `dedicated_node_pool`。平台为一个 resourceBindingId 或明确账号组创建或绑定专属计算池，并通过 taint、label、nodeSelector、toleration 防止平台服务和其他用户进入。
-- `dedicated_node`：更细的高级隔离选项，只能在专属池或明确绑定的专属节点语义下使用。
+- `tenant_node_pool`：默认套餐和后续叠加计算都使用由 Package C 创建或绑定的 tenant node pool。每个 tenant node pool 只能绑定一个 `resourceBindingId` 或一个明确租户/账号组，并且必须配套独立 namespace、ResourceQuota、LimitRange、admission policy、resourceBinding、审计标签、taint、label、nodeSelector 和 toleration。超过 allocation 的 workload 必须 fail-closed。
 
-标准套餐不得解释成“一用户一个节点池”。高级套餐可以购买“专属计算资源 / 高级隔离套餐”，但普通用户仍不直接管理节点池。
+普通用户仍不直接管理节点池；Portal 对普通用户只展示计算资源、套餐、任务并发、状态和费用/审计语言。
 
 ## Runtime Requirement
 

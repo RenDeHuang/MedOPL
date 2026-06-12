@@ -113,9 +113,19 @@ function planFor(options) {
     computePlan: {
       resourceType: "workspace_compute_allocation",
       action: "plan_create_or_expand",
-      clusterModel: "shared_cluster_layered_isolation",
-      standardPlanUsesSharedPool: true,
-      premiumDedicatedPoolSupported: true,
+      clusterModel: "unified_tke_cluster_with_tenant_node_pools",
+      platformServicePoolPreserved: true,
+      sharedUserComputePoolUsed: false,
+      tenantNodePoolPlan: {
+        action: "plan_create_or_release",
+        ownership: "tenant_workspace_dedicated",
+        createdByPackageC: true,
+        releasedByPackageC: true,
+        bindsAccountId: options.accountId,
+        bindsWorkspaceId: options.workspaceId,
+        bindsResourceBindingId: options.resourceBindingId,
+        nodePoolNamePrefix: "medopl-tenant-",
+      },
       kubernetesControls: [
         "namespace",
         "rbac",
@@ -124,6 +134,9 @@ function planFor(options) {
         "networkpolicy",
         "pod_security",
         "admission_policy",
+        "taints_and_tolerations",
+        "node_selector",
+        "labels",
       ],
       computeShape: options.serverPlanId === "pro"
         ? { cpuCores: 8, memoryGb: 16, taskConcurrency: 5 }

@@ -1,7 +1,7 @@
 import { goControlPlaneClient } from "../client";
 import type { CommercialProfile, SelectedServerPlan } from "./types";
 
-export type { CommercialProfile, TrialEntitlement } from "./types";
+export type { CommercialProfile } from "./types";
 
 export interface CurrentUserPayload {
   id: string;

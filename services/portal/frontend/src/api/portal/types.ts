@@ -5,18 +5,6 @@ export interface PublicSettingsPayload {
   homeContent: string;
 }
 
-export interface TrialEntitlement {
-  kind: string;
-  status: string;
-  source: string;
-  currency: string;
-  totalCredit: number;
-  remainingCredit: number;
-  createdAt: string;
-  expiresAt: string;
-  note: string;
-}
-
 export interface CommercialProfile {
   accountStatus: string;
   billingStatus: string;
@@ -27,7 +15,6 @@ export interface CommercialProfile {
   canStartChargeableRun: boolean;
   chargeBlockedReasons: string[];
   priceTransparency: string;
-  trialEntitlement: TrialEntitlement | null;
   group: null | {
     id: string;
     name: string;

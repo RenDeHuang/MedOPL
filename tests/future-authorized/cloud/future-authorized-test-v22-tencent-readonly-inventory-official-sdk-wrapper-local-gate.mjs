@@ -44,8 +44,16 @@ const fakeClients = {
         return {
           TotalCount: 2,
           NodePoolSet: [
-            { NodePoolId: "np-platform", LifeState: "normal" },
-            { NodePoolId: "np-shared", LifeState: "normal" },
+            {
+              NodePoolId: "np-platform",
+              LifeState: "normal",
+              Tags: [{ Key: "medopl.io/pool", Value: "platform" }],
+            },
+            {
+              NodePoolId: "np-tenant-ws-proof",
+              LifeState: "normal",
+              Tags: [{ Key: "medopl.io/pool", Value: "tenant" }],
+            },
           ],
           RequestId: "request-node-pools-proof",
         };
@@ -123,6 +131,11 @@ assert.equal(resources.some((resource) => resource.resourceType === "tkeNodePool
 assert.equal(resources.some((resource) => resource.resourceType === "cosStorageSummary"), true, "resources_include_cos_summary");
 assert.equal(resources.some((resource) => resource.resourceType === "billingSummary"), true, "resources_include_billing_summary");
 assert.equal(resources.some((resource) => resource.resourceType === "billingTagSummary"), true, "resources_include_tag_summary");
+const nodePoolSummary = resources.find((resource) => resource.resourceType === "tkeNodePoolSummary");
+assert.equal(nodePoolSummary?.platformServicePoolObserved, true, "platform_service_pool_observed");
+assert.equal(nodePoolSummary?.tenantNodePoolCount, 1, "tenant_node_pool_count");
+assert.equal(nodePoolSummary?.sharedUserComputePoolObserved, false, "shared_user_pool_must_not_be_observed");
+assert.equal(nodePoolSummary?.nodePoolRoleCounts?.shared_user_compute_forbidden, 0, "shared_role_count_must_be_zero");
 
 for (const call of calls) {
   assert.match(call.method, /^(?:Describe|List|Get|Head|getService|headObject)/u, `call_must_be_readonly:${call.method}`);

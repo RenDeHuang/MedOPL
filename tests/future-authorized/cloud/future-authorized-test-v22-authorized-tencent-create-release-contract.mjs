@@ -56,7 +56,9 @@ const requiredPhrases = [
   "批量下载",
   "批量删除",
   "COS prefix 是内部实现",
-  "TKE shared cluster",
+  "unified TKE cluster",
+  "platform service node pool",
+  "tenant node pool，由 Package C 在租户或工作台开通时创建并绑定",
   "namespace / quota",
   "node pool class",
   "SecretId / SecretKey / kubeconfig 只进入后端 secret boundary",
@@ -105,6 +107,12 @@ for (const forbidden of [
   "legacyResourceOrderId",
   "legacyresourceorderid",
   "migration-only alias",
+  "TKE shared cluster",
+  "默认资源模型是共享用户计算池",
+  "普通 CPU 任务可以共享通用 node pool class",
+  "标准套餐使用共享用户计算池",
+  "shared_quota",
+  "标准套餐不得解释成“一用户一个节点池”",
 ]) {
   assert.equal(contract.includes(forbidden), false, `authorized_tencent_contract_retired_alias_must_not_be_required:${forbidden}`);
 }

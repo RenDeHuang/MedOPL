@@ -59,10 +59,10 @@ try {
     "na-siliconvalley",
     "--vpc-id",
     "vpc-placeholder",
-    "--standard-node-pool-name",
-    "medopl-standard-shared",
-    "--system-node-pool-name",
+    "--platform-node-pool-name",
     "medopl-platform-system",
+    "--tenant-node-pool-name-prefix",
+    "medopl-tenant-",
   ];
 
   const missingFlags = run(["--operation-id", "op-tke-bootstrap-proof"]);
@@ -97,7 +97,7 @@ try {
   assert.equal(summary.requiredMutationEnvFields.length, 2, "summary_env_fields_count");
   assert.deepEqual(summary.requiredMutationEnvFields, [
     "TENCENT_MUTATION_TKE_CLUSTER_ID",
-    "TENCENT_MUTATION_TKE_NODE_POOL_ID",
+    "TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID",
   ], "summary_env_fields");
   assert.equal(summary.reportPath.endsWith("op-tke-bootstrap-proof-preflight.json"), true, "summary_report_path");
   assertNoSensitiveOutput(accepted.stdout + accepted.stderr, "accepted_output");
@@ -114,12 +114,15 @@ try {
   assert.equal(report.boundary.buildsOrPushesImage, false, "report_no_build_push");
   assert.equal(report.topology.dataPlane.requiredStores.includes("Redis"), false, "redis_must_not_be_required");
   assert.deepEqual(report.topology.dataPlane.requiredStores, ["PostgreSQL", "COS", "CBS"], "required_data_plane");
+  assert.equal(report.target.clusterModel, "unified_tke_cluster_with_tenant_node_pools", "cluster_model");
+  assert.equal(report.target.firstCanaryRequiresTenantNodePool, true, "first_canary_requires_tenant_node_pool");
+  assert.equal(report.topology.tke.sharedUserComputePoolRequired, false, "shared_user_pool_not_required");
+  assert.equal(report.topology.tke.premiumDedicatedPoolRequired, false, "premium_pool_not_required");
   assert.deepEqual(report.topology.tke.nodePools.map((item) => item.id), [
     "platform_service_pool",
-    "shared_user_compute_pool",
-    "premium_dedicated_pool_future",
+    "tenant_node_pool_template",
   ], "node_pool_layers");
-  assert.equal(report.topology.tke.nodePools.find((item) => item.id === "premium_dedicated_pool_future").requiredForFirstCanary, false, "premium_pool_future_only");
+  assert.equal(report.topology.tke.nodePools.find((item) => item.id === "tenant_node_pool_template").createdDuringPackageC, true, "tenant_pool_created_during_package_c");
   assert.deepEqual(report.topology.kubernetesControls, [
     "namespace",
     "rbac",
@@ -134,14 +137,14 @@ try {
   ], "kubernetes_controls");
   assert.deepEqual(report.nextUserActions, [
     "Create or select VPC and private subnets in the target region.",
-    "Create one TKE cluster with separate platform service and shared user compute node pools.",
-    "Keep premium dedicated pool as a later paid isolation phase, not required for the first canary.",
+    "Create one TKE cluster with a platform service node pool only.",
+    "Leave tenant node pools to Package C tenant or workspace lifecycle execution.",
     "Create or bind PostgreSQL, COS and CBS according to the production topology contract.",
-    "Fill TENCENT_MUTATION_TKE_CLUSTER_ID and TENCENT_MUTATION_TKE_NODE_POOL_ID after readonly inventory observes them.",
+    "Fill TENCENT_MUTATION_TKE_CLUSTER_ID and TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID after readonly inventory observes them.",
   ], "next_user_actions");
   assert.deepEqual(report.requiredMutationEnvFields, [
     "TENCENT_MUTATION_TKE_CLUSTER_ID",
-    "TENCENT_MUTATION_TKE_NODE_POOL_ID",
+    "TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID",
   ], "required_env_fields");
   assert.equal(report.requiredAuthorizationBeforeNextStep, "explicit_package_c_live_mutation_authorization", "required_next_authorization");
   assertNoSensitiveOutput(JSON.stringify(report), "report");
@@ -157,7 +160,8 @@ try {
   assert(contract.includes("spec:v22-tke-bootstrap-preflight-boundary"), "contract_must_index_tke_bootstrap_preflight");
   assert(contract.includes("TKE bootstrap preflight"), "contract_must_describe_tke_bootstrap_preflight");
   assert(contract.includes("TENCENT_MUTATION_TKE_CLUSTER_ID"), "contract_must_name_cluster_env_field");
-  assert(contract.includes("TENCENT_MUTATION_TKE_NODE_POOL_ID"), "contract_must_name_node_pool_env_field");
+  assert(contract.includes("TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID"), "contract_must_name_platform_node_pool_env_field");
+  assert.equal(contract.includes("TENCENT_MUTATION_TKE_NODE_POOL_ID"), false, "old_single_node_pool_env_must_be_removed");
   assert(contract.includes("PostgreSQL / COS / CBS"), "contract_must_keep_postgresql_cos_cbs_data_plane");
   assert.equal(contract.includes("Redis is required"), false, "contract_must_not_require_redis");
   assert(operationsSpec.includes("operations:tke-bootstrap-preflight"), "operations_spec_must_include_preflight_requirement");

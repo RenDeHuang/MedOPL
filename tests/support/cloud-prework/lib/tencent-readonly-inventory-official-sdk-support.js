@@ -34,6 +34,49 @@ function countBy(items = [], fieldNames = []) {
   return counts;
 }
 
+function tagValue(item = {}, keys = []) {
+  const sources = [
+    item.Tags,
+    item.TagSet,
+    item.Labels,
+    item.LabelSet,
+  ].filter(Array.isArray);
+  for (const source of sources) {
+    for (const tag of source) {
+      const key = String(tag?.Key ?? tag?.key ?? tag?.Name ?? tag?.name ?? "").trim();
+      const value = String(tag?.Value ?? tag?.value ?? "").trim();
+      if (keys.includes(key) && value) return value;
+    }
+  }
+  for (const key of keys) {
+    const direct = item[key] ?? item[key.replace(/\./gu, "_")] ?? item[key.replace(/\//gu, "_")];
+    if (direct !== undefined && String(direct).trim()) return String(direct).trim();
+  }
+  return "";
+}
+
+function classifyNodePool(item = {}) {
+  const role = tagValue(item, ["medopl.io/pool", "medopl.io/role", "medopl_pool", "medopl_role"]);
+  if (role === "platform" || role === "platform_services" || role === "platform_service") return "platform_service";
+  if (role === "tenant" || role === "tenant_workspace" || role === "tenant_node_pool") return "tenant";
+  if (role === "shared" || role === "shared_user_compute") return "shared_user_compute_forbidden";
+  return "unclassified";
+}
+
+function nodePoolRoleCounts(items = []) {
+  const counts = {
+    platform_service: 0,
+    tenant: 0,
+    shared_user_compute_forbidden: 0,
+    unclassified: 0,
+  };
+  for (const item of Array.isArray(items) ? items : []) {
+    const role = classifyNodePool(item);
+    counts[role] = (counts[role] || 0) + 1;
+  }
+  return counts;
+}
+
 function monthNow() {
   return new Date().toISOString().slice(0, 7);
 }
@@ -171,6 +214,7 @@ export async function runTencentReadonlyInventoryOfficialSdk({
       const nodePoolResponse = await capture(blockers, "DescribeClusterNodePools", region, () => modules.describeTkeNodePools(region, { ClusterId: cluster.ClusterId }));
       const nodePools = Array.isArray(nodePoolResponse?.NodePoolSet) ? nodePoolResponse.NodePoolSet : [];
       if (nodePoolResponse) {
+        const roleCounts = nodePoolRoleCounts(nodePools);
         resources.push({
           region,
           resourceType: "tkeNodePoolSummary",
@@ -179,6 +223,12 @@ export async function runTencentReadonlyInventoryOfficialSdk({
           totalCount: normalizeNumber(nodePoolResponse.TotalCount ?? nodePools.length),
           nodePoolCount: nodePools.length,
           lifeStateCounts: countBy(nodePools, ["LifeState", "Status"]),
+          nodePoolRoleCounts: roleCounts,
+          platformServicePoolObserved: roleCounts.platform_service > 0,
+          tenantNodePoolCount: roleCounts.tenant,
+          sharedUserComputePoolObserved: roleCounts.shared_user_compute_forbidden > 0,
+          unclassifiedNodePoolCount: roleCounts.unclassified,
+          roleClassificationSource: "explicit_tags_or_unclassified",
           tagCompleteness: "not_checked",
           portalMappingStatus: "not_checked_without_portal_ledger",
         });

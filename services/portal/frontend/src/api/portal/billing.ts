@@ -16,7 +16,6 @@ export interface BillingPayload {
     activeFreeze?: number;
     frozen?: number;
     availableBalance?: number;
-    trialRemaining?: number;
   };
   totals: {
     cpuCost: number;

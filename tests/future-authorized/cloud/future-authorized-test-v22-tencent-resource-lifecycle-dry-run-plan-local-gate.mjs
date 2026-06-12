@@ -103,7 +103,7 @@ try {
   assert.equal(report.storagePlan.resourceType, "workspace_file_space", "storage_type");
   assert.equal(report.storagePlan.retentionPolicy.deleteProtectionDays, 7, "storage_retention_days");
   assert.equal(report.computePlan.resourceType, "workspace_compute_allocation", "compute_type");
-  assert.equal(report.computePlan.clusterModel, "shared_cluster_layered_isolation", "compute_cluster_model");
+  assert.equal(report.computePlan.clusterModel, "unified_tke_cluster_with_tenant_node_pools", "compute_cluster_model");
   assert.deepEqual(report.computePlan.kubernetesControls, [
     "namespace",
     "rbac",
@@ -112,9 +112,24 @@ try {
     "networkpolicy",
     "pod_security",
     "admission_policy",
+    "taints_and_tolerations",
+    "node_selector",
+    "labels",
   ], "compute_kubernetes_controls");
-  assert.equal(report.computePlan.standardPlanUsesSharedPool, true, "standard_shared_pool");
-  assert.equal(report.computePlan.premiumDedicatedPoolSupported, true, "premium_dedicated_pool");
+  assert.equal(report.computePlan.platformServicePoolPreserved, true, "platform_service_pool_preserved");
+  assert.equal(report.computePlan.sharedUserComputePoolUsed, false, "shared_user_pool_not_used");
+  assert.equal(Object.hasOwn(report.computePlan, "standardPlanUsesSharedPool"), false, "old_standard_shared_pool_field_removed");
+  assert.equal(Object.hasOwn(report.computePlan, "premiumDedicatedPoolSupported"), false, "old_premium_pool_field_removed");
+  assert.deepEqual(report.computePlan.tenantNodePoolPlan, {
+    action: "plan_create_or_release",
+    ownership: "tenant_workspace_dedicated",
+    createdByPackageC: true,
+    releasedByPackageC: true,
+    bindsAccountId: "acct-demo",
+    bindsWorkspaceId: "ws-demo",
+    bindsResourceBindingId: "rb-demo",
+    nodePoolNamePrefix: "medopl-tenant-",
+  }, "tenant_node_pool_plan");
   assert.equal(report.billingPlan.chargeApplied, false, "billing_no_charge");
   assert.equal(report.billingPlan.freezeOnly, true, "billing_freeze_only");
   assert.equal(report.safetyChecks.every((item) => item.status === "pass"), true, "safety_checks_pass");

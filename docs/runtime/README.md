@@ -12,7 +12,7 @@ Runtime 主链路是：
 ```text
 Portal -> OPL Web Gateway -> clean One Person Lab upstream
   -> Runtime Bridge / Runtime Agent
-  -> platform-managed TKE/storage resource pools
+  -> platform service node pool + tenant node pool lifecycle in unified TKE
   -> Billing/Quota/Audit/Admin
 ```
 
@@ -21,6 +21,8 @@ One Person Lab upstream 必须保持 clean。Portal/Gateway/Runtime Bridge 不�
 Runtime Bridge 负责 session/message/run/file/artifact/provider route/providerKeyRef/trace projection，不是 cloud inventory truth，也不是 billing ledger truth。Real OPL canary 是验证链路，不是 production completion claim。OPL workbench entry 与 managed run 是两道 gate；entry 负责账号、工作空间、Gateway/upstream entry 和用户自己的 gflabtoken provider binding，managed run 再检查托管 runtime、文件空间、余额、`providerKeyRef` 和 Runtime Bridge。
 
 AI Runtime Contract 固定 Runtime Bridge AI runtime adapter layer：Portal/Gateway 只把托管工作台上下文、`providerKeyRef`、run/file/artifact intent 和 trace/audit metadata 投给 Runtime Bridge；Runtime Bridge 再适配 OPL ACP runtime、Runtime Agent HTTP API 和未来 MCP-compatible boundary。稳定对象是 runtimeSession、runtimeTool、runtimeResource、runtimeRun、runtimeArtifact 和 runtimeApproval。MCP-compatible boundary 只表示 tools / resources / prompts / artifacts / approval shape compatibility，当前 machine boundary 是 `runtime-bridge-mcp-compatible-shapes.mjs` 的本地 shape-only projection；不代表 production MCP server、外部 MCP client、真实云、secret、deploy、kubectl、build/push 或 live-test 已授权。
+
+Cloud runtime topology uses one unified TKE cluster: MedOPL platform services run on the platform service node pool, while Package C creates and releases a dedicated tenant node pool for each tenant or workspace resource binding. Tenant workload scheduling is tenant-pool-only and allocation-bound.
 
 Portal canonical truth 是 control-plane store，生产方向是 PostgreSQL-only required data plane。Portal 保存账号、用户、工作空间、钱包、冻结金额、账本、审计、resource binding、fileRef/logical index、session/run/artifact/trace metadata 的业务事实。Redis is not a required production dependency；当前生产拓扑和本地产品闭环不得要求 Redis，后续只有在 session、cache、queue、lock 或短期协调压力被 PostgreSQL 方案和 runtime evidence 证明不足时，才可另开独立授权 leaf 作为 optional volatile accelerator 评估。
 

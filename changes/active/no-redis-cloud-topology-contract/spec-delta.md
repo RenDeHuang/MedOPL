@@ -15,7 +15,7 @@ Target specs:
 ## ADDED
 
 - `docs/runtime/README.md`：Portal canonical truth 改为 PostgreSQL-only required data plane；Redis is not a required production dependency。
-- `docs/specs/README.md#spec-v22-production-cloud-topology-boundary`：新增 Kubernetes 多租户控制要求和 dedicated pool 调度约束。
+- `docs/specs/README.md#spec-v22-production-cloud-topology-boundary`：新增 Kubernetes 多租户控制要求和 tenant node pool 调度约束。
 
 ## MODIFIED
 

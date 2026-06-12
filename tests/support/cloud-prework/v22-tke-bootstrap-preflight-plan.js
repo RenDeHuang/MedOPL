@@ -16,7 +16,7 @@ const FORBIDDEN_ARGS = new Set([
 
 const REQUIRED_ENV_FIELDS = Object.freeze([
   "TENCENT_MUTATION_TKE_CLUSTER_ID",
-  "TENCENT_MUTATION_TKE_NODE_POOL_ID",
+  "TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID",
 ]);
 
 function parseArgs(argv = process.argv.slice(2)) {
@@ -27,8 +27,8 @@ function parseArgs(argv = process.argv.slice(2)) {
     operationId: "",
     region: "",
     vpcId: "",
-    standardNodePoolName: "",
-    systemNodePoolName: "",
+    platformNodePoolName: "",
+    tenantNodePoolNamePrefix: "",
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -46,10 +46,10 @@ function parseArgs(argv = process.argv.slice(2)) {
       options.region = argv[++index] || "";
     } else if (arg === "--vpc-id") {
       options.vpcId = argv[++index] || "";
-    } else if (arg === "--standard-node-pool-name") {
-      options.standardNodePoolName = argv[++index] || "";
-    } else if (arg === "--system-node-pool-name") {
-      options.systemNodePoolName = argv[++index] || "";
+    } else if (arg === "--platform-node-pool-name") {
+      options.platformNodePoolName = argv[++index] || "";
+    } else if (arg === "--tenant-node-pool-name-prefix") {
+      options.tenantNodePoolNamePrefix = argv[++index] || "";
     } else {
       throw new Error(`tke_bootstrap_preflight_unknown_arg:${arg}`);
     }
@@ -71,8 +71,8 @@ function validate(options) {
     "operationId",
     "region",
     "vpcId",
-    "standardNodePoolName",
-    "systemNodePoolName",
+    "platformNodePoolName",
+    "tenantNodePoolNamePrefix",
   ]) {
     requireValue(options, key);
   }
@@ -97,33 +97,29 @@ function planFor(options) {
       provider: "tencent_cloud",
       region: options.region,
       vpcId: options.vpcId,
-      clusterModel: "shared_cluster_layered_isolation",
-      firstCanaryRequiresPremiumPool: false,
+      clusterModel: "unified_tke_cluster_with_tenant_node_pools",
+      firstCanaryRequiresTenantNodePool: true,
     },
     topology: {
       tke: {
         requiredClusterCount: 1,
+        sharedUserComputePoolRequired: false,
+        premiumDedicatedPoolRequired: false,
         nodePools: [
           {
             id: "platform_service_pool",
-            name: options.systemNodePoolName,
+            name: options.platformNodePoolName,
             purpose: "Portal, Gateway, Runtime Bridge, worker and platform services",
             requiredForFirstCanary: true,
             workloadPolicy: "platform_only",
           },
           {
-            id: "shared_user_compute_pool",
-            name: options.standardNodePoolName,
-            purpose: "standard workspace runtime workload with hard namespace isolation",
-            requiredForFirstCanary: true,
-            workloadPolicy: "shared_user_compute_only",
-          },
-          {
-            id: "premium_dedicated_pool_future",
-            name: "medopl-premium-dedicated-future",
-            purpose: "paid premium isolation capacity after baseline canary",
+            id: "tenant_node_pool_template",
+            namePrefix: options.tenantNodePoolNamePrefix,
+            purpose: "dedicated tenant or workspace runtime workload node pools created by Package C",
             requiredForFirstCanary: false,
-            workloadPolicy: "dedicated_user_compute_only",
+            workloadPolicy: "tenant_workspace_dedicated_only",
+            createdDuringPackageC: true,
           },
         ],
       },
@@ -161,10 +157,10 @@ function planFor(options) {
     },
     nextUserActions: [
       "Create or select VPC and private subnets in the target region.",
-      "Create one TKE cluster with separate platform service and shared user compute node pools.",
-      "Keep premium dedicated pool as a later paid isolation phase, not required for the first canary.",
+      "Create one TKE cluster with a platform service node pool only.",
+      "Leave tenant node pools to Package C tenant or workspace lifecycle execution.",
       "Create or bind PostgreSQL, COS and CBS according to the production topology contract.",
-      "Fill TENCENT_MUTATION_TKE_CLUSTER_ID and TENCENT_MUTATION_TKE_NODE_POOL_ID after readonly inventory observes them.",
+      "Fill TENCENT_MUTATION_TKE_CLUSTER_ID and TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID after readonly inventory observes them.",
     ],
     requiredMutationEnvFields: [...REQUIRED_ENV_FIELDS],
     requiredAuthorizationBeforeNextStep: "explicit_package_c_live_mutation_authorization",

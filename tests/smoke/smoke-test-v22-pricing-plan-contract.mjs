@@ -45,8 +45,12 @@ const contract = extractContractJson(contractMarkdown);
 
 assert.equal(contract.contract, "v22_pricing_snapshot_boundary", "pricing_contract_name_mismatch");
 assert.equal(contract.version, 1, "pricing_contract_version_mismatch");
-assert.deepEqual(sortedKeys(contract), ["advancedIsolationModes", "contract", "plans", "version"], "pricing_contract_top_level_keys_mismatch");
-assert.deepEqual(contract.advancedIsolationModes, ["dedicated_node_pool", "dedicated_node"], "pricing_contract_advanced_isolation_modes_mismatch");
+assert.deepEqual(sortedKeys(contract), ["computeProvisioningModel", "contract", "plans", "version"], "pricing_contract_top_level_keys_mismatch");
+assert.deepEqual(contract.computeProvisioningModel, {
+  tenantNodePoolCreatedByPackageC: true,
+  sharedUserComputePoolSupported: false,
+  userBuysNodePool: false,
+}, "pricing_contract_compute_provisioning_model_mismatch");
 assert(Array.isArray(contract.plans), "pricing_contract_plans_must_be_array");
 assert.equal(contract.plans.length, expectedPlans.size, "pricing_contract_plan_count_mismatch");
 assert.deepEqual(contract.plans.map((plan) => plan.id), [...expectedPlans.keys()], "pricing_contract_plan_order_mismatch");
@@ -75,7 +79,7 @@ for (const plan of contract.plans) {
   assert.deepEqual(sortedKeys(plan.compute), ["cpuCores", "isolationMode", "memoryGb", "userBuysNodePool"], `${plan.id}_compute_keys_mismatch`);
   assert.equal(plan.compute.cpuCores, expected.cpuCores, `${plan.id}_cpu_mismatch`);
   assert.equal(plan.compute.memoryGb, expected.memoryGb, `${plan.id}_memory_mismatch`);
-  assert.equal(plan.compute.isolationMode, "shared_quota", `${plan.id}_isolation_mode_mismatch`);
+  assert.equal(plan.compute.isolationMode, "tenant_node_pool", `${plan.id}_isolation_mode_mismatch`);
   assert.equal(plan.compute.userBuysNodePool, false, `${plan.id}_must_not_sell_node_pool`);
 
   assert.deepEqual(sortedKeys(plan.storage), ["capacityGb"], `${plan.id}_storage_keys_mismatch`);

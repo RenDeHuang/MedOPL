@@ -57,6 +57,8 @@ assertIncludesAll(contract, [
   "TKE 私网出公网、拉镜像、访问模型/API/云 API",
   "PostgreSQL",
   "Portal canonical store、账本、资源绑定、审计、文件索引",
+  "platform service node pool",
+  "tenant node pool",
 ], "production_cloud_topology_resource_roles");
 
 assertIncludesAll(contract, [
@@ -81,6 +83,9 @@ assertIncludesAll(contract, [
   "label",
   "nodeSelector",
   "toleration",
+  "tenant node pool",
+  "用户 workload 不得调度到 platform service node pool",
+  "平台服务不得调度到 tenant node pool",
 ], "production_cloud_topology_kubernetes_multitenancy_controls");
 
 assertIncludesAll(contract, [
@@ -114,6 +119,8 @@ assertIncludesAll(contract, [
   "\"changesDeploy\": false",
   "\"usesKubectl\": false",
   "\"runsBuildPush\": false",
+  "\"tenantNodePoolRequiredPerWorkspace\": true",
+  "\"sharedUserComputePoolSupported\": false",
 ], "production_cloud_topology_contract_data");
 
 assertNotIncludesAny(contract, [
@@ -124,6 +131,7 @@ assertNotIncludesAny(contract, [
   "\"callsRealCloud\": true",
   "\"readsSecret\": true",
   "\"createsOrDeletesResources\": true",
+  "\"sharedUserComputePoolSupported\": true",
 ], "production_cloud_topology_forbidden_contract_data");
 
 assertIncludesAll(readme, [
@@ -139,6 +147,14 @@ assertNotIncludesAny(contract, [
   "CLB/TKE/CBS/NAT/Redis/PostgreSQL",
   "CLB / TKE / CBS / NAT / Redis / PostgreSQL",
   "\"Redis\":",
+  "\"shared user compute pool\":",
+  "\"dedicated user compute pool\":",
+  "shared_quota",
+  "默认资源模型是共享用户计算池",
+  "普通 CPU 任务可以共享通用 node pool class",
+  "标准套餐使用共享用户计算池",
+  "标准套餐不是一用户一个 node pool",
+  "标准套餐不得解释成“一用户一个节点池”",
 ], "production_cloud_topology_must_not_require_redis");
 
 assert.equal(suite, "", "production_topology_must_not_read_legacy_suite_source");
@@ -150,7 +166,7 @@ console.log(JSON.stringify({
   checked: [
     "contract_only_not_deployed_connected_or_verified",
     "resource_roles_for_clb_tke_cos_cbs_nat_postgresql",
-    "kubernetes_multitenancy_controls_for_shared_and_dedicated_pools",
+    "kubernetes_multitenancy_controls_for_tenant_node_pools",
     "user_product_language_hides_cloud_control_plane_terms",
     "future_readonly_inventory_and_deploy_plan_dimensions",
     "no_real_cloud_secret_deploy_kubectl_build_push_or_resource_mutation",

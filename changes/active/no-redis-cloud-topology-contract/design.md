@@ -7,7 +7,7 @@ Machine boundary: 本文件是人读设计记录。代码和合同验收由 docs
 
 ## Architecture
 
-MedOPL v22 的稳定接云前置拓扑固定为共享 TKE 集群 + 分层隔离 + 高级套餐专属池。平台服务和用户 workload 分开调度；标准套餐使用 shared user compute pool 并通过 Kubernetes 多租户控制硬隔离；高级套餐映射 dedicated user compute pool 或 dedicated node。
+MedOPL v22 的稳定接云前置拓扑固定为统一 TKE 集群 + platform service node pool + 每租户/工作台 tenant node pool。平台服务只运行在 platform service pool；租户 workload 由 Package C 在开通时创建独立 tenant node pool。
 
 ## Data Plane
 
@@ -23,5 +23,5 @@ Topology eval 同时检查：
 
 - Redis 不再出现在必需 topology。
 - COS/CBS/PostgreSQL 角色分离。
-- Kubernetes 多租户控制关键字存在。
+- Kubernetes 多租户控制和 tenant node pool 调度隔离关键字存在。
 - 本地 compose 不要求 Redis。

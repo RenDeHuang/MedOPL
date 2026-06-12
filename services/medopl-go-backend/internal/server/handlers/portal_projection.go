@@ -586,7 +586,7 @@ func managedResourceBindingPlan() gin.H {
 }
 
 func commercialProfile() gin.H {
-	return gin.H{"accountStatus": "active", "billingStatus": "funded", "entitlementStatus": "active", "walletBalance": 100, "balanceFloor": 1, "canEnterWorkbench": true, "canStartChargeableRun": true, "chargeBlockedReasons": []string{}, "priceTransparency": "local_rc", "trialEntitlement": nil, "group": nil}
+	return gin.H{"accountStatus": "active", "billingStatus": "funded", "entitlementStatus": "active", "walletBalance": 100, "balanceFloor": 1, "canEnterWorkbench": true, "canStartChargeableRun": true, "chargeBlockedReasons": []string{}, "priceTransparency": "local_rc", "group": nil}
 }
 
 func selectedServerPlan() gin.H {

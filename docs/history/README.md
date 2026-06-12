@@ -59,6 +59,13 @@ landed 后的记录还必须补齐：
 
 ## Current Run Summaries
 
+### 2026-06-12 - Superseded cloud node pool topology
+
+- The earlier shared user compute pool / premium dedicated pool future-phase wording is retained below only as provenance for landed prework.
+- Current truth has moved to unified TKE cluster + platform service node pool + Package C-created tenant node pool per tenant or workspace.
+- The old single `TENCENT_MUTATION_TKE_NODE_POOL_ID` shared-pool mapping is superseded by `TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID`; tenant node pool IDs are produced by authorized Package C lifecycle execution, not prefilled in foundation notes.
+
+
 ### 2026-05-28 changes/archive/2026-05-28-portal-opl-refund-api-fix
 
 Status: `archived / local-gated`

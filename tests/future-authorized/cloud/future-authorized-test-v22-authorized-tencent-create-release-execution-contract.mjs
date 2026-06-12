@@ -58,7 +58,7 @@ assertIncludesAll(contract, [
   "TENCENT_MUTATION_DAILY_BUDGET_CNY",
   "TENCENT_MUTATION_MAX_OPERATION_COUNT",
   "TENCENT_MUTATION_TKE_CLUSTER_ID",
-  "TENCENT_MUTATION_TKE_NODE_POOL_ID",
+  "TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID",
   "TENCENT_MUTATION_COS_BUCKET",
   "TENCENT_MUTATION_COS_REGION",
   "TENCENT_MUTATION_WORKSPACE_PREFIX_ROOT",
@@ -77,19 +77,21 @@ assertIncludesAll(contract, [
 
 assertIncludesAll(contract, [
   "TKE 节点池必须先分型再 mutation",
-  "标准套餐不是一用户一个 node pool",
-  "Package C 必须先写 compute allocation，再写 ResourceQuota / LimitRange / admission policy",
-  "共享用户计算池只能做池级容量补足",
+  "每个租户或工作台必须拥有由 MedOPL 创建并绑定的 tenant node pool",
+  "Package C 必须先创建 tenant node pool",
+  "平台服务池只承载平台服务，不承载租户 workload",
+  "Package C 必须先创建 tenant node pool，再写 compute allocation、namespace、quota、labels、network policy 和 admission policy",
   "DescribeClusterNodePools",
-  "ModifyNodePoolDesiredCapacityAboutAsg",
   "DescribeNodePools",
+  "CreateNodePool",
+  "DeleteNodePool",
   "ScaleNodePool",
   "Native",
-  "专属 node pool 只能绑定到一个 resourceBindingId 或一个明确的账号组",
-  "专属池必须使用 taint / label / nodeSelector / toleration 防止平台服务和其他用户调度进入",
-  "当前混跑 Portal/OPL/trace/billing/system 的节点池不得缩到 0",
-  "replicas_0_1_0 只允许用于空闲测试池或专属计算池的闭环 canary",
-  "不得用旧 `ModifyNodePoolDesiredCapacityAboutAsg` 判定节点池不存在",
+  "tenant node pool 只能绑定到一个 resourceBindingId 或一个明确的租户/账号组",
+  "tenant pool 必须使用 taint / label / nodeSelector / toleration 防止平台服务和其他用户调度进入",
+  "当前承载 Portal/OPL/trace/billing/system 的 platform service node pool 不得缩到 0",
+  "replicas_0_1_0 只允许用于 tenant node pool 的闭环 canary",
+  "不得用旧 `ModifyNodePoolDesiredCapacityAboutAsg` 判定 tenant node pool 不存在",
 ], "execution_contract_tke_node_pool_shape_detection");
 
 assertIncludesAll(contract, [
@@ -197,12 +199,18 @@ assertIncludesAll(contract, [
   "\"tkeNodePoolShapeMustBeDetectedBeforeMutation\": true",
   "\"nativeNodePoolReadApi\": \"DescribeNodePools\"",
   "\"nativeNodePoolMutationApi\": \"ScaleNodePool\"",
-  "\"legacyRegularNodePoolMutationApi\": \"ModifyNodePoolDesiredCapacityAboutAsg\"",
-  "\"nativeNodePoolCanaryLoop\": \"replicas_0_1_0_only_for_idle_canary_or_dedicated_pool\"",
-  "\"standardPlansUseSharedUserComputePool\": true",
+  "\"nativeNodePoolCreateApi\": \"CreateNodePool\"",
+  "\"nativeNodePoolDeleteApi\": \"DeleteNodePool\"",
+  "\"nativeNodePoolCanaryLoop\": \"replicas_0_1_0_only_for_tenant_node_pool\"",
+  "\"tenantNodePoolRequiredPerWorkspace\": true",
+  "\"standardPlansUseSharedUserComputePool\": false",
+  "\"sharedUserComputePoolSupported\": false",
   "\"standardPlansRequireNamespaceQuota\": true",
   "\"overAllocationMustFailClosed\": true",
-  "\"dedicatedNodePoolSupportedAsAdvancedIsolation\": true",
+  "\"platformServicePoolProtected\": true",
+  "\"packageCCreatesTenantNodePool\": true",
+  "\"packageCReleasesTenantNodePool\": true",
+  "\"singleMutationNodePoolEnvForbidden\": true",
 ], "execution_contract_machine_readable_data");
 
 assertNotIncludesAny(contract, [
@@ -212,6 +220,15 @@ assertNotIncludesAny(contract, [
   "legacyResourceOrderId",
   "legacyresourceorderid",
   "migration-only alias",
+  "TENCENT_MUTATION_TKE_NODE_POOL_ID",
+  "\"standardPlansUseSharedUserComputePool\": true",
+  "默认资源模型是共享用户计算池",
+  "普通 CPU 任务可以共享通用 node pool class",
+  "标准套餐使用共享用户计算池",
+  "默认套餐使用 `shared_quota`",
+  "标准套餐不是一用户一个 node pool",
+  "标准套餐不得解释成“一用户一个节点池”",
+  "共享用户计算池只能做池级容量补足",
 ], "execution_contract_forbidden_mixed_gate_language");
 
 assert(readme.includes("spec:v22-authorized-tencent-create-release-execution-boundary"), "readme_must_index_execution_contract");
