@@ -136,7 +136,7 @@ Node Portal backend physical removal: `services/portal/src` 已物理清退；�
 - token/provider key: [spec:v22-token-provider-boundary](#spec-v22-token-provider-boundary), [spec:v22-user-credit-provider-boundary](#spec-v22-user-credit-provider-boundary), [spec:v22-opl-entry-preflight-auth-boundary](#spec-v22-opl-entry-preflight-auth-boundary)。每个用户使用自己的 gflabtoken API Key 作为模型调用凭证；Portal 可以展示“是否已绑定”状态，但 API Key 不是 Portal 普通登录字段；gflabtoken.cn 网站本身不进入 MedOPL 用户主流程。
 - resource plan: [spec:v22-resource-plan-boundary](#spec-v22-resource-plan-boundary)。用户购买的是计算资源套餐和工作台能力，不是节点、节点池或云控制台资源；后台实现必须为每个租户或工作台创建并绑定独立 tenant node pool。
 - tenant/resource binding: [spec:v22-tenant-resource-binding-boundary](#spec-v22-tenant-resource-binding-boundary), [spec:v22-managed-environment-open-boundary](#spec-v22-managed-environment-open-boundary)
-- managed resource binding plan / mock snapshot: [spec:v22-managed-environment-open-boundary](#spec-v22-managed-environment-open-boundary)。当前只展示托管运行环境计划摘要，不代表真实资源已创建；后续真实腾讯云接入路线为 `mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> TKE bootstrap preflight when no TKE foundation exists -> readonly/tencent inventory provider -> authorized/tencent create/release provider -> authorized/tencent deploy provider -> canary / QA / status update`，真实接入另开 feat/* 并单独授权。
+- managed resource binding plan / mock snapshot: [spec:v22-managed-environment-open-boundary](#spec-v22-managed-environment-open-boundary)。当前只展示托管运行环境计划摘要，不代表真实资源已创建；后续真实腾讯云接入路线为 `mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> TKE bootstrap preflight when no TKE foundation exists -> readonly/tencent inventory provider -> authorized/tencent create/release provider -> Package D deploy readiness planning for platform pool and VPC PostgreSQL -> authorized/tencent deploy provider -> canary / QA / status update`，真实接入另开 feat/* 并单独授权。
 - readonly/tencent quote provider: [spec:v22-tencent-readonly-quote-provider-boundary](#spec-v22-tencent-readonly-quote-provider-boundary)。当前只定义 interface 和 mock adapter，输出 `regionLabel`、`planSpec`、`estimatedCost`、`quoteSource`、`quoteStatus`、`quoteSnapshotId`，不读取 secret，不调用真实腾讯云 API。
 - dry-run/tencent resource plan provider: [spec:v22-tencent-dry-run-resource-plan-provider-boundary](#spec-v22-tencent-dry-run-resource-plan-provider-boundary)。当前只基于 readonly quote 和 managed resource binding plan 生成不会执行的资源创建计划，输出 `resourcePlanId`、`resourceBindingId`、`planMode`、`resourceSteps`、`approvalRequired`、`releasePolicy`、`auditStatus`、`riskNotes` 等业务字段；`realResourceCreated` 和 `chargeApplied` 不属于 `resourcePlan` 顶层字段。
 - TKE bootstrap preflight: [spec:v22-tke-bootstrap-preflight-boundary](#spec-v22-tke-bootstrap-preflight-boundary)。当前只生成云底座 checklist，说明缺 TKE 时先创建/选择 VPC、私有子网、统一 TKE 集群和 platform service node pool；tenant node pool 由 Package C 在租户或工作台开通时创建和释放。它不读取 secret、不调用真实云、不 kubectl、不 deploy、不 build/push、不创建资源。PostgreSQL / COS / CBS 是当前必需数据面，Redis 不进入必需项。
@@ -275,7 +275,7 @@ node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs
 
 AI MVP readiness audit 只汇总本地 readiness 证据边界：MVP contract suite、pre-cloud deployable RC、local Portal/OPL delivery RC、AI Runtime Contract、Runtime Bridge session/run/file/providerKeyRef smoke、Runtime Bridge local fake probe、MCP-compatible shape-only projection、real-cloud authorization blocker 和 Sentrux structure gate 状态。它不能把本地 proof 升级成真实云、production MCP server、external MCP client、deploy、kubectl、build/push、live-test、secret read 或 production runtime readiness。
 
-six-step AI MVP readiness 完成后的唯一可声明状态是 `local_ai_mvp_readiness_only`：当前修复分支收口、Portal 结构质量恢复、E2E MVP 验证、AI Runtime Contract、Runtime Bridge AI runtime layer 和 MCP-compatible boundary design 都只能证明本地端到端 MVP readiness。六步之后仍必须进入 real-cloud authorization boundary、mock/snapshot provider、readonly quote、dry-run plan、readonly inventory、authorized create/release、authorized deploy、canary / QA / status update。未完成这些云门禁前，不能声明 real_cloud_ready、production_online、deploy_ready、secret_authorized 或 live_test_authorized。
+six-step AI MVP readiness 完成后的唯一可声明状态是 `local_ai_mvp_readiness_only`：当前修复分支收口、Portal 结构质量恢复、E2E MVP 验证、AI Runtime Contract、Runtime Bridge AI runtime layer 和 MCP-compatible boundary design 都只能证明本地端到端 MVP readiness。六步之后仍必须进入 real-cloud authorization boundary、mock/snapshot provider、readonly quote、dry-run plan、readonly inventory、authorized create/release、Package D deploy readiness planning、authorized deploy、canary / QA / status update。未完成这些云门禁前，不能声明 real_cloud_ready、production_online、deploy_ready、secret_authorized 或 live_test_authorized。
 
 ### Portal-OPL Context Backflow 合同包
 
@@ -2014,14 +2014,20 @@ Package D 只能读取以下 key，且必须按 allowlist 精确读取，不允�
 - `TENCENT_TCR_REGION`
 - `TENCENT_DEPLOY_CLUSTER_ID`
 - `TENCENT_DEPLOY_KUBECONFIG_REF`
+- `PORTAL_POSTGRES_URL`
+- `PORTAL_POSTGRES_PASSWORD`
 
 `TENCENT_DEPLOY_KUBECONFIG_REF` 只能是后端 secret reference 或本机受控路径引用，不能把 raw kubeconfig 写入合同、日志、Portal payload、`.runtime` 或 git。
+
+`PORTAL_POSTGRES_URL` 必须指向 VPC 内网 PostgreSQL endpoint `10.66.0.21:5432`，不依赖公网 PostgreSQL。`PORTAL_POSTGRES_PASSWORD` 和完整 DB URL 只能进入后端 secret 边界；stdout、docs、git、Portal payload 和 `.runtime` 只能出现脱敏摘要或 endpoint host:port。Package C PostgreSQL ledger sink 的真实 DB canary 不再从本机追求连通性；它必须等 Portal / control-plane service 部署到 VPC 内、可从 TKE platform pool 访问 `medopl-postgres` 后再单独授权执行。
 
 `TENCENT_TCR_REPOSITORY`、`TENCENT_DEPLOY_NAMESPACE`、`TENCENT_DEPLOY_WORKLOAD`、`TENCENT_DEPLOY_CONTAINER`、`TENCENT_DEPLOY_RUNTIME_SMOKE_URL` 不属于 secret allowlist。它们是 release plan 的 non-secret target 字段，必须逐 target 显式声明，不能用单值环境变量把多服务发布压成单容器发布。
 
 ## Release Plan
 
 Package D 必须通过 `--release-plan <json>` 消费本地受控 release plan。release plan 可以放在 `.runtime` 或用户指定的本地路径，不进入 git，不包含 raw secret、raw kubeconfig、token、cookie、object key、signed URL 或 raw cloud response。
+
+当前稳定上线 readiness target 固定为 TKE cluster `cls-fi097sy4` 的 protected platform service node pool `np-cbk784r8`。release plan 必须把平台服务 target 调度到该 platform pool，并保留 pool 保护边界；Package D 不创建、删除、释放或扩缩容 node pool，也不能把 tenant node pool lifecycle 逻辑带入 deploy lane。
 
 OPL / Portal / Gateway / Runtime Agent target ownership 必须同时订阅 [spec:v22-opl-deployment-ownership-release-plan-boundary](#spec-v22-opl-deployment-ownership-release-plan-boundary)。该 Level 4 子合同把 target 分为 `platform_service_target` 和 `workspace_runtime_target`：平台服务必须有 `ownerRef/operationId`，但不强制 `workspaceId/resourceBindingId`；workspace runtime target 必须额外绑定 `workspaceId/resourceBindingId`。只有 `k8s-app/qcloud-app`、deployment 名字、namespace、IP、创建时间或人工记忆时必须 fail-closed。
 
@@ -2111,6 +2117,8 @@ D3a 不授权 `kubectl apply`、rollout、runtime smoke、rollback 或 Package C
 - 不得覆盖已有 tag。
 - 不得删除 image、tag、repository 或 namespace。
 - 不得写入 raw docker config、registry secret 或完整 registry credential。
+
+Package D deploy readiness gap list 当前固定为：image build、TCR push、Kubernetes manifests、platform pool scheduling、DB connectivity smoke、rollback plan。缺任一项只能进入 readiness planning / dry-run，不得宣称 production deploy ready。
 
 ## Kubernetes Deploy Scope
 
@@ -2292,7 +2300,31 @@ R-16 `deploy-dry-run` 必须显式传入 `--image-digests-file <path>`，并且�
     "TENCENT_TCR_NAMESPACE",
     "TENCENT_TCR_REGION",
     "TENCENT_DEPLOY_CLUSTER_ID",
-    "TENCENT_DEPLOY_KUBECONFIG_REF"
+    "TENCENT_DEPLOY_KUBECONFIG_REF",
+    "PORTAL_POSTGRES_URL",
+    "PORTAL_POSTGRES_PASSWORD"
+  ],
+  "currentReadinessTarget": {
+    "clusterId": "cls-fi097sy4",
+    "platformNodePoolId": "np-cbk784r8",
+    "postgresEndpoint": "10.66.0.21:5432",
+    "postgresAccess": "vpc_private_only",
+    "postgresLedgerCanaryTiming": "after_service_deployed_inside_vpc"
+  },
+  "deploymentSafetyGates": {
+    "runTencentDeployExecutionDefault": "0",
+    "readsKubeconfigWithoutSeparateAuthorization": false,
+    "runsBuildPushWithoutSeparateAuthorization": false,
+    "runsKubectlWithoutSeparateAuthorization": false,
+    "runsDeployWithoutSeparateAuthorization": false
+  },
+  "readinessGaps": [
+    "image build",
+    "TCR push",
+    "Kubernetes manifests",
+    "platform pool scheduling",
+    "DB connectivity smoke",
+    "rollback plan"
   ],
   "releasePlan": {
     "required": true,
@@ -2988,7 +3020,31 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
       "TENCENT_TCR_NAMESPACE",
       "TENCENT_TCR_REGION",
       "TENCENT_DEPLOY_CLUSTER_ID",
-      "TENCENT_DEPLOY_KUBECONFIG_REF"
+      "TENCENT_DEPLOY_KUBECONFIG_REF",
+      "PORTAL_POSTGRES_URL",
+      "PORTAL_POSTGRES_PASSWORD"
+    ],
+    "currentReadinessTarget": {
+      "clusterId": "cls-fi097sy4",
+      "platformNodePoolId": "np-cbk784r8",
+      "postgresEndpoint": "10.66.0.21:5432",
+      "postgresAccess": "vpc_private_only",
+      "postgresLedgerCanaryTiming": "after_service_deployed_inside_vpc"
+    },
+    "deploymentSafetyGates": {
+      "runTencentDeployExecutionDefault": "0",
+      "readsKubeconfigWithoutSeparateAuthorization": false,
+      "runsBuildPushWithoutSeparateAuthorization": false,
+      "runsKubectlWithoutSeparateAuthorization": false,
+      "runsDeployWithoutSeparateAuthorization": false
+    },
+    "readinessGaps": [
+      "image build",
+      "TCR push",
+      "Kubernetes manifests",
+      "platform pool scheduling",
+      "DB connectivity smoke",
+      "rollback plan"
     ],
     "releasePlan": {
       "required": true,
@@ -3827,7 +3883,7 @@ Portal 工作空间可以展示 `managed resource binding plan / mock snapshot`�
 
 后续真实腾讯云接入路线必须按阶段推进：
 
-`mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> TKE bootstrap preflight when no TKE foundation exists -> readonly/tencent inventory provider -> authorized/tencent create/release provider -> authorized/tencent deploy provider -> canary / QA / status update`
+`mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> TKE bootstrap preflight when no TKE foundation exists -> readonly/tencent inventory provider -> authorized/tencent create/release provider -> Package D deploy readiness planning for platform pool and VPC PostgreSQL -> authorized/tencent deploy provider -> canary / QA / status update`
 
 等价 provider 路线：`mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> TKE bootstrap preflight when no TKE foundation exists -> readonly/tencent inventory -> authorized/tencent create/release -> authorized/tencent deploy -> canary / QA / status update`。
 
@@ -10647,7 +10703,7 @@ Provider response 不得包含：
 
 `mock/snapshot -> readonly/tencent quote -> dry-run/tencent plan -> TKE bootstrap preflight when no TKE foundation exists -> readonly/tencent inventory -> authorized/tencent create/release -> authorized/tencent deploy -> canary / QA / status update`
 
-等价阶段名：`mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> TKE bootstrap preflight when no TKE foundation exists -> readonly/tencent inventory provider -> authorized/tencent create/release provider -> authorized/tencent deploy provider -> canary / QA / status update`
+等价阶段名：`mock/snapshot provider -> readonly/tencent quote provider -> dry-run/tencent plan provider -> TKE bootstrap preflight when no TKE foundation exists -> readonly/tencent inventory provider -> authorized/tencent create/release provider -> Package D deploy readiness planning for platform pool and VPC PostgreSQL -> authorized/tencent deploy provider -> canary / QA / status update`
 
 真实腾讯云 readonly 接入、SDK 选择、API 凭据读取、限流、重试、审计日志和真实 quote source 均必须另开 feat/* 并单独授权。
 

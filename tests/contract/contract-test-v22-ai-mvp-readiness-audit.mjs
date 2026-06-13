@@ -112,6 +112,7 @@ assert.deepEqual(current.release_readiness_state.required_sequence, [
   "dry-run plan",
   "readonly inventory",
   "authorized create/release",
+  "Package D deploy readiness planning for platform pool and VPC PostgreSQL",
   "authorized deploy",
   "canary / QA / status update",
 ], "real_cloud_sequence_must_stay_explicit_before_online_claim");
@@ -149,10 +150,23 @@ const aiRuntimeCloseout = await readRepoFile("changes/active/ai-runtime-contract
 for (const marker of [
   "platform-provisioned / customer-dedicated",
   "real-cloud-authorization-boundary",
-  "secret read, provider operation, true cloud mutation, deploy, kubectl, build/push and live-test remain blocked",
-  "not real-cloud readiness",
+  "not production readiness",
+  "deploy execution evidence",
 ]) {
   assertIncludes(activeTruth, marker, "active_truth_ai_mvp_readiness_boundary");
+}
+for (const marker of [
+  "secret read",
+  "provider operation",
+  "true cloud mutation",
+  "kubeconfig read",
+  "deploy",
+  "kubectl",
+  "build/push",
+  "Package D execution",
+  "live-test",
+]) {
+  assertIncludes(activeTruth, marker, "active_truth_ai_mvp_readiness_forbidden_ops");
 }
 
 for (const marker of [

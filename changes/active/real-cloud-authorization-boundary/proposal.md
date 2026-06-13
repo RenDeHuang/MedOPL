@@ -55,6 +55,7 @@ mock/snapshot provider
 -> dry-run plan
 -> readonly inventory
 -> authorized create/release
+-> Package D deploy readiness planning for platform pool and VPC PostgreSQL
 -> authorized deploy
 -> canary / QA / status update
 ```

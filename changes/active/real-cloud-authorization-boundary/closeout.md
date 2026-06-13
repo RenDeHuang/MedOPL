@@ -18,7 +18,8 @@ Status: local_boundary_audited
 
 - The future real-cloud authorization boundary is represented as an active change package.
 - The local boundary now records the required future authorization fields: operation class, target environment, secret allowlist, API allowlist, budget, evidence sink and rollback owner.
-- The post-boundary sequence is locked as `mock/snapshot provider -> readonly quote -> dry-run plan -> readonly inventory -> authorized create/release -> authorized deploy -> canary / QA / status update`.
+- The post-boundary sequence is locked as `mock/snapshot provider -> readonly quote -> dry-run plan -> readonly inventory -> authorized create/release -> Package D deploy readiness planning for platform pool and VPC PostgreSQL -> authorized deploy -> canary / QA / status update`.
+- Package D deploy readiness planning is fixed for stable上线: cluster `cls-fi097sy4`, platform pool `np-cbk784r8`, VPC PostgreSQL `10.66.0.21:5432`, deploy secret/env allowlist, default-disabled deploy gate and readiness gaps.
 - Raw live evidence, if later authorized, must stay in `.runtime` or another approved non-git evidence sink, with only sanitized summary entering git.
 
 ## Cannot Claim
@@ -26,6 +27,7 @@ Status: local_boundary_audited
 - Real cloud, deploy, kubectl, build/push, live-test or production release is authorized.
 - Any secret, provider credential, cloud resource, billing reconciliation or runtime deployment has been validated.
 - This package does not make MedOPL cloud online, production online, deploy ready, secret authorized or live-test authorized.
+- This package does not run Package D, read kubeconfig, build/push, kubectl, deploy or connect/write real PostgreSQL.
 
 ## Archive Target
 

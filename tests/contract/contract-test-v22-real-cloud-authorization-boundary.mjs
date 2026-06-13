@@ -66,6 +66,7 @@ assert.deepEqual(current.release_readiness_state.required_sequence, [
   "dry-run plan",
   "readonly inventory",
   "authorized create/release",
+  "Package D deploy readiness planning for platform pool and VPC PostgreSQL",
   "authorized deploy",
   "canary / QA / status update",
 ], "real_cloud_release_sequence_mismatch");
@@ -88,6 +89,7 @@ const fullCloudSequence = [
   "dry-run plan",
   "readonly inventory",
   "authorized create/release",
+  "Package D deploy readiness planning for platform pool and VPC PostgreSQL",
   "authorized deploy",
   "canary / QA / status update",
 ];
@@ -159,6 +161,7 @@ for (const marker of [
   "dry-run plan",
   "readonly inventory",
   "authorized create/release",
+  "Package D deploy readiness planning for platform pool and VPC PostgreSQL",
   "authorized deploy",
   "canary / QA / status update",
 ]) {
