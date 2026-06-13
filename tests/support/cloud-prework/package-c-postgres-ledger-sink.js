@@ -4,7 +4,8 @@ import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 
 const EXECUTION_GATE_KEY = "RUN_MEDOPL_POSTGRES_LEDGER_EXECUTION";
-const REQUIRED_KEYS = Object.freeze([
+const TENCENT_EXECUTION_GATE_KEY = "RUN_TENCENT_CREATE_RELEASE_EXECUTION";
+export const REQUIRED_KEYS = Object.freeze([
   EXECUTION_GATE_KEY,
   "MEDOPL_POSTGRES_LEDGER_HOST",
   "MEDOPL_POSTGRES_LEDGER_PORT",
@@ -13,9 +14,9 @@ const REQUIRED_KEYS = Object.freeze([
   "MEDOPL_POSTGRES_LEDGER_PASSWORD",
   "MEDOPL_POSTGRES_LEDGER_SSLMODE",
 ]);
-const OPTIONAL_KEYS = Object.freeze(["MEDOPL_POSTGRES_LEDGER_SCHEMA"]);
-const ALLOWLIST = Object.freeze([...REQUIRED_KEYS, ...OPTIONAL_KEYS]);
-const REQUIRED_TABLES = Object.freeze(["resource_bindings", "cloud_operations"]);
+const OPTIONAL_KEYS = Object.freeze(["MEDOPL_POSTGRES_LEDGER_SCHEMA", TENCENT_EXECUTION_GATE_KEY]);
+export const ALLOWLIST = Object.freeze([...REQUIRED_KEYS, ...OPTIONAL_KEYS]);
+export const REQUIRED_TABLES = Object.freeze(["resource_bindings", "cloud_operations"]);
 const VALID_STATUSES = new Set([
   "requested",
   "creating",
@@ -85,6 +86,7 @@ export function parsePostgresLedgerEnv(content = "") {
 }
 
 function forbiddenKey(key = "") {
+  if (key === TENCENT_EXECUTION_GATE_KEY) return false;
   return (
     /^TENCENT_/u.test(key)
     || /^PACKAGE_D_/u.test(key)
@@ -108,6 +110,18 @@ function tableName(schema, table) {
   return `"${validateIdentifier(schema, "schema")}"."${validateIdentifier(table, "table")}"`;
 }
 
+function boolish(value) {
+  return value === true || value === 1 || value === "1" || value === "t" || value === "true";
+}
+
+function ensureCanaryResourceBindingId(resourceBindingId = "") {
+  const normalized = requiredString({ resourceBindingId }, "resourceBindingId");
+  if (!/^rb-postgres-ledger-canary-[a-z0-9-]+$/u.test(normalized)) {
+    throw new Error("package_c_postgres_ledger_canary_resource_binding_id_required");
+  }
+  return normalized;
+}
+
 function value(env, key) {
   return clean(env.get(key));
 }
@@ -117,6 +131,8 @@ export function validatePostgresLedgerEnv(env) {
   const missing = REQUIRED_KEYS.filter((key) => value(env, key) === "");
   const errors = [];
   if (value(env, EXECUTION_GATE_KEY) !== "1") errors.push("RUN_MEDOPL_POSTGRES_LEDGER_EXECUTION_must_be_1");
+  const tencentMutationRunGate = value(env, TENCENT_EXECUTION_GATE_KEY) || "0";
+  if (tencentMutationRunGate !== "0") errors.push("RUN_TENCENT_CREATE_RELEASE_EXECUTION_must_be_0");
   const port = Number(value(env, "MEDOPL_POSTGRES_LEDGER_PORT"));
   if (!Number.isInteger(port) || port <= 0 || port > 65535) errors.push("MEDOPL_POSTGRES_LEDGER_PORT_invalid");
   const sslMode = value(env, "MEDOPL_POSTGRES_LEDGER_SSLMODE");
@@ -139,6 +155,7 @@ export function validatePostgresLedgerEnv(env) {
     requiredKeys: REQUIRED_KEYS,
     config: ok ? {
       executionGate: value(env, EXECUTION_GATE_KEY),
+      tencentMutationRunGate,
       host: value(env, "MEDOPL_POSTGRES_LEDGER_HOST"),
       port,
       database: value(env, "MEDOPL_POSTGRES_LEDGER_DATABASE"),
@@ -153,6 +170,7 @@ export function validatePostgresLedgerEnv(env) {
 export function redactPostgresLedgerConfig(config = {}) {
   return {
     executionGate: clean(config.executionGate) === "1" ? "1" : "0",
+    tencentMutationRunGate: clean(config.tencentMutationRunGate) === "1" ? "1" : "0",
     host: clean(config.host) ? "[redacted-host]" : "",
     port: Number(config.port) || 0,
     database: clean(config.database) ? "[redacted-database]" : "",
@@ -164,13 +182,13 @@ export function redactPostgresLedgerConfig(config = {}) {
   };
 }
 
-export function createPackageCPostgresDriverAdapter() {
+export function createPackageCPostgresDriverAdapter({ requirePackage = (name) => requireFromHere(name) } = {}) {
   let client = null;
   return {
     async connect(config) {
       let pg;
       try {
-        pg = requireFromHere("pg");
+        pg = requirePackage("pg");
       } catch {
         throw new Error("package_c_postgres_ledger_pg_driver_missing");
       }
@@ -336,6 +354,8 @@ export function createPackageCPostgresLedgerSink({ config, adapter }) {
   const schema = validateIdentifier(config.schema || "public", "schema");
   const resourceBindingsTable = tableName(schema, "resource_bindings");
   const cloudOperationsTable = tableName(schema, "cloud_operations");
+  const tenantsTable = tableName(schema, "tenants");
+  const workspacesTable = tableName(schema, "workspaces");
   let connected = false;
 
   async function ensureConnected() {
@@ -371,6 +391,61 @@ export function createPackageCPostgresLedgerSink({ config, adapter }) {
     `, [resourceBindingId, ...entries.map(([, value]) => value)]);
   }
 
+  async function readResourceBinding(resourceBindingId) {
+    await ensureConnected();
+    const result = await requiredQuery(adapter, `
+      SELECT resource_binding_id, tenant_id, account_id, workspace_id,
+        billing_attribution_id, server_plan_id, workspace_storage_gb,
+        cloud_provider, region, cluster_id, node_pool_id, node_pool_name,
+        status, operation_id, canonical_ownership_source, cloud_tag_support
+      FROM ${resourceBindingsTable}
+      WHERE resource_binding_id = $1
+    `, [resourceBindingId]);
+    return result?.rows?.[0] || null;
+  }
+
+  async function readCloudOperation(operationIdOrResourceBindingId) {
+    await ensureConnected();
+    const result = await requiredQuery(adapter, `
+      SELECT operation_id, resource_binding_id, tenant_id, account_id,
+        workspace_id, billing_attribution_id, operation_type, server_plan_id,
+        workspace_storage_gb, status, cloud_provider, region, cluster_id,
+        node_pool_id, node_pool_name, cloud_tag_support,
+        canonical_ownership_source
+      FROM ${cloudOperationsTable}
+      WHERE operation_id = $1 OR resource_binding_id = $1
+      ORDER BY updated_at DESC
+      LIMIT 1
+    `, [operationIdOrResourceBindingId]);
+    return result?.rows?.[0] || null;
+  }
+
+  async function assertParentRows({ tenantId, workspaceId }) {
+    await ensureConnected();
+    const result = await requiredQuery(adapter, `
+      SELECT
+        EXISTS(SELECT 1 FROM ${tenantsTable} WHERE id = $1) AS tenant_exists,
+        EXISTS(SELECT 1 FROM ${workspacesTable} WHERE id = $2 AND tenant_id = $1) AS workspace_exists
+    `, [tenantId, workspaceId]);
+    const row = result?.rows?.[0] || {};
+    if (!boolish(row.tenant_exists) || !boolish(row.workspace_exists)) {
+      throw new Error("package_c_postgres_ledger_parent_rows_missing");
+    }
+  }
+
+  async function deleteCanary(resourceBindingId) {
+    await ensureConnected();
+    const safeResourceBindingId = ensureCanaryResourceBindingId(resourceBindingId);
+    await requiredQuery(adapter, `
+      DELETE FROM ${cloudOperationsTable}
+      WHERE resource_binding_id = $1
+    `, [safeResourceBindingId]);
+    await requiredQuery(adapter, `
+      DELETE FROM ${resourceBindingsTable}
+      WHERE resource_binding_id = $1
+    `, [safeResourceBindingId]);
+  }
+
   return {
     mode: "postgres_execution",
     productionPostgresWrite: true,
@@ -378,6 +453,10 @@ export function createPackageCPostgresLedgerSink({ config, adapter }) {
       await ensureConnected();
       await preflight({ adapter, schema });
     },
+    assertParentRows,
+    readResourceBinding,
+    readCloudOperation,
+    deleteCanary,
     async createResourceBinding(resourceBinding) {
       await ensureConnected();
       const row = resourceBindingRow(resourceBinding);
@@ -509,6 +588,7 @@ export async function runPackageCPostgresLedgerPrepareOnly({
   reportDir = path.join(".runtime", "v22-cloud-lifecycle"),
   operationId = "op-package-c-postgres-ledger-prepare-only",
   adapter,
+  driverAdapter,
 } = {}) {
   if (clean(envFile) && /(?:package-d-deploy|kubeconfig)/iu.test(clean(envFile))) {
     throw new Error("package_c_postgres_ledger_env_file_forbidden");
@@ -546,7 +626,7 @@ export async function runPackageCPostgresLedgerPrepareOnly({
   }
   const sink = createPackageCPostgresLedgerSink({
     config: validation.config,
-    adapter: adapter || createPackageCPostgresDriverAdapter(),
+    adapter: adapter || driverAdapter || createPackageCPostgresDriverAdapter(),
   });
   try {
     await sink.preflight();
@@ -620,9 +700,19 @@ export function parsePackageCPostgresLedgerArgs(argv = process.argv.slice(2)) {
   const options = {
     prepareOnly: false,
     confirmDbPreflightOnly: false,
+    liveCanary: false,
+    confirmRealDbCanary: false,
+    confirmDbCanaryCleanup: false,
     envFile: "",
     reportDir: path.join(".runtime", "v22-cloud-lifecycle"),
     operationId: "op-package-c-postgres-ledger-prepare-only",
+    resourceBindingId: "",
+    tenantId: "",
+    accountId: "",
+    workspaceId: "",
+    billingAttributionId: "",
+    nodePoolId: "",
+    nodePoolName: "",
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
@@ -631,17 +721,44 @@ export function parsePackageCPostgresLedgerArgs(argv = process.argv.slice(2)) {
       options.prepareOnly = true;
     } else if (arg === "--confirm-db-preflight-only") {
       options.confirmDbPreflightOnly = true;
+    } else if (arg === "--live-canary") {
+      options.liveCanary = true;
+    } else if (arg === "--confirm-real-db-canary") {
+      options.confirmRealDbCanary = true;
+    } else if (arg === "--confirm-db-canary-cleanup") {
+      options.confirmDbCanaryCleanup = true;
     } else if (arg === "--ledger-env-file") {
       options.envFile = argv[++index] || "";
     } else if (arg === "--report-dir") {
       options.reportDir = argv[++index] || "";
     } else if (arg === "--operation-id") {
       options.operationId = argv[++index] || "";
+    } else if (arg === "--resource-binding-id") {
+      options.resourceBindingId = argv[++index] || "";
+    } else if (arg === "--tenant-id") {
+      options.tenantId = argv[++index] || "";
+    } else if (arg === "--account-id") {
+      options.accountId = argv[++index] || "";
+    } else if (arg === "--workspace-id") {
+      options.workspaceId = argv[++index] || "";
+    } else if (arg === "--billing-attribution-id") {
+      options.billingAttributionId = argv[++index] || "";
+    } else if (arg === "--node-pool-id") {
+      options.nodePoolId = argv[++index] || "";
+    } else if (arg === "--node-pool-name") {
+      options.nodePoolName = argv[++index] || "";
     } else {
       throw new Error(`package_c_postgres_ledger_unknown_arg:${arg}`);
     }
   }
-  if (!options.prepareOnly || !options.confirmDbPreflightOnly) {
+  if (options.liveCanary) {
+    if (!options.confirmRealDbCanary || !options.confirmDbCanaryCleanup) {
+      throw new Error("package_c_postgres_ledger_canary_confirmation_required");
+    }
+    for (const key of ["resourceBindingId", "tenantId", "accountId", "workspaceId", "billingAttributionId", "nodePoolId"]) {
+      if (!clean(options[key])) throw new Error(`package_c_postgres_ledger_canary_missing:${key}`);
+    }
+  } else if (!options.prepareOnly || !options.confirmDbPreflightOnly) {
     throw new Error("package_c_postgres_ledger_prepare_only_confirmation_required");
   }
   if (!clean(options.envFile)) throw new Error("package_c_postgres_ledger_env_file_required");
@@ -651,19 +768,36 @@ export function parsePackageCPostgresLedgerArgs(argv = process.argv.slice(2)) {
 
 async function main() {
   const options = parsePackageCPostgresLedgerArgs();
-  const summary = await runPackageCPostgresLedgerPrepareOnly({
-    envFile: options.envFile,
-    reportDir: options.reportDir,
-    operationId: options.operationId,
-  });
+  let summary;
+  if (options.liveCanary) {
+    const { runPackageCPostgresLedgerCanaryLive } = await import("./package-c-postgres-ledger-live-canary.js");
+    summary = await runPackageCPostgresLedgerCanaryLive({
+      envFile: options.envFile,
+      reportDir: options.reportDir,
+      operationId: options.operationId,
+      resourceBindingId: options.resourceBindingId,
+      tenantId: options.tenantId,
+      accountId: options.accountId,
+      workspaceId: options.workspaceId,
+      billingAttributionId: options.billingAttributionId,
+      nodePoolId: options.nodePoolId,
+      nodePoolName: options.nodePoolName,
+    });
+  } else {
+    summary = await runPackageCPostgresLedgerPrepareOnly({
+      envFile: options.envFile,
+      reportDir: options.reportDir,
+      operationId: options.operationId,
+    });
+  }
   console.log(JSON.stringify({
     ok: summary.ok,
     package: "C",
-    mode: "postgres_ledger_prepare_only",
+    mode: summary.mode,
     operationId: summary.operationId,
     summaryPath: summary.summaryPath,
     evidenceRoot: summary.evidenceRoot,
-    productionPostgresWrite: false,
+    productionPostgresWrite: summary.boundary?.productionPostgresWrite === true,
     executesTencentMutation: false,
     callsKubectl: false,
     deploysWorkload: false,

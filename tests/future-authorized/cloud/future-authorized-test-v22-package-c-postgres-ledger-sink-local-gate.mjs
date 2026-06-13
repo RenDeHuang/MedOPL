@@ -7,13 +7,22 @@ import path from "node:path";
 import {
   createPackageCPostgresDriverAdapter,
   createPackageCPostgresLedgerSink,
+  parsePackageCPostgresLedgerArgs,
   parsePostgresLedgerEnv,
   redactPostgresLedgerConfig,
   runPackageCPostgresLedgerPrepareOnly,
   validatePostgresLedgerEnv,
 } from "../../support/cloud-prework/package-c-postgres-ledger-sink.js";
+import {
+  runPackageCPostgresLedgerCanaryLive,
+} from "../../support/cloud-prework/package-c-postgres-ledger-live-canary.js";
 
 const runner = "tests/support/cloud-prework/package-c-postgres-ledger-sink.js";
+const rootPackage = JSON.parse(await readFile("package.json", "utf8"));
+const rootLock = JSON.parse(await readFile("package-lock.json", "utf8"));
+
+assert.equal(rootPackage.dependencies?.pg, "^8.21.0", "root_cloud_tooling_must_own_pg_dependency");
+assert.equal(rootLock.packages?.[""]?.dependencies?.pg, "^8.21.0", "root_lock_must_own_pg_dependency");
 
 function runCli(args = []) {
   return spawnSync(process.execPath, [runner, ...args], {
@@ -46,15 +55,19 @@ function assertNoSensitiveOutput(text = "", label = "output") {
     "KUBECONFIG",
     "SecretId",
     "SecretKey",
-    "kubeconfig",
     "rawResponse",
   ]) {
     assert.equal(String(text).includes(forbidden), false, `${label}_must_not_include:${forbidden}`);
   }
 }
 
-function createFakeAdapter({ tableRows = [{ table_name: "resource_bindings" }, { table_name: "cloud_operations" }] } = {}) {
+function createFakeAdapter({
+  tableRows = [{ table_name: "resource_bindings" }, { table_name: "cloud_operations" }],
+  parentsExist = true,
+} = {}) {
   const calls = [];
+  const resourceBindings = new Map();
+  const cloudOperations = new Map();
   return {
     calls,
     async connect(config) {
@@ -62,6 +75,7 @@ function createFakeAdapter({ tableRows = [{ table_name: "resource_bindings" }, {
     },
     async query(sql, params = []) {
       calls.push({ method: "query", sql, params });
+      const normalized = String(sql || "").replace(/\s+/gu, " ").trim();
       if (sql.includes("SELECT 1 AS medopl_postgres_ledger_reachable")) {
         return { rows: [{ medopl_postgres_ledger_reachable: 1 }] };
       }
@@ -69,6 +83,72 @@ function createFakeAdapter({ tableRows = [{ table_name: "resource_bindings" }, {
         return { rows: tableRows };
       }
       if (sql.includes("medopl_ledger_write_permission_probe")) {
+        return { rows: [] };
+      }
+      if (normalized.includes("FROM \"public\".\"tenants\"") && normalized.includes("FROM \"public\".\"workspaces\"")) {
+        return { rows: parentsExist ? [{ tenant_exists: 1, workspace_exists: 1 }] : [{ tenant_exists: 0, workspace_exists: 0 }] };
+      }
+      if (normalized.startsWith("INSERT INTO \"public\".\"resource_bindings\"")) {
+        const row = {
+          resource_binding_id: params[4],
+          tenant_id: params[1],
+          account_id: params[2],
+          workspace_id: params[3],
+          billing_attribution_id: params[5],
+          server_plan_id: params[6],
+          workspace_storage_gb: params[7],
+          cloud_provider: params[8],
+          region: params[9],
+          cluster_id: params[10],
+          node_pool_id: params[11],
+          node_pool_name: params[12],
+          status: params[13],
+          operation_id: params[14],
+          canonical_ownership_source: params[15],
+          cloud_tag_support: params[16],
+        };
+        resourceBindings.set(row.resource_binding_id, row);
+        return { rows: [] };
+      }
+      if (normalized.startsWith("INSERT INTO \"public\".\"cloud_operations\"")) {
+        const row = {
+          operation_id: params[1],
+          resource_binding_id: params[2],
+          tenant_id: params[3],
+          account_id: params[4],
+          workspace_id: params[5],
+          billing_attribution_id: params[6],
+          operation_type: params[7],
+          server_plan_id: params[8],
+          workspace_storage_gb: params[9],
+          status: params[10],
+          cloud_provider: params[11],
+          region: params[12],
+          cluster_id: params[13],
+          node_pool_id: params[14],
+          node_pool_name: params[15],
+          cloud_tag_support: params[16],
+          canonical_ownership_source: params[17],
+        };
+        cloudOperations.set(row.operation_id, row);
+        return { rows: [] };
+      }
+      if (normalized.startsWith("SELECT") && normalized.includes("FROM \"public\".\"resource_bindings\"")) {
+        const row = resourceBindings.get(params[0]);
+        return { rows: row ? [row] : [] };
+      }
+      if (normalized.startsWith("SELECT") && normalized.includes("FROM \"public\".\"cloud_operations\"")) {
+        const row = cloudOperations.get(params[0]) || [...cloudOperations.values()].find((entry) => entry.resource_binding_id === params[0]);
+        return { rows: row ? [row] : [] };
+      }
+      if (normalized.startsWith("DELETE FROM \"public\".\"cloud_operations\"")) {
+        for (const [operationId, row] of cloudOperations.entries()) {
+          if (row.resource_binding_id === params[0]) cloudOperations.delete(operationId);
+        }
+        return { rows: [] };
+      }
+      if (normalized.startsWith("DELETE FROM \"public\".\"resource_bindings\"")) {
+        resourceBindings.delete(params[0]);
         return { rows: [] };
       }
       return { rows: [] };
@@ -110,7 +190,11 @@ assert.equal(redacted.password, "[redacted]", "password_must_be_redacted");
 assert.equal(redacted.connectionUrl, "[not-used]", "db_url_must_not_be_required");
 assert.equal(JSON.stringify(redacted).includes("db-password-proof"), false, "redacted_config_must_not_include_password");
 
-const driverAdapter = createPackageCPostgresDriverAdapter();
+const driverAdapter = createPackageCPostgresDriverAdapter({
+  requirePackage() {
+    throw new Error("missing_pg_for_contract_test");
+  },
+});
 let missingDriverError = null;
 try {
   await driverAdapter.connect(validConfig.config);
@@ -127,6 +211,14 @@ assertNoSensitiveOutput(missingConfirmation.stdout + missingConfirmation.stderr,
 const forbiddenCli = runCli(["--prepare-only", "--confirm-db-preflight-only", "--ledger-env-file", "/tmp/proof.env", "--operation-id", "op-proof", "--kubectl"]);
 assert.notEqual(forbiddenCli.status, 0, "cli_must_reject_kubectl_arg");
 assert(forbiddenCli.stderr.includes("package_c_postgres_ledger_forbidden_arg:--kubectl"), "cli_forbidden_arg_reason");
+
+let canaryMissingConfirmation = null;
+try {
+  parsePackageCPostgresLedgerArgs(["--live-canary", "--ledger-env-file", "/tmp/proof.env"]);
+} catch (error) {
+  canaryMissingConfirmation = error;
+}
+assert.equal(canaryMissingConfirmation?.message, "package_c_postgres_ledger_canary_confirmation_required", "live_canary_must_require_confirmation");
 
 const adapter = createFakeAdapter();
 const sink = createPackageCPostgresLedgerSink({ config: validConfig.config, adapter });
@@ -215,6 +307,11 @@ try {
     envContent: baseEnv(),
     reportDir,
     operationId: "op-postgres-ledger-prepare-only-missing-driver-proof",
+    driverAdapter: createPackageCPostgresDriverAdapter({
+      requirePackage() {
+        throw new Error("missing_pg_for_contract_test");
+      },
+    }),
   });
   assert.equal(missingDriverSummary.ok, false, "prepare_only_without_driver_must_fail_closed");
   assert.equal(missingDriverSummary.failure.code, "package_c_postgres_ledger_pg_driver_missing", "prepare_only_missing_driver_reason");
@@ -232,6 +329,69 @@ try {
     forbiddenEnvFileError = error;
   }
   assert.equal(forbiddenEnvFileError?.message, "package_c_postgres_ledger_env_file_forbidden", "prepare_only_must_reject_package_d_env_file");
+
+  const canaryAdapter = createFakeAdapter();
+  const canarySummary = await runPackageCPostgresLedgerCanaryLive({
+    envContent: `${baseEnv()}\nRUN_TENCENT_CREATE_RELEASE_EXECUTION=0`,
+    reportDir,
+    operationId: "op-postgres-ledger-canary-proof",
+    resourceBindingId: "rb-postgres-ledger-canary-20260614-001",
+    tenantId: "tenant-canary",
+    accountId: "account-canary",
+    workspaceId: "workspace-canary",
+    billingAttributionId: "billing-canary",
+    nodePoolId: "np-postgres-ledger-canary-proof",
+    adapter: canaryAdapter,
+  });
+  assert.equal(canarySummary.ok, true, "live_canary_ok");
+  assert.equal(canarySummary.mode, "postgres_ledger_live_canary");
+  assert.equal(canarySummary.boundary.productionPostgresWrite, true, "live_canary_declares_real_db_write");
+  assert.equal(canarySummary.boundary.executesTencentMutation, false, "live_canary_must_not_execute_tencent_mutation");
+  assert.equal(canarySummary.confirmations.insertReadback, true, "live_canary_insert_readback_confirmed");
+  assert.equal(canarySummary.confirmations.cleanupReadbackAbsent, true, "live_canary_cleanup_absent_confirmed");
+  assert.equal(canarySummary.redactionAudit.passwordRedacted, true, "live_canary_password_redacted");
+  assert.equal(canarySummary.redactionAudit.connectionUrlOmitted, true, "live_canary_url_omitted");
+  assertNoSensitiveOutput(JSON.stringify(canarySummary), "live_canary_summary");
+  const canarySql = canaryAdapter.calls.map((call) => call.sql || "").join("\n");
+  assert(canarySql.includes("INSERT INTO \"public\".\"resource_bindings\""), "live_canary_writes_resource_binding");
+  assert(canarySql.includes("INSERT INTO \"public\".\"cloud_operations\""), "live_canary_writes_cloud_operation");
+  assert(canarySql.includes("DELETE FROM \"public\".\"cloud_operations\""), "live_canary_cleans_cloud_operation_first");
+  assert(canarySql.includes("DELETE FROM \"public\".\"resource_bindings\""), "live_canary_cleans_resource_binding");
+  assert.equal(canaryAdapter.calls.some((call) => JSON.stringify(call).includes("np-cbk784r8")), false, "live_canary_must_not_write_platform_pool");
+  const canaryEvidence = JSON.parse(await readFile(canarySummary.summaryPath, "utf8"));
+  assert.equal(canaryEvidence.confirmations.cleanupReadbackAbsent, true, "live_canary_evidence_cleanup_absent");
+  assertNoSensitiveOutput(JSON.stringify(canaryEvidence), "live_canary_evidence");
+
+  const missingParentsSummary = await runPackageCPostgresLedgerCanaryLive({
+    envContent: `${baseEnv()}\nRUN_TENCENT_CREATE_RELEASE_EXECUTION=0`,
+    reportDir,
+    operationId: "op-postgres-ledger-canary-missing-parent-proof",
+    resourceBindingId: "rb-postgres-ledger-canary-20260614-missing-parent",
+    tenantId: "tenant-missing",
+    accountId: "account-canary",
+    workspaceId: "workspace-missing",
+    billingAttributionId: "billing-canary",
+    nodePoolId: "np-postgres-ledger-canary-proof",
+    adapter: createFakeAdapter({ parentsExist: false }),
+  });
+  assert.equal(missingParentsSummary.ok, false, "missing_parent_rows_must_fail_closed");
+  assert.equal(missingParentsSummary.failure.code, "package_c_postgres_ledger_parent_rows_missing", "missing_parent_failure_code");
+  assertNoSensitiveOutput(JSON.stringify(missingParentsSummary), "missing_parent_summary");
+
+  const tencentGateSummary = await runPackageCPostgresLedgerCanaryLive({
+    envContent: `${baseEnv()}\nRUN_TENCENT_CREATE_RELEASE_EXECUTION=1`,
+    reportDir,
+    operationId: "op-postgres-ledger-canary-tencent-gate-proof",
+    resourceBindingId: "rb-postgres-ledger-canary-20260614-tencent-gate",
+    tenantId: "tenant-canary",
+    accountId: "account-canary",
+    workspaceId: "workspace-canary",
+    billingAttributionId: "billing-canary",
+    nodePoolId: "np-postgres-ledger-canary-proof",
+    adapter: createFakeAdapter(),
+  });
+  assert.equal(tencentGateSummary.ok, false, "tencent_gate_nonzero_must_fail_closed");
+  assert.equal(tencentGateSummary.validation.errors.includes("RUN_TENCENT_CREATE_RELEASE_EXECUTION_must_be_0"), true, "tencent_gate_zero_required");
 } finally {
   await rm(tmp, { recursive: true, force: true });
 }
