@@ -59,6 +59,39 @@ landed 后的记录还必须补齐：
 
 ## Current Run Summaries
 
+### 2026-06-14 package-c-postgres-ledger-sink-support
+
+Status: `landed candidate / local-gated`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `8bacfd2af1d67642037ecf97d8c99255ebecc957`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Added Package C PostgreSQL ledger sink support under `tests/support/cloud-prework` with explicit `RUN_MEDOPL_POSTGRES_LEDGER_EXECUTION=1` gate.
+- Added allowlisted local DB env parsing, forbidden package-d/kubeconfig/Tencent key rejection, schema/table/write-permission preflight, parameterized ledger writes and redacted `.runtime` prepare-only evidence.
+- Added fail-closed behavior for missing gate, missing DB env, forbidden env, forbidden CLI args and missing `pg` driver.
+- Registered the local gate in `cloud-future-authorized`.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-c-postgres-ledger-sink-local-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-c-live-canary-live-runner-local-gate.mjs`: pass.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: pass.
+
+Can-claim:
+
+- Package C has a gated PostgreSQL ledger sink support path and prepare-only preflight contract.
+- Prepare-only evidence redacts DB password / URL and does not write business rows.
+
+Cannot-claim:
+
+- A real DB secret was read, a real PostgreSQL connection was executed, Tencent mutation ran, kubectl/deploy/build-push/Package D ran, or Portal/billing/workspace quota productionization is complete.
+
+
 ### 2026-06-12 - Superseded cloud node pool topology
 
 - The earlier shared user compute pool / premium dedicated pool future-phase wording is retained below only as provenance for landed prework.

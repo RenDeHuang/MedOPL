@@ -5,7 +5,7 @@
   "human_truth": "docs/active/README.md",
   "spec_truth": "docs/specs/README.md",
   "verify_manifest": "tests/fixtures/v22/agent-verify-manifest.json",
-  "last_updated_at": "2026-06-13",
+  "last_updated_at": "2026-06-14",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
   "base_trunk_head": "8f324241004faa9b650cf9cf591bbebc414f6363",
@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13: CreateNodePool, scale up, scale down and DeleteNodePool passed for medopl-tenant-rb-package-c-live-canary-20260613; readonly cleanup check observed platform pool np-cbk784r8 and no residual canary tenant node pool by name or id. TagResources for tke:nodepool returned InvalidParameter.UnsupportedService and remains non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound is landed in Go domain, memory store, Ent schema and baseline migration; Package C live runner projects the tenant node pool lifecycle into local ResourceBinding / CloudOperation state-machine evidence; Package C repository write wiring contract now covers create resource binding, append cloud operation event, nodePoolId update, lifecycle status update, released, failed and cleanupRequired paths through an injected ledger sink. Canonical ownership and billing truth remains PostgreSQL ledger, not cloud tags, but the default runner sink is still local/dry-run and does not execute a real PostgreSQL connection. Next implementation plan is real PostgreSQL execution sink, billing/audit ledger, Portal opening entry and workspace storage quota. New Tencent mutation, kubectl, deploy, build/push, Package D and live-test remain blocked without separate authorization. Starter remains starter_2c4g_10gb: 2C4G, 10GB workspace storage, TKE SA5.MEDIUM4, CLOUD_BSSD 50GB node system disk and public IP disabled; arbitrary Tencent instanceType input is rejected unless represented by a MedOPL plan catalog allowlist entry.",
+  "current_problem": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13: CreateNodePool, scale up, scale down and DeleteNodePool passed for medopl-tenant-rb-package-c-live-canary-20260613; readonly cleanup check observed platform pool np-cbk784r8 and no residual canary tenant node pool by name or id. TagResources for tke:nodepool returned InvalidParameter.UnsupportedService and remains non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound is landed in Go domain, memory store, Ent schema and baseline migration; Package C live runner projects the tenant node pool lifecycle into local ResourceBinding / CloudOperation state-machine evidence; Package C repository write wiring contract now covers create resource binding, append cloud operation event, nodePoolId update, lifecycle status update, released, failed and cleanupRequired paths through an injected ledger sink. Canonical ownership and billing truth remains PostgreSQL ledger, not cloud tags. The default runner sink is still local/dry-run and does not execute a real PostgreSQL connection, but Package C now has gated PostgreSQL ledger sink support with RUN_MEDOPL_POSTGRES_LEDGER_EXECUTION=1, allowlisted local DB env keys, schema/write-permission preflight, redacted .runtime evidence and fail-closed missing-driver behavior. This branch did not read real DB secrets or run a real DB connection. Next implementation plan is explicitly authorized PostgreSQL prepare/live execution, billing/audit ledger, Portal opening entry and workspace storage quota. New DB secret read, Tencent mutation, kubectl, deploy, build/push, Package D and live-test remain blocked without separate authorization. Starter remains starter_2c4g_10gb: 2C4G, 10GB workspace storage, TKE SA5.MEDIUM4, CLOUD_BSSD 50GB node system disk and public IP disabled; arbitrary Tencent instanceType input is rejected unless represented by a MedOPL plan catalog allowlist entry.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -100,7 +100,7 @@
       "depends_on": [
         "precloud-deployable-rc"
       ],
-      "history_summary": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound, runner-local state-machine evidence and repository write wiring contract have landed. Productionization remains blocked on real PostgreSQL execution sink, billing/audit ledger, Portal opening entry and workspace storage quota. New Tencent mutation, kubectl, deploy, build/push, Package D and live-test remain blocked without separate authorization.",
+      "history_summary": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound, runner-local state-machine evidence, repository write wiring contract and gated PostgreSQL sink support path have landed. Productionization remains blocked on explicitly authorized PostgreSQL prepare/live execution, billing/audit ledger, Portal opening entry and workspace storage quota. New DB secret read, Tencent mutation, kubectl, deploy, build/push, Package D and live-test remain blocked without separate authorization.",
       "landed_commit": "8f324241004faa9b650cf9cf591bbebc414f6363"
     },
     {
@@ -161,7 +161,7 @@
         "local-portal-opl-delivery-rc",
         "real-cloud-authorization-boundary"
       ],
-      "history_summary": "Local AI MVP baseline, real-cloud vision docs, real-cloud readiness lane, legacy runtime cloud cleanup, Package B readonly inventory, TC3 diagnostic cleanup, Package C dry-run create/release plan, TKE bootstrap preflight, repo governance closeout, Package C live canary readiness gate, Package C non-secret cloud parameters input contract, Package C live canary runner, unsupported tke:nodepool tag skip strategy, authorized Package C create/scale/delete canary, PostgreSQL resource_bindings / cloud_operations lower bound, Package C local state-machine evidence and Package C repository write wiring contract have landed as pre-cloud / scoped local evidence. Productionization remains blocked on real PostgreSQL execution sink, billing/audit ledger, Portal opening entry and workspace storage quota.",
+      "history_summary": "Local AI MVP baseline, real-cloud vision docs, real-cloud readiness lane, legacy runtime cloud cleanup, Package B readonly inventory, TC3 diagnostic cleanup, Package C dry-run create/release plan, TKE bootstrap preflight, repo governance closeout, Package C live canary readiness gate, Package C non-secret cloud parameters input contract, Package C live canary runner, unsupported tke:nodepool tag skip strategy, authorized Package C create/scale/delete canary, PostgreSQL resource_bindings / cloud_operations lower bound, Package C local state-machine evidence, Package C repository write wiring contract and gated PostgreSQL sink support path have landed as pre-cloud / scoped local evidence. Productionization remains blocked on explicitly authorized PostgreSQL prepare/live execution, billing/audit ledger, Portal opening entry and workspace storage quota.",
       "closed_at": "2026-06-13",
       "landed_commit": "8f324241004faa9b650cf9cf591bbebc414f6363"
     }
@@ -285,7 +285,7 @@
       "authorized deploy",
       "canary / QA / status update"
     ],
-    "latest_local_evidence": "package-c-ledger-repository-write-wiring-2026-06-13",
+    "latest_local_evidence": "package-c-postgres-ledger-sink-local-gate-2026-06-14",
     "package_c_live_canary": {
       "status": "authorized_live_canary_completed",
       "operation_id": "op-package-c-live-canary-live-full-lifecycle-2026-06-13",
@@ -296,13 +296,16 @@
       "cleanup_check": "passed_no_residual_tenant_pool_platform_pool_observed",
       "protected_platform_node_pool_id": "np-cbk784r8",
       "tag_resources": "tke_nodepool_unsupported_not_canonical",
-      "canonical_ownership_billing_truth": "medopl_postgresql_resource_binding_ledger_repository_contract_landed",
+      "canonical_ownership_billing_truth": "medopl_postgresql_resource_binding_ledger_gated_sink_support_landed",
       "cloud_operation_state_machine": "runner_local_evidence_and_repository_sink_contract_landed",
-      "state_machine_scope": "local_runtime_evidence_and_repository_contract_not_real_postgresql_connection_execution",
-      "repository_write_contract": "create_append_update_release_failed_cleanup_required_landed"
+      "state_machine_scope": "local_runtime_evidence_repository_contract_and_gated_postgres_sink_support_not_authorized_real_db_execution",
+      "repository_write_contract": "create_append_update_release_failed_cleanup_required_landed",
+      "postgres_ledger_sink": "gated_execution_support_prepare_only_local_gate_landed",
+      "postgres_execution_gate": "RUN_MEDOPL_POSTGRES_LEDGER_EXECUTION=1_required",
+      "postgres_execution_status": "not_run_no_db_secret_read_no_real_connection"
     },
     "productionization_plan": [
-      "real PostgreSQL execution sink",
+      "authorized PostgreSQL prepare/live execution",
       "billing/audit ledger",
       "Portal opening entry",
       "workspace storage quota"
