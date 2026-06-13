@@ -34,6 +34,10 @@ const FIXED_CLUSTER_ID = "cls-fi097sy4";
 const FIXED_PLATFORM_NODE_POOL_ID = "np-cbk784r8";
 const FIXED_TENANT_NODE_POOL_PREFIX = "medopl-tenant-";
 const TARGET_TENANT_NODE_POOL_NAME = "medopl-tenant-rb-package-c-live-canary-20260613";
+const CLOUD_PROVIDER = "tencent";
+const CANONICAL_OWNERSHIP_SOURCE = "postgres_resource_binding_ledger";
+const CLOUD_TAG_SUPPORT = "tke_nodepool_unsupported";
+const CLOUD_OPERATION_TYPE = "package_c_create_release_canary";
 const API_VERSIONS = Object.freeze({
   GetCallerIdentity: "v20180813",
   DescribeClusters: "v20220501",
@@ -331,6 +335,146 @@ function createNodePoolRequest(cloudParameters, options) {
   };
 }
 
+function isoNow() {
+  return new Date().toISOString();
+}
+
+function packageCLedgerIdentity(options, cloudParameters) {
+  return {
+    tenantId: options.tenantId,
+    accountId: options.accountId,
+    workspaceId: options.workspaceId,
+    resourceBindingId: options.resourceBindingId,
+    billingAttributionId: options.billingAttributionId,
+    serverPlanId: cloudParameters.planId,
+    workspaceStorageGb: cloudParameters.workspaceStorageGb,
+    cloudProvider: CLOUD_PROVIDER,
+    region: REGION,
+    clusterId: options.targetClusterId,
+    nodePoolName: TARGET_TENANT_NODE_POOL_NAME,
+    operationId: options.operationId,
+  };
+}
+
+function createPackageCCloudOperationStateMachine({ options, cloudParameters, validation }) {
+  const identity = packageCLedgerIdentity(options, cloudParameters);
+  const protectedNodePoolIds = new Set([
+    options.protectedPlatformNodePoolId,
+    ...(validation?.protectedNodePoolIds || []),
+  ].filter(Boolean));
+  const state = {
+    status: "requested",
+    nodePoolId: "",
+    createdAt: isoNow(),
+    releasedAt: "",
+    completedAt: "",
+    stateTransitions: [],
+    events: [],
+  };
+
+  function assertTenantNodePoolIdWritable(nodePoolId) {
+    const normalized = String(nodePoolId || "").trim();
+    if (normalized && protectedNodePoolIds.has(normalized)) {
+      throw new Error("package_c_live_canary_ledger_refuses_protected_node_pool_target");
+    }
+    return normalized;
+  }
+
+  function resourceBindingSnapshot() {
+    return {
+      ...identity,
+      nodePoolId: state.nodePoolId,
+      status: state.status,
+      createdAt: state.createdAt,
+      ...(state.releasedAt ? { releasedAt: state.releasedAt } : {}),
+      canonicalOwnershipSource: CANONICAL_OWNERSHIP_SOURCE,
+      cloudTagSupport: CLOUD_TAG_SUPPORT,
+    };
+  }
+
+  function cloudOperationSnapshot() {
+    return {
+      operationId: identity.operationId,
+      resourceBindingId: identity.resourceBindingId,
+      tenantId: identity.tenantId,
+      accountId: identity.accountId,
+      workspaceId: identity.workspaceId,
+      billingAttributionId: identity.billingAttributionId,
+      operationType: CLOUD_OPERATION_TYPE,
+      serverPlanId: identity.serverPlanId,
+      workspaceStorageGb: identity.workspaceStorageGb,
+      status: state.status,
+      cloudProvider: identity.cloudProvider,
+      region: identity.region,
+      clusterId: identity.clusterId,
+      nodePoolId: state.nodePoolId,
+      nodePoolName: identity.nodePoolName,
+      cloudTagSupport: CLOUD_TAG_SUPPORT,
+      canonicalOwnershipSource: CANONICAL_OWNERSHIP_SOURCE,
+      createdAt: state.createdAt,
+      ...(state.completedAt ? { completedAt: state.completedAt } : {}),
+    };
+  }
+
+  function transition(status, extra = {}) {
+    const nextNodePoolId = Object.hasOwn(extra, "nodePoolId")
+      ? assertTenantNodePoolIdWritable(extra.nodePoolId)
+      : state.nodePoolId;
+    if (Object.hasOwn(extra, "nodePoolId")) state.nodePoolId = nextNodePoolId;
+    state.status = status;
+    if (status === "released") {
+      state.releasedAt = isoNow();
+      state.completedAt = state.releasedAt;
+    } else if (status === "failed" || status === "cleanupRequired") {
+      state.completedAt = isoNow();
+    }
+    const entry = {
+      status,
+      at: isoNow(),
+      ...(extra.reason ? { reason: extra.reason } : {}),
+      resourceBinding: resourceBindingSnapshot(),
+      cloudOperation: cloudOperationSnapshot(),
+    };
+    state.stateTransitions.push(entry);
+    return entry;
+  }
+
+  function recordEvent(type, event = {}) {
+    state.events.push({
+      type,
+      at: isoNow(),
+      operationId: identity.operationId,
+      resourceBindingId: identity.resourceBindingId,
+      status: state.status,
+      canonicalOwnershipSource: CANONICAL_OWNERSHIP_SOURCE,
+      cloudTagSupport: CLOUD_TAG_SUPPORT,
+      ...event,
+    });
+  }
+
+  function snapshot() {
+    return {
+      evidenceSink: ".runtime",
+      productionPostgresWrite: false,
+      canonicalOwnershipSource: CANONICAL_OWNERSHIP_SOURCE,
+      cloudTagSupport: CLOUD_TAG_SUPPORT,
+      resourceBinding: resourceBindingSnapshot(),
+      cloudOperation: cloudOperationSnapshot(),
+      stateTransitions: state.stateTransitions,
+      events: state.events,
+    };
+  }
+
+  transition("requested", { reason: "resource_binding_requested_before_provider_create" });
+  return {
+    transition,
+    recordEvent,
+    snapshot,
+    currentStatus: () => state.status,
+    currentNodePoolId: () => state.nodePoolId,
+  };
+}
+
 function tagResourceArn(env, nodePoolId) {
   return `qcs::tke:${REGION}:uin/${value(env, "TENCENT_MUTATION_ACCOUNT_ID")}:nodepool/${nodePoolId}`;
 }
@@ -357,17 +501,21 @@ async function callTagResourcesBestEffort(steps, fn, extra = {}) {
   assertNoForbiddenApi("TagResources");
   try {
     const response = await fn();
-    steps.push(sanitizedStep("TagResources", "completed", response, extra));
+    const step = sanitizedStep("TagResources", "completed", response, extra);
+    steps.push(step);
+    return step;
   } catch (error) {
     if (!isTagResourcesUnsupportedService(error)) {
       steps.push(sanitizedFailureStep("TagResources", error, extra));
       throw error;
     }
-    steps.push(skippedUnsupportedServiceStep("TagResources", error, extra));
+    const step = skippedUnsupportedServiceStep("TagResources", error, extra);
+    steps.push(step);
+    return step;
   }
 }
 
-async function rollbackTenantPool({ modules, steps, options, validation, nodePoolId }) {
+async function rollbackTenantPool({ modules, steps, options, validation, nodePoolId, ledger }) {
   if (!nodePoolId) return [];
   const rollbackSteps = [];
   const safeNodePoolId = ensureTenantNodePoolId(
@@ -375,6 +523,18 @@ async function rollbackTenantPool({ modules, steps, options, validation, nodePoo
     validation.protectedNodePoolIds,
     options.protectedPlatformNodePoolId,
   );
+  if (!["releaseRequested", "deleting", "released", "cleanupRequired"].includes(ledger?.currentStatus())) {
+    ledger?.transition("releaseRequested", {
+      nodePoolId: safeNodePoolId,
+      reason: "post_create_failure_cleanup_requested",
+    });
+  }
+  if (!["deleting", "released", "cleanupRequired"].includes(ledger?.currentStatus())) {
+    ledger?.transition("deleting", {
+      nodePoolId: safeNodePoolId,
+      reason: "post_create_failure_cleanup_deleting",
+    });
+  }
   try {
     await callStep(steps, "ScaleNodePool", () => modules.scaleNodePool(REGION, {
       ClusterId: options.targetClusterId,
@@ -391,8 +551,16 @@ async function rollbackTenantPool({ modules, steps, options, validation, nodePoo
       NodePoolId: safeNodePoolId,
     }), { region: REGION, nodePoolId: safeNodePoolId });
     rollbackSteps.push("delete_tenant_pool");
+    ledger?.transition("released", {
+      nodePoolId: safeNodePoolId,
+      reason: "post_create_failure_cleanup_released",
+    });
   } catch {
     rollbackSteps.push("delete_tenant_pool_failed");
+    ledger?.transition("cleanupRequired", {
+      nodePoolId: safeNodePoolId,
+      reason: "post_create_failure_cleanup_delete_failed",
+    });
   }
   return rollbackSteps;
 }
@@ -413,7 +581,7 @@ async function writeRunGateZero(secretFile) {
   await writeFile(secretFile, next.join("\n"));
 }
 
-function redactedSummaryFor({ ok, options, validation, cloudParameters, steps, targetNodePoolId = "", rollbackSteps = [], failure = null }) {
+function redactedSummaryFor({ ok, options, validation, cloudParameters, steps, ledger, targetNodePoolId = "", rollbackSteps = [], failure = null }) {
   const evidenceRoot = path.join(options.reportDir, options.operationId);
   return {
     ok,
@@ -431,7 +599,8 @@ function redactedSummaryFor({ ok, options, validation, cloudParameters, steps, t
       realCloudCalls: true,
       mutationExecuted: steps.some((step) => ["CreateNodePool", "ScaleNodePool", "DeleteNodePool", "TagResources"].includes(step.api)),
       readsMutationSecret: true,
-      writesLedger: false,
+      writesLedger: true,
+      productionPostgresWrite: false,
       callsKubectl: false,
       deploysWorkload: false,
       buildsOrPushesImage: false,
@@ -455,8 +624,9 @@ function redactedSummaryFor({ ok, options, validation, cloudParameters, steps, t
     },
     cloudTagSupport: "tkeNodePoolUnsupported",
     tagResourcesSkippedUnsupportedService: steps.some((step) => step.api === "TagResources" && step.status === "skipped_unsupported_service"),
-    canonicalOwnershipSource: "medopl_resource_binding_ledger",
+    canonicalOwnershipSource: CANONICAL_OWNERSHIP_SOURCE,
     canaryOwnershipEvidenceSink: ".runtime",
+    ledger: ledger.snapshot(),
     secretAllowlist: PACKAGE_C_LIVE_CANARY_SECRET_ALLOWLIST,
     apiAllowlist: PACKAGE_C_LIVE_CANARY_API_ALLOWLIST,
     expectedCreateReleasePlan: expectedCreateReleasePlan(options),
@@ -489,6 +659,7 @@ async function writeEvidenceFiles({ options, summary, cloudParameters }) {
   const scaleDownResultPath = path.join(evidenceRoot, "scale-down-result-redacted.json");
   const releaseResultPath = path.join(evidenceRoot, "release-result-redacted.json");
   const failureResultPath = path.join(evidenceRoot, "failure-result-redacted.json");
+  const ledgerPath = path.join(evidenceRoot, "ledger-state-machine.json");
   await writeFile(createRequestPath, `${JSON.stringify(redactedCreateNodePoolRequest(cloudParameters, options), null, 2)}\n`);
   await writeFile(preflightPath, `${JSON.stringify({
     ok: true,
@@ -504,11 +675,13 @@ async function writeEvidenceFiles({ options, summary, cloudParameters }) {
   await writeFile(scaleDownResultPath, `${JSON.stringify(summary.steps.find((step) => step.api === "ScaleNodePool" && step.replicas === 0) || null, null, 2)}\n`);
   await writeFile(releaseResultPath, `${JSON.stringify(summary.steps.find((step) => step.api === "DeleteNodePool") || null, null, 2)}\n`);
   await writeFile(failureResultPath, `${JSON.stringify(summary.steps.find((step) => step.status === "failed") || null, null, 2)}\n`);
+  await writeFile(ledgerPath, `${JSON.stringify(summary.ledger, null, 2)}\n`);
   await writeFile(summaryPath, `${JSON.stringify(summary, null, 2)}\n`);
   return {
     evidenceRoot,
     createRequestPath,
     summaryPath,
+    ledgerPath,
   };
 }
 
@@ -569,6 +742,7 @@ export async function runPackageCLiveCanaryLive({ options, modules } = {}) {
   const cloudParameters = validateCloudParameters(parseCloudParameters(await readFile(options.cloudParamsFile, "utf8")), options);
   if (!modules) throw new Error("package_c_live_canary_live_modules_required");
   const steps = [];
+  const ledger = createPackageCCloudOperationStateMachine({ options, cloudParameters, validation });
   let targetNodePoolId = "";
   let rollbackSteps = [];
   let summary;
@@ -599,6 +773,7 @@ export async function runPackageCLiveCanaryLive({ options, modules } = {}) {
       throw new Error("package_c_live_canary_live_tenant_node_pool_already_exists");
     }
 
+    ledger.transition("creating", { reason: "before_create_node_pool" });
     const createResponse = await callStep(steps, "CreateNodePool", () => modules.createNodePool(REGION, createNodePoolRequest(cloudParameters, options)), {
       region: REGION,
       nodePoolName: TARGET_TENANT_NODE_POOL_NAME,
@@ -608,18 +783,42 @@ export async function runPackageCLiveCanaryLive({ options, modules } = {}) {
       validation.protectedNodePoolIds,
       options.protectedPlatformNodePoolId,
     );
+    ledger.transition("created", {
+      nodePoolId: targetNodePoolId,
+      reason: "create_node_pool_completed",
+    });
 
     const resourceArn = tagResourceArn(env, targetNodePoolId);
-    await callTagResourcesBestEffort(steps, () => modules.tagResources({
+    const tagResourcesStep = await callTagResourcesBestEffort(steps, () => modules.tagResources({
       ResourceList: [resourceArn],
       Tags: tagList(options),
     }), { region: REGION, nodePoolId: targetNodePoolId, nodePoolName: TARGET_TENANT_NODE_POOL_NAME });
+    if (tagResourcesStep?.status === "skipped_unsupported_service") {
+      ledger.recordEvent("tagResourcesSkippedUnsupportedService", {
+        blocking: false,
+        action: "TagResources",
+        apiVersion: API_VERSIONS.TagResources,
+        code: tagResourcesStep.code,
+        message: tagResourcesStep.message,
+        ...(tagResourcesStep.requestId ? { requestId: tagResourcesStep.requestId } : {}),
+        nodePoolId: targetNodePoolId,
+        nodePoolName: TARGET_TENANT_NODE_POOL_NAME,
+      });
+    }
 
+    ledger.transition("scaling", {
+      nodePoolId: targetNodePoolId,
+      reason: "scale_up_requested",
+    });
     await callStep(steps, "ScaleNodePool", () => modules.scaleNodePool(REGION, {
       ClusterId: options.targetClusterId,
       NodePoolId: targetNodePoolId,
       Replicas: 1,
     }), { region: REGION, nodePoolId: targetNodePoolId, replicas: 1 });
+    ledger.transition("ready", {
+      nodePoolId: targetNodePoolId,
+      reason: "scale_up_completed",
+    });
 
     const afterCreatePools = await callStep(steps, "DescribeNodePools", () => modules.describeNodePools(REGION, {
       ClusterId: options.targetClusterId,
@@ -635,16 +834,28 @@ export async function runPackageCLiveCanaryLive({ options, modules } = {}) {
       );
     }
 
+    ledger.transition("releaseRequested", {
+      nodePoolId: targetNodePoolId,
+      reason: "release_requested_after_canary_observed",
+    });
     await callStep(steps, "ScaleNodePool", () => modules.scaleNodePool(REGION, {
       ClusterId: options.targetClusterId,
       NodePoolId: targetNodePoolId,
       Replicas: 0,
     }), { region: REGION, nodePoolId: targetNodePoolId, replicas: 0 });
 
+    ledger.transition("deleting", {
+      nodePoolId: targetNodePoolId,
+      reason: "delete_node_pool_requested",
+    });
     await callStep(steps, "DeleteNodePool", () => modules.deleteNodePool(REGION, {
       ClusterId: options.targetClusterId,
       NodePoolId: targetNodePoolId,
     }), { region: REGION, nodePoolId: targetNodePoolId });
+    ledger.transition("released", {
+      nodePoolId: targetNodePoolId,
+      reason: "delete_node_pool_completed",
+    });
 
     await callStep(steps, "GetResources", () => modules.getResources({
       ResourceList: [resourceArn],
@@ -657,23 +868,43 @@ export async function runPackageCLiveCanaryLive({ options, modules } = {}) {
       validation,
       cloudParameters,
       steps,
+      ledger,
       targetNodePoolId,
     });
   } catch (error) {
     lastFailure = steps.findLast?.((step) => step.status === "failed") || null;
+    if (lastFailure?.api === "TagResources") {
+      ledger.recordEvent("tagResourcesFailed", {
+        blocking: true,
+        action: "TagResources",
+        apiVersion: API_VERSIONS.TagResources,
+        code: lastFailure.code,
+        message: lastFailure.message,
+        ...(lastFailure.requestId ? { requestId: lastFailure.requestId } : {}),
+        nodePoolId: targetNodePoolId,
+        nodePoolName: TARGET_TENANT_NODE_POOL_NAME,
+      });
+    }
     rollbackSteps = await rollbackTenantPool({
       modules,
       steps,
       options,
       validation,
       nodePoolId: targetNodePoolId,
+      ledger,
     });
+    if (!targetNodePoolId) {
+      ledger.transition("failed", {
+        reason: "provider_create_not_completed_no_cleanup_required",
+      });
+    }
     summary = redactedSummaryFor({
       ok: false,
       options,
       validation,
       cloudParameters,
       steps,
+      ledger,
       targetNodePoolId,
       rollbackSteps,
       failure: lastFailure ? {

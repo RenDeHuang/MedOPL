@@ -34,6 +34,15 @@ function assertNoSensitiveOutput(text = "", label = "output") {
   }
 }
 
+function assertLedgerDoesNotWriteProtectedPool(summary, label) {
+  assert.notEqual(summary.ledger?.resourceBinding?.nodePoolId, "np-cbk784r8", `${label}_resource_binding_must_not_write_platform_pool`);
+  assert.notEqual(summary.ledger?.cloudOperation?.nodePoolId, "np-cbk784r8", `${label}_cloud_operation_must_not_write_platform_pool`);
+  for (const transition of summary.ledger?.stateTransitions || []) {
+    assert.notEqual(transition.resourceBinding?.nodePoolId, "np-cbk784r8", `${label}_transition_resource_binding_must_not_write_platform_pool`);
+    assert.notEqual(transition.cloudOperation?.nodePoolId, "np-cbk784r8", `${label}_transition_cloud_operation_must_not_write_platform_pool`);
+  }
+}
+
 function baseEnv(runGate = "1") {
   return [
     `RUN_TENCENT_CREATE_RELEASE_EXECUTION=${runGate}`,
@@ -239,8 +248,31 @@ try {
   assert.equal(evidence.boundary.callsKubectl, false, "evidence_no_kubectl");
   assert.equal(evidence.boundary.deploysWorkload, false, "evidence_no_deploy");
   assert.equal(evidence.boundary.buildsOrPushesImage, false, "evidence_no_build_push");
+  assert.equal(evidence.boundary.writesLedger, true, "evidence_writes_ledger");
   assert.equal(evidence.target.protectedPlatformNodePoolId, "np-cbk784r8", "evidence_protected_pool");
   assert.equal(evidence.target.tenantNodePoolName, "medopl-tenant-rb-package-c-live-canary-20260613", "evidence_tenant_pool");
+  assert.equal(evidence.ledger.resourceBinding.status, "released", "ledger_final_resource_binding_released");
+  assert.equal(evidence.ledger.cloudOperation.status, "released", "ledger_final_cloud_operation_released");
+  assert.equal(evidence.ledger.resourceBinding.nodePoolName, "medopl-tenant-rb-package-c-live-canary-20260613", "ledger_node_pool_name");
+  assert.equal(evidence.ledger.resourceBinding.nodePoolId, "np-tenant-proof", "ledger_node_pool_id");
+  assert.equal(evidence.ledger.resourceBinding.serverPlanId, "starter_2c4g_10gb", "ledger_canonical_server_plan");
+  assert.equal(evidence.ledger.resourceBinding.workspaceStorageGb, 10, "ledger_workspace_storage");
+  assert.equal(evidence.ledger.resourceBinding.canonicalOwnershipSource, "postgres_resource_binding_ledger", "ledger_canonical_source");
+  assert.equal(evidence.ledger.resourceBinding.cloudTagSupport, "tke_nodepool_unsupported", "ledger_cloud_tag_support");
+  assert.deepEqual(evidence.ledger.stateTransitions.map((transition) => transition.status), [
+    "requested",
+    "creating",
+    "created",
+    "scaling",
+    "ready",
+    "releaseRequested",
+    "deleting",
+    "released",
+  ], "ledger_success_state_path");
+  assert.equal(evidence.ledger.stateTransitions[0].resourceBinding.nodePoolName, "medopl-tenant-rb-package-c-live-canary-20260613", "ledger_pre_create_name_exists");
+  assert.equal(evidence.ledger.stateTransitions[0].resourceBinding.nodePoolId, "", "ledger_pre_create_node_pool_id_empty");
+  assert.equal(evidence.ledger.stateTransitions[1].status, "creating", "ledger_create_before_provider_call");
+  assertLedgerDoesNotWriteProtectedPool(evidence, "success");
   assert.deepEqual(evidence.executedApis, [
     "GetCallerIdentity",
     "DescribeClusters",
@@ -316,7 +348,10 @@ try {
   assert.equal(unsupportedTagEvidence.ok, true, "unsupported_tag_evidence_ok");
   assert.equal(unsupportedTagEvidence.tagResourcesSkippedUnsupportedService, true, "unsupported_tag_skip_flag");
   assert.equal(unsupportedTagEvidence.cloudTagSupport, "tkeNodePoolUnsupported", "unsupported_tag_cloud_support");
-  assert.equal(unsupportedTagEvidence.canonicalOwnershipSource, "medopl_resource_binding_ledger", "unsupported_tag_canonical_ownership_source");
+  assert.equal(unsupportedTagEvidence.canonicalOwnershipSource, "postgres_resource_binding_ledger", "unsupported_tag_canonical_ownership_source");
+  assert.equal(unsupportedTagEvidence.ledger.resourceBinding.canonicalOwnershipSource, "postgres_resource_binding_ledger", "unsupported_tag_ledger_canonical_source");
+  assert.equal(unsupportedTagEvidence.ledger.resourceBinding.cloudTagSupport, "tke_nodepool_unsupported", "unsupported_tag_ledger_cloud_support");
+  assert.equal(unsupportedTagEvidence.ledger.events.some((event) => event.type === "tagResourcesSkippedUnsupportedService" && event.blocking === false), true, "unsupported_tag_must_be_non_blocking_ledger_event");
   assert.equal(unsupportedTagEvidence.canaryOwnershipEvidenceSink, ".runtime", "unsupported_tag_canary_evidence_sink");
   assert.equal(unsupportedTagStep.status, "skipped_unsupported_service", "unsupported_tag_step_status");
   assert.equal(unsupportedTagStep.error.code, "InvalidParameter.UnsupportedService", "unsupported_tag_step_error_code");
@@ -325,7 +360,253 @@ try {
   assert.equal(unsupportedTagStep.continuesCanary, true, "unsupported_tag_step_continues_canary");
   assert.deepEqual(unsupportedTagEvidence.rollback.steps, [], "unsupported_tag_must_not_trigger_rollback");
   assert.equal(unsupportedTagCalls.some((call) => call.req?.NodePoolId === "np-cbk784r8"), false, "unsupported_tag_must_not_touch_platform_pool");
+  assertLedgerDoesNotWriteProtectedPool(unsupportedTagEvidence, "unsupported_tag");
   assertNoSensitiveOutput(JSON.stringify(unsupportedTagEvidence), "unsupported_tag_evidence");
+
+  await writeFile(envFile, baseEnv("1"));
+  const createFailureCalls = [];
+  const createFailureModules = {
+    async getCallerIdentity(req = null) {
+      createFailureCalls.push({ api: "GetCallerIdentity", req });
+      return { AccountId: "100047070895", RequestId: "req-create-fail-sts" };
+    },
+    async describeClusters(region, req = {}) {
+      createFailureCalls.push({ api: "DescribeClusters", region, req });
+      return { Clusters: [{ ClusterId: "cls-fi097sy4", ClusterStatus: "Running" }], RequestId: "req-create-fail-clusters" };
+    },
+    async describeNodePools(region, req = {}) {
+      createFailureCalls.push({ api: "DescribeNodePools", region, req });
+      return { NodePools: [{ NodePoolId: "np-cbk784r8", Name: "platform" }], RequestId: "req-create-fail-node-pools" };
+    },
+    async createNodePool(region, req = {}) {
+      createFailureCalls.push({ api: "CreateNodePool", region, req });
+      const error = new Error("create denied");
+      error.code = "OperationDenied";
+      error.requestId = "req-create-denied";
+      throw error;
+    },
+    async tagResources(req = {}) {
+      createFailureCalls.push({ api: "TagResources", req });
+      return { RequestId: "req-create-fail-tag" };
+    },
+    async scaleNodePool(region, req = {}) {
+      createFailureCalls.push({ api: "ScaleNodePool", region, req });
+      return { RequestId: "req-create-fail-scale" };
+    },
+    async deleteNodePool(region, req = {}) {
+      createFailureCalls.push({ api: "DeleteNodePool", region, req });
+      return { RequestId: "req-create-fail-delete" };
+    },
+    async getResources(req = {}) {
+      createFailureCalls.push({ api: "GetResources", req });
+      return { ResourceTagMappingList: [], RequestId: "req-create-fail-get-resources" };
+    },
+  };
+  let createFailureError = null;
+  try {
+    await runPackageCLiveCanaryLive({ options, modules: createFailureModules });
+  } catch (error) {
+    createFailureError = error;
+  }
+  assert(createFailureError, "runner_must_throw_when_create_fails");
+  assert.equal(createFailureError.summary.ledger.resourceBinding.status, "failed", "create_failure_ledger_status");
+  assert.equal(createFailureError.summary.ledger.resourceBinding.nodePoolId, "", "create_failure_ledger_node_pool_id_empty");
+  assert.deepEqual(createFailureError.summary.ledger.stateTransitions.map((transition) => transition.status), [
+    "requested",
+    "creating",
+    "failed",
+  ], "create_failure_state_path");
+  assert.equal(createFailureError.summary.rollback.attempted, false, "create_failure_must_not_cleanup_without_node_pool_id");
+  assert.deepEqual(createFailureCalls.map((call) => call.api), [
+    "GetCallerIdentity",
+    "DescribeClusters",
+    "DescribeNodePools",
+    "CreateNodePool",
+  ], "create_failure_call_order");
+  assertLedgerDoesNotWriteProtectedPool(createFailureError.summary, "create_failure");
+  assertNoSensitiveOutput(JSON.stringify(createFailureError.summary), "create_failure_summary");
+
+  await writeFile(envFile, baseEnv("1"));
+  const scaleFailureCalls = [];
+  const scaleFailureModules = {
+    async getCallerIdentity(req = null) {
+      scaleFailureCalls.push({ api: "GetCallerIdentity", req });
+      return { AccountId: "100047070895", RequestId: "req-scale-fail-sts" };
+    },
+    async describeClusters(region, req = {}) {
+      scaleFailureCalls.push({ api: "DescribeClusters", region, req });
+      return { Clusters: [{ ClusterId: "cls-fi097sy4", ClusterStatus: "Running" }], RequestId: "req-scale-fail-clusters" };
+    },
+    async describeNodePools(region, req = {}) {
+      scaleFailureCalls.push({ api: "DescribeNodePools", region, req });
+      return { NodePools: [{ NodePoolId: "np-cbk784r8", Name: "platform" }], RequestId: "req-scale-fail-node-pools" };
+    },
+    async createNodePool(region, req = {}) {
+      scaleFailureCalls.push({ api: "CreateNodePool", region, req });
+      return { NodePoolId: "np-tenant-scale-fail-proof", RequestId: "req-scale-fail-create" };
+    },
+    async tagResources(req = {}) {
+      scaleFailureCalls.push({ api: "TagResources", req });
+      return { RequestId: "req-scale-fail-tag" };
+    },
+    async scaleNodePool(region, req = {}) {
+      scaleFailureCalls.push({ api: "ScaleNodePool", region, req });
+      if (req.Replicas === 1) {
+        const error = new Error("scale up denied");
+        error.code = "OperationDenied";
+        error.requestId = "req-scale-up-denied";
+        throw error;
+      }
+      return { RequestId: "req-scale-down-cleanup" };
+    },
+    async deleteNodePool(region, req = {}) {
+      scaleFailureCalls.push({ api: "DeleteNodePool", region, req });
+      return { RequestId: "req-scale-fail-cleanup-delete" };
+    },
+    async getResources(req = {}) {
+      scaleFailureCalls.push({ api: "GetResources", req });
+      return { ResourceTagMappingList: [], RequestId: "req-scale-fail-get-resources" };
+    },
+  };
+  let scaleFailureError = null;
+  try {
+    await runPackageCLiveCanaryLive({ options, modules: scaleFailureModules });
+  } catch (error) {
+    scaleFailureError = error;
+  }
+  assert(scaleFailureError, "runner_must_throw_when_scale_fails_after_create");
+  assert.equal(scaleFailureError.summary.ledger.resourceBinding.status, "released", "scale_failure_cleanup_success_final_status");
+  assert.deepEqual(scaleFailureError.summary.ledger.stateTransitions.map((transition) => transition.status), [
+    "requested",
+    "creating",
+    "created",
+    "scaling",
+    "releaseRequested",
+    "deleting",
+    "released",
+  ], "scale_failure_state_path");
+  assert.deepEqual(scaleFailureError.summary.rollback.steps, [
+    "scale_tenant_pool_to_zero",
+    "delete_tenant_pool",
+  ], "scale_failure_cleanup_steps");
+  assert.equal(scaleFailureCalls.some((call) => call.req?.NodePoolId === "np-cbk784r8"), false, "scale_failure_must_not_touch_platform_pool");
+  assertLedgerDoesNotWriteProtectedPool(scaleFailureError.summary, "scale_failure");
+  assertNoSensitiveOutput(JSON.stringify(scaleFailureError.summary), "scale_failure_summary");
+
+  await writeFile(envFile, baseEnv("1"));
+  const deleteFailureCalls = [];
+  const deleteFailureModules = {
+    async getCallerIdentity(req = null) {
+      deleteFailureCalls.push({ api: "GetCallerIdentity", req });
+      return { AccountId: "100047070895", RequestId: "req-delete-fail-sts" };
+    },
+    async describeClusters(region, req = {}) {
+      deleteFailureCalls.push({ api: "DescribeClusters", region, req });
+      return { Clusters: [{ ClusterId: "cls-fi097sy4", ClusterStatus: "Running" }], RequestId: "req-delete-fail-clusters" };
+    },
+    async describeNodePools(region, req = {}) {
+      deleteFailureCalls.push({ api: "DescribeNodePools", region, req });
+      if (req?.Filters?.some((filter) => filter.Name === "NodePoolsName")) {
+        return { NodePools: [{ NodePoolId: "np-tenant-delete-fail-proof", Name: "medopl-tenant-rb-package-c-live-canary-20260613" }], RequestId: "req-delete-fail-node-pool-name" };
+      }
+      return { NodePools: [{ NodePoolId: "np-cbk784r8", Name: "platform" }], RequestId: "req-delete-fail-node-pools" };
+    },
+    async createNodePool(region, req = {}) {
+      deleteFailureCalls.push({ api: "CreateNodePool", region, req });
+      return { NodePoolId: "np-tenant-delete-fail-proof", RequestId: "req-delete-fail-create" };
+    },
+    async tagResources(req = {}) {
+      deleteFailureCalls.push({ api: "TagResources", req });
+      return { RequestId: "req-delete-fail-tag" };
+    },
+    async scaleNodePool(region, req = {}) {
+      deleteFailureCalls.push({ api: "ScaleNodePool", region, req });
+      return { RequestId: `req-delete-fail-scale-${req.Replicas}` };
+    },
+    async deleteNodePool(region, req = {}) {
+      deleteFailureCalls.push({ api: "DeleteNodePool", region, req });
+      const error = new Error("delete denied");
+      error.code = "OperationDenied";
+      error.requestId = "req-delete-denied";
+      throw error;
+    },
+    async getResources(req = {}) {
+      deleteFailureCalls.push({ api: "GetResources", req });
+      return { ResourceTagMappingList: [], RequestId: "req-delete-fail-get-resources" };
+    },
+  };
+  let deleteFailureError = null;
+  try {
+    await runPackageCLiveCanaryLive({ options, modules: deleteFailureModules });
+  } catch (error) {
+    deleteFailureError = error;
+  }
+  assert(deleteFailureError, "runner_must_throw_when_delete_fails");
+  assert.equal(deleteFailureError.summary.ledger.resourceBinding.status, "cleanupRequired", "delete_failure_final_status");
+  assert.deepEqual(deleteFailureError.summary.ledger.stateTransitions.map((transition) => transition.status), [
+    "requested",
+    "creating",
+    "created",
+    "scaling",
+    "ready",
+    "releaseRequested",
+    "deleting",
+    "cleanupRequired",
+  ], "delete_failure_state_path");
+  assert.equal(deleteFailureError.summary.ledger.stateTransitions.at(-1).status, "cleanupRequired", "delete_failure_last_transition");
+  assert(deleteFailureError.summary.rollback.steps.includes("delete_tenant_pool_failed"), "delete_failure_cleanup_step");
+  assert.equal(deleteFailureCalls.some((call) => call.req?.NodePoolId === "np-cbk784r8"), false, "delete_failure_must_not_touch_platform_pool");
+  assertLedgerDoesNotWriteProtectedPool(deleteFailureError.summary, "delete_failure");
+  assertNoSensitiveOutput(JSON.stringify(deleteFailureError.summary), "delete_failure_summary");
+
+  await writeFile(envFile, baseEnv("1"));
+  const protectedPoolCalls = [];
+  const protectedPoolModules = {
+    async getCallerIdentity(req = null) {
+      protectedPoolCalls.push({ api: "GetCallerIdentity", req });
+      return { AccountId: "100047070895", RequestId: "req-protected-sts" };
+    },
+    async describeClusters(region, req = {}) {
+      protectedPoolCalls.push({ api: "DescribeClusters", region, req });
+      return { Clusters: [{ ClusterId: "cls-fi097sy4", ClusterStatus: "Running" }], RequestId: "req-protected-clusters" };
+    },
+    async describeNodePools(region, req = {}) {
+      protectedPoolCalls.push({ api: "DescribeNodePools", region, req });
+      return { NodePools: [{ NodePoolId: "np-cbk784r8", Name: "platform" }], RequestId: "req-protected-node-pools" };
+    },
+    async createNodePool(region, req = {}) {
+      protectedPoolCalls.push({ api: "CreateNodePool", region, req });
+      return { NodePoolId: "np-cbk784r8", RequestId: "req-protected-create" };
+    },
+    async tagResources(req = {}) {
+      protectedPoolCalls.push({ api: "TagResources", req });
+      return { RequestId: "req-protected-tag" };
+    },
+    async scaleNodePool(region, req = {}) {
+      protectedPoolCalls.push({ api: "ScaleNodePool", region, req });
+      return { RequestId: "req-protected-scale" };
+    },
+    async deleteNodePool(region, req = {}) {
+      protectedPoolCalls.push({ api: "DeleteNodePool", region, req });
+      return { RequestId: "req-protected-delete" };
+    },
+    async getResources(req = {}) {
+      protectedPoolCalls.push({ api: "GetResources", req });
+      return { ResourceTagMappingList: [], RequestId: "req-protected-get-resources" };
+    },
+  };
+  let protectedPoolError = null;
+  try {
+    await runPackageCLiveCanaryLive({ options, modules: protectedPoolModules });
+  } catch (error) {
+    protectedPoolError = error;
+  }
+  assert(protectedPoolError, "runner_must_throw_when_provider_returns_protected_pool_id");
+  assert.equal(protectedPoolError.summary.ledger.resourceBinding.status, "failed", "protected_pool_final_status");
+  assert.equal(protectedPoolError.summary.ledger.resourceBinding.nodePoolId, "", "protected_pool_must_not_be_written_to_ledger");
+  assert.equal(protectedPoolCalls.some((call) => call.api === "ScaleNodePool" || call.api === "DeleteNodePool"), false, "protected_pool_must_not_scale_or_delete_platform_pool");
+  assertLedgerDoesNotWriteProtectedPool(protectedPoolError.summary, "protected_pool");
+  assertNoSensitiveOutput(JSON.stringify(protectedPoolError.summary), "protected_pool_summary");
 
   await writeFile(envFile, baseEnv("1"));
   const rollbackCalls = [];
@@ -398,6 +679,8 @@ try {
     "scale_tenant_pool_to_zero",
     "delete_tenant_pool",
   ], "rollback_steps");
+  assert.equal(rollbackError.summary.ledger.resourceBinding.status, "released", "rollback_cleanup_success_final_status");
+  assert.equal(rollbackError.summary.ledger.events.some((event) => event.type === "tagResourcesFailed" && event.blocking === true), true, "blocking_tag_failure_must_be_ledger_event");
   assert.deepEqual(rollbackCalls.map((call) => call.api), [
     "GetCallerIdentity",
     "DescribeClusters",
@@ -411,6 +694,7 @@ try {
   assert.equal(rollbackCalls.find((call) => call.api === "ScaleNodePool").req.Replicas, 0, "rollback_scales_to_zero");
   assert.equal(rollbackCalls.find((call) => call.api === "DeleteNodePool").req.NodePoolId, "np-tenant-rollback-proof", "rollback_deletes_tenant_pool");
   assert.equal(rollbackCalls.some((call) => call.req?.NodePoolId === "np-cbk784r8"), false, "rollback_must_not_touch_platform_pool");
+  assertLedgerDoesNotWriteProtectedPool(rollbackError.summary, "rollback");
   assertNoSensitiveOutput(JSON.stringify(rollbackError.summary), "rollback_summary");
 } finally {
   await rm(tmp, { recursive: true, force: true });

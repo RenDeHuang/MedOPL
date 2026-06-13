@@ -206,9 +206,9 @@ export function redactedCreateNodePoolRequest(cloudParameters, options) {
     cloudTagSupport: "tkeNodePoolUnsupported",
     hardBlocker: false,
     unsupportedServiceSkipCode: "InvalidParameter.UnsupportedService",
-    canonicalOwnershipSource: "medopl_resource_binding_ledger",
+    canonicalOwnershipSource: "postgres_resource_binding_ledger",
     canaryOwnershipEvidenceSink: ".runtime",
-    futureCanonicalStore: "PostgreSQL",
+    futureCanonicalStore: "PostgreSQL resource_bindings/cloud_operations",
     tags: [
       { TagKey: "resourceBindingId", TagValue: options.resourceBindingId },
       { TagKey: "billingAttributionId", TagValue: options.billingAttributionId },
