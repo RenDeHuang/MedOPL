@@ -4910,7 +4910,7 @@ Branch: `recovery/platform-v22-trunk`
 
 Scope:
 
-- Closed out the landed Package C PostgreSQL ledger sink gate commit `d58f236a036ca0b787afc65592f0a164e16de936`.
+- Closed out the landed Package C PostgreSQL ledger sink gate commit `a7a8a2526f3bf32b0aa515ef492254e89c5927ad`.
 - Updated current truth to keep real DB execution blocked until a separate authorized successful PostgreSQL live canary with an explicit dedicated ledger env file and parent-row identities; the root `pg` driver path is now declared.
 - No DB secret read, PostgreSQL connection execution, Tencent mutation, kubectl, deploy, build/push, Package D, live-test, kubeconfig read or secret write to git was performed.
 
@@ -4927,13 +4927,13 @@ Cannot-claim:
 
 - A real PostgreSQL canary ran or productionization is complete.
 
-landed_commit: `d58f236a036ca0b787afc65592f0a164e16de936`
+landed_commit: `a7a8a2526f3bf32b0aa515ef492254e89c5927ad`
 
 landing_gate_result: `passed / ff-only landed / pushed`
 
 post_push_verification:
 
-- `origin/recovery/platform-v22-trunk` reached `d58f236a036ca0b787afc65592f0a164e16de936`.
+- `origin/recovery/platform-v22-trunk` reached `a7a8a2526f3bf32b0aa515ef492254e89c5927ad`.
 
 post_merge_closeout: `completed`
 
