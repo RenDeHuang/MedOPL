@@ -217,14 +217,14 @@ try {
   assert.equal(Object.hasOwn(createCall.req, "Tags"), false, "create_request_must_not_inline_cloud_tags");
   assert.equal(Object.hasOwn(createCall.req, "Annotations"), false, "create_request_must_not_inline_annotations");
   assert.deepEqual(tagResourcesCall.req.Tags, [
-    { Key: "resourceBindingId", Value: "rb-package-c-live-canary-20260613" },
-    { Key: "billingAttributionId", Value: "ba-package-c-live-canary-20260613" },
-    { Key: "tenantId", Value: "tenant-canary-package-c" },
-    { Key: "workspaceId", Value: "ws-canary-package-c" },
-    { Key: "medopl.io/role", Value: "tenant_node_pool" },
-    { Key: "medopl.io/package", Value: "C" },
-    { Key: "medopl.io/canary", Value: "package_c_live" },
-  ], "tag_resources_keeps_tenant_ownership_tags_after_create");
+    { TagKey: "resourceBindingId", TagValue: "rb-package-c-live-canary-20260613" },
+    { TagKey: "billingAttributionId", TagValue: "ba-package-c-live-canary-20260613" },
+    { TagKey: "tenantId", TagValue: "tenant-canary-package-c" },
+    { TagKey: "workspaceId", TagValue: "ws-canary-package-c" },
+    { TagKey: "medopl.io/role", TagValue: "tenant_node_pool" },
+    { TagKey: "medopl.io/package", TagValue: "C" },
+    { TagKey: "medopl.io/canary", TagValue: "package_c_live" },
+  ], "tag_resources_uses_tencent_tag_api_field_names_after_create");
   assert.equal(calls.filter((call) => call.api === "ScaleNodePool")[0].req.Replicas, 1, "scale_up_one");
   assert.equal(calls.filter((call) => call.api === "ScaleNodePool")[1].req.Replicas, 0, "scale_down_zero");
   assert.equal(calls.find((call) => call.api === "DeleteNodePool").req.NodePoolId, "np-tenant-proof", "delete_tenant_pool");

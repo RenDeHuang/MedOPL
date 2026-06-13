@@ -204,13 +204,13 @@ export function redactedCreateNodePoolRequest(cloudParameters, options) {
     api: "TagResources",
     afterCreateNodePool: true,
     tags: [
-      { Key: "resourceBindingId", Value: options.resourceBindingId },
-      { Key: "billingAttributionId", Value: options.billingAttributionId },
-      { Key: "tenantId", Value: options.tenantId },
-      { Key: "workspaceId", Value: options.workspaceId },
-      { Key: "medopl.io/role", Value: "tenant_node_pool" },
-      { Key: "medopl.io/package", Value: "C" },
-      { Key: "medopl.io/canary", Value: "package_c_live" },
+      { TagKey: "resourceBindingId", TagValue: options.resourceBindingId },
+      { TagKey: "billingAttributionId", TagValue: options.billingAttributionId },
+      { TagKey: "tenantId", TagValue: options.tenantId },
+      { TagKey: "workspaceId", TagValue: options.workspaceId },
+      { TagKey: "medopl.io/role", TagValue: "tenant_node_pool" },
+      { TagKey: "medopl.io/package", TagValue: "C" },
+      { TagKey: "medopl.io/canary", TagValue: "package_c_live" },
     ],
   };
   return {
