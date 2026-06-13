@@ -9,10 +9,10 @@ const goLabDomainSource = await readFile(path.join(repoRoot, "services/medopl-go
 const goLabTestSource = await readFile(path.join(repoRoot, "services/medopl-go-backend/internal/domain/lab/lab_test.go"), "utf8");
 
 for (const marker of [
-  "ID:                  \"starter_2c4g_10gb\"",
+  "ID:                  \"starter_2c4g_100gb\"",
   "Cores: 2",
   "MemoryGB: 4",
-  "IncludedGB: 10",
+  "IncludedGB: 100",
   "ID:                  \"pro_8c16g_100gb\"",
   "Cores: 8",
   "MemoryGB: 16",
@@ -25,7 +25,7 @@ for (const marker of [
 
 for (const marker of [
   "TestCatalogDefinesStarterAndProWithoutProductionPriceClaim",
-  "starter_2c4g_10gb",
+  "starter_2c4g_100gb",
   "pro_8c16g_100gb",
   "item.Billing.BasePrice != nil",
   "!item.Billing.PendingProductApproval",
@@ -47,5 +47,5 @@ console.log(JSON.stringify({
   ok: true,
   contract: "v22_resource_plan",
   source: "services/medopl-go-backend/internal/domain/lab/lab.go",
-  planIds: ["starter_2c4g_10gb", "pro_8c16g_100gb"],
+  planIds: ["starter_2c4g_100gb", "pro_8c16g_100gb"],
 }, null, 2));

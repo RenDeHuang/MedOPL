@@ -15,7 +15,7 @@ func TestLabStoreActivatesAndUpgradesSubscription(t *testing.T) {
 	subscription := labdomain.Subscription{
 		ID:             "sub-v22",
 		WorkspaceID:    "workspace-v22",
-		PackageID:      "starter_2c4g_10gb",
+		PackageID:      "starter_2c4g_100gb",
 		Status:         labdomain.SubscriptionStatusActive,
 		IdempotencyKey: "idem-activate",
 	}
@@ -23,7 +23,7 @@ func TestLabStoreActivatesAndUpgradesSubscription(t *testing.T) {
 		t.Fatalf("activate: %v", err)
 	}
 	found, err := store.SubscriptionByWorkspace(ctx, "workspace-v22")
-	if err != nil || found.PackageID != "starter_2c4g_10gb" {
+	if err != nil || found.PackageID != "starter_2c4g_100gb" {
 		t.Fatalf("found = %+v err=%v", found, err)
 	}
 	subscription.PackageID = "pro_8c16g_100gb"
@@ -46,7 +46,7 @@ func TestLabStoreFailsClosedForUnknownWorkspaceAndDuplicateID(t *testing.T) {
 	subscription := labdomain.Subscription{
 		ID:             "sub-v22",
 		WorkspaceID:    "workspace-v22",
-		PackageID:      "starter_2c4g_10gb",
+		PackageID:      "starter_2c4g_100gb",
 		Status:         labdomain.SubscriptionStatusActive,
 		IdempotencyKey: "idem-activate",
 	}

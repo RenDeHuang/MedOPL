@@ -135,7 +135,7 @@ assert.equal(contract.backendImplementationBoundary.userNarrativeAllowed, false,
 assert.equal(contract.backendImplementationBoundary.cloudConsoleShownToUser, false, "cloud_console_must_not_be_shown_to_user");
 assert.equal(contract.backendImplementationBoundary.tkeUserNarrativeAllowed, false, "tke_must_not_be_user_narrative");
 
-assert.deepEqual(contract.defaultPlans, ["starter_2c4g_10gb", "pro_8c16g_100gb"], "default_plans_mismatch");
+assert.deepEqual(contract.defaultPlans, ["starter_2c4g_100gb", "pro_8c16g_100gb"], "default_plans_mismatch");
 assert.equal(contract.defaultPlans.includes("custom"), false, "custom_plan_must_not_be_implemented_in_mvp_contract");
 assert.equal(contract.defaultPlans.includes("custom_package"), false, "custom_package_must_not_be_implemented_in_mvp_contract");
 

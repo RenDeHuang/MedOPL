@@ -2971,7 +2971,7 @@ Scope:
 
 - Define the commercial package model after structural convergence: `api_only`, `full_runtime` and `customer_dedicated`.
 - Preserve the customer-facing rule: anyone can enter OPL; MedOPL is required for platform-managed compute, file space, isolation, billing and audit.
-- Make `starter_2c4g_10gb` and `pro_8c16g_100gb` current MVP specs inside `full_runtime`, not a second commercial model.
+- Make `starter_2c4g_100gb` and `pro_8c16g_100gb` current MVP specs inside `full_runtime`, not a second commercial model.
 - Decide UI impact from the commercial model without changing Portal UI code in this stage.
 - Record that current Portal UI surfaces already answer: 买了什么, 能不能用, 缺什么, 下一步点哪里, 结果在哪里, 费用是否正常.
 - Require a future UI implementation leaf before `customer_dedicated` becomes customer-visible.
@@ -4355,6 +4355,53 @@ post_push_verification:
 - `origin/recovery/platform-v22-trunk` reached `3e7802f813b4c1e90e5f72dc6975a49223fc2159`.
 - `npm run verify`: pass before push.
 - `npm run closeout:check -- --json`: expected closeout gap detected after the implementation commit reached trunk; this closeout records it.
+- No additional Tencent mutation, deploy, kubectl, build/push, Package D, live-test, kubeconfig read or secret write to git was performed by this closeout.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-13 recovery/platform-v22-trunk
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `3e7802f813b4c1e90e5f72dc6975a49223fc2159`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Fixed Package C live runner failure evidence so Tencent SDK failures are stored with sanitized `error.code`, `error.message`, `requestId`, `apiVersion`, `action`, `region` and `nodePoolName`.
+- Kept failure evidence out of raw provider response, SecretId, SecretKey, kubeconfig and token surfaces.
+- Updated active/delivery/current truth to record that Package C live runner failure redaction is local future-authorized evidence only.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-c-live-canary-live-runner-local-gate.mjs`: pass.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: pass.
+- `npm run verify`: pass before push.
+
+Can-claim:
+
+- `origin/recovery/platform-v22-trunk` includes the Package C live runner failure evidence redaction fix at `2baa3b36aa1032962f5af91c0b698b7740621cb0`.
+- Package C local live runner tests cover sanitized failure evidence for Tencent SDK errors.
+
+Cannot-claim:
+
+- This closeout authorizes a new real Tencent mutation, deploy, kubectl, build/push, Package D, live-test or kubeconfig read.
+- Production billing readiness, production runtime readiness or production deploy readiness is complete.
+- Protected platform node pool `np-cbk784r8` may be deleted, scaled or modified.
+
+landed_commit: `2baa3b36aa1032962f5af91c0b698b7740621cb0`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `2baa3b36aa1032962f5af91c0b698b7740621cb0`.
+- `npm run closeout:check -- --json`: expected closeout gap detected after the failure evidence fix reached trunk; this closeout records it.
 - No additional Tencent mutation, deploy, kubectl, build/push, Package D, live-test, kubeconfig read or secret write to git was performed by this closeout.
 
 post_merge_closeout: `completed`

@@ -99,20 +99,20 @@ type Entitlement struct {
 
 var catalog = []PackagePlan{
 	{
-		ID:                  "starter_2c4g_10gb",
+		ID:                  "starter_2c4g_100gb",
 		Name:                "入门套餐",
 		Audience:            "regular",
 		Currency:            "CNY",
 		ComputeTier:         "starter",
 		Headline:            "适合小型文件分析和轻量任务",
 		Compute:             ComputeSpec{Tier: "starter", Label: "标准计算能力", Cores: 2, MemoryGB: 4, MaxConcurrentRuns: 1},
-		Storage:             StorageSpec{IncludedGB: 10, WarningRatio: 0.8},
+		Storage:             StorageSpec{IncludedGB: 100, WarningRatio: 0.8},
 		Billing:             BillingSpec{BasePrice: nil, PendingProductApproval: true, PriceLabel: "正式售价未定价", FreezeDays: 7},
-		BackingServerPlanID: "starter_2c4g_10gb",
+		BackingServerPlanID: "starter_2c4g_100gb",
 		ComputePower:        "2 核计算能力",
-		StorageCapacityGB:   10,
+		StorageCapacityGB:   100,
 		GracePeriodDays:     7,
-		PlanSummary:         "2C / 4GB 内存 / 10GB",
+		PlanSummary:         "2C / 4GB 内存 / 100GB",
 		MemoryGB:            4,
 	},
 	{
@@ -122,7 +122,7 @@ var catalog = []PackagePlan{
 		Currency:            "CNY",
 		ComputeTier:         "pro",
 		Headline:            "适合更大的文件分析和多任务处理",
-		Compute:             ComputeSpec{Tier: "pro", Label: "更快计算能力", Cores: 8, MemoryGB: 16, MaxConcurrentRuns: 3},
+		Compute:             ComputeSpec{Tier: "pro", Label: "更快计算能力", Cores: 8, MemoryGB: 16, MaxConcurrentRuns: 2},
 		Storage:             StorageSpec{IncludedGB: 100, WarningRatio: 0.8},
 		Billing:             BillingSpec{BasePrice: nil, PendingProductApproval: true, PriceLabel: "正式售价未定价", FreezeDays: 7},
 		BackingServerPlanID: "pro_8c16g_100gb",
@@ -135,17 +135,16 @@ var catalog = []PackagePlan{
 }
 
 var packageAliases = map[string]string{
-	"starter":              "starter_2c4g_10gb",
-	"starter-2c":           "starter_2c4g_10gb",
-	"starter-2c4g-10gb":    "starter_2c4g_10gb",
-	"starter_2c4gb_10gb":   "starter_2c4g_10gb",
-	"starter_2c4g_10gb":    "starter_2c4g_10gb",
+	"starter":              "starter_2c4g_100gb",
+	"starter-2c":           "starter_2c4g_100gb",
+	"starter-2c4g-100gb":   "starter_2c4g_100gb",
+	"starter_2c4gb_100gb":  "starter_2c4g_100gb",
+	"starter_2c4g_100gb":   "starter_2c4g_100gb",
 	"pro":                  "pro_8c16g_100gb",
 	"pro-8c":               "pro_8c16g_100gb",
 	"pro-8c16g-100gb":      "pro_8c16g_100gb",
 	"pro_8c16gb_100gb":     "pro_8c16g_100gb",
 	"pro_8c16g_100gb":      "pro_8c16g_100gb",
-	"default-2c4gb-10gb":   "starter_2c4g_10gb",
 	"default-8c16gb-100gb": "pro_8c16g_100gb",
 }
 

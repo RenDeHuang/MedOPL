@@ -59,12 +59,12 @@ try {
     clusterId: "cls-fi097sy4",
     protectedPlatformNodePoolId: "np-cbk784r8",
     tenantNodePoolPrefix: "medopl-tenant-",
+    planId: "starter",
     workerSubnetId: "subnet-a1fldajw",
     securityGroupId: "sg-6671l5we",
     availabilityZone: "na-siliconvalley-1",
-    instanceType: "SA5.MEDIUM2",
     systemDisk: {
-      type: "CLOUD_PREMIUM",
+      type: "CloudBSSD",
       sizeGb: 50,
     },
     billingMode: "POSTPAID_BY_HOUR",
@@ -203,11 +203,11 @@ try {
     clusterId: "cls-fi097sy4",
     protectedPlatformNodePoolId: "np-cbk784r8",
     tenantNodePoolPrefix: "medopl-tenant-",
+    planId: "starter",
     workerSubnetId: "subnet-not-allowed",
     securityGroupId: "sg-6671l5we",
     availabilityZone: "na-siliconvalley-1",
-    instanceType: "SA5.MEDIUM2",
-    systemDisk: { type: "CLOUD_PREMIUM", sizeGb: 50 },
+    systemDisk: { type: "CloudBSSD", sizeGb: 50 },
     billingMode: "POSTPAID_BY_HOUR",
     publicIp: { enabled: true },
     nodeImageOrRuntimeConfig: { imageType: "TKE_RUNTIME", runtime: "containerd", runtimeVersion: "1.6" },
@@ -224,11 +224,11 @@ try {
     clusterId: "cls-fi097sy4",
     protectedPlatformNodePoolId: "np-cbk784r8",
     tenantNodePoolPrefix: "medopl-tenant-",
+    planId: "starter",
     workerSubnetId: "subnet-a1fldajw",
     securityGroupId: "sg-6671l5we",
     availabilityZone: "na-siliconvalley-1",
-    instanceType: "SA5.MEDIUM2",
-    systemDisk: { type: "CLOUD_PREMIUM", sizeGb: 50 },
+    systemDisk: { type: "CloudBSSD", sizeGb: 50 },
     billingMode: "POSTPAID_BY_HOUR",
     publicIp: { enabled: true },
     nodeImageOrRuntimeConfig: { imageType: "TKE_RUNTIME", runtime: "containerd", runtimeVersion: "1.6" },
@@ -238,6 +238,92 @@ try {
   assert.notEqual(publicIpEnabled.status, 0, "runner_must_reject_public_ip_enabled");
   assert(publicIpEnabled.stderr.includes("package_c_live_canary_readiness_public_ip_must_be_disabled"), "public_ip_enabled_reason");
   assertNoSensitiveOutput(publicIpEnabled.stdout + publicIpEnabled.stderr, "public_ip_enabled_output");
+
+  const forbiddenInstanceTypeFile = path.join(tmp, "forbidden-instance-type-cloud-params.json");
+  await writeFile(forbiddenInstanceTypeFile, JSON.stringify({
+    schemaVersion: 1,
+    clusterId: "cls-fi097sy4",
+    protectedPlatformNodePoolId: "np-cbk784r8",
+    tenantNodePoolPrefix: "medopl-tenant-",
+    planId: "starter",
+    workerSubnetId: "subnet-a1fldajw",
+    securityGroupId: "sg-6671l5we",
+    availabilityZone: "na-siliconvalley-1",
+    instanceType: "SA5.MEDIUM2",
+    systemDisk: { type: "CloudBSSD", sizeGb: 50 },
+    billingMode: "POSTPAID_BY_HOUR",
+    publicIp: { enabled: false },
+    nodeImageOrRuntimeConfig: { imageType: "TKE_RUNTIME", runtime: "containerd", runtimeVersion: "1.6" },
+    loginOrKeyPolicy: { mode: "DISABLED" },
+  }, null, 2));
+  const forbiddenInstanceType = run([...commonArgs, "--cloud-params-file", forbiddenInstanceTypeFile]);
+  assert.notEqual(forbiddenInstanceType.status, 0, "runner_must_reject_arbitrary_instance_type");
+  assert(forbiddenInstanceType.stderr.includes("package_c_live_canary_readiness_cloud_param_not_allowed:instanceType"), "forbidden_instance_type_reason");
+  assertNoSensitiveOutput(forbiddenInstanceType.stdout + forbiddenInstanceType.stderr, "forbidden_instance_type_output");
+
+  const forbiddenNodeInstanceTypeFile = path.join(tmp, "forbidden-node-instance-type-cloud-params.json");
+  await writeFile(forbiddenNodeInstanceTypeFile, JSON.stringify({
+    schemaVersion: 1,
+    clusterId: "cls-fi097sy4",
+    protectedPlatformNodePoolId: "np-cbk784r8",
+    tenantNodePoolPrefix: "medopl-tenant-",
+    planId: "starter",
+    workerSubnetId: "subnet-a1fldajw",
+    securityGroupId: "sg-6671l5we",
+    availabilityZone: "na-siliconvalley-1",
+    nodeInstanceType: "SA5.16XLARGE128",
+    systemDisk: { type: "CloudBSSD", sizeGb: 50 },
+    billingMode: "POSTPAID_BY_HOUR",
+    publicIp: { enabled: false },
+    nodeImageOrRuntimeConfig: { imageType: "TKE_RUNTIME", runtime: "containerd", runtimeVersion: "1.6" },
+    loginOrKeyPolicy: { mode: "DISABLED" },
+  }, null, 2));
+  const forbiddenNodeInstanceType = run([...commonArgs, "--cloud-params-file", forbiddenNodeInstanceTypeFile]);
+  assert.notEqual(forbiddenNodeInstanceType.status, 0, "runner_must_reject_arbitrary_node_instance_type");
+  assert(forbiddenNodeInstanceType.stderr.includes("package_c_live_canary_readiness_cloud_param_not_allowed:nodeInstanceType"), "forbidden_node_instance_type_reason");
+  assertNoSensitiveOutput(forbiddenNodeInstanceType.stdout + forbiddenNodeInstanceType.stderr, "forbidden_node_instance_type_output");
+
+  const unknownPlanFile = path.join(tmp, "unknown-plan-cloud-params.json");
+  await writeFile(unknownPlanFile, JSON.stringify({
+    schemaVersion: 1,
+    clusterId: "cls-fi097sy4",
+    protectedPlatformNodePoolId: "np-cbk784r8",
+    tenantNodePoolPrefix: "medopl-tenant-",
+    planId: "custom-99c",
+    workerSubnetId: "subnet-a1fldajw",
+    securityGroupId: "sg-6671l5we",
+    availabilityZone: "na-siliconvalley-1",
+    systemDisk: { type: "CloudBSSD", sizeGb: 50 },
+    billingMode: "POSTPAID_BY_HOUR",
+    publicIp: { enabled: false },
+    nodeImageOrRuntimeConfig: { imageType: "TKE_RUNTIME", runtime: "containerd", runtimeVersion: "1.6" },
+    loginOrKeyPolicy: { mode: "DISABLED" },
+  }, null, 2));
+  const unknownPlan = run([...commonArgs, "--cloud-params-file", unknownPlanFile]);
+  assert.notEqual(unknownPlan.status, 0, "runner_must_reject_unknown_plan");
+  assert(unknownPlan.stderr.includes("package_c_live_canary_readiness_plan_not_allowlisted:custom-99c"), "unknown_plan_reason");
+  assertNoSensitiveOutput(unknownPlan.stdout + unknownPlan.stderr, "unknown_plan_output");
+
+  const planMismatchFile = path.join(tmp, "plan-mismatch-cloud-params.json");
+  await writeFile(planMismatchFile, JSON.stringify({
+    schemaVersion: 1,
+    clusterId: "cls-fi097sy4",
+    protectedPlatformNodePoolId: "np-cbk784r8",
+    tenantNodePoolPrefix: "medopl-tenant-",
+    planId: "pro",
+    workerSubnetId: "subnet-a1fldajw",
+    securityGroupId: "sg-6671l5we",
+    availabilityZone: "na-siliconvalley-1",
+    systemDisk: { type: "CloudBSSD", sizeGb: 50 },
+    billingMode: "POSTPAID_BY_HOUR",
+    publicIp: { enabled: false },
+    nodeImageOrRuntimeConfig: { imageType: "TKE_RUNTIME", runtime: "containerd", runtimeVersion: "1.6" },
+    loginOrKeyPolicy: { mode: "DISABLED" },
+  }, null, 2));
+  const planMismatch = run([...commonArgs, "--cloud-params-file", planMismatchFile]);
+  assert.notEqual(planMismatch.status, 0, "runner_must_reject_plan_mismatch");
+  assert(planMismatch.stderr.includes("package_c_live_canary_readiness_plan_mismatch:starter_2c4g_100gb:pro_8c16g_100gb"), "plan_mismatch_reason");
+  assertNoSensitiveOutput(planMismatch.stdout + planMismatch.stderr, "plan_mismatch_output");
 
   const accepted = run(commonArgs);
   assert.equal(accepted.status, 0, `runner_should_generate_readiness_pack:${accepted.stderr}`);
@@ -320,6 +406,15 @@ try {
   assert.equal(report.cloudParameters.clusterId, "cls-fi097sy4", "cloud_cluster");
   assert.equal(report.cloudParameters.protectedPlatformNodePoolId, "np-cbk784r8", "cloud_protected_pool");
   assert.equal(report.cloudParameters.tenantNodePoolPrefix, "medopl-tenant-", "cloud_prefix");
+  assert.equal(report.cloudParameters.planId, "starter_2c4g_100gb", "cloud_plan_id");
+  assert.equal(report.cloudParameters.requestedPlanId, "starter", "cloud_requested_plan_id");
+  assert.equal(report.cloudParameters.planCatalogId, "v22_package_c_live_canary_plan_catalog_allowlist", "cloud_plan_catalog_id");
+  assert.deepEqual(report.cloudParameters.compute, { cpuCores: 2, memoryGb: 4, maxConcurrentTasks: 1 }, "cloud_plan_compute");
+  assert.equal(report.cloudParameters.workspaceStorageGb, 100, "cloud_workspace_storage");
+  assert.equal(report.cloudParameters.nodeInstanceType, "SA5.MEDIUM4", "cloud_node_instance_type");
+  assert.equal(report.cloudParameters.systemDisk.type, "CloudBSSD", "cloud_system_disk_type");
+  assert.equal(report.cloudParameters.systemDisk.sizeGb, 50, "cloud_system_disk_size");
+  assert.notEqual(report.cloudParameters.workspaceStorageGb, report.cloudParameters.systemDisk.sizeGb, "workspace_storage_must_not_equal_system_disk");
   assert(report.evidenceSink.root.endsWith("op-package-c-live-canary-readiness-proof"), "evidence_sink_root");
   assert.equal(report.evidenceSink.files.includes("create-request-redacted.json"), true, "must_write_redacted_create_request");
   assert.equal(report.rollback.owner, "MedOPL Operations", "rollback_owner");
@@ -333,7 +428,12 @@ try {
   assert.equal(redactedCreateRequest.workerSubnetId, "subnet-a1fldajw", "redacted_request_worker_subnet");
   assert.equal(redactedCreateRequest.securityGroupId, "sg-6671l5we", "redacted_request_security_group");
   assert.equal(redactedCreateRequest.publicIp.enabled, false, "redacted_request_public_ip_disabled");
-  assert.equal(redactedCreateRequest.systemDisk.type, "CLOUD_PREMIUM", "redacted_request_disk_type");
+  assert.equal(Object.hasOwn(redactedCreateRequest, "instanceType"), false, "redacted_request_must_not_accept_raw_instance_type");
+  assert.equal(redactedCreateRequest.planId, "starter_2c4g_100gb", "redacted_request_plan_id");
+  assert.equal(redactedCreateRequest.nodeInstanceType, "SA5.MEDIUM4", "redacted_request_node_instance_type");
+  assert.equal(redactedCreateRequest.workspaceStorageGb, 100, "redacted_request_workspace_storage");
+  assert.equal(redactedCreateRequest.systemDisk.type, "CloudBSSD", "redacted_request_disk_type");
+  assert.equal(redactedCreateRequest.systemDisk.sizeGb, 50, "redacted_request_disk_size");
   assert.equal(redactedCreateRequest.billingMode, "POSTPAID_BY_HOUR", "redacted_request_billing_mode");
   assert.equal(redactedCreateRequest.loginOrKeyPolicy.mode, "DISABLED", "redacted_request_login_disabled");
   assertNoSensitiveOutput(JSON.stringify(redactedCreateRequest), "redacted_create_request");
@@ -348,6 +448,9 @@ try {
   assert.equal(pack.cloudParameters.workerSubnetId, "subnet-a1fldajw", "pack_worker_subnet");
   assert.equal(pack.cloudParameters.securityGroupId, "sg-6671l5we", "pack_security_group");
   assert.equal(pack.cloudParameters.publicIp.enabled, false, "pack_public_ip_disabled");
+  assert.equal(pack.cloudParameters.planId, "starter_2c4g_100gb", "pack_plan_id");
+  assert.equal(pack.cloudParameters.workspaceStorageGb, 100, "pack_workspace_storage");
+  assert.equal(pack.cloudParameters.nodeInstanceType, "SA5.MEDIUM4", "pack_node_instance_type");
   assert.equal(pack.cloudParametersSource.kind, "non_secret_json_file", "pack_cloud_params_source");
   assert.equal(pack.forbiddenOperations.includes("kubectl"), true, "pack_forbids_kubectl");
   assert.equal(pack.forbiddenOperations.includes("deploy"), true, "pack_forbids_deploy");

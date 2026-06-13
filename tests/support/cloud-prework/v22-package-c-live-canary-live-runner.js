@@ -319,7 +319,7 @@ function createNodePoolRequest(cloudParameters, options) {
         DiskType: cloudParameters.systemDisk.type,
         DiskSize: cloudParameters.systemDisk.sizeGb,
       },
-      InstanceTypes: [cloudParameters.instanceType],
+      InstanceTypes: [cloudParameters.nodeInstanceType],
       SecurityGroupIds: [cloudParameters.securityGroupId],
       EnableAutoscaling: false,
       Replicas: 0,

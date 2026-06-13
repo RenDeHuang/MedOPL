@@ -65,7 +65,7 @@ export function packageStorage(plan: LabPackagePlan) {
 }
 
 export function packageDisplayName(plan: LabPackagePlan) {
-  if (plan.id === "starter_2c4g_10gb") return "基础版";
+  if (plan.id === "starter_2c4g_100gb") return "基础版";
   if (plan.id === "pro_8c16g_100gb") return "标准版";
   return plan.name;
 }

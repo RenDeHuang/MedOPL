@@ -143,14 +143,14 @@ Node Portal backend physical removal: `services/portal/src` 已物理清退；�
 - readonly/tencent inventory: [spec:v22-tencent-readonly-inventory-boundary](#spec-v22-tencent-readonly-inventory-boundary)。当前只定义真实云只读盘点合同，用来验证云上事实和 Portal 账本是否一致；未来 secret 文件只能 allowlist_only 读取 readonly inventory keys，不允许“一读全读”；仅允许 Describe/List/Get/Head 类只读 API，不读取 COS 对象正文，不调用 mutation API，不创建、删除、释放、扩缩容或改标签。
 - production cloud topology: [spec:v22-production-cloud-topology-boundary](#spec-v22-production-cloud-topology-boundary)。当前只是合同，定义 CLB / TKE / COS / CBS / NAT / PostgreSQL 在 MedOPL v22 生产拓扑中的角色，并区分 platform service node pool 与每个租户或工作台的 tenant node pool；不代表已部署、已接入或已验证，不读取 secret，不调用真实云，不改 deploy，不 kubectl，不 build/push，不创建/删除资源。普通用户产品语言不展示这些云资源名；region/VPC/subnet/security group/resource tag/cost allocation 后续进入 readonly inventory 和 deploy plan。
 - cloud onboarding workflow: [spec:v22-cloud-onboarding-workflow-boundary](#spec-v22-cloud-onboarding-workflow-boundary)。该 repo-tracked cloud onboarding workflow 合同把 official SDK provider strategy、wrapper、dependency loader、check-config、default gate、user-authorized readonly live、report review、TC3 cleanup、dry-run create/release、TKE bootstrap preflight、mutation wrapper、authorized live、deploy、Portal production integration 和 canary/QA/status update 定成业务推进顺序；它不替代 AGENTS.md，AGENTS.md 管 A/B/C/D 纪律和授权红线，本合同管业务推进顺序、阶段状态、blocker 回流和下一步任务包。
-- authorized/tencent create/release: [spec:v22-authorized-tencent-create-release-boundary](#spec-v22-authorized-tencent-create-release-boundary)。当前只定义真实创建/释放前的授权边界，覆盖基础套餐、Pro 套餐、自定义规格、统一 TKE 集群、tenant node pool create/release、namespace/quota、node pool class、COS 文件空间、7 天保护期、文件夹管理、T+1 分账标签和失败审计；标准套餐也必须由 MedOPL 创建并绑定独立 tenant node pool；7 天保护期只由存储资源 / 文件空间删除或独立欠费保留策略触发；不读取 secret，不调用真实腾讯云 API，不创建或释放真实资源。
+- authorized/tencent create/release: [spec:v22-authorized-tencent-create-release-boundary](#spec-v22-authorized-tencent-create-release-boundary)。当前只定义真实创建/释放前的授权边界，覆盖基础套餐、Pro 套餐、plan catalog allowlisted 升级规格、统一 TKE 集群、tenant node pool create/release、namespace/quota、node pool class、COS 文件空间、7 天保护期、文件夹管理、T+1 分账标签和失败审计；标准套餐也必须由 MedOPL 创建并绑定独立 tenant node pool；7 天保护期只由存储资源 / 文件空间删除或独立欠费保留策略触发；不读取 secret，不调用真实腾讯云 API，不创建或释放真实资源。
 - authorized/tencent create/release implementation: [spec:v22-authorized-tencent-create-release-implementation-boundary](#spec-v22-authorized-tencent-create-release-implementation-boundary)。当前只定义后续真实 create/release implementation 前的授权、风控、失败回滚、费用保护和审计合同；默认风控上限不是默认开通规格，计算资源和存储资源生命周期分离，且风控可由 Portal 管理员按账号修改；不读取 secret，不调用真实腾讯云 API，不创建或释放真实资源。
 - authorized/tencent create/release execution: [spec:v22-authorized-tencent-create-release-execution-boundary](#spec-v22-authorized-tencent-create-release-execution-boundary)。当前只收敛真实变更资源执行前的 gate、mutation secret allowlist、资源生命周期、Portal ledger + 云标签双重校验、风控 override、冻结金额、120 分钟核对、T+1 COS 对账、回滚和 admin 审计边界；Package C 必须为租户或工作台创建 tenant node pool，再写 compute allocation、namespace、ResourceQuota / LimitRange / admission policy，超过 allocation 必须 fail-closed；readonly inventory 与 create/release mutation gate、secret 和 runner/bridge 必须分离；本合同不读取 mutation secret，不调用真实云，不执行真实 create/release。
 - authorized/tencent deploy execution: [spec:v22-authorized-tencent-deploy-execution-boundary](#spec-v22-authorized-tencent-deploy-execution-boundary)。Package D 合同，定义 TCR 镜像、push 唯一 test tag、digest verify、kubectl deploy dry-run、指定 namespace/workload/container rollout、runtime smoke 和 rollback evidence 边界；Package D 不授权 Package C 的资源生命周期动作，不创建、删除、释放或扩缩容 TKE node pool，不创建、删除、清空或扩容 COS bucket/prefix/object，不允许误删、误停或误改别人的节点和存储。
 - OPL deployment ownership release plan: [spec:v22-opl-deployment-ownership-release-plan-boundary](#spec-v22-opl-deployment-ownership-release-plan-boundary)。Package D 的 Level 4 子合同，定义 `platform_service_target` 与 `workspace_runtime_target` 的 release plan owner guard。平台服务 target 需要 `ownerRef/operationId`，不强制 `workspaceId/resourceBindingId`；workspace runtime target 必须绑定 `workspaceId/resourceBindingId`。该合同只证明 release plan ownership gate，不授权 build/push/kubectl，也不把 OPL lane 扩权成 deploy lane。
 - Package D image push gate: [spec:v22-authorized-tencent-deploy-execution-boundary](#spec-v22-authorized-tencent-deploy-execution-boundary) 的 R-14/R-15 子链路。`build-push` 必须先有已审查的 TCR preflight evidence，并显式传入 `acceptedPreflightId`；缺失时 runner fail-closed。cloud-lane 分支可长期保存 D1/D2/D3 stacked evidence，但不得把 fake-live 或未授权真实 push 当作 production deploy 完成。
 - Package D deploy dry-run gate: [spec:v22-authorized-tencent-deploy-execution-boundary](#spec-v22-authorized-tencent-deploy-execution-boundary) 的 R-16 子链路。`deploy-dry-run` 必须消费 D2 build-push digest report，并显式传入 `imageDigestsFile`；缺失时 runner fail-closed。该 gate 不授权 `kubectl apply`、rollout、runtime smoke 或 Package C 资源生命周期动作。
-- real resource contract alignment smoke: [../../tests/future-authorized/cloud/future-authorized-test-v22-real-resource-contract-alignment.mjs](../../tests/future-authorized/cloud/future-authorized-test-v22-real-resource-contract-alignment.mjs)。该 smoke 守住基础套餐、Pro 套餐、自定义规格、任务并发、计算资源和存储资源生命周期分离，以及普通用户主语言边界，防止真实资源接入前恢复旧口径。
+- real resource contract alignment smoke: [../../tests/future-authorized/cloud/future-authorized-test-v22-real-resource-contract-alignment.mjs](../../tests/future-authorized/cloud/future-authorized-test-v22-real-resource-contract-alignment.mjs)。该 smoke 守住基础套餐、Pro 套餐、plan catalog allowlisted 升级规格、任务并发、计算资源和存储资源生命周期分离，以及普通用户主语言边界，防止真实资源接入前恢复旧口径。
 - billing freeze/preauth: [spec:v22-billing-freeze-boundary](#spec-v22-billing-freeze-boundary), [spec:v22-release-stop-billing-audit-boundary](#spec-v22-release-stop-billing-audit-boundary)
 - trace metadata: [spec:v22-trace-metadata-boundary](#spec-v22-trace-metadata-boundary), [spec:v22-portal-files-billing-trace-boundary](#spec-v22-portal-files-billing-trace-boundary), [spec:v22-langfuse-observability-metadata-boundary](#spec-v22-langfuse-observability-metadata-boundary)
 - AI Runtime Contract: [spec:v22-ai-runtime-contract-boundary](#spec-v22-ai-runtime-contract-boundary)。该合同把 Runtime Bridge 固定为 AI runtime adapter owner，定义 runtimeSession / runtimeTool / runtimeResource / runtimeRun / runtimeArtifact / runtimeApproval，并把 MCP-compatible boundary 限定为 tools / resources / prompts / artifacts / approval shape compatibility；不授权真实云、secret、deploy、kubectl、build/push 或 live-test，也不授权 production MCP server 或外部 MCP client。
@@ -724,9 +724,9 @@ Former title: v22 Authorized Tencent Create/Release Boundary
 
 用户可见套餐必须使用产品语言：
 
-- 基础套餐：2c / 4GB / 10GB 文件空间，默认 1 个任务并发。
+- 基础套餐：2c / 4GB / 100GB 文件空间，默认 1 个任务并发。
 - Pro 套餐：8c / 16GB / 100GB 文件空间，默认 2 个任务并发。
-- 自定义规格：CPU、内存、文件空间和任务并发数。
+- 升级规格：先经产品审批并进入 MedOPL plan catalog allowlist，再展示 CPU、内存、文件空间和任务并发数。
 
 工作台资源展示字段包括：套餐、计算资源、文件空间、任务并发、状态、预计费用、释放策略和审计状态。普通用户可以理解自己购买了多少计算和存储，但不得管理 CVM、COS、K8s、TKE、kubeconfig、bucket、object key、VPC 或安全组。
 
@@ -742,7 +742,7 @@ Former title: v22 Authorized Tencent Create/Release Boundary
 
 - 基础套餐默认 1 个任务并发。
 - Pro 套餐默认 2 个任务并发。
-- 自定义规格按 CPU、内存、文件空间和任务并发数估算。
+- 升级规格按进入 MedOPL plan catalog allowlist 后的 CPU、内存、文件空间和任务并发数估算。
 - 5 个必须写成任务并发，不是 session 并发。
 
 超过并发上限的任务进入队列，用户看到“排队中 / 等待资源 / 运行中 / 已完成 / 失败”等产品状态，不看到 Kubernetes scheduler 或节点池细节。
@@ -760,7 +760,7 @@ Former title: v22 Authorized Tencent Create/Release Boundary
 - COS prefix 是内部实现。
 - 可选 CBS / CFS / pod ephemeral scratch，仅作为运行时内部实现，不作为用户购买的文件空间主叙事。
 
-MVP 默认使用统一 TKE 集群，不默认为每个租户创建独立集群。多租户通过 tenant node pool、namespace、quota、labels、network policy、admission policy、taint、nodeSelector、toleration、resource binding 和资源标签隔离。`starter_2c4g_10gb`、`pro_8c16g_100gb` 和后续叠加计算都必须由 Package C 创建或绑定该租户/工作台自己的 tenant node pool；用户 A 和用户 B 不得共享同一个用户计算池。超过 compute allocation 的 workload 必须 fail-closed，不得自动扩容并由平台垫付，也不得借用其他用户 allocation。
+MVP 默认使用统一 TKE 集群，不默认为每个租户创建独立集群。多租户通过 tenant node pool、namespace、quota、labels、network policy、admission policy、taint、nodeSelector、toleration、resource binding 和资源标签隔离。`starter_2c4g_100gb`、`pro_8c16g_100gb` 和后续叠加计算都必须由 Package C 创建或绑定该租户/工作台自己的 tenant node pool；用户 A 和用户 B 不得共享同一个用户计算池。超过 compute allocation 的 workload 必须 fail-closed，不得自动扩容并由平台垫付，也不得借用其他用户 allocation。
 
 计算升级必须先完成 Portal 套餐变更、冻结金额或余额校验、cloud operation 和审计记录，然后 Package C 才能更新 compute allocation、ResourceQuota / LimitRange / admission policy，并调整对应 tenant node pool desired capacity 或绑定更高 workload class。普通用户仍看到“计算资源 / 套餐 / 任务并发 / 状态”，不是节点池。
 
@@ -806,7 +806,7 @@ MVP 默认使用统一 TKE 集群，不默认为每个租户创建独立集群�
   "billingAttributionId": "billing attribution id",
   "workspaceId": "workspace id",
   "accountId": "account id",
-  "serverPlanId": "starter_2c4g_10gb or pro_8c16g_100gb or custom",
+  "serverPlanId": "starter_2c4g_100gb or pro_8c16g_100gb or catalog-allowlisted upgrade",
   "tenantId": "tenant id",
   "runId": "run id or null",
   "environmentId": "environment id"
@@ -1018,7 +1018,7 @@ mutation secret 不得进入 Portal payload、前端状态、URL、日志、evid
 
 ## Package C Live Canary Non-Secret Cloud Parameters
 
-Package C live canary readiness 需要独立的 non-secret cloud parameters JSON 输入；worker subnet、安全组、实例规格、系统盘、计费模式、public IP、AZ、镜像/runtime 和登录策略不得写入 `package-c-mutation.env`，也不得进入 mutation secret allowlist。
+Package C live canary readiness 需要独立的 non-secret cloud parameters JSON 输入；worker subnet、安全组、系统盘、计费模式、public IP、AZ、镜像/runtime 和登录策略不得写入 `package-c-mutation.env`，也不得进入 mutation secret allowlist。实例规格不得由用户或 env 任意输入；Package C 必须从 plan catalog allowlist 派生 `nodeInstanceType`、workspace storage quota 和 TKE system disk 参数。
 
 当前 prepare-only input contract 固定：
 
@@ -1027,10 +1027,16 @@ Package C live canary readiness 需要独立的 non-secret cloud parameters JSON
 - worker subnet：`subnet-a1fldajw`
 - security group：`sg-6671l5we`
 - tenant node pool prefix：`medopl-tenant-`
+- plan catalog：`tests/support/cloud-prework/package-c-live-canary-plan-catalog-allowlist.json`
+- canary plan：`starter_2c4g_100gb` = 2C4G + 100GB workspace storage
+- starter node instance type：`SA5.MEDIUM4`
+- node system disk：`CloudBSSD` / `50GB`
 - public IP：disabled
 - `RUN_TENCENT_CREATE_RELEASE_EXECUTION`：`0`
 
-readiness runner 只校验 schema、固定值、redaction 和 evidence sink，输出 `.runtime` readiness evidence、redacted `CreateNodePool` request 和 authorization pack；它不执行 `CreateNodePool`、`ScaleNodePool`、`DeleteNodePool`，不调用 Tencent mutation，不读取 kubeconfig，不执行 kubectl、deploy、build/push 或 Package D。
+`workspaceStorageGb` 是用户套餐的文件空间额度 / 计费项，默认由 COS workspace quota 承载；TKE node `systemDisk` 是节点系统盘，不等于 workspace storage。用户可以升级配置，但升级目标必须先进入 plan catalog allowlist，不能把任意 Tencent `instanceType` 写进 cloud params 或 mutation env。
+
+readiness runner 只校验 schema、固定值、plan catalog allowlist、redaction 和 evidence sink，输出 `.runtime` readiness evidence、redacted `CreateNodePool` request 和 authorization pack；它不执行 `CreateNodePool`、`ScaleNodePool`、`DeleteNodePool`，不调用 Tencent mutation，不读取 kubeconfig，不执行 kubectl、deploy、build/push 或 Package D。
 
 ## 资源生命周期分离
 
@@ -1603,7 +1609,7 @@ Former title: v22 Commercial UI Impact Decision
 商业化分层对 UI 的后续影响：
 
 - `api_only` 只需要入口、账号、工作空间、provider 绑定状态和文件/任务/结果索引；当前 UI 已覆盖为 OPL entry/context 状态。
-- `full_runtime` 使用当前运行环境、资源、文件空间、账单、trace 和释放 surface；当前 MVP 规格 `starter_2c4g_10gb` / `pro_8c16g_100gb` 仍属于该层。
+- `full_runtime` 使用当前运行环境、资源、文件空间、账单、trace 和释放 surface；当前 MVP 规格 `starter_2c4g_100gb` / `pro_8c16g_100gb` 仍属于该层。
 - `customer_dedicated` 在真正对客户展示前必须另开 UI implementation leaf，补专属隔离、审批窗口、客户级审计标签和变更窗口的可见状态；不得在本阶段用文案把它伪装成已上线能力。
 
 ## Contract Data
@@ -1736,11 +1742,11 @@ Former title: v22 Authorized Tencent Create/Release Implementation Boundary
 
 ## 套餐口径
 
-套餐和自定义规格必须使用产品语言：
+套餐和 allowlisted 升级规格必须使用产品语言：
 
-- 基础套餐：2c / 4GB / 10GB 文件空间。
+- 基础套餐：2c / 4GB / 100GB 文件空间。
 - Pro 套餐：8c / 16GB / 100GB 文件空间。
-- 自定义：CPU、内存、文件空间、任务并发数。
+- 升级规格：先进入 MedOPL plan catalog allowlist，再展示 CPU、内存、文件空间、任务并发数。
 
 5 个必须写成任务并发，不是 session 并发。session 只是运行、观测或访问上下文，不等同于可同时执行的任务数。
 
@@ -1869,9 +1875,9 @@ T+1 腾讯云 / COS 账单和 Portal ledger 对不上时，进入管理员审计
     "effectiveLimitsVisible": true
   },
   "packages": {
-    "starter": "2c / 4GB / 10GB 文件空间",
+    "starter": "2c / 4GB / 100GB 文件空间",
     "pro": "8c / 16GB / 100GB 文件空间",
-    "customSupports": [
+    "allowlistedUpgradeSupports": [
       "CPU",
       "内存",
       "文件空间",
@@ -3685,7 +3691,7 @@ Former title: v22 Managed Environment Open Boundary Contract
 
 MVP 只支持两个默认套餐：
 
-- `starter_2c4g_10gb`
+- `starter_2c4g_100gb`
 - `pro_8c16g_100gb`
 
 套餐边界：
@@ -3696,7 +3702,7 @@ MVP 只支持两个默认套餐：
 
 本轮不写正式价格，不扩展自定义套餐实现。
 
-MVP 不暴露 `custom` active 套餐。普通用户开通与查询只允许 `starter_2c4g_10gb`、`pro_8c16g_100gb`。
+MVP 不暴露任意自定义 active 套餐。普通用户开通与查询只允许 `starter_2c4g_100gb`、`pro_8c16g_100gb` 和后续进入 plan catalog allowlist 的升级规格。
 
 ## Open Flow
 
@@ -3739,7 +3745,7 @@ MVP 不暴露 `custom` active 套餐。普通用户开通与查询只允许 `sta
     "amountCents": 0
   },
   "selectedPlan": {
-    "id": "starter_2c4g_10gb or pro_8c16g_100gb",
+    "id": "starter_2c4g_100gb or pro_8c16g_100gb",
     "storageBackend": "cos_standard_workspace_quota",
     "basePrice": null,
     "pendingProductApproval": true
@@ -3866,7 +3872,7 @@ Langfuse 只作为后续 trace metadata 来源，不进入 MVP 主产品叙事�
 
 ## Scope
 
-- 默认套餐只引用 `starter_2c4g_10gb` 和 `pro_8c16g_100gb`。
+- 默认套餐只引用 `starter_2c4g_100gb` 和 `pro_8c16g_100gb`。
 - 本合同不扩展自定义套餐实现。
 - Portal 登录不需要 gflabtoken API Key。
 - 每个用户使用自己的 gflabtoken API Key 作为模型调用凭证；OPL entry/preflight 或工作台 provider 绑定面必须能收用户自己的 key，已绑定用户不要求重复输入。
@@ -3922,7 +3928,7 @@ Langfuse 只作为后续 trace metadata 来源，不进入 MVP 主产品叙事�
     "tkeUserNarrativeAllowed": false
   },
   "defaultPlans": [
-    "starter_2c4g_10gb",
+    "starter_2c4g_100gb",
     "pro_8c16g_100gb"
   ],
   "secretBoundary": {
@@ -4015,7 +4021,7 @@ Langfuse 只作为后续 trace metadata 来源，不进入 MVP 主产品叙事�
       "name": "用户在 Portal 开通托管运行环境，选择套餐和文件空间",
       "userFacing": true,
       "requiredEvidence": [
-        "selected plan is starter_2c4g_10gb or pro_8c16g_100gb",
+        "selected plan is starter_2c4g_100gb or pro_8c16g_100gb",
         "file space quota selected",
         "hosted runtime requested"
       ]
@@ -7357,7 +7363,7 @@ Former title: v22 Pricing Snapshot Boundary Contract
 
 ## Scope
 
-- v22 默认套餐只包含 `starter_2c4g_10gb` 和 `pro_8c16g_100gb`。
+- v22 默认套餐只包含 `starter_2c4g_100gb` 和 `pro_8c16g_100gb`。
 - 资源由平台开通，区域固定为 `na-siliconvalley`，可用区固定为 `na-siliconvalley-1`。
 - 存储后端固定为 `cos_standard_workspace_quota`，操作系统固定为 `ubuntu_22_04`。
 - 云账单模式固定为 `pay_as_you_go`。
@@ -7384,7 +7390,7 @@ Former title: v22 Pricing Snapshot Boundary Contract
   },
   "plans": [
     {
-      "id": "starter_2c4g_10gb",
+      "id": "starter_2c4g_100gb",
       "compute": {
         "cpuCores": 2,
         "memoryGb": 4,
@@ -7392,7 +7398,7 @@ Former title: v22 Pricing Snapshot Boundary Contract
         "userBuysNodePool": false
       },
       "storage": {
-        "capacityGb": 10
+        "capacityGb": 100
       },
       "storageBackend": "cos_standard_workspace_quota",
       "region": "na-siliconvalley",
@@ -9158,10 +9164,10 @@ MedOPL 提供托管 runtime、计算和存储能力。用户选择套餐或扩�
 
 | 套餐 ID | 计算 | 存储 | 默认并发 |
 | --- | --- | --- |
-| `starter_2c4g_10gb` | 2c4gb | 10GB | 1 |
+| `starter_2c4g_100gb` | 2c4gb | 100GB | 1 |
 | `pro_8c16g_100gb` | 8c16gb | 100GB | 2 |
 
-`starter_2c4g_10gb` 与 `pro_8c16g_100gb` 是 v22 默认套餐的唯一标准命名。不得再使用“默认套餐 1/2”命名。
+`starter_2c4g_100gb` 与 `pro_8c16g_100gb` 是 v22 默认套餐的唯一标准命名。不得再使用“默认套餐 1/2”命名。
 
 ## Extensions
 

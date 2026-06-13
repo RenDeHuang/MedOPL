@@ -59,7 +59,7 @@ for (const required of [
 
 assertIncludes(resourcesSurfaceSources, "loadRuntimeEnvironmentModel", "resource_surface_must_use_portal_adapter_loader");
 assertIncludes(resourcesSurfaceSources, "fetchMyResources", "resource_adapter_must_call_platform_provisioned_resources_api");
-assertIncludes(resourcesSurfaceSources, "starter_2c4g_10gb", "resource_surface_must_use_starter_package_id");
+assertIncludes(resourcesSurfaceSources, "starter_2c4g_100gb", "resource_surface_must_use_starter_package_id");
 assertIncludes(resourcesSurfaceSources, "pro_8c16g_100gb", "resource_surface_must_use_pro_package_id");
 assertExcludes(resourcesSurfaceSources, "@submit.prevent=\"submitEnsureProtectionFreeze\"", "ordinary_resource_surface_must_not_offer_freeze_form");
 assertExcludes(resourcesSurfaceSources, "@submit.prevent=\"submitCreateCompute\"", "ordinary_resource_surface_must_not_offer_direct_compute_create");

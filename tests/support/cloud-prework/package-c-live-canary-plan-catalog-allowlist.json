@@ -1,0 +1,55 @@
+{
+  "contract": "v22_package_c_live_canary_plan_catalog_allowlist",
+  "version": 1,
+  "canaryPlanId": "starter_2c4g_100gb",
+  "plans": [
+    {
+      "id": "starter_2c4g_100gb",
+      "aliases": ["starter", "starter-2c", "starter-2c4g-100gb"],
+      "compute": {
+        "cpuCores": 2,
+        "memoryGb": 4,
+        "maxConcurrentTasks": 1
+      },
+      "workspaceStorageGb": 100,
+      "tke": {
+        "nodeInstanceType": "SA5.MEDIUM4",
+        "systemDisk": {
+          "type": "CloudBSSD",
+          "sizeGb": 50
+        },
+        "billingMode": "POSTPAID_BY_HOUR",
+        "publicIp": {
+          "enabled": false
+        }
+      }
+    },
+    {
+      "id": "pro_8c16g_100gb",
+      "aliases": ["pro", "pro-8c", "pro-8c16g-100gb"],
+      "compute": {
+        "cpuCores": 8,
+        "memoryGb": 16,
+        "maxConcurrentTasks": 2
+      },
+      "workspaceStorageGb": 100,
+      "tke": {
+        "nodeInstanceType": "SA5.2XLARGE16",
+        "systemDisk": {
+          "type": "CloudBSSD",
+          "sizeGb": 50
+        },
+        "billingMode": "POSTPAID_BY_HOUR",
+        "publicIp": {
+          "enabled": false
+        }
+      }
+    }
+  ],
+  "upgradePolicy": {
+    "userCanUpgrade": true,
+    "requiresPlanCatalogAllowlist": true,
+    "arbitraryInstanceTypeAllowed": false
+  },
+  "workspaceStorageIsNodeSystemDisk": false
+}

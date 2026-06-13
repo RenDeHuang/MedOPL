@@ -78,11 +78,11 @@ Go backend 是 MedOPL control-plane business truth 的本地 MVP takeover 承载
 
 进入 OPL 工作台和运行平台托管任务是两道 gate：workbench entry 要求账号、工作空间、Gateway / upstream entry 可用，并要求用户输入或已有自己的 gflabtoken API Key；managed run 还要求托管计算资源、文件空间、余额 / 冻结金额、`providerKeyRef` 和 Runtime Bridge 可用。
 
-当前 MVP active 规格只落在 `full_runtime` 层：`starter_2c4g_10gb` 和 `pro_8c16g_100gb`。它们是托管运行能力的规格映射，不是第二套商业模型。
+当前 MVP active 规格只落在 `full_runtime` 层：`starter_2c4g_100gb` 和 `pro_8c16g_100gb`。它们是托管运行能力的规格映射，不是第二套商业模型。用户可以升级配置，但只能选择 MedOPL plan catalog allowlist 里的规格，不能任意填写云厂商 instance type。
 
 | 套餐 | 计算资源 | 文件空间 | 任务并发 |
 | --- | --- | --- | --- |
-| 基础套餐 | 2c / 4GB | 10GB 文件空间 | 1 个任务并发 |
+| 基础套餐 | 2c / 4GB | 100GB 文件空间 | 1 个任务并发 |
 | Pro 套餐 | 8c / 16GB | 100GB 文件空间 | 2 个任务并发 |
 
 资源生命周期边界：
@@ -106,7 +106,7 @@ Go backend 是 MedOPL control-plane business truth 的本地 MVP takeover 承载
 5. 用户在 OPL entry/preflight 或工作台 provider 绑定面输入自己的 gflabtoken API Key；已绑定用户不要求重复输入。
 6. 用户进入 OPL / 工作台，查看上下文、组织文件、准备任务和查看已有结果。
 7. 用户选择是否开通计算资源和文件空间。
-8. 如开通，用户选择基础套餐、Pro 套餐、叠加资源或自定义规格。
+8. 如开通，用户选择基础套餐、Pro 套餐，或已进入 MedOPL plan catalog allowlist 的升级规格。
 9. 平台在统一 TKE 集群内为该租户或工作台创建独立 tenant node pool，并绑定文件空间、计费和审计；计算资源与文件空间可独立保留或释放。
 10. Portal 展示账号的计算资源、文件空间、工作空间和资源绑定状态。
 11. 开通资源后开始预扣费或冻结金额。

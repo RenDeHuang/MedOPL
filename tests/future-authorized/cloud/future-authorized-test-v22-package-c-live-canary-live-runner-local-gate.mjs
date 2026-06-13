@@ -60,12 +60,12 @@ function cloudParams() {
     clusterId: "cls-fi097sy4",
     protectedPlatformNodePoolId: "np-cbk784r8",
     tenantNodePoolPrefix: "medopl-tenant-",
+    planId: "starter",
     workerSubnetId: "subnet-a1fldajw",
     securityGroupId: "sg-6671l5we",
     availabilityZone: "na-siliconvalley-1",
-    instanceType: "SA5.MEDIUM2",
     systemDisk: {
-      type: "CLOUD_PREMIUM",
+      type: "CloudBSSD",
       sizeGb: 50,
     },
     billingMode: "POSTPAID_BY_HOUR",
@@ -206,6 +206,9 @@ try {
   assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Name, "medopl-tenant-rb-package-c-live-canary-20260613", "create_name");
   assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Native.SubnetIds[0], "subnet-a1fldajw", "create_subnet");
   assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Native.SecurityGroupIds[0], "sg-6671l5we", "create_sg");
+  assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Native.InstanceTypes[0], "SA5.MEDIUM4", "create_instance_from_starter_catalog");
+  assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Native.SystemDisk.DiskType, "CloudBSSD", "create_system_disk_type");
+  assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Native.SystemDisk.DiskSize, 50, "create_system_disk_size");
   assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Native.InternetAccessible.MaxBandwidthOut, 0, "create_public_ip_disabled");
   assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Native.Replicas, 0, "create_desired_zero");
   assert.deepEqual(calls.find((call) => call.api === "CreateNodePool").req.Annotations, [
