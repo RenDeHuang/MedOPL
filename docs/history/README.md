@@ -4940,6 +4940,49 @@ post_merge_closeout: `completed`
 next_cursor: `real-cloud-authorization-boundary`
 
 
+### 2026-06-14 package-d-deploy-readiness-planning
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `f71c0e0c577d617ca84290140f5d75f66cdb3760`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Switched the stable上线 path to Package D deploy readiness planning only; no deploy execution ran.
+- Fixed the deploy readiness target as TKE cluster `cls-fi097sy4` and protected platform pool `np-cbk784r8`.
+- Recorded VPC-only PostgreSQL endpoint `10.66.0.21:5432`; Package C PostgreSQL ledger canary waits until service runs inside the VPC.
+- Extended Package D local gate to include TCR credentials, registry / namespace / region, kubeconfig ref, deploy cluster id and Portal PostgreSQL URL / password allowlist with redaction.
+- Recorded readiness gaps: image build, TCR push, Kubernetes manifests, platform pool scheduling, DB connectivity smoke and rollback plan.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs`: pass.
+- `npm run verify`: pass.
+
+Can-claim:
+
+- Package D deploy readiness planning now has repo-native target, secret/env, safety gate and readiness gap truth.
+
+Cannot-claim:
+
+- Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution, real PostgreSQL write or production runtime occurred.
+
+landed_commit: `bce336f732b2a1acbbd79319f04e0986164e5aeb`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `bce336f732b2a1acbbd79319f04e0986164e5aeb`.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
 ### 2026-06-14 package-c-postgres-ledger-live-canary-preflight
 
 Status: `authoring / authorized live DB canary failed closed`

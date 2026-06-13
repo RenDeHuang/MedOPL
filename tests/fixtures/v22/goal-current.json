@@ -8,12 +8,12 @@
   "last_updated_at": "2026-06-14",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "a7a8a2526f3bf32b0aa515ef492254e89c5927ad",
+  "base_trunk_head": "bce336f732b2a1acbbd79319f04e0986164e5aeb",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "a7a8a2526f3bf32b0aa515ef492254e89c5927ad",
+  "last_landed_commit": "bce336f732b2a1acbbd79319f04e0986164e5aeb",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -441,7 +441,7 @@
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
   "last_landed_branch": "recovery/platform-v22-trunk",
-  "last_landed_at": "2026-06-13",
+  "last_landed_at": "2026-06-14",
   "history_latest_branch": "recovery/platform-v22-trunk",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
