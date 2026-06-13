@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 	"sync"
+	"time"
 
 	cpd "github.com/rendehuang/medopl/services/medopl-go-backend/internal/domain/controlplane"
 	cprepo "github.com/rendehuang/medopl/services/medopl-go-backend/internal/repository/controlplane"
@@ -127,6 +128,10 @@ func (store *ControlPlaneStore) SaveResourceBindingLedger(ctx context.Context, l
 	return nil
 }
 
+func (store *ControlPlaneStore) CreateResourceBindingLedger(ctx context.Context, ledger cpd.ResourceBindingLedger) error {
+	return store.SaveResourceBindingLedger(ctx, ledger)
+}
+
 func (store *ControlPlaneStore) ResourceBindingLedgerByID(ctx context.Context, resourceBindingID string) (cpd.ResourceBindingLedger, error) {
 	if err := ctx.Err(); err != nil {
 		return cpd.ResourceBindingLedger{}, err
@@ -165,6 +170,77 @@ func (store *ControlPlaneStore) SaveCloudOperation(ctx context.Context, operatio
 	store.mu.Lock()
 	defer store.mu.Unlock()
 	store.operationsByID[operation.OperationID] = operation
+	return nil
+}
+
+func (store *ControlPlaneStore) AppendCloudOperationEvent(ctx context.Context, operation cpd.CloudOperation) error {
+	return store.SaveCloudOperation(ctx, operation)
+}
+
+func (store *ControlPlaneStore) UpdateResourceBindingNodePool(ctx context.Context, resourceBindingID string, nodePoolID string, status string) error {
+	return store.updateResourceBinding(ctx, resourceBindingID, func(ledger cpd.ResourceBindingLedger) (cpd.ResourceBindingLedger, error) {
+		if !cpd.IsResourceBindingStatus(status) {
+			return cpd.ResourceBindingLedger{}, cpd.ErrStatusRequired
+		}
+		ledger.NodePoolID = nodePoolID
+		ledger.Status = status
+		return ledger, nil
+	})
+}
+
+func (store *ControlPlaneStore) UpdateResourceBindingStatus(ctx context.Context, resourceBindingID string, status string) error {
+	return store.updateResourceBinding(ctx, resourceBindingID, func(ledger cpd.ResourceBindingLedger) (cpd.ResourceBindingLedger, error) {
+		if !cpd.IsResourceBindingStatus(status) {
+			return cpd.ResourceBindingLedger{}, cpd.ErrStatusRequired
+		}
+		ledger.Status = status
+		return ledger, nil
+	})
+}
+
+func (store *ControlPlaneStore) MarkResourceBindingReleased(ctx context.Context, resourceBindingID string, releasedAt time.Time) error {
+	return store.updateResourceBinding(ctx, resourceBindingID, func(ledger cpd.ResourceBindingLedger) (cpd.ResourceBindingLedger, error) {
+		ledger.Status = cpd.ResourceBindingStatusReleased
+		ledger.ReleasedAt = releasedAt.UTC().Format(time.RFC3339)
+		return ledger, nil
+	})
+}
+
+func (store *ControlPlaneStore) MarkResourceBindingFailed(ctx context.Context, resourceBindingID string) error {
+	return store.UpdateResourceBindingStatus(ctx, resourceBindingID, cpd.ResourceBindingStatusFailed)
+}
+
+func (store *ControlPlaneStore) MarkResourceBindingCleanupRequired(ctx context.Context, resourceBindingID string) error {
+	return store.UpdateResourceBindingStatus(ctx, resourceBindingID, cpd.ResourceBindingStatusCleanupRequired)
+}
+
+func (store *ControlPlaneStore) updateResourceBinding(ctx context.Context, resourceBindingID string, update func(cpd.ResourceBindingLedger) (cpd.ResourceBindingLedger, error)) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	ledger, ok := store.ledgersByBinding[resourceBindingID]
+	if !ok {
+		return cprepo.ErrNotFound
+	}
+	updated, err := update(ledger)
+	if err != nil {
+		return err
+	}
+	store.ledgersByBinding[resourceBindingID] = updated
+
+	if operation, ok := store.operationsByID[updated.OperationID]; ok {
+		operation.NodePoolID = updated.NodePoolID
+		operation.Status = updated.Status
+		if updated.Status == cpd.ResourceBindingStatusReleased && updated.ReleasedAt != "" {
+			operation.CompletedAt = updated.ReleasedAt
+		}
+		if updated.Status == cpd.ResourceBindingStatusFailed || updated.Status == cpd.ResourceBindingStatusCleanupRequired {
+			operation.CompletedAt = time.Now().UTC().Format(time.RFC3339)
+		}
+		store.operationsByID[operation.OperationID] = operation
+	}
 	return nil
 }
 

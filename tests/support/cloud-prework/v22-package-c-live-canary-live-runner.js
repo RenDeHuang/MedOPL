@@ -475,6 +475,98 @@ function createPackageCCloudOperationStateMachine({ options, cloudParameters, va
   };
 }
 
+export function createPackageCLocalLedgerSink() {
+  return {
+    mode: "local_dry_run",
+    productionPostgresWrite: false,
+    async createResourceBinding() {},
+    async appendCloudOperationEvent() {},
+    async updateNodePoolId() {},
+    async updateLifecycleStatus() {},
+    async markReleased() {},
+    async markFailed() {},
+    async markCleanupRequired() {},
+  };
+}
+
+function normalizeLedgerSink(ledgerSink = null) {
+  const sink = ledgerSink || createPackageCLocalLedgerSink();
+  for (const method of [
+    "createResourceBinding",
+    "appendCloudOperationEvent",
+    "updateNodePoolId",
+    "updateLifecycleStatus",
+    "markReleased",
+    "markFailed",
+    "markCleanupRequired",
+  ]) {
+    if (typeof sink[method] !== "function") {
+      throw new Error(`package_c_live_canary_ledger_sink_method_missing:${method}`);
+    }
+  }
+  return sink;
+}
+
+function createPackageCLedgerWriter({ ledger, ledgerSink }) {
+  const sink = normalizeLedgerSink(ledgerSink);
+  const writes = [];
+  const mode = String(sink.mode || (sink.productionPostgresWrite ? "postgres_repository_contract" : "local_dry_run"));
+  const productionPostgresWrite = sink.productionPostgresWrite === true;
+
+  async function write(method, args = []) {
+    writes.push({ method });
+    await sink[method](...args);
+  }
+
+  async function createInitial() {
+    const snapshot = ledger.snapshot();
+    await write("createResourceBinding", [snapshot.resourceBinding]);
+    await write("appendCloudOperationEvent", [snapshot.cloudOperation]);
+  }
+
+  async function persistTransition(transition) {
+    const resourceBinding = transition.resourceBinding;
+    const cloudOperation = transition.cloudOperation;
+    if (transition.status === "created") {
+      await write("updateNodePoolId", [
+        resourceBinding.resourceBindingId,
+        resourceBinding.nodePoolId,
+        transition.status,
+      ]);
+    } else if (transition.status === "released") {
+      await write("markReleased", [
+        resourceBinding.resourceBindingId,
+        resourceBinding.releasedAt,
+      ]);
+    } else if (transition.status === "failed") {
+      await write("markFailed", [resourceBinding.resourceBindingId]);
+    } else if (transition.status === "cleanupRequired") {
+      await write("markCleanupRequired", [resourceBinding.resourceBindingId]);
+    } else {
+      await write("updateLifecycleStatus", [resourceBinding.resourceBindingId, transition.status]);
+    }
+    await write("appendCloudOperationEvent", [cloudOperation]);
+  }
+
+  function snapshot() {
+    return {
+      mode,
+      productionPostgresWrite,
+      dryRun: productionPostgresWrite !== true,
+      canonicalStore: "PostgreSQL resource_bindings/cloud_operations",
+      writeCount: writes.length,
+      methods: writes.map((entry) => entry.method),
+    };
+  }
+
+  return {
+    createInitial,
+    persistTransition,
+    snapshot,
+    productionPostgresWrite: () => productionPostgresWrite,
+  };
+}
+
 function tagResourceArn(env, nodePoolId) {
   return `qcs::tke:${REGION}:uin/${value(env, "TENCENT_MUTATION_ACCOUNT_ID")}:nodepool/${nodePoolId}`;
 }
@@ -515,7 +607,7 @@ async function callTagResourcesBestEffort(steps, fn, extra = {}) {
   }
 }
 
-async function rollbackTenantPool({ modules, steps, options, validation, nodePoolId, ledger }) {
+async function rollbackTenantPool({ modules, steps, options, validation, nodePoolId, ledger, ledgerWriter }) {
   if (!nodePoolId) return [];
   const rollbackSteps = [];
   const safeNodePoolId = ensureTenantNodePoolId(
@@ -524,16 +616,18 @@ async function rollbackTenantPool({ modules, steps, options, validation, nodePoo
     options.protectedPlatformNodePoolId,
   );
   if (!["releaseRequested", "deleting", "released", "cleanupRequired"].includes(ledger?.currentStatus())) {
-    ledger?.transition("releaseRequested", {
+    const transition = ledger?.transition("releaseRequested", {
       nodePoolId: safeNodePoolId,
       reason: "post_create_failure_cleanup_requested",
     });
+    if (transition) await ledgerWriter?.persistTransition(transition);
   }
   if (!["deleting", "released", "cleanupRequired"].includes(ledger?.currentStatus())) {
-    ledger?.transition("deleting", {
+    const transition = ledger?.transition("deleting", {
       nodePoolId: safeNodePoolId,
       reason: "post_create_failure_cleanup_deleting",
     });
+    if (transition) await ledgerWriter?.persistTransition(transition);
   }
   try {
     await callStep(steps, "ScaleNodePool", () => modules.scaleNodePool(REGION, {
@@ -551,16 +645,18 @@ async function rollbackTenantPool({ modules, steps, options, validation, nodePoo
       NodePoolId: safeNodePoolId,
     }), { region: REGION, nodePoolId: safeNodePoolId });
     rollbackSteps.push("delete_tenant_pool");
-    ledger?.transition("released", {
+    const transition = ledger?.transition("released", {
       nodePoolId: safeNodePoolId,
       reason: "post_create_failure_cleanup_released",
     });
+    if (transition) await ledgerWriter?.persistTransition(transition);
   } catch {
     rollbackSteps.push("delete_tenant_pool_failed");
-    ledger?.transition("cleanupRequired", {
+    const transition = ledger?.transition("cleanupRequired", {
       nodePoolId: safeNodePoolId,
       reason: "post_create_failure_cleanup_delete_failed",
     });
+    if (transition) await ledgerWriter?.persistTransition(transition);
   }
   return rollbackSteps;
 }
@@ -581,7 +677,7 @@ async function writeRunGateZero(secretFile) {
   await writeFile(secretFile, next.join("\n"));
 }
 
-function redactedSummaryFor({ ok, options, validation, cloudParameters, steps, ledger, targetNodePoolId = "", rollbackSteps = [], failure = null }) {
+function redactedSummaryFor({ ok, options, validation, cloudParameters, steps, ledger, ledgerWriter, targetNodePoolId = "", rollbackSteps = [], failure = null }) {
   const evidenceRoot = path.join(options.reportDir, options.operationId);
   return {
     ok,
@@ -600,7 +696,7 @@ function redactedSummaryFor({ ok, options, validation, cloudParameters, steps, l
       mutationExecuted: steps.some((step) => ["CreateNodePool", "ScaleNodePool", "DeleteNodePool", "TagResources"].includes(step.api)),
       readsMutationSecret: true,
       writesLedger: true,
-      productionPostgresWrite: false,
+      productionPostgresWrite: ledgerWriter?.productionPostgresWrite() === true,
       callsKubectl: false,
       deploysWorkload: false,
       buildsOrPushesImage: false,
@@ -626,6 +722,14 @@ function redactedSummaryFor({ ok, options, validation, cloudParameters, steps, l
     tagResourcesSkippedUnsupportedService: steps.some((step) => step.api === "TagResources" && step.status === "skipped_unsupported_service"),
     canonicalOwnershipSource: CANONICAL_OWNERSHIP_SOURCE,
     canaryOwnershipEvidenceSink: ".runtime",
+    ledgerWrite: ledgerWriter?.snapshot() || {
+      mode: "local_dry_run",
+      productionPostgresWrite: false,
+      dryRun: true,
+      canonicalStore: "PostgreSQL resource_bindings/cloud_operations",
+      writeCount: 0,
+      methods: [],
+    },
     ledger: ledger.snapshot(),
     secretAllowlist: PACKAGE_C_LIVE_CANARY_SECRET_ALLOWLIST,
     apiAllowlist: PACKAGE_C_LIVE_CANARY_API_ALLOWLIST,
@@ -734,7 +838,7 @@ export function createTencentPackageCLiveCanaryModules({ clients, tencentSdkRoot
   };
 }
 
-export async function runPackageCLiveCanaryLive({ options, modules } = {}) {
+export async function runPackageCLiveCanaryLive({ options, modules, ledgerSink } = {}) {
   if (!options) throw new Error("package_c_live_canary_live_options_required");
   validateOptions(options);
   const env = parseEnv(await readFile(options.secretFile, "utf8"));
@@ -743,6 +847,8 @@ export async function runPackageCLiveCanaryLive({ options, modules } = {}) {
   if (!modules) throw new Error("package_c_live_canary_live_modules_required");
   const steps = [];
   const ledger = createPackageCCloudOperationStateMachine({ options, cloudParameters, validation });
+  const ledgerWriter = createPackageCLedgerWriter({ ledger, ledgerSink });
+  await ledgerWriter.createInitial();
   let targetNodePoolId = "";
   let rollbackSteps = [];
   let summary;
@@ -773,7 +879,7 @@ export async function runPackageCLiveCanaryLive({ options, modules } = {}) {
       throw new Error("package_c_live_canary_live_tenant_node_pool_already_exists");
     }
 
-    ledger.transition("creating", { reason: "before_create_node_pool" });
+    await ledgerWriter.persistTransition(ledger.transition("creating", { reason: "before_create_node_pool" }));
     const createResponse = await callStep(steps, "CreateNodePool", () => modules.createNodePool(REGION, createNodePoolRequest(cloudParameters, options)), {
       region: REGION,
       nodePoolName: TARGET_TENANT_NODE_POOL_NAME,
@@ -783,10 +889,10 @@ export async function runPackageCLiveCanaryLive({ options, modules } = {}) {
       validation.protectedNodePoolIds,
       options.protectedPlatformNodePoolId,
     );
-    ledger.transition("created", {
+    await ledgerWriter.persistTransition(ledger.transition("created", {
       nodePoolId: targetNodePoolId,
       reason: "create_node_pool_completed",
-    });
+    }));
 
     const resourceArn = tagResourceArn(env, targetNodePoolId);
     const tagResourcesStep = await callTagResourcesBestEffort(steps, () => modules.tagResources({
@@ -806,19 +912,19 @@ export async function runPackageCLiveCanaryLive({ options, modules } = {}) {
       });
     }
 
-    ledger.transition("scaling", {
+    await ledgerWriter.persistTransition(ledger.transition("scaling", {
       nodePoolId: targetNodePoolId,
       reason: "scale_up_requested",
-    });
+    }));
     await callStep(steps, "ScaleNodePool", () => modules.scaleNodePool(REGION, {
       ClusterId: options.targetClusterId,
       NodePoolId: targetNodePoolId,
       Replicas: 1,
     }), { region: REGION, nodePoolId: targetNodePoolId, replicas: 1 });
-    ledger.transition("ready", {
+    await ledgerWriter.persistTransition(ledger.transition("ready", {
       nodePoolId: targetNodePoolId,
       reason: "scale_up_completed",
-    });
+    }));
 
     const afterCreatePools = await callStep(steps, "DescribeNodePools", () => modules.describeNodePools(REGION, {
       ClusterId: options.targetClusterId,
@@ -834,28 +940,28 @@ export async function runPackageCLiveCanaryLive({ options, modules } = {}) {
       );
     }
 
-    ledger.transition("releaseRequested", {
+    await ledgerWriter.persistTransition(ledger.transition("releaseRequested", {
       nodePoolId: targetNodePoolId,
       reason: "release_requested_after_canary_observed",
-    });
+    }));
     await callStep(steps, "ScaleNodePool", () => modules.scaleNodePool(REGION, {
       ClusterId: options.targetClusterId,
       NodePoolId: targetNodePoolId,
       Replicas: 0,
     }), { region: REGION, nodePoolId: targetNodePoolId, replicas: 0 });
 
-    ledger.transition("deleting", {
+    await ledgerWriter.persistTransition(ledger.transition("deleting", {
       nodePoolId: targetNodePoolId,
       reason: "delete_node_pool_requested",
-    });
+    }));
     await callStep(steps, "DeleteNodePool", () => modules.deleteNodePool(REGION, {
       ClusterId: options.targetClusterId,
       NodePoolId: targetNodePoolId,
     }), { region: REGION, nodePoolId: targetNodePoolId });
-    ledger.transition("released", {
+    await ledgerWriter.persistTransition(ledger.transition("released", {
       nodePoolId: targetNodePoolId,
       reason: "delete_node_pool_completed",
-    });
+    }));
 
     await callStep(steps, "GetResources", () => modules.getResources({
       ResourceList: [resourceArn],
@@ -869,6 +975,7 @@ export async function runPackageCLiveCanaryLive({ options, modules } = {}) {
       cloudParameters,
       steps,
       ledger,
+      ledgerWriter,
       targetNodePoolId,
     });
   } catch (error) {
@@ -892,11 +999,12 @@ export async function runPackageCLiveCanaryLive({ options, modules } = {}) {
       validation,
       nodePoolId: targetNodePoolId,
       ledger,
+      ledgerWriter,
     });
     if (!targetNodePoolId) {
-      ledger.transition("failed", {
+      await ledgerWriter.persistTransition(ledger.transition("failed", {
         reason: "provider_create_not_completed_no_cleanup_required",
-      });
+      }));
     }
     summary = redactedSummaryFor({
       ok: false,
@@ -905,6 +1013,7 @@ export async function runPackageCLiveCanaryLive({ options, modules } = {}) {
       cloudParameters,
       steps,
       ledger,
+      ledgerWriter,
       targetNodePoolId,
       rollbackSteps,
       failure: lastFailure ? {

@@ -43,6 +43,36 @@ function assertLedgerDoesNotWriteProtectedPool(summary, label) {
   }
 }
 
+function createLedgerSinkRecorder() {
+  const calls = [];
+  return {
+    calls,
+    productionPostgresWrite: false,
+    mode: "postgres_repository_contract",
+    async createResourceBinding(resourceBinding) {
+      calls.push({ method: "createResourceBinding", resourceBinding });
+    },
+    async appendCloudOperationEvent(cloudOperation) {
+      calls.push({ method: "appendCloudOperationEvent", cloudOperation });
+    },
+    async updateNodePoolId(resourceBindingId, nodePoolId, status) {
+      calls.push({ method: "updateNodePoolId", resourceBindingId, nodePoolId, status });
+    },
+    async updateLifecycleStatus(resourceBindingId, status) {
+      calls.push({ method: "updateLifecycleStatus", resourceBindingId, status });
+    },
+    async markReleased(resourceBindingId, releasedAt) {
+      calls.push({ method: "markReleased", resourceBindingId, releasedAt });
+    },
+    async markFailed(resourceBindingId) {
+      calls.push({ method: "markFailed", resourceBindingId });
+    },
+    async markCleanupRequired(resourceBindingId) {
+      calls.push({ method: "markCleanupRequired", resourceBindingId });
+    },
+  };
+}
+
 function baseEnv(runGate = "1") {
   return [
     `RUN_TENCENT_CREATE_RELEASE_EXECUTION=${runGate}`,
@@ -191,7 +221,8 @@ try {
   };
 
   const options = parsePackageCLiveCanaryLiveArgs(baseArgs);
-  const summary = await runPackageCLiveCanaryLive({ options, modules: fakeModules });
+  const successLedgerSink = createLedgerSinkRecorder();
+  const summary = await runPackageCLiveCanaryLive({ options, modules: fakeModules, ledgerSink: successLedgerSink });
   assert.equal(summary.ok, true, "live_summary_ok");
   assert.equal(summary.mode, "live_canary", "live_summary_mode");
   assert.equal(summary.realCloudCalls, true, "live_summary_real_cloud");
@@ -211,6 +242,27 @@ try {
     "DeleteNodePool",
     "GetResources",
   ], "live_call_order");
+  assert.deepEqual(successLedgerSink.calls.map((call) => `${call.method}:${call.status || call.resourceBinding?.status || call.cloudOperation?.status || ""}`), [
+    "createResourceBinding:requested",
+    "appendCloudOperationEvent:requested",
+    "updateLifecycleStatus:creating",
+    "appendCloudOperationEvent:creating",
+    "updateNodePoolId:created",
+    "appendCloudOperationEvent:created",
+    "updateLifecycleStatus:scaling",
+    "appendCloudOperationEvent:scaling",
+    "updateLifecycleStatus:ready",
+    "appendCloudOperationEvent:ready",
+    "updateLifecycleStatus:releaseRequested",
+    "appendCloudOperationEvent:releaseRequested",
+    "updateLifecycleStatus:deleting",
+    "appendCloudOperationEvent:deleting",
+    "markReleased:",
+    "appendCloudOperationEvent:released",
+  ], "success_ledger_sink_write_path");
+  assert.equal(successLedgerSink.calls[0].resourceBinding.nodePoolName, "medopl-tenant-rb-package-c-live-canary-20260613", "success_sink_pre_create_node_pool_name");
+  assert.equal(successLedgerSink.calls[0].resourceBinding.nodePoolId, "", "success_sink_pre_create_node_pool_id_empty");
+  assert.equal(successLedgerSink.calls.find((call) => call.method === "updateNodePoolId").nodePoolId, "np-tenant-proof", "success_sink_node_pool_id_update");
   const createCall = calls.find((call) => call.api === "CreateNodePool");
   const tagResourcesCall = calls.find((call) => call.api === "TagResources");
   assert.equal(createCall.req.ClusterId, "cls-fi097sy4", "create_cluster");
@@ -249,6 +301,10 @@ try {
   assert.equal(evidence.boundary.deploysWorkload, false, "evidence_no_deploy");
   assert.equal(evidence.boundary.buildsOrPushesImage, false, "evidence_no_build_push");
   assert.equal(evidence.boundary.writesLedger, true, "evidence_writes_ledger");
+  assert.equal(evidence.boundary.productionPostgresWrite, false, "evidence_must_not_claim_real_postgres_write");
+  assert.equal(evidence.ledgerWrite.mode, "postgres_repository_contract", "evidence_ledger_write_contract_mode");
+  assert.equal(evidence.ledgerWrite.productionPostgresWrite, false, "evidence_ledger_write_not_real_db");
+  assert.equal(evidence.ledgerWrite.canonicalStore, "PostgreSQL resource_bindings/cloud_operations", "evidence_ledger_write_canonical_store");
   assert.equal(evidence.target.protectedPlatformNodePoolId, "np-cbk784r8", "evidence_protected_pool");
   assert.equal(evidence.target.tenantNodePoolName, "medopl-tenant-rb-package-c-live-canary-20260613", "evidence_tenant_pool");
   assert.equal(evidence.ledger.resourceBinding.status, "released", "ledger_final_resource_binding_released");
@@ -365,6 +421,7 @@ try {
 
   await writeFile(envFile, baseEnv("1"));
   const createFailureCalls = [];
+  const createFailureLedgerSink = createLedgerSinkRecorder();
   const createFailureModules = {
     async getCallerIdentity(req = null) {
       createFailureCalls.push({ api: "GetCallerIdentity", req });
@@ -404,7 +461,7 @@ try {
   };
   let createFailureError = null;
   try {
-    await runPackageCLiveCanaryLive({ options, modules: createFailureModules });
+    await runPackageCLiveCanaryLive({ options, modules: createFailureModules, ledgerSink: createFailureLedgerSink });
   } catch (error) {
     createFailureError = error;
   }
@@ -423,6 +480,14 @@ try {
     "DescribeNodePools",
     "CreateNodePool",
   ], "create_failure_call_order");
+  assert.deepEqual(createFailureLedgerSink.calls.map((call) => `${call.method}:${call.status || call.resourceBinding?.status || call.cloudOperation?.status || ""}`), [
+    "createResourceBinding:requested",
+    "appendCloudOperationEvent:requested",
+    "updateLifecycleStatus:creating",
+    "appendCloudOperationEvent:creating",
+    "markFailed:",
+    "appendCloudOperationEvent:failed",
+  ], "create_failure_ledger_sink_write_path");
   assertLedgerDoesNotWriteProtectedPool(createFailureError.summary, "create_failure");
   assertNoSensitiveOutput(JSON.stringify(createFailureError.summary), "create_failure_summary");
 
@@ -495,6 +560,7 @@ try {
 
   await writeFile(envFile, baseEnv("1"));
   const deleteFailureCalls = [];
+  const deleteFailureLedgerSink = createLedgerSinkRecorder();
   const deleteFailureModules = {
     async getCallerIdentity(req = null) {
       deleteFailureCalls.push({ api: "GetCallerIdentity", req });
@@ -537,7 +603,7 @@ try {
   };
   let deleteFailureError = null;
   try {
-    await runPackageCLiveCanaryLive({ options, modules: deleteFailureModules });
+    await runPackageCLiveCanaryLive({ options, modules: deleteFailureModules, ledgerSink: deleteFailureLedgerSink });
   } catch (error) {
     deleteFailureError = error;
   }
@@ -554,6 +620,7 @@ try {
     "cleanupRequired",
   ], "delete_failure_state_path");
   assert.equal(deleteFailureError.summary.ledger.stateTransitions.at(-1).status, "cleanupRequired", "delete_failure_last_transition");
+  assert.equal(deleteFailureLedgerSink.calls.some((call) => call.method === "markCleanupRequired" && call.resourceBindingId === "rb-package-c-live-canary-20260613"), true, "delete_failure_sink_marks_cleanup_required");
   assert(deleteFailureError.summary.rollback.steps.includes("delete_tenant_pool_failed"), "delete_failure_cleanup_step");
   assert.equal(deleteFailureCalls.some((call) => call.req?.NodePoolId === "np-cbk784r8"), false, "delete_failure_must_not_touch_platform_pool");
   assertLedgerDoesNotWriteProtectedPool(deleteFailureError.summary, "delete_failure");
