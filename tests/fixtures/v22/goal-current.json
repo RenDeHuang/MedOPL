@@ -8,12 +8,12 @@
   "last_updated_at": "2026-06-13",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "3f5595d8e9c1384f7e7c6001b41385cd9defb115",
+  "base_trunk_head": "c31ae1583390db7cfe8c59168cd4565eee1c52d3",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "3f5595d8e9c1384f7e7c6001b41385cd9defb115",
+  "last_landed_commit": "c31ae1583390db7cfe8c59168cd4565eee1c52d3",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13: CreateNodePool, scale up, scale down and DeleteNodePool passed for medopl-tenant-rb-package-c-live-canary-20260613; readonly cleanup check observed platform pool np-cbk784r8 and no residual canary tenant node pool by name or id. TagResources for tke:nodepool returned InvalidParameter.UnsupportedService and remains non-canonical. Ownership and billing attribution canonical truth must be MedOPL PostgreSQL resourceBinding ledger. Next implementation plan is PostgreSQL resource binding ledger, cloud operation state machine, billing/audit ledger, Portal opening entry and workspace storage quota. No next-stage implementation is included in this closeout; new Tencent mutation, kubectl, deploy, build/push, Package D and live-test remain blocked without separate authorization. Starter remains starter_2c4g_10gb: 2C4G, 10GB workspace storage, TKE SA5.MEDIUM4, CLOUD_BSSD 50GB node system disk and public IP disabled; arbitrary Tencent instanceType input is rejected unless represented by a MedOPL plan catalog allowlist entry.",
+  "current_problem": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13: CreateNodePool, scale up, scale down and DeleteNodePool passed for medopl-tenant-rb-package-c-live-canary-20260613; readonly cleanup check observed platform pool np-cbk784r8 and no residual canary tenant node pool by name or id. TagResources for tke:nodepool returned InvalidParameter.UnsupportedService and remains non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound is now landed in Go domain, memory store, Ent schema and baseline migration; canonical ownership and billing truth remains PostgreSQL ledger, not cloud tags. Next implementation plan is cloud operation state machine integration, billing/audit ledger, Portal opening entry and workspace storage quota. New Tencent mutation, kubectl, deploy, build/push, Package D and live-test remain blocked without separate authorization. Starter remains starter_2c4g_10gb: 2C4G, 10GB workspace storage, TKE SA5.MEDIUM4, CLOUD_BSSD 50GB node system disk and public IP disabled; arbitrary Tencent instanceType input is rejected unless represented by a MedOPL plan catalog allowlist entry.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -100,8 +100,8 @@
       "depends_on": [
         "precloud-deployable-rc"
       ],
-      "history_summary": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13: CreateNodePool, scale up, scale down and DeleteNodePool passed for medopl-tenant-rb-package-c-live-canary-20260613; readonly cleanup check observed platform pool np-cbk784r8 and no residual canary tenant node pool by name or id. TagResources for tke:nodepool returned InvalidParameter.UnsupportedService and remains non-canonical. Ownership and billing attribution canonical truth must be MedOPL PostgreSQL resourceBinding ledger. Next implementation plan is PostgreSQL resource binding ledger, cloud operation state machine, billing/audit ledger, Portal opening entry and workspace storage quota. No next-stage implementation is included in this closeout; new Tencent mutation, kubectl, deploy, build/push, Package D and live-test remain blocked without separate authorization.",
-      "landed_commit": "3f5595d8e9c1384f7e7c6001b41385cd9defb115"
+      "history_summary": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13: CreateNodePool, scale up, scale down and DeleteNodePool passed for medopl-tenant-rb-package-c-live-canary-20260613; readonly cleanup check observed platform pool np-cbk784r8 and no residual canary tenant node pool by name or id. TagResources for tke:nodepool returned InvalidParameter.UnsupportedService and remains non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound is now landed in Go domain, memory store, Ent schema and baseline migration; canonical ownership and billing truth remains PostgreSQL ledger, not cloud tags. Next implementation plan is cloud operation state machine integration, billing/audit ledger, Portal opening entry and workspace storage quota. New Tencent mutation, kubectl, deploy, build/push, Package D and live-test remain blocked without separate authorization.",
+      "landed_commit": "c31ae1583390db7cfe8c59168cd4565eee1c52d3"
     },
     {
       "id": "go-control-plane-mvp-takeover",
@@ -161,9 +161,9 @@
         "local-portal-opl-delivery-rc",
         "real-cloud-authorization-boundary"
       ],
-      "history_summary": "Local AI MVP baseline, real-cloud vision docs, real-cloud readiness lane, legacy runtime cloud cleanup, Package B readonly inventory, TC3 diagnostic cleanup, Package C dry-run create/release plan, TKE bootstrap preflight, repo governance closeout, Package C live canary readiness gate, Package C non-secret cloud parameters input contract, Package C live canary runner and unsupported tke:nodepool tag skip strategy landed as pre-cloud / scoped local evidence. Package C live create/release remains authorization-required; tenant node pools are created by Package C per tenant or workspace. Package C authorized live canary subsequently proved create/scale/delete tenant node pool lifecycle and cleanup; productionization remains blocked on PostgreSQL resourceBinding ledger, cloud operation state machine, billing/audit ledger, Portal opening entry and workspace storage quota.",
+      "history_summary": "Local AI MVP baseline, real-cloud vision docs, real-cloud readiness lane, legacy runtime cloud cleanup, Package B readonly inventory, TC3 diagnostic cleanup, Package C dry-run create/release plan, TKE bootstrap preflight, repo governance closeout, Package C live canary readiness gate, Package C non-secret cloud parameters input contract, Package C live canary runner and unsupported tke:nodepool tag skip strategy landed as pre-cloud / scoped local evidence. Package C live create/release remains authorization-required; tenant node pools are created by Package C per tenant or workspace. Package C authorized live canary subsequently proved create/scale/delete tenant node pool lifecycle and cleanup; PostgreSQL resource_bindings / cloud_operations ledger lower bound has landed; productionization remains blocked on cloud operation state machine integration, billing/audit ledger, Portal opening entry and workspace storage quota.",
       "closed_at": "2026-06-13",
-      "landed_commit": "3f5595d8e9c1384f7e7c6001b41385cd9defb115"
+      "landed_commit": "c31ae1583390db7cfe8c59168cd4565eee1c52d3"
     }
   ],
   "current_leaf": {
@@ -296,11 +296,10 @@
       "cleanup_check": "passed_no_residual_tenant_pool_platform_pool_observed",
       "protected_platform_node_pool_id": "np-cbk784r8",
       "tag_resources": "tke_nodepool_unsupported_not_canonical",
-      "canonical_ownership_billing_truth": "medopl_postgresql_resource_binding_ledger_required"
+      "canonical_ownership_billing_truth": "medopl_postgresql_resource_binding_ledger_lower_bound_landed"
     },
     "productionization_plan": [
-      "PostgreSQL resource binding ledger",
-      "cloud operation state machine",
+      "cloud operation state machine integration",
       "billing/audit ledger",
       "Portal opening entry",
       "workspace storage quota"

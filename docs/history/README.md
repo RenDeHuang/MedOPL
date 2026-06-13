@@ -4723,3 +4723,51 @@ post_merge_closeout: `completed`
 next_cursor: `real-cloud-authorization-boundary`
 
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
+
+### 2026-06-13 resource-binding-ledger-lower-bound
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `6d21bfa88c8d34e96b93c840df37069d8ec9b68b`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Added the MedOPL PostgreSQL `resource_bindings` / `cloud_operations` ledger lower bound for the Package C tenant node pool lifecycle.
+- Added Go domain model and status allowlist for `requested`, `creating`, `created`, `scaling`, `ready`, `releaseRequested`, `deleting`, `released`, `failed` and `cleanupRequired`.
+- Added local control-plane store methods and tests for lookup by `resourceBindingId` / `operationId`.
+- Added Ent schema and baseline migration markers for canonical ownership / billing truth in PostgreSQL.
+- Kept Tencent `tke:nodepool` `TagResources` unsupported as non-canonical; ledger fields use `canonical_ownership_source=postgres_resource_binding_ledger` and `cloud_tag_support=tke_nodepool_unsupported`.
+- Preserved pre-create semantics: `nodePoolName` records the target tenant node pool, while `nodePoolId` may be empty until Tencent returns a provider ID.
+
+Verification:
+
+- `GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...` from `services/medopl-go-backend`: pass.
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: expected closeout gap detected after `c31ae1583390db7cfe8c59168cd4565eee1c52d3` reached trunk; this closeout records it.
+
+Can-claim:
+
+- MedOPL now has a local Go/PostgreSQL schema and domain lower bound for resource binding and cloud operation canonical ledger records.
+- Package C ownership / billing truth can be represented in PostgreSQL ledger shape rather than Tencent TKE node pool cloud tags.
+
+Cannot-claim:
+
+- Portal self-service opening, production DB migration execution, cloud operation state machine integration, billing/audit ledger, workspace quota, deploy, kubectl, build/push, Package D or production runtime readiness is implemented.
+- New Tencent mutation or live-test is authorized by this closeout.
+
+landed_commit: `c31ae1583390db7cfe8c59168cd4565eee1c52d3`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `c31ae1583390db7cfe8c59168cd4565eee1c52d3`.
+- No Tencent mutation, kubectl, deploy, build/push, Package D, live-test, kubeconfig read, secret read or secret write to git was performed.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
