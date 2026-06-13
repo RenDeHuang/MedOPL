@@ -4819,3 +4819,51 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-13 package-c-ledger-repository-write-wiring
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `66519110ca3ad1426d80952f072eb361ec3ec8a7`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Added Package C resource binding ledger write methods to the Go control-plane repository contract: create resource binding, append cloud operation event, nodePoolId update, lifecycle status update, mark released, mark failed and mark cleanupRequired.
+- Implemented the local memory store contract path against the existing ResourceBinding / CloudOperation domain model, Ent schema and baseline migration shape.
+- Wired Package C live runner state transitions to an injected ledger sink while keeping the default sink local/dry-run.
+- Kept `.runtime` evidence as audit output and PostgreSQL `resource_bindings` / `cloud_operations` as the canonical ownership / billing shape; Tencent `tke:nodepool` tags remain non-canonical and unsupported.
+- Preserved boundaries: no DB password or connection string read, no real PostgreSQL connection execution, no new Tencent mutation, kubectl, deploy, build/push, Package D, kubeconfig read or secret write to git.
+
+Verification:
+
+- `go test ./internal/domain/controlplane ./internal/repository/controlplane ./internal/repository/memory ./internal/repository/postgres` from `services/medopl-go-backend`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-c-live-canary-live-runner-local-gate.mjs`: pass.
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass before closeout commit.
+
+Can-claim:
+
+- Package C runner can now project ResourceBinding / CloudOperation lifecycle transitions into a repository write contract for success, create failure and cleanupRequired paths.
+- Dry-run/local mode does not require a real DB and does not read DB credentials.
+
+Cannot-claim:
+
+- A real PostgreSQL connection sink, Portal self-service opening, billing/audit ledger, workspace quota, deploy, kubectl, build/push, Package D or production runtime readiness is implemented.
+- New Tencent mutation or live-test is authorized by this closeout.
+
+landed_commit: `8f324241004faa9b650cf9cf591bbebc414f6363`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `8f324241004faa9b650cf9cf591bbebc414f6363` before this closeout.
+- No DB secret read, PostgreSQL connection execution, Tencent mutation, kubectl, deploy, build/push, Package D, live-test, kubeconfig read or secret write to git was performed.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
