@@ -4771,3 +4771,51 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-13 package-c-cloud-operation-state-machine
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `881eb5001be1fba76425277125cc0ed44ea372fc`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Integrated Package C live runner evidence with the ResourceBinding / CloudOperation status vocabulary.
+- State-machine evidence now covers `requested`, `creating`, `created`, `scaling`, `ready`, `releaseRequested`, `deleting`, `released`, `failed` and `cleanupRequired`.
+- Added local gate coverage for successful lifecycle, create failure, post-create scale failure with cleanup, delete failure and protected pool fail-closed behavior.
+- Kept unsupported `tke:nodepool` `TagResources` as a non-blocking event; canonical ownership / billing truth remains PostgreSQL `resource_bindings` / `cloud_operations`, not Tencent cloud tags.
+- Preserved boundaries: no new Tencent mutation, kubectl, deploy, build/push, Package D, kubeconfig read or secret write to git.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-c-live-canary-live-runner-local-gate.mjs`: pass.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: pass.
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass before closeout commit.
+
+Can-claim:
+
+- Package C live runner now emits local `.runtime` ResourceBinding / CloudOperation state-machine evidence for the verified tenant node pool lifecycle and fail-closed paths.
+- Protected platform node pool `np-cbk784r8` cannot be written as the tenant node pool in runner ledger evidence.
+
+Cannot-claim:
+
+- Production PostgreSQL writes, Portal self-service opening, billing/audit ledger, workspace quota, deploy, kubectl, build/push, Package D or production runtime readiness is implemented.
+- New Tencent mutation or live-test is authorized by this closeout.
+
+landed_commit: `f15baae3020fe09143ecc90074f0b508bc661dbd`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `f15baae3020fe09143ecc90074f0b508bc661dbd` before this closeout.
+- No Tencent mutation, kubectl, deploy, build/push, Package D, live-test, kubeconfig read, secret read or secret write to git was performed.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
