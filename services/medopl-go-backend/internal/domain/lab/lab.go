@@ -99,20 +99,20 @@ type Entitlement struct {
 
 var catalog = []PackagePlan{
 	{
-		ID:                  "starter_2c4g_100gb",
+		ID:                  "starter_2c4g_10gb",
 		Name:                "入门套餐",
 		Audience:            "regular",
 		Currency:            "CNY",
 		ComputeTier:         "starter",
 		Headline:            "适合小型文件分析和轻量任务",
 		Compute:             ComputeSpec{Tier: "starter", Label: "标准计算能力", Cores: 2, MemoryGB: 4, MaxConcurrentRuns: 1},
-		Storage:             StorageSpec{IncludedGB: 100, WarningRatio: 0.8},
+		Storage:             StorageSpec{IncludedGB: 10, WarningRatio: 0.8},
 		Billing:             BillingSpec{BasePrice: nil, PendingProductApproval: true, PriceLabel: "正式售价未定价", FreezeDays: 7},
-		BackingServerPlanID: "starter_2c4g_100gb",
+		BackingServerPlanID: "starter_2c4g_10gb",
 		ComputePower:        "2 核计算能力",
-		StorageCapacityGB:   100,
+		StorageCapacityGB:   10,
 		GracePeriodDays:     7,
-		PlanSummary:         "2C / 4GB 内存 / 100GB",
+		PlanSummary:         "2C / 4GB 内存 / 10GB",
 		MemoryGB:            4,
 	},
 	{
@@ -135,11 +135,11 @@ var catalog = []PackagePlan{
 }
 
 var packageAliases = map[string]string{
-	"starter":              "starter_2c4g_100gb",
-	"starter-2c":           "starter_2c4g_100gb",
-	"starter-2c4g-100gb":   "starter_2c4g_100gb",
-	"starter_2c4gb_100gb":  "starter_2c4g_100gb",
-	"starter_2c4g_100gb":   "starter_2c4g_100gb",
+	"starter":              "starter_2c4g_10gb",
+	"starter-2c":           "starter_2c4g_10gb",
+	"starter-2c4g-10gb":   "starter_2c4g_10gb",
+	"starter_2c4gb_10gb":  "starter_2c4g_10gb",
+	"starter_2c4g_10gb":   "starter_2c4g_10gb",
 	"pro":                  "pro_8c16g_100gb",
 	"pro-8c":               "pro_8c16g_100gb",
 	"pro-8c16g-100gb":      "pro_8c16g_100gb",

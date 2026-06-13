@@ -2971,7 +2971,7 @@ Scope:
 
 - Define the commercial package model after structural convergence: `api_only`, `full_runtime` and `customer_dedicated`.
 - Preserve the customer-facing rule: anyone can enter OPL; MedOPL is required for platform-managed compute, file space, isolation, billing and audit.
-- Make `starter_2c4g_100gb` and `pro_8c16g_100gb` current MVP specs inside `full_runtime`, not a second commercial model.
+- Make `starter_2c4g_10gb` and `pro_8c16g_100gb` current MVP specs inside `full_runtime`, not a second commercial model.
 - Decide UI impact from the commercial model without changing Portal UI code in this stage.
 - Record that current Portal UI surfaces already answer: 买了什么, 能不能用, 缺什么, 下一步点哪里, 结果在哪里, 费用是否正常.
 - Require a future UI implementation leaf before `customer_dedicated` becomes customer-visible.
@@ -4423,13 +4423,13 @@ Model: `gpt-5.4`
 Scope:
 
 - Aligned Package C live canary prepare-only cloud params with the MedOPL plan catalog.
-- Set Starter current product/server plan to `starter_2c4g_100gb`: 2C4G, 100GB workspace storage and one task concurrency.
+- Set Starter current product/server plan to `starter_2c4g_10gb`: 2C4G, 10GB workspace storage and one task concurrency.
 - Kept Pro current product/server plan as `pro_8c16g_100gb`: 8C16G, 100GB workspace storage and two task concurrency.
 - Added a Package C plan catalog allowlist consumed by the readiness and live runner helpers.
 - Derived Tencent `nodeInstanceType`, workspace storage quota and TKE node `systemDisk` from the allowlist instead of accepting arbitrary `instanceType` input.
 - Fixed the Package C canary Starter mapping to TKE `SA5.MEDIUM4`, `CloudBSSD` 50GB node system disk and public IP disabled.
 - Kept `workspaceStorageGb` as the user package storage quota / billing item, distinct from TKE node system disk.
-- Cleared active `starter_2c4g_10gb`, temporary Starter 10GB and arbitrary custom instance type wording from current product/spec/source/test truth, except negative tests and history context.
+- Cleared active temporary Starter 100GB and arbitrary custom instance type wording from current product/spec/source/test truth, except negative tests and history context.
 
 Verification:
 

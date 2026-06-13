@@ -78,11 +78,11 @@ Go backend 是 MedOPL control-plane business truth 的本地 MVP takeover 承载
 
 进入 OPL 工作台和运行平台托管任务是两道 gate：workbench entry 要求账号、工作空间、Gateway / upstream entry 可用，并要求用户输入或已有自己的 gflabtoken API Key；managed run 还要求托管计算资源、文件空间、余额 / 冻结金额、`providerKeyRef` 和 Runtime Bridge 可用。
 
-当前 MVP active 规格只落在 `full_runtime` 层：`starter_2c4g_100gb` 和 `pro_8c16g_100gb`。它们是托管运行能力的规格映射，不是第二套商业模型。用户可以升级配置，但只能选择 MedOPL plan catalog allowlist 里的规格，不能任意填写云厂商 instance type。
+当前 MVP active 规格只落在 `full_runtime` 层：`starter_2c4g_10gb` 和 `pro_8c16g_100gb`。它们是托管运行能力的规格映射，不是第二套商业模型。用户可以升级配置，但只能选择 MedOPL plan catalog allowlist 里的规格，不能任意填写云厂商 instance type。
 
 | 套餐 | 计算资源 | 文件空间 | 任务并发 |
 | --- | --- | --- | --- |
-| 基础套餐 | 2c / 4GB | 100GB 文件空间 | 1 个任务并发 |
+| 基础套餐 | 2c / 4GB | 10GB 文件空间 | 1 个任务并发 |
 | Pro 套餐 | 8c / 16GB | 100GB 文件空间 | 2 个任务并发 |
 
 资源生命周期边界：

@@ -61,7 +61,7 @@ assertIncludesAll(contract, [
 ], "implementation_contract_risk_limits");
 
 assertIncludesAll(contract, [
-  "基础套餐：2c / 4GB / 100GB 文件空间",
+  "基础套餐：2c / 4GB / 10GB 文件空间",
   "Pro 套餐：8c / 16GB / 100GB 文件空间",
   "升级规格：先进入 MedOPL plan catalog allowlist，再展示 CPU、内存、文件空间、任务并发数",
   "5 个必须写成任务并发，不是 session 并发",

@@ -8,7 +8,7 @@ func TestCatalogDefinesStarterAndProWithoutProductionPriceClaim(t *testing.T) {
 		t.Fatalf("catalog length = %d", len(items))
 	}
 	starter, ok := PackageByID("starter")
-	if !ok || starter.ID != "starter_2c4g_100gb" || starter.Compute.Cores != 2 || starter.Storage.IncludedGB != 100 {
+	if !ok || starter.ID != "starter_2c4g_10gb" || starter.Compute.Cores != 2 || starter.Storage.IncludedGB != 10 {
 		t.Fatalf("starter package = %+v ok=%v", starter, ok)
 	}
 	pro, ok := PackageByID("pro")
@@ -33,18 +33,18 @@ func TestBuildEntitlementProjectsActiveSubscription(t *testing.T) {
 	subscription := Subscription{
 		ID:             "sub-v22",
 		WorkspaceID:    "workspace-v22",
-		PackageID:      "starter_2c4g_100gb",
+		PackageID:      "starter_2c4g_10gb",
 		Status:         SubscriptionStatusActive,
 		IdempotencyKey: "idem-v22",
 	}
 	entitlement := BuildEntitlement("workspace-v22", subscription)
-	if !entitlement.Enabled || entitlement.Status != string(SubscriptionStatusActive) || entitlement.PackageID != "starter_2c4g_100gb" {
+	if !entitlement.Enabled || entitlement.Status != string(SubscriptionStatusActive) || entitlement.PackageID != "starter_2c4g_10gb" {
 		t.Fatalf("entitlement = %+v", entitlement)
 	}
 	if !entitlement.Gates.CanUpload || !entitlement.Gates.CanRun || !entitlement.Actions.CanStartPaidRun {
 		t.Fatalf("entitlement gates = %+v actions = %+v", entitlement.Gates, entitlement.Actions)
 	}
-	if entitlement.Storage.TotalGB != 100 || entitlement.Compute.MaxConcurrentRuns != 1 {
+	if entitlement.Storage.TotalGB != 10 || entitlement.Compute.MaxConcurrentRuns != 1 {
 		t.Fatalf("entitlement resource projection = %+v", entitlement)
 	}
 }

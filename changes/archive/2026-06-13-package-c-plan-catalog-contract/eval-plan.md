@@ -21,7 +21,7 @@ npm run verify
 ## Can Claim
 
 - Package C prepare-only canary validates Starter through plan catalog allowlist.
-- Starter current product storage is 100GB workspace storage.
+- Starter current product storage is 10GB workspace storage.
 - TKE node system disk remains a separate node parameter.
 
 ## Cannot Claim

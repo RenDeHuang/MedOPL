@@ -8,15 +8,36 @@ const repoRoot = path.resolve(__dirname, "../..");
 const goLabDomainSource = await readFile(path.join(repoRoot, "services/medopl-go-backend/internal/domain/lab/lab.go"), "utf8");
 const goLabTestSource = await readFile(path.join(repoRoot, "services/medopl-go-backend/internal/domain/lab/lab_test.go"), "utf8");
 
+function packageBlock(packageId) {
+  const start = goLabDomainSource.indexOf(`ID:                  "${packageId}"`);
+  assert.notEqual(start, -1, `go_lab_resource_plan_package_missing:${packageId}`);
+  const next = goLabDomainSource.indexOf("\n\t},", start);
+  assert.notEqual(next, -1, `go_lab_resource_plan_package_end_missing:${packageId}`);
+  return goLabDomainSource.slice(start, next);
+}
+
+const starterBlock = packageBlock("starter_2c4g_10gb");
+const proBlock = packageBlock("pro_8c16g_100gb");
+
 for (const marker of [
-  "ID:                  \"starter_2c4g_100gb\"",
+  "ID:                  \"starter_2c4g_10gb\"",
   "Cores: 2",
   "MemoryGB: 4",
-  "IncludedGB: 100",
+  "IncludedGB: 10",
+]) {
+  assert(starterBlock.includes(marker), `go_lab_starter_resource_plan_marker_missing:${marker}`);
+}
+
+for (const marker of [
   "ID:                  \"pro_8c16g_100gb\"",
   "Cores: 8",
   "MemoryGB: 16",
   "IncludedGB: 100",
+]) {
+  assert(proBlock.includes(marker), `go_lab_pro_resource_plan_marker_missing:${marker}`);
+}
+
+for (const marker of [
   "PendingProductApproval: true",
   "BasePrice: nil",
 ]) {
@@ -25,7 +46,7 @@ for (const marker of [
 
 for (const marker of [
   "TestCatalogDefinesStarterAndProWithoutProductionPriceClaim",
-  "starter_2c4g_100gb",
+  "starter_2c4g_10gb",
   "pro_8c16g_100gb",
   "item.Billing.BasePrice != nil",
   "!item.Billing.PendingProductApproval",
@@ -47,5 +68,5 @@ console.log(JSON.stringify({
   ok: true,
   contract: "v22_resource_plan",
   source: "services/medopl-go-backend/internal/domain/lab/lab.go",
-  planIds: ["starter_2c4g_100gb", "pro_8c16g_100gb"],
+  planIds: ["starter_2c4g_10gb", "pro_8c16g_100gb"],
 }, null, 2));

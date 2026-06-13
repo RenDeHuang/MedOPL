@@ -574,11 +574,11 @@ func balanceLink() gin.H {
 }
 
 func storageEntitlement(workspaceID string) gin.H {
-	return gin.H{"enabled": true, "status": "active", "freeQuotaGb": 100, "minimumPurchaseGb": 100, "retentionPolicy": "workspace_lifecycle", "storageSizeGb": 100, "message": "precloud_local_rc", "workspaceId": workspaceID}
+	return gin.H{"enabled": true, "status": "active", "freeQuotaGb": 10, "minimumPurchaseGb": 10, "retentionPolicy": "workspace_lifecycle", "storageSizeGb": 10, "message": "precloud_local_rc", "workspaceId": workspaceID}
 }
 
 func fileSpace() gin.H {
-	return gin.H{"capacityGb": 100, "usedGb": 1, "retentionDays": 7, "currentFolderRef": "root", "folders": []gin.H{{"folderRef": "root", "name": "root", "parentFolderRef": "", "path": "/", "status": "active"}}, "files": []gin.H{{"fileRef": "file-local-rc", "name": "input.csv", "folderRef": "root", "kind": "input", "source": "upload", "sessionId": "session-local-rc", "taskRef": "run-local-rc", "artifactRef": "", "sizeBytes": 128, "status": "available", "deletedAt": "", "retentionUntil": ""}}, "selectedFileRefs": []string{}, "actions": gin.H{"createFolder": true, "renameFolder": true, "deleteFileOrFolder": true, "uploadToCurrentFolder": true, "moveFileOrFolder": true, "selectFiles": true, "batchDownload": true, "batchDelete": true, "permanentDeleteRequiresConfirmation": true, "clearFileSpaceRequiresConfirmation": true}, "deletePolicy": gin.H{"ordinaryDeleteRequiresConfirmation": true, "retentionDays": 7, "permanentDeleteRequiresConfirmation": true, "clearFileSpaceRequiresConfirmation": true}}
+	return gin.H{"capacityGb": 10, "usedGb": 1, "retentionDays": 7, "currentFolderRef": "root", "folders": []gin.H{{"folderRef": "root", "name": "root", "parentFolderRef": "", "path": "/", "status": "active"}}, "files": []gin.H{{"fileRef": "file-local-rc", "name": "input.csv", "folderRef": "root", "kind": "input", "source": "upload", "sessionId": "session-local-rc", "taskRef": "run-local-rc", "artifactRef": "", "sizeBytes": 128, "status": "available", "deletedAt": "", "retentionUntil": ""}}, "selectedFileRefs": []string{}, "actions": gin.H{"createFolder": true, "renameFolder": true, "deleteFileOrFolder": true, "uploadToCurrentFolder": true, "moveFileOrFolder": true, "selectFiles": true, "batchDownload": true, "batchDelete": true, "permanentDeleteRequiresConfirmation": true, "clearFileSpaceRequiresConfirmation": true}, "deletePolicy": gin.H{"ordinaryDeleteRequiresConfirmation": true, "retentionDays": 7, "permanentDeleteRequiresConfirmation": true, "clearFileSpaceRequiresConfirmation": true}}
 }
 
 func managedResourceBindingPlan() gin.H {

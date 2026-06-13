@@ -322,7 +322,7 @@ try {
   }, null, 2));
   const planMismatch = run([...commonArgs, "--cloud-params-file", planMismatchFile]);
   assert.notEqual(planMismatch.status, 0, "runner_must_reject_plan_mismatch");
-  assert(planMismatch.stderr.includes("package_c_live_canary_readiness_plan_mismatch:starter_2c4g_100gb:pro_8c16g_100gb"), "plan_mismatch_reason");
+  assert(planMismatch.stderr.includes("package_c_live_canary_readiness_plan_mismatch:starter_2c4g_10gb:pro_8c16g_100gb"), "plan_mismatch_reason");
   assertNoSensitiveOutput(planMismatch.stdout + planMismatch.stderr, "plan_mismatch_output");
 
   const accepted = run(commonArgs);
@@ -406,11 +406,11 @@ try {
   assert.equal(report.cloudParameters.clusterId, "cls-fi097sy4", "cloud_cluster");
   assert.equal(report.cloudParameters.protectedPlatformNodePoolId, "np-cbk784r8", "cloud_protected_pool");
   assert.equal(report.cloudParameters.tenantNodePoolPrefix, "medopl-tenant-", "cloud_prefix");
-  assert.equal(report.cloudParameters.planId, "starter_2c4g_100gb", "cloud_plan_id");
+  assert.equal(report.cloudParameters.planId, "starter_2c4g_10gb", "cloud_plan_id");
   assert.equal(report.cloudParameters.requestedPlanId, "starter", "cloud_requested_plan_id");
   assert.equal(report.cloudParameters.planCatalogId, "v22_package_c_live_canary_plan_catalog_allowlist", "cloud_plan_catalog_id");
   assert.deepEqual(report.cloudParameters.compute, { cpuCores: 2, memoryGb: 4, maxConcurrentTasks: 1 }, "cloud_plan_compute");
-  assert.equal(report.cloudParameters.workspaceStorageGb, 100, "cloud_workspace_storage");
+  assert.equal(report.cloudParameters.workspaceStorageGb, 10, "cloud_workspace_storage");
   assert.equal(report.cloudParameters.nodeInstanceType, "SA5.MEDIUM4", "cloud_node_instance_type");
   assert.equal(report.cloudParameters.systemDisk.type, "CloudBSSD", "cloud_system_disk_type");
   assert.equal(report.cloudParameters.systemDisk.sizeGb, 50, "cloud_system_disk_size");
@@ -429,9 +429,9 @@ try {
   assert.equal(redactedCreateRequest.securityGroupId, "sg-6671l5we", "redacted_request_security_group");
   assert.equal(redactedCreateRequest.publicIp.enabled, false, "redacted_request_public_ip_disabled");
   assert.equal(Object.hasOwn(redactedCreateRequest, "instanceType"), false, "redacted_request_must_not_accept_raw_instance_type");
-  assert.equal(redactedCreateRequest.planId, "starter_2c4g_100gb", "redacted_request_plan_id");
+  assert.equal(redactedCreateRequest.planId, "starter_2c4g_10gb", "redacted_request_plan_id");
   assert.equal(redactedCreateRequest.nodeInstanceType, "SA5.MEDIUM4", "redacted_request_node_instance_type");
-  assert.equal(redactedCreateRequest.workspaceStorageGb, 100, "redacted_request_workspace_storage");
+  assert.equal(redactedCreateRequest.workspaceStorageGb, 10, "redacted_request_workspace_storage");
   assert.equal(redactedCreateRequest.systemDisk.type, "CloudBSSD", "redacted_request_disk_type");
   assert.equal(redactedCreateRequest.systemDisk.sizeGb, 50, "redacted_request_disk_size");
   assert.equal(redactedCreateRequest.billingMode, "POSTPAID_BY_HOUR", "redacted_request_billing_mode");
@@ -448,8 +448,8 @@ try {
   assert.equal(pack.cloudParameters.workerSubnetId, "subnet-a1fldajw", "pack_worker_subnet");
   assert.equal(pack.cloudParameters.securityGroupId, "sg-6671l5we", "pack_security_group");
   assert.equal(pack.cloudParameters.publicIp.enabled, false, "pack_public_ip_disabled");
-  assert.equal(pack.cloudParameters.planId, "starter_2c4g_100gb", "pack_plan_id");
-  assert.equal(pack.cloudParameters.workspaceStorageGb, 100, "pack_workspace_storage");
+  assert.equal(pack.cloudParameters.planId, "starter_2c4g_10gb", "pack_plan_id");
+  assert.equal(pack.cloudParameters.workspaceStorageGb, 10, "pack_workspace_storage");
   assert.equal(pack.cloudParameters.nodeInstanceType, "SA5.MEDIUM4", "pack_node_instance_type");
   assert.equal(pack.cloudParametersSource.kind, "non_secret_json_file", "pack_cloud_params_source");
   assert.equal(pack.forbiddenOperations.includes("kubectl"), true, "pack_forbids_kubectl");

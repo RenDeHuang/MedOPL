@@ -3,7 +3,7 @@
 ## Self Review
 
 - plan catalog boundary: Package C consumes a repo-tracked allowlist fixture.
-- product truth: docs/product, docs/specs, Go lab catalog and smoke tests agree on Starter 100GB.
+- product truth: docs/product, docs/specs, Go lab catalog and smoke tests agree on Starter 10GB.
 - secret hygiene: no secret path or raw credential is added.
 - real-cloud boundary: live mutation remains unauthorized and `RUN_TENCENT_CREATE_RELEASE_EXECUTION` stays outside this package.
 

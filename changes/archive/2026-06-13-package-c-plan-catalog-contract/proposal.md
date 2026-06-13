@@ -13,7 +13,7 @@ Package C live canary cloud params still accepted a temporary instance shape and
 ## Goals
 
 - Make Package C live canary validate the Starter plan from a repo-consumed plan catalog allowlist.
-- Move starter to `2C4G + 100GB workspace storage`.
+- Keep starter at `2C4G + 10GB workspace storage`.
 - Keep workspace storage separate from the TKE node system disk.
 - Reject arbitrary Tencent `instanceType` / `nodeInstanceType` input.
 

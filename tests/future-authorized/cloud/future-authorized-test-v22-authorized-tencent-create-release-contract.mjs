@@ -22,7 +22,7 @@ const requiredPhrases = [
   "authorized Tencent create/release",
   "本合同只定义授权边界，不执行真实创建或释放",
   "工作台资源",
-  "基础套餐：2c / 4GB / 100GB 文件空间",
+  "基础套餐：2c / 4GB / 10GB 文件空间",
   "Pro 套餐：8c / 16GB / 100GB 文件空间",
   "升级规格：先经产品审批并进入 MedOPL plan catalog allowlist，再展示 CPU、内存、文件空间和任务并发数",
   "多个任务可以复用同一组计算资源",

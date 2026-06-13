@@ -33,7 +33,7 @@ function sortedKeys(value) {
 }
 
 const expectedPlans = new Map([
-  ["starter_2c4g_100gb", { cpuCores: 2, memoryGb: 4, capacityGb: 100 }],
+  ["starter_2c4g_10gb", { cpuCores: 2, memoryGb: 4, capacityGb: 10 }],
   ["pro_8c16g_100gb", { cpuCores: 8, memoryGb: 16, capacityGb: 100 }],
 ]);
 
@@ -97,7 +97,7 @@ for (const plan of contract.plans) {
 }
 
 for (const marker of [
-  "starter_2c4g_100gb",
+  "starter_2c4g_10gb",
   "pro_8c16g_100gb",
   "PendingProductApproval: true",
   "PriceLabel: \"正式售价未定价\"",

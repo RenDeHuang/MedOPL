@@ -1,17 +1,17 @@
 {
   "contract": "v22_package_c_live_canary_plan_catalog_allowlist",
   "version": 1,
-  "canaryPlanId": "starter_2c4g_100gb",
+  "canaryPlanId": "starter_2c4g_10gb",
   "plans": [
     {
-      "id": "starter_2c4g_100gb",
-      "aliases": ["starter", "starter-2c", "starter-2c4g-100gb"],
+      "id": "starter_2c4g_10gb",
+      "aliases": ["starter", "starter-2c", "starter-2c4g-10gb"],
       "compute": {
         "cpuCores": 2,
         "memoryGb": 4,
         "maxConcurrentTasks": 1
       },
-      "workspaceStorageGb": 100,
+      "workspaceStorageGb": 10,
       "tke": {
         "nodeInstanceType": "SA5.MEDIUM4",
         "systemDisk": {

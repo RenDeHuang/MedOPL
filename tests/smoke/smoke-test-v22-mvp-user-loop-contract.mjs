@@ -5,12 +5,12 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const STARTED_AT = "2026-05-07T00:00:00.000Z";
 
 const PACKAGE_CATALOG = Object.freeze({
-  "starter_2c4g_100gb": Object.freeze({
-    id: "starter_2c4g_100gb",
-    title: "Starter 2c4g + 100GB",
+  "starter_2c4g_10gb": Object.freeze({
+    id: "starter_2c4g_10gb",
+    title: "Starter 2c4g + 10GB",
     kind: "starter",
     compute: Object.freeze({ cpuCores: 2, memoryGb: 4 }),
-    storage: Object.freeze({ capacityGb: 100 }),
+    storage: Object.freeze({ capacityGb: 10 }),
     weeklyPreauthCents: 3000,
   }),
   "pro_8c16g_100gb": Object.freeze({
@@ -666,21 +666,21 @@ assert.equal(rejectedRun.ok, false, "hosted_run_before_runtime_must_be_rejected"
 assert.equal(rejectedRun.error, "runtime_resource_binding_required", "hosted_run_rejection_error_mismatch");
 
 const starterSelection = packageSelection({
-  packageId: "starter_2c4g_100gb",
+  packageId: "starter_2c4g_10gb",
 });
 assert.equal(starterSelection.base.compute.cpuCores, 2, "starter_package_must_define_2_cores");
 assert.equal(starterSelection.base.compute.memoryGb, 4, "starter_package_must_define_4gb_memory");
-assert.equal(starterSelection.base.storage.capacityGb, 100, "starter_package_must_define_100gb_storage");
+assert.equal(starterSelection.base.storage.capacityGb, 10, "starter_package_must_define_10gb_storage");
 assert.equal(starterSelection.selected.compute.cpuCores, 2, "starter_selected_compute_must_match_base_in_mvp");
-assert.equal(starterSelection.selected.storage.capacityGb, 100, "starter_selected_storage_must_match_base_in_mvp");
+assert.equal(starterSelection.selected.storage.capacityGb, 10, "starter_selected_storage_must_match_base_in_mvp");
 
 assert.throws(() => packageSelection({
-  packageId: "starter_2c4g_100gb",
+  packageId: "starter_2c4g_10gb",
   computeAddons: [{ kind: "additional_compute", cpuCores: 2, memoryGb: 4 }],
 }), /compute_addons_active_path_must_be_forbidden_in_mvp/u, "compute_addons_active_path_must_be_rejected_in_mvp");
 
 assert.throws(() => packageSelection({
-  packageId: "starter_2c4g_100gb",
+  packageId: "starter_2c4g_10gb",
   storageAddons: [{ kind: "additional_storage", capacityGb: 20 }],
 }), /storage_addons_active_path_must_be_forbidden_in_mvp/u, "storage_addons_active_path_must_be_rejected_in_mvp");
 
@@ -708,12 +708,12 @@ const starterBinding = provisionRuntimeBinding(state, {
   lifecycleMode: "platform_provisioned",
   cloudMutation: false,
   packageSelection: {
-    packageId: "starter_2c4g_100gb",
+    packageId: "starter_2c4g_10gb",
   },
 });
 assert.equal(starterBinding.compute.cpuCores, 2, "starter_binding_must_provision_2_cores");
 assert.equal(starterBinding.compute.memoryGb, 4, "starter_binding_must_provision_4gb_memory");
-assert.equal(starterBinding.storage.capacityGb, 100, "starter_binding_must_provision_100gb_storage");
+assert.equal(starterBinding.storage.capacityGb, 10, "starter_binding_must_provision_10gb_storage");
 
 const proWorkspace = {
   id: "workspace-v22-pro",
@@ -851,9 +851,9 @@ const contractEvidence = {
   },
   coveredPackages: [
     {
-      id: "starter_2c4g_100gb",
-      compute: PACKAGE_CATALOG["starter_2c4g_100gb"].compute,
-      storage: PACKAGE_CATALOG["starter_2c4g_100gb"].storage,
+      id: "starter_2c4g_10gb",
+      compute: PACKAGE_CATALOG["starter_2c4g_10gb"].compute,
+      storage: PACKAGE_CATALOG["starter_2c4g_10gb"].storage,
     },
     {
       id: "pro_8c16g_100gb",

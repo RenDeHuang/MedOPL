@@ -724,7 +724,7 @@ Former title: v22 Authorized Tencent Create/Release Boundary
 
 用户可见套餐必须使用产品语言：
 
-- 基础套餐：2c / 4GB / 100GB 文件空间，默认 1 个任务并发。
+- 基础套餐：2c / 4GB / 10GB 文件空间，默认 1 个任务并发。
 - Pro 套餐：8c / 16GB / 100GB 文件空间，默认 2 个任务并发。
 - 升级规格：先经产品审批并进入 MedOPL plan catalog allowlist，再展示 CPU、内存、文件空间和任务并发数。
 
@@ -760,7 +760,7 @@ Former title: v22 Authorized Tencent Create/Release Boundary
 - COS prefix 是内部实现。
 - 可选 CBS / CFS / pod ephemeral scratch，仅作为运行时内部实现，不作为用户购买的文件空间主叙事。
 
-MVP 默认使用统一 TKE 集群，不默认为每个租户创建独立集群。多租户通过 tenant node pool、namespace、quota、labels、network policy、admission policy、taint、nodeSelector、toleration、resource binding 和资源标签隔离。`starter_2c4g_100gb`、`pro_8c16g_100gb` 和后续叠加计算都必须由 Package C 创建或绑定该租户/工作台自己的 tenant node pool；用户 A 和用户 B 不得共享同一个用户计算池。超过 compute allocation 的 workload 必须 fail-closed，不得自动扩容并由平台垫付，也不得借用其他用户 allocation。
+MVP 默认使用统一 TKE 集群，不默认为每个租户创建独立集群。多租户通过 tenant node pool、namespace、quota、labels、network policy、admission policy、taint、nodeSelector、toleration、resource binding 和资源标签隔离。`starter_2c4g_10gb`、`pro_8c16g_100gb` 和后续叠加计算都必须由 Package C 创建或绑定该租户/工作台自己的 tenant node pool；用户 A 和用户 B 不得共享同一个用户计算池。超过 compute allocation 的 workload 必须 fail-closed，不得自动扩容并由平台垫付，也不得借用其他用户 allocation。
 
 计算升级必须先完成 Portal 套餐变更、冻结金额或余额校验、cloud operation 和审计记录，然后 Package C 才能更新 compute allocation、ResourceQuota / LimitRange / admission policy，并调整对应 tenant node pool desired capacity 或绑定更高 workload class。普通用户仍看到“计算资源 / 套餐 / 任务并发 / 状态”，不是节点池。
 
@@ -806,7 +806,7 @@ MVP 默认使用统一 TKE 集群，不默认为每个租户创建独立集群�
   "billingAttributionId": "billing attribution id",
   "workspaceId": "workspace id",
   "accountId": "account id",
-  "serverPlanId": "starter_2c4g_100gb or pro_8c16g_100gb or catalog-allowlisted upgrade",
+  "serverPlanId": "starter_2c4g_10gb or pro_8c16g_100gb or catalog-allowlisted upgrade",
   "tenantId": "tenant id",
   "runId": "run id or null",
   "environmentId": "environment id"
@@ -1028,7 +1028,7 @@ Package C live canary readiness 需要独立的 non-secret cloud parameters JSON
 - security group：`sg-6671l5we`
 - tenant node pool prefix：`medopl-tenant-`
 - plan catalog：`tests/support/cloud-prework/package-c-live-canary-plan-catalog-allowlist.json`
-- canary plan：`starter_2c4g_100gb` = 2C4G + 100GB workspace storage
+- canary plan：`starter_2c4g_10gb` = 2C4G + 10GB workspace storage
 - starter node instance type：`SA5.MEDIUM4`
 - node system disk：`CloudBSSD` / `50GB`
 - public IP：disabled
@@ -1609,7 +1609,7 @@ Former title: v22 Commercial UI Impact Decision
 商业化分层对 UI 的后续影响：
 
 - `api_only` 只需要入口、账号、工作空间、provider 绑定状态和文件/任务/结果索引；当前 UI 已覆盖为 OPL entry/context 状态。
-- `full_runtime` 使用当前运行环境、资源、文件空间、账单、trace 和释放 surface；当前 MVP 规格 `starter_2c4g_100gb` / `pro_8c16g_100gb` 仍属于该层。
+- `full_runtime` 使用当前运行环境、资源、文件空间、账单、trace 和释放 surface；当前 MVP 规格 `starter_2c4g_10gb` / `pro_8c16g_100gb` 仍属于该层。
 - `customer_dedicated` 在真正对客户展示前必须另开 UI implementation leaf，补专属隔离、审批窗口、客户级审计标签和变更窗口的可见状态；不得在本阶段用文案把它伪装成已上线能力。
 
 ## Contract Data
@@ -1744,7 +1744,7 @@ Former title: v22 Authorized Tencent Create/Release Implementation Boundary
 
 套餐和 allowlisted 升级规格必须使用产品语言：
 
-- 基础套餐：2c / 4GB / 100GB 文件空间。
+- 基础套餐：2c / 4GB / 10GB 文件空间。
 - Pro 套餐：8c / 16GB / 100GB 文件空间。
 - 升级规格：先进入 MedOPL plan catalog allowlist，再展示 CPU、内存、文件空间、任务并发数。
 
@@ -1875,7 +1875,7 @@ T+1 腾讯云 / COS 账单和 Portal ledger 对不上时，进入管理员审计
     "effectiveLimitsVisible": true
   },
   "packages": {
-    "starter": "2c / 4GB / 100GB 文件空间",
+    "starter": "2c / 4GB / 10GB 文件空间",
     "pro": "8c / 16GB / 100GB 文件空间",
     "allowlistedUpgradeSupports": [
       "CPU",
@@ -3691,7 +3691,7 @@ Former title: v22 Managed Environment Open Boundary Contract
 
 MVP 只支持两个默认套餐：
 
-- `starter_2c4g_100gb`
+- `starter_2c4g_10gb`
 - `pro_8c16g_100gb`
 
 套餐边界：
@@ -3702,7 +3702,7 @@ MVP 只支持两个默认套餐：
 
 本轮不写正式价格，不扩展自定义套餐实现。
 
-MVP 不暴露任意自定义 active 套餐。普通用户开通与查询只允许 `starter_2c4g_100gb`、`pro_8c16g_100gb` 和后续进入 plan catalog allowlist 的升级规格。
+MVP 不暴露任意自定义 active 套餐。普通用户开通与查询只允许 `starter_2c4g_10gb`、`pro_8c16g_100gb` 和后续进入 plan catalog allowlist 的升级规格。
 
 ## Open Flow
 
@@ -3745,7 +3745,7 @@ MVP 不暴露任意自定义 active 套餐。普通用户开通与查询只允�
     "amountCents": 0
   },
   "selectedPlan": {
-    "id": "starter_2c4g_100gb or pro_8c16g_100gb",
+    "id": "starter_2c4g_10gb or pro_8c16g_100gb",
     "storageBackend": "cos_standard_workspace_quota",
     "basePrice": null,
     "pendingProductApproval": true
@@ -3872,7 +3872,7 @@ Langfuse 只作为后续 trace metadata 来源，不进入 MVP 主产品叙事�
 
 ## Scope
 
-- 默认套餐只引用 `starter_2c4g_100gb` 和 `pro_8c16g_100gb`。
+- 默认套餐只引用 `starter_2c4g_10gb` 和 `pro_8c16g_100gb`。
 - 本合同不扩展自定义套餐实现。
 - Portal 登录不需要 gflabtoken API Key。
 - 每个用户使用自己的 gflabtoken API Key 作为模型调用凭证；OPL entry/preflight 或工作台 provider 绑定面必须能收用户自己的 key，已绑定用户不要求重复输入。
@@ -3928,7 +3928,7 @@ Langfuse 只作为后续 trace metadata 来源，不进入 MVP 主产品叙事�
     "tkeUserNarrativeAllowed": false
   },
   "defaultPlans": [
-    "starter_2c4g_100gb",
+    "starter_2c4g_10gb",
     "pro_8c16g_100gb"
   ],
   "secretBoundary": {
@@ -4021,7 +4021,7 @@ Langfuse 只作为后续 trace metadata 来源，不进入 MVP 主产品叙事�
       "name": "用户在 Portal 开通托管运行环境，选择套餐和文件空间",
       "userFacing": true,
       "requiredEvidence": [
-        "selected plan is starter_2c4g_100gb or pro_8c16g_100gb",
+        "selected plan is starter_2c4g_10gb or pro_8c16g_100gb",
         "file space quota selected",
         "hosted runtime requested"
       ]
@@ -7363,7 +7363,7 @@ Former title: v22 Pricing Snapshot Boundary Contract
 
 ## Scope
 
-- v22 默认套餐只包含 `starter_2c4g_100gb` 和 `pro_8c16g_100gb`。
+- v22 默认套餐只包含 `starter_2c4g_10gb` 和 `pro_8c16g_100gb`。
 - 资源由平台开通，区域固定为 `na-siliconvalley`，可用区固定为 `na-siliconvalley-1`。
 - 存储后端固定为 `cos_standard_workspace_quota`，操作系统固定为 `ubuntu_22_04`。
 - 云账单模式固定为 `pay_as_you_go`。
@@ -7390,7 +7390,7 @@ Former title: v22 Pricing Snapshot Boundary Contract
   },
   "plans": [
     {
-      "id": "starter_2c4g_100gb",
+      "id": "starter_2c4g_10gb",
       "compute": {
         "cpuCores": 2,
         "memoryGb": 4,
@@ -7398,7 +7398,7 @@ Former title: v22 Pricing Snapshot Boundary Contract
         "userBuysNodePool": false
       },
       "storage": {
-        "capacityGb": 100
+        "capacityGb": 10
       },
       "storageBackend": "cos_standard_workspace_quota",
       "region": "na-siliconvalley",
@@ -9164,10 +9164,10 @@ MedOPL 提供托管 runtime、计算和存储能力。用户选择套餐或扩�
 
 | 套餐 ID | 计算 | 存储 | 默认并发 |
 | --- | --- | --- |
-| `starter_2c4g_100gb` | 2c4gb | 100GB | 1 |
+| `starter_2c4g_10gb` | 2c4gb | 10GB | 1 |
 | `pro_8c16g_100gb` | 8c16gb | 100GB | 2 |
 
-`starter_2c4g_100gb` 与 `pro_8c16g_100gb` 是 v22 默认套餐的唯一标准命名。不得再使用“默认套餐 1/2”命名。
+`starter_2c4g_10gb` 与 `pro_8c16g_100gb` 是 v22 默认套餐的唯一标准命名。不得再使用“默认套餐 1/2”命名。
 
 ## Extensions
 

@@ -33,7 +33,7 @@ func TestServiceActivatesAndUpgradesLabPackage(t *testing.T) {
 		PackageID:      "starter",
 		IdempotencyKey: "idem-activate",
 	})
-	if err != nil || activated.Subscription.PackageID != "starter_2c4g_100gb" || !activated.Entitlement.Enabled {
+	if err != nil || activated.Subscription.PackageID != "starter_2c4g_10gb" || !activated.Entitlement.Enabled {
 		t.Fatalf("activated=%+v err=%v", activated, err)
 	}
 	upgraded, err := service.UpgradeLabPackage(ctx, MutationInput{
