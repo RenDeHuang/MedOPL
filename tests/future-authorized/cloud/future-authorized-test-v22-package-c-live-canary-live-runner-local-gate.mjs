@@ -202,22 +202,29 @@ try {
     "DeleteNodePool",
     "GetResources",
   ], "live_call_order");
-  assert.equal(calls.find((call) => call.api === "CreateNodePool").req.ClusterId, "cls-fi097sy4", "create_cluster");
-  assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Name, "medopl-tenant-rb-package-c-live-canary-20260613", "create_name");
-  assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Native.SubnetIds[0], "subnet-a1fldajw", "create_subnet");
-  assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Native.SecurityGroupIds[0], "sg-6671l5we", "create_sg");
-  assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Native.InstanceTypes[0], "SA5.MEDIUM4", "create_instance_from_starter_catalog");
-  assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Native.SystemDisk.DiskType, "CLOUD_BSSD", "create_system_disk_type");
-  assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Native.SystemDisk.DiskSize, 50, "create_system_disk_size");
-  assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Native.InternetAccessible.MaxBandwidthOut, 0, "create_public_ip_disabled");
-  assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Native.Replicas, 0, "create_desired_zero");
-  assert.deepEqual(calls.find((call) => call.api === "CreateNodePool").req.Annotations, [
-    { Name: "medopl.io/availability-zone", Value: "na-siliconvalley-1" },
-    { Name: "medopl.io/runtime", Value: "containerd" },
-    { Name: "medopl.io/runtime-version", Value: "1.6" },
-    { Name: "medopl.io/image-type", Value: "TKE_RUNTIME" },
-    { Name: "medopl.io/login-policy", Value: "DISABLED" },
-  ], "create_annotations_from_cloud_params");
+  const createCall = calls.find((call) => call.api === "CreateNodePool");
+  const tagResourcesCall = calls.find((call) => call.api === "TagResources");
+  assert.equal(createCall.req.ClusterId, "cls-fi097sy4", "create_cluster");
+  assert.equal(createCall.req.Name, "medopl-tenant-rb-package-c-live-canary-20260613", "create_name");
+  assert.equal(createCall.req.Native.SubnetIds[0], "subnet-a1fldajw", "create_subnet");
+  assert.equal(createCall.req.Native.SecurityGroupIds[0], "sg-6671l5we", "create_sg");
+  assert.equal(createCall.req.Native.InstanceTypes[0], "SA5.MEDIUM4", "create_instance_from_starter_catalog");
+  assert.equal(createCall.req.Native.SystemDisk.DiskType, "CLOUD_BSSD", "create_system_disk_type");
+  assert.equal(createCall.req.Native.SystemDisk.DiskSize, 50, "create_system_disk_size");
+  assert.equal(createCall.req.Native.InternetAccessible.AddressType, "PublicIP", "create_internet_accessible_address_type");
+  assert.equal(createCall.req.Native.InternetAccessible.MaxBandwidthOut, 0, "create_public_ip_disabled");
+  assert.equal(createCall.req.Native.Replicas, 0, "create_desired_zero");
+  assert.equal(Object.hasOwn(createCall.req, "Tags"), false, "create_request_must_not_inline_cloud_tags");
+  assert.equal(Object.hasOwn(createCall.req, "Annotations"), false, "create_request_must_not_inline_annotations");
+  assert.deepEqual(tagResourcesCall.req.Tags, [
+    { Key: "resourceBindingId", Value: "rb-package-c-live-canary-20260613" },
+    { Key: "billingAttributionId", Value: "ba-package-c-live-canary-20260613" },
+    { Key: "tenantId", Value: "tenant-canary-package-c" },
+    { Key: "workspaceId", Value: "ws-canary-package-c" },
+    { Key: "medopl.io/role", Value: "tenant_node_pool" },
+    { Key: "medopl.io/package", Value: "C" },
+    { Key: "medopl.io/canary", Value: "package_c_live" },
+  ], "tag_resources_keeps_tenant_ownership_tags_after_create");
   assert.equal(calls.filter((call) => call.api === "ScaleNodePool")[0].req.Replicas, 1, "scale_up_one");
   assert.equal(calls.filter((call) => call.api === "ScaleNodePool")[1].req.Replicas, 0, "scale_down_zero");
   assert.equal(calls.find((call) => call.api === "DeleteNodePool").req.NodePoolId, "np-tenant-proof", "delete_tenant_pool");

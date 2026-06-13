@@ -200,6 +200,19 @@ export function validateCloudParameters(params, options) {
 
 export function redactedCreateNodePoolRequest(cloudParameters, options) {
   const tenantNodePoolId = `${options.tenantNodePoolPrefix}${options.resourceBindingId}`;
+  const tagResourcesPlan = {
+    api: "TagResources",
+    afterCreateNodePool: true,
+    tags: [
+      { Key: "resourceBindingId", Value: options.resourceBindingId },
+      { Key: "billingAttributionId", Value: options.billingAttributionId },
+      { Key: "tenantId", Value: options.tenantId },
+      { Key: "workspaceId", Value: options.workspaceId },
+      { Key: "medopl.io/role", Value: "tenant_node_pool" },
+      { Key: "medopl.io/package", Value: "C" },
+      { Key: "medopl.io/canary", Value: "package_c_live" },
+    ],
+  };
   return {
     api: "CreateNodePool",
     executedNow: false,
@@ -219,6 +232,15 @@ export function redactedCreateNodePoolRequest(cloudParameters, options) {
     systemDisk: cloudParameters.systemDisk,
     billingMode: cloudParameters.billingMode,
     publicIp: cloudParameters.publicIp,
+    createNodePoolNativeInternetAccessible: {
+      AddressType: "PublicIP",
+      MaxBandwidthOut: 0,
+      ChargeType: "TRAFFIC_POSTPAID_BY_HOUR",
+      publicIpDisabled: cloudParameters.publicIp.enabled === false,
+    },
+    createNodePoolInlineTags: [],
+    createNodePoolInlineAnnotations: [],
+    tagResourcesPlan,
     nodeImageOrRuntimeConfig: cloudParameters.nodeImageOrRuntimeConfig,
     loginOrKeyPolicy: cloudParameters.loginOrKeyPolicy,
   };

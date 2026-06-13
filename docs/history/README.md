@@ -4470,4 +4470,54 @@ post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 
+### 2026-06-13 recovery/platform-v22-trunk
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `53d685fb9a7c0328ddec57879a5b71eec57deac7`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Corrected the Package C plan catalog and prepare-only contract to Tencent's observed `CLOUD_BSSD` system disk enum.
+- Kept Starter as `starter_2c4g_10gb`: 2C4G, 10GB workspace storage, TKE `SA5.MEDIUM4`, 50GB node system disk and public IP disabled.
+- Kept the CreateNodePool request path as `Native.SystemDisk.DiskType` / `Native.SystemDisk.DiskSize`.
+- Updated Package C readiness/live runner local gates and current truth docs to use `CLOUD_BSSD`.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-c-live-canary-readiness-local-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-c-live-canary-live-runner-local-gate.mjs`: pass.
+- `npm run verify`: pass before push.
+- `npm run closeout:check -- --json`: pass before push.
+
+Can-claim:
+
+- `origin/recovery/platform-v22-trunk` includes the Package C `CLOUD_BSSD` system disk contract correction at `6651d064933aa730858cd6c70239c7ba1176492b`.
+- Package C prepare-only evidence can now express Starter with Tencent's observed `CLOUD_BSSD` system disk enum.
+
+Cannot-claim:
+
+- This closeout authorizes a real Tencent mutation, deploy, kubectl, build/push, Package D, live-test, kubeconfig read or secret read.
+- Production billing readiness, production runtime readiness or production deploy readiness is complete.
+- Protected platform node pool `np-cbk784r8` may be deleted, scaled or modified.
+
+landed_commit: `6651d064933aa730858cd6c70239c7ba1176492b`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `6651d064933aa730858cd6c70239c7ba1176492b`.
+- `npm run verify`: pass before push.
+- `npm run closeout:check -- --json`: pass before push.
+- No additional Tencent mutation, deploy, kubectl, build/push, Package D, live-test, kubeconfig read or secret write to git was performed by this closeout.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。

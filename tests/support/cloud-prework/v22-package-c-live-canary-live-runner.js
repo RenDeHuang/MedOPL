@@ -282,31 +282,14 @@ function nodeLabels(options) {
   ];
 }
 
-function nodeAnnotations(cloudParameters) {
-  return [
-    { Name: "medopl.io/availability-zone", Value: cloudParameters.availabilityZone },
-    { Name: "medopl.io/runtime", Value: cloudParameters.nodeImageOrRuntimeConfig.runtime },
-    { Name: "medopl.io/runtime-version", Value: cloudParameters.nodeImageOrRuntimeConfig.runtimeVersion },
-    { Name: "medopl.io/image-type", Value: cloudParameters.nodeImageOrRuntimeConfig.imageType },
-    { Name: "medopl.io/login-policy", Value: cloudParameters.loginOrKeyPolicy.mode },
-  ];
-}
-
 function createNodePoolRequest(cloudParameters, options) {
   return {
     ClusterId: options.targetClusterId,
     Name: TARGET_TENANT_NODE_POOL_NAME,
     Type: "Native",
     Labels: nodeLabels(options),
-    Tags: [
-      {
-        ResourceType: "machine",
-        Tags: tagList(options),
-      },
-    ],
     DeletionProtection: false,
     Unschedulable: true,
-    Annotations: nodeAnnotations(cloudParameters),
     Native: {
       Scaling: {
         MinReplicas: 0,
@@ -324,6 +307,7 @@ function createNodePoolRequest(cloudParameters, options) {
       EnableAutoscaling: false,
       Replicas: 0,
       InternetAccessible: {
+        AddressType: "PublicIP",
         MaxBandwidthOut: 0,
         ChargeType: "TRAFFIC_POSTPAID_BY_HOUR",
       },

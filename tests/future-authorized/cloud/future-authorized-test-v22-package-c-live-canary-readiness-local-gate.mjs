@@ -428,6 +428,22 @@ try {
   assert.equal(redactedCreateRequest.workerSubnetId, "subnet-a1fldajw", "redacted_request_worker_subnet");
   assert.equal(redactedCreateRequest.securityGroupId, "sg-6671l5we", "redacted_request_security_group");
   assert.equal(redactedCreateRequest.publicIp.enabled, false, "redacted_request_public_ip_disabled");
+  assert.equal(redactedCreateRequest.createNodePoolNativeInternetAccessible.AddressType, "PublicIP", "redacted_request_address_type_public_ip");
+  assert.equal(redactedCreateRequest.createNodePoolNativeInternetAccessible.MaxBandwidthOut, 0, "redacted_request_max_bandwidth_zero");
+  assert.equal(redactedCreateRequest.createNodePoolNativeInternetAccessible.publicIpDisabled, true, "redacted_request_public_ip_disabled_by_zero_bandwidth");
+  assert.deepEqual(redactedCreateRequest.createNodePoolInlineTags, [], "redacted_request_must_not_inline_cloud_tags");
+  assert.deepEqual(redactedCreateRequest.createNodePoolInlineAnnotations, [], "redacted_request_must_not_inline_annotations");
+  assert.equal(redactedCreateRequest.tagResourcesPlan.api, "TagResources", "redacted_request_tag_resources_api");
+  assert.equal(redactedCreateRequest.tagResourcesPlan.afterCreateNodePool, true, "redacted_request_tag_resources_after_create");
+  assert.deepEqual(redactedCreateRequest.tagResourcesPlan.tags, [
+    { Key: "resourceBindingId", Value: "rb-canary-package-c-20260613-001" },
+    { Key: "billingAttributionId", Value: "ba-canary-package-c-20260613-001" },
+    { Key: "tenantId", Value: "tenant-canary-package-c" },
+    { Key: "workspaceId", Value: "ws-canary-package-c" },
+    { Key: "medopl.io/role", Value: "tenant_node_pool" },
+    { Key: "medopl.io/package", Value: "C" },
+    { Key: "medopl.io/canary", Value: "package_c_live" },
+  ], "redacted_request_keeps_tag_resources_plan");
   assert.equal(Object.hasOwn(redactedCreateRequest, "instanceType"), false, "redacted_request_must_not_accept_raw_instance_type");
   assert.equal(redactedCreateRequest.planId, "starter_2c4g_10gb", "redacted_request_plan_id");
   assert.equal(redactedCreateRequest.nodeInstanceType, "SA5.MEDIUM4", "redacted_request_node_instance_type");
