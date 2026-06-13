@@ -141,6 +141,22 @@ function createFakeAdapter({
         const row = cloudOperations.get(params[0]) || [...cloudOperations.values()].find((entry) => entry.resource_binding_id === params[0]);
         return { rows: row ? [row] : [] };
       }
+      if (normalized.startsWith("UPDATE \"public\".\"resource_bindings\"")) {
+        const row = resourceBindings.get(params[0]);
+        if (row) {
+          if (normalized.includes("status = $2")) row.status = params[1];
+          if (normalized.includes("node_pool_id = $2")) row.node_pool_id = params[1];
+        }
+        return { rows: [] };
+      }
+      if (normalized.startsWith("UPDATE \"public\".\"cloud_operations\"")) {
+        for (const row of cloudOperations.values()) {
+          if (row.resource_binding_id !== params[0]) continue;
+          if (normalized.includes("status = $2")) row.status = params[1];
+          if (normalized.includes("node_pool_id = $2")) row.node_pool_id = params[1];
+        }
+        return { rows: [] };
+      }
       if (normalized.startsWith("DELETE FROM \"public\".\"cloud_operations\"")) {
         for (const [operationId, row] of cloudOperations.entries()) {
           if (row.resource_binding_id === params[0]) cloudOperations.delete(operationId);
@@ -348,6 +364,7 @@ try {
   assert.equal(canarySummary.boundary.productionPostgresWrite, true, "live_canary_declares_real_db_write");
   assert.equal(canarySummary.boundary.executesTencentMutation, false, "live_canary_must_not_execute_tencent_mutation");
   assert.equal(canarySummary.confirmations.insertReadback, true, "live_canary_insert_readback_confirmed");
+  assert.equal(canarySummary.confirmations.releasedReadback, true, "live_canary_released_readback_confirmed");
   assert.equal(canarySummary.confirmations.cleanupReadbackAbsent, true, "live_canary_cleanup_absent_confirmed");
   assert.equal(canarySummary.redactionAudit.passwordRedacted, true, "live_canary_password_redacted");
   assert.equal(canarySummary.redactionAudit.connectionUrlOmitted, true, "live_canary_url_omitted");
@@ -355,10 +372,13 @@ try {
   const canarySql = canaryAdapter.calls.map((call) => call.sql || "").join("\n");
   assert(canarySql.includes("INSERT INTO \"public\".\"resource_bindings\""), "live_canary_writes_resource_binding");
   assert(canarySql.includes("INSERT INTO \"public\".\"cloud_operations\""), "live_canary_writes_cloud_operation");
+  assert(canarySql.includes("UPDATE \"public\".\"resource_bindings\""), "live_canary_marks_resource_binding_released");
+  assert(canarySql.includes("UPDATE \"public\".\"cloud_operations\""), "live_canary_marks_cloud_operation_released");
   assert(canarySql.includes("DELETE FROM \"public\".\"cloud_operations\""), "live_canary_cleans_cloud_operation_first");
   assert(canarySql.includes("DELETE FROM \"public\".\"resource_bindings\""), "live_canary_cleans_resource_binding");
   assert.equal(canaryAdapter.calls.some((call) => JSON.stringify(call).includes("np-cbk784r8")), false, "live_canary_must_not_write_platform_pool");
   const canaryEvidence = JSON.parse(await readFile(canarySummary.summaryPath, "utf8"));
+  assert.equal(canaryEvidence.confirmations.releasedReadback, true, "live_canary_evidence_released_readback");
   assert.equal(canaryEvidence.confirmations.cleanupReadbackAbsent, true, "live_canary_evidence_cleanup_absent");
   assertNoSensitiveOutput(JSON.stringify(canaryEvidence), "live_canary_evidence");
 

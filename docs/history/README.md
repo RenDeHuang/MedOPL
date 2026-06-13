@@ -4938,3 +4938,33 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+
+### 2026-06-14 package-c-postgres-ledger-live-canary-preflight
+
+Status: `authoring / authorized live DB canary failed closed`
+
+Branch: `recovery/platform-v22-trunk`
+
+Scope:
+
+- Added explicit Package C PostgreSQL ledger canary released-state readback before cleanup.
+- Added PostgreSQL connection timeout so VPC/private endpoint failures fail closed instead of hanging.
+- Ran the authorized PostgreSQL ledger canary using only `/home/dev/.secrets/medopl/v22/postgres-ledger.env`.
+- The canary failed closed at DB connection preflight with `timeout expired` and `network_unreachable_or_connection_preflight_failed` in redacted `.runtime` evidence.
+- No parent-row check, canary `ResourceBinding` / `CloudOperation` write, released mark or cleanup write executed because preflight did not connect.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-c-postgres-ledger-sink-local-gate.mjs`: pass.
+
+Can-claim:
+
+- The live DB canary path now fails closed on unreachable PostgreSQL and records redacted failure evidence.
+
+Cannot-claim:
+
+- A successful real PostgreSQL ledger write/read/release/cleanup occurred.
+- Tencent mutation, kubectl, deploy, build/push, Package D, kubeconfig read, package-c mutation env read or package-d deploy env read occurred.
+
+next_cursor: `real-cloud-authorization-boundary`

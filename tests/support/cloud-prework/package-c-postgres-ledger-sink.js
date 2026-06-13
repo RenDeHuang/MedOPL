@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const EXECUTION_GATE_KEY = "RUN_MEDOPL_POSTGRES_LEDGER_EXECUTION";
 const TENCENT_EXECUTION_GATE_KEY = "RUN_TENCENT_CREATE_RELEASE_EXECUTION";
+const POSTGRES_CONNECTION_TIMEOUT_MS = 5000;
 export const REQUIRED_KEYS = Object.freeze([
   EXECUTION_GATE_KEY,
   "MEDOPL_POSTGRES_LEDGER_HOST",
@@ -200,6 +201,7 @@ export function createPackageCPostgresDriverAdapter({ requirePackage = (name) =>
         database: config.database,
         user: config.user,
         password: config.password,
+        connectionTimeoutMillis: POSTGRES_CONNECTION_TIMEOUT_MS,
         ssl: config.sslMode === "disable" ? false : { rejectUnauthorized: config.sslMode === "verify-full" },
       });
       await client.connect();

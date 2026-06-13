@@ -138,9 +138,12 @@ function redactedCanaryIdentity(identity = {}) {
 }
 
 function failurePayload(error) {
+  const code = clean(error?.message || error?.code || "package_c_postgres_ledger_failed");
+  const isNetworkFailure = /(?:timeout|timed out|ETIMEDOUT|ECONNREFUSED|EHOSTUNREACH|ENETUNREACH|network|connect)/iu.test(code);
   return {
-    code: clean(error?.message || error?.code || "package_c_postgres_ledger_failed"),
+    code,
     message: redactedText(error?.message || "package_c_postgres_ledger_failed"),
+    failureClass: isNetworkFailure ? "network_unreachable_or_connection_preflight_failed" : "postgres_ledger_canary_failed",
   };
 }
 
@@ -168,6 +171,7 @@ function baseCanarySummary({ operationId, boundary, validation = null }) {
       preflight: false,
       parentRowsExist: false,
       insertReadback: false,
+      releasedReadback: false,
       cleanupReadbackAbsent: false,
     },
     redactionAudit: {
@@ -237,6 +241,7 @@ export async function runPackageCPostgresLedgerCanaryLive({
     preflight: false,
     parentRowsExist: false,
     insertReadback: false,
+    releasedReadback: false,
     cleanupIssued: false,
     cleanupReadbackAbsent: false,
   };
@@ -252,6 +257,11 @@ export async function runPackageCPostgresLedgerCanaryLive({
     const cloudOperation = await sink.readCloudOperation(identity.operationId);
     confirmations.insertReadback = Boolean(resourceBinding && cloudOperation);
     if (!confirmations.insertReadback) throw new Error("package_c_postgres_ledger_canary_readback_missing");
+    await sink.markReleased(identity.resourceBindingId, new Date().toISOString());
+    const releasedResourceBinding = await sink.readResourceBinding(identity.resourceBindingId);
+    const releasedCloudOperation = await sink.readCloudOperation(identity.operationId);
+    confirmations.releasedReadback = releasedResourceBinding?.status === "released" && releasedCloudOperation?.status === "released";
+    if (!confirmations.releasedReadback) throw new Error("package_c_postgres_ledger_canary_released_readback_missing");
     await sink.deleteCanary(identity.resourceBindingId);
     confirmations.cleanupIssued = true;
     const resourceBindingAfterCleanup = await sink.readResourceBinding(identity.resourceBindingId);
