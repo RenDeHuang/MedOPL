@@ -4408,4 +4408,66 @@ post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 
+### 2026-06-13 recovery/platform-v22-trunk
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `2baa3b36aa1032962f5af91c0b698b7740621cb0`
+
+Archived change package: `changes/archive/2026-06-13-package-c-plan-catalog-contract`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Aligned Package C live canary prepare-only cloud params with the MedOPL plan catalog.
+- Set Starter current product/server plan to `starter_2c4g_100gb`: 2C4G, 100GB workspace storage and one task concurrency.
+- Kept Pro current product/server plan as `pro_8c16g_100gb`: 8C16G, 100GB workspace storage and two task concurrency.
+- Added a Package C plan catalog allowlist consumed by the readiness and live runner helpers.
+- Derived Tencent `nodeInstanceType`, workspace storage quota and TKE node `systemDisk` from the allowlist instead of accepting arbitrary `instanceType` input.
+- Fixed the Package C canary Starter mapping to TKE `SA5.MEDIUM4`, `CloudBSSD` 50GB node system disk and public IP disabled.
+- Kept `workspaceStorageGb` as the user package storage quota / billing item, distinct from TKE node system disk.
+- Cleared active `starter_2c4g_10gb`, temporary Starter 10GB and arbitrary custom instance type wording from current product/spec/source/test truth, except negative tests and history context.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-c-live-canary-readiness-local-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-c-live-canary-live-runner-local-gate.mjs`: pass.
+- `node tests/smoke/smoke-test-v22-pricing-plan-contract.mjs`: pass.
+- `node tests/smoke/smoke-test-v22-resource-plan-contract.mjs`: pass.
+- `node tests/smoke/smoke-test-v22-mvp-user-loop-contract.mjs`: pass.
+- `bash -lc "cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./internal/domain/lab ./internal/service/lab ./internal/repository/memory ./internal/server/handlers"`: pass.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: pass.
+- `npm run verify`: pass before push.
+
+Can-claim:
+
+- `origin/recovery/platform-v22-trunk` includes the Package C plan catalog canary contract at `93b93fc5af455111c2c33b31599cf5cca5e548d8`.
+- Package C prepare-only canary validates Starter through catalog-derived Tencent node parameters.
+- User upgrades remain allowed only after the target shape exists in MedOPL plan catalog allowlist.
+
+Cannot-claim:
+
+- This closeout authorizes a real Tencent mutation, deploy, kubectl, build/push, Package D, live-test, kubeconfig read or secret read.
+- Production billing readiness, production runtime readiness or production deploy readiness is complete.
+- Users can choose arbitrary Tencent instance types.
+- Protected platform node pool `np-cbk784r8` may be deleted, scaled or modified.
+
+landed_commit: `93b93fc5af455111c2c33b31599cf5cca5e548d8`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `93b93fc5af455111c2c33b31599cf5cca5e548d8`.
+- `npm run verify`: pass before push.
+- `npm run closeout:check -- --json`: expected closeout gap detected after the implementation commit reached trunk; this closeout records it.
+- No additional Tencent mutation, deploy, kubectl, build/push, Package D, live-test, kubeconfig read or secret write to git was performed by this closeout.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。

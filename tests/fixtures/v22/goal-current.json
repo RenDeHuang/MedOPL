@@ -8,12 +8,12 @@
   "last_updated_at": "2026-06-13",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "2baa3b36aa1032962f5af91c0b698b7740621cb0",
+  "base_trunk_head": "93b93fc5af455111c2c33b31599cf5cca5e548d8",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "2baa3b36aa1032962f5af91c0b698b7740621cb0",
+  "last_landed_commit": "93b93fc5af455111c2c33b31599cf5cca5e548d8",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package C live canary runner is landed as local future-authorized code/test evidence. The runner requires explicit live confirmation, RUN_TENCENT_CREATE_RELEASE_EXECUTION=1, cluster cls-fi097sy4, protected platform node pool np-cbk784r8, tenant node pool prefix medopl-tenant-, worker subnet subnet-a1fldajw, security group sg-6671l5we, public IP disabled, max operation count 1 and budget at or below 50 CNY; it rejects deploy, kubectl, build/push, Package D and kubeconfig arguments; writes only redacted .runtime evidence while resetting RUN_TENCENT_CREATE_RELEASE_EXECUTION to 0; and stores Tencent SDK failures only as sanitized code/message/requestId/apiVersion/action/region/nodePoolName. Real Package C create/release remains blocked until current-session authorization is explicitly granted; shared user compute pool is forbidden, tenant node pools must be created by Package C per tenant or workspace, and the current cursor remains real-cloud-authorization-boundary without deploy/kubectl/build-push/live-test authorization.",
+  "current_problem": "Package C live canary runner is landed as local future-authorized code/test evidence and now validates Starter through the MedOPL plan catalog allowlist. Starter is starter_2c4g_100gb: 2C4G, 100GB workspace storage, TKE SA5.MEDIUM4, CloudBSSD 50GB node system disk and public IP disabled; Pro is pro_8c16g_100gb with two task concurrency. workspaceStorageGb is the user package storage quota / billing item and is not the TKE node system disk. Real Package C create/release remains blocked until current-session authorization is explicitly granted; RUN_TENCENT_CREATE_RELEASE_EXECUTION must remain 0 for prepare-only, arbitrary Tencent instanceType input is rejected, shared user compute pool is forbidden, tenant node pools must be created by Package C per tenant or workspace, and the current cursor remains real-cloud-authorization-boundary without deploy/kubectl/build-push/live-test authorization.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -100,7 +100,8 @@
       "depends_on": [
         "precloud-deployable-rc"
       ],
-      "history_summary": "Precloud deployable RC is ready for landing review; this cursor is a blocked authorization boundary and does not authorize any secret, provider, cloud, deploy, kubectl, build/push or live-test operation."
+      "history_summary": "Package C dry-run create/release plan, TKE bootstrap preflight, live canary readiness gate, live canary runner, failure evidence redaction and plan-catalog canary contract are landed as pre-cloud / scoped local evidence. Package C live create/release remains authorization-required; tenant node pools are created by Package C per tenant or workspace; arbitrary Tencent instanceType input is rejected unless represented by a MedOPL plan catalog allowlist entry.",
+      "landed_commit": "93b93fc5af455111c2c33b31599cf5cca5e548d8"
     },
     {
       "id": "go-control-plane-mvp-takeover",

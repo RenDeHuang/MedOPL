@@ -1,10 +1,10 @@
 # package-c-plan-catalog-contract Closeout
 
-Status: local_contract_closed_before_landing
+Status: archived
 
 ## Commits
 
-- pending
+- 93b93fc5af455111c2c33b31599cf5cca5e548d8
 
 ## Verification
 
@@ -33,7 +33,7 @@ Status: local_contract_closed_before_landing
 
 ## Archive Target
 
-- changes/archive/YYYY-MM-DD-package-c-plan-catalog-contract
+- changes/archive/2026-06-13-package-c-plan-catalog-contract
 
 ## Next Owner
 
