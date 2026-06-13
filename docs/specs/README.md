@@ -1030,7 +1030,7 @@ Package C live canary readiness 需要独立的 non-secret cloud parameters JSON
 - plan catalog：`tests/support/cloud-prework/package-c-live-canary-plan-catalog-allowlist.json`
 - canary plan：`starter_2c4g_10gb` = 2C4G + 10GB workspace storage
 - starter node instance type：`SA5.MEDIUM4`
-- node system disk：`CloudSSD` / `50GB`
+- node system disk：`CLOUD_BSSD` / `50GB`
 - public IP：disabled
 - `RUN_TENCENT_CREATE_RELEASE_EXECUTION`：`0`
 
