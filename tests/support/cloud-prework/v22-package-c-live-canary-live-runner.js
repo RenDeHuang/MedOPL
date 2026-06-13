@@ -9,6 +9,20 @@ import {
   validateCloudParameters,
 } from "./package-c-live-canary-cloud-params.js";
 import {
+  CANONICAL_OWNERSHIP_SOURCE,
+  CLOUD_OPERATION_TYPE,
+  CLOUD_TAG_SUPPORT,
+  createPackageCLedgerWriter,
+} from "./package-c-live-canary-ledger-writer.js";
+import {
+  API_VERSIONS,
+  sanitizedErrorPayload,
+  sanitizedFailureStep,
+  sanitizedStep,
+  sanitizedTencentError,
+  skippedUnsupportedServiceStep,
+} from "./package-c-live-canary-tencent-steps.js";
+import {
   PACKAGE_C_LIVE_CANARY_API_ALLOWLIST,
   PACKAGE_C_LIVE_CANARY_SECRET_ALLOWLIST,
   expectedCreateReleasePlan,
@@ -35,19 +49,6 @@ const FIXED_PLATFORM_NODE_POOL_ID = "np-cbk784r8";
 const FIXED_TENANT_NODE_POOL_PREFIX = "medopl-tenant-";
 const TARGET_TENANT_NODE_POOL_NAME = "medopl-tenant-rb-package-c-live-canary-20260613";
 const CLOUD_PROVIDER = "tencent";
-const CANONICAL_OWNERSHIP_SOURCE = "postgres_resource_binding_ledger";
-const CLOUD_TAG_SUPPORT = "tke_nodepool_unsupported";
-const CLOUD_OPERATION_TYPE = "package_c_create_release_canary";
-const API_VERSIONS = Object.freeze({
-  GetCallerIdentity: "v20180813",
-  DescribeClusters: "v20220501",
-  DescribeNodePools: "v20220501",
-  CreateNodePool: "v20220501",
-  ScaleNodePool: "v20220501",
-  DeleteNodePool: "v20220501",
-  TagResources: "v20180813",
-  GetResources: "v20180813",
-});
 
 export function parsePackageCLiveCanaryLiveArgs(argv = process.argv.slice(2)) {
   const options = {
@@ -163,11 +164,6 @@ function validateLiveEnv(env, options) {
   return validation;
 }
 
-function normalizeRequestId(response = {}) {
-  const value = response?.RequestId;
-  return value ? String(value).slice(0, 96) : "";
-}
-
 function nodePoolsFrom(response = {}) {
   if (Array.isArray(response.NodePools)) return response.NodePools;
   if (Array.isArray(response.NodePoolSet)) return response.NodePoolSet;
@@ -176,93 +172,6 @@ function nodePoolsFrom(response = {}) {
 
 function findNodePoolByName(response = {}, name = "") {
   return nodePoolsFrom(response).find((nodePool) => String(nodePool?.Name || "") === name) || null;
-}
-
-function sanitizedStep(api, status, response = {}, extra = {}) {
-  return {
-    api,
-    action: api,
-    ...(API_VERSIONS[api] ? { apiVersion: API_VERSIONS[api] } : {}),
-    status,
-    ...(extra.nodePoolId ? { nodePoolId: extra.nodePoolId } : {}),
-    ...(extra.nodePoolName ? { nodePoolName: extra.nodePoolName } : {}),
-    ...(Number.isInteger(extra.replicas) ? { replicas: extra.replicas } : {}),
-    ...(extra.region ? { region: extra.region } : {}),
-    ...(normalizeRequestId(response) ? { requestId: normalizeRequestId(response) } : {}),
-  };
-}
-
-function redactedText(value = "") {
-  const placeholder = "[redacted-sensitive-value]";
-  return String(value || "")
-    .replace(/SecretId/gu, placeholder)
-    .replace(/SecretKey/gu, placeholder)
-    .replace(/Authorization/giu, placeholder)
-    .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/giu, `Bearer ${placeholder}`)
-    .replace(/\btoken\s*[:=]\s*[^,\s;]+/giu, placeholder)
-    .replace(/\btoken\b/giu, placeholder)
-    .replace(/\bkubeconfig\b/giu, placeholder)
-    .slice(0, 512);
-}
-
-function errorRequestId(error = {}) {
-  if (error?.requestId) return String(error.requestId).slice(0, 96);
-  if (error?.RequestId) return String(error.RequestId).slice(0, 96);
-  if (error?.response?.RequestId) return String(error.response.RequestId).slice(0, 96);
-  if (error?.response?.requestId) return String(error.response.requestId).slice(0, 96);
-  if (typeof error?.getRequestId === "function") {
-    return String(error.getRequestId() || "").slice(0, 96);
-  }
-  return "";
-}
-
-function sanitizedErrorPayload(error) {
-  const requestId = errorRequestId(error);
-  return {
-    code: String(error?.code || error?.Code || error?.name || "tencent_sdk_call_failed").replace(/[^A-Za-z0-9_.:-]/gu, "_").slice(0, 96),
-    message: redactedText(error?.message || error?.Message || ""),
-    requestId,
-  };
-}
-
-function sanitizedTencentError(api, error, extra = {}) {
-  const errorPayload = sanitizedErrorPayload(error);
-  return {
-    error: errorPayload,
-    code: errorPayload.code,
-    message: errorPayload.message,
-    ...(errorPayload.requestId ? { requestId: errorPayload.requestId } : {}),
-    ...(API_VERSIONS[api] ? { apiVersion: API_VERSIONS[api] } : {}),
-    action: api,
-    ...(extra.region ? { region: extra.region } : {}),
-    ...(extra.nodePoolName ? { nodePoolName: extra.nodePoolName } : {}),
-  };
-}
-
-function sanitizedFailureStep(api, error, extra = {}) {
-  const sanitizedError = sanitizedTencentError(api, error, extra);
-  return {
-    api,
-    action: api,
-    ...(sanitizedError.apiVersion ? { apiVersion: sanitizedError.apiVersion } : {}),
-    status: "failed",
-    error: sanitizedError.error,
-    code: sanitizedError.code,
-    message: sanitizedError.message,
-    ...(sanitizedError.requestId ? { requestId: sanitizedError.requestId } : {}),
-    ...(extra.nodePoolId ? { nodePoolId: extra.nodePoolId } : {}),
-    ...(extra.nodePoolName ? { nodePoolName: extra.nodePoolName } : {}),
-    ...(Number.isInteger(extra.replicas) ? { replicas: extra.replicas } : {}),
-    ...(extra.region ? { region: extra.region } : {}),
-  };
-}
-
-function skippedUnsupportedServiceStep(api, error, extra = {}) {
-  return {
-    ...sanitizedFailureStep(api, error, extra),
-    status: "skipped_unsupported_service",
-    continuesCanary: true,
-  };
 }
 
 function isTagResourcesUnsupportedService(error) {
@@ -472,98 +381,6 @@ function createPackageCCloudOperationStateMachine({ options, cloudParameters, va
     snapshot,
     currentStatus: () => state.status,
     currentNodePoolId: () => state.nodePoolId,
-  };
-}
-
-export function createPackageCLocalLedgerSink() {
-  return {
-    mode: "local_dry_run",
-    productionPostgresWrite: false,
-    async createResourceBinding() {},
-    async appendCloudOperationEvent() {},
-    async updateNodePoolId() {},
-    async updateLifecycleStatus() {},
-    async markReleased() {},
-    async markFailed() {},
-    async markCleanupRequired() {},
-  };
-}
-
-function normalizeLedgerSink(ledgerSink = null) {
-  const sink = ledgerSink || createPackageCLocalLedgerSink();
-  for (const method of [
-    "createResourceBinding",
-    "appendCloudOperationEvent",
-    "updateNodePoolId",
-    "updateLifecycleStatus",
-    "markReleased",
-    "markFailed",
-    "markCleanupRequired",
-  ]) {
-    if (typeof sink[method] !== "function") {
-      throw new Error(`package_c_live_canary_ledger_sink_method_missing:${method}`);
-    }
-  }
-  return sink;
-}
-
-function createPackageCLedgerWriter({ ledger, ledgerSink }) {
-  const sink = normalizeLedgerSink(ledgerSink);
-  const writes = [];
-  const mode = String(sink.mode || (sink.productionPostgresWrite ? "postgres_repository_contract" : "local_dry_run"));
-  const productionPostgresWrite = sink.productionPostgresWrite === true;
-
-  async function write(method, args = []) {
-    writes.push({ method });
-    await sink[method](...args);
-  }
-
-  async function createInitial() {
-    const snapshot = ledger.snapshot();
-    await write("createResourceBinding", [snapshot.resourceBinding]);
-    await write("appendCloudOperationEvent", [snapshot.cloudOperation]);
-  }
-
-  async function persistTransition(transition) {
-    const resourceBinding = transition.resourceBinding;
-    const cloudOperation = transition.cloudOperation;
-    if (transition.status === "created") {
-      await write("updateNodePoolId", [
-        resourceBinding.resourceBindingId,
-        resourceBinding.nodePoolId,
-        transition.status,
-      ]);
-    } else if (transition.status === "released") {
-      await write("markReleased", [
-        resourceBinding.resourceBindingId,
-        resourceBinding.releasedAt,
-      ]);
-    } else if (transition.status === "failed") {
-      await write("markFailed", [resourceBinding.resourceBindingId]);
-    } else if (transition.status === "cleanupRequired") {
-      await write("markCleanupRequired", [resourceBinding.resourceBindingId]);
-    } else {
-      await write("updateLifecycleStatus", [resourceBinding.resourceBindingId, transition.status]);
-    }
-    await write("appendCloudOperationEvent", [cloudOperation]);
-  }
-
-  function snapshot() {
-    return {
-      mode,
-      productionPostgresWrite,
-      dryRun: productionPostgresWrite !== true,
-      canonicalStore: "PostgreSQL resource_bindings/cloud_operations",
-      writeCount: writes.length,
-      methods: writes.map((entry) => entry.method),
-    };
-  }
-
-  return {
-    createInitial,
-    persistTransition,
-    snapshot,
-    productionPostgresWrite: () => productionPostgresWrite,
   };
 }
 
