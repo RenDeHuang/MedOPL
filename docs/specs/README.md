@@ -1038,6 +1038,8 @@ Package C live canary readiness 需要独立的 non-secret cloud parameters JSON
 
 readiness runner 只校验 schema、固定值、plan catalog allowlist、redaction 和 evidence sink，输出 `.runtime` readiness evidence、redacted `CreateNodePool` request 和 authorization pack；它不执行 `CreateNodePool`、`ScaleNodePool`、`DeleteNodePool`，不调用 Tencent mutation，不读取 kubeconfig，不执行 kubectl、deploy、build/push 或 Package D。
 
+Package C create/release canary 保留 post-create `TagResources` plan，但 TKE tenant node pool 当前不把 Tencent `tke:nodepool` cloud tags 作为 hard blocker。若 `TagResources` 返回 `InvalidParameter.UnsupportedService` 且指向 `tke:nodepool`，runner 必须记录 `tagResourcesSkippedUnsupportedService` / `cloudTagSupport=tkeNodePoolUnsupported`，继续后续 scale / observe / release；其它 `TagResources` 错误仍 fail-closed 并只允许清理本次 canary tenant node pool。ownership / billing attribution 的 canonical truth 是 MedOPL `resourceBinding` ledger；当前 canary 阶段先写 `.runtime` evidence，后续 production path 进入 PostgreSQL ledger。云标签仅作为支持资源层的 reconciliation evidence，不得替代 Portal canonical ledger。
+
 ## 资源生命周期分离
 
 工作空间、计算资源和文件空间生命周期必须分离：

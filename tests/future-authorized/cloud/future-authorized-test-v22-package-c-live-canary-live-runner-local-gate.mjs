@@ -256,6 +256,78 @@ try {
   assertNoSensitiveOutput(JSON.stringify(evidence), "evidence");
 
   await writeFile(envFile, baseEnv("1"));
+  const unsupportedTagCalls = [];
+  const unsupportedTagModules = {
+    async getCallerIdentity(req = null) {
+      unsupportedTagCalls.push({ api: "GetCallerIdentity", req });
+      return { AccountId: "100047070895", RequestId: "req-unsupported-sts" };
+    },
+    async describeClusters(region, req = {}) {
+      unsupportedTagCalls.push({ api: "DescribeClusters", region, req });
+      return { Clusters: [{ ClusterId: "cls-fi097sy4", ClusterStatus: "Running" }], RequestId: "req-unsupported-clusters" };
+    },
+    async describeNodePools(region, req = {}) {
+      unsupportedTagCalls.push({ api: "DescribeNodePools", region, req });
+      if (req?.Filters?.some((filter) => filter.Name === "NodePoolsName")) {
+        return { NodePools: [{ NodePoolId: "np-tenant-unsupported-tag-proof", Name: "medopl-tenant-rb-package-c-live-canary-20260613" }], RequestId: "req-unsupported-node-pool-name" };
+      }
+      return { NodePools: [{ NodePoolId: "np-cbk784r8", Name: "platform" }], RequestId: "req-unsupported-node-pools" };
+    },
+    async createNodePool(region, req = {}) {
+      unsupportedTagCalls.push({ api: "CreateNodePool", region, req });
+      return { NodePoolId: "np-tenant-unsupported-tag-proof", RequestId: "req-unsupported-create" };
+    },
+    async tagResources(req = {}) {
+      unsupportedTagCalls.push({ api: "TagResources", req });
+      const error = new Error("unsupported service| tke:nodepool");
+      error.code = "InvalidParameter.UnsupportedService";
+      error.requestId = "req-unsupported-tag";
+      throw error;
+    },
+    async scaleNodePool(region, req = {}) {
+      unsupportedTagCalls.push({ api: "ScaleNodePool", region, req });
+      return { RequestId: `req-unsupported-scale-${req.Replicas}` };
+    },
+    async deleteNodePool(region, req = {}) {
+      unsupportedTagCalls.push({ api: "DeleteNodePool", region, req });
+      return { RequestId: "req-unsupported-delete" };
+    },
+    async getResources(req = {}) {
+      unsupportedTagCalls.push({ api: "GetResources", req });
+      return { ResourceTagMappingList: [], RequestId: "req-unsupported-get-resources" };
+    },
+  };
+  const unsupportedTagSummary = await runPackageCLiveCanaryLive({ options, modules: unsupportedTagModules });
+  assert.equal(unsupportedTagSummary.ok, true, "unsupported_tag_summary_ok");
+  assert.deepEqual(unsupportedTagCalls.map((call) => call.api), [
+    "GetCallerIdentity",
+    "DescribeClusters",
+    "DescribeNodePools",
+    "CreateNodePool",
+    "TagResources",
+    "ScaleNodePool",
+    "DescribeNodePools",
+    "ScaleNodePool",
+    "DeleteNodePool",
+    "GetResources",
+  ], "unsupported_tag_call_order_must_continue");
+  const unsupportedTagEvidence = JSON.parse(await readFile(unsupportedTagSummary.summaryPath, "utf8"));
+  const unsupportedTagStep = unsupportedTagEvidence.steps.find((step) => step.api === "TagResources");
+  assert.equal(unsupportedTagEvidence.ok, true, "unsupported_tag_evidence_ok");
+  assert.equal(unsupportedTagEvidence.tagResourcesSkippedUnsupportedService, true, "unsupported_tag_skip_flag");
+  assert.equal(unsupportedTagEvidence.cloudTagSupport, "tkeNodePoolUnsupported", "unsupported_tag_cloud_support");
+  assert.equal(unsupportedTagEvidence.canonicalOwnershipSource, "medopl_resource_binding_ledger", "unsupported_tag_canonical_ownership_source");
+  assert.equal(unsupportedTagEvidence.canaryOwnershipEvidenceSink, ".runtime", "unsupported_tag_canary_evidence_sink");
+  assert.equal(unsupportedTagStep.status, "skipped_unsupported_service", "unsupported_tag_step_status");
+  assert.equal(unsupportedTagStep.error.code, "InvalidParameter.UnsupportedService", "unsupported_tag_step_error_code");
+  assert.equal(unsupportedTagStep.error.message, "unsupported service| tke:nodepool", "unsupported_tag_step_error_message");
+  assert.equal(unsupportedTagStep.error.requestId, "req-unsupported-tag", "unsupported_tag_step_error_request_id");
+  assert.equal(unsupportedTagStep.continuesCanary, true, "unsupported_tag_step_continues_canary");
+  assert.deepEqual(unsupportedTagEvidence.rollback.steps, [], "unsupported_tag_must_not_trigger_rollback");
+  assert.equal(unsupportedTagCalls.some((call) => call.req?.NodePoolId === "np-cbk784r8"), false, "unsupported_tag_must_not_touch_platform_pool");
+  assertNoSensitiveOutput(JSON.stringify(unsupportedTagEvidence), "unsupported_tag_evidence");
+
+  await writeFile(envFile, baseEnv("1"));
   const rollbackCalls = [];
   const rollbackModules = {
     async getCallerIdentity(req = null) {

@@ -203,6 +203,12 @@ export function redactedCreateNodePoolRequest(cloudParameters, options) {
   const tagResourcesPlan = {
     api: "TagResources",
     afterCreateNodePool: true,
+    cloudTagSupport: "tkeNodePoolUnsupported",
+    hardBlocker: false,
+    unsupportedServiceSkipCode: "InvalidParameter.UnsupportedService",
+    canonicalOwnershipSource: "medopl_resource_binding_ledger",
+    canaryOwnershipEvidenceSink: ".runtime",
+    futureCanonicalStore: "PostgreSQL",
     tags: [
       { TagKey: "resourceBindingId", TagValue: options.resourceBindingId },
       { TagKey: "billingAttributionId", TagValue: options.billingAttributionId },

@@ -253,6 +253,19 @@ function sanitizedFailureStep(api, error, extra = {}) {
   };
 }
 
+function skippedUnsupportedServiceStep(api, error, extra = {}) {
+  return {
+    ...sanitizedFailureStep(api, error, extra),
+    status: "skipped_unsupported_service",
+    continuesCanary: true,
+  };
+}
+
+function isTagResourcesUnsupportedService(error) {
+  const payload = sanitizedErrorPayload(error);
+  return payload.code === "InvalidParameter.UnsupportedService" && payload.message.includes("tke:nodepool");
+}
+
 function ensureTenantNodePoolId(nodePoolId, protectedNodePoolIds, protectedPlatformNodePoolId) {
   const normalized = String(nodePoolId || "").trim();
   if (!normalized) throw new Error("package_c_live_canary_live_tenant_node_pool_id_missing");
@@ -337,6 +350,20 @@ async function callStep(steps, api, fn, extra = {}) {
   } catch (error) {
     steps.push(sanitizedFailureStep(api, error, extra));
     throw error;
+  }
+}
+
+async function callTagResourcesBestEffort(steps, fn, extra = {}) {
+  assertNoForbiddenApi("TagResources");
+  try {
+    const response = await fn();
+    steps.push(sanitizedStep("TagResources", "completed", response, extra));
+  } catch (error) {
+    if (!isTagResourcesUnsupportedService(error)) {
+      steps.push(sanitizedFailureStep("TagResources", error, extra));
+      throw error;
+    }
+    steps.push(skippedUnsupportedServiceStep("TagResources", error, extra));
   }
 }
 
@@ -426,6 +453,10 @@ function redactedSummaryFor({ ok, options, validation, cloudParameters, steps, t
       publicIp: cloudParameters.publicIp,
       sharedUserComputePoolAllowed: false,
     },
+    cloudTagSupport: "tkeNodePoolUnsupported",
+    tagResourcesSkippedUnsupportedService: steps.some((step) => step.api === "TagResources" && step.status === "skipped_unsupported_service"),
+    canonicalOwnershipSource: "medopl_resource_binding_ledger",
+    canaryOwnershipEvidenceSink: ".runtime",
     secretAllowlist: PACKAGE_C_LIVE_CANARY_SECRET_ALLOWLIST,
     apiAllowlist: PACKAGE_C_LIVE_CANARY_API_ALLOWLIST,
     expectedCreateReleasePlan: expectedCreateReleasePlan(options),
@@ -579,7 +610,7 @@ export async function runPackageCLiveCanaryLive({ options, modules } = {}) {
     );
 
     const resourceArn = tagResourceArn(env, targetNodePoolId);
-    await callStep(steps, "TagResources", () => modules.tagResources({
+    await callTagResourcesBestEffort(steps, () => modules.tagResources({
       ResourceList: [resourceArn],
       Tags: tagList(options),
     }), { region: REGION, nodePoolId: targetNodePoolId, nodePoolName: TARGET_TENANT_NODE_POOL_NAME });

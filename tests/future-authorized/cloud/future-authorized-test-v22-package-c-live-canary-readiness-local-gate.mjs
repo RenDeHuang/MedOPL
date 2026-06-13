@@ -435,6 +435,12 @@ try {
   assert.deepEqual(redactedCreateRequest.createNodePoolInlineAnnotations, [], "redacted_request_must_not_inline_annotations");
   assert.equal(redactedCreateRequest.tagResourcesPlan.api, "TagResources", "redacted_request_tag_resources_api");
   assert.equal(redactedCreateRequest.tagResourcesPlan.afterCreateNodePool, true, "redacted_request_tag_resources_after_create");
+  assert.equal(redactedCreateRequest.tagResourcesPlan.cloudTagSupport, "tkeNodePoolUnsupported", "redacted_request_tag_resources_cloud_support");
+  assert.equal(redactedCreateRequest.tagResourcesPlan.hardBlocker, false, "redacted_request_tag_resources_not_hard_blocker");
+  assert.equal(redactedCreateRequest.tagResourcesPlan.unsupportedServiceSkipCode, "InvalidParameter.UnsupportedService", "redacted_request_tag_resources_unsupported_skip_code");
+  assert.equal(redactedCreateRequest.tagResourcesPlan.canonicalOwnershipSource, "medopl_resource_binding_ledger", "redacted_request_canonical_ownership_source");
+  assert.equal(redactedCreateRequest.tagResourcesPlan.canaryOwnershipEvidenceSink, ".runtime", "redacted_request_canary_ownership_evidence_sink");
+  assert.equal(redactedCreateRequest.tagResourcesPlan.futureCanonicalStore, "PostgreSQL", "redacted_request_future_canonical_store");
   assert.deepEqual(redactedCreateRequest.tagResourcesPlan.tags, [
     { TagKey: "resourceBindingId", TagValue: "rb-canary-package-c-20260613-001" },
     { TagKey: "billingAttributionId", TagValue: "ba-canary-package-c-20260613-001" },
