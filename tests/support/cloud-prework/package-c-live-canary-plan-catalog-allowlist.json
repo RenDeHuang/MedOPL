@@ -15,7 +15,7 @@
       "tke": {
         "nodeInstanceType": "SA5.MEDIUM4",
         "systemDisk": {
-          "type": "CloudBSSD",
+          "type": "CloudSSD",
           "sizeGb": 50
         },
         "billingMode": "POSTPAID_BY_HOUR",
@@ -36,7 +36,7 @@
       "tke": {
         "nodeInstanceType": "SA5.2XLARGE16",
         "systemDisk": {
-          "type": "CloudBSSD",
+          "type": "CloudSSD",
           "sizeGb": 50
         },
         "billingMode": "POSTPAID_BY_HOUR",

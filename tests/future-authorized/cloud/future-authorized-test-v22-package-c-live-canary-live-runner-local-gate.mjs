@@ -65,7 +65,7 @@ function cloudParams() {
     securityGroupId: "sg-6671l5we",
     availabilityZone: "na-siliconvalley-1",
     systemDisk: {
-      type: "CloudBSSD",
+      type: "CloudSSD",
       sizeGb: 50,
     },
     billingMode: "POSTPAID_BY_HOUR",
@@ -207,7 +207,7 @@ try {
   assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Native.SubnetIds[0], "subnet-a1fldajw", "create_subnet");
   assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Native.SecurityGroupIds[0], "sg-6671l5we", "create_sg");
   assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Native.InstanceTypes[0], "SA5.MEDIUM4", "create_instance_from_starter_catalog");
-  assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Native.SystemDisk.DiskType, "CloudBSSD", "create_system_disk_type");
+  assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Native.SystemDisk.DiskType, "CloudSSD", "create_system_disk_type");
   assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Native.SystemDisk.DiskSize, 50, "create_system_disk_size");
   assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Native.InternetAccessible.MaxBandwidthOut, 0, "create_public_ip_disabled");
   assert.equal(calls.find((call) => call.api === "CreateNodePool").req.Native.Replicas, 0, "create_desired_zero");

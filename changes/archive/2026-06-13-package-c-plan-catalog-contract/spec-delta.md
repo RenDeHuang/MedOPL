@@ -13,7 +13,7 @@ Target specs:
 ## MODIFIED
 
 - Starter storage remains 10GB in current product/spec/test truth while TKE node system disk remains 50GB.
-- Package C canary validates Starter through catalog-derived `SA5.MEDIUM4`, `CloudBSSD` and 50GB node system disk instead of temporary `SA5.MEDIUM2`.
+- Package C canary validates Starter through catalog-derived `SA5.MEDIUM4`, `CloudSSD` and 50GB node system disk instead of temporary `SA5.MEDIUM2`.
 - User upgrades are allowed only after the target shape exists in the MedOPL plan catalog allowlist.
 
 ## REMOVED

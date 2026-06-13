@@ -64,7 +64,7 @@ try {
     securityGroupId: "sg-6671l5we",
     availabilityZone: "na-siliconvalley-1",
     systemDisk: {
-      type: "CloudBSSD",
+      type: "CloudSSD",
       sizeGb: 50,
     },
     billingMode: "POSTPAID_BY_HOUR",
@@ -207,7 +207,7 @@ try {
     workerSubnetId: "subnet-not-allowed",
     securityGroupId: "sg-6671l5we",
     availabilityZone: "na-siliconvalley-1",
-    systemDisk: { type: "CloudBSSD", sizeGb: 50 },
+    systemDisk: { type: "CloudSSD", sizeGb: 50 },
     billingMode: "POSTPAID_BY_HOUR",
     publicIp: { enabled: true },
     nodeImageOrRuntimeConfig: { imageType: "TKE_RUNTIME", runtime: "containerd", runtimeVersion: "1.6" },
@@ -228,7 +228,7 @@ try {
     workerSubnetId: "subnet-a1fldajw",
     securityGroupId: "sg-6671l5we",
     availabilityZone: "na-siliconvalley-1",
-    systemDisk: { type: "CloudBSSD", sizeGb: 50 },
+    systemDisk: { type: "CloudSSD", sizeGb: 50 },
     billingMode: "POSTPAID_BY_HOUR",
     publicIp: { enabled: true },
     nodeImageOrRuntimeConfig: { imageType: "TKE_RUNTIME", runtime: "containerd", runtimeVersion: "1.6" },
@@ -250,7 +250,7 @@ try {
     securityGroupId: "sg-6671l5we",
     availabilityZone: "na-siliconvalley-1",
     instanceType: "SA5.MEDIUM2",
-    systemDisk: { type: "CloudBSSD", sizeGb: 50 },
+    systemDisk: { type: "CloudSSD", sizeGb: 50 },
     billingMode: "POSTPAID_BY_HOUR",
     publicIp: { enabled: false },
     nodeImageOrRuntimeConfig: { imageType: "TKE_RUNTIME", runtime: "containerd", runtimeVersion: "1.6" },
@@ -272,7 +272,7 @@ try {
     securityGroupId: "sg-6671l5we",
     availabilityZone: "na-siliconvalley-1",
     nodeInstanceType: "SA5.16XLARGE128",
-    systemDisk: { type: "CloudBSSD", sizeGb: 50 },
+    systemDisk: { type: "CloudSSD", sizeGb: 50 },
     billingMode: "POSTPAID_BY_HOUR",
     publicIp: { enabled: false },
     nodeImageOrRuntimeConfig: { imageType: "TKE_RUNTIME", runtime: "containerd", runtimeVersion: "1.6" },
@@ -293,7 +293,7 @@ try {
     workerSubnetId: "subnet-a1fldajw",
     securityGroupId: "sg-6671l5we",
     availabilityZone: "na-siliconvalley-1",
-    systemDisk: { type: "CloudBSSD", sizeGb: 50 },
+    systemDisk: { type: "CloudSSD", sizeGb: 50 },
     billingMode: "POSTPAID_BY_HOUR",
     publicIp: { enabled: false },
     nodeImageOrRuntimeConfig: { imageType: "TKE_RUNTIME", runtime: "containerd", runtimeVersion: "1.6" },
@@ -314,7 +314,7 @@ try {
     workerSubnetId: "subnet-a1fldajw",
     securityGroupId: "sg-6671l5we",
     availabilityZone: "na-siliconvalley-1",
-    systemDisk: { type: "CloudBSSD", sizeGb: 50 },
+    systemDisk: { type: "CloudSSD", sizeGb: 50 },
     billingMode: "POSTPAID_BY_HOUR",
     publicIp: { enabled: false },
     nodeImageOrRuntimeConfig: { imageType: "TKE_RUNTIME", runtime: "containerd", runtimeVersion: "1.6" },
@@ -412,7 +412,7 @@ try {
   assert.deepEqual(report.cloudParameters.compute, { cpuCores: 2, memoryGb: 4, maxConcurrentTasks: 1 }, "cloud_plan_compute");
   assert.equal(report.cloudParameters.workspaceStorageGb, 10, "cloud_workspace_storage");
   assert.equal(report.cloudParameters.nodeInstanceType, "SA5.MEDIUM4", "cloud_node_instance_type");
-  assert.equal(report.cloudParameters.systemDisk.type, "CloudBSSD", "cloud_system_disk_type");
+  assert.equal(report.cloudParameters.systemDisk.type, "CloudSSD", "cloud_system_disk_type");
   assert.equal(report.cloudParameters.systemDisk.sizeGb, 50, "cloud_system_disk_size");
   assert.notEqual(report.cloudParameters.workspaceStorageGb, report.cloudParameters.systemDisk.sizeGb, "workspace_storage_must_not_equal_system_disk");
   assert(report.evidenceSink.root.endsWith("op-package-c-live-canary-readiness-proof"), "evidence_sink_root");
@@ -432,7 +432,7 @@ try {
   assert.equal(redactedCreateRequest.planId, "starter_2c4g_10gb", "redacted_request_plan_id");
   assert.equal(redactedCreateRequest.nodeInstanceType, "SA5.MEDIUM4", "redacted_request_node_instance_type");
   assert.equal(redactedCreateRequest.workspaceStorageGb, 10, "redacted_request_workspace_storage");
-  assert.equal(redactedCreateRequest.systemDisk.type, "CloudBSSD", "redacted_request_disk_type");
+  assert.equal(redactedCreateRequest.systemDisk.type, "CloudSSD", "redacted_request_disk_type");
   assert.equal(redactedCreateRequest.systemDisk.sizeGb, 50, "redacted_request_disk_size");
   assert.equal(redactedCreateRequest.billingMode, "POSTPAID_BY_HOUR", "redacted_request_billing_mode");
   assert.equal(redactedCreateRequest.loginOrKeyPolicy.mode, "DISABLED", "redacted_request_login_disabled");

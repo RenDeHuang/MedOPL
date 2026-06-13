@@ -4427,7 +4427,7 @@ Scope:
 - Kept Pro current product/server plan as `pro_8c16g_100gb`: 8C16G, 100GB workspace storage and two task concurrency.
 - Added a Package C plan catalog allowlist consumed by the readiness and live runner helpers.
 - Derived Tencent `nodeInstanceType`, workspace storage quota and TKE node `systemDisk` from the allowlist instead of accepting arbitrary `instanceType` input.
-- Fixed the Package C canary Starter mapping to TKE `SA5.MEDIUM4`, `CloudBSSD` 50GB node system disk and public IP disabled.
+- Fixed the Package C canary Starter mapping to TKE `SA5.MEDIUM4`, `CloudSSD` 50GB node system disk and public IP disabled.
 - Kept `workspaceStorageGb` as the user package storage quota / billing item, distinct from TKE node system disk.
 - Cleared active temporary Starter 100GB and arbitrary custom instance type wording from current product/spec/source/test truth, except negative tests and history context.
 
