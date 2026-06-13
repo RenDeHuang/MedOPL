@@ -4673,4 +4673,53 @@ post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 
+### 2026-06-13 package-c-live-canary-post-live
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `3f5595d8e9c1384f7e7c6001b41385cd9defb115`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Recorded the authorized Package C tenant node pool live canary closeout without adding new long-lived docs, directories, flows, entrypoints or implementation code.
+- `CreateNodePool`, scale up, scale down and `DeleteNodePool` passed for `medopl-tenant-rb-package-c-live-canary-20260613`.
+- Readonly cleanup check passed: the canary tenant node pool was absent by name and id, while protected platform pool `np-cbk784r8` was observed.
+- `TagResources` for `tke:nodepool` returned `InvalidParameter.UnsupportedService`; cloud tags remain non-canonical for TKE node pools.
+- Canonical ownership / billing truth must enter the MedOPL PostgreSQL `resourceBinding` ledger before production.
+- Next implementation plan is limited to PostgreSQL resource binding ledger, cloud operation state machine, billing/audit ledger, Portal opening entry and workspace storage quota.
+
+Verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass before push.
+
+Can-claim:
+
+- Package C has one real Tencent tenant node pool lifecycle canary proving create / scale / delete / cleanup against the fixed cluster and protected platform pool boundary.
+- `tke:nodepool` cloud tagging is unsupported and cannot be ownership / billing source of truth.
+- Productionization now starts from MedOPL PostgreSQL `resourceBinding` ledger and operation/billing/Portal/storage quota surfaces.
+
+Cannot-claim:
+
+- Production Portal self-service, PostgreSQL ledger, billing/audit ledger, workspace quota, deploy, kubectl, build/push, Package D or production runtime readiness is implemented.
+- Additional Tencent mutation or live-test is authorized by this closeout.
+- Protected platform node pool `np-cbk784r8` may be deleted, scaled or modified.
+
+landed_commit: `3f5595d8e9c1384f7e7c6001b41385cd9defb115`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `3f5595d8e9c1384f7e7c6001b41385cd9defb115` before this closeout.
+- No new Tencent mutation, kubectl, deploy, build/push, Package D or implementation code was performed by this closeout.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
