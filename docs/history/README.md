@@ -73,7 +73,8 @@ Scope:
 
 - Added Package C PostgreSQL ledger sink support under `tests/support/cloud-prework` with explicit `RUN_MEDOPL_POSTGRES_LEDGER_EXECUTION=1` gate.
 - Added allowlisted local DB env parsing, forbidden package-d/kubeconfig/Tencent key rejection, schema/table/write-permission preflight, parameterized ledger writes and redacted `.runtime` prepare-only evidence.
-- Added fail-closed behavior for missing gate, missing DB env, forbidden env, forbidden CLI args and missing `pg` driver.
+- Added the explicit PostgreSQL live canary runner contract for write/read/cleanup: `RUN_TENCENT_CREATE_RELEASE_EXECUTION=0`, existing tenant/workspace parent rows, canary-scoped `resourceBindingId`, post-write readback and cleanup readback-absent confirmation.
+- Added the root `pg` driver dependency for the gated PostgreSQL sink and kept fail-closed behavior for missing gate, missing DB env, forbidden env, forbidden CLI args and missing driver loading.
 - Registered the local gate in `cloud-future-authorized`.
 
 Verification:
@@ -84,7 +85,7 @@ Verification:
 
 Can-claim:
 
-- Package C has a gated PostgreSQL ledger sink support path and prepare-only preflight contract.
+- Package C has a gated PostgreSQL ledger sink support path, root `pg` driver dependency, prepare-only preflight contract and explicit live canary write/read/cleanup runner contract.
 - Prepare-only evidence redacts DB password / URL and does not write business rows.
 
 Cannot-claim:
@@ -4896,6 +4897,43 @@ post_push_verification:
 
 - `origin/recovery/platform-v22-trunk` reached `8f324241004faa9b650cf9cf591bbebc414f6363` before this closeout.
 - No DB secret read, PostgreSQL connection execution, Tencent mutation, kubectl, deploy, build/push, Package D, live-test, kubeconfig read or secret write to git was performed.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-14 package-c-postgres-ledger-sink-gate-closeout
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Scope:
+
+- Closed out the landed Package C PostgreSQL ledger sink gate commit `d58f236a036ca0b787afc65592f0a164e16de936`.
+- Updated current truth to keep real DB execution blocked until a separate authorized successful PostgreSQL live canary with an explicit dedicated ledger env file and parent-row identities; the root `pg` driver path is now declared.
+- No DB secret read, PostgreSQL connection execution, Tencent mutation, kubectl, deploy, build/push, Package D, live-test, kubeconfig read or secret write to git was performed.
+
+Verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+Can-claim:
+
+- Latest trunk closeout is synchronized to the current `origin/recovery/platform-v22-trunk` head.
+
+Cannot-claim:
+
+- A real PostgreSQL canary ran or productionization is complete.
+
+landed_commit: `d58f236a036ca0b787afc65592f0a164e16de936`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `d58f236a036ca0b787afc65592f0a164e16de936`.
 
 post_merge_closeout: `completed`
 
