@@ -8,12 +8,12 @@
   "last_updated_at": "2026-06-13",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "10ef7d28c4c15fba309e1ceb1f8ad3348fcf8976",
+  "base_trunk_head": "f4194f349a87cd492942b11844e797fdc0739e37",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "10ef7d28c4c15fba309e1ceb1f8ad3348fcf8976",
+  "last_landed_commit": "f4194f349a87cd492942b11844e797fdc0739e37",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package C live canary runner is landed as local future-authorized code/test evidence and now validates Starter through the MedOPL plan catalog allowlist. Starter is starter_2c4g_10gb: 2C4G, 10GB workspace storage, TKE SA5.MEDIUM4, CLOUD_BSSD 50GB node system disk and public IP disabled; Pro is pro_8c16g_100gb with two task concurrency. workspaceStorageGb is the user package storage quota / billing item and is not the TKE node system disk. Real Package C create/release remains blocked until current-session authorization is explicitly granted; RUN_TENCENT_CREATE_RELEASE_EXECUTION must remain 0 for prepare-only, arbitrary Tencent instanceType input is rejected, shared user compute pool is forbidden, tenant node pools must be created by Package C per tenant or workspace, and the current cursor remains real-cloud-authorization-boundary without deploy/kubectl/build-push/live-test authorization.",
+  "current_problem": "Package C live canary runner is landed as local future-authorized code/test evidence and now validates Starter through the MedOPL plan catalog allowlist. Starter is starter_2c4g_10gb: 2C4G, 10GB workspace storage, TKE SA5.MEDIUM4, CLOUD_BSSD 50GB node system disk and public IP disabled; Pro is pro_8c16g_100gb with two task concurrency. workspaceStorageGb is the user package storage quota / billing item and is not the TKE node system disk. Package C retains a post-create TagResources plan, but Tencent tke:nodepool InvalidParameter.UnsupportedService is not a hard blocker; the runner records tagResourcesSkippedUnsupportedService and cloudTagSupport=tkeNodePoolUnsupported, then continues scale / observe / release, while other TagResources errors still fail closed. Ownership and billing attribution canonical truth is the MedOPL resourceBinding ledger, with current canary evidence in .runtime and future production ledger in PostgreSQL. Real Package C create/release remains blocked until current-session authorization is explicitly granted; RUN_TENCENT_CREATE_RELEASE_EXECUTION must remain 0 for prepare-only, arbitrary Tencent instanceType input is rejected, shared user compute pool is forbidden, tenant node pools must be created by Package C per tenant or workspace, and the current cursor remains real-cloud-authorization-boundary without deploy/kubectl/build-push/live-test authorization.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -100,8 +100,8 @@
       "depends_on": [
         "precloud-deployable-rc"
       ],
-      "history_summary": "Package C dry-run create/release plan, TKE bootstrap preflight, live canary readiness gate, live canary runner, failure evidence redaction and plan-catalog canary contract are landed as pre-cloud / scoped local evidence. Package C live create/release remains authorization-required; tenant node pools are created by Package C per tenant or workspace; arbitrary Tencent instanceType input is rejected unless represented by a MedOPL plan catalog allowlist entry.",
-      "landed_commit": "10ef7d28c4c15fba309e1ceb1f8ad3348fcf8976"
+      "history_summary": "Package C dry-run create/release plan, TKE bootstrap preflight, live canary readiness gate, live canary runner, failure evidence redaction, plan-catalog canary contract and unsupported tke:nodepool tag skip strategy are landed as pre-cloud / scoped local evidence. Package C live create/release remains authorization-required; tenant node pools are created by Package C per tenant or workspace; ownership and billing attribution canonical truth is the MedOPL resourceBinding ledger; arbitrary Tencent instanceType input is rejected unless represented by a MedOPL plan catalog allowlist entry.",
+      "landed_commit": "f4194f349a87cd492942b11844e797fdc0739e37"
     },
     {
       "id": "go-control-plane-mvp-takeover",
@@ -161,9 +161,9 @@
         "local-portal-opl-delivery-rc",
         "real-cloud-authorization-boundary"
       ],
-      "history_summary": "Local AI MVP baseline, real-cloud vision docs, real-cloud readiness lane, legacy runtime cloud cleanup, Package B readonly inventory, TC3 diagnostic cleanup, Package C dry-run create/release plan, TKE bootstrap preflight, repo governance closeout, Package C live canary readiness gate, Package C non-secret cloud parameters input contract and Package C live canary runner landed as pre-cloud / scoped local evidence. Package C live create/release remains authorization-required; tenant node pools are created by Package C per tenant or workspace.",
+      "history_summary": "Local AI MVP baseline, real-cloud vision docs, real-cloud readiness lane, legacy runtime cloud cleanup, Package B readonly inventory, TC3 diagnostic cleanup, Package C dry-run create/release plan, TKE bootstrap preflight, repo governance closeout, Package C live canary readiness gate, Package C non-secret cloud parameters input contract, Package C live canary runner and unsupported tke:nodepool tag skip strategy landed as pre-cloud / scoped local evidence. Package C live create/release remains authorization-required; tenant node pools are created by Package C per tenant or workspace.",
       "closed_at": "2026-06-13",
-      "landed_commit": "2baa3b36aa1032962f5af91c0b698b7740621cb0"
+      "landed_commit": "f4194f349a87cd492942b11844e797fdc0739e37"
     }
   ],
   "current_leaf": {

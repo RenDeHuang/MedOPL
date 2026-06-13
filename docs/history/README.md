@@ -4619,4 +4619,58 @@ post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 
+### 2026-06-13 recovery/platform-v22-trunk
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `10ef7d28c4c15fba309e1ceb1f8ad3348fcf8976`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Updated Package C live canary `TagResources` strategy after Tencent returned `InvalidParameter.UnsupportedService` for `tke:nodepool`.
+- Kept the post-create `TagResources` plan but stopped treating unsupported TKE node pool cloud tags as a create/release canary hard blocker.
+- Added fail-closed runner behavior: `InvalidParameter.UnsupportedService` containing `tke:nodepool` records `tagResourcesSkippedUnsupportedService` and `cloudTagSupport=tkeNodePoolUnsupported`, then continues scale / observe / release; other `TagResources` errors still fail closed and only allow cleanup of the current canary tenant node pool.
+- Set ownership / billing attribution canonical truth to the MedOPL `resourceBinding` ledger; current canary evidence writes only `.runtime`, and the production ledger path remains PostgreSQL.
+- Updated prepare-only cloud parameters evidence and future-authorized local gates for the unsupported cloud-tag strategy.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-c-live-canary-readiness-local-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-c-live-canary-live-runner-local-gate.mjs`: pass.
+- `npm run verify`: pass before push.
+- `npm run closeout:check -- --json`: expected closeout gap detected after the Package C unsupported tag strategy reached trunk; this closeout records it.
+- `git diff --check -- docs specs changes tests scripts package.json`: pass before push.
+
+Can-claim:
+
+- `origin/recovery/platform-v22-trunk` includes the Package C unsupported `tke:nodepool` tag strategy at `f4194f349a87cd492942b11844e797fdc0739e37`.
+- Package C live runner can skip only Tencent `InvalidParameter.UnsupportedService` for `tke:nodepool` cloud tags and continue the canary flow.
+- Cloud tags remain planned reconciliation evidence where supported; MedOPL `resourceBinding` ledger is the canonical ownership / billing attribution truth.
+
+Cannot-claim:
+
+- This closeout authorizes a real Tencent mutation, deploy, kubectl, build/push, Package D, live-test, kubeconfig read or secret read.
+- Production billing readiness, production runtime readiness or production deploy readiness is complete.
+- Unsupported `tke:nodepool` cloud tags can replace the MedOPL resourceBinding ledger.
+- Protected platform node pool `np-cbk784r8` may be deleted, scaled or modified.
+
+landed_commit: `f4194f349a87cd492942b11844e797fdc0739e37`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `f4194f349a87cd492942b11844e797fdc0739e37`.
+- `npm run verify`: pass before push.
+- `npm run closeout:check -- --json`: expected closeout gap detected after the Package C unsupported `tke:nodepool` tag strategy reached trunk; this closeout records it.
+- No Tencent mutation, deploy, kubectl, build/push, Package D, live-test, kubeconfig read or secret write to git was performed by this closeout.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。
