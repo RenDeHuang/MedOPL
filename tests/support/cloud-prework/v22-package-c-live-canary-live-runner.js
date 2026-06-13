@@ -34,6 +34,16 @@ const FIXED_CLUSTER_ID = "cls-fi097sy4";
 const FIXED_PLATFORM_NODE_POOL_ID = "np-cbk784r8";
 const FIXED_TENANT_NODE_POOL_PREFIX = "medopl-tenant-";
 const TARGET_TENANT_NODE_POOL_NAME = "medopl-tenant-rb-package-c-live-canary-20260613";
+const API_VERSIONS = Object.freeze({
+  GetCallerIdentity: "v20180813",
+  DescribeClusters: "v20220501",
+  DescribeNodePools: "v20220501",
+  CreateNodePool: "v20220501",
+  ScaleNodePool: "v20220501",
+  DeleteNodePool: "v20220501",
+  TagResources: "v20180813",
+  GetResources: "v20180813",
+});
 
 export function parsePackageCLiveCanaryLiveArgs(argv = process.argv.slice(2)) {
   const options = {
@@ -167,6 +177,8 @@ function findNodePoolByName(response = {}, name = "") {
 function sanitizedStep(api, status, response = {}, extra = {}) {
   return {
     api,
+    action: api,
+    ...(API_VERSIONS[api] ? { apiVersion: API_VERSIONS[api] } : {}),
     status,
     ...(extra.nodePoolId ? { nodePoolId: extra.nodePoolId } : {}),
     ...(extra.nodePoolName ? { nodePoolName: extra.nodePoolName } : {}),
@@ -176,11 +188,64 @@ function sanitizedStep(api, status, response = {}, extra = {}) {
   };
 }
 
+function redactedText(value = "") {
+  const placeholder = "[redacted-sensitive-value]";
+  return String(value || "")
+    .replace(/SecretId/gu, placeholder)
+    .replace(/SecretKey/gu, placeholder)
+    .replace(/Authorization/giu, placeholder)
+    .replace(/Bearer\s+[A-Za-z0-9._~+/=-]+/giu, `Bearer ${placeholder}`)
+    .replace(/\btoken\s*[:=]\s*[^,\s;]+/giu, placeholder)
+    .replace(/\btoken\b/giu, placeholder)
+    .replace(/\bkubeconfig\b/giu, placeholder)
+    .slice(0, 512);
+}
+
+function errorRequestId(error = {}) {
+  if (error?.requestId) return String(error.requestId).slice(0, 96);
+  if (error?.RequestId) return String(error.RequestId).slice(0, 96);
+  if (error?.response?.RequestId) return String(error.response.RequestId).slice(0, 96);
+  if (error?.response?.requestId) return String(error.response.requestId).slice(0, 96);
+  if (typeof error?.getRequestId === "function") {
+    return String(error.getRequestId() || "").slice(0, 96);
+  }
+  return "";
+}
+
+function sanitizedErrorPayload(error) {
+  const requestId = errorRequestId(error);
+  return {
+    code: String(error?.code || error?.Code || error?.name || "tencent_sdk_call_failed").replace(/[^A-Za-z0-9_.:-]/gu, "_").slice(0, 96),
+    message: redactedText(error?.message || error?.Message || ""),
+    requestId,
+  };
+}
+
+function sanitizedTencentError(api, error, extra = {}) {
+  const errorPayload = sanitizedErrorPayload(error);
+  return {
+    error: errorPayload,
+    code: errorPayload.code,
+    message: errorPayload.message,
+    ...(errorPayload.requestId ? { requestId: errorPayload.requestId } : {}),
+    ...(API_VERSIONS[api] ? { apiVersion: API_VERSIONS[api] } : {}),
+    action: api,
+    ...(extra.region ? { region: extra.region } : {}),
+    ...(extra.nodePoolName ? { nodePoolName: extra.nodePoolName } : {}),
+  };
+}
+
 function sanitizedFailureStep(api, error, extra = {}) {
+  const sanitizedError = sanitizedTencentError(api, error, extra);
   return {
     api,
+    action: api,
+    ...(sanitizedError.apiVersion ? { apiVersion: sanitizedError.apiVersion } : {}),
     status: "failed",
-    code: String(error?.code || error?.name || "tencent_sdk_call_failed").replace(/[^A-Za-z0-9_.:-]/gu, "_").slice(0, 96),
+    error: sanitizedError.error,
+    code: sanitizedError.code,
+    message: sanitizedError.message,
+    ...(sanitizedError.requestId ? { requestId: sanitizedError.requestId } : {}),
     ...(extra.nodePoolId ? { nodePoolId: extra.nodePoolId } : {}),
     ...(extra.nodePoolName ? { nodePoolName: extra.nodePoolName } : {}),
     ...(Number.isInteger(extra.replicas) ? { replicas: extra.replicas } : {}),
@@ -408,6 +473,7 @@ async function writeEvidenceFiles({ options, summary, cloudParameters }) {
   const scaleUpResultPath = path.join(evidenceRoot, "scale-up-result-redacted.json");
   const scaleDownResultPath = path.join(evidenceRoot, "scale-down-result-redacted.json");
   const releaseResultPath = path.join(evidenceRoot, "release-result-redacted.json");
+  const failureResultPath = path.join(evidenceRoot, "failure-result-redacted.json");
   await writeFile(createRequestPath, `${JSON.stringify(redactedCreateNodePoolRequest(cloudParameters, options), null, 2)}\n`);
   await writeFile(preflightPath, `${JSON.stringify({
     ok: true,
@@ -422,6 +488,7 @@ async function writeEvidenceFiles({ options, summary, cloudParameters }) {
   await writeFile(scaleUpResultPath, `${JSON.stringify(summary.steps.find((step) => step.api === "ScaleNodePool" && step.replicas === 1) || null, null, 2)}\n`);
   await writeFile(scaleDownResultPath, `${JSON.stringify(summary.steps.find((step) => step.api === "ScaleNodePool" && step.replicas === 0) || null, null, 2)}\n`);
   await writeFile(releaseResultPath, `${JSON.stringify(summary.steps.find((step) => step.api === "DeleteNodePool") || null, null, 2)}\n`);
+  await writeFile(failureResultPath, `${JSON.stringify(summary.steps.find((step) => step.status === "failed") || null, null, 2)}\n`);
   await writeFile(summaryPath, `${JSON.stringify(summary, null, 2)}\n`);
   return {
     evidenceRoot,
@@ -490,6 +557,7 @@ export async function runPackageCLiveCanaryLive({ options, modules } = {}) {
   let targetNodePoolId = "";
   let rollbackSteps = [];
   let summary;
+  let lastFailure = null;
   try {
     const identity = await callStep(steps, "GetCallerIdentity", () => modules.getCallerIdentity(null));
     if (String(identity?.AccountId || "") !== value(env, "TENCENT_MUTATION_ACCOUNT_ID")) {
@@ -530,7 +598,7 @@ export async function runPackageCLiveCanaryLive({ options, modules } = {}) {
     await callStep(steps, "TagResources", () => modules.tagResources({
       ResourceList: [resourceArn],
       Tags: tagList(options),
-    }), { nodePoolId: targetNodePoolId, nodePoolName: TARGET_TENANT_NODE_POOL_NAME });
+    }), { region: REGION, nodePoolId: targetNodePoolId, nodePoolName: TARGET_TENANT_NODE_POOL_NAME });
 
     await callStep(steps, "ScaleNodePool", () => modules.scaleNodePool(REGION, {
       ClusterId: options.targetClusterId,
@@ -566,7 +634,7 @@ export async function runPackageCLiveCanaryLive({ options, modules } = {}) {
     await callStep(steps, "GetResources", () => modules.getResources({
       ResourceList: [resourceArn],
       MaxResults: 50,
-    }), { nodePoolId: targetNodePoolId, nodePoolName: TARGET_TENANT_NODE_POOL_NAME });
+    }), { region: REGION, nodePoolId: targetNodePoolId, nodePoolName: TARGET_TENANT_NODE_POOL_NAME });
 
     summary = redactedSummaryFor({
       ok: true,
@@ -577,6 +645,7 @@ export async function runPackageCLiveCanaryLive({ options, modules } = {}) {
       targetNodePoolId,
     });
   } catch (error) {
+    lastFailure = steps.findLast?.((step) => step.status === "failed") || null;
     rollbackSteps = await rollbackTenantPool({
       modules,
       steps,
@@ -592,9 +661,16 @@ export async function runPackageCLiveCanaryLive({ options, modules } = {}) {
       steps,
       targetNodePoolId,
       rollbackSteps,
-      failure: {
-        code: String(error?.code || error?.name || "package_c_live_canary_live_failed").replace(/[^A-Za-z0-9_.:-]/gu, "_").slice(0, 96),
-      },
+      failure: lastFailure ? {
+        error: lastFailure.error,
+        code: lastFailure.code,
+        message: lastFailure.message,
+        ...(lastFailure.requestId ? { requestId: lastFailure.requestId } : {}),
+        ...(lastFailure.apiVersion ? { apiVersion: lastFailure.apiVersion } : {}),
+        action: lastFailure.action || lastFailure.api,
+        ...(lastFailure.region ? { region: lastFailure.region } : {}),
+        ...(lastFailure.nodePoolName ? { nodePoolName: lastFailure.nodePoolName } : {}),
+      } : sanitizedTencentError("local_validator", error, {}),
     });
   } finally {
     await writeRunGateZero(options.secretFile);

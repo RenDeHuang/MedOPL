@@ -4311,4 +4311,54 @@ post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 
+### 2026-06-13 recovery/platform-v22-trunk
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `bae0a6ee7ab52cfb8177ce0454fa2f188e8b1a02`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Added Package C live canary runner as a future-authorized local proof surface.
+- The runner rejects deploy, kubectl, build/push, Package D, kubeconfig and unsafe args.
+- The runner requires explicit live confirmation, `RUN_TENCENT_CREATE_RELEASE_EXECUTION=1`, max operation count `1`, budget at or below `50` CNY, cluster `cls-fi097sy4`, protected platform pool `np-cbk784r8` and tenant prefix `medopl-tenant-`.
+- Successful runs reset `RUN_TENCENT_CREATE_RELEASE_EXECUTION` back to `0`; local tests prove call order, protected pool refusal, rollback shape and redacted evidence files.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-c-live-canary-live-runner-local-gate.mjs`: pass.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: pass.
+- `npm run verify`: pass before push.
+
+Can-claim:
+
+- `origin/recovery/platform-v22-trunk` includes the Package C live canary runner at `3e7802f813b4c1e90e5f72dc6975a49223fc2159`.
+- Package C has a local runner contract for authorized create/scale/release canary execution and redacted `.runtime` evidence.
+- The runner is registered in the cloud future-authorized lane.
+
+Cannot-claim:
+
+- This closeout authorizes a new real Tencent mutation, deploy, kubectl, build/push, Package D, live-test or kubeconfig read.
+- Production billing readiness, production runtime readiness or production deploy readiness is complete.
+- Protected platform node pool `np-cbk784r8` may be deleted, scaled or modified.
+
+landed_commit: `3e7802f813b4c1e90e5f72dc6975a49223fc2159`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `3e7802f813b4c1e90e5f72dc6975a49223fc2159`.
+- `npm run verify`: pass before push.
+- `npm run closeout:check -- --json`: expected closeout gap detected after the implementation commit reached trunk; this closeout records it.
+- No additional Tencent mutation, deploy, kubectl, build/push, Package D, live-test, kubeconfig read or secret write to git was performed by this closeout.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。

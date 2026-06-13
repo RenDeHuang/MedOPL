@@ -266,8 +266,9 @@ try {
     },
     async tagResources(req = {}) {
       rollbackCalls.push({ api: "TagResources", req });
-      const error = new Error("tag denied");
+      const error = new Error("tag denied by cam policy; token and SecretKey and kubeconfig must not leak");
       error.code = "OperationDenied";
+      error.requestId = "req-denied-tag";
       throw error;
     },
     async scaleNodePool(region, req = {}) {
@@ -291,7 +292,26 @@ try {
   }
   assert(rollbackError, "runner_must_throw_when_post_create_step_fails");
   assert.equal(rollbackError.summary.ok, false, "rollback_summary_not_ok");
+  assert.equal(rollbackError.summary.failure.error.code, "OperationDenied", "rollback_failure_error_code");
+  assert.equal(rollbackError.summary.failure.error.message, "tag denied by cam policy; [redacted-sensitive-value] and [redacted-sensitive-value] and [redacted-sensitive-value] must not leak", "rollback_failure_error_message");
+  assert.equal(rollbackError.summary.failure.error.requestId, "req-denied-tag", "rollback_failure_error_request_id");
   assert.equal(rollbackError.summary.failure.code, "OperationDenied", "rollback_failure_code");
+  assert.equal(rollbackError.summary.failure.message, "tag denied by cam policy; [redacted-sensitive-value] and [redacted-sensitive-value] and [redacted-sensitive-value] must not leak", "rollback_failure_message");
+  assert.equal(rollbackError.summary.failure.requestId, "req-denied-tag", "rollback_failure_request_id");
+  assert.equal(rollbackError.summary.failure.apiVersion, "v20180813", "rollback_failure_api_version");
+  assert.equal(rollbackError.summary.failure.action, "TagResources", "rollback_failure_action");
+  assert.equal(rollbackError.summary.failure.region, "na-siliconvalley", "rollback_failure_region");
+  assert.equal(rollbackError.summary.failure.nodePoolName, "medopl-tenant-rb-package-c-live-canary-20260613", "rollback_failure_node_pool_name");
+  const failedStep = rollbackError.summary.steps.find((step) => step.api === "TagResources");
+  assert.equal(failedStep.error.code, "OperationDenied", "rollback_step_error_code");
+  assert.equal(failedStep.error.message, "tag denied by cam policy; [redacted-sensitive-value] and [redacted-sensitive-value] and [redacted-sensitive-value] must not leak", "rollback_step_error_message");
+  assert.equal(failedStep.error.requestId, "req-denied-tag", "rollback_step_error_request_id");
+  assert.equal(failedStep.message, "tag denied by cam policy; [redacted-sensitive-value] and [redacted-sensitive-value] and [redacted-sensitive-value] must not leak", "rollback_step_message");
+  assert.equal(failedStep.requestId, "req-denied-tag", "rollback_step_request_id");
+  assert.equal(failedStep.apiVersion, "v20180813", "rollback_step_api_version");
+  assert.equal(failedStep.action, "TagResources", "rollback_step_action");
+  const failureResult = JSON.parse(await readFile(path.join(rollbackError.summary.evidenceRoot, "failure-result-redacted.json"), "utf8"));
+  assert.deepEqual(failureResult, failedStep, "failure_result_must_match_failed_step");
   assert.deepEqual(rollbackError.summary.rollback.steps, [
     "scale_tenant_pool_to_zero",
     "delete_tenant_pool",
