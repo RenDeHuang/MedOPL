@@ -4414,7 +4414,7 @@ Status: `landed / pushed / post-push verified`
 
 Branch: `recovery/platform-v22-trunk`
 
-Base trunk HEAD: `2baa3b36aa1032962f5af91c0b698b7740621cb0`
+Base trunk HEAD: `15bd7eed506f4522e2283f103c7b503a3aa50f71`
 
 Archived change package: `changes/archive/2026-06-13-package-c-plan-catalog-contract`
 
@@ -4444,7 +4444,7 @@ Verification:
 
 Can-claim:
 
-- `origin/recovery/platform-v22-trunk` includes the Package C plan catalog canary contract at `93b93fc5af455111c2c33b31599cf5cca5e548d8`.
+- `origin/recovery/platform-v22-trunk` includes the Package C plan catalog canary contract correction at `e9d027b6cf7f5e2b3d9d76de635f1c852747a39c`.
 - Package C prepare-only canary validates Starter through catalog-derived Tencent node parameters.
 - User upgrades remain allowed only after the target shape exists in MedOPL plan catalog allowlist.
 
@@ -4455,15 +4455,15 @@ Cannot-claim:
 - Users can choose arbitrary Tencent instance types.
 - Protected platform node pool `np-cbk784r8` may be deleted, scaled or modified.
 
-landed_commit: `93b93fc5af455111c2c33b31599cf5cca5e548d8`
+landed_commit: `e9d027b6cf7f5e2b3d9d76de635f1c852747a39c`
 
 landing_gate_result: `passed / ff-only landed / pushed`
 
 post_push_verification:
 
-- `origin/recovery/platform-v22-trunk` reached `93b93fc5af455111c2c33b31599cf5cca5e548d8`.
+- `origin/recovery/platform-v22-trunk` reached `e9d027b6cf7f5e2b3d9d76de635f1c852747a39c`.
 - `npm run verify`: pass before push.
-- `npm run closeout:check -- --json`: expected closeout gap detected after the implementation commit reached trunk; this closeout records it.
+- `npm run closeout:check -- --json`: expected closeout gap detected after the Starter plan correction reached trunk; this closeout records it.
 - No additional Tencent mutation, deploy, kubectl, build/push, Package D, live-test, kubeconfig read or secret write to git was performed by this closeout.
 
 post_merge_closeout: `completed`
