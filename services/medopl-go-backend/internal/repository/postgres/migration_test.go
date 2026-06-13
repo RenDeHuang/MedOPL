@@ -26,16 +26,27 @@ func TestBaselineMigrationIsRepeatableAndCanonical(t *testing.T) {
 		"CREATE TABLE IF NOT EXISTS files",
 		"CREATE TABLE IF NOT EXISTS billing_events",
 		"CREATE TABLE IF NOT EXISTS workflow_executions",
+		"CREATE TABLE IF NOT EXISTS resource_bindings",
+		"CREATE TABLE IF NOT EXISTS cloud_operations",
 		"CREATE INDEX IF NOT EXISTS",
 		"idempotency_key",
 		"workspace_id",
+		"resource_binding_id",
+		"billing_attribution_id",
+		"workspace_storage_gb",
+		"node_pool_id",
+		"node_pool_name",
+		"operation_id",
 		"REFERENCES tenants(id)",
 		"REFERENCES workspaces(id)",
 		"REFERENCES runs(id)",
+		"REFERENCES resource_bindings(resource_binding_id)",
 		"CREATE UNIQUE INDEX IF NOT EXISTS idx_users_tenant_email",
 		"CREATE UNIQUE INDEX IF NOT EXISTS idx_workspaces_tenant_slug",
 		"CREATE UNIQUE INDEX IF NOT EXISTS idx_runs_workspace_idempotency",
 		"CREATE UNIQUE INDEX IF NOT EXISTS idx_files_workspace_name",
+		"CREATE UNIQUE INDEX IF NOT EXISTS idx_resource_bindings_resource_binding_id",
+		"CREATE UNIQUE INDEX IF NOT EXISTS idx_cloud_operations_operation_id",
 	} {
 		if !strings.Contains(migration, marker) {
 			t.Fatalf("migration missing marker %q", marker)
@@ -47,6 +58,21 @@ func TestBaselineMigrationIsRepeatableAndCanonical(t *testing.T) {
 	} {
 		if strings.Contains(migration, forbidden) {
 			t.Fatalf("migration must not encode absent values as %q", forbidden)
+		}
+	}
+}
+
+func TestResourceBindingLedgerMigrationKeepsCloudTagsNonCanonical(t *testing.T) {
+	migration := readServiceFile(t, "migrations/0001_baseline.sql")
+	for _, marker := range []string{
+		"canonical_ownership_source TEXT NOT NULL DEFAULT 'postgres_resource_binding_ledger'",
+		"cloud_tag_support TEXT NOT NULL DEFAULT 'tke_nodepool_unsupported'",
+		"CHECK (status IN ('requested', 'creating', 'created', 'scaling', 'ready', 'releaseRequested', 'deleting', 'released', 'failed', 'cleanupRequired'))",
+		"CHECK (workspace_storage_gb > 0)",
+		"released_at TIMESTAMPTZ",
+	} {
+		if !strings.Contains(migration, marker) {
+			t.Fatalf("resource binding ledger migration missing marker %q", marker)
 		}
 	}
 }
@@ -124,6 +150,31 @@ func TestEntSchemaDeclaresCanonicalPostgresConstraints(t *testing.T) {
 			"Indexes() []ent.Index",
 			`field.String("run_id").Optional().Nillable()`,
 			`index.Fields("idempotency_key").Unique()`,
+		},
+		"resourcebinding.go": {
+			"Edges() []ent.Edge",
+			"Indexes() []ent.Index",
+			`field.String("resource_binding_id").NotEmpty().Unique()`,
+			`field.Int("workspace_storage_gb").Positive()`,
+			`field.String("canonical_ownership_source").Default("postgres_resource_binding_ledger")`,
+			`field.String("cloud_tag_support").Default("tke_nodepool_unsupported")`,
+			`field.Time("released_at").Optional().Nillable()`,
+			`index.Fields("resource_binding_id").Unique()`,
+			`edge.From("tenant"`,
+			`edge.From("workspace"`,
+		},
+		"cloudoperation.go": {
+			"Edges() []ent.Edge",
+			"Indexes() []ent.Index",
+			`field.String("operation_id").NotEmpty().Unique()`,
+			`field.String("resource_binding_id").NotEmpty()`,
+			`field.String("server_plan_id").NotEmpty()`,
+			`field.Int("workspace_storage_gb").Positive()`,
+			`field.String("cloud_tag_support").Default("tke_nodepool_unsupported")`,
+			`field.String("canonical_ownership_source").Default("postgres_resource_binding_ledger")`,
+			`field.Time("completed_at").Optional().Nillable()`,
+			`index.Fields("operation_id").Unique()`,
+			`edge.From("resource_binding"`,
 		},
 	}
 

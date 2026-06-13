@@ -35,6 +35,8 @@ func (Workspace) Edges() []ent.Edge {
 		edge.To("files", File.Type),
 		edge.To("billing_events", BillingEvent.Type),
 		edge.To("workflow_executions", WorkflowExecution.Type),
+		edge.To("resource_bindings", ResourceBinding.Type),
+		edge.To("cloud_operations", CloudOperation.Type),
 	}
 }
 

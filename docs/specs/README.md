@@ -868,6 +868,8 @@ Portal canonical truth 存在 PostgreSQL，不存在 COS、CBS、Redis 或云标
 - audit event。
 - provider secret reference。
 
+当前 PostgreSQL resource binding ledger 的已落地机器下界在 `services/medopl-go-backend`：domain model 覆盖 `resourceBindingId`、`billingAttributionId`、`serverPlanId`、`workspaceStorageGb`、Tencent cluster / node pool identity、operationId 和 lifecycle status；baseline migration 与 Ent schema 声明 `resource_bindings` / `cloud_operations`。`nodePoolId` 在 requested / creating 阶段可以为空，`nodePoolName` 必须保留目标 tenant node pool 名称；`cloud_tag_support=tke_nodepool_unsupported` 且 `canonical_ownership_source=postgres_resource_binding_ledger`。这只是 canonical ledger/schema 下界，不代表 Portal 开通入口、cloud operation state machine、billing/audit ledger、workspace quota 或真实 DB migration 已执行。
+
 当前生产必需数据面是 PostgreSQL-only required data plane。queue、lock、session、job state 和短期协调优先由 PostgreSQL-backed 表、状态机、事务锁和运行时内存边界承接；Redis 不属于必需拓扑，不得作为上线前置。若后续 runtime evidence 证明需要更高吞吐的 volatile accelerator，必须另开独立 leaf 并证明 Redis 仍不持有 canonical truth。COS 只保存文件对象。CBS 只作为 TKE 节点盘或必要持久卷。腾讯云 tag / cost allocation 只作为云侧对账证据。
 
 Portal 点击“开通工作台资源”时，必须先写 cloud operation 和审计事件，再进入 dry-run diff 和真实执行授权。真实执行结果必须回写 cloud operation state，不能只靠云侧状态代表 Portal truth。

@@ -28,6 +28,8 @@ func (Tenant) Edges() []ent.Edge {
 		edge.To("users", User.Type),
 		edge.To("workspaces", Workspace.Type),
 		edge.To("billing_events", BillingEvent.Type),
+		edge.To("resource_bindings", ResourceBinding.Type),
+		edge.To("cloud_operations", CloudOperation.Type),
 	}
 }
 

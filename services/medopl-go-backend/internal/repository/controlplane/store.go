@@ -17,6 +17,11 @@ type Store interface {
 	SaveResource(ctx context.Context, resource cpd.ManagedResource) error
 	ResourceByBinding(ctx context.Context, resourceBindingID string) (cpd.ManagedResource, error)
 	ListResources(ctx context.Context, workspaceID string) ([]cpd.ManagedResource, error)
+	SaveResourceBindingLedger(ctx context.Context, ledger cpd.ResourceBindingLedger) error
+	ResourceBindingLedgerByID(ctx context.Context, resourceBindingID string) (cpd.ResourceBindingLedger, error)
+	ListResourceBindingLedgers(ctx context.Context, workspaceID string) ([]cpd.ResourceBindingLedger, error)
+	SaveCloudOperation(ctx context.Context, operation cpd.CloudOperation) error
+	CloudOperationByID(ctx context.Context, operationID string) (cpd.CloudOperation, error)
 	SaveAuditEvent(ctx context.Context, event cpd.AuditEvent) error
 	ListAuditEvents(ctx context.Context, workspaceID string) ([]cpd.AuditEvent, error)
 }

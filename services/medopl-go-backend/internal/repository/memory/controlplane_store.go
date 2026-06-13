@@ -14,6 +14,8 @@ type ControlPlaneStore struct {
 	bindingsByWorkspace map[string]cpd.ProviderBinding
 	launchesByID        map[string]cpd.LaunchProjection
 	resourcesByBinding  map[string]cpd.ManagedResource
+	ledgersByBinding    map[string]cpd.ResourceBindingLedger
+	operationsByID      map[string]cpd.CloudOperation
 	auditEventsByID     map[string]cpd.AuditEvent
 }
 
@@ -22,6 +24,8 @@ func NewControlPlaneStore() *ControlPlaneStore {
 		bindingsByWorkspace: make(map[string]cpd.ProviderBinding),
 		launchesByID:        make(map[string]cpd.LaunchProjection),
 		resourcesByBinding:  make(map[string]cpd.ManagedResource),
+		ledgersByBinding:    make(map[string]cpd.ResourceBindingLedger),
+		operationsByID:      make(map[string]cpd.CloudOperation),
 		auditEventsByID:     make(map[string]cpd.AuditEvent),
 	}
 }
@@ -111,6 +115,70 @@ func (store *ControlPlaneStore) ListResources(ctx context.Context, workspaceID s
 		return items[i].ResourceBindingID < items[j].ResourceBindingID
 	})
 	return items, nil
+}
+
+func (store *ControlPlaneStore) SaveResourceBindingLedger(ctx context.Context, ledger cpd.ResourceBindingLedger) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	store.ledgersByBinding[ledger.ResourceBindingID] = ledger
+	return nil
+}
+
+func (store *ControlPlaneStore) ResourceBindingLedgerByID(ctx context.Context, resourceBindingID string) (cpd.ResourceBindingLedger, error) {
+	if err := ctx.Err(); err != nil {
+		return cpd.ResourceBindingLedger{}, err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	ledger, ok := store.ledgersByBinding[resourceBindingID]
+	if !ok {
+		return cpd.ResourceBindingLedger{}, cprepo.ErrNotFound
+	}
+	return ledger, nil
+}
+
+func (store *ControlPlaneStore) ListResourceBindingLedgers(ctx context.Context, workspaceID string) ([]cpd.ResourceBindingLedger, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	items := make([]cpd.ResourceBindingLedger, 0, len(store.ledgersByBinding))
+	for _, item := range store.ledgersByBinding {
+		if workspaceID == "" || item.WorkspaceID == workspaceID {
+			items = append(items, item)
+		}
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].ResourceBindingID < items[j].ResourceBindingID
+	})
+	return items, nil
+}
+
+func (store *ControlPlaneStore) SaveCloudOperation(ctx context.Context, operation cpd.CloudOperation) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	store.operationsByID[operation.OperationID] = operation
+	return nil
+}
+
+func (store *ControlPlaneStore) CloudOperationByID(ctx context.Context, operationID string) (cpd.CloudOperation, error) {
+	if err := ctx.Err(); err != nil {
+		return cpd.CloudOperation{}, err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	operation, ok := store.operationsByID[operationID]
+	if !ok {
+		return cpd.CloudOperation{}, cprepo.ErrNotFound
+	}
+	return operation, nil
 }
 
 func (store *ControlPlaneStore) SaveAuditEvent(ctx context.Context, event cpd.AuditEvent) error {
