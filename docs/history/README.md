@@ -4569,4 +4569,54 @@ post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 
+### 2026-06-13 recovery/platform-v22-trunk
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `a2488f5b13cc7b4f1bd90c65e2d7dd306553a693`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Aligned Package C `TagResources` request tags with Tencent Tag API v20180813 field names.
+- Changed post-create tag pairs from `{ Key, Value }` to `{ TagKey, TagValue }`.
+- Updated the prepare-only redacted request contract so `tagResourcesPlan.tags` shows `TagKey` / `TagValue`.
+- Kept the Package C `CreateNodePool` builder unchanged, including `PublicIP`, `MaxBandwidthOut=0`, no inline business tags / annotations, `starter_2c4g_10gb` and `CLOUD_BSSD` 50GB node system disk.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-c-live-canary-readiness-local-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-c-live-canary-live-runner-local-gate.mjs`: pass.
+- `npm run verify`: pass before push.
+- `npm run closeout:check -- --json`: expected closeout gap detected after the TagResources builder fix reached trunk; this closeout records it.
+
+Can-claim:
+
+- `origin/recovery/platform-v22-trunk` includes the Package C `TagResources` tag field correction at `10ef7d28c4c15fba309e1ceb1f8ad3348fcf8976`.
+- Package C prepare-only evidence can now express post-create `TagResources` tags using `TagKey` / `TagValue`.
+
+Cannot-claim:
+
+- This closeout authorizes a real Tencent mutation, deploy, kubectl, build/push, Package D, live-test, kubeconfig read or secret read.
+- Production billing readiness, production runtime readiness or production deploy readiness is complete.
+- Protected platform node pool `np-cbk784r8` may be deleted, scaled or modified.
+
+landed_commit: `10ef7d28c4c15fba309e1ceb1f8ad3348fcf8976`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `10ef7d28c4c15fba309e1ceb1f8ad3348fcf8976`.
+- `npm run verify`: pass before push.
+- `npm run closeout:check -- --json`: expected closeout gap detected after the Package C `TagResources` field correction reached trunk; this closeout records it.
+- No Tencent mutation, deploy, kubectl, build/push, Package D, live-test, kubeconfig read or secret write to git was performed by this closeout.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
 详细过程证据以 git history 为准。本文件只保当前可审摘要，不再保 shadow archive。

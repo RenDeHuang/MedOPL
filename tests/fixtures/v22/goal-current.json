@@ -8,12 +8,12 @@
   "last_updated_at": "2026-06-13",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "6cc500635d7dbd46ef2148984b648da202f95ba5",
+  "base_trunk_head": "10ef7d28c4c15fba309e1ceb1f8ad3348fcf8976",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "6cc500635d7dbd46ef2148984b648da202f95ba5",
+  "last_landed_commit": "10ef7d28c4c15fba309e1ceb1f8ad3348fcf8976",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -101,7 +101,7 @@
         "precloud-deployable-rc"
       ],
       "history_summary": "Package C dry-run create/release plan, TKE bootstrap preflight, live canary readiness gate, live canary runner, failure evidence redaction and plan-catalog canary contract are landed as pre-cloud / scoped local evidence. Package C live create/release remains authorization-required; tenant node pools are created by Package C per tenant or workspace; arbitrary Tencent instanceType input is rejected unless represented by a MedOPL plan catalog allowlist entry.",
-      "landed_commit": "6cc500635d7dbd46ef2148984b648da202f95ba5"
+      "landed_commit": "10ef7d28c4c15fba309e1ceb1f8ad3348fcf8976"
     },
     {
       "id": "go-control-plane-mvp-takeover",
