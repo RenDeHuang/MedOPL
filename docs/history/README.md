@@ -5244,3 +5244,48 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-14 package-d-deploy-runner-placement-correction
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `00a113c5987d3e172d97b030830a6edb59b313e6`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Corrected Package D runner placement: preferred deploy execution is now a TKE in-cluster platform runner/job on protected platform pool `np-cbk784r8`, not an extra default CVM.
+- Downgraded the previous `medopl-v22-deploy-runner` VPC CVM checklist to fallback-only / not-default.
+- Split build/push from deploy/smoke: image build and TCR push can be handled by an external build runner or future Kaniko/BuildKit path, while deploy/smoke, Kubernetes API connectivity preflight, PostgreSQL ledger canary, DB connectivity smoke and rollback run inside TKE/VPC on the platform runner.
+- Preserved commercial stability boundaries: PostgreSQL stays private, TKE API stays private, tenant pool scheduling remains forbidden and no extra CVM is created as the default route.
+- Kept Package D non-executing: `RUN_TENCENT_DEPLOY_EXECUTION=0`, no Tencent mutation, no kubectl, no deploy, no build/push and no secret or `.runtime` commit.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs`: pass.
+
+Can-claim:
+
+- Package D placement truth now prefers the existing platform node pool `np-cbk784r8` for deploy/smoke execution.
+- VPC CVM runner remains only a fallback plan.
+- `realExecutionReady` remains `false`.
+
+Cannot-claim:
+
+- A platform runner job was created, Kubernetes API was called, kubectl ran, deploy ran, build/push ran, Tencent mutation ran, a CVM was created, secret files were read, Package D execution ran, or production runtime is online.
+
+landed_commit: `c1a1aa096130643a99131ed53dd36457ddeaf6e8`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
