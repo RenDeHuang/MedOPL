@@ -8,12 +8,12 @@
   "last_updated_at": "2026-06-15",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "db0f9f1653fa46ffbbc399af7b963b288212023b",
+  "base_trunk_head": "cbe1be8b155b89030cf2d8ee32154d6a86ec45c7",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "db0f9f1653fa46ffbbc399af7b963b288212023b",
+  "last_landed_commit": "cbe1be8b155b89030cf2d8ee32154d6a86ec45c7",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -101,7 +101,7 @@
         "precloud-deployable-rc"
       ],
       "history_summary": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound, runner-local state-machine evidence, repository write wiring contract and gated PostgreSQL sink support path and explicit live canary runner contract have landed. Package D release plan, execution preflight gate, in-cluster runner shape gate, non-executing runner manifest materialization / authorization pack, bootstrap authorization pack and the repo-native Kubernetes API server-side dry-run preflight runner and repo-native bootstrap apply runner have landed, so reviewable bootstrap path readiness and a single cloud-runner entrypoint are true while realExecutionReady=false. Kubernetes API connectivity now passed, context/cluster matched cls-fi097sy4, bootstrap apply confirmed medopl-platform Active and allowlisted bootstrap resources, and the same-name Job immutable finding is folded into the corrected contract: bootstrap apply / dry-run no longer reapply Job, while Job execution is a separate run-scoped authorization. Stabilization remains blocked on rerunning corrected bootstrap apply / dry-run, separately authorizing run-scoped Job lifecycle, service-in-VPC PostgreSQL live canary, image build execution, TCR push execution, DB connectivity smoke, rollback evidence, billing/audit ledger, Portal opening entry and workspace storage quota. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization.",
-      "landed_commit": "db0f9f1653fa46ffbbc399af7b963b288212023b"
+      "landed_commit": "cbe1be8b155b89030cf2d8ee32154d6a86ec45c7"
     },
     {
       "id": "go-control-plane-mvp-takeover",
@@ -116,7 +116,7 @@
         "opl-entry-real-preflight-launch"
       ],
       "history_summary": "Go control-plane MVP takeover landed through local RC; Node Portal v22 control-plane routes are retired; evidence remains local and pre-cloud only.",
-      "landed_commit": "0112813998456d879e9ea10782f224c29f3a166f",
+      "landed_commit": "cbe1be8b155b89030cf2d8ee32154d6a86ec45c7",
       "closed_at": "2026-05-25",
       "archive": "changes/archive/2026-05-24-go-control-plane-mvp-takeover"
     },

@@ -92,13 +92,11 @@ Cannot-claim:
 
 - A real DB secret was read, a real PostgreSQL connection was executed, Tencent mutation ran, kubectl/deploy/build-push/Package D ran, or Portal/billing/workspace quota productionization is complete.
 
-
 ### 2026-06-12 - Superseded cloud node pool topology
 
 - The earlier shared user compute pool / premium dedicated pool future-phase wording is retained below only as provenance for landed prework.
 - Current truth has moved to unified TKE cluster + platform service node pool + Package C-created tenant node pool per tenant or workspace.
 - The old single `TENCENT_MUTATION_TKE_NODE_POOL_ID` shared-pool mapping is superseded by `TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID`; tenant node pool IDs are produced by authorized Package C lifecycle execution, not prefilled in foundation notes.
-
 
 ### 2026-05-28 changes/archive/2026-05-28-portal-opl-refund-api-fix
 
@@ -130,7 +128,6 @@ Cannot-claim:
 Next owner:
 
 - `MedOPL Platform` keeps local Portal/OPL delivery regression green.
-
 
 ### 2026-05-23 changes/archive/2026-05-23-local-golden-path-release-candidate
 
@@ -218,7 +215,6 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
-
 ### 2026-05-23 changes/archive/2026-05-23-repo-native-change-lifecycle
 
 Status: `archived / local-gated`
@@ -2688,7 +2684,6 @@ post_push_verification:
 - `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`: pass.
 - `git diff --check -- docs tests scripts`: pass.
 
-
 landed_commit: `2e644fc774e567db9418e3d13942e1598434433e`
 
 landing_gate_result: `passed / ff-only landed / pushed`
@@ -3906,7 +3901,6 @@ post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 
-
 ### 2026-06-10 feat/v22-tke-bootstrap-preflight
 
 Status: `landed / pushed / post-push verified`
@@ -4939,7 +4933,6 @@ post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 
-
 ### 2026-06-14 package-d-deploy-readiness-planning
 
 Status: `landed / pushed / post-push verified`
@@ -5666,6 +5659,57 @@ Cannot-claim:
 - This repo session read real kubeconfig or secrets, connected to Kubernetes API, ran real kubectl, created Kubernetes resources, deployed, built/pushed images, executed Tencent mutation, ran Package C live, ran Package D production execution, or brought production runtime online.
 
 landed_commit: `db0f9f1653fa46ffbbc399af7b963b288212023b`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-15 package-d-bootstrap-job-lifecycle-split
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `7c839c42e558556d0f50384f36c61101c087d518`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Recorded the cloud finding: Package D bootstrap apply confirmed Kubernetes API connectivity, target cluster `cls-fi097sy4`, `medopl-platform` Active and allowlisted bootstrap resources, then post-apply server-side dry-run failed on same-name `Job/medopl-platform-runner` `spec.template` immutability.
+- Removed same-name Job from the idempotent bootstrap apply and server-side dry-run manifest packs.
+- Kept bootstrap apply scoped to Namespace, ServiceAccount, RBAC, ConfigMap, Secret and imagePullSecret resources only.
+- Split the in-cluster runner Job into a separate run-scoped lifecycle contract with unique names like `medopl-platform-runner-preflight-<runid>`.
+- Updated active/delivery/current truth so the next cloud step is corrected bootstrap apply / server-side dry-run rerun, followed by separate run-scoped Job authorization.
+
+Verification:
+
+- RED: `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-bootstrap-apply-runner-local-gate.mjs` failed because `Job/medopl-platform-runner` was still in the bootstrap allowlist.
+- RED: `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-kubernetes-api-preflight-runner-local-gate.mjs` failed because the server-side dry-run manifest still included `kind: Job`.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-bootstrap-apply-runner-local-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-kubernetes-api-preflight-runner-local-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs`: pass.
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+Can-claim:
+
+- Package D bootstrap apply and server-side dry-run packs no longer reapply the immutable same-name Job template.
+- The run-scoped Job lifecycle is a separate authorization boundary.
+- `realExecutionReady` remains `false`.
+
+Cannot-claim:
+
+- This repo session read real kubeconfig or secrets, connected to Kubernetes API, ran real kubectl, deleted the existing Job, created Kubernetes resources, deployed, built/pushed images, executed Tencent mutation, ran Package C live, ran Package D production execution, or brought production runtime online.
+
+landed_commit: `cbe1be8b155b89030cf2d8ee32154d6a86ec45c7`
 
 landing_gate_result: `passed / ff-only landed / pushed`
 
