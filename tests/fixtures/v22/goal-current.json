@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13: CreateNodePool, scale up, scale down and DeleteNodePool passed for medopl-tenant-rb-package-c-live-canary-20260613; readonly cleanup check observed platform pool np-cbk784r8 and no residual canary tenant node pool by name or id. TagResources for tke:nodepool returned InvalidParameter.UnsupportedService and remains non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound is landed in Go domain, memory store, Ent schema and baseline migration; Package C live runner projects the tenant node pool lifecycle into local ResourceBinding / CloudOperation state-machine evidence; Package C repository write wiring contract now covers create resource binding, append cloud operation event, nodePoolId update, lifecycle status update, released, failed and cleanupRequired paths through an injected ledger sink. Canonical ownership and billing truth remains PostgreSQL ledger, not cloud tags. The default runner sink is still local/dry-run and does not execute a real PostgreSQL connection, but Package C now has gated PostgreSQL ledger sink support with root pg driver dependency, RUN_MEDOPL_POSTGRES_LEDGER_EXECUTION=1, allowlisted local DB env keys, schema/write-permission preflight, explicit live canary write/read/cleanup runner, redacted .runtime evidence and fail-closed driver/gate behavior. An explicitly authorized PostgreSQL ledger canary read only the dedicated ledger env file and failed closed at connection preflight with timeout expired / network_unreachable_or_connection_preflight_failed before parent-row check or DB write. Next stable上线 plan is Package D deploy readiness planning for TKE cluster cls-fi097sy4 platform pool np-cbk784r8 and VPC PostgreSQL 10.66.0.21:5432, with preferred deploy execution now moved to a TKE in-cluster platform runner/job scheduled on protected platform pool np-cbk784r8; build/push image readiness is separate and can be handled by an external build runner or future Kaniko/BuildKit, while deploy/smoke/DB connectivity preflight runs inside the TKE platform pool and VPC; the previous medopl-v22-deploy-runner VPC CVM checklist is fallback-only, not the default route; the non-executing local shape gate now verifies RUN_TENCENT_DEPLOY_EXECUTION=0, deploy/runtime env allowlists, kubeconfig ref-only handling, Portal runtime PostgreSQL endpoint, manifest scheduling to the platform service pool, rollback plan shape and tenant pool scheduling rejection. The reviewable Package D release plan shape now makes releasePlanReady=true while realExecutionReady remains false, and the Package D execution preflight gate can judge split deploy/runtime env allowlists, fixed cluster/namespace/platform pool/PostgreSQL/image targets and redaction audit while keeping realExecutionReady=false. Package D in-cluster platform runner shape gate is now landed and split into a repo-local support module to keep the deploy gate under line budget: the preferred runner shape is a Kubernetes Job in namespace medopl-platform with serviceAccount medopl-platform-runner, scheduling fixed to platform service pool np-cbk784r8, tenant pool prefix medopl-tenant- forbidden, configMap/secretRef/imagePullSecret-only runtime inputs, no plaintext secret, no raw kubeconfig, minimal RBAC with namespace scope preferred and cluster-scope limited to read-only nodes for platform pool visibility, command allowlist limited to preflight/deploy/smoke/rollback, and redacted shape evidence written only to .runtime. It does not call kubectl, connect to Kubernetes API, deploy, build/push, execute Tencent mutation, read kubeconfig, or allow Package C live. Package D in-cluster runner manifest materialization is now a non-executing review pack: it produces Namespace, ServiceAccount, ConfigMap, redacted Secret templates, imagePullSecret template, Role/RoleBinding, nodes read-only ClusterRole/ClusterRoleBinding and Job manifest shape plus an authorization pack; after local WSL could not reach the TKE API, the same gate now includes a bootstrap authorization pack recommending Tencent CloudShell, Cloud Assistant or a VPC internal runner for server-side dry-run / later separately authorized bootstrap, with rollback plan, stop conditions, fixed target cls-fi097sy4 / medopl-platform / np-cbk784r8, resource classes and redacted evidence path. Secret values remain key-level redacted placeholders and raw kubeconfig is forbidden. This pack now has a repo-native cloud-runner execution entrypoint for later authorized Kubernetes API connectivity / server-side dry-run: it reads only the Package D deploy env, Portal runtime env and kubeconfig paths passed by flag, requires RUN_TENCENT_DEPLOY_EXECUTION=0, validates cluster cls-fi097sy4 / namespace medopl-platform / platform scheduling np-cbk784r8 / VPC PostgreSQL 10.66.0.21:5432, runs only kubectl client check, current-context, namespace read and kubectl apply --server-side --dry-run=server against the Package D bootstrap manifest pack, writes redacted .runtime evidence, and rejects real apply/delete/patch/scale/deploy/build-push/Tencent mutation/Package C live. This entrypoint has now been executed once from a TKE/VPC-reachable environment: Kubernetes API connectivity passed, context/cluster matched cls-fi097sy4, but namespace_read found medopl-platform missing, so server-side dry-run was not entered. Evidence is redacted at /opt/medopl/.runtime/package-d-kubernetes-api-server-side-dry-run-preflight/preflight-redacted.json. The next required boundary is a separately authorized Package D bootstrap apply that creates medopl-platform Namespace and only Package D bootstrap resources before rerunning the dry-run preflight. The current WSL session is no longer the Package D execution target; deploy/smoke, Kubernetes API connectivity, PostgreSQL ledger canary, DB smoke and rollback should run from the TKE platform runner after separate authorization, while image build/push remains a separate external build runner or future Kaniko/BuildKit concern; realExecutionReady stays false until bootstrap apply and subsequent dry-run / smoke preflights pass; the next boundary is authorized Package D bootstrap apply for the missing medopl-platform namespace. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization. Starter remains starter_2c4g_10gb: 2C4G, 10GB workspace storage, TKE SA5.MEDIUM4, CLOUD_BSSD 50GB node system disk and public IP disabled; arbitrary Tencent instanceType input is rejected unless represented by a MedOPL plan catalog allowlist entry.",
+  "current_problem": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13: CreateNodePool, scale up, scale down and DeleteNodePool passed for medopl-tenant-rb-package-c-live-canary-20260613; readonly cleanup check observed platform pool np-cbk784r8 and no residual canary tenant node pool by name or id. TagResources for tke:nodepool returned InvalidParameter.UnsupportedService and remains non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound is landed in Go domain, memory store, Ent schema and baseline migration; Package C live runner projects the tenant node pool lifecycle into local ResourceBinding / CloudOperation state-machine evidence; Package C repository write wiring contract now covers create resource binding, append cloud operation event, nodePoolId update, lifecycle status update, released, failed and cleanupRequired paths through an injected ledger sink. Canonical ownership and billing truth remains PostgreSQL ledger, not cloud tags. The default runner sink is still local/dry-run and does not execute a real PostgreSQL connection, but Package C now has gated PostgreSQL ledger sink support with root pg driver dependency, RUN_MEDOPL_POSTGRES_LEDGER_EXECUTION=1, allowlisted local DB env keys, schema/write-permission preflight, explicit live canary write/read/cleanup runner, redacted .runtime evidence and fail-closed driver/gate behavior. An explicitly authorized PostgreSQL ledger canary read only the dedicated ledger env file and failed closed at connection preflight with timeout expired / network_unreachable_or_connection_preflight_failed before parent-row check or DB write. Next stable上线 plan is Package D deploy readiness planning for TKE cluster cls-fi097sy4 platform pool np-cbk784r8 and VPC PostgreSQL 10.66.0.21:5432, with preferred deploy execution now moved to a TKE in-cluster platform runner/job scheduled on protected platform pool np-cbk784r8; build/push image readiness is separate and can be handled by an external build runner or future Kaniko/BuildKit, while deploy/smoke/DB connectivity preflight runs inside the TKE platform pool and VPC; the previous medopl-v22-deploy-runner VPC CVM checklist is fallback-only, not the default route; the non-executing local shape gate now verifies RUN_TENCENT_DEPLOY_EXECUTION=0, deploy/runtime env allowlists, kubeconfig ref-only handling, Portal runtime PostgreSQL endpoint, manifest scheduling to the platform service pool, rollback plan shape and tenant pool scheduling rejection. The reviewable Package D release plan shape now makes releasePlanReady=true while realExecutionReady remains false, and the Package D execution preflight gate can judge split deploy/runtime env allowlists, fixed cluster/namespace/platform pool/PostgreSQL/image targets and redaction audit while keeping realExecutionReady=false. Package D in-cluster platform runner shape gate is now landed and split into a repo-local support module to keep the deploy gate under line budget: the preferred runner shape is a Kubernetes Job in namespace medopl-platform with serviceAccount medopl-platform-runner, scheduling fixed to platform service pool np-cbk784r8, tenant pool prefix medopl-tenant- forbidden, configMap/secretRef/imagePullSecret-only runtime inputs, no plaintext secret, no raw kubeconfig, minimal RBAC with namespace scope preferred and cluster-scope limited to read-only nodes for platform pool visibility, command allowlist limited to preflight/deploy/smoke/rollback, and redacted shape evidence written only to .runtime. It does not call kubectl, connect to Kubernetes API, deploy, build/push, execute Tencent mutation, read kubeconfig, or allow Package C live. Package D in-cluster runner manifest materialization is now a non-executing review pack: it produces Namespace, ServiceAccount, ConfigMap, redacted Secret templates, imagePullSecret template, Role/RoleBinding, nodes read-only ClusterRole/ClusterRoleBinding and Job manifest shape plus an authorization pack; after local WSL could not reach the TKE API, the same gate now includes a bootstrap authorization pack recommending Tencent CloudShell, Cloud Assistant or a VPC internal runner for server-side dry-run / later separately authorized bootstrap, with rollback plan, stop conditions, fixed target cls-fi097sy4 / medopl-platform / np-cbk784r8, resource classes and redacted evidence path. Secret values remain key-level redacted placeholders and raw kubeconfig is forbidden. This pack now has repo-native cloud-runner execution entrypoints for later authorized Kubernetes API connectivity / server-side dry-run and bootstrap apply: it reads only the Package D deploy env, Portal runtime env and kubeconfig paths passed by flag, requires RUN_TENCENT_DEPLOY_EXECUTION=0, validates cluster cls-fi097sy4 / namespace medopl-platform / platform scheduling np-cbk784r8 / VPC PostgreSQL 10.66.0.21:5432, runs only kubectl client check, current-context, namespace read and kubectl apply --server-side --dry-run=server against the Package D bootstrap manifest pack, writes redacted .runtime evidence, and rejects real apply/delete/patch/scale/deploy/build-push/Tencent mutation/Package C live. This entrypoint has now been executed once from a TKE/VPC-reachable environment: Kubernetes API connectivity passed, context/cluster matched cls-fi097sy4, but namespace_read found medopl-platform missing, so server-side dry-run was not entered. Evidence is redacted at /opt/medopl/.runtime/package-d-kubernetes-api-server-side-dry-run-preflight/preflight-redacted.json. The next required boundary is authorized cloud execution of the repo-native Package D bootstrap apply runner that creates medopl-platform Namespace and only Package D bootstrap resources before rerunning the dry-run preflight. The current WSL session is no longer the Package D execution target; deploy/smoke, Kubernetes API connectivity, PostgreSQL ledger canary, DB smoke and rollback should run from the TKE platform runner after separate authorization, while image build/push remains a separate external build runner or future Kaniko/BuildKit concern; realExecutionReady stays false until bootstrap apply and subsequent dry-run / smoke preflights pass; the next boundary is authorized cloud execution of the repo-native Package D bootstrap apply runner for the missing medopl-platform namespace. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization. Starter remains starter_2c4g_10gb: 2C4G, 10GB workspace storage, TKE SA5.MEDIUM4, CLOUD_BSSD 50GB node system disk and public IP disabled; arbitrary Tencent instanceType input is rejected unless represented by a MedOPL plan catalog allowlist entry.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -100,7 +100,7 @@
       "depends_on": [
         "precloud-deployable-rc"
       ],
-      "history_summary": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound, runner-local state-machine evidence, repository write wiring contract and gated PostgreSQL sink support path and explicit live canary runner contract have landed. Package D release plan, execution preflight gate, in-cluster runner shape gate, non-executing runner manifest materialization / authorization pack, bootstrap authorization pack and the repo-native Kubernetes API server-side dry-run preflight runner have landed, so reviewable bootstrap path readiness and a single cloud-runner entrypoint are true while realExecutionReady=false. Kubernetes API connectivity now passed and context/cluster matched cls-fi097sy4, but medopl-platform namespace is missing and blocked server-side dry-run at namespace_read. Stabilization remains blocked on authorized Package D bootstrap apply for the missing namespace/resources, service-in-VPC PostgreSQL live canary, image build execution, TCR push execution, DB connectivity smoke, rollback evidence, billing/audit ledger, Portal opening entry and workspace storage quota. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization.",
+      "history_summary": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound, runner-local state-machine evidence, repository write wiring contract and gated PostgreSQL sink support path and explicit live canary runner contract have landed. Package D release plan, execution preflight gate, in-cluster runner shape gate, non-executing runner manifest materialization / authorization pack, bootstrap authorization pack and the repo-native Kubernetes API server-side dry-run preflight runner and repo-native bootstrap apply runner have landed, so reviewable bootstrap path readiness and a single cloud-runner entrypoint are true while realExecutionReady=false. Kubernetes API connectivity now passed and context/cluster matched cls-fi097sy4, but medopl-platform namespace is missing and blocked server-side dry-run at namespace_read. Stabilization remains blocked on authorized cloud execution of the repo-native Package D bootstrap apply runner for the missing namespace/resources, service-in-VPC PostgreSQL live canary, image build execution, TCR push execution, DB connectivity smoke, rollback evidence, billing/audit ledger, Portal opening entry and workspace storage quota. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization.",
       "landed_commit": "601e4099548c3436a75c13994a989d86294a94c7"
     },
     {
@@ -202,6 +202,7 @@
       "node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk --json",
       "node tests/future-authorized/cloud/future-authorized-test-v22-tke-bootstrap-preflight-local-gate.mjs",
       "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-kubernetes-api-preflight-runner-local-gate.mjs",
+      "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-bootstrap-apply-runner-local-gate.mjs",
       "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json",
       "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
       "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
@@ -258,7 +259,7 @@
     "package_d_deploy_readiness_plan": {
       "executionEnvironment": "tke_in_cluster_platform_runner_preferred",
       "readinessGaps": [
-        "authorized Package D bootstrap apply for missing medopl-platform namespace",
+        "authorized cloud execution of Package D bootstrap apply runner for missing medopl-platform namespace",
         "PostgreSQL ledger canary from TKE platform runner",
         "Package D combined preflight from TKE platform runner",
         "image build execution",
@@ -697,7 +698,7 @@
         }
       },
       "bootstrapApplyAuthorizationPack": {
-        "status": "authorization_required_namespace_missing",
+        "status": "repo_native_runner_landed_authorization_required_namespace_missing",
         "targetClusterId": "cls-fi097sy4",
         "namespace": "medopl-platform",
         "platformNodePoolId": "np-cbk784r8",
@@ -705,11 +706,15 @@
         "allowedResourceClasses": [
           "Namespace/medopl-platform",
           "ServiceAccount/medopl-platform-runner",
-          "minimal RBAC for Package D bootstrap resources",
+          "Role/medopl-platform-runner",
+          "RoleBinding/medopl-platform-runner",
+          "ClusterRole/medopl-platform-runner-node-reader",
+          "ClusterRoleBinding/medopl-platform-runner-node-reader",
           "ConfigMap/medopl-package-d-runner-config",
-          "SecretRef-backed package-d deploy/runtime secrets",
-          "imagePullSecret/medopl-tcr-pull-secret",
-          "Job/medopl-platform-runner bootstrap resource shape"
+          "Secret/medopl-package-d-deploy-env",
+          "Secret/medopl-portal-runtime-env",
+          "Secret/medopl-tcr-pull-secret",
+          "Job/medopl-platform-runner"
         ],
         "allowedOperations": [
           "kubectl apply only Package D bootstrap manifests",
@@ -741,13 +746,76 @@
           "Never delete, scale or modify np-cbk784r8 or any medopl-tenant- tenant pool."
         ],
         "nextAuthorizationPrompt": [
-          "Authorize Package D bootstrap apply from a Tencent CloudShell, Cloud Assistant session, or VPC internal runner that can reach TKE API for cls-fi097sy4.",
+          "Authorize Package D bootstrap apply runner from a Tencent CloudShell, Cloud Assistant session, or VPC internal runner that can reach TKE API for cls-fi097sy4.",
+          "Run: node tests/support/cloud-prework/package-d-bootstrap-apply-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode bootstrap-apply",
           "Allowed reads: /home/dev/.secrets/medopl/v22/package-d-deploy.env, /home/dev/.secrets/medopl/v22/portal-runtime.env, /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy.",
-          "Allowed Kubernetes operations: create medopl-platform Namespace and create/update only Package D bootstrap resources: ServiceAccount, minimal RBAC, ConfigMap, SecretRef-backed Secrets, imagePullSecret and bootstrap Job resources in medopl-platform.",
+          "Allowed Kubernetes operations: create medopl-platform Namespace and create/update only allowlisted Package D bootstrap resources.",
           "After bootstrap apply, rerun the Package D Kubernetes API server-side dry-run preflight command and write redacted evidence under .runtime.",
           "Forbidden: business Deployment rollout, tenant pool / medopl-tenant-, modifying np-cbk784r8, kubectl delete/patch/scale outside Package D bootstrap resources, build/push, Tencent mutation, Package C live, Package D production deploy."
         ],
-        "realExecutionReady": false
+        "realExecutionReady": false,
+        "runnerCommand": "node tests/support/cloud-prework/package-d-bootstrap-apply-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode bootstrap-apply",
+        "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-bootstrap-apply-runner-local-gate.mjs",
+        "evidenceSink": ".runtime/package-d-bootstrap-apply/bootstrap-apply-redacted.json"
+      },
+      "bootstrapApplyRunner": {
+        "status": "repo_native_runner_local_gate_landed_real_cloud_execution_pending",
+        "contract": "package_d_bootstrap_apply_runner",
+        "command": "node tests/support/cloud-prework/package-d-bootstrap-apply-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode bootstrap-apply",
+        "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-bootstrap-apply-runner-local-gate.mjs",
+        "evidenceSink": ".runtime/package-d-bootstrap-apply/bootstrap-apply-redacted.json",
+        "redactedManifestEvidence": ".runtime/package-d-bootstrap-apply/bootstrap-manifests-apply-redacted.json",
+        "readsWhenAuthorized": [
+          "/home/dev/.secrets/medopl/v22/package-d-deploy.env",
+          "/home/dev/.secrets/medopl/v22/portal-runtime.env",
+          "/home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy"
+        ],
+        "allowedResources": [
+          "Namespace/medopl-platform",
+          "ServiceAccount/medopl-platform-runner",
+          "Role/medopl-platform-runner",
+          "RoleBinding/medopl-platform-runner",
+          "ClusterRole/medopl-platform-runner-node-reader",
+          "ClusterRoleBinding/medopl-platform-runner-node-reader",
+          "ConfigMap/medopl-package-d-runner-config",
+          "Secret/medopl-package-d-deploy-env",
+          "Secret/medopl-portal-runtime-env",
+          "Secret/medopl-tcr-pull-secret",
+          "Job/medopl-platform-runner"
+        ],
+        "allowedKubectlCommands": [
+          "kubectl version --client",
+          "kubectl config current-context",
+          "kubectl get namespace medopl-platform -o json",
+          "kubectl apply --server-side -f -",
+          "kubectl apply --server-side --dry-run=server -f - -o yaml"
+        ],
+        "failClosedChecks": [
+          "RUN_TENCENT_DEPLOY_EXECUTION must equal 0",
+          "cluster/context must match cls-fi097sy4",
+          "namespace must equal medopl-platform",
+          "manifest must not reference medopl-tenant-",
+          "manifest must not include business Deployment or Service rollout",
+          "manifest must not attempt to modify np-cbk784r8",
+          "all resource kind/name/namespace values must be allowlisted",
+          "kubectl apply must be server-side stdin apply against Package D bootstrap manifests only",
+          "post-apply dry-run must use --server-side --dry-run=server",
+          "redaction audit must pass"
+        ],
+        "forbiddenNow": [
+          "business Deployment rollout",
+          "Package D production deploy",
+          "build/push",
+          "Tencent mutation",
+          "Package C live",
+          "tenant pool or medopl-tenant- resources",
+          "modify np-cbk784r8",
+          "kubectl delete/patch/scale outside Package D bootstrap resources",
+          "output kubeconfig/token/cert/DB password/TCR secret/Portal admin password"
+        ],
+        "postApplyStep": "automatically runs Package D server-side dry-run preflight shape against the same bootstrap manifest pack",
+        "realExecutionReady": false,
+        "localGateOnlyThisCommit": true
       }
     }
   },
@@ -917,7 +985,7 @@
         "realExecutionReady": false
       },
       "readinessGaps": [
-        "authorized Package D bootstrap apply for missing medopl-platform namespace",
+        "authorized cloud execution of Package D bootstrap apply runner for missing medopl-platform namespace",
         "PostgreSQL ledger canary from TKE platform runner",
         "Package D combined preflight from TKE platform runner",
         "image build execution",
@@ -1051,7 +1119,7 @@
         }
       },
       "bootstrapApplyAuthorizationPack": {
-        "status": "authorization_required_namespace_missing",
+        "status": "repo_native_runner_landed_authorization_required_namespace_missing",
         "targetClusterId": "cls-fi097sy4",
         "namespace": "medopl-platform",
         "platformNodePoolId": "np-cbk784r8",
@@ -1059,11 +1127,15 @@
         "allowedResourceClasses": [
           "Namespace/medopl-platform",
           "ServiceAccount/medopl-platform-runner",
-          "minimal RBAC for Package D bootstrap resources",
+          "Role/medopl-platform-runner",
+          "RoleBinding/medopl-platform-runner",
+          "ClusterRole/medopl-platform-runner-node-reader",
+          "ClusterRoleBinding/medopl-platform-runner-node-reader",
           "ConfigMap/medopl-package-d-runner-config",
-          "SecretRef-backed package-d deploy/runtime secrets",
-          "imagePullSecret/medopl-tcr-pull-secret",
-          "Job/medopl-platform-runner bootstrap resource shape"
+          "Secret/medopl-package-d-deploy-env",
+          "Secret/medopl-portal-runtime-env",
+          "Secret/medopl-tcr-pull-secret",
+          "Job/medopl-platform-runner"
         ],
         "allowedOperations": [
           "kubectl apply only Package D bootstrap manifests",
@@ -1095,17 +1167,80 @@
           "Never delete, scale or modify np-cbk784r8 or any medopl-tenant- tenant pool."
         ],
         "nextAuthorizationPrompt": [
-          "Authorize Package D bootstrap apply from a Tencent CloudShell, Cloud Assistant session, or VPC internal runner that can reach TKE API for cls-fi097sy4.",
+          "Authorize Package D bootstrap apply runner from a Tencent CloudShell, Cloud Assistant session, or VPC internal runner that can reach TKE API for cls-fi097sy4.",
+          "Run: node tests/support/cloud-prework/package-d-bootstrap-apply-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode bootstrap-apply",
           "Allowed reads: /home/dev/.secrets/medopl/v22/package-d-deploy.env, /home/dev/.secrets/medopl/v22/portal-runtime.env, /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy.",
-          "Allowed Kubernetes operations: create medopl-platform Namespace and create/update only Package D bootstrap resources: ServiceAccount, minimal RBAC, ConfigMap, SecretRef-backed Secrets, imagePullSecret and bootstrap Job resources in medopl-platform.",
+          "Allowed Kubernetes operations: create medopl-platform Namespace and create/update only allowlisted Package D bootstrap resources.",
           "After bootstrap apply, rerun the Package D Kubernetes API server-side dry-run preflight command and write redacted evidence under .runtime.",
           "Forbidden: business Deployment rollout, tenant pool / medopl-tenant-, modifying np-cbk784r8, kubectl delete/patch/scale outside Package D bootstrap resources, build/push, Tencent mutation, Package C live, Package D production deploy."
         ],
-        "realExecutionReady": false
+        "realExecutionReady": false,
+        "runnerCommand": "node tests/support/cloud-prework/package-d-bootstrap-apply-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode bootstrap-apply",
+        "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-bootstrap-apply-runner-local-gate.mjs",
+        "evidenceSink": ".runtime/package-d-bootstrap-apply/bootstrap-apply-redacted.json"
+      },
+      "bootstrapApplyRunner": {
+        "status": "repo_native_runner_local_gate_landed_real_cloud_execution_pending",
+        "contract": "package_d_bootstrap_apply_runner",
+        "command": "node tests/support/cloud-prework/package-d-bootstrap-apply-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode bootstrap-apply",
+        "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-bootstrap-apply-runner-local-gate.mjs",
+        "evidenceSink": ".runtime/package-d-bootstrap-apply/bootstrap-apply-redacted.json",
+        "redactedManifestEvidence": ".runtime/package-d-bootstrap-apply/bootstrap-manifests-apply-redacted.json",
+        "readsWhenAuthorized": [
+          "/home/dev/.secrets/medopl/v22/package-d-deploy.env",
+          "/home/dev/.secrets/medopl/v22/portal-runtime.env",
+          "/home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy"
+        ],
+        "allowedResources": [
+          "Namespace/medopl-platform",
+          "ServiceAccount/medopl-platform-runner",
+          "Role/medopl-platform-runner",
+          "RoleBinding/medopl-platform-runner",
+          "ClusterRole/medopl-platform-runner-node-reader",
+          "ClusterRoleBinding/medopl-platform-runner-node-reader",
+          "ConfigMap/medopl-package-d-runner-config",
+          "Secret/medopl-package-d-deploy-env",
+          "Secret/medopl-portal-runtime-env",
+          "Secret/medopl-tcr-pull-secret",
+          "Job/medopl-platform-runner"
+        ],
+        "allowedKubectlCommands": [
+          "kubectl version --client",
+          "kubectl config current-context",
+          "kubectl get namespace medopl-platform -o json",
+          "kubectl apply --server-side -f -",
+          "kubectl apply --server-side --dry-run=server -f - -o yaml"
+        ],
+        "failClosedChecks": [
+          "RUN_TENCENT_DEPLOY_EXECUTION must equal 0",
+          "cluster/context must match cls-fi097sy4",
+          "namespace must equal medopl-platform",
+          "manifest must not reference medopl-tenant-",
+          "manifest must not include business Deployment or Service rollout",
+          "manifest must not attempt to modify np-cbk784r8",
+          "all resource kind/name/namespace values must be allowlisted",
+          "kubectl apply must be server-side stdin apply against Package D bootstrap manifests only",
+          "post-apply dry-run must use --server-side --dry-run=server",
+          "redaction audit must pass"
+        ],
+        "forbiddenNow": [
+          "business Deployment rollout",
+          "Package D production deploy",
+          "build/push",
+          "Tencent mutation",
+          "Package C live",
+          "tenant pool or medopl-tenant- resources",
+          "modify np-cbk784r8",
+          "kubectl delete/patch/scale outside Package D bootstrap resources",
+          "output kubeconfig/token/cert/DB password/TCR secret/Portal admin password"
+        ],
+        "postApplyStep": "automatically runs Package D server-side dry-run preflight shape against the same bootstrap manifest pack",
+        "realExecutionReady": false,
+        "localGateOnlyThisCommit": true
       }
     },
     "readinessGaps": [
-      "Kubernetes API connectivity preflight from TKE platform runner",
+      "authorized cloud execution of Package D bootstrap apply runner for missing medopl-platform namespace",
       "PostgreSQL ledger canary from TKE platform runner",
       "Package D combined preflight from TKE platform runner",
       "image build execution",
@@ -1176,6 +1311,7 @@
     "node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk --json",
     "node tests/future-authorized/cloud/future-authorized-test-v22-tke-bootstrap-preflight-local-gate.mjs",
     "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-kubernetes-api-preflight-runner-local-gate.mjs",
+    "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-bootstrap-apply-runner-local-gate.mjs",
     "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json",
     "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
     "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
@@ -1546,7 +1682,7 @@
       "realExecutionReady": false
     },
     "readinessGaps": [
-      "authorized Package D bootstrap apply for missing medopl-platform namespace",
+      "authorized cloud execution of Package D bootstrap apply runner for missing medopl-platform namespace",
       "PostgreSQL ledger canary from TKE platform runner",
       "Package D combined preflight from TKE platform runner",
       "image build execution",
@@ -2062,7 +2198,7 @@
       }
     },
     "bootstrapApplyAuthorizationPack": {
-      "status": "authorization_required_namespace_missing",
+      "status": "repo_native_runner_landed_authorization_required_namespace_missing",
       "targetClusterId": "cls-fi097sy4",
       "namespace": "medopl-platform",
       "platformNodePoolId": "np-cbk784r8",
@@ -2070,11 +2206,15 @@
       "allowedResourceClasses": [
         "Namespace/medopl-platform",
         "ServiceAccount/medopl-platform-runner",
-        "minimal RBAC for Package D bootstrap resources",
+        "Role/medopl-platform-runner",
+        "RoleBinding/medopl-platform-runner",
+        "ClusterRole/medopl-platform-runner-node-reader",
+        "ClusterRoleBinding/medopl-platform-runner-node-reader",
         "ConfigMap/medopl-package-d-runner-config",
-        "SecretRef-backed package-d deploy/runtime secrets",
-        "imagePullSecret/medopl-tcr-pull-secret",
-        "Job/medopl-platform-runner bootstrap resource shape"
+        "Secret/medopl-package-d-deploy-env",
+        "Secret/medopl-portal-runtime-env",
+        "Secret/medopl-tcr-pull-secret",
+        "Job/medopl-platform-runner"
       ],
       "allowedOperations": [
         "kubectl apply only Package D bootstrap manifests",
@@ -2106,13 +2246,76 @@
         "Never delete, scale or modify np-cbk784r8 or any medopl-tenant- tenant pool."
       ],
       "nextAuthorizationPrompt": [
-        "Authorize Package D bootstrap apply from a Tencent CloudShell, Cloud Assistant session, or VPC internal runner that can reach TKE API for cls-fi097sy4.",
+        "Authorize Package D bootstrap apply runner from a Tencent CloudShell, Cloud Assistant session, or VPC internal runner that can reach TKE API for cls-fi097sy4.",
+        "Run: node tests/support/cloud-prework/package-d-bootstrap-apply-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode bootstrap-apply",
         "Allowed reads: /home/dev/.secrets/medopl/v22/package-d-deploy.env, /home/dev/.secrets/medopl/v22/portal-runtime.env, /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy.",
-        "Allowed Kubernetes operations: create medopl-platform Namespace and create/update only Package D bootstrap resources: ServiceAccount, minimal RBAC, ConfigMap, SecretRef-backed Secrets, imagePullSecret and bootstrap Job resources in medopl-platform.",
+        "Allowed Kubernetes operations: create medopl-platform Namespace and create/update only allowlisted Package D bootstrap resources.",
         "After bootstrap apply, rerun the Package D Kubernetes API server-side dry-run preflight command and write redacted evidence under .runtime.",
         "Forbidden: business Deployment rollout, tenant pool / medopl-tenant-, modifying np-cbk784r8, kubectl delete/patch/scale outside Package D bootstrap resources, build/push, Tencent mutation, Package C live, Package D production deploy."
       ],
-      "realExecutionReady": false
+      "realExecutionReady": false,
+      "runnerCommand": "node tests/support/cloud-prework/package-d-bootstrap-apply-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode bootstrap-apply",
+      "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-bootstrap-apply-runner-local-gate.mjs",
+      "evidenceSink": ".runtime/package-d-bootstrap-apply/bootstrap-apply-redacted.json"
+    },
+    "bootstrapApplyRunner": {
+      "status": "repo_native_runner_local_gate_landed_real_cloud_execution_pending",
+      "contract": "package_d_bootstrap_apply_runner",
+      "command": "node tests/support/cloud-prework/package-d-bootstrap-apply-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode bootstrap-apply",
+      "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-bootstrap-apply-runner-local-gate.mjs",
+      "evidenceSink": ".runtime/package-d-bootstrap-apply/bootstrap-apply-redacted.json",
+      "redactedManifestEvidence": ".runtime/package-d-bootstrap-apply/bootstrap-manifests-apply-redacted.json",
+      "readsWhenAuthorized": [
+        "/home/dev/.secrets/medopl/v22/package-d-deploy.env",
+        "/home/dev/.secrets/medopl/v22/portal-runtime.env",
+        "/home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy"
+      ],
+      "allowedResources": [
+        "Namespace/medopl-platform",
+        "ServiceAccount/medopl-platform-runner",
+        "Role/medopl-platform-runner",
+        "RoleBinding/medopl-platform-runner",
+        "ClusterRole/medopl-platform-runner-node-reader",
+        "ClusterRoleBinding/medopl-platform-runner-node-reader",
+        "ConfigMap/medopl-package-d-runner-config",
+        "Secret/medopl-package-d-deploy-env",
+        "Secret/medopl-portal-runtime-env",
+        "Secret/medopl-tcr-pull-secret",
+        "Job/medopl-platform-runner"
+      ],
+      "allowedKubectlCommands": [
+        "kubectl version --client",
+        "kubectl config current-context",
+        "kubectl get namespace medopl-platform -o json",
+        "kubectl apply --server-side -f -",
+        "kubectl apply --server-side --dry-run=server -f - -o yaml"
+      ],
+      "failClosedChecks": [
+        "RUN_TENCENT_DEPLOY_EXECUTION must equal 0",
+        "cluster/context must match cls-fi097sy4",
+        "namespace must equal medopl-platform",
+        "manifest must not reference medopl-tenant-",
+        "manifest must not include business Deployment or Service rollout",
+        "manifest must not attempt to modify np-cbk784r8",
+        "all resource kind/name/namespace values must be allowlisted",
+        "kubectl apply must be server-side stdin apply against Package D bootstrap manifests only",
+        "post-apply dry-run must use --server-side --dry-run=server",
+        "redaction audit must pass"
+      ],
+      "forbiddenNow": [
+        "business Deployment rollout",
+        "Package D production deploy",
+        "build/push",
+        "Tencent mutation",
+        "Package C live",
+        "tenant pool or medopl-tenant- resources",
+        "modify np-cbk784r8",
+        "kubectl delete/patch/scale outside Package D bootstrap resources",
+        "output kubeconfig/token/cert/DB password/TCR secret/Portal admin password"
+      ],
+      "postApplyStep": "automatically runs Package D server-side dry-run preflight shape against the same bootstrap manifest pack",
+      "realExecutionReady": false,
+      "localGateOnlyThisCommit": true
     }
   }
 }

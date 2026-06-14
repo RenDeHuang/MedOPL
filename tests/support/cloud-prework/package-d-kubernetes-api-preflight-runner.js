@@ -13,14 +13,14 @@ import {
 
 export const PACKAGE_D_KUBERNETES_API_PREFLIGHT_COMMAND = "node tests/support/cloud-prework/package-d-kubernetes-api-preflight-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode server-side-dry-run";
 
-const FIXED_CLUSTER_ID = "cls-fi097sy4";
-const FIXED_NAMESPACE = "medopl-platform";
-const FIXED_PLATFORM_NODE_POOL_ID = "np-cbk784r8";
-const FIXED_POSTGRES_ENDPOINT = "10.66.0.21:5432";
+export const FIXED_CLUSTER_ID = "cls-fi097sy4";
+export const FIXED_NAMESPACE = "medopl-platform";
+export const FIXED_PLATFORM_NODE_POOL_ID = "np-cbk784r8";
+export const FIXED_POSTGRES_ENDPOINT = "10.66.0.21:5432";
 const DEFAULT_EVIDENCE_DIR = ".runtime/package-d-kubernetes-api-server-side-dry-run-preflight";
 const DRY_RUN_IMAGE_TAG = "server-side-dry-run";
-const KUBE_ENV_NAME = ["KUBE", "CONFIG"].join("");
-const DEPLOY_ENV_KEYS = Object.freeze([
+export const KUBE_ENV_NAME = ["KUBE", "CONFIG"].join("");
+export const DEPLOY_ENV_KEYS = Object.freeze([
   "RUN_TENCENT_DEPLOY_EXECUTION",
   "TCR_ID",
   "TCR_SECRET",
@@ -30,7 +30,7 @@ const DEPLOY_ENV_KEYS = Object.freeze([
   "TENCENT_DEPLOY_CLUSTER_ID",
   "TENCENT_DEPLOY_KUBECONFIG_REF",
 ]);
-const RUNTIME_ENV_KEYS = Object.freeze([
+export const RUNTIME_ENV_KEYS = Object.freeze([
   "PORTAL_ADMIN_EMAIL",
   "PORTAL_ADMIN_NAME",
   "PORTAL_ADMIN_PASSWORD",
@@ -83,7 +83,7 @@ function parseArgs(argv = []) {
   return args;
 }
 
-function parseEnv(content = "", allowedKeys = []) {
+export function parseEnv(content = "", allowedKeys = []) {
   const allowed = new Set(allowedKeys);
   const env = {};
   const duplicates = [];
@@ -115,11 +115,11 @@ function postgresEndpoint(value = "") {
   }
 }
 
-function assertFile(pathname = "", reason) {
+export function assertFile(pathname = "", reason) {
   if (!pathname || !existsSync(pathname)) throw new Error(reason);
 }
 
-function assertTargetEnv({ deployEnv, runtimeEnv, kubeconfigPath }) {
+export function assertTargetEnv({ deployEnv, runtimeEnv, kubeconfigPath }) {
   if (deployEnv.RUN_TENCENT_DEPLOY_EXECUTION !== "0") throw new Error("package_d_deploy_run_gate_must_remain_zero");
   if (deployEnv.TENCENT_DEPLOY_CLUSTER_ID !== FIXED_CLUSTER_ID) throw new Error("package_d_deploy_cluster_mismatch");
   if (path.resolve(deployEnv.TENCENT_DEPLOY_KUBECONFIG_REF) !== path.resolve(kubeconfigPath)) {
@@ -131,7 +131,7 @@ function assertTargetEnv({ deployEnv, runtimeEnv, kubeconfigPath }) {
   }
 }
 
-function kubeconfigSummary(content = "") {
+export function kubeconfigSummary(content = "") {
   const currentContext = content.match(/^current-context:\s*([^\n\r]+)/mu)?.[1]?.trim() || "";
   const serverPresent = /^\s*server:\s*\S+/mu.test(content);
   const clusterIdPresent = content.includes(FIXED_CLUSTER_ID);
@@ -187,7 +187,7 @@ function serverSideDryRunManifests({ deployEnv }) {
   return { apiVersion: "v1", kind: "List", items };
 }
 
-function assertManifestBoundary(manifests) {
+export function assertManifestBoundary(manifests) {
   const serialized = JSON.stringify(manifests);
   if (serialized.includes("medopl-tenant-")) throw new Error("package_d_manifest_references_tenant_pool");
   if (serialized.includes("postgresql://")) throw new Error("package_d_manifest_exposes_db_url");
@@ -225,11 +225,11 @@ function assertKubectlCommandAllowed(args = []) {
   }
 }
 
-function redactedCommand(args = []) {
+export function redactedCommand(args = []) {
   return args.map((arg, index) => (args[index - 1] === "-f" ? "REDACTED_MANIFEST_PACK" : arg)).join(" ");
 }
 
-function redactionAudit(serializedEvidence = "") {
+export function redactionAudit(serializedEvidence = "") {
   return {
     tcrSecretExposed: serializedEvidence.includes("tcr-secret-value") || serializedEvidence.includes("TCR_SECRET="),
     portalAdminPasswordExposed: serializedEvidence.includes("portal-admin-password") || serializedEvidence.includes("PORTAL_ADMIN_PASSWORD="),
@@ -245,16 +245,17 @@ function redactionAudit(serializedEvidence = "") {
   };
 }
 
-async function defaultKubectlExecutor({ args, env }) {
+export async function defaultKubectlExecutor({ args, env, stdin }) {
   const result = spawnSync(args[0], args.slice(1), {
     env: { ...process.env, ...env },
     encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
+    input: stdin,
+    stdio: ["pipe", "pipe", "pipe"],
   });
   return { status: result.status ?? 1, stdout: result.stdout || "", stderr: result.stderr || "" };
 }
 
-function summarizeCommandResult(command, result) {
+export function summarizeCommandResult(command, result) {
   return {
     name: command.name,
     command: redactedCommand(command.args),
