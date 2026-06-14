@@ -90,6 +90,46 @@ assert.deepEqual(pack.authorizationPack.forbiddenUntilAuthorized, [
   "tenant pool mutation",
 ], "authorization_pack_must_keep_forbidden_ops");
 
+assert.equal(pack.bootstrapAuthorizationPack.status, "authorization_pack_only", "bootstrap_authorization_pack_must_be_plan_only");
+assert.deepEqual(pack.bootstrapAuthorizationPack.recommendedExecutionEnvironments, [
+  "Tencent CloudShell with target TKE API reachability",
+  "Tencent Cloud Assistant session on a VPC-reachable host",
+  "VPC internal runner with TKE API reachability",
+], "bootstrap_authorization_pack_must_prefer_cloud_reachable_environment");
+assert.deepEqual(pack.bootstrapAuthorizationPack.discouragedExecutionEnvironments, [
+  "local WSL without TKE API reachability",
+], "bootstrap_authorization_pack_must_discourage_local_wsl");
+assert.deepEqual(pack.bootstrapAuthorizationPack.target, {
+  clusterId: "cls-fi097sy4",
+  namespace: "medopl-platform",
+  platformNodePoolId: "np-cbk784r8",
+  schedulingClass: "platform_service_pool",
+}, "bootstrap_authorization_pack_target_must_be_fixed");
+assert.deepEqual(pack.bootstrapAuthorizationPack.resourceTypesToCreateOrValidate, [
+  "Namespace",
+  "ServiceAccount",
+  "RBAC",
+  "ConfigMap",
+  "SecretRef",
+  "imagePullSecret",
+  "Job",
+], "bootstrap_authorization_pack_resource_types_must_be_explicit");
+assert(pack.bootstrapAuthorizationPack.forbiddenScope.includes("medopl-tenant- tenant pool"), "bootstrap_authorization_pack_must_forbid_tenant_pool");
+assert(pack.bootstrapAuthorizationPack.forbiddenScope.includes("Package C live"), "bootstrap_authorization_pack_must_forbid_package_c_live");
+assert(pack.bootstrapAuthorizationPack.forbiddenScope.includes("build/push"), "bootstrap_authorization_pack_must_forbid_build_push");
+assert(pack.bootstrapAuthorizationPack.forbiddenScope.includes("formal deploy"), "bootstrap_authorization_pack_must_forbid_formal_deploy");
+assert(pack.bootstrapAuthorizationPack.rollbackPlan.some((item) => item.includes("np-cbk784r8")), "bootstrap_authorization_pack_must_protect_platform_pool_in_rollback");
+assert(pack.bootstrapAuthorizationPack.stopConditions.includes("manifest references medopl-tenant-"), "bootstrap_authorization_pack_must_stop_on_tenant_reference");
+assert(pack.bootstrapAuthorizationPack.stopConditions.includes("server-side dry-run is rejected"), "bootstrap_authorization_pack_must_stop_on_dry_run_rejection");
+assert.equal(
+  pack.bootstrapAuthorizationPack.redactedEvidencePath,
+  ".runtime/package-d-in-cluster-platform-runner-bootstrap-authorization/authorization-pack-redacted.json",
+  "bootstrap_authorization_pack_evidence_path_must_be_runtime_only",
+);
+assert(pack.bootstrapAuthorizationPack.nextAuthorizationPrompt.some((item) => item.includes("CloudShell")), "bootstrap_authorization_pack_must_prompt_cloudshell_or_reachable_runner");
+assert(pack.bootstrapAuthorizationPack.nextAuthorizationPrompt.some((item) => item.includes("server-side dry-run")), "bootstrap_authorization_pack_must_prompt_dry_run_first");
+assert(pack.bootstrapAuthorizationPack.nextAuthorizationPrompt.some((item) => item.includes("separate authorization")), "bootstrap_authorization_pack_must_require_separate_apply_authorization");
+
 const evidence = writePackageDRunnerManifestPack({ reportRoot, pack });
 assert.equal(evidence.path.endsWith("manifest-pack-redacted.json"), true, "manifest_pack_evidence_path");
 assert.equal(evidence.report.ok, true, "manifest_pack_evidence_ok");
@@ -104,6 +144,7 @@ console.log(JSON.stringify({
   namespace: pack.manifests.namespace.metadata.name,
   serviceAccount: pack.manifests.serviceAccount.metadata.name,
   workloadKind: pack.manifests.job.kind,
+  bootstrapAuthorizationPack: pack.bootstrapAuthorizationPack.status,
   realExecutionReady: false,
   evidence: ".runtime/package-d-in-cluster-platform-runner-manifest-materialization/manifest-pack-redacted.json",
 }, null, 2));
