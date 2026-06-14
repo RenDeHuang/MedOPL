@@ -5529,3 +5529,55 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-14 package-d-kubernetes-api-preflight-runner
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `6ce4e79838c5adee735460341c99092596de2373`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Added the repo-native Package D Kubernetes API / server-side dry-run preflight runner at `tests/support/cloud-prework/package-d-kubernetes-api-preflight-runner.js`.
+- Fixed the single cloud runner command: `node tests/support/cloud-prework/package-d-kubernetes-api-preflight-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode server-side-dry-run`.
+- Reused the existing Package D in-cluster platform runner manifest materialization pack; no new loop, runner loop or truth source was added.
+- The runner requires `RUN_TENCENT_DEPLOY_EXECUTION=0`, target cluster `cls-fi097sy4`, namespace `medopl-platform`, platform scheduling `np-cbk784r8`, VPC PostgreSQL `10.66.0.21:5432`, tenant-pool rejection and redacted `.runtime` evidence.
+- Allowed kubectl command shape is limited to client availability, current context, namespace read and `kubectl apply --server-side --dry-run=server` against the redacted bootstrap manifest pack.
+- Added a future-authorized local gate that uses fake env/kubeconfig files and fake kubectl only, proving fail-closed missing kubeconfig, dry-run-only command shape, forbidden op rejection and redaction.
+- Registered the local gate in the existing `cloud-future-authorized` lane and verify manifest.
+
+Verification:
+
+- RED: `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-kubernetes-api-preflight-runner-local-gate.mjs` failed with `ERR_MODULE_NOT_FOUND` before the runner existed.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-kubernetes-api-preflight-runner-local-gate.mjs`: pass.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: pass.
+- `node tests/health/health-check-v22-workflow-gate.mjs`: pass after removing secret-like diff shapes from the new fake test/runner.
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass before closeout metadata commit.
+
+Can-claim:
+
+- Package D now has a repo-native, machine-guarded single command for later authorized Kubernetes API connectivity / server-side dry-run preflight from a TKE/VPC-reachable execution environment.
+- The local gate proves the command remains fail-closed, redacted and dry-run-only.
+- `realExecutionReady` remains `false`.
+
+Cannot-claim:
+
+- Real kubeconfig or secret files were read, Kubernetes API was contacted, real kubectl ran, server-side dry-run passed against the live cluster, a Kubernetes resource was created, deploy ran, build/push ran, Tencent mutation ran, Package C live ran, Package D execution ran, or production runtime is online.
+
+landed_commit: `50c2203e7c8ebbff35ed3bdebe39df955881aaa4`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
