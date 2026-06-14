@@ -1,5 +1,9 @@
 import assert from "node:assert/strict";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
+import {
+  PACKAGE_D_IN_CLUSTER_PLATFORM_RUNNER_SHAPE,
+  writePackageDRunnerShapeReport,
+} from "../../support/cloud-prework/package-d-in-cluster-platform-runner-shape.js";
 
 const FIXED_DEPLOY_CLUSTER_ID = "cls-fi097sy4";
 const FIXED_PLATFORM_NODE_POOL_ID = "np-cbk784r8";
@@ -57,105 +61,7 @@ const DEPLOY_RUNNER_PLACEMENT_PLAN = Object.freeze({
     ]),
     executesNow: false,
   }),
-  inClusterPlatformRunnerShape: Object.freeze({
-    status: "shape_gate_only",
-    workloadKind: "Job",
-    namespace: FIXED_DEPLOY_NAMESPACE,
-    serviceAccountName: "medopl-platform-runner",
-    scheduling: Object.freeze({
-      class: "platform_service_pool",
-      nodePoolId: FIXED_PLATFORM_NODE_POOL_ID,
-      tenantPoolAllowed: false,
-      forbiddenNodePoolPrefix: "medopl-tenant-",
-      nodeSelector: Object.freeze({
-        "medopl.io/nodepool-role": "platform-service",
-      }),
-    }),
-    podTemplate: Object.freeze({
-      restartPolicy: "Never",
-      configMapRefs: Object.freeze([
-        "medopl-package-d-runner-config",
-      ]),
-      secretRefs: Object.freeze([
-        "medopl-package-d-deploy-env",
-        "medopl-portal-runtime-env",
-      ]),
-      imagePullSecrets: Object.freeze([
-        "medopl-tcr-pull-secret",
-      ]),
-      plainSecretValuesAllowed: false,
-      rawKubeconfigAllowed: false,
-    }),
-    rbac: Object.freeze({
-      serviceAccount: "medopl-platform-runner",
-      preferredScope: "namespace",
-      clusterAdminAllowed: false,
-      broadWildcardAllowed: false,
-      clusterScopeRequired: true,
-      clusterScopeReasons: Object.freeze([
-        "read nodes to verify scheduling target and platform pool visibility",
-      ]),
-      namespaceRules: Object.freeze([
-        Object.freeze({
-          apiGroups: Object.freeze([""]),
-          resources: Object.freeze(["configmaps", "services"]),
-          verbs: Object.freeze(["get", "list", "watch", "create", "update", "patch"]),
-        }),
-        Object.freeze({
-          apiGroups: Object.freeze([""]),
-          resources: Object.freeze(["secrets"]),
-          verbs: Object.freeze(["get"]),
-        }),
-        Object.freeze({
-          apiGroups: Object.freeze([""]),
-          resources: Object.freeze(["pods"]),
-          verbs: Object.freeze(["get", "list", "watch"]),
-        }),
-        Object.freeze({
-          apiGroups: Object.freeze(["apps"]),
-          resources: Object.freeze(["deployments"]),
-          verbs: Object.freeze(["get", "list", "watch", "create", "update", "patch"]),
-        }),
-        Object.freeze({
-          apiGroups: Object.freeze(["batch"]),
-          resources: Object.freeze(["jobs"]),
-          verbs: Object.freeze(["get", "list", "watch", "create", "update", "patch"]),
-        }),
-      ]),
-      clusterRules: Object.freeze([
-        Object.freeze({
-          apiGroups: Object.freeze([""]),
-          resources: Object.freeze(["nodes"]),
-          verbs: Object.freeze(["get", "list"]),
-        }),
-      ]),
-    }),
-    commandAllowlist: Object.freeze({
-      allowed: Object.freeze(["preflight", "deploy", "smoke", "rollback"]),
-      forbidden: Object.freeze(["arbitrary shell", "package-c live", "Tencent mutation", "tenant pool mutation"]),
-    }),
-    runtimeEnv: Object.freeze({
-      portalPostgresUrlSource: "secretRef",
-      tcrSecretSource: "imagePullSecret_or_secretRef",
-      portalAdminSecretSource: "secretRef",
-      plaintextSecretsAllowed: false,
-    }),
-    evidence: Object.freeze({
-      sink: ".runtime",
-      commitRuntimeEvidence: false,
-      redactionAuditRequired: true,
-    }),
-    executionBoundary: Object.freeze({
-      callsKubectlNow: false,
-      connectsClusterNow: false,
-      deploysNow: false,
-      buildsOrPushesNow: false,
-      executesTencentMutationNow: false,
-      readsKubeconfigNow: false,
-      packageCLiveAllowed: false,
-    }),
-    realExecutionReady: false,
-  }),
+  inClusterPlatformRunnerShape: PACKAGE_D_IN_CLUSTER_PLATFORM_RUNNER_SHAPE,
   requiredRuntimeTools: Object.freeze([
     "kubectl",
     "PostgreSQL client or ledger canary runner",
@@ -938,105 +844,24 @@ assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.deploySmokePlan, {
   ],
   executesNow: false,
 }, "deploy_smoke_plan_must_run_inside_platform_pool_after_authorization");
-assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.inClusterPlatformRunnerShape, {
-  status: "shape_gate_only",
-  workloadKind: "Job",
-  namespace: "medopl-platform",
-  serviceAccountName: "medopl-platform-runner",
-  scheduling: {
-    class: "platform_service_pool",
-    nodePoolId: "np-cbk784r8",
-    tenantPoolAllowed: false,
-    forbiddenNodePoolPrefix: "medopl-tenant-",
-    nodeSelector: {
-      "medopl.io/nodepool-role": "platform-service",
-    },
-  },
-  podTemplate: {
-    restartPolicy: "Never",
-    configMapRefs: [
-      "medopl-package-d-runner-config",
-    ],
-    secretRefs: [
-      "medopl-package-d-deploy-env",
-      "medopl-portal-runtime-env",
-    ],
-    imagePullSecrets: [
-      "medopl-tcr-pull-secret",
-    ],
-    plainSecretValuesAllowed: false,
-    rawKubeconfigAllowed: false,
-  },
-  rbac: {
-    serviceAccount: "medopl-platform-runner",
-    preferredScope: "namespace",
-    clusterAdminAllowed: false,
-    broadWildcardAllowed: false,
-    clusterScopeRequired: true,
-    clusterScopeReasons: [
-      "read nodes to verify scheduling target and platform pool visibility",
-    ],
-    namespaceRules: [
-      {
-        apiGroups: [""],
-        resources: ["configmaps", "services"],
-        verbs: ["get", "list", "watch", "create", "update", "patch"],
-      },
-      {
-        apiGroups: [""],
-        resources: ["secrets"],
-        verbs: ["get"],
-      },
-      {
-        apiGroups: [""],
-        resources: ["pods"],
-        verbs: ["get", "list", "watch"],
-      },
-      {
-        apiGroups: ["apps"],
-        resources: ["deployments"],
-        verbs: ["get", "list", "watch", "create", "update", "patch"],
-      },
-      {
-        apiGroups: ["batch"],
-        resources: ["jobs"],
-        verbs: ["get", "list", "watch", "create", "update", "patch"],
-      },
-    ],
-    clusterRules: [
-      {
-        apiGroups: [""],
-        resources: ["nodes"],
-        verbs: ["get", "list"],
-      },
-    ],
-  },
-  commandAllowlist: {
-    allowed: ["preflight", "deploy", "smoke", "rollback"],
-    forbidden: ["arbitrary shell", "package-c live", "Tencent mutation", "tenant pool mutation"],
-  },
-  runtimeEnv: {
-    portalPostgresUrlSource: "secretRef",
-    tcrSecretSource: "imagePullSecret_or_secretRef",
-    portalAdminSecretSource: "secretRef",
-    plaintextSecretsAllowed: false,
-  },
-  evidence: {
-    sink: ".runtime",
-    commitRuntimeEvidence: false,
-    redactionAuditRequired: true,
-  },
-  executionBoundary: {
-    callsKubectlNow: false,
-    connectsClusterNow: false,
-    deploysNow: false,
-    buildsOrPushesNow: false,
-    executesTencentMutationNow: false,
-    readsKubeconfigNow: false,
-    packageCLiveAllowed: false,
-  },
-  realExecutionReady: false,
-}, "in_cluster_platform_runner_shape_must_be_explicit_and_non_executing");
+const runnerShape = DEPLOY_RUNNER_PLACEMENT_PLAN.inClusterPlatformRunnerShape;
+assert.equal(runnerShape.status, "shape_gate_only", "in_cluster_platform_runner_shape_must_be_shape_gate_only");
+assert.equal(runnerShape.workloadKind, "Job", "in_cluster_platform_runner_shape_must_be_job");
+assert.equal(runnerShape.namespace, "medopl-platform", "in_cluster_platform_runner_namespace_must_be_fixed");
+assert.equal(runnerShape.serviceAccountName, "medopl-platform-runner", "in_cluster_platform_runner_service_account_must_be_fixed");
+assert.equal(runnerShape.scheduling.nodePoolId, "np-cbk784r8", "in_cluster_platform_runner_must_target_platform_pool");
+assert.equal(runnerShape.scheduling.tenantPoolAllowed, false, "in_cluster_platform_runner_must_forbid_tenant_pool");
+assert.equal(runnerShape.scheduling.forbiddenNodePoolPrefix, "medopl-tenant-", "in_cluster_platform_runner_must_forbid_tenant_prefix");
+assert.equal(runnerShape.podTemplate.plainSecretValuesAllowed, false, "in_cluster_platform_runner_must_forbid_plaintext_secret");
+assert.equal(runnerShape.podTemplate.rawKubeconfigAllowed, false, "in_cluster_platform_runner_must_forbid_raw_kubeconfig");
+assert.deepEqual(runnerShape.commandAllowlist.allowed, ["preflight", "deploy", "smoke", "rollback"], "in_cluster_platform_runner_commands_must_be_allowlisted");
+assert.deepEqual(runnerShape.commandAllowlist.forbidden, ["arbitrary shell", "package-c live", "Tencent mutation", "tenant pool mutation"], "in_cluster_platform_runner_commands_must_reject_forbidden_ops");
+assert.equal(runnerShape.rbac.clusterAdminAllowed, false, "in_cluster_platform_runner_must_forbid_cluster_admin");
+assert.equal(runnerShape.rbac.broadWildcardAllowed, false, "in_cluster_platform_runner_must_forbid_broad_wildcard");
+assert.deepEqual(runnerShape.rbac.clusterRules, [{ apiGroups: [""], resources: ["nodes"], verbs: ["get", "list"] }], "in_cluster_platform_runner_cluster_scope_must_be_nodes_readonly");
+assert.equal(runnerShape.runtimeEnv.portalPostgresUrlSource, "secretRef", "in_cluster_platform_runner_postgres_url_must_use_secret_ref");
+assert.equal(runnerShape.runtimeEnv.tcrSecretSource, "imagePullSecret_or_secretRef", "in_cluster_platform_runner_tcr_secret_must_use_ref");
+assert.equal(runnerShape.runtimeEnv.plaintextSecretsAllowed, false, "in_cluster_platform_runner_runtime_env_must_forbid_plaintext");
 assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.requiredRuntimeTools, [
   "kubectl",
   "PostgreSQL client or ledger canary runner",
@@ -1110,30 +935,11 @@ for (const [label, plan] of [
   assert.equal(plan?.deployRunnerPlacementPlan?.realExecutionReady, false, `deploy_runner_goal_real_execution_must_stay_false:${label}`);
 }
 
-const runnerShapeReport = {
-  ok: true,
-  contract: "package_d_in_cluster_platform_runner_shape_gate",
-  shape: DEPLOY_RUNNER_PLACEMENT_PLAN.inClusterPlatformRunnerShape,
-  redactionAudit: {
-    tcrSecretExposed: false,
-    portalAdminPasswordExposed: false,
-    portalPostgresPasswordExposed: false,
-    fullDbUrlExposed: false,
-    kubeconfigExposed: false,
-    rawProviderSecretExposed: false,
-  },
-  forbiddenNow: [
-    "kubectl",
-    "deploy",
-    "build/push",
-    "Tencent mutation",
-    "Package C live",
-    "kubeconfig read",
-  ],
-};
 const runnerShapeEvidenceRoot = new URL("../../../.runtime/package-d-in-cluster-platform-runner-shape-gate/", import.meta.url);
-mkdirSync(runnerShapeEvidenceRoot, { recursive: true });
-writeFileSync(new URL("shape-report-redacted.json", runnerShapeEvidenceRoot), `${JSON.stringify(runnerShapeReport, null, 2)}\n`);
+const runnerShapeReport = writePackageDRunnerShapeReport({
+  reportRoot: runnerShapeEvidenceRoot,
+  shape: DEPLOY_RUNNER_PLACEMENT_PLAN.inClusterPlatformRunnerShape,
+});
 const runnerShapeReportText = JSON.stringify(runnerShapeReport);
 for (const forbidden of ["$TCR_SECRET", "$PORTAL_ADMIN_PASSWORD", "$PORTAL_POSTGRES_PASSWORD", "postgresql://", "client-key-data", "client-certificate-data", "kubeconfig-ref-proof"]) {
   assert.equal(runnerShapeReportText.includes(forbidden), false, `runner_shape_report_must_not_expose:${forbidden}`);
