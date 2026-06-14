@@ -5197,3 +5197,50 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-14 package-d-deploy-runner-provisioning-checklist
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `3a72a24302d30774ef8cd135d81fca0b6ba810cb`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Added the `medopl-v22-deploy-runner` CVM provisioning checklist to the Package D VPC deploy runner plan.
+- Fixed CVM checklist values: `na-siliconvalley`, `medopl-vpc`, `medopl-private-a`, Ubuntu LTS or TencentOS, 2C4G, 50GB disk and public IP disabled by default.
+- Fixed SSH and security-group boundaries: inbound minimal, SSH only as a temporary operator-IP exception, outbound to TCR, TKE API private endpoint and PostgreSQL `10.66.0.21:5432`.
+- Fixed install checklist: `git`, `node/npm`, `go`, `docker` and `kubectl`.
+- Fixed runner-local secret placement paths under `/home/dev/.secrets/medopl/v22/` for `package-d-deploy.env`, `portal-runtime.env` and `kubeconfig-package-d-deploy`.
+- Fixed runner validation order: `docker version`, `kubectl version --client`, TCR login preflight, Kubernetes API connectivity preflight, PostgreSQL ledger canary and Package D combined preflight.
+- Guarded the checklist through the future-authorized Package D local gate and machine cursor fixture.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs`: pass.
+- `git diff --check -- tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs tests/fixtures/v22/goal-current.json`: pass.
+
+Can-claim:
+
+- Package D now has a repo-native, machine-guarded CVM provisioning checklist for the dedicated VPC deploy runner.
+- `realExecutionReady` remains `false`.
+
+Cannot-claim:
+
+- The deploy runner was created, Tencent mutation ran, CVM was created, kubectl ran, deploy ran, build/push ran, Package D execution ran, secret files were read, or production runtime is online.
+
+landed_commit: `febd5086881ecf6634380e7660f9c0f390bd21f0`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
