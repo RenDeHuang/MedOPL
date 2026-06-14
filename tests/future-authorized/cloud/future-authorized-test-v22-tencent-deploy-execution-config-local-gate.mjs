@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 const FIXED_DEPLOY_CLUSTER_ID = "cls-fi097sy4";
 const FIXED_PLATFORM_NODE_POOL_ID = "np-cbk784r8";
@@ -12,6 +13,47 @@ const READINESS_GAPS = Object.freeze([
   "DB connectivity smoke",
   "rollback plan",
 ]);
+
+const VPC_DEPLOY_RUNNER_PLAN = Object.freeze({
+  status: "implementation_plan_only",
+  runnerName: "medopl-v22-deploy-runner",
+  region: "na-siliconvalley",
+  vpc: "medopl-vpc",
+  subnet: "medopl-private-a",
+  purpose: Object.freeze([
+    "docker build",
+    "TCR login/push",
+    "kubectl deploy",
+    "DB connectivity smoke",
+    "rollback",
+  ]),
+  requiredTools: Object.freeze([
+    "git",
+    "node/npm",
+    "go",
+    "docker",
+    "kubectl",
+  ]),
+  secretPaths: Object.freeze([
+    "/home/dev/.secrets/medopl/v22/package-d-deploy.env",
+    "/home/dev/.secrets/medopl/v22/portal-runtime.env",
+    "/home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy",
+  ]),
+  safetyBoundary: Object.freeze({
+    postgresPublicAccess: false,
+    tkeApiPublicAccess: false,
+    sshIngress: "operator_ip_only_or_cloud_assistant_console",
+    runnerStateCommittedToGit: false,
+  }),
+  preflightOrder: Object.freeze([
+    "TCR login preflight",
+    "Kubernetes API connectivity preflight",
+    "PostgreSQL ledger canary",
+    "Package D combined preflight",
+  ]),
+  realExecutionReady: false,
+});
+const currentGoal = JSON.parse(readFileSync(new URL("../../fixtures/v22/goal-current.json", import.meta.url), "utf8"));
 
 const PACKAGE_D_SECRET_KEY_LIST = Object.freeze([
   "RUN_TENCENT_DEPLOY_EXECUTION",
@@ -680,6 +722,57 @@ assert.equal(executionPreflightGate.summary.redactionAudit.portalAdminPasswordEx
 assert.equal(executionPreflightGate.summary.redactionAudit.portalPostgresPasswordExposed, false, "redaction_audit_must_hide_postgres_password");
 assert.equal(executionPreflightGate.summary.redactionAudit.fullDbUrlExposed, false, "redaction_audit_must_hide_full_db_url");
 assert.equal(executionPreflightGate.summary.redactionAudit.kubeconfigExposed, false, "redaction_audit_must_hide_kubeconfig");
+assert.equal(VPC_DEPLOY_RUNNER_PLAN.status, "implementation_plan_only", "vpc_deploy_runner_must_stay_plan_only");
+assert.equal(VPC_DEPLOY_RUNNER_PLAN.runnerName, "medopl-v22-deploy-runner", "vpc_deploy_runner_name_must_be_fixed");
+assert.equal(VPC_DEPLOY_RUNNER_PLAN.region, "na-siliconvalley", "vpc_deploy_runner_region_must_be_silicon_valley");
+assert.equal(VPC_DEPLOY_RUNNER_PLAN.vpc, "medopl-vpc", "vpc_deploy_runner_vpc_must_be_medopl_vpc");
+assert.equal(VPC_DEPLOY_RUNNER_PLAN.subnet, "medopl-private-a", "vpc_deploy_runner_subnet_must_be_private_a");
+assert.deepEqual(VPC_DEPLOY_RUNNER_PLAN.purpose, [
+  "docker build",
+  "TCR login/push",
+  "kubectl deploy",
+  "DB connectivity smoke",
+  "rollback",
+], "vpc_deploy_runner_purpose_must_cover_package_d_execution_loop");
+assert.deepEqual(VPC_DEPLOY_RUNNER_PLAN.requiredTools, [
+  "git",
+  "node/npm",
+  "go",
+  "docker",
+  "kubectl",
+], "vpc_deploy_runner_required_tools_must_be_explicit");
+assert.deepEqual(VPC_DEPLOY_RUNNER_PLAN.secretPaths, [
+  "/home/dev/.secrets/medopl/v22/package-d-deploy.env",
+  "/home/dev/.secrets/medopl/v22/portal-runtime.env",
+  "/home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy",
+], "vpc_deploy_runner_secret_paths_must_be_exact");
+assert.equal(VPC_DEPLOY_RUNNER_PLAN.safetyBoundary.postgresPublicAccess, false, "vpc_deploy_runner_must_not_open_postgres_public_access");
+assert.equal(VPC_DEPLOY_RUNNER_PLAN.safetyBoundary.tkeApiPublicAccess, false, "vpc_deploy_runner_must_not_open_tke_api_public_access");
+assert.equal(VPC_DEPLOY_RUNNER_PLAN.safetyBoundary.sshIngress, "operator_ip_only_or_cloud_assistant_console", "vpc_deploy_runner_ssh_ingress_must_be_restricted");
+assert.equal(VPC_DEPLOY_RUNNER_PLAN.safetyBoundary.runnerStateCommittedToGit, false, "vpc_deploy_runner_state_must_not_enter_git");
+assert.deepEqual(VPC_DEPLOY_RUNNER_PLAN.preflightOrder, [
+  "TCR login preflight",
+  "Kubernetes API connectivity preflight",
+  "PostgreSQL ledger canary",
+  "Package D combined preflight",
+], "vpc_deploy_runner_preflight_order_must_be_fixed");
+assert.equal(VPC_DEPLOY_RUNNER_PLAN.realExecutionReady, false, "vpc_deploy_runner_plan_must_not_mark_real_execution_ready");
+for (const [label, plan] of [
+  ["top_level", currentGoal.package_d_deploy_readiness_plan],
+  ["current_leaf", currentGoal.current_leaf?.package_d_deploy_readiness_plan],
+]) {
+  assert.equal(plan?.executionEnvironment, "vpc_dedicated_deploy_runner_required", `vpc_deploy_runner_execution_environment_missing:${label}`);
+  assert.equal(plan?.vpcDeployRunnerPlan?.runnerName, VPC_DEPLOY_RUNNER_PLAN.runnerName, `vpc_deploy_runner_goal_runner_name_mismatch:${label}`);
+  assert.equal(plan?.vpcDeployRunnerPlan?.region, VPC_DEPLOY_RUNNER_PLAN.region, `vpc_deploy_runner_goal_region_mismatch:${label}`);
+  assert.equal(plan?.vpcDeployRunnerPlan?.vpc, VPC_DEPLOY_RUNNER_PLAN.vpc, `vpc_deploy_runner_goal_vpc_mismatch:${label}`);
+  assert.equal(plan?.vpcDeployRunnerPlan?.subnet, VPC_DEPLOY_RUNNER_PLAN.subnet, `vpc_deploy_runner_goal_subnet_mismatch:${label}`);
+  assert.deepEqual(plan?.vpcDeployRunnerPlan?.purpose, VPC_DEPLOY_RUNNER_PLAN.purpose, `vpc_deploy_runner_goal_purpose_mismatch:${label}`);
+  assert.deepEqual(plan?.vpcDeployRunnerPlan?.requiredTools, VPC_DEPLOY_RUNNER_PLAN.requiredTools, `vpc_deploy_runner_goal_required_tools_mismatch:${label}`);
+  assert.deepEqual(plan?.vpcDeployRunnerPlan?.secretPaths, VPC_DEPLOY_RUNNER_PLAN.secretPaths, `vpc_deploy_runner_goal_secret_paths_mismatch:${label}`);
+  assert.deepEqual(plan?.vpcDeployRunnerPlan?.safetyBoundary, VPC_DEPLOY_RUNNER_PLAN.safetyBoundary, `vpc_deploy_runner_goal_safety_boundary_mismatch:${label}`);
+  assert.deepEqual(plan?.vpcDeployRunnerPlan?.preflightOrder, VPC_DEPLOY_RUNNER_PLAN.preflightOrder, `vpc_deploy_runner_goal_preflight_order_mismatch:${label}`);
+  assert.equal(plan?.vpcDeployRunnerPlan?.realExecutionReady, false, `vpc_deploy_runner_goal_real_execution_must_stay_false:${label}`);
+}
 
 console.log(JSON.stringify({
   ok: true,
@@ -696,8 +789,16 @@ console.log(JSON.stringify({
   rollbackPlanReady: true,
   releasePlanReady: releasePlan.summary.releasePlanReady,
   executionPreflightGateReady: executionPreflightGate.summary.executionPreflightGateReady,
+  vpcDeployRunnerPlanReady: true,
   realExecutionReady: false,
   imageTargets: releasePlan.summary.imageTargets,
+  deployRunner: {
+    runnerName: VPC_DEPLOY_RUNNER_PLAN.runnerName,
+    region: VPC_DEPLOY_RUNNER_PLAN.region,
+    vpc: VPC_DEPLOY_RUNNER_PLAN.vpc,
+    subnet: VPC_DEPLOY_RUNNER_PLAN.subnet,
+    realExecutionReady: VPC_DEPLOY_RUNNER_PLAN.realExecutionReady,
+  },
   requiresKubeApiserverConnectivity: true,
   acceptedSecretFile: accepted.file,
   blockedReason: "needs_reviewed_real_release_plan_kube_apiserver_connectivity_dry_run_acceptance_and_explicit_authorization",
