@@ -13,7 +13,7 @@ const READINESS_GAPS = Object.freeze([
   "rollback plan",
 ]);
 
-const PACKAGE_D_SECRET_KEYS = new Set([
+const PACKAGE_D_SECRET_KEY_LIST = Object.freeze([
   "RUN_TENCENT_DEPLOY_EXECUTION",
   "TCR_ID",
   "TCR_SECRET",
@@ -22,14 +22,18 @@ const PACKAGE_D_SECRET_KEYS = new Set([
   "TENCENT_TCR_REGION",
   "TENCENT_DEPLOY_CLUSTER_ID",
   "TENCENT_DEPLOY_KUBECONFIG_REF",
+]);
+
+const PORTAL_RUNTIME_SECRET_KEY_LIST = Object.freeze([
+  "PORTAL_ADMIN_EMAIL",
+  "PORTAL_ADMIN_NAME",
+  "PORTAL_ADMIN_PASSWORD",
   "PORTAL_POSTGRES_URL",
   "PORTAL_POSTGRES_PASSWORD",
 ]);
 
-const PORTAL_RUNTIME_SECRET_KEYS = new Set([
-  "PORTAL_POSTGRES_URL",
-  "PORTAL_POSTGRES_PASSWORD",
-]);
+const PACKAGE_D_SECRET_KEYS = new Set(PACKAGE_D_SECRET_KEY_LIST);
+const PORTAL_RUNTIME_SECRET_KEYS = new Set(PORTAL_RUNTIME_SECRET_KEY_LIST);
 
 const FORBIDDEN_SECRET_KEYS = new Set([
   "RUN_TENCENT_READONLY_INVENTORY",
@@ -252,9 +256,6 @@ function checkConfig(content = "") {
   if (text(env.TENCENT_DEPLOY_CLUSTER_ID) !== FIXED_DEPLOY_CLUSTER_ID) {
     return { ok: false, blockedReason: "deploy_cluster_id_mismatch" };
   }
-  if (postgresEndpoint(env.PORTAL_POSTGRES_URL) !== FIXED_POSTGRES_ENDPOINT) {
-    return { ok: false, blockedReason: "deploy_postgres_vpc_endpoint_required" };
-  }
   if (text(env.RUN_TENCENT_DEPLOY_EXECUTION) !== "0") {
     return { ok: false, blockedReason: "deploy_run_gate_must_remain_zero_for_local_shape" };
   }
@@ -269,11 +270,8 @@ function checkConfig(content = "") {
       namespace: "redacted",
       region: text(env.TENCENT_TCR_REGION),
       deployClusterId: text(env.TENCENT_DEPLOY_CLUSTER_ID),
+      kubeconfigRef: "redacted",
       platformNodePoolId: FIXED_PLATFORM_NODE_POOL_ID,
-      postgresEndpoint: FIXED_POSTGRES_ENDPOINT,
-      postgresUrl: "redacted",
-      postgresPassword: "redacted",
-      postgresCanaryTiming: "after_service_deployed_inside_vpc",
       readinessGaps: READINESS_GAPS,
       runTencentDeployExecutionDefault: "0",
       callsDockerNow: false,
@@ -302,9 +300,13 @@ function checkPortalRuntimeEnv(content = "") {
     ok: true,
     blockedReason: "",
     summary: {
+      adminEmail: "redacted",
+      adminName: "redacted",
+      adminPassword: "redacted",
       postgresEndpoint: FIXED_POSTGRES_ENDPOINT,
       postgresUrl: "redacted",
       postgresPassword: "redacted",
+      postgresCanaryTiming: "after_service_deployed_inside_vpc",
     },
   };
 }
@@ -312,6 +314,9 @@ function checkPortalRuntimeEnv(content = "") {
 function checkManifestPlan(plan = {}) {
   if (text(plan.clusterId) !== FIXED_DEPLOY_CLUSTER_ID) {
     return { ok: false, blockedReason: "manifest_cluster_id_mismatch" };
+  }
+  if (text(plan.namespace) !== FIXED_DEPLOY_NAMESPACE) {
+    return { ok: false, blockedReason: "manifest_namespace_required" };
   }
   if (plan?.schedulingTarget?.class !== "platform_service_pool") {
     return { ok: false, blockedReason: "manifest_must_target_platform_service_pool" };
@@ -336,6 +341,7 @@ function checkManifestPlan(plan = {}) {
     blockedReason: "",
     summary: {
       deployClusterId: FIXED_DEPLOY_CLUSTER_ID,
+      namespace: FIXED_DEPLOY_NAMESPACE,
       manifestSchedulingTarget: "platform_service_pool",
       platformNodePoolId: FIXED_PLATFORM_NODE_POOL_ID,
       tenantSchedulingAllowed: false,
@@ -354,6 +360,7 @@ function checkLocalShapeGate({ deployEnv, portalRuntimeEnv, manifestPlan }) {
     summary: {
       runTencentDeployExecution: "0",
       deployClusterId: FIXED_DEPLOY_CLUSTER_ID,
+      namespace: FIXED_DEPLOY_NAMESPACE,
       platformNodePoolId: FIXED_PLATFORM_NODE_POOL_ID,
       postgresEndpoint: FIXED_POSTGRES_ENDPOINT,
       manifestSchedulingTarget: manifestPlan.summary.manifestSchedulingTarget,
@@ -365,6 +372,66 @@ function checkLocalShapeGate({ deployEnv, portalRuntimeEnv, manifestPlan }) {
       deploysNow: false,
       buildsOrPushesNow: false,
       realPackageDExecution: false,
+    },
+  };
+}
+
+function checkExecutionPreflightGate({ deployEnv, portalRuntimeEnv, manifestPlan, releasePlan }) {
+  const failed = [deployEnv, portalRuntimeEnv, manifestPlan, releasePlan].find((item) => !item?.ok);
+  if (failed) return { ok: false, blockedReason: failed.blockedReason || "package_d_execution_preflight_gate_failed" };
+  return {
+    ok: true,
+    blockedReason: "",
+    summary: {
+      executionPreflightGateReady: true,
+      releasePlanReady: releasePlan.summary.releasePlanReady,
+      realExecutionReady: false,
+      packageDExecutionReady: false,
+      runTencentDeployExecution: "0",
+      deployClusterId: FIXED_DEPLOY_CLUSTER_ID,
+      namespace: FIXED_DEPLOY_NAMESPACE,
+      platformNodePoolId: FIXED_PLATFORM_NODE_POOL_ID,
+      postgresEndpoint: FIXED_POSTGRES_ENDPOINT,
+      imageTargets: releasePlan.summary.imageTargets,
+      callsDockerNow: false,
+      callsKubectlNow: false,
+      readsKubeconfigNow: false,
+      deploysNow: false,
+      buildsOrPushesNow: false,
+      executesTencentMutationNow: false,
+      redactedEvidence: {
+        deployEnv: {
+          runTencentDeployExecution: "0",
+          tcrId: "redacted",
+          tcrSecret: "redacted",
+          registry: "redacted",
+          namespace: "redacted",
+          region: "na-siliconvalley",
+          clusterId: FIXED_DEPLOY_CLUSTER_ID,
+          kubeconfigRef: "redacted",
+        },
+        portalRuntimeEnv: {
+          adminEmail: "redacted",
+          adminName: "redacted",
+          adminPassword: "redacted",
+          postgresEndpoint: FIXED_POSTGRES_ENDPOINT,
+          postgresUrl: "redacted",
+          postgresPassword: "redacted",
+        },
+        manifest: {
+          namespace: FIXED_DEPLOY_NAMESPACE,
+          schedulingTarget: "platform_service_pool",
+          platformNodePoolId: FIXED_PLATFORM_NODE_POOL_ID,
+          tenantPoolSchedulingAllowed: false,
+        },
+      },
+      redactionAudit: {
+        tcrSecretExposed: false,
+        portalAdminPasswordExposed: false,
+        portalPostgresPasswordExposed: false,
+        fullDbUrlExposed: false,
+        kubeconfigExposed: false,
+      },
     },
   };
 }
@@ -381,8 +448,6 @@ const checked = [
       "TENCENT_TCR_REGION=na-siliconvalley",
       "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
       "TENCENT_DEPLOY_KUBECONFIG_REF=kubeconfig-ref-proof",
-      "PORTAL_POSTGRES_URL=postgresql://medopl:$PORTAL_POSTGRES_PASSWORD@10.66.0.21:5432/medopl",
-      "PORTAL_POSTGRES_PASSWORD=$PORTAL_POSTGRES_PASSWORD",
     ].join("\n")),
   },
   {
@@ -396,8 +461,6 @@ const checked = [
       "TENCENT_TCR_REGION=na-siliconvalley",
       "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
       "TENCENT_DEPLOY_KUBECONFIG_REF=kubeconfig-ref-proof",
-      "PORTAL_POSTGRES_URL=postgresql://medopl:$PORTAL_POSTGRES_PASSWORD@10.66.0.21:5432/medopl",
-      "PORTAL_POSTGRES_PASSWORD=$PORTAL_POSTGRES_PASSWORD",
     ].join("\n")),
   },
   {
@@ -411,8 +474,20 @@ const checked = [
       "TENCENT_TCR_REGION=na-siliconvalley",
       "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
       "TENCENT_DEPLOY_KUBECONFIG_REF=apiVersion: v1\\nkind: Config\\nclusters: []",
+    ].join("\n")),
+  },
+  {
+    file: "package-d-deploy-with-runtime-secret.env",
+    result: checkConfig([
+      "RUN_TENCENT_DEPLOY_EXECUTION=0",
+      "TCR_ID=deploy-id-proof",
+      "TCR_SECRET=$TCR_SECRET",
+      "TENCENT_TCR_REGISTRY=registry-proof.example.tencentcloudcr.com",
+      "TENCENT_TCR_NAMESPACE=namespace-proof",
+      "TENCENT_TCR_REGION=na-siliconvalley",
+      "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
+      "TENCENT_DEPLOY_KUBECONFIG_REF=kubeconfig-ref-proof",
       "PORTAL_POSTGRES_URL=postgresql://medopl:$PORTAL_POSTGRES_PASSWORD@10.66.0.21:5432/medopl",
-      "PORTAL_POSTGRES_PASSWORD=$PORTAL_POSTGRES_PASSWORD",
     ].join("\n")),
   },
   {
@@ -432,14 +507,19 @@ const checked = [
 ];
 
 const accepted = checked.find((item) => item.result.ok);
+const portalRuntimeEnv = checkPortalRuntimeEnv([
+  "PORTAL_ADMIN_EMAIL=admin@example.invalid",
+  "PORTAL_ADMIN_NAME=MedOPL Admin",
+  "PORTAL_ADMIN_PASSWORD=$PORTAL_ADMIN_PASSWORD",
+  "PORTAL_POSTGRES_URL=postgresql://medopl:$PORTAL_POSTGRES_PASSWORD@10.66.0.21:5432/medopl",
+  "PORTAL_POSTGRES_PASSWORD=$PORTAL_POSTGRES_PASSWORD",
+].join("\n"));
 const localShapeGate = checkLocalShapeGate({
   deployEnv: checked.find((item) => item.file === "package-d-deploy.env").result,
-  portalRuntimeEnv: checkPortalRuntimeEnv([
-    "PORTAL_POSTGRES_URL=postgresql://medopl:$PORTAL_POSTGRES_PASSWORD@10.66.0.21:5432/medopl",
-    "PORTAL_POSTGRES_PASSWORD=$PORTAL_POSTGRES_PASSWORD",
-  ].join("\n")),
+  portalRuntimeEnv,
   manifestPlan: checkManifestPlan({
     clusterId: "cls-fi097sy4",
+    namespace: "medopl-platform",
     schedulingTarget: {
       class: "platform_service_pool",
       nodePoolId: "np-cbk784r8",
@@ -457,6 +537,10 @@ const localShapeGate = checkLocalShapeGate({
     },
   }),
 });
+const portalRuntimeMissingAdmin = checkPortalRuntimeEnv([
+  "PORTAL_POSTGRES_URL=postgresql://medopl:$PORTAL_POSTGRES_PASSWORD@10.66.0.21:5432/medopl",
+  "PORTAL_POSTGRES_PASSWORD=$PORTAL_POSTGRES_PASSWORD",
+].join("\n"));
 const releasePlan = checkReleasePlan({
   runId: "pkg-d-release-plan-review-20260614",
   versionTag: "v22-package-d-20260614-review",
@@ -514,10 +598,37 @@ const releasePlan = checkReleasePlan({
     rollbackEvidence: "required_redacted_runtime_evidence",
   },
 });
+const executionPreflightGate = checkExecutionPreflightGate({
+  deployEnv: checked.find((item) => item.file === "package-d-deploy.env").result,
+  portalRuntimeEnv,
+  manifestPlan: checkManifestPlan({
+    clusterId: "cls-fi097sy4",
+    namespace: "medopl-platform",
+    schedulingTarget: {
+      class: "platform_service_pool",
+      nodePoolId: "np-cbk784r8",
+      nodeSelector: {
+        "medopl.io/nodepool-role": "platform-service",
+      },
+    },
+    dbTarget: {
+      endpoint: "10.66.0.21:5432",
+    },
+    rollbackPlan: {
+      owner: "MedOPL Operations",
+      strategy: "roll_back_to_previous_image_ref",
+      previousImageRefRequired: true,
+    },
+  }),
+  releasePlan,
+});
 
 assert(localShapeGate.ok, "package_d_local_shape_gate_must_accept_default_disabled_non_executing_shape");
 assert(releasePlan.ok, "package_d_release_plan_must_be_reviewable_without_real_execution");
+assert(executionPreflightGate.ok, "package_d_execution_preflight_gate_must_accept_redacted_non_executing_boundary");
 assert(accepted, "deploy_config_gate_must_accept_package_d_allowlist");
+assert.deepEqual([...PACKAGE_D_SECRET_KEYS], PACKAGE_D_SECRET_KEY_LIST, "package_d_deploy_env_allowlist_must_be_exact");
+assert.deepEqual([...PORTAL_RUNTIME_SECRET_KEYS], PORTAL_RUNTIME_SECRET_KEY_LIST, "portal_runtime_env_allowlist_must_be_exact");
 assert.equal(accepted.result.summary.callsDockerNow, false, "config_gate_must_not_call_docker");
 assert.equal(accepted.result.summary.callsKubectlNow, false, "config_gate_must_not_call_kubectl");
 assert.equal(accepted.result.summary.readsKubeconfigNow, false, "config_gate_must_not_read_kubeconfig");
@@ -528,11 +639,19 @@ assert.equal(checked.find((item) => item.file === "package-c-mutation.env").resu
 assert.equal(checked.find((item) => item.file === "readonly.env").result.blockedReason.startsWith("tencent_deploy_forbidden_secret_key:"), true, "readonly_secret_must_be_rejected");
 assert.equal(checked.find((item) => item.file === "package-d-deploy-execution-enabled.env").result.blockedReason, "deploy_run_gate_must_remain_zero_for_local_shape", "deploy_execution_enabled_gate_must_be_rejected_by_local_shape");
 assert.equal(checked.find((item) => item.file === "package-d-deploy-raw-kubeconfig.env").result.blockedReason, "deploy_kubeconfig_ref_must_not_embed_yaml", "raw_kubeconfig_yaml_must_be_rejected");
+assert.equal(checked.find((item) => item.file === "package-d-deploy-with-runtime-secret.env").result.blockedReason, "tencent_deploy_non_allowlist_secret_key_rejected:PORTAL_POSTGRES_URL", "deploy_env_must_not_accept_portal_runtime_keys");
+assert.equal(portalRuntimeMissingAdmin.blockedReason, "portal_runtime_env_allowlist_incomplete", "portal_runtime_env_must_require_admin_keys");
 assert.equal(JSON.stringify(checked).includes("$TCR_SECRET"), false, "config_gate_output_must_be_redacted");
+assert.equal(JSON.stringify(executionPreflightGate).includes("$TCR_SECRET"), false, "execution_preflight_evidence_must_not_expose_tcr_secret");
+assert.equal(JSON.stringify(executionPreflightGate).includes("$PORTAL_ADMIN_PASSWORD"), false, "execution_preflight_evidence_must_not_expose_admin_password");
 assert.equal(JSON.stringify(checked).includes("$PORTAL_POSTGRES_PASSWORD"), false, "config_gate_output_must_not_expose_postgres_password");
+assert.equal(JSON.stringify(executionPreflightGate).includes("$PORTAL_POSTGRES_PASSWORD"), false, "execution_preflight_evidence_must_not_expose_postgres_password");
 assert.equal(JSON.stringify(checked).includes("postgresql://"), false, "config_gate_output_must_not_expose_postgres_url");
+assert.equal(JSON.stringify(executionPreflightGate).includes("postgresql://"), false, "execution_preflight_evidence_must_not_expose_postgres_url");
 assert.equal(JSON.stringify(checked).includes("kubeconfig-ref-proof"), false, "config_gate_output_must_not_expose_kubeconfig_ref");
+assert.equal(JSON.stringify(executionPreflightGate).includes("kubeconfig-ref-proof"), false, "execution_preflight_evidence_must_not_expose_kubeconfig_ref");
 assert.equal(localShapeGate.summary.runTencentDeployExecution, "0", "local_shape_gate_must_require_deploy_execution_zero");
+assert.equal(localShapeGate.summary.namespace, "medopl-platform", "local_shape_gate_namespace_must_be_fixed");
 assert.equal(localShapeGate.summary.manifestSchedulingTarget, "platform_service_pool", "manifest_must_target_platform_service_pool");
 assert.equal(localShapeGate.summary.tenantSchedulingAllowed, false, "manifest_must_not_target_tenant_pool");
 assert.equal(localShapeGate.summary.rollbackPlanPresent, true, "rollback_plan_must_exist");
@@ -542,8 +661,8 @@ assert.deepEqual(releasePlan.summary.imageTargets, ["portal-frontend", "medopl-g
 assert.equal(releasePlan.summary.dbPasswordInManifestPlaintext, false, "release_plan_must_not_put_db_password_in_manifest_plaintext");
 assert.equal(accepted.result.summary.deployClusterId, "cls-fi097sy4", "deploy_readiness_cluster_must_be_fixed");
 assert.equal(accepted.result.summary.platformNodePoolId, "np-cbk784r8", "deploy_readiness_platform_pool_must_be_fixed");
-assert.equal(accepted.result.summary.postgresEndpoint, "10.66.0.21:5432", "deploy_readiness_postgres_must_use_vpc_endpoint");
-assert.equal(accepted.result.summary.postgresCanaryTiming, "after_service_deployed_inside_vpc", "deploy_readiness_db_canary_must_wait_for_vpc_runtime");
+assert.equal(portalRuntimeEnv.summary.postgresEndpoint, "10.66.0.21:5432", "portal_runtime_postgres_must_use_vpc_endpoint");
+assert.equal(portalRuntimeEnv.summary.postgresCanaryTiming, "after_service_deployed_inside_vpc", "deploy_readiness_db_canary_must_wait_for_vpc_runtime");
 assert.deepEqual(accepted.result.summary.readinessGaps, [
   "image build",
   "TCR push",
@@ -553,6 +672,14 @@ assert.deepEqual(accepted.result.summary.readinessGaps, [
   "rollback plan",
 ], "deploy_readiness_gap_list_must_be_explicit");
 assert.equal(accepted.result.summary.runTencentDeployExecutionDefault, "0", "deploy_readiness_run_gate_default_must_stay_zero");
+assert.equal(executionPreflightGate.summary.executionPreflightGateReady, true, "execution_preflight_gate_must_be_ready_to_judge_allowlisted_inputs");
+assert.equal(executionPreflightGate.summary.realExecutionReady, false, "execution_preflight_gate_must_not_mark_real_execution_ready");
+assert.equal(executionPreflightGate.summary.packageDExecutionReady, false, "execution_preflight_gate_must_not_enter_package_d_execution");
+assert.equal(executionPreflightGate.summary.redactionAudit.tcrSecretExposed, false, "redaction_audit_must_hide_tcr_secret");
+assert.equal(executionPreflightGate.summary.redactionAudit.portalAdminPasswordExposed, false, "redaction_audit_must_hide_admin_password");
+assert.equal(executionPreflightGate.summary.redactionAudit.portalPostgresPasswordExposed, false, "redaction_audit_must_hide_postgres_password");
+assert.equal(executionPreflightGate.summary.redactionAudit.fullDbUrlExposed, false, "redaction_audit_must_hide_full_db_url");
+assert.equal(executionPreflightGate.summary.redactionAudit.kubeconfigExposed, false, "redaction_audit_must_hide_kubeconfig");
 
 console.log(JSON.stringify({
   ok: true,
@@ -568,6 +695,7 @@ console.log(JSON.stringify({
   manifestShapeReady: true,
   rollbackPlanReady: true,
   releasePlanReady: releasePlan.summary.releasePlanReady,
+  executionPreflightGateReady: executionPreflightGate.summary.executionPreflightGateReady,
   realExecutionReady: false,
   imageTargets: releasePlan.summary.imageTargets,
   requiresKubeApiserverConnectivity: true,

@@ -2004,7 +2004,9 @@ Package D 的定位是“把一组已审查镜像版本接到指定运行面并�
 
 ## Package D Secret Allowlist
 
-Package D 只能读取以下 key，且必须按 allowlist 精确读取，不允许 source env，不允许一读全读：
+Package D 只能读取以下两个 env 文件的 allowlisted key，且必须按文件边界精确读取，不允许 source env，不允许一读全读。
+
+`package-d-deploy.env` allowlist：
 
 - `RUN_TENCENT_DEPLOY_EXECUTION`
 - `TCR_ID`
@@ -2014,14 +2016,20 @@ Package D 只能读取以下 key，且必须按 allowlist 精确读取，不允�
 - `TENCENT_TCR_REGION`
 - `TENCENT_DEPLOY_CLUSTER_ID`
 - `TENCENT_DEPLOY_KUBECONFIG_REF`
+
+`portal-runtime.env` allowlist：
+
+- `PORTAL_ADMIN_EMAIL`
+- `PORTAL_ADMIN_NAME`
+- `PORTAL_ADMIN_PASSWORD`
 - `PORTAL_POSTGRES_URL`
 - `PORTAL_POSTGRES_PASSWORD`
 
 `TENCENT_DEPLOY_KUBECONFIG_REF` 只能是后端 secret reference 或本机受控路径引用，不能把 raw kubeconfig 写入合同、日志、Portal payload、`.runtime` 或 git。
 
-`PORTAL_POSTGRES_URL` 必须指向 VPC 内网 PostgreSQL endpoint `10.66.0.21:5432`，不依赖公网 PostgreSQL。`PORTAL_POSTGRES_PASSWORD` 和完整 DB URL 只能进入后端 secret 边界；stdout、docs、git、Portal payload 和 `.runtime` 只能出现脱敏摘要或 endpoint host:port。Package C PostgreSQL ledger sink 的真实 DB canary 不再从本机追求连通性；它必须等 Portal / control-plane service 部署到 VPC 内、可从 TKE platform pool 访问 `medopl-postgres` 后再单独授权执行。
+`PORTAL_ADMIN_PASSWORD`、`PORTAL_POSTGRES_PASSWORD` 和完整 DB URL 只能进入后端 secret 边界；stdout、docs、git、Portal payload 和 `.runtime` 只能出现脱敏摘要或 endpoint host:port。`PORTAL_POSTGRES_URL` 必须指向 VPC 内网 PostgreSQL endpoint `10.66.0.21:5432`，不依赖公网 PostgreSQL。Package C PostgreSQL ledger sink 的真实 DB canary 不再从本机追求连通性；它必须等 Portal / control-plane service 部署到 VPC 内、可从 TKE platform pool 访问 `medopl-postgres` 后再单独授权执行。
 
-Package D local shape gate 是非执行 gate：通过态必须保持 `RUN_TENCENT_DEPLOY_EXECUTION=0`，只允许读取 allowlisted key names 和必要非 secret values，必须拒绝 raw kubeconfig YAML；它可以验证 deploy env、Portal runtime env、manifest scheduling target、DB endpoint 和 rollback plan shape，但不得 build/push、读取 kubeconfig、kubectl、deploy 或进入真实 Package D execution。
+Package D execution boundary / preflight gate 是非执行 gate：通过态必须保持 `RUN_TENCENT_DEPLOY_EXECUTION=0`，只允许读取 allowlisted key names 和必要非 secret values，必须拒绝 raw kubeconfig YAML；它可以验证 deploy env、Portal runtime env、manifest scheduling target、DB endpoint、image targets、redaction evidence 和 rollback plan shape，但不得 build/push、读取 kubeconfig、kubectl、deploy 或进入真实 Package D execution。`realExecutionReady` 只能被严格判断，本地 gate 通过后仍保持 `false`。
 
 `TENCENT_TCR_REPOSITORY`、`TENCENT_DEPLOY_NAMESPACE`、`TENCENT_DEPLOY_WORKLOAD`、`TENCENT_DEPLOY_CONTAINER`、`TENCENT_DEPLOY_RUNTIME_SMOKE_URL` 不属于 secret allowlist。它们是 release plan 的 non-secret target 字段，必须逐 target 显式声明，不能用单值环境变量把多服务发布压成单容器发布。
 
@@ -2300,7 +2308,7 @@ R-16 `deploy-dry-run` 必须显式传入 `--image-digests-file <path>`，并且�
     "R-17",
     "R-18"
   ],
-  "secretAllowlist": [
+  "deployEnvAllowlist": [
     "RUN_TENCENT_DEPLOY_EXECUTION",
     "TCR_ID",
     "TCR_SECRET",
@@ -2308,7 +2316,12 @@ R-16 `deploy-dry-run` 必须显式传入 `--image-digests-file <path>`，并且�
     "TENCENT_TCR_NAMESPACE",
     "TENCENT_TCR_REGION",
     "TENCENT_DEPLOY_CLUSTER_ID",
-    "TENCENT_DEPLOY_KUBECONFIG_REF",
+    "TENCENT_DEPLOY_KUBECONFIG_REF"
+  ],
+  "portalRuntimeEnvAllowlist": [
+    "PORTAL_ADMIN_EMAIL",
+    "PORTAL_ADMIN_NAME",
+    "PORTAL_ADMIN_PASSWORD",
     "PORTAL_POSTGRES_URL",
     "PORTAL_POSTGRES_PASSWORD"
   ],
@@ -3020,7 +3033,7 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
       "R-17",
       "R-18"
     ],
-    "secretAllowlist": [
+    "deployEnvAllowlist": [
       "RUN_TENCENT_DEPLOY_EXECUTION",
       "TCR_ID",
       "TCR_SECRET",
@@ -3028,7 +3041,12 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
       "TENCENT_TCR_NAMESPACE",
       "TENCENT_TCR_REGION",
       "TENCENT_DEPLOY_CLUSTER_ID",
-      "TENCENT_DEPLOY_KUBECONFIG_REF",
+      "TENCENT_DEPLOY_KUBECONFIG_REF"
+    ],
+    "portalRuntimeEnvAllowlist": [
+      "PORTAL_ADMIN_EMAIL",
+      "PORTAL_ADMIN_NAME",
+      "PORTAL_ADMIN_PASSWORD",
       "PORTAL_POSTGRES_URL",
       "PORTAL_POSTGRES_PASSWORD"
     ],

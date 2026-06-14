@@ -25,6 +25,7 @@ git diff --check -- docs changes specs tests scripts
 - Future authorization must name operation class, target environment, secret allowlist, API allowlist, budget, evidence sink and rollback owner before any sensitive operation runs.
 - Package D deploy readiness planning has a non-executing local shape gate for cluster `cls-fi097sy4`, platform pool `np-cbk784r8`, VPC PostgreSQL `10.66.0.21:5432`, deploy/runtime env allowlists, kubeconfig ref-only handling, manifest scheduling to platform service pool, rollback plan shape and readiness gaps.
 - Package D release plan shape is reviewable: image targets, tag rule, TCR shape, Kubernetes manifest shape, runtime env secretRef boundary, DB connectivity smoke plan, rollback plan and redacted evidence classes are explicit, with `releasePlanReady=true` and `realExecutionReady=false`.
+- Package D execution preflight gate can judge the split `package-d-deploy.env` and `portal-runtime.env` allowlists, fixed cluster / namespace / platform pool / DB endpoint / image targets and redaction audit while keeping `RUN_TENCENT_DEPLOY_EXECUTION=0` and `realExecutionReady=false`.
 
 ## Cannot Claim
 
@@ -33,6 +34,7 @@ git diff --check -- docs changes specs tests scripts
 - Local dry-run evidence proves live behavior.
 - Package D local shape gate must keep `RUN_TENCENT_DEPLOY_EXECUTION=0`; it does not authorize deploy execution, kubeconfig read, kubectl, build/push or DB writes.
 - Package D release plan readiness does not authorize image build, TCR push, Kubernetes dry-run/apply, DB smoke, rollback execution or Package D execution.
+- Package D execution preflight readiness does not authorize reading kubeconfig contents, build/push, kubectl, deploy, Tencent mutation or Package D execution.
 
 ## Required Future Sequence
 

@@ -319,18 +319,6 @@
       "postgresEndpoint": "10.66.0.21:5432",
       "postgresAccess": "vpc_private_only",
       "postgresLedgerCanaryTiming": "after_service_deployed_inside_vpc",
-      "secretAllowlist": [
-        "RUN_TENCENT_DEPLOY_EXECUTION",
-        "TCR_ID",
-        "TCR_SECRET",
-        "TENCENT_TCR_REGISTRY",
-        "TENCENT_TCR_NAMESPACE",
-        "TENCENT_TCR_REGION",
-        "TENCENT_DEPLOY_CLUSTER_ID",
-        "TENCENT_DEPLOY_KUBECONFIG_REF",
-        "PORTAL_POSTGRES_URL",
-        "PORTAL_POSTGRES_PASSWORD"
-      ],
       "safetyGates": {
         "runTencentDeployExecutionDefault": "0",
         "noKubeconfigReadWithoutSeparateAuthorization": true,
@@ -349,11 +337,13 @@
           "targetClass": "platform_service_pool",
           "targetPlatformNodePoolId": "np-cbk784r8",
           "tenantPoolSchedulingAllowed": false,
-          "postgresEndpoint": "10.66.0.21:5432"
+          "postgresEndpoint": "10.66.0.21:5432",
+          "namespace": "medopl-platform"
         },
         "rollbackPlanShapeRequired": true,
         "releasePlanReady": true,
-        "realExecutionReady": false
+        "realExecutionReady": false,
+        "namespace": "medopl-platform"
       },
       "releasePlan": {
         "status": "reviewable_plan_ready_non_executing",
@@ -441,7 +431,75 @@
         "build/push",
         "kubeconfig read",
         "Package D execution"
-      ]
+      ],
+      "deployEnvAllowlist": [
+        "RUN_TENCENT_DEPLOY_EXECUTION",
+        "TCR_ID",
+        "TCR_SECRET",
+        "TENCENT_TCR_REGISTRY",
+        "TENCENT_TCR_NAMESPACE",
+        "TENCENT_TCR_REGION",
+        "TENCENT_DEPLOY_CLUSTER_ID",
+        "TENCENT_DEPLOY_KUBECONFIG_REF"
+      ],
+      "portalRuntimeEnvAllowlist": [
+        "PORTAL_ADMIN_EMAIL",
+        "PORTAL_ADMIN_NAME",
+        "PORTAL_ADMIN_PASSWORD",
+        "PORTAL_POSTGRES_URL",
+        "PORTAL_POSTGRES_PASSWORD"
+      ],
+      "executionPreflightGate": {
+        "status": "ready_non_executing_allowlist_judgement_only",
+        "executionPreflightGateReady": true,
+        "realExecutionReady": false,
+        "packageDExecutionReady": false,
+        "runTencentDeployExecutionRequired": "0",
+        "deployEnvAllowlist": [
+          "RUN_TENCENT_DEPLOY_EXECUTION",
+          "TCR_ID",
+          "TCR_SECRET",
+          "TENCENT_TCR_REGISTRY",
+          "TENCENT_TCR_NAMESPACE",
+          "TENCENT_TCR_REGION",
+          "TENCENT_DEPLOY_CLUSTER_ID",
+          "TENCENT_DEPLOY_KUBECONFIG_REF"
+        ],
+        "portalRuntimeEnvAllowlist": [
+          "PORTAL_ADMIN_EMAIL",
+          "PORTAL_ADMIN_NAME",
+          "PORTAL_ADMIN_PASSWORD",
+          "PORTAL_POSTGRES_URL",
+          "PORTAL_POSTGRES_PASSWORD"
+        ],
+        "targetChecks": {
+          "clusterId": "cls-fi097sy4",
+          "namespace": "medopl-platform",
+          "platformNodePoolId": "np-cbk784r8",
+          "postgresEndpoint": "10.66.0.21:5432",
+          "imageTargets": [
+            "portal-frontend",
+            "medopl-go-backend",
+            "opl-web-gateway",
+            "opl-runtime-bridge"
+          ]
+        },
+        "redactionRequired": [
+          "TCR_SECRET",
+          "PORTAL_ADMIN_PASSWORD",
+          "PORTAL_POSTGRES_PASSWORD",
+          "full_db_url",
+          "kubeconfig"
+        ],
+        "forbiddenNow": [
+          "kubeconfig content read",
+          "build/push",
+          "kubectl",
+          "deploy",
+          "Tencent mutation",
+          "Package D execution"
+        ]
+      }
     }
   },
   "ai_mvp_readiness_state": {
@@ -770,18 +828,6 @@
     "postgresEndpoint": "10.66.0.21:5432",
     "postgresAccess": "vpc_private_only",
     "postgresLedgerCanaryTiming": "after_service_deployed_inside_vpc",
-    "secretAllowlist": [
-      "RUN_TENCENT_DEPLOY_EXECUTION",
-      "TCR_ID",
-      "TCR_SECRET",
-      "TENCENT_TCR_REGISTRY",
-      "TENCENT_TCR_NAMESPACE",
-      "TENCENT_TCR_REGION",
-      "TENCENT_DEPLOY_CLUSTER_ID",
-      "TENCENT_DEPLOY_KUBECONFIG_REF",
-      "PORTAL_POSTGRES_URL",
-      "PORTAL_POSTGRES_PASSWORD"
-    ],
     "safetyGates": {
       "runTencentDeployExecutionDefault": "0",
       "noKubeconfigReadWithoutSeparateAuthorization": true,
@@ -800,11 +846,13 @@
         "targetClass": "platform_service_pool",
         "targetPlatformNodePoolId": "np-cbk784r8",
         "tenantPoolSchedulingAllowed": false,
-        "postgresEndpoint": "10.66.0.21:5432"
+        "postgresEndpoint": "10.66.0.21:5432",
+        "namespace": "medopl-platform"
       },
       "rollbackPlanShapeRequired": true,
       "releasePlanReady": true,
-      "realExecutionReady": false
+      "realExecutionReady": false,
+      "namespace": "medopl-platform"
     },
     "releasePlan": {
       "status": "reviewable_plan_ready_non_executing",
@@ -892,6 +940,74 @@
       "build/push",
       "kubeconfig read",
       "Package D execution"
-    ]
+    ],
+    "deployEnvAllowlist": [
+      "RUN_TENCENT_DEPLOY_EXECUTION",
+      "TCR_ID",
+      "TCR_SECRET",
+      "TENCENT_TCR_REGISTRY",
+      "TENCENT_TCR_NAMESPACE",
+      "TENCENT_TCR_REGION",
+      "TENCENT_DEPLOY_CLUSTER_ID",
+      "TENCENT_DEPLOY_KUBECONFIG_REF"
+    ],
+    "portalRuntimeEnvAllowlist": [
+      "PORTAL_ADMIN_EMAIL",
+      "PORTAL_ADMIN_NAME",
+      "PORTAL_ADMIN_PASSWORD",
+      "PORTAL_POSTGRES_URL",
+      "PORTAL_POSTGRES_PASSWORD"
+    ],
+    "executionPreflightGate": {
+      "status": "ready_non_executing_allowlist_judgement_only",
+      "executionPreflightGateReady": true,
+      "realExecutionReady": false,
+      "packageDExecutionReady": false,
+      "runTencentDeployExecutionRequired": "0",
+      "deployEnvAllowlist": [
+        "RUN_TENCENT_DEPLOY_EXECUTION",
+        "TCR_ID",
+        "TCR_SECRET",
+        "TENCENT_TCR_REGISTRY",
+        "TENCENT_TCR_NAMESPACE",
+        "TENCENT_TCR_REGION",
+        "TENCENT_DEPLOY_CLUSTER_ID",
+        "TENCENT_DEPLOY_KUBECONFIG_REF"
+      ],
+      "portalRuntimeEnvAllowlist": [
+        "PORTAL_ADMIN_EMAIL",
+        "PORTAL_ADMIN_NAME",
+        "PORTAL_ADMIN_PASSWORD",
+        "PORTAL_POSTGRES_URL",
+        "PORTAL_POSTGRES_PASSWORD"
+      ],
+      "targetChecks": {
+        "clusterId": "cls-fi097sy4",
+        "namespace": "medopl-platform",
+        "platformNodePoolId": "np-cbk784r8",
+        "postgresEndpoint": "10.66.0.21:5432",
+        "imageTargets": [
+          "portal-frontend",
+          "medopl-go-backend",
+          "opl-web-gateway",
+          "opl-runtime-bridge"
+        ]
+      },
+      "redactionRequired": [
+        "TCR_SECRET",
+        "PORTAL_ADMIN_PASSWORD",
+        "PORTAL_POSTGRES_PASSWORD",
+        "full_db_url",
+        "kubeconfig"
+      ],
+      "forbiddenNow": [
+        "kubeconfig content read",
+        "build/push",
+        "kubectl",
+        "deploy",
+        "Tencent mutation",
+        "Package D execution"
+      ]
+    }
   }
 }
