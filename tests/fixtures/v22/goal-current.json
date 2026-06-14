@@ -312,6 +312,170 @@
           ],
           "executesNow": false
         },
+        "inClusterPlatformRunnerShape": {
+          "status": "shape_gate_only",
+          "workloadKind": "Job",
+          "namespace": "medopl-platform",
+          "serviceAccountName": "medopl-platform-runner",
+          "scheduling": {
+            "class": "platform_service_pool",
+            "nodePoolId": "np-cbk784r8",
+            "tenantPoolAllowed": false,
+            "forbiddenNodePoolPrefix": "medopl-tenant-",
+            "nodeSelector": {
+              "medopl.io/nodepool-role": "platform-service"
+            }
+          },
+          "podTemplate": {
+            "restartPolicy": "Never",
+            "configMapRefs": [
+              "medopl-package-d-runner-config"
+            ],
+            "secretRefs": [
+              "medopl-package-d-deploy-env",
+              "medopl-portal-runtime-env"
+            ],
+            "imagePullSecrets": [
+              "medopl-tcr-pull-secret"
+            ],
+            "plainSecretValuesAllowed": false,
+            "rawKubeconfigAllowed": false
+          },
+          "rbac": {
+            "serviceAccount": "medopl-platform-runner",
+            "preferredScope": "namespace",
+            "clusterAdminAllowed": false,
+            "broadWildcardAllowed": false,
+            "clusterScopeRequired": true,
+            "clusterScopeReasons": [
+              "read nodes to verify scheduling target and platform pool visibility"
+            ],
+            "namespaceRules": [
+              {
+                "apiGroups": [
+                  ""
+                ],
+                "resources": [
+                  "configmaps",
+                  "services"
+                ],
+                "verbs": [
+                  "get",
+                  "list",
+                  "watch",
+                  "create",
+                  "update",
+                  "patch"
+                ]
+              },
+              {
+                "apiGroups": [
+                  ""
+                ],
+                "resources": [
+                  "secrets"
+                ],
+                "verbs": [
+                  "get"
+                ]
+              },
+              {
+                "apiGroups": [
+                  ""
+                ],
+                "resources": [
+                  "pods"
+                ],
+                "verbs": [
+                  "get",
+                  "list",
+                  "watch"
+                ]
+              },
+              {
+                "apiGroups": [
+                  "apps"
+                ],
+                "resources": [
+                  "deployments"
+                ],
+                "verbs": [
+                  "get",
+                  "list",
+                  "watch",
+                  "create",
+                  "update",
+                  "patch"
+                ]
+              },
+              {
+                "apiGroups": [
+                  "batch"
+                ],
+                "resources": [
+                  "jobs"
+                ],
+                "verbs": [
+                  "get",
+                  "list",
+                  "watch",
+                  "create",
+                  "update",
+                  "patch"
+                ]
+              }
+            ],
+            "clusterRules": [
+              {
+                "apiGroups": [
+                  ""
+                ],
+                "resources": [
+                  "nodes"
+                ],
+                "verbs": [
+                  "get",
+                  "list"
+                ]
+              }
+            ]
+          },
+          "commandAllowlist": {
+            "allowed": [
+              "preflight",
+              "deploy",
+              "smoke",
+              "rollback"
+            ],
+            "forbidden": [
+              "arbitrary shell",
+              "package-c live",
+              "Tencent mutation",
+              "tenant pool mutation"
+            ]
+          },
+          "runtimeEnv": {
+            "portalPostgresUrlSource": "secretRef",
+            "tcrSecretSource": "imagePullSecret_or_secretRef",
+            "portalAdminSecretSource": "secretRef",
+            "plaintextSecretsAllowed": false
+          },
+          "evidence": {
+            "sink": ".runtime",
+            "commitRuntimeEvidence": false,
+            "redactionAuditRequired": true
+          },
+          "executionBoundary": {
+            "callsKubectlNow": false,
+            "connectsClusterNow": false,
+            "deploysNow": false,
+            "buildsOrPushesNow": false,
+            "executesTencentMutationNow": false,
+            "readsKubeconfigNow": false,
+            "packageCLiveAllowed": false
+          },
+          "realExecutionReady": false
+        },
         "requiredRuntimeTools": [
           "kubectl",
           "PostgreSQL client or ledger canary runner"
@@ -1190,6 +1354,170 @@
           "rollback"
         ],
         "executesNow": false
+      },
+      "inClusterPlatformRunnerShape": {
+        "status": "shape_gate_only",
+        "workloadKind": "Job",
+        "namespace": "medopl-platform",
+        "serviceAccountName": "medopl-platform-runner",
+        "scheduling": {
+          "class": "platform_service_pool",
+          "nodePoolId": "np-cbk784r8",
+          "tenantPoolAllowed": false,
+          "forbiddenNodePoolPrefix": "medopl-tenant-",
+          "nodeSelector": {
+            "medopl.io/nodepool-role": "platform-service"
+          }
+        },
+        "podTemplate": {
+          "restartPolicy": "Never",
+          "configMapRefs": [
+            "medopl-package-d-runner-config"
+          ],
+          "secretRefs": [
+            "medopl-package-d-deploy-env",
+            "medopl-portal-runtime-env"
+          ],
+          "imagePullSecrets": [
+            "medopl-tcr-pull-secret"
+          ],
+          "plainSecretValuesAllowed": false,
+          "rawKubeconfigAllowed": false
+        },
+        "rbac": {
+          "serviceAccount": "medopl-platform-runner",
+          "preferredScope": "namespace",
+          "clusterAdminAllowed": false,
+          "broadWildcardAllowed": false,
+          "clusterScopeRequired": true,
+          "clusterScopeReasons": [
+            "read nodes to verify scheduling target and platform pool visibility"
+          ],
+          "namespaceRules": [
+            {
+              "apiGroups": [
+                ""
+              ],
+              "resources": [
+                "configmaps",
+                "services"
+              ],
+              "verbs": [
+                "get",
+                "list",
+                "watch",
+                "create",
+                "update",
+                "patch"
+              ]
+            },
+            {
+              "apiGroups": [
+                ""
+              ],
+              "resources": [
+                "secrets"
+              ],
+              "verbs": [
+                "get"
+              ]
+            },
+            {
+              "apiGroups": [
+                ""
+              ],
+              "resources": [
+                "pods"
+              ],
+              "verbs": [
+                "get",
+                "list",
+                "watch"
+              ]
+            },
+            {
+              "apiGroups": [
+                "apps"
+              ],
+              "resources": [
+                "deployments"
+              ],
+              "verbs": [
+                "get",
+                "list",
+                "watch",
+                "create",
+                "update",
+                "patch"
+              ]
+            },
+            {
+              "apiGroups": [
+                "batch"
+              ],
+              "resources": [
+                "jobs"
+              ],
+              "verbs": [
+                "get",
+                "list",
+                "watch",
+                "create",
+                "update",
+                "patch"
+              ]
+            }
+          ],
+          "clusterRules": [
+            {
+              "apiGroups": [
+                ""
+              ],
+              "resources": [
+                "nodes"
+              ],
+              "verbs": [
+                "get",
+                "list"
+              ]
+            }
+          ]
+        },
+        "commandAllowlist": {
+          "allowed": [
+            "preflight",
+            "deploy",
+            "smoke",
+            "rollback"
+          ],
+          "forbidden": [
+            "arbitrary shell",
+            "package-c live",
+            "Tencent mutation",
+            "tenant pool mutation"
+          ]
+        },
+        "runtimeEnv": {
+          "portalPostgresUrlSource": "secretRef",
+          "tcrSecretSource": "imagePullSecret_or_secretRef",
+          "portalAdminSecretSource": "secretRef",
+          "plaintextSecretsAllowed": false
+        },
+        "evidence": {
+          "sink": ".runtime",
+          "commitRuntimeEvidence": false,
+          "redactionAuditRequired": true
+        },
+        "executionBoundary": {
+          "callsKubectlNow": false,
+          "connectsClusterNow": false,
+          "deploysNow": false,
+          "buildsOrPushesNow": false,
+          "executesTencentMutationNow": false,
+          "readsKubeconfigNow": false,
+          "packageCLiveAllowed": false
+        },
+        "realExecutionReady": false
       },
       "requiredRuntimeTools": [
         "kubectl",

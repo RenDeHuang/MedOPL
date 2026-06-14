@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 const FIXED_DEPLOY_CLUSTER_ID = "cls-fi097sy4";
 const FIXED_PLATFORM_NODE_POOL_ID = "np-cbk784r8";
@@ -56,6 +56,105 @@ const DEPLOY_RUNNER_PLACEMENT_PLAN = Object.freeze({
       "rollback",
     ]),
     executesNow: false,
+  }),
+  inClusterPlatformRunnerShape: Object.freeze({
+    status: "shape_gate_only",
+    workloadKind: "Job",
+    namespace: FIXED_DEPLOY_NAMESPACE,
+    serviceAccountName: "medopl-platform-runner",
+    scheduling: Object.freeze({
+      class: "platform_service_pool",
+      nodePoolId: FIXED_PLATFORM_NODE_POOL_ID,
+      tenantPoolAllowed: false,
+      forbiddenNodePoolPrefix: "medopl-tenant-",
+      nodeSelector: Object.freeze({
+        "medopl.io/nodepool-role": "platform-service",
+      }),
+    }),
+    podTemplate: Object.freeze({
+      restartPolicy: "Never",
+      configMapRefs: Object.freeze([
+        "medopl-package-d-runner-config",
+      ]),
+      secretRefs: Object.freeze([
+        "medopl-package-d-deploy-env",
+        "medopl-portal-runtime-env",
+      ]),
+      imagePullSecrets: Object.freeze([
+        "medopl-tcr-pull-secret",
+      ]),
+      plainSecretValuesAllowed: false,
+      rawKubeconfigAllowed: false,
+    }),
+    rbac: Object.freeze({
+      serviceAccount: "medopl-platform-runner",
+      preferredScope: "namespace",
+      clusterAdminAllowed: false,
+      broadWildcardAllowed: false,
+      clusterScopeRequired: true,
+      clusterScopeReasons: Object.freeze([
+        "read nodes to verify scheduling target and platform pool visibility",
+      ]),
+      namespaceRules: Object.freeze([
+        Object.freeze({
+          apiGroups: Object.freeze([""]),
+          resources: Object.freeze(["configmaps", "services"]),
+          verbs: Object.freeze(["get", "list", "watch", "create", "update", "patch"]),
+        }),
+        Object.freeze({
+          apiGroups: Object.freeze([""]),
+          resources: Object.freeze(["secrets"]),
+          verbs: Object.freeze(["get"]),
+        }),
+        Object.freeze({
+          apiGroups: Object.freeze([""]),
+          resources: Object.freeze(["pods"]),
+          verbs: Object.freeze(["get", "list", "watch"]),
+        }),
+        Object.freeze({
+          apiGroups: Object.freeze(["apps"]),
+          resources: Object.freeze(["deployments"]),
+          verbs: Object.freeze(["get", "list", "watch", "create", "update", "patch"]),
+        }),
+        Object.freeze({
+          apiGroups: Object.freeze(["batch"]),
+          resources: Object.freeze(["jobs"]),
+          verbs: Object.freeze(["get", "list", "watch", "create", "update", "patch"]),
+        }),
+      ]),
+      clusterRules: Object.freeze([
+        Object.freeze({
+          apiGroups: Object.freeze([""]),
+          resources: Object.freeze(["nodes"]),
+          verbs: Object.freeze(["get", "list"]),
+        }),
+      ]),
+    }),
+    commandAllowlist: Object.freeze({
+      allowed: Object.freeze(["preflight", "deploy", "smoke", "rollback"]),
+      forbidden: Object.freeze(["arbitrary shell", "package-c live", "Tencent mutation", "tenant pool mutation"]),
+    }),
+    runtimeEnv: Object.freeze({
+      portalPostgresUrlSource: "secretRef",
+      tcrSecretSource: "imagePullSecret_or_secretRef",
+      portalAdminSecretSource: "secretRef",
+      plaintextSecretsAllowed: false,
+    }),
+    evidence: Object.freeze({
+      sink: ".runtime",
+      commitRuntimeEvidence: false,
+      redactionAuditRequired: true,
+    }),
+    executionBoundary: Object.freeze({
+      callsKubectlNow: false,
+      connectsClusterNow: false,
+      deploysNow: false,
+      buildsOrPushesNow: false,
+      executesTencentMutationNow: false,
+      readsKubeconfigNow: false,
+      packageCLiveAllowed: false,
+    }),
+    realExecutionReady: false,
   }),
   requiredRuntimeTools: Object.freeze([
     "kubectl",
@@ -839,6 +938,105 @@ assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.deploySmokePlan, {
   ],
   executesNow: false,
 }, "deploy_smoke_plan_must_run_inside_platform_pool_after_authorization");
+assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.inClusterPlatformRunnerShape, {
+  status: "shape_gate_only",
+  workloadKind: "Job",
+  namespace: "medopl-platform",
+  serviceAccountName: "medopl-platform-runner",
+  scheduling: {
+    class: "platform_service_pool",
+    nodePoolId: "np-cbk784r8",
+    tenantPoolAllowed: false,
+    forbiddenNodePoolPrefix: "medopl-tenant-",
+    nodeSelector: {
+      "medopl.io/nodepool-role": "platform-service",
+    },
+  },
+  podTemplate: {
+    restartPolicy: "Never",
+    configMapRefs: [
+      "medopl-package-d-runner-config",
+    ],
+    secretRefs: [
+      "medopl-package-d-deploy-env",
+      "medopl-portal-runtime-env",
+    ],
+    imagePullSecrets: [
+      "medopl-tcr-pull-secret",
+    ],
+    plainSecretValuesAllowed: false,
+    rawKubeconfigAllowed: false,
+  },
+  rbac: {
+    serviceAccount: "medopl-platform-runner",
+    preferredScope: "namespace",
+    clusterAdminAllowed: false,
+    broadWildcardAllowed: false,
+    clusterScopeRequired: true,
+    clusterScopeReasons: [
+      "read nodes to verify scheduling target and platform pool visibility",
+    ],
+    namespaceRules: [
+      {
+        apiGroups: [""],
+        resources: ["configmaps", "services"],
+        verbs: ["get", "list", "watch", "create", "update", "patch"],
+      },
+      {
+        apiGroups: [""],
+        resources: ["secrets"],
+        verbs: ["get"],
+      },
+      {
+        apiGroups: [""],
+        resources: ["pods"],
+        verbs: ["get", "list", "watch"],
+      },
+      {
+        apiGroups: ["apps"],
+        resources: ["deployments"],
+        verbs: ["get", "list", "watch", "create", "update", "patch"],
+      },
+      {
+        apiGroups: ["batch"],
+        resources: ["jobs"],
+        verbs: ["get", "list", "watch", "create", "update", "patch"],
+      },
+    ],
+    clusterRules: [
+      {
+        apiGroups: [""],
+        resources: ["nodes"],
+        verbs: ["get", "list"],
+      },
+    ],
+  },
+  commandAllowlist: {
+    allowed: ["preflight", "deploy", "smoke", "rollback"],
+    forbidden: ["arbitrary shell", "package-c live", "Tencent mutation", "tenant pool mutation"],
+  },
+  runtimeEnv: {
+    portalPostgresUrlSource: "secretRef",
+    tcrSecretSource: "imagePullSecret_or_secretRef",
+    portalAdminSecretSource: "secretRef",
+    plaintextSecretsAllowed: false,
+  },
+  evidence: {
+    sink: ".runtime",
+    commitRuntimeEvidence: false,
+    redactionAuditRequired: true,
+  },
+  executionBoundary: {
+    callsKubectlNow: false,
+    connectsClusterNow: false,
+    deploysNow: false,
+    buildsOrPushesNow: false,
+    executesTencentMutationNow: false,
+    readsKubeconfigNow: false,
+    packageCLiveAllowed: false,
+  },
+  realExecutionReady: false,
+}, "in_cluster_platform_runner_shape_must_be_explicit_and_non_executing");
 assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.requiredRuntimeTools, [
   "kubectl",
   "PostgreSQL client or ledger canary runner",
@@ -912,6 +1110,42 @@ for (const [label, plan] of [
   assert.equal(plan?.deployRunnerPlacementPlan?.realExecutionReady, false, `deploy_runner_goal_real_execution_must_stay_false:${label}`);
 }
 
+const runnerShapeReport = {
+  ok: true,
+  contract: "package_d_in_cluster_platform_runner_shape_gate",
+  shape: DEPLOY_RUNNER_PLACEMENT_PLAN.inClusterPlatformRunnerShape,
+  redactionAudit: {
+    tcrSecretExposed: false,
+    portalAdminPasswordExposed: false,
+    portalPostgresPasswordExposed: false,
+    fullDbUrlExposed: false,
+    kubeconfigExposed: false,
+    rawProviderSecretExposed: false,
+  },
+  forbiddenNow: [
+    "kubectl",
+    "deploy",
+    "build/push",
+    "Tencent mutation",
+    "Package C live",
+    "kubeconfig read",
+  ],
+};
+const runnerShapeEvidenceRoot = new URL("../../../.runtime/package-d-in-cluster-platform-runner-shape-gate/", import.meta.url);
+mkdirSync(runnerShapeEvidenceRoot, { recursive: true });
+writeFileSync(new URL("shape-report-redacted.json", runnerShapeEvidenceRoot), `${JSON.stringify(runnerShapeReport, null, 2)}\n`);
+const runnerShapeReportText = JSON.stringify(runnerShapeReport);
+for (const forbidden of ["$TCR_SECRET", "$PORTAL_ADMIN_PASSWORD", "$PORTAL_POSTGRES_PASSWORD", "postgresql://", "client-key-data", "client-certificate-data", "kubeconfig-ref-proof"]) {
+  assert.equal(runnerShapeReportText.includes(forbidden), false, `runner_shape_report_must_not_expose:${forbidden}`);
+}
+assert.equal(runnerShapeReport.shape.evidence.sink, ".runtime", "runner_shape_report_must_target_runtime_evidence");
+assert.equal(runnerShapeReport.shape.evidence.commitRuntimeEvidence, false, "runner_shape_report_must_not_be_committed");
+assert.equal(runnerShapeReport.shape.executionBoundary.callsKubectlNow, false, "runner_shape_report_must_not_call_kubectl");
+assert.equal(runnerShapeReport.shape.executionBoundary.deploysNow, false, "runner_shape_report_must_not_deploy");
+assert.equal(runnerShapeReport.shape.executionBoundary.buildsOrPushesNow, false, "runner_shape_report_must_not_build_push");
+assert.equal(runnerShapeReport.shape.executionBoundary.executesTencentMutationNow, false, "runner_shape_report_must_not_execute_tencent_mutation");
+assert.equal(runnerShapeReport.shape.executionBoundary.packageCLiveAllowed, false, "runner_shape_report_must_not_allow_package_c_live");
+
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_tencent_deploy_execution_config_local_gate",
@@ -939,6 +1173,8 @@ console.log(JSON.stringify({
     fallback: DEPLOY_RUNNER_PLACEMENT_PLAN.vpcCvmRunnerFallback.status,
     realExecutionReady: DEPLOY_RUNNER_PLACEMENT_PLAN.realExecutionReady,
   },
+  inClusterRunnerShapeGateReady: true,
+  shapeEvidenceSink: ".runtime/package-d-in-cluster-platform-runner-shape-gate/shape-report-redacted.json",
   requiresKubeApiserverConnectivity: true,
   acceptedSecretFile: accepted.file,
   blockedReason: "needs_reviewed_real_release_plan_kube_apiserver_connectivity_dry_run_acceptance_and_explicit_authorization",
