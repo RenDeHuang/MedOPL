@@ -4983,6 +4983,51 @@ post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 
+### 2026-06-14 package-d-local-shape-gate
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `3b1c0e62649616a8cf7ab3d9254e30e59ed166a4`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Added a non-executing Package D local shape gate.
+- The gate accepts only `RUN_TENCENT_DEPLOY_EXECUTION=0` for local shape proof and rejects execution-enabled Package D env.
+- The gate validates allowlisted deploy/runtime env keys, kubeconfig ref-only handling, VPC PostgreSQL endpoint `10.66.0.21:5432`, target cluster `cls-fi097sy4`, platform service pool `np-cbk784r8`, manifest scheduling to platform service pool and rollback plan shape.
+- The gate rejects raw kubeconfig YAML and tenant pool scheduling for platform service workloads.
+- Preserved boundaries: no Tencent mutation, kubectl, deploy, build/push, Package D execution, kubeconfig read, package-d env read, secret read or `.runtime` commit.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs`: pass.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: pass.
+- `git diff --check -- docs changes tests`: pass.
+
+Can-claim:
+
+- Package D local shape gate now covers default-disabled deploy env, Portal runtime PostgreSQL endpoint, kubeconfig ref-only handling, platform pool scheduling shape and rollback plan shape.
+
+Cannot-claim:
+
+- Package D release plan is executable, image build is ready, TCR push is ready, Kubernetes manifests are production-ready, DB connectivity smoke ran, kubectl/deploy/build-push/Package D execution occurred, or production runtime is online.
+
+landed_commit: `28a0e1af3b3f91a3e1c55be6fd2552e0771fc7c1`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `28a0e1af3b3f91a3e1c55be6fd2552e0771fc7c1`.
+- No Tencent mutation, kubectl, deploy, build/push, Package D execution, kubeconfig read, package-d env read, secret read or `.runtime` commit was performed.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
 ### 2026-06-14 package-c-postgres-ledger-live-canary-preflight
 
 Status: `authoring / authorized live DB canary failed closed`
