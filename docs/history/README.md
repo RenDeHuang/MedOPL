@@ -5028,6 +5028,54 @@ post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 
+### 2026-06-14 package-d-release-plan-shape
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `879318ac2a460450d2dbdbad8d33e6d223e70054`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Added a reviewable Package D release plan shape without real deploy execution.
+- The release plan covers image build plan, unique tag rule, TCR registry / namespace / region shape, Kubernetes namespace / deployment / service / config / secretRef shape and platform pool scheduling.
+- Image targets are `portal-frontend`, `medopl-go-backend`, `opl-web-gateway` and `opl-runtime-bridge`.
+- Runtime env injection keeps `PORTAL_POSTGRES_URL` on VPC endpoint `10.66.0.21:5432` and requires DB password through secretRef, not manifest plaintext.
+- Added DB connectivity smoke plan for PostgreSQL ledger sink after service runs inside TKE/VPC.
+- Added rollback plan for image rollback, Kubernetes rollout undo, config rollback and DB migration forward-only / explicit rollback authorization policy.
+- Added required redacted evidence classes for build, push, deploy, smoke and rollback.
+- Preserved boundaries: `RUN_TENCENT_DEPLOY_EXECUTION=0`, no package-d env read, no kubeconfig read, no build/push, no kubectl, no deploy, no Tencent mutation, no `.runtime` or secret commit.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs`: pass.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: pass.
+- `git diff --check -- docs changes tests`: pass.
+
+Can-claim:
+
+- Package D `releasePlanReady=true` for a reviewable, non-executing release plan shape.
+
+Cannot-claim:
+
+- `realExecutionReady=true`, image build, TCR push, kubeconfig read, Kubernetes dry-run/apply, DB connectivity smoke execution, rollback execution, Package D execution, deploy or production runtime occurred.
+
+landed_commit: `cdc3f4b1ee1a12a2f245a2f4a7e1e28f5493465c`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `origin/recovery/platform-v22-trunk` reached `cdc3f4b1ee1a12a2f245a2f4a7e1e28f5493465c`.
+- No package-d env read, kubeconfig read, build/push, kubectl, deploy, Tencent mutation, `.runtime` commit or secret commit was performed.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
 ### 2026-06-14 package-c-postgres-ledger-live-canary-preflight
 
 Status: `authoring / authorized live DB canary failed closed`
