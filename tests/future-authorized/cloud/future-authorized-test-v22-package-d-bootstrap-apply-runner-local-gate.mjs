@@ -164,9 +164,13 @@ try {
     "Secret/medopl-package-d-deploy-env",
     "Secret/medopl-portal-runtime-env",
     "Secret/medopl-tcr-pull-secret",
-    "Job/medopl-platform-runner",
   ], "allowed_resource_list_must_be_fixed");
+  assert.equal(plan.allowedResources.some((resource) => resource.startsWith("Job/")), false, "bootstrap_idempotent_pack_must_not_include_same_name_job");
+  assert.equal(plan.jobLifecycle.kind, "run_scoped_job_lifecycle", "job_lifecycle_must_be_separate");
+  assert.equal(plan.jobLifecycle.namePattern, "medopl-platform-runner-preflight-<runid>", "job_lifecycle_must_use_unique_run_scoped_name");
+  assert.equal(plan.jobLifecycle.authorizationRequired, true, "job_lifecycle_must_remain_separately_authorized");
   assert.equal(JSON.stringify(plan.manifestsRedacted).includes("medopl-tenant-"), false, "manifests_must_not_reference_tenant_pool");
+  assert.equal(JSON.stringify(plan.manifestsRedacted).includes("\"kind\":\"Job\""), false, "bootstrap_must_not_include_mutable_same_name_job");
   assert.equal(JSON.stringify(plan.manifestsRedacted).includes("Deployment"), false, "bootstrap_must_not_include_business_deployment");
   assert.equal(JSON.stringify(plan.manifestsRedacted).includes("Service\""), false, "bootstrap_must_not_include_business_service");
   assertNoSensitiveText(JSON.stringify(plan), "plan");

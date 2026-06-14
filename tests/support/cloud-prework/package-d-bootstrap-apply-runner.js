@@ -31,7 +31,6 @@ import {
 export const PACKAGE_D_BOOTSTRAP_APPLY_COMMAND = "node tests/support/cloud-prework/package-d-bootstrap-apply-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode bootstrap-apply";
 
 const DEFAULT_EVIDENCE_DIR = ".runtime/package-d-bootstrap-apply";
-const BOOTSTRAP_IMAGE_TAG = "bootstrap-apply";
 const FORBIDDEN_ARGS = Object.freeze(new Set([
   "--deploy",
   "--build",
@@ -53,7 +52,6 @@ const ALLOWED_RESOURCES = Object.freeze([
   "Secret/medopl-package-d-deploy-env",
   "Secret/medopl-portal-runtime-env",
   "Secret/medopl-tcr-pull-secret",
-  "Job/medopl-platform-runner",
 ]);
 
 function text(value = "") {
@@ -96,7 +94,6 @@ function imagePullSecretData({ registry, username, password }) {
 function materializeBootstrapApplyManifests({ deployEnv, runtimeEnv }) {
   const pack = materializePackageDInClusterRunnerPack(PACKAGE_D_IN_CLUSTER_PLATFORM_RUNNER_SHAPE);
   const manifests = pack.manifests;
-  const imageRef = `${deployEnv.TENCENT_TCR_REGISTRY}/${deployEnv.TENCENT_TCR_NAMESPACE}/medopl-package-d-runner:${BOOTSTRAP_IMAGE_TAG}`;
   const items = [
     manifests.namespace,
     manifests.serviceAccount,
@@ -121,22 +118,6 @@ function materializeBootstrapApplyManifests({ deployEnv, runtimeEnv }) {
     manifests.roleBinding,
     manifests.clusterRole,
     manifests.clusterRoleBinding,
-    {
-      ...manifests.job,
-      spec: {
-        ...manifests.job.spec,
-        template: {
-          ...manifests.job.spec.template,
-          spec: {
-            ...manifests.job.spec.template.spec,
-            containers: manifests.job.spec.template.spec.containers.map((container) => ({
-              ...container,
-              image: imageRef,
-            })),
-          },
-        },
-      },
-    },
   ];
   return { apiVersion: "v1", kind: "List", items };
 }
@@ -256,6 +237,7 @@ export async function buildPackageDBootstrapApplyPlan({
   const runtimeEnv = parseEnv(await readFile(runtimeEnvPath, "utf8"), RUNTIME_ENV_KEYS);
   assertTargetEnv({ deployEnv, runtimeEnv, kubeconfigPath });
   const clusterAuth = kubeconfigSummary(await readFile(kubeconfigPath, "utf8"));
+  const runnerPack = materializePackageDInClusterRunnerPack(PACKAGE_D_IN_CLUSTER_PLATFORM_RUNNER_SHAPE);
   const applyManifests = materializeBootstrapApplyManifests({ deployEnv, runtimeEnv });
   assertBootstrapManifestBoundary(applyManifests);
   const manifestsRedacted = redactedManifestList(applyManifests);
@@ -286,6 +268,7 @@ export async function buildPackageDBootstrapApplyPlan({
     },
     clusterAuth,
     allowedResources: [...ALLOWED_RESOURCES],
+    jobLifecycle: runnerPack.jobLifecycle,
     manifestsRedacted,
     commands,
     evidence: {
@@ -360,6 +343,7 @@ export async function runPackageDBootstrapApply({
     failedStep: failed?.name || "",
     commands: commandResults,
     allowedResources: plan.allowedResources,
+    jobLifecycle: plan.jobLifecycle,
     postApplyPreflight: postApplyPreflight ? {
       evidencePath: postApplyPreflight.evidencePath,
       serverSideDryRun: postApplyPreflight.serverSideDryRun,
@@ -374,6 +358,7 @@ export async function runPackageDBootstrapApply({
     env: plan.env,
     clusterAuth: plan.clusterAuth,
     boundary: plan.boundary,
+    jobLifecycle: plan.jobLifecycle,
     manifestsRedacted: plan.manifestsRedacted,
   };
   const audit = redactionAudit(JSON.stringify(evidence));

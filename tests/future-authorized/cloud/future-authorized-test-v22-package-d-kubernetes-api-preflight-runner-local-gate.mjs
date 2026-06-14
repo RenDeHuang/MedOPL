@@ -140,6 +140,10 @@ try {
   assert.equal(plan.commands.filter((command) => command.args.includes("apply")).length, 1, "single_apply_dry_run_command");
   assert(plan.commands.find((command) => command.args.includes("apply")).args.includes("--dry-run=server"), "apply_command_must_be_server_dry_run");
   assert.equal(JSON.stringify(plan.manifests).includes("medopl-tenant-"), false, "manifests_must_not_reference_tenant_pool");
+  assert.equal(JSON.stringify(plan.manifests).includes("\"kind\":\"Job\""), false, "server_side_dry_run_must_not_reapply_same_name_job");
+  assert.equal(plan.jobLifecycle.kind, "run_scoped_job_lifecycle", "job_lifecycle_must_be_separate");
+  assert.equal(plan.jobLifecycle.namePattern, "medopl-platform-runner-preflight-<runid>", "job_lifecycle_must_use_unique_run_scoped_name");
+  assert.equal(plan.jobLifecycle.authorizationRequired, true, "job_lifecycle_must_remain_separately_authorized");
   assertNoSensitiveText(JSON.stringify(plan), "plan");
 
   const commandLog = [];

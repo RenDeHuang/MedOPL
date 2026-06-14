@@ -150,6 +150,7 @@ const PORTAL_RUNTIME_SECRET_KEYS = Object.freeze([
   "PORTAL_POSTGRES_URL",
   "PORTAL_POSTGRES_PASSWORD",
 ]);
+const RUN_SCOPED_JOB_NAME_PATTERN = "medopl-platform-runner-preflight-<runid>";
 
 function redactedStringData(keys = []) {
   return Object.fromEntries(keys.map((key) => [key, "REDACTED_REQUIRED_AT_APPLY_TIME"]));
@@ -243,10 +244,31 @@ export function materializePackageDInClusterRunnerPack(shape = PACKAGE_D_IN_CLUS
         subjects: [{ kind: "ServiceAccount", name: serviceAccount, namespace }],
         roleRef: { apiGroup: "rbac.authorization.k8s.io", kind: "ClusterRole", name: "medopl-platform-runner-node-reader" },
       },
-      job: {
+    },
+    jobLifecycle: {
+      kind: "run_scoped_job_lifecycle",
+      namePattern: RUN_SCOPED_JOB_NAME_PATTERN,
+      authorizationRequired: true,
+      includedInBootstrapApply: false,
+      includedInServerSideDryRun: false,
+      sameNameTemplateUpdateAllowed: false,
+      allowedActions: [
+        "create unique Job",
+        "observe Job",
+        "collect redacted evidence",
+        "cleanup only that unique Job",
+      ],
+      forbiddenActions: [
+        "update existing Job spec.template",
+        "delete Package D bootstrap resources as part of Job cleanup",
+        "business Deployment rollout",
+        "tenant pool mutation",
+        "platform pool modification",
+      ],
+      template: {
         apiVersion: "batch/v1",
         kind: "Job",
-        metadata: { name: "medopl-platform-runner", namespace },
+        metadata: { name: RUN_SCOPED_JOB_NAME_PATTERN, namespace },
         spec: {
           template: {
             spec: {
@@ -310,8 +332,13 @@ export function materializePackageDInClusterRunnerPack(shape = PACKAGE_D_IN_CLUS
         "ConfigMap",
         "SecretRef",
         "imagePullSecret",
-        "Job",
       ],
+      jobLifecycleBoundary: {
+        status: "separate_authorization_required",
+        namePattern: RUN_SCOPED_JOB_NAME_PATTERN,
+        reason: "Kubernetes Job spec.template is immutable; bootstrap apply must not reapply a same-name Job template.",
+        allowedOnlyAfterBootstrapDryRunPasses: true,
+      },
       forbiddenScope: [
         "medopl-tenant- tenant pool",
         "Package C live",
@@ -321,8 +348,8 @@ export function materializePackageDInClusterRunnerPack(shape = PACKAGE_D_IN_CLUS
       ],
       rollbackPlan: [
         "If server-side dry-run fails, do not create resources and keep evidence only.",
-        "If bootstrap apply is separately authorized later and fails before Job creation, remove only Package D bootstrap resources in medopl-platform.",
-        "If bootstrap Job is created in a later authorization and fails, collect redacted logs/events, delete only that bootstrap Job, and leave existing platform pool untouched.",
+        "If bootstrap apply is separately authorized later and fails, remove only Package D idempotent bootstrap resources in medopl-platform.",
+        "If a run-scoped Job is created in a later authorization and fails, collect redacted logs/events, delete only that unique Job, and leave existing bootstrap resources and platform pool untouched.",
         "Never delete, scale or modify platform node pool np-cbk784r8 or any medopl-tenant- pool.",
       ],
       stopConditions: [
@@ -341,7 +368,8 @@ export function materializePackageDInClusterRunnerPack(shape = PACKAGE_D_IN_CLUS
         "Allow reading the Package D kubeconfig and env files only in that environment.",
         "Allow kubectl server-side dry-run for the Package D bootstrap manifests.",
         "Do not authorize real deploy, build/push, Tencent mutation, Package C live, tenant pool mutation or platform pool modification.",
-        "If dry-run passes, request a separate authorization before applying bootstrap resources or creating the in-cluster runner Job.",
+        "If dry-run passes, request a separate authorization before applying bootstrap resources.",
+        "Request another separate authorization before creating a run-scoped in-cluster runner Job.",
       ],
     },
     executionBoundary: shape.executionBoundary,
@@ -355,6 +383,7 @@ export function writePackageDRunnerManifestPack({ reportRoot, pack } = {}) {
     ok: true,
     contract: "package_d_in_cluster_platform_runner_manifest_materialization",
     manifests: pack.manifests,
+    jobLifecycle: pack.jobLifecycle,
     authorizationPack: pack.authorizationPack,
     bootstrapAuthorizationPack: pack.bootstrapAuthorizationPack,
     executionBoundary: pack.executionBoundary,
@@ -378,6 +407,7 @@ export function writePackageDRunnerBootstrapAuthorizationPack({ reportRoot, pack
     ok: true,
     contract: "package_d_in_cluster_platform_runner_bootstrap_authorization_pack",
     bootstrapAuthorizationPack: pack.bootstrapAuthorizationPack,
+    jobLifecycle: pack.jobLifecycle,
     executionBoundary: pack.executionBoundary,
     redactionAudit: {
       tcrSecretExposed: false,

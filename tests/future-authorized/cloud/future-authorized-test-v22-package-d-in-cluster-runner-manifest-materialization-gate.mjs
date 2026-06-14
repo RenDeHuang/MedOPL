@@ -23,22 +23,27 @@ assert.equal(pack.executionBoundary.packageCLiveAllowed, false, "manifest_pack_m
 
 assert.equal(pack.manifests.namespace.metadata.name, "medopl-platform", "namespace_must_be_medopl_platform");
 assert.equal(pack.manifests.serviceAccount.metadata.name, "medopl-platform-runner", "service_account_must_be_fixed");
-assert.equal(pack.manifests.job.kind, "Job", "runner_workload_must_be_job");
-assert.equal(pack.manifests.job.metadata.namespace, "medopl-platform", "job_namespace_must_be_fixed");
-assert.equal(pack.manifests.job.spec.template.spec.serviceAccountName, "medopl-platform-runner", "job_service_account_must_be_fixed");
-assert.equal(pack.manifests.job.spec.template.spec.restartPolicy, "Never", "job_restart_policy_must_be_never");
-assert.equal(pack.manifests.job.spec.template.spec.nodeSelector["medopl.io/nodepool-role"], "platform-service", "job_must_target_platform_service_selector");
-assert.equal(JSON.stringify(pack.manifests.job).includes("medopl-tenant-"), false, "job_manifest_must_not_reference_tenant_pool");
-assert.equal(JSON.stringify(pack.manifests.job).includes("client-key-data"), false, "job_manifest_must_not_embed_kubeconfig");
-assert.equal(JSON.stringify(pack.manifests.job).includes("postgresql://"), false, "job_manifest_must_not_embed_db_url");
+assert.equal(pack.jobLifecycle.kind, "run_scoped_job_lifecycle", "runner_workload_must_be_run_scoped_job_lifecycle");
+assert.equal(pack.jobLifecycle.namePattern, "medopl-platform-runner-preflight-<runid>", "job_lifecycle_must_use_unique_run_scoped_name");
+assert.equal(pack.jobLifecycle.includedInBootstrapApply, false, "job_lifecycle_must_not_be_in_bootstrap_apply");
+assert.equal(pack.jobLifecycle.includedInServerSideDryRun, false, "job_lifecycle_must_not_be_in_server_side_dry_run");
+assert.equal(pack.jobLifecycle.sameNameTemplateUpdateAllowed, false, "job_lifecycle_must_forbid_same_name_template_update");
+assert.equal(pack.jobLifecycle.template.kind, "Job", "runner_workload_template_must_be_job");
+assert.equal(pack.jobLifecycle.template.metadata.namespace, "medopl-platform", "job_namespace_must_be_fixed");
+assert.equal(pack.jobLifecycle.template.spec.template.spec.serviceAccountName, "medopl-platform-runner", "job_service_account_must_be_fixed");
+assert.equal(pack.jobLifecycle.template.spec.template.spec.restartPolicy, "Never", "job_restart_policy_must_be_never");
+assert.equal(pack.jobLifecycle.template.spec.template.spec.nodeSelector["medopl.io/nodepool-role"], "platform-service", "job_must_target_platform_service_selector");
+assert.equal(JSON.stringify(pack.jobLifecycle.template).includes("medopl-tenant-"), false, "job_manifest_must_not_reference_tenant_pool");
+assert.equal(JSON.stringify(pack.jobLifecycle.template).includes("client-key-data"), false, "job_manifest_must_not_embed_kubeconfig");
+assert.equal(JSON.stringify(pack.jobLifecycle.template).includes("postgresql://"), false, "job_manifest_must_not_embed_db_url");
 
-assert.deepEqual(pack.manifests.job.spec.template.spec.imagePullSecrets, [{ name: "medopl-tcr-pull-secret" }], "job_must_use_image_pull_secret_ref");
-assert.deepEqual(pack.manifests.job.spec.template.spec.containers[0].envFrom, [
+assert.deepEqual(pack.jobLifecycle.template.spec.template.spec.imagePullSecrets, [{ name: "medopl-tcr-pull-secret" }], "job_must_use_image_pull_secret_ref");
+assert.deepEqual(pack.jobLifecycle.template.spec.template.spec.containers[0].envFrom, [
   { configMapRef: { name: "medopl-package-d-runner-config" } },
   { secretRef: { name: "medopl-package-d-deploy-env" } },
   { secretRef: { name: "medopl-portal-runtime-env" } },
 ], "job_must_use_configmap_and_secret_refs");
-assert.deepEqual(pack.manifests.job.spec.template.spec.containers[0].args, ["$(PACKAGE_D_RUNNER_COMMAND)"], "job_command_must_be_config_driven_allowlisted");
+assert.deepEqual(pack.jobLifecycle.template.spec.template.spec.containers[0].args, ["$(PACKAGE_D_RUNNER_COMMAND)"], "job_command_must_be_config_driven_allowlisted");
 
 assert.equal(pack.manifests.configMap.metadata.name, "medopl-package-d-runner-config", "configmap_name_must_be_fixed");
 assert.equal(pack.manifests.configMap.data.PACKAGE_D_RUNNER_COMMAND_ALLOWLIST, "preflight,deploy,smoke,rollback", "configmap_must_record_command_allowlist");
@@ -114,8 +119,13 @@ assert.deepEqual(pack.bootstrapAuthorizationPack.resourceTypesToCreateOrValidate
   "ConfigMap",
   "SecretRef",
   "imagePullSecret",
-  "Job",
 ], "bootstrap_authorization_pack_resource_types_must_be_explicit");
+assert.deepEqual(pack.bootstrapAuthorizationPack.jobLifecycleBoundary, {
+  status: "separate_authorization_required",
+  namePattern: "medopl-platform-runner-preflight-<runid>",
+  reason: "Kubernetes Job spec.template is immutable; bootstrap apply must not reapply a same-name Job template.",
+  allowedOnlyAfterBootstrapDryRunPasses: true,
+}, "bootstrap_authorization_pack_must_split_job_lifecycle");
 assert(pack.bootstrapAuthorizationPack.forbiddenScope.includes("medopl-tenant- tenant pool"), "bootstrap_authorization_pack_must_forbid_tenant_pool");
 assert(pack.bootstrapAuthorizationPack.forbiddenScope.includes("Package C live"), "bootstrap_authorization_pack_must_forbid_package_c_live");
 assert(pack.bootstrapAuthorizationPack.forbiddenScope.includes("build/push"), "bootstrap_authorization_pack_must_forbid_build_push");
@@ -151,7 +161,8 @@ console.log(JSON.stringify({
   contract: "package_d_in_cluster_platform_runner_manifest_materialization_gate",
   namespace: pack.manifests.namespace.metadata.name,
   serviceAccount: pack.manifests.serviceAccount.metadata.name,
-  workloadKind: pack.manifests.job.kind,
+  workloadKind: pack.jobLifecycle.template.kind,
+  jobLifecycle: pack.jobLifecycle.kind,
   bootstrapAuthorizationPack: pack.bootstrapAuthorizationPack.status,
   realExecutionReady: false,
   evidence: ".runtime/package-d-in-cluster-platform-runner-manifest-materialization/manifest-pack-redacted.json",

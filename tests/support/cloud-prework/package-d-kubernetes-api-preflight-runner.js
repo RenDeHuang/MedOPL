@@ -18,7 +18,6 @@ export const FIXED_NAMESPACE = "medopl-platform";
 export const FIXED_PLATFORM_NODE_POOL_ID = "np-cbk784r8";
 export const FIXED_POSTGRES_ENDPOINT = "10.66.0.21:5432";
 const DEFAULT_EVIDENCE_DIR = ".runtime/package-d-kubernetes-api-server-side-dry-run-preflight";
-const DRY_RUN_IMAGE_TAG = "server-side-dry-run";
 export const KUBE_ENV_NAME = ["KUBE", "CONFIG"].join("");
 export const DEPLOY_ENV_KEYS = Object.freeze([
   "RUN_TENCENT_DEPLOY_EXECUTION",
@@ -150,7 +149,6 @@ export function kubeconfigSummary(content = "") {
 function serverSideDryRunManifests({ deployEnv }) {
   const pack = materializePackageDInClusterRunnerPack(PACKAGE_D_IN_CLUSTER_PLATFORM_RUNNER_SHAPE);
   const manifests = pack.manifests;
-  const imageRef = `${deployEnv.TENCENT_TCR_REGISTRY}/${deployEnv.TENCENT_TCR_NAMESPACE}/medopl-package-d-runner:${DRY_RUN_IMAGE_TAG}`;
   const items = [
     manifests.namespace,
     manifests.serviceAccount,
@@ -167,22 +165,6 @@ function serverSideDryRunManifests({ deployEnv }) {
     manifests.roleBinding,
     manifests.clusterRole,
     manifests.clusterRoleBinding,
-    {
-      ...manifests.job,
-      spec: {
-        ...manifests.job.spec,
-        template: {
-          ...manifests.job.spec.template,
-          spec: {
-            ...manifests.job.spec.template.spec,
-            containers: manifests.job.spec.template.spec.containers.map((container) => ({
-              ...container,
-              image: imageRef,
-            })),
-          },
-        },
-      },
-    },
   ];
   return { apiVersion: "v1", kind: "List", items };
 }
@@ -194,14 +176,12 @@ export function assertManifestBoundary(manifests) {
   if (serialized.includes("client-key-data") || serialized.includes("client-certificate-data")) {
     throw new Error("package_d_manifest_embeds_kubeconfig");
   }
-  const job = manifests.items.find((item) => item.kind === "Job");
   const configMap = manifests.items.find((item) => item.kind === "ConfigMap");
-  if (job?.metadata?.namespace !== FIXED_NAMESPACE) throw new Error("package_d_job_namespace_mismatch");
   if (configMap?.data?.TARGET_PLATFORM_NODE_POOL_ID !== FIXED_PLATFORM_NODE_POOL_ID) {
     throw new Error("package_d_scheduling_platform_pool_mismatch");
   }
-  if (job?.spec?.template?.spec?.nodeSelector?.["medopl.io/nodepool-role"] !== "platform-service") {
-    throw new Error("package_d_scheduling_selector_mismatch");
+  if (configMap?.data?.TARGET_NAMESPACE !== FIXED_NAMESPACE) {
+    throw new Error("package_d_target_namespace_mismatch");
   }
 }
 
@@ -291,6 +271,7 @@ export async function buildPackageDKubernetesApiPreflightPlan({
   assertTargetEnv({ deployEnv, runtimeEnv, kubeconfigPath });
   const clusterAuth = kubeconfigSummary(await readFile(kubeconfigPath, "utf8"));
   const manifests = serverSideDryRunManifests({ deployEnv });
+  const runnerPack = materializePackageDInClusterRunnerPack(PACKAGE_D_IN_CLUSTER_PLATFORM_RUNNER_SHAPE);
   assertManifestBoundary(manifests);
   const manifestPath = path.join(evidenceDir, "bootstrap-manifests-server-side-dry-run-redacted.json");
   const commands = plannedCommands(manifestPath).map((command) => {
@@ -319,6 +300,7 @@ export async function buildPackageDKubernetesApiPreflightPlan({
     },
     clusterAuth,
     manifests,
+    jobLifecycle: runnerPack.jobLifecycle,
     manifestPath,
     commands,
     boundary: {
@@ -368,6 +350,7 @@ export async function runPackageDKubernetesApiPreflight({
     serverSideDryRun: dryRunResult?.status === 0 ? "pass" : "not_passed",
     failedStep: failed?.name || "",
     commands: commandResults,
+    jobLifecycle: plan.jobLifecycle,
     realExecutionReady: false,
   };
   const evidence = {
@@ -376,6 +359,7 @@ export async function runPackageDKubernetesApiPreflight({
     env: plan.env,
     clusterAuth: plan.clusterAuth,
     boundary: plan.boundary,
+    jobLifecycle: plan.jobLifecycle,
     commands: commandResults,
   };
   const audit = redactionAudit(JSON.stringify(evidence));
