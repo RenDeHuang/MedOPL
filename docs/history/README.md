@@ -5629,3 +5629,51 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+### 2026-06-15 package-d-bootstrap-apply-runner
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `7fdea84c2e4b079480aa7fd98b3b7b507d32a6eb`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Added the repo-native Package D bootstrap apply runner at `tests/support/cloud-prework/package-d-bootstrap-apply-runner.js`.
+- Fixed the single cloud runner command: `node tests/support/cloud-prework/package-d-bootstrap-apply-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode bootstrap-apply`.
+- Limited apply scope to `medopl-platform` Namespace and allowlisted Package D bootstrap ServiceAccount/RBAC/ConfigMap/Secret/imagePullSecret/Job resources only.
+- Reused the existing Package D in-cluster runner manifest materialization and post-apply server-side dry-run preflight runner; no new loop or truth source was added.
+- Kept fail-closed gates for `RUN_TENCENT_DEPLOY_EXECUTION=0`, target cluster `cls-fi097sy4`, namespace `medopl-platform`, platform pool `np-cbk784r8`, tenant-pool rejection, forbidden business Deployment/Service rollout and redacted evidence.
+
+Verification:
+
+- RED: `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-bootstrap-apply-runner-local-gate.mjs` failed with missing post-apply preflight evidence before the runner reused the preflight runner.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-bootstrap-apply-runner-local-gate.mjs`: pass.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: pass.
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass before closeout metadata commit.
+
+Can-claim:
+
+- Package D now has a repo-native, machine-guarded single command for later authorized bootstrap apply from a TKE/VPC-reachable execution environment.
+- The local gate proves allowlisted apply command shape, post-apply dry-run reuse, target matching, forbidden-op rejection and redaction.
+- `realExecutionReady` remains `false`.
+
+Cannot-claim:
+
+- This repo session read real kubeconfig or secrets, connected to Kubernetes API, ran real kubectl, created Kubernetes resources, deployed, built/pushed images, executed Tencent mutation, ran Package C live, ran Package D production execution, or brought production runtime online.
+
+landed_commit: `db0f9f1653fa46ffbbc399af7b963b288212023b`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
