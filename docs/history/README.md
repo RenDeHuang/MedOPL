@@ -5480,3 +5480,52 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-14 package-d-runner-bootstrap-authorization-pack
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `9c970ec189b03a81173d77478168c8593d7bb9cb`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Added a bootstrap authorization pack to the existing Package D in-cluster runner manifest materialization gate.
+- Kept this in the existing `cloud-future-authorized` lane and did not create a new loop, runner loop or truth source.
+- Recommended execution environments are Tencent CloudShell, Tencent Cloud Assistant or a VPC internal runner with TKE API reachability; local WSL is discouraged after API connectivity timeout.
+- Fixed target cluster `cls-fi097sy4`, namespace `medopl-platform` and platform node pool `np-cbk784r8`.
+- Covered bootstrap resource classes: Namespace, ServiceAccount, RBAC, ConfigMap, SecretRef, imagePullSecret and Job.
+- Recorded rollback plan, stop conditions, redacted evidence path and the next real authorization prompt.
+- Added a separate redacted bootstrap authorization evidence writer at `.runtime/package-d-in-cluster-platform-runner-bootstrap-authorization/authorization-pack-redacted.json`.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs`: pass.
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass before closeout metadata commit.
+
+Can-claim:
+
+- Package D has a repo-native, machine-guarded bootstrap authorization pack for moving Kubernetes API connectivity / server-side dry-run into a TKE API reachable environment.
+- The pack remains static/redacted and non-executing.
+- `realExecutionReady` remains `false`.
+
+Cannot-claim:
+
+- Kubernetes API was called, server-side dry-run passed, a Kubernetes resource was created, kubeconfig was read in this closeout, kubectl ran, deploy ran, build/push ran, Tencent mutation ran, secrets were read, Package C live ran, Package D execution ran, or production runtime is online.
+
+landed_commit: `ce32b72ce26207014f131241f2caa5c7e62fe117`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
