@@ -5150,3 +5150,50 @@ Cannot-claim:
 - Tencent mutation, kubectl, deploy, build/push, Package D, kubeconfig read, package-c mutation env read or package-d deploy env read occurred.
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-14 package-d-vpc-deploy-runner-plan
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `7299d6d0c9b75d48accb018d4cc25decfd9f4e17`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Fixed the Package D commercial stabilization execution environment as a dedicated VPC deploy runner, not the current WSL session.
+- Recorded runner name `medopl-v22-deploy-runner`, region `na-siliconvalley`, VPC `medopl-vpc` and subnet `medopl-private-a`.
+- Recorded runner purposes: docker build, TCR login/push, kubectl deploy, DB connectivity smoke and rollback.
+- Recorded required tools: `git`, `node/npm`, `go`, `docker` and `kubectl`.
+- Recorded runner-local secret paths under `/home/dev/.secrets/medopl/v22/` for `package-d-deploy.env`, `portal-runtime.env` and `kubeconfig-package-d-deploy`.
+- Preserved safety boundaries: PostgreSQL stays private, TKE API stays private, SSH is operator-IP-only or cloud assistant / console access, and runner state must not enter git.
+- Fixed preflight order before deploy execution: TCR login preflight, Kubernetes API connectivity preflight, PostgreSQL ledger canary and Package D combined preflight.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs`: pass.
+- `git diff --check -- docs tests`: pass.
+
+Can-claim:
+
+- Package D has a repo-native implementation plan for a dedicated VPC deploy runner and its preflight order.
+- The plan is represented in machine cursor fixture and guarded by the future-authorized Package D gate.
+
+Cannot-claim:
+
+- The deploy runner was created, Tencent mutation ran, CVM was created, kubectl ran, deploy ran, build/push ran, Package D execution ran, or production runtime is online.
+
+landed_commit: `f788f0019c0f2661617ffebe2d27f3fcfd10d709`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs`: pass.
+- `git diff --check -- docs tests`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
