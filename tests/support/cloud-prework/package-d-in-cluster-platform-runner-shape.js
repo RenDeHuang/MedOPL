@@ -371,3 +371,24 @@ export function writePackageDRunnerManifestPack({ reportRoot, pack } = {}) {
   writeFileSync(target, `${JSON.stringify(report, null, 2)}\n`);
   return { path: target.pathname, report };
 }
+
+export function writePackageDRunnerBootstrapAuthorizationPack({ reportRoot, pack } = {}) {
+  mkdirSync(reportRoot, { recursive: true });
+  const report = {
+    ok: true,
+    contract: "package_d_in_cluster_platform_runner_bootstrap_authorization_pack",
+    bootstrapAuthorizationPack: pack.bootstrapAuthorizationPack,
+    executionBoundary: pack.executionBoundary,
+    redactionAudit: {
+      tcrSecretExposed: false,
+      portalAdminPasswordExposed: false,
+      portalPostgresPasswordExposed: false,
+      fullDbUrlExposed: false,
+      kubeconfigExposed: false,
+      rawProviderSecretExposed: false,
+    },
+  };
+  const target = new URL("authorization-pack-redacted.json", reportRoot);
+  writeFileSync(target, `${JSON.stringify(report, null, 2)}\n`);
+  return { path: target.pathname, report };
+}

@@ -3,10 +3,12 @@ import assert from "node:assert/strict";
 import {
   PACKAGE_D_IN_CLUSTER_PLATFORM_RUNNER_SHAPE,
   materializePackageDInClusterRunnerPack,
+  writePackageDRunnerBootstrapAuthorizationPack,
   writePackageDRunnerManifestPack,
 } from "../../support/cloud-prework/package-d-in-cluster-platform-runner-shape.js";
 
 const reportRoot = new URL("../../../.runtime/package-d-in-cluster-platform-runner-manifest-materialization/", import.meta.url);
+const bootstrapReportRoot = new URL("../../../.runtime/package-d-in-cluster-platform-runner-bootstrap-authorization/", import.meta.url);
 const pack = materializePackageDInClusterRunnerPack(PACKAGE_D_IN_CLUSTER_PLATFORM_RUNNER_SHAPE);
 
 assert.equal(pack.ok, true, "manifest_pack_must_be_ok");
@@ -133,9 +135,15 @@ assert(pack.bootstrapAuthorizationPack.nextAuthorizationPrompt.some((item) => it
 const evidence = writePackageDRunnerManifestPack({ reportRoot, pack });
 assert.equal(evidence.path.endsWith("manifest-pack-redacted.json"), true, "manifest_pack_evidence_path");
 assert.equal(evidence.report.ok, true, "manifest_pack_evidence_ok");
+const bootstrapEvidence = writePackageDRunnerBootstrapAuthorizationPack({ reportRoot: bootstrapReportRoot, pack });
+assert.equal(bootstrapEvidence.path.endsWith("authorization-pack-redacted.json"), true, "bootstrap_authorization_pack_evidence_path");
+assert.equal(bootstrapEvidence.report.ok, true, "bootstrap_authorization_pack_evidence_ok");
+assert.equal(bootstrapEvidence.report.contract, "package_d_in_cluster_platform_runner_bootstrap_authorization_pack", "bootstrap_authorization_pack_evidence_contract");
 const evidenceText = JSON.stringify(evidence.report);
+const bootstrapEvidenceText = JSON.stringify(bootstrapEvidence.report);
 for (const forbidden of ["$TCR_SECRET", "$PORTAL_ADMIN_PASSWORD", "$PORTAL_POSTGRES_PASSWORD", "postgresql://", "client-key-data", "client-certificate-data", "current-context:", "clusters:"]) {
   assert.equal(evidenceText.includes(forbidden), false, `manifest_pack_evidence_must_not_expose:${forbidden}`);
+  assert.equal(bootstrapEvidenceText.includes(forbidden), false, `bootstrap_authorization_pack_evidence_must_not_expose:${forbidden}`);
 }
 
 console.log(JSON.stringify({
@@ -147,4 +155,5 @@ console.log(JSON.stringify({
   bootstrapAuthorizationPack: pack.bootstrapAuthorizationPack.status,
   realExecutionReady: false,
   evidence: ".runtime/package-d-in-cluster-platform-runner-manifest-materialization/manifest-pack-redacted.json",
+  bootstrapEvidence: ".runtime/package-d-in-cluster-platform-runner-bootstrap-authorization/authorization-pack-redacted.json",
 }, null, 2));
