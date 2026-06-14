@@ -5721,3 +5721,52 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-15 package-d-run-scoped-job-runner
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `3ff77d13b36f2ce930886cf304a0fc21d188423b`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Added the repo-native Package D run-scoped Job preflight runner at `tests/support/cloud-prework/package-d-run-scoped-job-runner.js`.
+- Added the single cloud runner command: `node tests/support/cloud-prework/package-d-run-scoped-job-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id <runid> --mode preflight-job`.
+- Fixed the Job name contract to `medopl-platform-runner-preflight-<runid>` and scoped it to namespace `medopl-platform`, serviceAccount `medopl-platform-runner`, platform pool scheduling `np-cbk784r8` and preflight-only execution.
+- Limited the runner to create/observe/log/get and success-cleanup for the unique run-scoped Job only; no same-name Job template update, business Deployment rollout, build/push, Tencent mutation, Package C live or production deploy is allowed.
+- Added local/future-authorized gate coverage for runid validation, manifest redaction, scheduling, command allowlist, scoped cleanup and forbidden operation rejection.
+
+Verification:
+
+- RED: `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs` failed with `ERR_MODULE_NOT_FOUND` before the runner existed.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs`: pass.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: pass.
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+Can-claim:
+
+- Package D now has a repo-native, machine-guarded single command for later authorized run-scoped platform runner Job preflight.
+- The local gate proves unique Job naming, preflight-only manifest shape, platform scheduling, redaction and scoped success cleanup with fake inputs only.
+- `realExecutionReady` remains `false`.
+
+Cannot-claim:
+
+- This repo session read real kubeconfig or secrets, connected to Kubernetes API, ran real kubectl, created Kubernetes resources, deployed, built/pushed images, executed Tencent mutation, ran Package C live, ran Package D production execution, or brought production runtime online.
+
+landed_commit: `6f85abf484002403be073a116ace9b48e856e0b2`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
