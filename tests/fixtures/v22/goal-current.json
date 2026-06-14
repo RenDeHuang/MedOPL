@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13: CreateNodePool, scale up, scale down and DeleteNodePool passed for medopl-tenant-rb-package-c-live-canary-20260613; readonly cleanup check observed platform pool np-cbk784r8 and no residual canary tenant node pool by name or id. TagResources for tke:nodepool returned InvalidParameter.UnsupportedService and remains non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound is landed in Go domain, memory store, Ent schema and baseline migration; Package C live runner projects the tenant node pool lifecycle into local ResourceBinding / CloudOperation state-machine evidence; Package C repository write wiring contract now covers create resource binding, append cloud operation event, nodePoolId update, lifecycle status update, released, failed and cleanupRequired paths through an injected ledger sink. Canonical ownership and billing truth remains PostgreSQL ledger, not cloud tags. The default runner sink is still local/dry-run and does not execute a real PostgreSQL connection, but Package C now has gated PostgreSQL ledger sink support with root pg driver dependency, RUN_MEDOPL_POSTGRES_LEDGER_EXECUTION=1, allowlisted local DB env keys, schema/write-permission preflight, explicit live canary write/read/cleanup runner, redacted .runtime evidence and fail-closed driver/gate behavior. An explicitly authorized PostgreSQL ledger canary read only the dedicated ledger env file and failed closed at connection preflight with timeout expired / network_unreachable_or_connection_preflight_failed before parent-row check or DB write. Next stable上线 plan is Package D deploy readiness planning for TKE cluster cls-fi097sy4 platform pool np-cbk784r8 and VPC PostgreSQL 10.66.0.21:5432, with a dedicated VPC deploy runner medopl-v22-deploy-runner in region na-siliconvalley, VPC medopl-vpc and subnet medopl-private-a as the target execution environment; the provisioning checklist is now fixed as Ubuntu LTS or TencentOS, 2C4G, 50GB disk, public IP disabled by default, minimal inbound security group, outbound TCR / TKE API private endpoint / PostgreSQL 10.66.0.21:5432, required git/node/npm/go/docker/kubectl tools and validation order docker version -> kubectl version --client -> TCR login preflight -> Kubernetes API connectivity preflight -> PostgreSQL ledger canary -> Package D combined preflight; the non-executing local shape gate now verifies RUN_TENCENT_DEPLOY_EXECUTION=0, deploy/runtime env allowlists, kubeconfig ref-only handling, Portal runtime PostgreSQL endpoint, manifest scheduling to the platform service pool, rollback plan shape and tenant pool scheduling rejection. The reviewable Package D release plan shape now makes releasePlanReady=true while realExecutionReady remains false, and the Package D execution preflight gate can judge split deploy/runtime env allowlists, fixed cluster/namespace/platform pool/PostgreSQL/image targets and redaction audit while keeping realExecutionReady=false. The current WSL session is no longer the Package D execution target; TCR login/push, Kubernetes API connectivity, PostgreSQL ledger canary, build/push, deploy, DB smoke and rollback should run from the dedicated VPC deploy runner after separate authorization, with realExecutionReady still false until that runner exists and preflights pass. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization. Starter remains starter_2c4g_10gb: 2C4G, 10GB workspace storage, TKE SA5.MEDIUM4, CLOUD_BSSD 50GB node system disk and public IP disabled; arbitrary Tencent instanceType input is rejected unless represented by a MedOPL plan catalog allowlist entry.",
+  "current_problem": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13: CreateNodePool, scale up, scale down and DeleteNodePool passed for medopl-tenant-rb-package-c-live-canary-20260613; readonly cleanup check observed platform pool np-cbk784r8 and no residual canary tenant node pool by name or id. TagResources for tke:nodepool returned InvalidParameter.UnsupportedService and remains non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound is landed in Go domain, memory store, Ent schema and baseline migration; Package C live runner projects the tenant node pool lifecycle into local ResourceBinding / CloudOperation state-machine evidence; Package C repository write wiring contract now covers create resource binding, append cloud operation event, nodePoolId update, lifecycle status update, released, failed and cleanupRequired paths through an injected ledger sink. Canonical ownership and billing truth remains PostgreSQL ledger, not cloud tags. The default runner sink is still local/dry-run and does not execute a real PostgreSQL connection, but Package C now has gated PostgreSQL ledger sink support with root pg driver dependency, RUN_MEDOPL_POSTGRES_LEDGER_EXECUTION=1, allowlisted local DB env keys, schema/write-permission preflight, explicit live canary write/read/cleanup runner, redacted .runtime evidence and fail-closed driver/gate behavior. An explicitly authorized PostgreSQL ledger canary read only the dedicated ledger env file and failed closed at connection preflight with timeout expired / network_unreachable_or_connection_preflight_failed before parent-row check or DB write. Next stable上线 plan is Package D deploy readiness planning for TKE cluster cls-fi097sy4 platform pool np-cbk784r8 and VPC PostgreSQL 10.66.0.21:5432, with preferred deploy execution now moved to a TKE in-cluster platform runner/job scheduled on protected platform pool np-cbk784r8; build/push image readiness is separate and can be handled by an external build runner or future Kaniko/BuildKit, while deploy/smoke/DB connectivity preflight runs inside the TKE platform pool and VPC; the previous medopl-v22-deploy-runner VPC CVM checklist is fallback-only, not the default route; the non-executing local shape gate now verifies RUN_TENCENT_DEPLOY_EXECUTION=0, deploy/runtime env allowlists, kubeconfig ref-only handling, Portal runtime PostgreSQL endpoint, manifest scheduling to the platform service pool, rollback plan shape and tenant pool scheduling rejection. The reviewable Package D release plan shape now makes releasePlanReady=true while realExecutionReady remains false, and the Package D execution preflight gate can judge split deploy/runtime env allowlists, fixed cluster/namespace/platform pool/PostgreSQL/image targets and redaction audit while keeping realExecutionReady=false. The current WSL session is no longer the Package D execution target; deploy/smoke, Kubernetes API connectivity, PostgreSQL ledger canary, DB smoke and rollback should run from the TKE platform runner after separate authorization, while image build/push remains a separate external build runner or future Kaniko/BuildKit concern; realExecutionReady stays false until those preflights pass. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization. Starter remains starter_2c4g_10gb: 2C4G, 10GB workspace storage, TKE SA5.MEDIUM4, CLOUD_BSSD 50GB node system disk and public IP disabled; arbitrary Tencent instanceType input is rejected unless represented by a MedOPL plan catalog allowlist entry.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -255,26 +255,66 @@
       "tests/fixtures/v22/agent-verify-manifest.json"
     ],
     "package_d_deploy_readiness_plan": {
-      "executionEnvironment": "vpc_dedicated_deploy_runner_required",
-      "vpcDeployRunnerPlan": {
-        "status": "implementation_plan_only",
-        "runnerName": "medopl-v22-deploy-runner",
-        "region": "na-siliconvalley",
-        "vpc": "medopl-vpc",
-        "subnet": "medopl-private-a",
+      "executionEnvironment": "tke_in_cluster_platform_runner_preferred",
+      "readinessGaps": [
+        "confirm in-cluster deploy/smoke runner job targets TKE platform pool np-cbk784r8",
+        "keep build/push image readiness separate via external build runner or future Kaniko/BuildKit",
+        "keep VPC CVM runner as fallback only, not default execution environment",
+        "Kubernetes API connectivity preflight from TKE platform runner",
+        "PostgreSQL ledger canary from TKE platform runner",
+        "Package D combined preflight from TKE platform runner",
+        "image build execution",
+        "TCR push execution",
+        "Kubernetes manifest dry-run/apply",
+        "DB connectivity smoke execution",
+        "rollback evidence after execution"
+      ],
+      "deployRunnerPlacementPlan": {
+        "status": "placement_plan_only",
+        "preferredExecutionLocation": "tke_in_cluster_platform_runner",
+        "preferredRunnerName": "medopl-platform-runner",
+        "clusterId": "cls-fi097sy4",
+        "namespace": "medopl-platform",
+        "platformNodePoolId": "np-cbk784r8",
+        "schedulingTarget": "platform_service_pool",
         "purpose": [
-          "docker build",
-          "TCR login/push",
-          "kubectl deploy",
-          "DB connectivity smoke",
+          "deploy/smoke inside TKE platform pool",
+          "DB connectivity smoke inside VPC",
           "rollback"
         ],
-        "requiredTools": [
-          "git",
-          "node/npm",
-          "go",
-          "docker",
-          "kubectl"
+        "buildPushPlan": {
+          "executionLocation": "external_build_runner_or_future_kaniko_buildkit",
+          "separatedFromDeploySmoke": true,
+          "imageTargets": [
+            "portal-frontend",
+            "medopl-go-backend",
+            "opl-web-gateway",
+            "opl-runtime-bridge"
+          ],
+          "allowedMethods": [
+            "external build runner",
+            "future Kaniko/BuildKit"
+          ],
+          "executesNow": false
+        },
+        "deploySmokePlan": {
+          "executionLocation": "tke_in_cluster_platform_runner",
+          "clusterId": "cls-fi097sy4",
+          "namespace": "medopl-platform",
+          "platformNodePoolId": "np-cbk784r8",
+          "schedulingTarget": "platform_service_pool",
+          "allowedActionsAfterAuthorization": [
+            "Kubernetes API connectivity preflight",
+            "PostgreSQL ledger canary",
+            "Package D combined preflight",
+            "deploy/smoke",
+            "rollback"
+          ],
+          "executesNow": false
+        },
+        "requiredRuntimeTools": [
+          "kubectl",
+          "PostgreSQL client or ledger canary runner"
         ],
         "secretPaths": [
           "/home/dev/.secrets/medopl/v22/package-d-deploy.env",
@@ -284,18 +324,18 @@
         "safetyBoundary": {
           "postgresPublicAccess": false,
           "tkeApiPublicAccess": false,
-          "sshIngress": "operator_ip_only_or_cloud_assistant_console",
-          "runnerStateCommittedToGit": false
+          "defaultExtraCvmRunner": false,
+          "runnerStateCommittedToGit": false,
+          "tenantPoolSchedulingAllowed": false
         },
         "preflightOrder": [
-          "TCR login preflight",
-          "Kubernetes API connectivity preflight",
-          "PostgreSQL ledger canary",
-          "Package D combined preflight"
+          "build/push image readiness from external build runner or future Kaniko/BuildKit",
+          "Kubernetes API connectivity preflight from TKE platform runner",
+          "PostgreSQL ledger canary from TKE platform runner",
+          "Package D combined preflight from TKE platform runner"
         ],
-        "realExecutionReady": false,
-        "provisioningChecklist": {
-          "provisioningStatus": "not_created",
+        "vpcCvmRunnerFallback": {
+          "status": "fallback_only_not_default",
           "cvm": {
             "name": "medopl-v22-deploy-runner",
             "region": "na-siliconvalley",
@@ -330,10 +370,10 @@
           "validationOrder": [
             "docker version",
             "kubectl version --client",
-            "TCR login preflight",
-            "Kubernetes API connectivity preflight",
-            "PostgreSQL ledger canary",
-            "Package D combined preflight"
+            "fallback TCR login preflight",
+            "fallback Kubernetes API connectivity preflight",
+            "fallback PostgreSQL ledger canary",
+            "fallback Package D combined preflight"
           ],
           "forbiddenNow": [
             "CVM create",
@@ -342,25 +382,9 @@
             "build/push",
             "kubectl"
           ]
-        }
-      },
-      "readinessGaps": [
-        "validate docker version and kubectl version --client on deploy runner before any login or API connectivity preflight",
-        "confirm minimal security group: inbound minimized, optional SSH operator IP only, outbound TCR / TKE API private endpoint / PostgreSQL 10.66.0.21:5432",
-        "confirm medopl-v22-deploy-runner CVM config: Ubuntu LTS or TencentOS, 2C4G, 50GB disk, no default public IP",
-        "provision medopl-v22-deploy-runner in medopl-vpc / medopl-private-a",
-        "install git/node/npm/go/docker/kubectl on deploy runner",
-        "place package-d deploy/runtime/kubeconfig secrets on deploy runner outside git",
-        "TCR login preflight from deploy runner",
-        "Kubernetes API connectivity preflight from deploy runner",
-        "PostgreSQL ledger canary from deploy runner or deployed service inside VPC",
-        "Package D combined preflight from deploy runner",
-        "image build execution",
-        "TCR push execution",
-        "Kubernetes manifest dry-run/apply",
-        "DB connectivity smoke execution",
-        "rollback evidence after execution"
-      ]
+        },
+        "realExecutionReady": false
+      }
     }
   },
   "release_readiness_state": {
@@ -1035,16 +1059,12 @@
       "realExecutionReady": false
     },
     "readinessGaps": [
-      "validate docker version and kubectl version --client on deploy runner before any login or API connectivity preflight",
-      "confirm minimal security group: inbound minimized, optional SSH operator IP only, outbound TCR / TKE API private endpoint / PostgreSQL 10.66.0.21:5432",
-      "confirm medopl-v22-deploy-runner CVM config: Ubuntu LTS or TencentOS, 2C4G, 50GB disk, no default public IP",
-      "provision medopl-v22-deploy-runner in medopl-vpc / medopl-private-a",
-      "install git/node/npm/go/docker/kubectl on deploy runner",
-      "place package-d deploy/runtime/kubeconfig secrets on deploy runner outside git",
-      "TCR login preflight from deploy runner",
-      "Kubernetes API connectivity preflight from deploy runner",
-      "PostgreSQL ledger canary from deploy runner or deployed service inside VPC",
-      "Package D combined preflight from deploy runner",
+      "confirm in-cluster deploy/smoke runner job targets TKE platform pool np-cbk784r8",
+      "keep build/push image readiness separate via external build runner or future Kaniko/BuildKit",
+      "keep VPC CVM runner as fallback only, not default execution environment",
+      "Kubernetes API connectivity preflight from TKE platform runner",
+      "PostgreSQL ledger canary from TKE platform runner",
+      "Package D combined preflight from TKE platform runner",
       "image build execution",
       "TCR push execution",
       "Kubernetes manifest dry-run/apply",
@@ -1127,26 +1147,53 @@
         "Package D execution"
       ]
     },
-    "executionEnvironment": "vpc_dedicated_deploy_runner_required",
-    "vpcDeployRunnerPlan": {
-      "status": "implementation_plan_only",
-      "runnerName": "medopl-v22-deploy-runner",
-      "region": "na-siliconvalley",
-      "vpc": "medopl-vpc",
-      "subnet": "medopl-private-a",
+    "executionEnvironment": "tke_in_cluster_platform_runner_preferred",
+    "deployRunnerPlacementPlan": {
+      "status": "placement_plan_only",
+      "preferredExecutionLocation": "tke_in_cluster_platform_runner",
+      "preferredRunnerName": "medopl-platform-runner",
+      "clusterId": "cls-fi097sy4",
+      "namespace": "medopl-platform",
+      "platformNodePoolId": "np-cbk784r8",
+      "schedulingTarget": "platform_service_pool",
       "purpose": [
-        "docker build",
-        "TCR login/push",
-        "kubectl deploy",
-        "DB connectivity smoke",
+        "deploy/smoke inside TKE platform pool",
+        "DB connectivity smoke inside VPC",
         "rollback"
       ],
-      "requiredTools": [
-        "git",
-        "node/npm",
-        "go",
-        "docker",
-        "kubectl"
+      "buildPushPlan": {
+        "executionLocation": "external_build_runner_or_future_kaniko_buildkit",
+        "separatedFromDeploySmoke": true,
+        "imageTargets": [
+          "portal-frontend",
+          "medopl-go-backend",
+          "opl-web-gateway",
+          "opl-runtime-bridge"
+        ],
+        "allowedMethods": [
+          "external build runner",
+          "future Kaniko/BuildKit"
+        ],
+        "executesNow": false
+      },
+      "deploySmokePlan": {
+        "executionLocation": "tke_in_cluster_platform_runner",
+        "clusterId": "cls-fi097sy4",
+        "namespace": "medopl-platform",
+        "platformNodePoolId": "np-cbk784r8",
+        "schedulingTarget": "platform_service_pool",
+        "allowedActionsAfterAuthorization": [
+          "Kubernetes API connectivity preflight",
+          "PostgreSQL ledger canary",
+          "Package D combined preflight",
+          "deploy/smoke",
+          "rollback"
+        ],
+        "executesNow": false
+      },
+      "requiredRuntimeTools": [
+        "kubectl",
+        "PostgreSQL client or ledger canary runner"
       ],
       "secretPaths": [
         "/home/dev/.secrets/medopl/v22/package-d-deploy.env",
@@ -1156,18 +1203,18 @@
       "safetyBoundary": {
         "postgresPublicAccess": false,
         "tkeApiPublicAccess": false,
-        "sshIngress": "operator_ip_only_or_cloud_assistant_console",
-        "runnerStateCommittedToGit": false
+        "defaultExtraCvmRunner": false,
+        "runnerStateCommittedToGit": false,
+        "tenantPoolSchedulingAllowed": false
       },
       "preflightOrder": [
-        "TCR login preflight",
-        "Kubernetes API connectivity preflight",
-        "PostgreSQL ledger canary",
-        "Package D combined preflight"
+        "build/push image readiness from external build runner or future Kaniko/BuildKit",
+        "Kubernetes API connectivity preflight from TKE platform runner",
+        "PostgreSQL ledger canary from TKE platform runner",
+        "Package D combined preflight from TKE platform runner"
       ],
-      "realExecutionReady": false,
-      "provisioningChecklist": {
-        "provisioningStatus": "not_created",
+      "vpcCvmRunnerFallback": {
+        "status": "fallback_only_not_default",
         "cvm": {
           "name": "medopl-v22-deploy-runner",
           "region": "na-siliconvalley",
@@ -1202,10 +1249,10 @@
         "validationOrder": [
           "docker version",
           "kubectl version --client",
-          "TCR login preflight",
-          "Kubernetes API connectivity preflight",
-          "PostgreSQL ledger canary",
-          "Package D combined preflight"
+          "fallback TCR login preflight",
+          "fallback Kubernetes API connectivity preflight",
+          "fallback PostgreSQL ledger canary",
+          "fallback Package D combined preflight"
         ],
         "forbiddenNow": [
           "CVM create",
@@ -1214,7 +1261,8 @@
           "build/push",
           "kubectl"
         ]
-      }
+      },
+      "realExecutionReady": false
     }
   }
 }
