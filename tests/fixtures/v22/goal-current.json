@@ -352,16 +352,87 @@
           "postgresEndpoint": "10.66.0.21:5432"
         },
         "rollbackPlanShapeRequired": true,
-        "releasePlanReady": false,
+        "releasePlanReady": true,
+        "realExecutionReady": false
+      },
+      "releasePlan": {
+        "status": "reviewable_plan_ready_non_executing",
+        "runIdShape": "pkg-d-release-plan-review-YYYYMMDD",
+        "versionTagRule": "v22-package-d-YYYYMMDD-runid-gitsha",
+        "tcrShape": {
+          "registryRefRequired": true,
+          "namespaceRefRequired": true,
+          "region": "na-siliconvalley",
+          "realCredentialsInGit": false
+        },
+        "namespace": "medopl-platform",
+        "imageTargets": [
+          {
+            "component": "portal-frontend",
+            "sourceRoot": "services/portal/frontend",
+            "targetClass": "platform_service_target"
+          },
+          {
+            "component": "medopl-go-backend",
+            "sourceRoot": "services/medopl-go-backend",
+            "targetClass": "platform_service_target"
+          },
+          {
+            "component": "opl-web-gateway",
+            "sourceRoot": "services/opl-web-gateway",
+            "targetClass": "platform_service_target"
+          },
+          {
+            "component": "opl-runtime-bridge",
+            "sourceRoot": "services/opl-runtime-bridge",
+            "targetClass": "platform_service_target"
+          }
+        ],
+        "manifestPlan": {
+          "deployment": true,
+          "service": true,
+          "config": true,
+          "secretRef": true,
+          "plainSecretValuesAllowed": false,
+          "platformPoolScheduling": {
+            "targetPlatformNodePoolId": "np-cbk784r8",
+            "tenantPoolSchedulingAllowed": false,
+            "forbiddenPrefix": "medopl-tenant-"
+          }
+        },
+        "runtimeEnvInjection": {
+          "portalPostgresEndpoint": "10.66.0.21:5432",
+          "portalPostgresUrlFromSecretRef": true,
+          "dbPasswordInManifestPlaintext": false,
+          "secretCommittedToGit": false
+        },
+        "dbConnectivitySmoke": {
+          "timing": "after_service_deployed_inside_tke_vpc",
+          "target": "postgres_ledger_sink",
+          "executesNow": false
+        },
+        "rollbackPlan": {
+          "imageRollback": true,
+          "kubernetesRolloutUndo": true,
+          "configRollback": true,
+          "dbMigrationPolicy": "forward_only_or_explicit_rollback_authorization"
+        },
+        "releaseEvidence": {
+          "buildEvidence": "required_redacted_runtime_evidence",
+          "pushEvidence": "required_redacted_runtime_evidence",
+          "deployEvidence": "required_redacted_runtime_evidence",
+          "smokeEvidence": "required_redacted_runtime_evidence",
+          "rollbackEvidence": "required_redacted_runtime_evidence"
+        },
+        "releasePlanReady": true,
         "realExecutionReady": false
       },
       "readinessGaps": [
-        "image build",
-        "TCR push",
-        "Kubernetes manifests",
-        "platform pool scheduling",
-        "DB connectivity smoke",
-        "rollback plan"
+        "image build execution",
+        "TCR push execution",
+        "Kubernetes manifest dry-run/apply",
+        "DB connectivity smoke execution",
+        "rollback evidence after execution"
       ],
       "forbiddenOpsNow": [
         "Tencent mutation",
@@ -732,16 +803,87 @@
         "postgresEndpoint": "10.66.0.21:5432"
       },
       "rollbackPlanShapeRequired": true,
-      "releasePlanReady": false,
+      "releasePlanReady": true,
+      "realExecutionReady": false
+    },
+    "releasePlan": {
+      "status": "reviewable_plan_ready_non_executing",
+      "runIdShape": "pkg-d-release-plan-review-YYYYMMDD",
+      "versionTagRule": "v22-package-d-YYYYMMDD-runid-gitsha",
+      "tcrShape": {
+        "registryRefRequired": true,
+        "namespaceRefRequired": true,
+        "region": "na-siliconvalley",
+        "realCredentialsInGit": false
+      },
+      "namespace": "medopl-platform",
+      "imageTargets": [
+        {
+          "component": "portal-frontend",
+          "sourceRoot": "services/portal/frontend",
+          "targetClass": "platform_service_target"
+        },
+        {
+          "component": "medopl-go-backend",
+          "sourceRoot": "services/medopl-go-backend",
+          "targetClass": "platform_service_target"
+        },
+        {
+          "component": "opl-web-gateway",
+          "sourceRoot": "services/opl-web-gateway",
+          "targetClass": "platform_service_target"
+        },
+        {
+          "component": "opl-runtime-bridge",
+          "sourceRoot": "services/opl-runtime-bridge",
+          "targetClass": "platform_service_target"
+        }
+      ],
+      "manifestPlan": {
+        "deployment": true,
+        "service": true,
+        "config": true,
+        "secretRef": true,
+        "plainSecretValuesAllowed": false,
+        "platformPoolScheduling": {
+          "targetPlatformNodePoolId": "np-cbk784r8",
+          "tenantPoolSchedulingAllowed": false,
+          "forbiddenPrefix": "medopl-tenant-"
+        }
+      },
+      "runtimeEnvInjection": {
+        "portalPostgresEndpoint": "10.66.0.21:5432",
+        "portalPostgresUrlFromSecretRef": true,
+        "dbPasswordInManifestPlaintext": false,
+        "secretCommittedToGit": false
+      },
+      "dbConnectivitySmoke": {
+        "timing": "after_service_deployed_inside_tke_vpc",
+        "target": "postgres_ledger_sink",
+        "executesNow": false
+      },
+      "rollbackPlan": {
+        "imageRollback": true,
+        "kubernetesRolloutUndo": true,
+        "configRollback": true,
+        "dbMigrationPolicy": "forward_only_or_explicit_rollback_authorization"
+      },
+      "releaseEvidence": {
+        "buildEvidence": "required_redacted_runtime_evidence",
+        "pushEvidence": "required_redacted_runtime_evidence",
+        "deployEvidence": "required_redacted_runtime_evidence",
+        "smokeEvidence": "required_redacted_runtime_evidence",
+        "rollbackEvidence": "required_redacted_runtime_evidence"
+      },
+      "releasePlanReady": true,
       "realExecutionReady": false
     },
     "readinessGaps": [
-      "image build",
-      "TCR push",
-      "Kubernetes manifests",
-      "platform pool scheduling",
-      "DB connectivity smoke",
-      "rollback plan"
+      "image build execution",
+      "TCR push execution",
+      "Kubernetes manifest dry-run/apply",
+      "DB connectivity smoke execution",
+      "rollback evidence after execution"
     ],
     "forbiddenOpsNow": [
       "Tencent mutation",

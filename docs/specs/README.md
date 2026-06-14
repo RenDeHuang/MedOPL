@@ -2033,6 +2033,8 @@ Package D 必须通过 `--release-plan <json>` 消费本地受控 release plan�
 
 Package D manifest / scheduling shape gate 必须把 Portal / control-plane 等平台服务调度到 platform service pool，不允许引用 `medopl-tenant-` tenant pool 或 workspace tenant pool 作为平台服务调度目标。rollback plan shape 必须存在并声明 owner / strategy；local shape gate 只证明这些字段存在和边界正确，不证明 release plan 已可执行。
 
+当前可审查 Package D release plan shape 覆盖四个 platform service image target：`portal-frontend`、`medopl-go-backend`、`opl-web-gateway`、`opl-runtime-bridge`。每个 target 必须声明 image build plan、唯一 tag rule、TCR registry / namespace / region shape、Kubernetes deployment / service / config / secretRef shape、platform pool scheduling、runtime env secretRef、expected version marker 和 owner guard。该 shape 可把 `releasePlanReady` 推进到 true；`realExecutionReady` 仍必须保持 false，直到单独授权读取 deploy secret / kubeconfig、build/push、kubectl dry-run/apply、runtime smoke 和 rollback evidence。
+
 OPL / Portal / Gateway / Runtime Agent target ownership 必须同时订阅 [spec:v22-opl-deployment-ownership-release-plan-boundary](#spec-v22-opl-deployment-ownership-release-plan-boundary)。该 Level 4 子合同把 target 分为 `platform_service_target` 和 `workspace_runtime_target`：平台服务必须有 `ownerRef/operationId`，但不强制 `workspaceId/resourceBindingId`；workspace runtime target 必须额外绑定 `workspaceId/resourceBindingId`。只有 `k8s-app/qcloud-app`、deployment 名字、namespace、IP、创建时间或人工记忆时必须 fail-closed。
 
 release plan 顶层字段：
@@ -2123,6 +2125,8 @@ D3a 不授权 `kubectl apply`、rollout、runtime smoke、rollback 或 Package C
 - 不得写入 raw docker config、registry secret 或完整 registry credential。
 
 Package D deploy readiness gap list 当前固定为：image build、TCR push、Kubernetes manifests、platform pool scheduling、DB connectivity smoke、rollback plan。缺任一项只能进入 readiness planning / dry-run，不得宣称 production deploy ready。
+
+当 release plan shape 已审查通过后，剩余 gap 改为执行态 gap：image build execution、TCR push execution、Kubernetes manifest dry-run / apply、DB connectivity smoke execution、rollback evidence after execution。shape 本身不得被写成 production deploy ready。
 
 ## Kubernetes Deploy Scope
 

@@ -16,6 +16,7 @@ Target specs:
 - The required future order remains `mock/snapshot provider -> readonly quote -> dry-run plan -> readonly inventory -> authorized create/release -> Package D deploy readiness planning for platform pool and VPC PostgreSQL -> authorized deploy -> canary / QA / status update`.
 - Stable上线 readiness now inserts Package D deploy readiness planning before deploy execution: target TKE cluster `cls-fi097sy4`, platform pool `np-cbk784r8`, VPC PostgreSQL endpoint `10.66.0.21:5432`, deploy/runtime env allowlists, default-disabled deploy execution gate, kubeconfig ref-only boundary, manifest scheduling to platform service pool, rollback plan shape and explicit readiness gaps.
 - Package D local shape gate is non-executing: `RUN_TENCENT_DEPLOY_EXECUTION` must remain `0`; the gate rejects raw kubeconfig YAML and tenant pool scheduling, and cannot make `releasePlanReady` or `realExecutionReady` true.
+- Package D reviewable release plan shape can now make `releasePlanReady=true` while keeping `realExecutionReady=false`. The shape covers image build plan, tag rule, TCR registry/namespace/region shape, Kubernetes namespace / deployment / service / config / secretRef shape, platform pool scheduling, VPC PostgreSQL runtime env injection, DB connectivity smoke plan, rollback plan and required redacted evidence classes.
 - Package C PostgreSQL ledger canary no longer treats local-machine access to the VPC private endpoint as the goal; successful real DB canary waits until the MedOPL service runs inside the VPC.
 
 ## REMOVED
@@ -26,6 +27,7 @@ Target specs:
 
 - This package does not authorize real cloud, deploy, kubectl, build/push, live-test or production release evidence.
 - This package does not prove provider credentials, cloud resource lifecycle, billing reconciliation or runtime deployment.
+- `releasePlanReady=true` does not mean image build, TCR push, Kubernetes dry-run/apply, DB smoke, rollback evidence or Package D execution has happened.
 
 ## EVALS
 
