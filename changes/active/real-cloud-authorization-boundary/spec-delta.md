@@ -14,7 +14,8 @@ Target specs:
 - The active boundary must point future work at `spec:v22-cloud-onboarding-workflow-boundary`: Gate-A is explicit user/process authorization, Gate-B is runner/allowlist/mode execution control, and missing either gate keeps `realCloudCalls=false`.
 - The required authorization record must name operation class, target environment, secret allowlist, API allowlist, budget, evidence sink and rollback owner. Raw evidence goes to `.runtime` or another approved non-git sink; git may only receive a sanitized summary.
 - The required future order remains `mock/snapshot provider -> readonly quote -> dry-run plan -> readonly inventory -> authorized create/release -> Package D deploy readiness planning for platform pool and VPC PostgreSQL -> authorized deploy -> canary / QA / status update`.
-- Stable上线 readiness now inserts Package D deploy readiness planning before deploy execution: target TKE cluster `cls-fi097sy4`, platform pool `np-cbk784r8`, VPC PostgreSQL endpoint `10.66.0.21:5432`, deploy secret/env allowlist, default-disabled deploy execution gate and explicit readiness gaps.
+- Stable上线 readiness now inserts Package D deploy readiness planning before deploy execution: target TKE cluster `cls-fi097sy4`, platform pool `np-cbk784r8`, VPC PostgreSQL endpoint `10.66.0.21:5432`, deploy/runtime env allowlists, default-disabled deploy execution gate, kubeconfig ref-only boundary, manifest scheduling to platform service pool, rollback plan shape and explicit readiness gaps.
+- Package D local shape gate is non-executing: `RUN_TENCENT_DEPLOY_EXECUTION` must remain `0`; the gate rejects raw kubeconfig YAML and tenant pool scheduling, and cannot make `releasePlanReady` or `realExecutionReady` true.
 - Package C PostgreSQL ledger canary no longer treats local-machine access to the VPC private endpoint as the goal; successful real DB canary waits until the MedOPL service runs inside the VPC.
 
 ## REMOVED

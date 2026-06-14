@@ -2021,6 +2021,8 @@ Package D 只能读取以下 key，且必须按 allowlist 精确读取，不允�
 
 `PORTAL_POSTGRES_URL` 必须指向 VPC 内网 PostgreSQL endpoint `10.66.0.21:5432`，不依赖公网 PostgreSQL。`PORTAL_POSTGRES_PASSWORD` 和完整 DB URL 只能进入后端 secret 边界；stdout、docs、git、Portal payload 和 `.runtime` 只能出现脱敏摘要或 endpoint host:port。Package C PostgreSQL ledger sink 的真实 DB canary 不再从本机追求连通性；它必须等 Portal / control-plane service 部署到 VPC 内、可从 TKE platform pool 访问 `medopl-postgres` 后再单独授权执行。
 
+Package D local shape gate 是非执行 gate：通过态必须保持 `RUN_TENCENT_DEPLOY_EXECUTION=0`，只允许读取 allowlisted key names 和必要非 secret values，必须拒绝 raw kubeconfig YAML；它可以验证 deploy env、Portal runtime env、manifest scheduling target、DB endpoint 和 rollback plan shape，但不得 build/push、读取 kubeconfig、kubectl、deploy 或进入真实 Package D execution。
+
 `TENCENT_TCR_REPOSITORY`、`TENCENT_DEPLOY_NAMESPACE`、`TENCENT_DEPLOY_WORKLOAD`、`TENCENT_DEPLOY_CONTAINER`、`TENCENT_DEPLOY_RUNTIME_SMOKE_URL` 不属于 secret allowlist。它们是 release plan 的 non-secret target 字段，必须逐 target 显式声明，不能用单值环境变量把多服务发布压成单容器发布。
 
 ## Release Plan
@@ -2028,6 +2030,8 @@ Package D 只能读取以下 key，且必须按 allowlist 精确读取，不允�
 Package D 必须通过 `--release-plan <json>` 消费本地受控 release plan。release plan 可以放在 `.runtime` 或用户指定的本地路径，不进入 git，不包含 raw secret、raw kubeconfig、token、cookie、object key、signed URL 或 raw cloud response。
 
 当前稳定上线 readiness target 固定为 TKE cluster `cls-fi097sy4` 的 protected platform service node pool `np-cbk784r8`。release plan 必须把平台服务 target 调度到该 platform pool，并保留 pool 保护边界；Package D 不创建、删除、释放或扩缩容 node pool，也不能把 tenant node pool lifecycle 逻辑带入 deploy lane。
+
+Package D manifest / scheduling shape gate 必须把 Portal / control-plane 等平台服务调度到 platform service pool，不允许引用 `medopl-tenant-` tenant pool 或 workspace tenant pool 作为平台服务调度目标。rollback plan shape 必须存在并声明 owner / strategy；local shape gate 只证明这些字段存在和边界正确，不证明 release plan 已可执行。
 
 OPL / Portal / Gateway / Runtime Agent target ownership 必须同时订阅 [spec:v22-opl-deployment-ownership-release-plan-boundary](#spec-v22-opl-deployment-ownership-release-plan-boundary)。该 Level 4 子合同把 target 分为 `platform_service_target` 和 `workspace_runtime_target`：平台服务必须有 `ownerRef/operationId`，但不强制 `workspaceId/resourceBindingId`；workspace runtime target 必须额外绑定 `workspaceId/resourceBindingId`。只有 `k8s-app/qcloud-app`、deployment 名字、namespace、IP、创建时间或人工记忆时必须 fail-closed。
 

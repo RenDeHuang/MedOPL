@@ -338,6 +338,23 @@
         "noKubectlWithoutSeparateAuthorization": true,
         "noDeployWithoutSeparateAuthorization": true
       },
+      "localShapeGate": {
+        "status": "passed_non_executing_shape_only",
+        "runTencentDeployExecutionRequired": "0",
+        "deployEnvAllowlistOnly": true,
+        "portalRuntimeEnvAllowlistOnly": true,
+        "kubeconfigRefOnly": true,
+        "rejectsRawKubeconfigYaml": true,
+        "manifestShape": {
+          "targetClass": "platform_service_pool",
+          "targetPlatformNodePoolId": "np-cbk784r8",
+          "tenantPoolSchedulingAllowed": false,
+          "postgresEndpoint": "10.66.0.21:5432"
+        },
+        "rollbackPlanShapeRequired": true,
+        "releasePlanReady": false,
+        "realExecutionReady": false
+      },
       "readinessGaps": [
         "image build",
         "TCR push",
@@ -700,6 +717,23 @@
       "noBuildPushWithoutSeparateAuthorization": true,
       "noKubectlWithoutSeparateAuthorization": true,
       "noDeployWithoutSeparateAuthorization": true
+    },
+    "localShapeGate": {
+      "status": "passed_non_executing_shape_only",
+      "runTencentDeployExecutionRequired": "0",
+      "deployEnvAllowlistOnly": true,
+      "portalRuntimeEnvAllowlistOnly": true,
+      "kubeconfigRefOnly": true,
+      "rejectsRawKubeconfigYaml": true,
+      "manifestShape": {
+        "targetClass": "platform_service_pool",
+        "targetPlatformNodePoolId": "np-cbk784r8",
+        "tenantPoolSchedulingAllowed": false,
+        "postgresEndpoint": "10.66.0.21:5432"
+      },
+      "rollbackPlanShapeRequired": true,
+      "releasePlanReady": false,
+      "realExecutionReady": false
     },
     "readinessGaps": [
       "image build",
