@@ -5289,3 +5289,52 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-14 package-d-in-cluster-platform-runner-shape-gate
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `ce8a2bae866f51e39613d03803599400faad5219`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Added a non-executing Package D in-cluster platform runner shape gate to the future-authorized deploy local gate.
+- Fixed runner shape as Kubernetes `Job` in namespace `medopl-platform` with serviceAccount `medopl-platform-runner`.
+- Fixed scheduling to platform service pool `np-cbk784r8`; tenant pool prefix `medopl-tenant-` remains forbidden.
+- Fixed configMap / secretRef / imagePullSecret shape; plaintext secrets and raw kubeconfig are forbidden in manifest shape.
+- Fixed RBAC shape: namespace scope preferred, no `cluster-admin`, no broad wildcard, and cluster-scope limited to read-only `nodes` so the platform runner can verify platform pool visibility.
+- Fixed runner command allowlist to `preflight`, `deploy`, `smoke` and `rollback`; arbitrary shell, Package C live, Tencent mutation and tenant pool mutation remain forbidden.
+- Shape evidence writes a redacted report under `.runtime/package-d-in-cluster-platform-runner-shape-gate/shape-report-redacted.json`; `.runtime` is not committed.
+
+Verification:
+
+- RED: focused Package D local gate failed before the runner shape existed with `in_cluster_platform_runner_shape_must_be_explicit_and_non_executing`.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs`: pass.
+- `git diff --check -- tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs tests/fixtures/v22/goal-current.json`: pass.
+
+Can-claim:
+
+- Package D has a repo-native, machine-guarded in-cluster platform runner Job/RBAC/env shape contract.
+- The preferred runner shape targets existing platform pool `np-cbk784r8` and keeps VPC CVM runner fallback-only.
+- `realExecutionReady` remains `false`.
+
+Cannot-claim:
+
+- A Kubernetes Job was created, Kubernetes API was called, kubectl ran, deploy ran, build/push ran, Tencent mutation ran, kubeconfig was read, secrets were read, Package D execution ran, or production runtime is online.
+
+landed_commit: `67e458bc24df2c08167c3ecd4fa0773dfda22dd9`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
