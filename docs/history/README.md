@@ -5581,3 +5581,51 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-15 package-d-namespace-bootstrap-boundary
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `8f02b9ae33e2e93df36dfffa29a9b02012f87da3`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Closed out the first real Package D Kubernetes API preflight result from the VPC/TKE runner without adding a new loop or truth source.
+- Recorded that Kubernetes API connectivity passed and context/cluster matched `cls-fi097sy4`.
+- Recorded the blocker: `medopl-platform` namespace does not exist, so the preflight failed closed at `namespace_read` and server-side dry-run was not entered.
+- Recorded redacted evidence path `/opt/medopl/.runtime/package-d-kubernetes-api-server-side-dry-run-preflight/preflight-redacted.json`.
+- Added the next bootstrap-only authorization boundary: create `medopl-platform` Namespace and create/update only Package D bootstrap ServiceAccount/RBAC/ConfigMap/SecretRef/imagePullSecret/Job resources.
+- Kept forbidden boundaries explicit: no business Deployment rollout, no tenant pool / `medopl-tenant-`, no `np-cbk784r8` modification, no build/push, no Tencent mutation, no Package C live and no production deploy.
+
+Verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass before closeout metadata commit.
+
+Can-claim:
+
+- Package D cloud preflight reached the live Kubernetes API and matched the target cluster.
+- The next gap is a bootstrap apply authorization pack for missing `medopl-platform` and Package D bootstrap resources only.
+- `realExecutionReady` remains `false`.
+
+Cannot-claim:
+
+- This repo session read kubeconfig or secrets, connected to Kubernetes API, ran kubectl, created Kubernetes resources, deployed, built/pushed images, executed Tencent mutation, ran Package C live, or brought production runtime online.
+- Server-side dry-run has passed; it was blocked before dry-run by missing namespace.
+
+landed_commit: `601e4099548c3436a75c13994a989d86294a94c7`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`

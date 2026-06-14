@@ -5,15 +5,15 @@
   "human_truth": "docs/active/README.md",
   "spec_truth": "docs/specs/README.md",
   "verify_manifest": "tests/fixtures/v22/agent-verify-manifest.json",
-  "last_updated_at": "2026-06-14",
+  "last_updated_at": "2026-06-15",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "50c2203e7c8ebbff35ed3bdebe39df955881aaa4",
+  "base_trunk_head": "601e4099548c3436a75c13994a989d86294a94c7",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "50c2203e7c8ebbff35ed3bdebe39df955881aaa4",
+  "last_landed_commit": "601e4099548c3436a75c13994a989d86294a94c7",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -101,7 +101,7 @@
         "precloud-deployable-rc"
       ],
       "history_summary": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound, runner-local state-machine evidence, repository write wiring contract and gated PostgreSQL sink support path and explicit live canary runner contract have landed. Package D release plan, execution preflight gate, in-cluster runner shape gate, non-executing runner manifest materialization / authorization pack, bootstrap authorization pack and the repo-native Kubernetes API server-side dry-run preflight runner have landed, so reviewable bootstrap path readiness and a single cloud-runner entrypoint are true while realExecutionReady=false. Kubernetes API connectivity now passed and context/cluster matched cls-fi097sy4, but medopl-platform namespace is missing and blocked server-side dry-run at namespace_read. Stabilization remains blocked on authorized Package D bootstrap apply for the missing namespace/resources, service-in-VPC PostgreSQL live canary, image build execution, TCR push execution, DB connectivity smoke, rollback evidence, billing/audit ledger, Portal opening entry and workspace storage quota. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization.",
-      "landed_commit": "50c2203e7c8ebbff35ed3bdebe39df955881aaa4"
+      "landed_commit": "601e4099548c3436a75c13994a989d86294a94c7"
     },
     {
       "id": "go-control-plane-mvp-takeover",
@@ -163,7 +163,7 @@
       ],
       "history_summary": "Local AI MVP baseline, real-cloud vision docs, real-cloud readiness lane, legacy runtime cloud cleanup, Package B readonly inventory, TC3 diagnostic cleanup, Package C dry-run create/release plan, TKE bootstrap preflight, repo governance closeout, Package C live canary readiness gate, Package C non-secret cloud parameters input contract, Package C live canary runner, unsupported tke:nodepool tag skip strategy, authorized Package C create/scale/delete canary, PostgreSQL resource_bindings / cloud_operations lower bound, Package C local state-machine evidence, Package C repository write wiring contract, gated PostgreSQL sink support path, explicit live canary runner contract, Package D local shape gate, reviewable release plan shape, execution preflight gate, in-cluster runner shape gate, non-executing runner manifest materialization / authorization pack, bootstrap authorization pack and repo-native Kubernetes API server-side dry-run preflight runner have landed as pre-cloud / scoped local evidence. Stabilization now uses Package D deploy readiness planning before deploy execution; productionization remains blocked on authorized Package D bootstrap apply after the namespace missing finding, image build/push/deploy/smoke/rollback evidence, service-in-VPC PostgreSQL live canary, billing/audit ledger, Portal opening entry and workspace storage quota.",
       "closed_at": "2026-06-13",
-      "landed_commit": "50c2203e7c8ebbff35ed3bdebe39df955881aaa4"
+      "landed_commit": "601e4099548c3436a75c13994a989d86294a94c7"
     }
   ],
   "current_leaf": {
@@ -1206,7 +1206,7 @@
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
   "last_landed_branch": "recovery/platform-v22-trunk",
-  "last_landed_at": "2026-06-14",
+  "last_landed_at": "2026-06-15",
   "history_latest_branch": "recovery/platform-v22-trunk",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
