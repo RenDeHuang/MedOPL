@@ -51,6 +51,55 @@ const VPC_DEPLOY_RUNNER_PLAN = Object.freeze({
     "PostgreSQL ledger canary",
     "Package D combined preflight",
   ]),
+  provisioningChecklist: Object.freeze({
+    provisioningStatus: "not_created",
+    cvm: Object.freeze({
+      name: "medopl-v22-deploy-runner",
+      region: "na-siliconvalley",
+      vpc: "medopl-vpc",
+      subnet: "medopl-private-a",
+      os: "Ubuntu LTS or TencentOS",
+      size: "2C4G",
+      disk: "50GB",
+      publicIp: "disabled_by_default_temporary_operator_ip_only_for_ssh",
+    }),
+    securityGroup: Object.freeze({
+      inbound: "minimal",
+      sshIngress: "operator_ip_only_when_temporarily_enabled",
+      outbound: Object.freeze([
+        "TCR",
+        "TKE API private endpoint",
+        "PostgreSQL 10.66.0.21:5432",
+      ]),
+    }),
+    installTools: Object.freeze([
+      "git",
+      "node/npm",
+      "go",
+      "docker",
+      "kubectl",
+    ]),
+    secretPaths: Object.freeze([
+      "/home/dev/.secrets/medopl/v22/package-d-deploy.env",
+      "/home/dev/.secrets/medopl/v22/portal-runtime.env",
+      "/home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy",
+    ]),
+    validationOrder: Object.freeze([
+      "docker version",
+      "kubectl version --client",
+      "TCR login preflight",
+      "Kubernetes API connectivity preflight",
+      "PostgreSQL ledger canary",
+      "Package D combined preflight",
+    ]),
+    forbiddenNow: Object.freeze([
+      "CVM create",
+      "Tencent mutation",
+      "deploy",
+      "build/push",
+      "kubectl",
+    ]),
+  }),
   realExecutionReady: false,
 });
 const currentGoal = JSON.parse(readFileSync(new URL("../../fixtures/v22/goal-current.json", import.meta.url), "utf8"));
@@ -756,6 +805,43 @@ assert.deepEqual(VPC_DEPLOY_RUNNER_PLAN.preflightOrder, [
   "PostgreSQL ledger canary",
   "Package D combined preflight",
 ], "vpc_deploy_runner_preflight_order_must_be_fixed");
+assert.equal(VPC_DEPLOY_RUNNER_PLAN.provisioningChecklist.provisioningStatus, "not_created", "vpc_deploy_runner_cvm_must_not_be_created_by_plan");
+assert.deepEqual(VPC_DEPLOY_RUNNER_PLAN.provisioningChecklist.cvm, {
+  name: "medopl-v22-deploy-runner",
+  region: "na-siliconvalley",
+  vpc: "medopl-vpc",
+  subnet: "medopl-private-a",
+  os: "Ubuntu LTS or TencentOS",
+  size: "2C4G",
+  disk: "50GB",
+  publicIp: "disabled_by_default_temporary_operator_ip_only_for_ssh",
+}, "vpc_deploy_runner_cvm_checklist_must_be_exact");
+assert.deepEqual(VPC_DEPLOY_RUNNER_PLAN.provisioningChecklist.securityGroup, {
+  inbound: "minimal",
+  sshIngress: "operator_ip_only_when_temporarily_enabled",
+  outbound: [
+    "TCR",
+    "TKE API private endpoint",
+    "PostgreSQL 10.66.0.21:5432",
+  ],
+}, "vpc_deploy_runner_security_group_checklist_must_be_exact");
+assert.deepEqual(VPC_DEPLOY_RUNNER_PLAN.provisioningChecklist.installTools, VPC_DEPLOY_RUNNER_PLAN.requiredTools, "vpc_deploy_runner_install_tools_must_match_required_tools");
+assert.deepEqual(VPC_DEPLOY_RUNNER_PLAN.provisioningChecklist.secretPaths, VPC_DEPLOY_RUNNER_PLAN.secretPaths, "vpc_deploy_runner_checklist_secret_paths_must_match_plan");
+assert.deepEqual(VPC_DEPLOY_RUNNER_PLAN.provisioningChecklist.validationOrder, [
+  "docker version",
+  "kubectl version --client",
+  "TCR login preflight",
+  "Kubernetes API connectivity preflight",
+  "PostgreSQL ledger canary",
+  "Package D combined preflight",
+], "vpc_deploy_runner_validation_order_must_be_exact");
+assert.deepEqual(VPC_DEPLOY_RUNNER_PLAN.provisioningChecklist.forbiddenNow, [
+  "CVM create",
+  "Tencent mutation",
+  "deploy",
+  "build/push",
+  "kubectl",
+], "vpc_deploy_runner_provisioning_checklist_must_remain_non_executing");
 assert.equal(VPC_DEPLOY_RUNNER_PLAN.realExecutionReady, false, "vpc_deploy_runner_plan_must_not_mark_real_execution_ready");
 for (const [label, plan] of [
   ["top_level", currentGoal.package_d_deploy_readiness_plan],
@@ -771,6 +857,7 @@ for (const [label, plan] of [
   assert.deepEqual(plan?.vpcDeployRunnerPlan?.secretPaths, VPC_DEPLOY_RUNNER_PLAN.secretPaths, `vpc_deploy_runner_goal_secret_paths_mismatch:${label}`);
   assert.deepEqual(plan?.vpcDeployRunnerPlan?.safetyBoundary, VPC_DEPLOY_RUNNER_PLAN.safetyBoundary, `vpc_deploy_runner_goal_safety_boundary_mismatch:${label}`);
   assert.deepEqual(plan?.vpcDeployRunnerPlan?.preflightOrder, VPC_DEPLOY_RUNNER_PLAN.preflightOrder, `vpc_deploy_runner_goal_preflight_order_mismatch:${label}`);
+  assert.deepEqual(plan?.vpcDeployRunnerPlan?.provisioningChecklist, VPC_DEPLOY_RUNNER_PLAN.provisioningChecklist, `vpc_deploy_runner_goal_provisioning_checklist_mismatch:${label}`);
   assert.equal(plan?.vpcDeployRunnerPlan?.realExecutionReady, false, `vpc_deploy_runner_goal_real_execution_must_stay_false:${label}`);
 }
 

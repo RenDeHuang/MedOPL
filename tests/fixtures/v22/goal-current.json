@@ -293,9 +293,61 @@
           "PostgreSQL ledger canary",
           "Package D combined preflight"
         ],
-        "realExecutionReady": false
+        "realExecutionReady": false,
+        "provisioningChecklist": {
+          "provisioningStatus": "not_created",
+          "cvm": {
+            "name": "medopl-v22-deploy-runner",
+            "region": "na-siliconvalley",
+            "vpc": "medopl-vpc",
+            "subnet": "medopl-private-a",
+            "os": "Ubuntu LTS or TencentOS",
+            "size": "2C4G",
+            "disk": "50GB",
+            "publicIp": "disabled_by_default_temporary_operator_ip_only_for_ssh"
+          },
+          "securityGroup": {
+            "inbound": "minimal",
+            "sshIngress": "operator_ip_only_when_temporarily_enabled",
+            "outbound": [
+              "TCR",
+              "TKE API private endpoint",
+              "PostgreSQL 10.66.0.21:5432"
+            ]
+          },
+          "installTools": [
+            "git",
+            "node/npm",
+            "go",
+            "docker",
+            "kubectl"
+          ],
+          "secretPaths": [
+            "/home/dev/.secrets/medopl/v22/package-d-deploy.env",
+            "/home/dev/.secrets/medopl/v22/portal-runtime.env",
+            "/home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy"
+          ],
+          "validationOrder": [
+            "docker version",
+            "kubectl version --client",
+            "TCR login preflight",
+            "Kubernetes API connectivity preflight",
+            "PostgreSQL ledger canary",
+            "Package D combined preflight"
+          ],
+          "forbiddenNow": [
+            "CVM create",
+            "Tencent mutation",
+            "deploy",
+            "build/push",
+            "kubectl"
+          ]
+        }
       },
       "readinessGaps": [
+        "validate docker version and kubectl version --client on deploy runner before any login or API connectivity preflight",
+        "confirm minimal security group: inbound minimized, optional SSH operator IP only, outbound TCR / TKE API private endpoint / PostgreSQL 10.66.0.21:5432",
+        "confirm medopl-v22-deploy-runner CVM config: Ubuntu LTS or TencentOS, 2C4G, 50GB disk, no default public IP",
         "provision medopl-v22-deploy-runner in medopl-vpc / medopl-private-a",
         "install git/node/npm/go/docker/kubectl on deploy runner",
         "place package-d deploy/runtime/kubeconfig secrets on deploy runner outside git",
@@ -983,6 +1035,9 @@
       "realExecutionReady": false
     },
     "readinessGaps": [
+      "validate docker version and kubectl version --client on deploy runner before any login or API connectivity preflight",
+      "confirm minimal security group: inbound minimized, optional SSH operator IP only, outbound TCR / TKE API private endpoint / PostgreSQL 10.66.0.21:5432",
+      "confirm medopl-v22-deploy-runner CVM config: Ubuntu LTS or TencentOS, 2C4G, 50GB disk, no default public IP",
       "provision medopl-v22-deploy-runner in medopl-vpc / medopl-private-a",
       "install git/node/npm/go/docker/kubectl on deploy runner",
       "place package-d deploy/runtime/kubeconfig secrets on deploy runner outside git",
@@ -1110,7 +1165,56 @@
         "PostgreSQL ledger canary",
         "Package D combined preflight"
       ],
-      "realExecutionReady": false
+      "realExecutionReady": false,
+      "provisioningChecklist": {
+        "provisioningStatus": "not_created",
+        "cvm": {
+          "name": "medopl-v22-deploy-runner",
+          "region": "na-siliconvalley",
+          "vpc": "medopl-vpc",
+          "subnet": "medopl-private-a",
+          "os": "Ubuntu LTS or TencentOS",
+          "size": "2C4G",
+          "disk": "50GB",
+          "publicIp": "disabled_by_default_temporary_operator_ip_only_for_ssh"
+        },
+        "securityGroup": {
+          "inbound": "minimal",
+          "sshIngress": "operator_ip_only_when_temporarily_enabled",
+          "outbound": [
+            "TCR",
+            "TKE API private endpoint",
+            "PostgreSQL 10.66.0.21:5432"
+          ]
+        },
+        "installTools": [
+          "git",
+          "node/npm",
+          "go",
+          "docker",
+          "kubectl"
+        ],
+        "secretPaths": [
+          "/home/dev/.secrets/medopl/v22/package-d-deploy.env",
+          "/home/dev/.secrets/medopl/v22/portal-runtime.env",
+          "/home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy"
+        ],
+        "validationOrder": [
+          "docker version",
+          "kubectl version --client",
+          "TCR login preflight",
+          "Kubernetes API connectivity preflight",
+          "PostgreSQL ledger canary",
+          "Package D combined preflight"
+        ],
+        "forbiddenNow": [
+          "CVM create",
+          "Tencent mutation",
+          "deploy",
+          "build/push",
+          "kubectl"
+        ]
+      }
     }
   }
 }
