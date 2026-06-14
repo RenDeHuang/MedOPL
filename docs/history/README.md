@@ -5338,3 +5338,50 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-14 package-d-runner-shape-support-split
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `ea52e9d3a036fc682b7dc15a3c088da1312da773`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Split the Package D in-cluster platform runner shape contract into `tests/support/cloud-prework/package-d-in-cluster-platform-runner-shape.js`.
+- Kept the future-authorized Package D deploy local gate as the consumer while reducing the gate file below the 1000-line budget.
+- Preserved the same non-executing runner shape: Kubernetes Job, serviceAccount `medopl-platform-runner`, platform pool `np-cbk784r8`, secretRef/imagePullSecret runtime boundary, minimal RBAC, command allowlist and redacted `.runtime` evidence.
+- Updated delivery current cursor to record the latest landed commit.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs`: pass.
+- `node scripts/v22-line-budget.mjs`: pass; deploy gate is 987 lines.
+- `npm run verify`: pass before this closeout update.
+- `npm run closeout:check -- --json`: pass before this closeout update.
+
+Can-claim:
+
+- Package D runner shape gate is factored into a support owner and remains machine-guarded.
+- Repo line budget is back within the existing baseline.
+- `realExecutionReady` remains `false`.
+
+Cannot-claim:
+
+- A Kubernetes Job was created, Kubernetes API was called, kubectl ran, deploy ran, build/push ran, Tencent mutation ran, kubeconfig was read, secrets were read, Package D execution ran, or production runtime is online.
+
+landed_commit: `6b5b7d3ba0906bc76bfb5b0eb65a10dab566ad6c`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
