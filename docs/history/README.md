@@ -5433,3 +5433,50 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-14 package-d-runner-manifest-registry-closeout
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `f8e6bf2ea0d85988881c2d37bad607d827653297`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Registered the Package D runner manifest materialization gate in the existing test lane registry owner.
+- Kept the gate in the existing `cloud-future-authorized` lane and did not create a new loop, runner loop or truth source.
+- This closeout only updates lifecycle metadata after the registry fix commit.
+
+Verification:
+
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs`: pass.
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+Can-claim:
+
+- The new Package D manifest materialization gate is covered by both existing suite manifest and test lane registry.
+- Package D manifest materialization remains static/redacted and non-executing.
+- `realExecutionReady` remains `false`.
+
+Cannot-claim:
+
+- A Kubernetes Job was created, Kubernetes API was called, kubeconfig was read, kubectl ran, deploy ran, build/push ran, Tencent mutation ran, secrets were read, Package C live ran, Package D execution ran, or production runtime is online.
+
+landed_commit: `0580a8dce649af45a603449f4ff07d8d0458b87a`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
