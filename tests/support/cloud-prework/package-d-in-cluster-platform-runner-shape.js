@@ -11,7 +11,7 @@ export const PACKAGE_D_IN_CLUSTER_PLATFORM_RUNNER_SHAPE = Object.freeze({
     tenantPoolAllowed: false,
     forbiddenNodePoolPrefix: "medopl-tenant-",
     nodeSelector: Object.freeze({
-      "medopl.io/nodepool-role": "platform-service",
+      "node.tke.cloud.tencent.com/machineset": "np-cbk784r8",
     }),
   }),
   podTemplate: Object.freeze({

@@ -32,7 +32,16 @@ assert.equal(pack.jobLifecycle.template.kind, "Job", "runner_workload_template_m
 assert.equal(pack.jobLifecycle.template.metadata.namespace, "medopl-platform", "job_namespace_must_be_fixed");
 assert.equal(pack.jobLifecycle.template.spec.template.spec.serviceAccountName, "medopl-platform-runner", "job_service_account_must_be_fixed");
 assert.equal(pack.jobLifecycle.template.spec.template.spec.restartPolicy, "Never", "job_restart_policy_must_be_never");
-assert.equal(pack.jobLifecycle.template.spec.template.spec.nodeSelector["medopl.io/nodepool-role"], "platform-service", "job_must_target_platform_service_selector");
+assert.deepEqual(
+  pack.jobLifecycle.template.spec.template.spec.nodeSelector,
+  { "node.tke.cloud.tencent.com/machineset": "np-cbk784r8" },
+  "job_must_target_tke_machineset_selector",
+);
+assert.equal(
+  Object.hasOwn(pack.jobLifecycle.template.spec.template.spec.nodeSelector, "medopl.io/nodepool-role"),
+  false,
+  "job_must_not_require_custom_platform_service_label",
+);
 assert.equal(JSON.stringify(pack.jobLifecycle.template).includes("medopl-tenant-"), false, "job_manifest_must_not_reference_tenant_pool");
 assert.equal(JSON.stringify(pack.jobLifecycle.template).includes("client-key-data"), false, "job_manifest_must_not_embed_kubeconfig");
 assert.equal(JSON.stringify(pack.jobLifecycle.template).includes("postgresql://"), false, "job_manifest_must_not_embed_db_url");

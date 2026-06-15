@@ -156,8 +156,11 @@ function assertJobManifestBoundary(manifest = {}) {
   }
   const podSpec = manifest.spec?.template?.spec || {};
   if (podSpec.serviceAccountName !== "medopl-platform-runner") throw new Error("package_d_run_scoped_job_service_account_mismatch");
-  if (podSpec.nodeSelector?.["medopl.io/nodepool-role"] !== "platform-service") {
+  if (podSpec.nodeSelector?.["node.tke.cloud.tencent.com/machineset"] !== FIXED_PLATFORM_NODE_POOL_ID) {
     throw new Error("package_d_run_scoped_job_scheduling_mismatch");
+  }
+  if (Object.hasOwn(podSpec.nodeSelector || {}, "medopl.io/nodepool-role")) {
+    throw new Error("package_d_run_scoped_job_uses_retired_custom_nodepool_label");
   }
   const container = podSpec.containers?.[0] || {};
   if (JSON.stringify(container.args) !== JSON.stringify(["preflight"])) {

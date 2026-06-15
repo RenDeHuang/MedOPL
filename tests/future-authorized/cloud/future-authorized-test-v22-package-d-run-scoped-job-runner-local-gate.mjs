@@ -183,7 +183,16 @@ try {
   assert.equal(plan.jobManifest.metadata.name, plan.jobName, "manifest_name_must_match_unique_job_name");
   assert.equal(plan.jobManifest.metadata.namespace, "medopl-platform", "manifest_namespace_must_be_fixed");
   assert.equal(plan.jobManifest.spec.template.spec.serviceAccountName, "medopl-platform-runner", "service_account_must_be_fixed");
-  assert.deepEqual(plan.jobManifest.spec.template.spec.nodeSelector, { "medopl.io/nodepool-role": "platform-service" }, "job_must_target_platform_service_selector");
+  assert.deepEqual(
+    plan.jobManifest.spec.template.spec.nodeSelector,
+    { "node.tke.cloud.tencent.com/machineset": "np-cbk784r8" },
+    "job_must_target_tke_machineset_selector",
+  );
+  assert.equal(
+    Object.hasOwn(plan.jobManifest.spec.template.spec.nodeSelector, "medopl.io/nodepool-role"),
+    false,
+    "job_must_not_require_custom_platform_service_label",
+  );
   assert.deepEqual(plan.jobManifest.spec.template.spec.containers[0].args, ["preflight"], "job_command_must_be_preflight_only");
   assert.deepEqual(plan.jobManifest.spec.template.spec.containers[0].envFrom, [
     { configMapRef: { name: "medopl-package-d-runner-config" } },

@@ -268,7 +268,7 @@ function releaseTarget({ component, repository = component, sourceRoot }) {
       nodePoolId: FIXED_PLATFORM_NODE_POOL_ID,
       tenantPoolAllowed: false,
       nodeSelector: {
-        "medopl.io/nodepool-role": "platform-service",
+        "node.tke.cloud.tencent.com/machineset": "np-cbk784r8",
       },
     },
   };
@@ -648,7 +648,7 @@ const localShapeGate = checkLocalShapeGate({
       class: "platform_service_pool",
       nodePoolId: "np-cbk784r8",
       nodeSelector: {
-        "medopl.io/nodepool-role": "platform-service",
+        "node.tke.cloud.tencent.com/machineset": "np-cbk784r8",
       },
     },
     dbTarget: {
@@ -732,7 +732,7 @@ const executionPreflightGate = checkExecutionPreflightGate({
       class: "platform_service_pool",
       nodePoolId: "np-cbk784r8",
       nodeSelector: {
-        "medopl.io/nodepool-role": "platform-service",
+        "node.tke.cloud.tencent.com/machineset": "np-cbk784r8",
       },
     },
     dbTarget: {
@@ -850,6 +850,10 @@ assert.equal(runnerShape.workloadKind, "Job", "in_cluster_platform_runner_shape_
 assert.equal(runnerShape.namespace, "medopl-platform", "in_cluster_platform_runner_namespace_must_be_fixed");
 assert.equal(runnerShape.serviceAccountName, "medopl-platform-runner", "in_cluster_platform_runner_service_account_must_be_fixed");
 assert.equal(runnerShape.scheduling.nodePoolId, "np-cbk784r8", "in_cluster_platform_runner_must_target_platform_pool");
+assert.deepEqual(runnerShape.scheduling.nodeSelector, {
+  "node.tke.cloud.tencent.com/machineset": "np-cbk784r8",
+}, "in_cluster_platform_runner_must_target_tke_machineset_label");
+assert.equal(Object.hasOwn(runnerShape.scheduling.nodeSelector, "medopl.io/nodepool-role"), false, "in_cluster_platform_runner_must_not_require_custom_platform_service_label");
 assert.equal(runnerShape.scheduling.tenantPoolAllowed, false, "in_cluster_platform_runner_must_forbid_tenant_pool");
 assert.equal(runnerShape.scheduling.forbiddenNodePoolPrefix, "medopl-tenant-", "in_cluster_platform_runner_must_forbid_tenant_prefix");
 assert.equal(runnerShape.podTemplate.plainSecretValuesAllowed, false, "in_cluster_platform_runner_must_forbid_plaintext_secret");
