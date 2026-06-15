@@ -8,12 +8,12 @@
   "last_updated_at": "2026-06-15",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "1cbb27edaacca7a29e47f71ccde3139df675153b",
+  "base_trunk_head": "a62ec2fd7d1fdf2c98fcdd7c60c6bf9aff9ac2ea",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "1cbb27edaacca7a29e47f71ccde3139df675153b",
+  "last_landed_commit": "a62ec2fd7d1fdf2c98fcdd7c60c6bf9aff9ac2ea",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -101,7 +101,7 @@
         "precloud-deployable-rc"
       ],
       "history_summary": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound, runner-local state-machine evidence, repository write wiring contract and gated PostgreSQL sink support path and explicit live canary runner contract have landed. Package D release plan, execution preflight gate, in-cluster runner shape gate, non-executing runner manifest materialization / authorization pack, bootstrap authorization pack and the repo-native Kubernetes API server-side dry-run preflight runner and repo-native bootstrap apply runner have landed, so reviewable bootstrap path readiness and a single cloud-runner entrypoint are true while realExecutionReady=false. Kubernetes API connectivity now passed, context/cluster matched cls-fi097sy4, bootstrap apply confirmed medopl-platform Active and allowlisted bootstrap resources, and the same-name Job immutable finding is folded into the corrected contract: bootstrap apply / dry-run no longer reapply Job, while Job execution is a separate run-scoped authorization. Stabilization remains blocked on authorized Package D runner image publish for the fixed TCR tag, rerunning the repo-native run-scoped Job preflight after publish, service-in-VPC PostgreSQL live canary, DB connectivity smoke, rollback evidence, billing/audit ledger, Portal opening entry and workspace storage quota. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization. Package D run-scoped Job cloud execution first exposed the retired custom selector gap; readonly scheduling discovery found node.tke.cloud.tencent.com/machineset=np-cbk784r8, and the repo contract now uses that existing TKE machineset label without modifying node labels. Package D run-scoped Job cloud execution pdrun-20260615-002 then scheduled on np-cbk784r8 but failed container image validation because a redacted image placeholder reached the live Job manifest; the repo contract now requires PACKAGE_D_RUNNER_IMAGE_REF for live manifests and keeps only redacted image refs in evidence. Package D run-scoped Job cloud execution pdrun-20260615-003 reached image pull but failed because the fixed TCR runner image tag was not found; the repo now has a GitHub Actions workflow_dispatch runner image publish lane and local gates for that tag; TKE/VPC runner build/push remains forbidden.",
-      "landed_commit": "1cbb27edaacca7a29e47f71ccde3139df675153b"
+      "landed_commit": "a62ec2fd7d1fdf2c98fcdd7c60c6bf9aff9ac2ea"
     },
     {
       "id": "go-control-plane-mvp-takeover",
@@ -171,7 +171,7 @@
     "gap_id": "real-cloud-authorization-boundary",
     "stage": "S7 real-cloud authorization boundary before readiness",
     "cursor_eligible": false,
-    "problem": "Package D run-scoped platform runner Job preflight reached image pull on pdrun-20260615-003 but the fixed TCR runner image tag was not found. The repo now owns a GitHub Actions workflow_dispatch image publish lane for uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001; it uses protected environment package-d-image-publish with only TCR_ID/TCR_SECRET, and keeps Docker build/push out of the TKE/VPC runner. This is image publish only, not deploy.",
+    "problem": "Package D run-scoped platform runner Job preflight reached image pull on pdrun-20260615-003 but the fixed TCR runner image tag was not found. The repo now owns a GitHub Actions workflow_dispatch image publish lane for uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001; it uses protected environment package-d-image-publish with only TCR_ID/TCR_SECRET, builds tests/support/cloud-prework/package-d-platform-runner.Dockerfile, and keeps Docker build/push out of the TKE/VPC runner. This is image publish only, not deploy.",
     "verification_commands": [
       "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
       "node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs",

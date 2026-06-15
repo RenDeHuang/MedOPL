@@ -5923,3 +5923,51 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-15 package-d-github-actions-image-publish-lane
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `1cbb27edaacca7a29e47f71ccde3139df675153b`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Replaced the Package D runner image publish route with GitHub Actions `workflow_dispatch` for `uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001`.
+- Added protected environment boundary `package-d-image-publish`; the publish lane requires only `TCR_ID` and `TCR_SECRET` and must not receive kubeconfig, DB password, Portal admin password, Tencent mutation credentials or Package C secrets.
+- Added the runner image Dockerfile and preflight-only entrypoint used by the workflow; the TKE/VPC runner remains Kubernetes preflight/deploy/smoke only and must not install Docker or build/push.
+- Added workflow/local gates for fixed non-latest tag, medopl namespace, medopl-platform-runner repo, redacted evidence and no kubectl/deploy/Tencent mutation/Package C live in the image publish lane.
+
+Verification:
+
+- RED: `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-workflow-gate.mjs` failed with missing workflow before the workflow existed.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-workflow-gate.mjs`: pass.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: pass.
+- `npm run verify`: pass.
+
+Can-claim:
+
+- Package D has a repo-native GitHub Actions image publish lane for the fixed runner image tag.
+- Build/push is separated from the TKE/VPC runner and from deploy.
+- `realExecutionReady` remains `false`.
+
+Cannot-claim:
+
+- This repo session read TCR secret, dispatched GitHub Actions, ran docker login/build/push, pulled/pushed images, read kubeconfig, connected to Kubernetes API, ran kubectl, deployed, executed Tencent mutation, ran Package C live, or completed Package D production execution.
+
+landed_commit: `a62ec2fd7d1fdf2c98fcdd7c60c6bf9aff9ac2ea`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
