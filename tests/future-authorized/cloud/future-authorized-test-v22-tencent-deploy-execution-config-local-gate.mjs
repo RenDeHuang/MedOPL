@@ -32,7 +32,7 @@ const DEPLOY_RUNNER_PLACEMENT_PLAN = Object.freeze({
     "rollback",
   ]),
   buildPushPlan: Object.freeze({
-    executionLocation: "external_build_runner_or_future_kaniko_buildkit",
+    executionLocation: "github_actions_workflow_dispatch",
     separatedFromDeploySmoke: true,
     imageTargets: Object.freeze([
       "portal-frontend",
@@ -41,7 +41,7 @@ const DEPLOY_RUNNER_PLACEMENT_PLAN = Object.freeze({
       "opl-runtime-bridge",
     ]),
     allowedMethods: Object.freeze([
-      "external build runner",
+      "GitHub Actions workflow_dispatch",
       "future Kaniko/BuildKit",
     ]),
     executesNow: false,
@@ -79,7 +79,7 @@ const DEPLOY_RUNNER_PLACEMENT_PLAN = Object.freeze({
     tenantPoolSchedulingAllowed: false,
   }),
   preflightOrder: Object.freeze([
-    "build/push image readiness from external build runner or future Kaniko/BuildKit",
+    "GitHub Actions workflow_dispatch publishes the fixed Package D runner image tag",
     "Kubernetes API connectivity preflight from TKE platform runner",
     "PostgreSQL ledger canary from TKE platform runner",
     "Package D combined preflight from TKE platform runner",
@@ -821,7 +821,7 @@ assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.purpose, [
   "DB connectivity smoke inside VPC",
   "rollback",
 ], "deploy_runner_preferred_purpose_must_cover_deploy_smoke_loop");
-assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.executionLocation, "external_build_runner_or_future_kaniko_buildkit", "build_push_must_be_separate_from_in_cluster_deploy_smoke");
+assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.executionLocation, "github_actions_workflow_dispatch", "build_push_must_be_separate_from_in_cluster_deploy_smoke");
 assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.separatedFromDeploySmoke, true, "build_push_and_deploy_smoke_must_be_separate");
 assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.imageTargets, [
   "portal-frontend",
@@ -830,9 +830,9 @@ assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.imageTargets, [
   "opl-runtime-bridge",
 ], "build_push_plan_must_keep_image_targets");
 assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.allowedMethods, [
-  "external build runner",
+  "GitHub Actions workflow_dispatch",
   "future Kaniko/BuildKit",
-], "build_push_plan_must_allow_external_or_future_in_cluster_builder");
+], "build_push_plan_must_allow_github_actions_or_future_in_cluster_builder");
 assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.executesNow, false, "build_push_plan_must_not_execute_now");
 assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.deploySmokePlan, {
   executionLocation: "tke_in_cluster_platform_runner",
@@ -886,7 +886,7 @@ assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.safetyBoundary.defaultExtraCvmRunner, 
 assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.safetyBoundary.runnerStateCommittedToGit, false, "deploy_runner_state_must_not_enter_git");
 assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.safetyBoundary.tenantPoolSchedulingAllowed, false, "deploy_runner_must_not_schedule_to_tenant_pool");
 assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.preflightOrder, [
-  "build/push image readiness from external build runner or future Kaniko/BuildKit",
+  "GitHub Actions workflow_dispatch publishes the fixed Package D runner image tag",
   "Kubernetes API connectivity preflight from TKE platform runner",
   "PostgreSQL ledger canary from TKE platform runner",
   "Package D combined preflight from TKE platform runner",
