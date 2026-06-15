@@ -5877,7 +5877,7 @@ next_cursor: `real-cloud-authorization-boundary`
 
 ### 2026-06-15 package-d-runner-image-publish-boundary
 
-Status: `landed / pending push verification`
+Status: `landed / pushed / post-push verified`
 
 Branch: `recovery/platform-v22-trunk`
 
@@ -5897,12 +5897,29 @@ Verification:
 
 - RED: `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs` failed with `ERR_MODULE_NOT_FOUND` before the runner existed.
 - `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs`: pass.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: pass.
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
 
 Can-claim:
 
 - Package D now has a repo-native, machine-guarded single command for later authorized runner image publish.
 - The local gate proves fail-closed auth, fixed image ref, TCR credential presence checks, command allowlist and redaction with fake docker only.
+- `realExecutionReady` remains `false`.
 
 Cannot-claim:
 
 - This repo session read TCR secret, ran docker login/build/push, pulled/pushed images, read kubeconfig, connected to Kubernetes API, ran kubectl, deployed, executed Tencent mutation, ran Package C live, or completed Package D production execution.
+
+landed_commit: `1cbb27edaacca7a29e47f71ccde3139df675153b`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
