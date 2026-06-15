@@ -131,7 +131,7 @@ Next owner:
 
 ### 2026-05-23 changes/archive/2026-05-23-local-golden-path-release-candidate
 
-Status: `authoring / local-gated`
+Status: `landed / pushed / post-push verified`
 
 Branch: `cleanup/golden-path-first-class`
 
@@ -6057,5 +6057,16 @@ Can-claim:
 Cannot-claim:
 
 - This repo session read kubeconfig or secrets, connected to Kubernetes API, ran kubectl, deployed, built/pushed images, executed Tencent mutation, ran Package C live, modified `np-cbk784r8`, modified `np-6l4nkdto`, or completed Package D production execution.
+
+landed_commit: `c8c8a1466be286adfd1457a744a634bb80eadbc0`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
