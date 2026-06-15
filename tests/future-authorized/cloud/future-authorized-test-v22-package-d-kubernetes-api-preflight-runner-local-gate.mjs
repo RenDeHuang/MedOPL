@@ -71,6 +71,7 @@ try {
     "TENCENT_TCR_REGION=na-siliconvalley",
     "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
     `TENCENT_DEPLOY_KUBECONFIG_REF=${kubeconfigPath}`,
+    "PACKAGE_D_RUNNER_IMAGE_REF=uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-fake",
     "",
   ].join("\n"));
   await writeFile(runtimeEnvPath, [

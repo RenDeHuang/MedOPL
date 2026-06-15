@@ -146,6 +146,7 @@ const PACKAGE_D_SECRET_KEY_LIST = Object.freeze([
   "TENCENT_TCR_REGION",
   "TENCENT_DEPLOY_CLUSTER_ID",
   "TENCENT_DEPLOY_KUBECONFIG_REF",
+  "PACKAGE_D_RUNNER_IMAGE_REF",
 ]);
 
 const PORTAL_RUNTIME_SECRET_KEY_LIST = Object.freeze([
@@ -572,6 +573,7 @@ const checked = [
       "TENCENT_TCR_REGION=na-siliconvalley",
       "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
       "TENCENT_DEPLOY_KUBECONFIG_REF=kubeconfig-ref-proof",
+      "PACKAGE_D_RUNNER_IMAGE_REF=registry-proof.example.tencentcloudcr.com/namespace-proof/medopl-platform-runner:v22-package-d-proof",
     ].join("\n")),
   },
   {
@@ -585,6 +587,7 @@ const checked = [
       "TENCENT_TCR_REGION=na-siliconvalley",
       "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
       "TENCENT_DEPLOY_KUBECONFIG_REF=kubeconfig-ref-proof",
+      "PACKAGE_D_RUNNER_IMAGE_REF=registry-proof.example.tencentcloudcr.com/namespace-proof/medopl-platform-runner:v22-package-d-proof",
     ].join("\n")),
   },
   {
@@ -598,6 +601,7 @@ const checked = [
       "TENCENT_TCR_REGION=na-siliconvalley",
       "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
       "TENCENT_DEPLOY_KUBECONFIG_REF=apiVersion: v1\\nkind: Config\\nclusters: []",
+      "PACKAGE_D_RUNNER_IMAGE_REF=registry-proof.example.tencentcloudcr.com/namespace-proof/medopl-platform-runner:v22-package-d-proof",
     ].join("\n")),
   },
   {
@@ -611,6 +615,7 @@ const checked = [
       "TENCENT_TCR_REGION=na-siliconvalley",
       "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
       "TENCENT_DEPLOY_KUBECONFIG_REF=kubeconfig-ref-proof",
+      "PACKAGE_D_RUNNER_IMAGE_REF=registry-proof.example.tencentcloudcr.com/namespace-proof/medopl-platform-runner:v22-package-d-proof",
       "PORTAL_POSTGRES_URL=postgresql://medopl:$PORTAL_POSTGRES_PASSWORD@10.66.0.21:5432/medopl",
     ].join("\n")),
   },

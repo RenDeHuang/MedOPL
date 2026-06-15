@@ -10,6 +10,7 @@ import {
 } from "../../support/cloud-prework/package-d-run-scoped-job-runner.js";
 
 const kubeEnvName = ["KUBE", "CONFIG"].join("");
+const runnerImageRef = "uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-fake";
 
 function assertNoSensitiveText(text = "", label = "text") {
   for (const forbidden of [
@@ -29,6 +30,7 @@ function assertNoSensitiveText(text = "", label = "text") {
     "docker push",
     "CreateNodePool",
     "medopl-tenant-",
+    runnerImageRef,
   ]) {
     assert.equal(text.includes(forbidden), false, `${label}_must_not_include:${forbidden}`);
   }
@@ -36,10 +38,16 @@ function assertNoSensitiveText(text = "", label = "text") {
 
 function fakeKubectlExecutor(commandLog) {
   return async ({ args, env, stdin }) => {
+    let stdinImage = "";
+    if (stdin) {
+      const parsed = JSON.parse(stdin);
+      stdinImage = parsed.spec.template.spec.containers[0].image;
+    }
     commandLog.push({
       args,
       env: { kubeEnvPresent: env[kubeEnvName] ? "redacted" : "" },
       stdinClass: stdin ? "present_redacted" : "empty",
+      stdinImage,
     });
     const joined = args.join(" ");
     assert.equal(args[0], "kubectl", "runner_must_use_kubectl_only");
@@ -61,6 +69,8 @@ function fakeKubectlExecutor(commandLog) {
     if (args.includes("create")) {
       assert.equal(args[args.indexOf("-f") + 1], "-", "job_create_must_use_stdin_manifest");
       assert.notEqual(stdin, "", "job_create_must_receive_manifest_stdin");
+      assert.equal(stdinImage, runnerImageRef, "job_create_live_manifest_must_use_real_runner_image_ref");
+      assert.equal(stdinImage.startsWith("REDACTED_"), false, "job_create_live_manifest_must_not_use_redacted_image_ref");
     }
     if (args.includes("current-context")) return { status: 0, stdout: "cls-fi097sy4-context\n", stderr: "" };
     if (args.includes("namespace")) {
@@ -99,6 +109,7 @@ try {
     "TENCENT_TCR_REGION=na-siliconvalley",
     "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
     `TENCENT_DEPLOY_KUBECONFIG_REF=${kubeconfigPath}`,
+    `PACKAGE_D_RUNNER_IMAGE_REF=${runnerImageRef}`,
     "",
   ].join("\n"));
   await writeFile(runtimeEnvPath, [
@@ -194,6 +205,11 @@ try {
     "job_must_not_require_custom_platform_service_label",
   );
   assert.deepEqual(plan.jobManifest.spec.template.spec.containers[0].args, ["preflight"], "job_command_must_be_preflight_only");
+  assert.equal(
+    plan.jobManifest.spec.template.spec.containers[0].image,
+    "REDACTED_PACKAGE_D_RUNNER_IMAGE_REF",
+    "public_plan_manifest_must_redact_runner_image_ref",
+  );
   assert.deepEqual(plan.jobManifest.spec.template.spec.containers[0].envFrom, [
     { configMapRef: { name: "medopl-package-d-runner-config" } },
     { secretRef: { name: "medopl-package-d-deploy-env" } },
@@ -243,6 +259,11 @@ try {
   assert.equal(commandLog.some((entry) => entry.args.includes("delete")), true, "runner_must_cleanup_unique_successful_job");
   assert.equal(commandLog.every((entry) => entry.env.kubeEnvPresent === "redacted"), true, "kubeconfig_env_must_be_passed_but_not_exposed");
   assert.equal(commandLog.every((entry) => entry.stdinClass !== "present_redacted" || entry.args.includes("create")), true, "stdin_must_only_feed_create");
+  assert.equal(
+    commandLog.find((entry) => entry.args.includes("create")).stdinImage,
+    runnerImageRef,
+    "live_create_stdin_must_use_real_runner_image_ref",
+  );
   assertNoSensitiveText(JSON.stringify(summary), "summary");
 
   const evidence = JSON.parse(await readFile(summary.evidencePath, "utf8"));
@@ -256,7 +277,61 @@ try {
 
   const manifest = JSON.parse(await readFile(summary.redactedManifestPath, "utf8"));
   assert.equal(manifest.metadata.name, plan.jobName, "redacted_manifest_job_name");
+  assert.equal(manifest.spec.template.spec.containers[0].image, "REDACTED_PACKAGE_D_RUNNER_IMAGE_REF", "redacted_manifest_must_hide_runner_image_ref");
   assertNoSensitiveText(JSON.stringify(manifest), "redacted_manifest");
+
+  await writeFile(deployEnvPath, [
+    "RUN_TENCENT_DEPLOY_EXECUTION=0",
+    "TCR_ID=100047070895",
+    "TCR_SECRET=tcr-secret-value",
+    "TENCENT_TCR_REGISTRY=uswccr.ccs.tencentyun.com",
+    "TENCENT_TCR_NAMESPACE=medopl",
+    "TENCENT_TCR_REGION=na-siliconvalley",
+    "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
+    `TENCENT_DEPLOY_KUBECONFIG_REF=${kubeconfigPath}`,
+    "",
+  ].join("\n"));
+  await assert.rejects(
+    () => buildPackageDRunScopedJobPlan({ deployEnvPath, runtimeEnvPath, kubeconfigPath, evidenceDir, runId }),
+    /package_d_env_missing:PACKAGE_D_RUNNER_IMAGE_REF|package_d_runner_image_ref_missing/,
+    "missing_runner_image_ref_must_fail_closed",
+  );
+
+  await writeFile(deployEnvPath, [
+    "RUN_TENCENT_DEPLOY_EXECUTION=0",
+    "TCR_ID=100047070895",
+    "TCR_SECRET=tcr-secret-value",
+    "TENCENT_TCR_REGISTRY=uswccr.ccs.tencentyun.com",
+    "TENCENT_TCR_NAMESPACE=medopl",
+    "TENCENT_TCR_REGION=na-siliconvalley",
+    "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
+    `TENCENT_DEPLOY_KUBECONFIG_REF=${kubeconfigPath}`,
+    "PACKAGE_D_RUNNER_IMAGE_REF=REDACTED_PACKAGE_D_RUNNER_IMAGE_REF",
+    "",
+  ].join("\n"));
+  await assert.rejects(
+    () => buildPackageDRunScopedJobPlan({ deployEnvPath, runtimeEnvPath, kubeconfigPath, evidenceDir, runId }),
+    /package_d_runner_image_ref_redacted_value_forbidden|package_d_runner_image_ref_malformed/,
+    "redacted_runner_image_ref_must_fail_closed",
+  );
+
+  await writeFile(deployEnvPath, [
+    "RUN_TENCENT_DEPLOY_EXECUTION=0",
+    "TCR_ID=100047070895",
+    "TCR_SECRET=tcr-secret-value",
+    "TENCENT_TCR_REGISTRY=uswccr.ccs.tencentyun.com",
+    "TENCENT_TCR_NAMESPACE=medopl",
+    "TENCENT_TCR_REGION=na-siliconvalley",
+    "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
+    `TENCENT_DEPLOY_KUBECONFIG_REF=${kubeconfigPath}`,
+    "PACKAGE_D_RUNNER_IMAGE_REF=bad image",
+    "",
+  ].join("\n"));
+  await assert.rejects(
+    () => buildPackageDRunScopedJobPlan({ deployEnvPath, runtimeEnvPath, kubeconfigPath, evidenceDir, runId }),
+    /package_d_runner_image_ref_malformed/,
+    "malformed_runner_image_ref_must_fail_closed",
+  );
 
   for (const forbiddenArg of ["--deploy", "--build", "--push", "--tencent-mutation", "--package-c-live", "--patch", "--scale", "--apply"]) {
     await assert.rejects(

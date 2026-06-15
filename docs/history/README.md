@@ -215,6 +215,7 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
 ### 2026-05-23 changes/archive/2026-05-23-repo-native-change-lifecycle
 
 Status: `archived / local-gated`
@@ -5823,3 +5824,40 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-15 package-d-run-scoped-job-image-ref-contract
+
+Status: `landed candidate / local-gated`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `d6318f322eeecdac7093cb0b74f34ccd4ada87ac`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Recorded the cloud finding from `pdrun-20260615-002`: the unique Package D run-scoped Job scheduled to `np-cbk784r8` with `node.tke.cloud.tencent.com/machineset=np-cbk784r8`, then failed container image validation because the live Job manifest used `REDACTED_PACKAGE_D_RUNNER_IMAGE_REF`.
+- Added `PACKAGE_D_RUNNER_IMAGE_REF` to the Package D deploy env allowlist and bootstrap Secret template contract.
+- Split run-scoped Job manifest handling so the Kubernetes live create stdin uses the real allowlisted image ref while `job-manifest-redacted.json` and preflight evidence keep the redacted image ref.
+- Added fail-closed checks for missing, malformed, registry/namespace-mismatched, `latest`, or `REDACTED_*` runner image refs.
+- Updated the next cloud authorization prompt to rerun with run id `pdrun-20260615-003`.
+
+Verification:
+
+- RED: `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs` failed with `package_d_env_non_allowlist_key:PACKAGE_D_RUNNER_IMAGE_REF` before the allowlist and runner split were updated.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-kubernetes-api-preflight-runner-local-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-bootstrap-apply-runner-local-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs`: pass.
+
+Can-claim:
+
+- Package D run-scoped Job runner no longer sends redacted image placeholders to Kubernetes live create manifests.
+- Package D evidence still redacts the runner image ref.
+- `realExecutionReady` remains `false`.
+
+Cannot-claim:
+
+- This repo session read real kubeconfig or secrets, connected to Kubernetes API, ran kubectl, created Kubernetes resources, deployed, built/pushed images, executed Tencent mutation, ran Package C live, ran Package D production execution, or brought production runtime online.

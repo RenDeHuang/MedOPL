@@ -2016,6 +2016,7 @@ Package D 只能读取以下两个 env 文件的 allowlisted key，且必须按�
 - `TENCENT_TCR_REGION`
 - `TENCENT_DEPLOY_CLUSTER_ID`
 - `TENCENT_DEPLOY_KUBECONFIG_REF`
+- `PACKAGE_D_RUNNER_IMAGE_REF`
 
 `portal-runtime.env` allowlist：
 
@@ -2026,6 +2027,8 @@ Package D 只能读取以下两个 env 文件的 allowlisted key，且必须按�
 - `PORTAL_POSTGRES_PASSWORD`
 
 `TENCENT_DEPLOY_KUBECONFIG_REF` 只能是后端 secret reference 或本机受控路径引用，不能把 raw kubeconfig 写入合同、日志、Portal payload、`.runtime` 或 git。
+
+`PACKAGE_D_RUNNER_IMAGE_REF` 是 run-scoped Package D platform runner Job 的非 secret image reference。它必须匹配 `TENCENT_TCR_REGISTRY` / `TENCENT_TCR_NAMESPACE` / repo / non-latest tag 形状；Kubernetes live Job manifest 必须使用真实值，`.runtime` evidence 和 docs 只能写 redacted image ref。`REDACTED_*` 占位符不得提交给 Kubernetes API。
 
 `PORTAL_ADMIN_PASSWORD`、`PORTAL_POSTGRES_PASSWORD` 和完整 DB URL 只能进入后端 secret 边界；stdout、docs、git、Portal payload 和 `.runtime` 只能出现脱敏摘要或 endpoint host:port。`PORTAL_POSTGRES_URL` 必须指向 VPC 内网 PostgreSQL endpoint `10.66.0.21:5432`，不依赖公网 PostgreSQL。Package C PostgreSQL ledger sink 的真实 DB canary 不再从本机追求连通性；它必须等 Portal / control-plane service 部署到 VPC 内、可从 TKE platform pool 访问 `medopl-postgres` 后再单独授权执行。
 
@@ -2316,7 +2319,8 @@ R-16 `deploy-dry-run` 必须显式传入 `--image-digests-file <path>`，并且�
     "TENCENT_TCR_NAMESPACE",
     "TENCENT_TCR_REGION",
     "TENCENT_DEPLOY_CLUSTER_ID",
-    "TENCENT_DEPLOY_KUBECONFIG_REF"
+    "TENCENT_DEPLOY_KUBECONFIG_REF",
+    "PACKAGE_D_RUNNER_IMAGE_REF"
   ],
   "portalRuntimeEnvAllowlist": [
     "PORTAL_ADMIN_EMAIL",
@@ -3041,7 +3045,8 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
       "TENCENT_TCR_NAMESPACE",
       "TENCENT_TCR_REGION",
       "TENCENT_DEPLOY_CLUSTER_ID",
-      "TENCENT_DEPLOY_KUBECONFIG_REF"
+      "TENCENT_DEPLOY_KUBECONFIG_REF",
+      "PACKAGE_D_RUNNER_IMAGE_REF"
     ],
     "portalRuntimeEnvAllowlist": [
       "PORTAL_ADMIN_EMAIL",

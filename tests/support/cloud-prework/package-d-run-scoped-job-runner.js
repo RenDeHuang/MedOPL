@@ -31,7 +31,8 @@ export const PACKAGE_D_RUN_SCOPED_JOB_COMMAND = "node tests/support/cloud-prewor
 const DEFAULT_EVIDENCE_ROOT = ".runtime/package-d-run-scoped-job-preflight";
 const CLEANUP_POLICY = "delete-on-success-retain-on-failure";
 const RUN_ID_PATTERN = /^[a-z0-9][a-z0-9-]{2,29}$/u;
-const RUNNER_IMAGE_REF = "REDACTED_PACKAGE_D_RUNNER_IMAGE_REF";
+const RUNNER_IMAGE_REF_SOURCE_KEY = "PACKAGE_D_RUNNER_IMAGE_REF";
+const REDACTED_RUNNER_IMAGE_REF = "REDACTED_PACKAGE_D_RUNNER_IMAGE_REF";
 const FORBIDDEN_ARGS = Object.freeze(new Set([
   "--deploy",
   "--build",
@@ -63,9 +64,42 @@ function assertRunId(runId = "") {
   if (!RUN_ID_PATTERN.test(runId)) throw new Error("package_d_run_scoped_job_runid_invalid");
 }
 
+function text(value = "") {
+  return String(value ?? "").trim();
+}
+
 function jobNameForRunId(runId = "") {
   assertRunId(runId);
   return `medopl-platform-runner-preflight-${runId}`;
+}
+
+function assertRunnerImageRef({ imageRef, deployEnv }) {
+  const value = text(imageRef);
+  if (!value) throw new Error("package_d_runner_image_ref_missing");
+  if (value.startsWith("REDACTED_")) throw new Error("package_d_runner_image_ref_redacted_value_forbidden");
+  if (/\s/u.test(value) || value.includes("://")) throw new Error("package_d_runner_image_ref_malformed");
+  const slashParts = value.split("/");
+  if (slashParts.length < 3) throw new Error("package_d_runner_image_ref_malformed");
+  const registry = slashParts[0];
+  const namespace = slashParts[1];
+  const imageNameWithTag = slashParts.slice(2).join("/");
+  const tagSeparator = imageNameWithTag.lastIndexOf(":");
+  if (tagSeparator <= 0 || tagSeparator === imageNameWithTag.length - 1) {
+    throw new Error("package_d_runner_image_ref_malformed");
+  }
+  const repository = imageNameWithTag.slice(0, tagSeparator);
+  const tag = imageNameWithTag.slice(tagSeparator + 1);
+  if (!repository || !tag || tag === "latest") throw new Error("package_d_runner_image_ref_malformed");
+  if (registry !== deployEnv.TENCENT_TCR_REGISTRY) throw new Error("package_d_runner_image_ref_registry_mismatch");
+  if (namespace !== deployEnv.TENCENT_TCR_NAMESPACE) throw new Error("package_d_runner_image_ref_namespace_mismatch");
+  return {
+    value,
+    sourceKey: RUNNER_IMAGE_REF_SOURCE_KEY,
+    registry,
+    namespace,
+    repository,
+    tagPresent: true,
+  };
 }
 
 function refList(names = [], key) {
@@ -76,7 +110,7 @@ function imagePullSecretRefs(names = []) {
   return names.map((name) => ({ name }));
 }
 
-function materializeRunScopedJobManifest({ runId }) {
+function materializeRunScopedJobManifest({ runId, runnerImageRef }) {
   const shape = PACKAGE_D_IN_CLUSTER_PLATFORM_RUNNER_SHAPE;
   const namespace = shape.namespace;
   const jobName = jobNameForRunId(runId);
@@ -112,7 +146,7 @@ function materializeRunScopedJobManifest({ runId }) {
           imagePullSecrets: imagePullSecretRefs(shape.podTemplate.imagePullSecrets),
           containers: [{
             name: "medopl-package-d-runner",
-            image: RUNNER_IMAGE_REF,
+            image: runnerImageRef,
             imagePullPolicy: "IfNotPresent",
             args: ["preflight"],
             envFrom: [
@@ -139,10 +173,14 @@ function materializeRunScopedJobManifest({ runId }) {
 }
 
 function redactedJobManifest(manifest = {}) {
-  return JSON.parse(JSON.stringify(manifest));
+  const redacted = JSON.parse(JSON.stringify(manifest));
+  if (redacted.spec?.template?.spec?.containers?.[0]) {
+    redacted.spec.template.spec.containers[0].image = REDACTED_RUNNER_IMAGE_REF;
+  }
+  return redacted;
 }
 
-function assertJobManifestBoundary(manifest = {}) {
+function assertJobManifestBoundary(manifest = {}, { allowRedactedImage = false } = {}) {
   const serialized = JSON.stringify(manifest);
   if (serialized.includes("medopl-tenant-")) throw new Error("package_d_run_scoped_job_references_tenant_pool");
   if (serialized.includes("postgresql://")) throw new Error("package_d_run_scoped_job_exposes_db_url");
@@ -163,6 +201,9 @@ function assertJobManifestBoundary(manifest = {}) {
     throw new Error("package_d_run_scoped_job_uses_retired_custom_nodepool_label");
   }
   const container = podSpec.containers?.[0] || {};
+  if (!allowRedactedImage && String(container.image || "").startsWith("REDACTED_")) {
+    throw new Error("package_d_run_scoped_job_live_manifest_redacted_image_forbidden");
+  }
   if (JSON.stringify(container.args) !== JSON.stringify(["preflight"])) {
     throw new Error("package_d_run_scoped_job_command_must_be_preflight");
   }
@@ -250,10 +291,13 @@ export async function buildPackageDRunScopedJobPlan({
   const deployEnv = parseEnv(await readFile(deployEnvPath, "utf8"), DEPLOY_ENV_KEYS);
   const runtimeEnv = parseEnv(await readFile(runtimeEnvPath, "utf8"), RUNTIME_ENV_KEYS);
   assertTargetEnv({ deployEnv, runtimeEnv, kubeconfigPath });
+  const runnerImage = assertRunnerImageRef({ imageRef: deployEnv[RUNNER_IMAGE_REF_SOURCE_KEY], deployEnv });
   const clusterAuth = kubeconfigSummary(await readFile(kubeconfigPath, "utf8"));
-  const manifestWithLifecycle = materializeRunScopedJobManifest({ runId });
-  const { packageDJobLifecycle, ...jobManifest } = manifestWithLifecycle;
-  assertJobManifestBoundary(jobManifest);
+  const manifestWithLifecycle = materializeRunScopedJobManifest({ runId, runnerImageRef: runnerImage.value });
+  const { packageDJobLifecycle, ...liveJobManifest } = manifestWithLifecycle;
+  assertJobManifestBoundary(liveJobManifest);
+  const jobManifest = redactedJobManifest(liveJobManifest);
+  assertJobManifestBoundary(jobManifest, { allowRedactedImage: true });
   const jobName = jobNameForRunId(runId);
   const commands = plannedCommands({ jobName }).map((command) => {
     assertKubectlCommandAllowed(command.args, command.kind, jobName);
@@ -261,7 +305,7 @@ export async function buildPackageDRunScopedJobPlan({
   });
   const scopedEvidenceDir = evidenceDir || path.join(DEFAULT_EVIDENCE_ROOT, runId);
 
-  return {
+  const plan = {
     ok: true,
     contract: "package_d_run_scoped_job_runner",
     mode: "preflight-job",
@@ -283,6 +327,10 @@ export async function buildPackageDRunScopedJobPlan({
       tcrRegistry: deployEnv.TENCENT_TCR_REGISTRY,
       tcrNamespace: deployEnv.TENCENT_TCR_NAMESPACE,
       tcrRegion: deployEnv.TENCENT_TCR_REGION,
+      runnerImageRefSourceKey: runnerImage.sourceKey,
+      runnerImageRef: "redacted",
+      runnerImageRepository: runnerImage.repository,
+      runnerImageTagPresent: runnerImage.tagPresent,
     },
     clusterAuth,
     preflightChecks: [
@@ -292,7 +340,7 @@ export async function buildPackageDRunScopedJobPlan({
       "tcr_imagepullsecret_image_pull_readiness_shape",
       "evidence_redaction_audit",
     ],
-    jobManifest: redactedJobManifest(jobManifest),
+    jobManifest,
     commands,
     evidence: {
       sink: ".runtime",
@@ -325,6 +373,11 @@ export async function buildPackageDRunScopedJobPlan({
     },
     realExecutionReady: false,
   };
+  Object.defineProperty(plan, "liveJobManifest", {
+    value: liveJobManifest,
+    enumerable: false,
+  });
+  return plan;
 }
 
 export async function runPackageDRunScopedJobPreflight({
@@ -340,7 +393,7 @@ export async function runPackageDRunScopedJobPreflight({
   await mkdir(scopedEvidenceDir, { recursive: true });
   await writeFile(plan.evidence.redactedManifestPath, `${JSON.stringify(plan.jobManifest, null, 2)}\n`);
 
-  const manifestStdin = `${JSON.stringify(plan.jobManifest, null, 2)}\n`;
+  const manifestStdin = `${JSON.stringify(plan.liveJobManifest, null, 2)}\n`;
   const commandResults = [];
   let namespaceStatus = "not_checked";
   let jobObserved = "not_checked";

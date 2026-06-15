@@ -62,6 +62,7 @@ assert.equal(pack.manifests.configMap.data.TARGET_PLATFORM_NODE_POOL_ID, "np-cbk
 assert.equal(pack.manifests.configMap.data.POSTGRES_ENDPOINT, "10.66.0.21:5432", "configmap_must_record_vpc_postgres_endpoint");
 
 assert.deepEqual(Object.keys(pack.manifests.secretTemplates.deployEnvSecret.stringData).sort(), [
+  "PACKAGE_D_RUNNER_IMAGE_REF",
   "RUN_TENCENT_DEPLOY_EXECUTION",
   "TCR_ID",
   "TCR_SECRET",
