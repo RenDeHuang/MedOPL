@@ -5770,3 +5770,56 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-15 package-d-run-scoped-job-machineset-selector
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `69142aa3d8fe44d609716853b87d89b0bf5b3bb0`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Recorded the cloud scheduling finding: the run-scoped Package D Job was created, but its Pod did not schedule because `np-cbk784r8` nodes do not carry the retired custom selector `medopl.io/nodepool-role=platform-service`.
+- Updated Package D runner scheduling to the existing TKE machineset label `node.tke.cloud.tencent.com/machineset=np-cbk784r8` without modifying node labels.
+- Kept `np-cbk784r8` as the protected platform service pool and kept tenant pool / `medopl-tenant-` scheduling forbidden.
+- Updated run-scoped Job runner boundary checks, in-cluster runner manifest materialization, Package D deploy execution local gate and current machine truth.
+- Updated the next cloud authorization prompt to rerun with run id `pdrun-20260615-002`.
+
+Verification:
+
+- RED: `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs` failed while the runner still emitted `medopl.io/nodepool-role=platform-service`.
+- RED: `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs` failed while the manifest pack still emitted `medopl.io/nodepool-role=platform-service`.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-kubernetes-api-preflight-runner-local-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-bootstrap-apply-runner-local-gate.mjs`: pass.
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+Can-claim:
+
+- Package D runner manifests target the real TKE machineset selector for `np-cbk784r8`.
+- Local gates reject reliance on the retired custom platform-service label.
+- `realExecutionReady` remains `false`.
+
+Cannot-claim:
+
+- This repo session read real kubeconfig or secrets, connected to Kubernetes API, ran kubectl, changed node labels, created Kubernetes resources, deployed, built/pushed images, executed Tencent mutation, ran Package C live, ran Package D production execution, or brought production runtime online.
+
+landed_commit: `fcc608fe7ace4de237376fe918b1c439eaf20e93`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
