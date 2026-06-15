@@ -2040,7 +2040,7 @@ Package D execution boundary / preflight gate 是非执行 gate：通过态必�
 
 Package D 必须通过 `--release-plan <json>` 消费本地受控 release plan。release plan 可以放在 `.runtime` 或用户指定的本地路径，不进入 git，不包含 raw secret、raw kubeconfig、token、cookie、object key、signed URL 或 raw cloud response。
 
-当前稳定上线 readiness target 固定为 TKE cluster `cls-fi097sy4` 的 protected platform service node pool `np-cbk784r8`。release plan 必须把平台服务 target 调度到该 platform pool，并保留 pool 保护边界；Package D 不创建、删除、释放或扩缩容 node pool，也不能把 tenant node pool lifecycle 逻辑带入 deploy lane。
+当前稳定上线 readiness target 固定为 TKE cluster `cls-fi097sy4`。Package D in-cluster runner / run-scoped Job 调度到 platform runner node pool `np-6l4nkdto`，selector 为 `node.tke.cloud.tencent.com/machineset=np-6l4nkdto`；旧 `np-cbk784r8` 保留为 protected legacy/platform pool，不再作为 Package D runner target。release plan 必须把平台服务 target 调度到 platform service pool，并保留 pool 保护边界；Package D 不创建、删除、释放或扩缩容 node pool，也不能把 tenant node pool lifecycle 逻辑带入 deploy lane。
 
 Package D manifest / scheduling shape gate 必须把 Portal / control-plane 等平台服务调度到 platform service pool，不允许引用 `medopl-tenant-` tenant pool 或 workspace tenant pool 作为平台服务调度目标。rollback plan shape 必须存在并声明 owner / strategy；local shape gate 只证明这些字段存在和边界正确，不证明 release plan 已可执行。
 
@@ -2331,7 +2331,8 @@ R-16 `deploy-dry-run` 必须显式传入 `--image-digests-file <path>`，并且�
   ],
   "currentReadinessTarget": {
     "clusterId": "cls-fi097sy4",
-    "platformNodePoolId": "np-cbk784r8",
+    "platformNodePoolId": "np-6l4nkdto",
+    "legacyProtectedPlatformNodePoolId": "np-cbk784r8",
     "postgresEndpoint": "10.66.0.21:5432",
     "postgresAccess": "vpc_private_only",
     "postgresLedgerCanaryTiming": "after_service_deployed_inside_vpc"
@@ -3057,7 +3058,8 @@ Package D 不授权 Package C 的资源生命周期动作：不得创建、删�
     ],
     "currentReadinessTarget": {
       "clusterId": "cls-fi097sy4",
-      "platformNodePoolId": "np-cbk784r8",
+      "platformNodePoolId": "np-6l4nkdto",
+      "legacyProtectedPlatformNodePoolId": "np-cbk784r8",
       "postgresEndpoint": "10.66.0.21:5432",
       "postgresAccess": "vpc_private_only",
       "postgresLedgerCanaryTiming": "after_service_deployed_inside_vpc"

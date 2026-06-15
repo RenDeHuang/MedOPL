@@ -131,7 +131,7 @@ Next owner:
 
 ### 2026-05-23 changes/archive/2026-05-23-local-golden-path-release-candidate
 
-Status: `landed / pushed / post-push verified`
+Status: `authoring / local-gated`
 
 Branch: `cleanup/golden-path-first-class`
 
@@ -6018,5 +6018,44 @@ post_push_verification:
 - `npm run closeout:check -- --json`: pass.
 
 post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-15 package-d-runner-placement-np-6l4nkdto
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `b77323845415ef7d53d76adefce893d741eb5c4d`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Migrated the Package D in-cluster runner / run-scoped Job scheduling contract to TKE machineset selector `node.tke.cloud.tencent.com/machineset=np-6l4nkdto`.
+- Recorded new runner placement: node pool `np-6l4nkdto`, machine id `np-6l4nkdto-2cdtm`, runner node IP `10.66.0.42`.
+- Kept old `np-cbk784r8` as protected legacy/platform pool and no longer as the Package D runner target.
+- Kept Package C tenant pool lifecycle semantics and protected pool guards unchanged.
+- Preserved forbidden boundaries: no tenant pool / `medopl-tenant-`, no Package C live, no business deploy, no build/push and no Tencent mutation.
+
+Verification:
+
+- RED: `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs` failed while Package D still returned `np-cbk784r8`.
+- RED: `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs` failed while the manifest pack still emitted `node.tke.cloud.tencent.com/machineset=np-cbk784r8`.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-kubernetes-api-preflight-runner-local-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-bootstrap-apply-runner-local-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs`: pass.
+
+Can-claim:
+
+- Package D runner manifests and local/future-authorized gates now target `node.tke.cloud.tencent.com/machineset=np-6l4nkdto`.
+- `np-cbk784r8` remains protected legacy/platform pool and is not a Package D runner scheduling target.
+
+Cannot-claim:
+
+- This repo session read kubeconfig or secrets, connected to Kubernetes API, ran kubectl, deployed, built/pushed images, executed Tencent mutation, ran Package C live, modified `np-cbk784r8`, modified `np-6l4nkdto`, or completed Package D production execution.
 
 next_cursor: `real-cloud-authorization-boundary`

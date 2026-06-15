@@ -34,8 +34,13 @@ assert.equal(pack.jobLifecycle.template.spec.template.spec.serviceAccountName, "
 assert.equal(pack.jobLifecycle.template.spec.template.spec.restartPolicy, "Never", "job_restart_policy_must_be_never");
 assert.deepEqual(
   pack.jobLifecycle.template.spec.template.spec.nodeSelector,
-  { "node.tke.cloud.tencent.com/machineset": "np-cbk784r8" },
+  { "node.tke.cloud.tencent.com/machineset": "np-6l4nkdto" },
   "job_must_target_tke_machineset_selector",
+);
+assert.notEqual(
+  pack.jobLifecycle.template.spec.template.spec.nodeSelector["node.tke.cloud.tencent.com/machineset"],
+  "np-cbk784r8",
+  "job_must_not_schedule_to_legacy_platform_pool",
 );
 assert.equal(
   Object.hasOwn(pack.jobLifecycle.template.spec.template.spec.nodeSelector, "medopl.io/nodepool-role"),
@@ -58,7 +63,7 @@ assert.equal(pack.manifests.configMap.metadata.name, "medopl-package-d-runner-co
 assert.equal(pack.manifests.configMap.data.PACKAGE_D_RUNNER_COMMAND_ALLOWLIST, "preflight,deploy,smoke,rollback", "configmap_must_record_command_allowlist");
 assert.equal(pack.manifests.configMap.data.RUN_TENCENT_DEPLOY_EXECUTION, "0", "configmap_must_keep_deploy_gate_zero");
 assert.equal(pack.manifests.configMap.data.TARGET_CLUSTER_ID, "cls-fi097sy4", "configmap_must_record_target_cluster");
-assert.equal(pack.manifests.configMap.data.TARGET_PLATFORM_NODE_POOL_ID, "np-cbk784r8", "configmap_must_record_platform_pool");
+assert.equal(pack.manifests.configMap.data.TARGET_PLATFORM_NODE_POOL_ID, "np-6l4nkdto", "configmap_must_record_runner_pool");
 assert.equal(pack.manifests.configMap.data.POSTGRES_ENDPOINT, "10.66.0.21:5432", "configmap_must_record_vpc_postgres_endpoint");
 
 assert.deepEqual(Object.keys(pack.manifests.secretTemplates.deployEnvSecret.stringData).sort(), [
@@ -119,7 +124,7 @@ assert.deepEqual(pack.bootstrapAuthorizationPack.discouragedExecutionEnvironment
 assert.deepEqual(pack.bootstrapAuthorizationPack.target, {
   clusterId: "cls-fi097sy4",
   namespace: "medopl-platform",
-  platformNodePoolId: "np-cbk784r8",
+  platformNodePoolId: "np-6l4nkdto",
   schedulingClass: "platform_service_pool",
 }, "bootstrap_authorization_pack_target_must_be_fixed");
 assert.deepEqual(pack.bootstrapAuthorizationPack.resourceTypesToCreateOrValidate, [

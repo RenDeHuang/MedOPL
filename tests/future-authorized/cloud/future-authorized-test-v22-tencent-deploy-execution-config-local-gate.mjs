@@ -6,7 +6,8 @@ import {
 } from "../../support/cloud-prework/package-d-in-cluster-platform-runner-shape.js";
 
 const FIXED_DEPLOY_CLUSTER_ID = "cls-fi097sy4";
-const FIXED_PLATFORM_NODE_POOL_ID = "np-cbk784r8";
+const FIXED_PLATFORM_NODE_POOL_ID = "np-6l4nkdto";
+const LEGACY_PROTECTED_PLATFORM_NODE_POOL_ID = "np-cbk784r8";
 const FIXED_POSTGRES_ENDPOINT = "10.66.0.21:5432";
 const FIXED_DEPLOY_NAMESPACE = "medopl-platform";
 const READINESS_GAPS = Object.freeze([
@@ -25,6 +26,9 @@ const DEPLOY_RUNNER_PLACEMENT_PLAN = Object.freeze({
   clusterId: FIXED_DEPLOY_CLUSTER_ID,
   namespace: FIXED_DEPLOY_NAMESPACE,
   platformNodePoolId: FIXED_PLATFORM_NODE_POOL_ID,
+  legacyProtectedPlatformNodePoolId: LEGACY_PROTECTED_PLATFORM_NODE_POOL_ID,
+  runnerMachineId: "np-6l4nkdto-2cdtm",
+  runnerNodeIp: "10.66.0.42",
   schedulingTarget: "platform_service_pool",
   purpose: Object.freeze([
     "deploy/smoke inside TKE platform pool",
@@ -51,6 +55,7 @@ const DEPLOY_RUNNER_PLACEMENT_PLAN = Object.freeze({
     clusterId: FIXED_DEPLOY_CLUSTER_ID,
     namespace: FIXED_DEPLOY_NAMESPACE,
     platformNodePoolId: FIXED_PLATFORM_NODE_POOL_ID,
+    legacyProtectedPlatformNodePoolId: LEGACY_PROTECTED_PLATFORM_NODE_POOL_ID,
     schedulingTarget: "platform_service_pool",
     allowedActionsAfterAuthorization: Object.freeze([
       "Kubernetes API connectivity preflight",
@@ -269,7 +274,7 @@ function releaseTarget({ component, repository = component, sourceRoot }) {
       nodePoolId: FIXED_PLATFORM_NODE_POOL_ID,
       tenantPoolAllowed: false,
       nodeSelector: {
-        "node.tke.cloud.tencent.com/machineset": "np-cbk784r8",
+        "node.tke.cloud.tencent.com/machineset": FIXED_PLATFORM_NODE_POOL_ID,
       },
     },
   };
@@ -651,9 +656,9 @@ const localShapeGate = checkLocalShapeGate({
     namespace: "medopl-platform",
     schedulingTarget: {
       class: "platform_service_pool",
-      nodePoolId: "np-cbk784r8",
+      nodePoolId: FIXED_PLATFORM_NODE_POOL_ID,
       nodeSelector: {
-        "node.tke.cloud.tencent.com/machineset": "np-cbk784r8",
+        "node.tke.cloud.tencent.com/machineset": FIXED_PLATFORM_NODE_POOL_ID,
       },
     },
     dbTarget: {
@@ -735,9 +740,9 @@ const executionPreflightGate = checkExecutionPreflightGate({
     namespace: "medopl-platform",
     schedulingTarget: {
       class: "platform_service_pool",
-      nodePoolId: "np-cbk784r8",
+      nodePoolId: FIXED_PLATFORM_NODE_POOL_ID,
       nodeSelector: {
-        "node.tke.cloud.tencent.com/machineset": "np-cbk784r8",
+        "node.tke.cloud.tencent.com/machineset": FIXED_PLATFORM_NODE_POOL_ID,
       },
     },
     dbTarget: {
@@ -789,7 +794,7 @@ assert.equal(releasePlan.summary.realExecutionReady, false, "release_plan_must_n
 assert.deepEqual(releasePlan.summary.imageTargets, ["portal-frontend", "medopl-go-backend", "opl-web-gateway", "opl-runtime-bridge"], "release_plan_must_list_image_targets");
 assert.equal(releasePlan.summary.dbPasswordInManifestPlaintext, false, "release_plan_must_not_put_db_password_in_manifest_plaintext");
 assert.equal(accepted.result.summary.deployClusterId, "cls-fi097sy4", "deploy_readiness_cluster_must_be_fixed");
-assert.equal(accepted.result.summary.platformNodePoolId, "np-cbk784r8", "deploy_readiness_platform_pool_must_be_fixed");
+assert.equal(accepted.result.summary.platformNodePoolId, FIXED_PLATFORM_NODE_POOL_ID, "deploy_readiness_platform_runner_pool_must_be_fixed");
 assert.equal(portalRuntimeEnv.summary.postgresEndpoint, "10.66.0.21:5432", "portal_runtime_postgres_must_use_vpc_endpoint");
 assert.equal(portalRuntimeEnv.summary.postgresCanaryTiming, "after_service_deployed_inside_vpc", "deploy_readiness_db_canary_must_wait_for_vpc_runtime");
 assert.deepEqual(accepted.result.summary.readinessGaps, [
@@ -814,7 +819,7 @@ assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.preferredExecutionLocation, "tke_in_cl
 assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.preferredRunnerName, "medopl-platform-runner", "deploy_runner_preferred_runner_name_must_be_platform_runner");
 assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.clusterId, "cls-fi097sy4", "deploy_runner_preferred_cluster_must_be_fixed");
 assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.namespace, "medopl-platform", "deploy_runner_preferred_namespace_must_be_fixed");
-assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.platformNodePoolId, "np-cbk784r8", "deploy_runner_preferred_platform_pool_must_be_fixed");
+assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.platformNodePoolId, FIXED_PLATFORM_NODE_POOL_ID, "deploy_runner_preferred_platform_runner_pool_must_be_fixed");
 assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.schedulingTarget, "platform_service_pool", "deploy_runner_preferred_scheduling_must_target_platform_pool");
 assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.purpose, [
   "deploy/smoke inside TKE platform pool",
@@ -838,7 +843,8 @@ assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.deploySmokePlan, {
   executionLocation: "tke_in_cluster_platform_runner",
   clusterId: "cls-fi097sy4",
   namespace: "medopl-platform",
-  platformNodePoolId: "np-cbk784r8",
+  platformNodePoolId: FIXED_PLATFORM_NODE_POOL_ID,
+  legacyProtectedPlatformNodePoolId: LEGACY_PROTECTED_PLATFORM_NODE_POOL_ID,
   schedulingTarget: "platform_service_pool",
   allowedActionsAfterAuthorization: [
     "Kubernetes API connectivity preflight",
@@ -854,10 +860,10 @@ assert.equal(runnerShape.status, "shape_gate_only", "in_cluster_platform_runner_
 assert.equal(runnerShape.workloadKind, "Job", "in_cluster_platform_runner_shape_must_be_job");
 assert.equal(runnerShape.namespace, "medopl-platform", "in_cluster_platform_runner_namespace_must_be_fixed");
 assert.equal(runnerShape.serviceAccountName, "medopl-platform-runner", "in_cluster_platform_runner_service_account_must_be_fixed");
-assert.equal(runnerShape.scheduling.nodePoolId, "np-cbk784r8", "in_cluster_platform_runner_must_target_platform_pool");
-assert.deepEqual(runnerShape.scheduling.nodeSelector, {
-  "node.tke.cloud.tencent.com/machineset": "np-cbk784r8",
-}, "in_cluster_platform_runner_must_target_tke_machineset_label");
+assert.equal(runnerShape.scheduling.nodePoolId, FIXED_PLATFORM_NODE_POOL_ID, "in_cluster_platform_runner_must_target_runner_pool");
+assert.deepEqual(runnerShape.scheduling.nodeSelector, { "node.tke.cloud.tencent.com/machineset": FIXED_PLATFORM_NODE_POOL_ID }, "in_cluster_platform_runner_must_target_tke_machineset_label");
+assert.notEqual(runnerShape.scheduling.nodePoolId, LEGACY_PROTECTED_PLATFORM_NODE_POOL_ID, "in_cluster_platform_runner_must_not_target_legacy_platform_pool");
+assert.deepEqual(runnerShape.scheduling.legacyProtectedNodePoolIds, [LEGACY_PROTECTED_PLATFORM_NODE_POOL_ID], "legacy_platform_pool_must_remain_protected");
 assert.equal(Object.hasOwn(runnerShape.scheduling.nodeSelector, "medopl.io/nodepool-role"), false, "in_cluster_platform_runner_must_not_require_custom_platform_service_label");
 assert.equal(runnerShape.scheduling.tenantPoolAllowed, false, "in_cluster_platform_runner_must_forbid_tenant_pool");
 assert.equal(runnerShape.scheduling.forbiddenNodePoolPrefix, "medopl-tenant-", "in_cluster_platform_runner_must_forbid_tenant_prefix");
@@ -871,10 +877,7 @@ assert.deepEqual(runnerShape.rbac.clusterRules, [{ apiGroups: [""], resources: [
 assert.equal(runnerShape.runtimeEnv.portalPostgresUrlSource, "secretRef", "in_cluster_platform_runner_postgres_url_must_use_secret_ref");
 assert.equal(runnerShape.runtimeEnv.tcrSecretSource, "imagePullSecret_or_secretRef", "in_cluster_platform_runner_tcr_secret_must_use_ref");
 assert.equal(runnerShape.runtimeEnv.plaintextSecretsAllowed, false, "in_cluster_platform_runner_runtime_env_must_forbid_plaintext");
-assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.requiredRuntimeTools, [
-  "kubectl",
-  "PostgreSQL client or ledger canary runner",
-], "deploy_runner_runtime_tools_must_be_minimal_for_platform_runner");
+assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.requiredRuntimeTools, ["kubectl", "PostgreSQL client or ledger canary runner"], "deploy_runner_runtime_tools_must_be_minimal_for_platform_runner");
 assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.secretPaths, [
   "/home/dev/.secrets/medopl/v22/package-d-deploy.env",
   "/home/dev/.secrets/medopl/v22/portal-runtime.env",

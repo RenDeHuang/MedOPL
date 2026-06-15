@@ -54,7 +54,7 @@ async function main() {
   if (text(process.env.EXPECTED_SERVICE_ACCOUNT) !== "medopl-platform-runner") {
     throw new Error("package_d_runner_service_account_mismatch");
   }
-  if (text(process.env.TARGET_PLATFORM_NODE_POOL_ID) !== "np-cbk784r8") {
+  if (text(process.env.TARGET_PLATFORM_NODE_POOL_ID) !== "np-6l4nkdto") {
     throw new Error("package_d_runner_platform_pool_mismatch");
   }
 
@@ -66,7 +66,7 @@ async function main() {
     command,
     namespace: expectedNamespace,
     serviceAccount: "medopl-platform-runner",
-    platformNodePoolId: "np-cbk784r8",
+    platformNodePoolId: "np-6l4nkdto",
     postgresEndpoint: postgresEndpoint === "10.66.0.21:5432" ? "10.66.0.21:5432" : "mismatch_redacted",
     postgresTcp: postgres,
     secretRefs: {

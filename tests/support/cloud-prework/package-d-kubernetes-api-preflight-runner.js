@@ -15,7 +15,7 @@ export const PACKAGE_D_KUBERNETES_API_PREFLIGHT_COMMAND = "node tests/support/cl
 
 export const FIXED_CLUSTER_ID = "cls-fi097sy4";
 export const FIXED_NAMESPACE = "medopl-platform";
-export const FIXED_PLATFORM_NODE_POOL_ID = "np-cbk784r8";
+export const FIXED_PLATFORM_NODE_POOL_ID = "np-6l4nkdto";
 export const FIXED_POSTGRES_ENDPOINT = "10.66.0.21:5432";
 const DEFAULT_EVIDENCE_DIR = ".runtime/package-d-kubernetes-api-server-side-dry-run-preflight";
 export const KUBE_ENV_NAME = ["KUBE", "CONFIG"].join("");

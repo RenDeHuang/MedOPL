@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13: CreateNodePool, scale up, scale down and DeleteNodePool passed for medopl-tenant-rb-package-c-live-canary-20260613; readonly cleanup check observed platform pool np-cbk784r8 and no residual canary tenant node pool by name or id. TagResources for tke:nodepool returned InvalidParameter.UnsupportedService and remains non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound is landed in Go domain, memory store, Ent schema and baseline migration; Package C live runner projects the tenant node pool lifecycle into local ResourceBinding / CloudOperation state-machine evidence; Package C repository write wiring contract now covers create resource binding, append cloud operation event, nodePoolId update, lifecycle status update, released, failed and cleanupRequired paths through an injected ledger sink. Canonical ownership and billing truth remains PostgreSQL ledger, not cloud tags. The default runner sink is still local/dry-run and does not execute a real PostgreSQL connection, but Package C now has gated PostgreSQL ledger sink support with root pg driver dependency, RUN_MEDOPL_POSTGRES_LEDGER_EXECUTION=1, allowlisted local DB env keys, schema/write-permission preflight, explicit live canary write/read/cleanup runner, redacted .runtime evidence and fail-closed driver/gate behavior. An explicitly authorized PostgreSQL ledger canary read only the dedicated ledger env file and failed closed at connection preflight with timeout expired / network_unreachable_or_connection_preflight_failed before parent-row check or DB write. Next stable上线 plan is Package D deploy readiness planning for TKE cluster cls-fi097sy4 platform pool np-cbk784r8 and VPC PostgreSQL 10.66.0.21:5432, with preferred deploy execution now moved to a TKE in-cluster platform runner/job scheduled on protected platform pool np-cbk784r8; build/push image readiness is separate and can be handled by an external build runner or future Kaniko/BuildKit, while deploy/smoke/DB connectivity preflight runs inside the TKE platform pool and VPC; the previous medopl-v22-deploy-runner VPC CVM checklist is fallback-only, not the default route; the non-executing local shape gate now verifies RUN_TENCENT_DEPLOY_EXECUTION=0, deploy/runtime env allowlists, kubeconfig ref-only handling, Portal runtime PostgreSQL endpoint, manifest scheduling to the platform service pool, rollback plan shape and tenant pool scheduling rejection. The reviewable Package D release plan shape now makes releasePlanReady=true while realExecutionReady remains false, and the Package D execution preflight gate can judge split deploy/runtime env allowlists, fixed cluster/namespace/platform pool/PostgreSQL/image targets and redaction audit while keeping realExecutionReady=false. Package D in-cluster platform runner shape gate is now landed and split into a repo-local support module to keep the deploy gate under line budget: the preferred runner shape is a Kubernetes Job in namespace medopl-platform with serviceAccount medopl-platform-runner, scheduling fixed to platform service pool np-cbk784r8, tenant pool prefix medopl-tenant- forbidden, configMap/secretRef/imagePullSecret-only runtime inputs, no plaintext secret, no raw kubeconfig, minimal RBAC with namespace scope preferred and cluster-scope limited to read-only nodes for platform pool visibility, command allowlist limited to preflight/deploy/smoke/rollback, and redacted shape evidence written only to .runtime. It does not call kubectl, connect to Kubernetes API, deploy, build/push, execute Tencent mutation, read kubeconfig, or allow Package C live. Package D in-cluster runner manifest materialization is now a non-executing review pack: it produces Namespace, ServiceAccount, ConfigMap, redacted Secret templates, imagePullSecret template, Role/RoleBinding, nodes read-only ClusterRole/ClusterRoleBinding and Job manifest shape plus an authorization pack; after local WSL could not reach the TKE API, the same gate now includes a bootstrap authorization pack recommending Tencent CloudShell, Cloud Assistant or a VPC internal runner for server-side dry-run / later separately authorized bootstrap, with rollback plan, stop conditions, fixed target cls-fi097sy4 / medopl-platform / np-cbk784r8, resource classes and redacted evidence path. Secret values remain key-level redacted placeholders and raw kubeconfig is forbidden. This pack now has repo-native cloud-runner execution entrypoints for later authorized Kubernetes API connectivity / server-side dry-run and bootstrap apply: it reads only the Package D deploy env, Portal runtime env and kubeconfig paths passed by flag, requires RUN_TENCENT_DEPLOY_EXECUTION=0, validates cluster cls-fi097sy4 / namespace medopl-platform / platform scheduling np-cbk784r8 / VPC PostgreSQL 10.66.0.21:5432, runs only kubectl client check, current-context, namespace read and kubectl apply --server-side --dry-run=server against the Package D bootstrap manifest pack, writes redacted .runtime evidence, and rejects real apply/delete/patch/scale/deploy/build-push/Tencent mutation/Package C live. This entrypoint has now been executed once from a TKE/VPC-reachable environment: Kubernetes API connectivity passed, context/cluster matched cls-fi097sy4, but namespace_read found medopl-platform missing, so server-side dry-run was not entered. Evidence is redacted at /opt/medopl/.runtime/package-d-kubernetes-api-server-side-dry-run-preflight/preflight-redacted.json. The next required boundary is authorized cloud execution of the repo-native Package D bootstrap apply runner that creates medopl-platform Namespace and only Package D bootstrap resources before rerunning the dry-run preflight. The current WSL session is no longer the Package D execution target; deploy/smoke, Kubernetes API connectivity, PostgreSQL ledger canary, DB smoke and rollback should run from the TKE platform runner after separate authorization, while image build/push remains a separate external build runner or future Kaniko/BuildKit concern; realExecutionReady stays false until bootstrap apply and subsequent dry-run / smoke preflights pass; the next boundary is authorized cloud execution of the repo-native Package D bootstrap apply runner for the missing medopl-platform namespace. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization. Starter remains starter_2c4g_10gb: 2C4G, 10GB workspace storage, TKE SA5.MEDIUM4, CLOUD_BSSD 50GB node system disk and public IP disabled; arbitrary Tencent instanceType input is rejected unless represented by a MedOPL plan catalog allowlist entry. Package D cloud bootstrap apply has now confirmed Kubernetes API connectivity, target cluster cls-fi097sy4, medopl-platform Active and allowlisted bootstrap resources. The corrected contract removes Job from idempotent bootstrap apply / server-side dry-run packs and adds a repo-native run-scoped preflight Job runner for unique names medopl-platform-runner-preflight-<runid>; Authorized cloud run-scoped Job creation first exposed the retired custom medopl.io/nodepool-role=platform-service selector gap; readonly scheduling discovery found the stable TKE label node.tke.cloud.tencent.com/machineset=np-cbk784r8, and Package D runner scheduling now targets that machineset label without modifying node labels. Package D run-scoped Job cloud execution pdrun-20260615-002 then scheduled on np-cbk784r8 but failed container image validation because a redacted image placeholder reached the live Job manifest; the repo contract now requires PACKAGE_D_RUNNER_IMAGE_REF for live manifests and keeps only redacted image refs in evidence. Package D run-scoped Job cloud execution pdrun-20260615-003 then reached image pull with the real allowlisted PACKAGE_D_RUNNER_IMAGE_REF but failed because the TCR tag was not found / ImagePullBackOff for uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001. The repo now has a separate public-repo-safe GitHub Actions workflow_dispatch image publish lane for that fixed non-latest tag; it uses GitHub Environment package-d-image-publish with contents: read, required reviewer, branch restriction to recovery/platform-v22-trunk / release/*, environment secrets only TCR_ID/TCR_SECRET, repository secrets forbidden, no automatic triggers, keeps build/push out of the TKE/VPC runner, and is not deploy.",
+  "current_problem": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13: CreateNodePool, scale up, scale down and DeleteNodePool passed for medopl-tenant-rb-package-c-live-canary-20260613; readonly cleanup check observed platform pool np-cbk784r8 and no residual canary tenant node pool by name or id. TagResources for tke:nodepool returned InvalidParameter.UnsupportedService and remains non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound is landed in Go domain, memory store, Ent schema and baseline migration; Package C live runner projects the tenant node pool lifecycle into local ResourceBinding / CloudOperation state-machine evidence; Package C repository write wiring contract now covers create resource binding, append cloud operation event, nodePoolId update, lifecycle status update, released, failed and cleanupRequired paths through an injected ledger sink. Canonical ownership and billing truth remains PostgreSQL ledger, not cloud tags. The default runner sink is still local/dry-run and does not execute a real PostgreSQL connection, but Package C now has gated PostgreSQL ledger sink support with root pg driver dependency, RUN_MEDOPL_POSTGRES_LEDGER_EXECUTION=1, allowlisted local DB env keys, schema/write-permission preflight, explicit live canary write/read/cleanup runner, redacted .runtime evidence and fail-closed driver/gate behavior. An explicitly authorized PostgreSQL ledger canary read only the dedicated ledger env file and failed closed at connection preflight with timeout expired / network_unreachable_or_connection_preflight_failed before parent-row check or DB write. Next stable上线 plan is Package D deploy readiness planning for TKE cluster cls-fi097sy4 and VPC PostgreSQL 10.66.0.21:5432; Package D runner placement has moved to TKE node pool np-6l4nkdto / runner node 10.66.0.42, while np-cbk784r8 remains a protected legacy/platform pool and is no longer the Package D runner target; build/push image readiness is separate and can be handled by an external build runner or future Kaniko/BuildKit, while deploy/smoke/DB connectivity preflight runs inside the TKE platform pool and VPC; the previous medopl-v22-deploy-runner VPC CVM checklist is fallback-only, not the default route; the non-executing local shape gate now verifies RUN_TENCENT_DEPLOY_EXECUTION=0, deploy/runtime env allowlists, kubeconfig ref-only handling, Portal runtime PostgreSQL endpoint, manifest scheduling to the platform service pool, rollback plan shape and tenant pool scheduling rejection. The reviewable Package D release plan shape now makes releasePlanReady=true while realExecutionReady remains false, and the Package D execution preflight gate can judge split deploy/runtime env allowlists, fixed cluster/namespace/platform pool/PostgreSQL/image targets and redaction audit while keeping realExecutionReady=false. Package D in-cluster platform runner shape gate is now landed and split into a repo-local support module to keep the deploy gate under line budget: the preferred runner shape is a Kubernetes Job in namespace medopl-platform with serviceAccount medopl-platform-runner, scheduling fixed to platform runner pool np-6l4nkdto, tenant pool prefix medopl-tenant- forbidden, configMap/secretRef/imagePullSecret-only runtime inputs, no plaintext secret, no raw kubeconfig, minimal RBAC with namespace scope preferred and cluster-scope limited to read-only nodes for platform pool visibility, command allowlist limited to preflight/deploy/smoke/rollback, and redacted shape evidence written only to .runtime. It does not call kubectl, connect to Kubernetes API, deploy, build/push, execute Tencent mutation, read kubeconfig, or allow Package C live. Package D in-cluster runner manifest materialization is now a non-executing review pack: it produces Namespace, ServiceAccount, ConfigMap, redacted Secret templates, imagePullSecret template, Role/RoleBinding, nodes read-only ClusterRole/ClusterRoleBinding and Job manifest shape plus an authorization pack; after local WSL could not reach the TKE API, the same gate now includes a bootstrap authorization pack recommending Tencent CloudShell, Cloud Assistant or a VPC internal runner for server-side dry-run / later separately authorized bootstrap, with rollback plan, stop conditions, fixed target cls-fi097sy4 / medopl-platform / np-6l4nkdto, resource classes and redacted evidence path. Secret values remain key-level redacted placeholders and raw kubeconfig is forbidden. This pack now has repo-native cloud-runner execution entrypoints for later authorized Kubernetes API connectivity / server-side dry-run and bootstrap apply: it reads only the Package D deploy env, Portal runtime env and kubeconfig paths passed by flag, requires RUN_TENCENT_DEPLOY_EXECUTION=0, validates cluster cls-fi097sy4 / namespace medopl-platform / platform runner scheduling np-6l4nkdto / VPC PostgreSQL 10.66.0.21:5432, runs only kubectl client check, current-context, namespace read and kubectl apply --server-side --dry-run=server against the Package D bootstrap manifest pack, writes redacted .runtime evidence, and rejects real apply/delete/patch/scale/deploy/build-push/Tencent mutation/Package C live. This entrypoint has now been executed once from a TKE/VPC-reachable environment: Kubernetes API connectivity passed, context/cluster matched cls-fi097sy4, but namespace_read found medopl-platform missing, so server-side dry-run was not entered. Evidence is redacted at /opt/medopl/.runtime/package-d-kubernetes-api-server-side-dry-run-preflight/preflight-redacted.json. The next required boundary is authorized cloud execution of the repo-native Package D bootstrap apply runner that creates medopl-platform Namespace and only Package D bootstrap resources before rerunning the dry-run preflight. The current WSL session is no longer the Package D execution target; deploy/smoke, Kubernetes API connectivity, PostgreSQL ledger canary, DB smoke and rollback should run from the TKE platform runner after separate authorization, while image build/push remains a separate external build runner or future Kaniko/BuildKit concern; realExecutionReady stays false until bootstrap apply and subsequent dry-run / smoke preflights pass; the next boundary is authorized cloud execution of the repo-native Package D bootstrap apply runner for the missing medopl-platform namespace. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization. Starter remains starter_2c4g_10gb: 2C4G, 10GB workspace storage, TKE SA5.MEDIUM4, CLOUD_BSSD 50GB node system disk and public IP disabled; arbitrary Tencent instanceType input is rejected unless represented by a MedOPL plan catalog allowlist entry. Package D cloud bootstrap apply has now confirmed Kubernetes API connectivity, target cluster cls-fi097sy4, medopl-platform Active and allowlisted bootstrap resources. The corrected contract removes Job from idempotent bootstrap apply / server-side dry-run packs and adds a repo-native run-scoped preflight Job runner for unique names medopl-platform-runner-preflight-<runid>; Authorized cloud run-scoped Job creation first exposed the retired custom medopl.io/nodepool-role=platform-service selector gap; readonly scheduling discovery first found node.tke.cloud.tencent.com/machineset=np-cbk784r8 for the old runner, then the Package D runner target moved to node.tke.cloud.tencent.com/machineset=np-6l4nkdto after the VPC/TKE runner moved to node pool np-6l4nkdto / node 10.66.0.42; no node labels are modified. Package D run-scoped Job cloud execution pdrun-20260615-002 then scheduled on np-cbk784r8 but failed container image validation because a redacted image placeholder reached the live Job manifest; the repo contract now requires PACKAGE_D_RUNNER_IMAGE_REF for live manifests and keeps only redacted image refs in evidence. Package D run-scoped Job cloud execution pdrun-20260615-003 then reached image pull with the real allowlisted PACKAGE_D_RUNNER_IMAGE_REF but failed because the TCR tag was not found / ImagePullBackOff for uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001. The repo now has a separate public-repo-safe GitHub Actions workflow_dispatch image publish lane for that fixed non-latest tag; it uses GitHub Environment package-d-image-publish with contents: read, required reviewer, branch restriction to recovery/platform-v22-trunk / release/*, environment secrets only TCR_ID/TCR_SECRET, repository secrets forbidden, no automatic triggers, keeps build/push out of the TKE/VPC runner, and is not deploy.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -100,7 +100,7 @@
       "depends_on": [
         "precloud-deployable-rc"
       ],
-      "history_summary": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound, runner-local state-machine evidence, repository write wiring contract and gated PostgreSQL sink support path and explicit live canary runner contract have landed. Package D release plan, execution preflight gate, in-cluster runner shape gate, non-executing runner manifest materialization / authorization pack, bootstrap authorization pack and the repo-native Kubernetes API server-side dry-run preflight runner and repo-native bootstrap apply runner have landed, so reviewable bootstrap path readiness and a single cloud-runner entrypoint are true while realExecutionReady=false. Kubernetes API connectivity now passed, context/cluster matched cls-fi097sy4, bootstrap apply confirmed medopl-platform Active and allowlisted bootstrap resources, and the same-name Job immutable finding is folded into the corrected contract: bootstrap apply / dry-run no longer reapply Job, while Job execution is a separate run-scoped authorization. Stabilization remains blocked on authorized Package D runner image publish for the fixed TCR tag, rerunning the repo-native run-scoped Job preflight after publish, service-in-VPC PostgreSQL live canary, DB connectivity smoke, rollback evidence, billing/audit ledger, Portal opening entry and workspace storage quota. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization. Package D run-scoped Job cloud execution first exposed the retired custom selector gap; readonly scheduling discovery found node.tke.cloud.tencent.com/machineset=np-cbk784r8, and the repo contract now uses that existing TKE machineset label without modifying node labels. Package D run-scoped Job cloud execution pdrun-20260615-002 then scheduled on np-cbk784r8 but failed container image validation because a redacted image placeholder reached the live Job manifest; the repo contract now requires PACKAGE_D_RUNNER_IMAGE_REF for live manifests and keeps only redacted image refs in evidence. Package D run-scoped Job cloud execution pdrun-20260615-003 reached image pull but failed because the fixed TCR runner image tag was not found; the repo now has a public-repo-safe GitHub Actions workflow_dispatch runner image publish lane and local gates for that tag; TKE/VPC runner build/push remains forbidden.",
+      "history_summary": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound, runner-local state-machine evidence, repository write wiring contract and gated PostgreSQL sink support path and explicit live canary runner contract have landed. Package D release plan, execution preflight gate, in-cluster runner shape gate, non-executing runner manifest materialization / authorization pack, bootstrap authorization pack and the repo-native Kubernetes API server-side dry-run preflight runner and repo-native bootstrap apply runner have landed, so reviewable bootstrap path readiness and a single cloud-runner entrypoint are true while realExecutionReady=false. Kubernetes API connectivity now passed, context/cluster matched cls-fi097sy4, bootstrap apply confirmed medopl-platform Active and allowlisted bootstrap resources, and the same-name Job immutable finding is folded into the corrected contract: bootstrap apply / dry-run no longer reapply Job, while Job execution is a separate run-scoped authorization. Stabilization remains blocked on authorized Package D runner image publish for the fixed TCR tag, rerunning the repo-native run-scoped Job preflight after publish, service-in-VPC PostgreSQL live canary, DB connectivity smoke, rollback evidence, billing/audit ledger, Portal opening entry and workspace storage quota. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization. Package D run-scoped Job cloud execution first exposed the retired custom selector gap; readonly scheduling discovery found node.tke.cloud.tencent.com/machineset=np-cbk784r8, and the repo contract now uses the new TKE machineset label node.tke.cloud.tencent.com/machineset=np-6l4nkdto without modifying node labels. Package D run-scoped Job cloud execution pdrun-20260615-002 then scheduled on np-cbk784r8 but failed container image validation because a redacted image placeholder reached the live Job manifest; the repo contract now requires PACKAGE_D_RUNNER_IMAGE_REF for live manifests and keeps only redacted image refs in evidence. Package D run-scoped Job cloud execution pdrun-20260615-003 reached image pull but failed because the fixed TCR runner image tag was not found; the repo now has a public-repo-safe GitHub Actions workflow_dispatch runner image publish lane and local gates for that tag; TKE/VPC runner build/push remains forbidden.",
       "landed_commit": "a6cf8353171a7fe5a0547ace63554db566765bea"
     },
     {
@@ -276,7 +276,7 @@
         "preferredRunnerName": "medopl-platform-runner",
         "clusterId": "cls-fi097sy4",
         "namespace": "medopl-platform",
-        "platformNodePoolId": "np-cbk784r8",
+        "platformNodePoolId": "np-6l4nkdto",
         "schedulingTarget": "platform_service_pool",
         "purpose": [
           "deploy/smoke inside TKE platform pool",
@@ -302,7 +302,7 @@
           "executionLocation": "tke_in_cluster_platform_runner",
           "clusterId": "cls-fi097sy4",
           "namespace": "medopl-platform",
-          "platformNodePoolId": "np-cbk784r8",
+          "platformNodePoolId": "np-6l4nkdto",
           "schedulingTarget": "platform_service_pool",
           "allowedActionsAfterAuthorization": [
             "Kubernetes API connectivity preflight",
@@ -311,7 +311,8 @@
             "deploy/smoke",
             "rollback"
           ],
-          "executesNow": false
+          "executesNow": false,
+          "legacyProtectedPlatformNodePoolId": "np-cbk784r8"
         },
         "inClusterPlatformRunnerShape": {
           "status": "shape_gate_only",
@@ -320,11 +321,14 @@
           "serviceAccountName": "medopl-platform-runner",
           "scheduling": {
             "class": "platform_service_pool",
-            "nodePoolId": "np-cbk784r8",
+            "nodePoolId": "np-6l4nkdto",
+            "legacyProtectedNodePoolIds": [
+              "np-cbk784r8"
+            ],
             "tenantPoolAllowed": false,
             "forbiddenNodePoolPrefix": "medopl-tenant-",
             "nodeSelector": {
-              "node.tke.cloud.tencent.com/machineset": "np-cbk784r8"
+              "node.tke.cloud.tencent.com/machineset": "np-6l4nkdto"
             }
           },
           "podTemplate": {
@@ -548,7 +552,10 @@
             "kubectl"
           ]
         },
-        "realExecutionReady": false
+        "realExecutionReady": false,
+        "legacyProtectedPlatformNodePoolId": "np-cbk784r8",
+        "runnerMachineId": "np-6l4nkdto-2cdtm",
+        "runnerNodeIp": "10.66.0.42"
       },
       "runnerManifestMaterialization": {
         "status": "materialized_non_executing_review_pack_with_bootstrap_authorization",
@@ -557,7 +564,7 @@
         "namespace": "medopl-platform",
         "serviceAccountName": "medopl-platform-runner",
         "workloadKind": "Job",
-        "platformNodePoolId": "np-cbk784r8",
+        "platformNodePoolId": "np-6l4nkdto",
         "manifestClasses": [
           "Namespace",
           "ServiceAccount",
@@ -606,8 +613,9 @@
           "target": {
             "clusterId": "cls-fi097sy4",
             "namespace": "medopl-platform",
-            "platformNodePoolId": "np-cbk784r8",
-            "schedulingClass": "platform_service_pool"
+            "platformNodePoolId": "np-6l4nkdto",
+            "schedulingClass": "platform_service_pool",
+            "legacyProtectedPlatformNodePoolId": "np-cbk784r8"
           },
           "resourceTypesToCreateOrValidate": [
             "Namespace",
@@ -628,12 +636,12 @@
             "If server-side dry-run fails, do not create new resources and keep evidence only.",
             "If bootstrap apply fails, remove or correct only Package D idempotent bootstrap resources after separate cleanup authorization.",
             "If a run-scoped Job is created in a later authorization and fails, collect redacted logs/events, delete only that unique Job, and leave existing bootstrap resources and platform pool untouched.",
-            "Never delete, scale or modify platform node pool np-cbk784r8 or any medopl-tenant- pool."
+            "Never delete, scale or modify legacy protected platform node pool np-cbk784r8, runner node pool np-6l4nkdto or any medopl-tenant- pool."
           ],
           "stopConditions": [
             "kubeconfig context or cluster does not match cls-fi097sy4",
             "namespace target is not medopl-platform",
-            "scheduling target is not platform pool np-cbk784r8",
+            "scheduling target is not platform runner pool np-6l4nkdto",
             "manifest references medopl-tenant-",
             "manifest embeds plaintext secret or raw kubeconfig",
             "RBAC requests cluster-admin or broad wildcard",
@@ -676,7 +684,8 @@
             "tenant pool mutation",
             "platform pool modification"
           ]
-        }
+        },
+        "legacyProtectedPlatformNodePoolId": "np-cbk784r8"
       },
       "kubernetesApiPreflightRunner": {
         "status": "real_cloud_connectivity_passed_bootstrap_resources_present_job_immutable_blocks_old_dry_run",
@@ -699,7 +708,7 @@
           "RUN_TENCENT_DEPLOY_EXECUTION must equal 0",
           "cluster must equal cls-fi097sy4",
           "namespace must equal medopl-platform",
-          "scheduling target must remain node.tke.cloud.tencent.com/machineset=np-cbk784r8",
+          "scheduling target must remain node.tke.cloud.tencent.com/machineset=np-6l4nkdto",
           "manifest must not reference medopl-tenant-",
           "kubectl apply must include --server-side and --dry-run=server",
           "redaction audit must pass"
@@ -754,7 +763,7 @@
         "status": "repo_native_runner_landed_job_immutable_strategy_corrected_authorization_required",
         "targetClusterId": "cls-fi097sy4",
         "namespace": "medopl-platform",
-        "platformNodePoolId": "np-cbk784r8",
+        "platformNodePoolId": "np-6l4nkdto",
         "purpose": "create_or_update_idempotent_package_d_bootstrap_resources_only",
         "allowedResourceClasses": [
           "Namespace/medopl-platform",
@@ -777,7 +786,7 @@
         "forbiddenOperations": [
           "business Deployment rollout",
           "tenant pool or medopl-tenant- resources",
-          "modify np-cbk784r8",
+          "modify np-cbk784r8 or np-6l4nkdto",
           "kubectl delete/patch/scale outside Package D bootstrap resources",
           "deploy production workloads",
           "build/push image",
@@ -789,14 +798,14 @@
           "manifest references medopl-tenant-",
           "operation target is not Package D idempotent bootstrap resource in medopl-platform",
           "operation attempts business Deployment rollout",
-          "operation attempts to modify np-cbk784r8",
+          "operation attempts to modify np-cbk784r8 or np-6l4nkdto",
           "operation attempts same-name Job template update",
           "redaction audit fails"
         ],
         "rollbackPlan": [
           "If bootstrap apply fails before creating resources, stop and keep redacted evidence only.",
           "If a Package D bootstrap resource is partially created and later rejected, remove or correct only that Package D bootstrap resource after separate cleanup authorization.",
-          "Never delete, scale or modify np-cbk784r8 or any medopl-tenant- tenant pool."
+          "Never delete, scale or modify legacy protected platform node pool np-cbk784r8, runner node pool np-6l4nkdto or any medopl-tenant- tenant pool."
         ],
         "nextAuthorizationPrompt": [
           "Authorize Package D corrected bootstrap apply runner from a Tencent CloudShell, Cloud Assistant session, or VPC internal runner that can reach TKE API for cls-fi097sy4.",
@@ -804,7 +813,7 @@
           "Allowed reads: /home/dev/.secrets/medopl/v22/package-d-deploy.env, /home/dev/.secrets/medopl/v22/portal-runtime.env, /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy.",
           "Allowed Kubernetes operations: create/update only allowlisted idempotent Package D bootstrap resources; no same-name Job reapply.",
           "After bootstrap apply, rerun the Package D Kubernetes API server-side dry-run preflight command and write redacted evidence under .runtime.",
-          "Forbidden: business Deployment rollout, tenant pool / medopl-tenant-, modifying np-cbk784r8, same-name Job template update, kubectl delete/patch/scale outside Package D bootstrap resources, build/push, Tencent mutation, Package C live, Package D production deploy."
+          "Forbidden: business Deployment rollout, tenant pool / medopl-tenant-, modifying np-cbk784r8 or np-6l4nkdto, same-name Job template update, kubectl delete/patch/scale outside Package D bootstrap resources, build/push, Tencent mutation, Package C live, Package D production deploy."
         ],
         "realExecutionReady": false,
         "runnerCommand": "node tests/support/cloud-prework/package-d-bootstrap-apply-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode bootstrap-apply",
@@ -841,7 +850,8 @@
           "serverSideDryRun": "failed_job_spec_template_immutable",
           "evidencePath": "/opt/medopl/.runtime/package-d-bootstrap-apply/post-apply-server-side-dry-run/preflight-redacted.json",
           "evidenceRedacted": true
-        }
+        },
+        "legacyProtectedPlatformNodePoolId": "np-cbk784r8"
       },
       "bootstrapApplyRunner": {
         "status": "repo_native_runner_local_gate_landed_job_immutable_strategy_corrected",
@@ -880,7 +890,7 @@
           "namespace must equal medopl-platform",
           "manifest must not reference medopl-tenant-",
           "manifest must not include business Deployment or Service rollout",
-          "manifest must not attempt to modify np-cbk784r8",
+          "manifest must not attempt to modify np-cbk784r8 or np-6l4nkdto",
           "manifest must not include same-name Job template update",
           "all resource kind/name/namespace values must be allowlisted",
           "kubectl apply must be server-side stdin apply against Package D idempotent bootstrap manifests only",
@@ -894,7 +904,7 @@
           "Tencent mutation",
           "Package C live",
           "tenant pool or medopl-tenant- resources",
-          "modify np-cbk784r8",
+          "modify np-cbk784r8 or np-6l4nkdto",
           "kubectl delete/patch/scale outside Package D bootstrap resources",
           "output kubeconfig/token/cert/DB password/TCR secret/Portal admin password"
         ],
@@ -943,9 +953,12 @@
           "clusterId": "cls-fi097sy4",
           "namespace": "medopl-platform",
           "serviceAccountName": "medopl-platform-runner",
-          "platformNodePoolId": "np-cbk784r8",
+          "platformNodePoolId": "np-6l4nkdto",
           "schedulingClass": "platform_service_pool",
-          "postgresEndpoint": "10.66.0.21:5432"
+          "postgresEndpoint": "10.66.0.21:5432",
+          "legacyProtectedPlatformNodePoolId": "np-cbk784r8",
+          "runnerMachineId": "np-6l4nkdto-2cdtm",
+          "runnerNodeIp": "10.66.0.42"
         },
         "jobManifestShape": {
           "kind": "Job",
@@ -953,7 +966,7 @@
           "namespace": "medopl-platform",
           "serviceAccountName": "medopl-platform-runner",
           "nodeSelector": {
-            "node.tke.cloud.tencent.com/machineset": "np-cbk784r8"
+            "node.tke.cloud.tencent.com/machineset": "np-6l4nkdto"
           },
           "imagePullSecrets": [
             "medopl-tcr-pull-secret"
@@ -995,7 +1008,7 @@
           "Job command must be preflight only",
           "manifest must not reference medopl-tenant-",
           "manifest must not contain plaintext secret, raw kubeconfig or full DB URL",
-          "scheduling must target node.tke.cloud.tencent.com/machineset=np-cbk784r8",
+          "scheduling must target node.tke.cloud.tencent.com/machineset=np-6l4nkdto",
           "cleanup may delete only the unique run-scoped Job after success",
           "redaction audit must pass",
           "custom medopl.io/nodepool-role platform-service selector must not be required",
@@ -1011,19 +1024,19 @@
           "Tencent mutation",
           "Package C live",
           "tenant pool or medopl-tenant- resources",
-          "modify np-cbk784r8",
+          "modify np-cbk784r8 or np-6l4nkdto",
           "kubectl apply/patch/scale",
           "kubectl delete outside the unique run-scoped Job success cleanup",
           "output kubeconfig/token/cert/DB password/TCR secret/Portal admin password"
         ],
         "authorizationPrompt": [
-          "Authorize Package D run-scoped platform runner Job preflight from Tencent CloudShell, Cloud Assistant or a VPC internal runner that can reach TKE API for cls-fi097sy4, using node.tke.cloud.tencent.com/machineset=np-cbk784r8 scheduling.",
-          "Run: node tests/support/cloud-prework/package-d-run-scoped-job-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id pdrun-20260615-003 --mode preflight-job",
+          "Authorize Package D run-scoped platform runner Job preflight from Tencent CloudShell, Cloud Assistant or a VPC internal runner that can reach TKE API for cls-fi097sy4, using node.tke.cloud.tencent.com/machineset=np-6l4nkdto scheduling.",
+          "Run: node tests/support/cloud-prework/package-d-run-scoped-job-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id pdrun-20260615-004 --mode preflight-job",
           "Required package-d-deploy.env key: PACKAGE_D_RUNNER_IMAGE_REF=<TCR registry>/<namespace>/medopl-platform-runner:<non-latest tag>; do not output TCR_SECRET or full kubeconfig.",
           "Allowed reads: /home/dev/.secrets/medopl/v22/package-d-deploy.env, /home/dev/.secrets/medopl/v22/portal-runtime.env, /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy.",
           "Allowed Kubernetes operations: create the unique Job medopl-platform-runner-preflight-<runid>, wait/get/logs that Job, and delete only that unique Job after success.",
           "Allowed preflight content: in-cluster identity/namespace/serviceAccount sanity, PostgreSQL 10.66.0.21:5432 connectivity smoke, Package D secretRef/env availability smoke, TCR imagePullSecret/image pull readiness shape and redaction audit.",
-          "Forbidden: same-name Job template update, business Deployment rollout, tenant pool / medopl-tenant-, modifying np-cbk784r8, kubectl apply/patch/scale, deleting anything except the successful run-scoped Job, build/push, Tencent mutation, Package C live, Package D production deploy."
+          "Forbidden: same-name Job template update, business Deployment rollout, tenant pool / medopl-tenant-, modifying np-cbk784r8 or np-6l4nkdto, kubectl apply/patch/scale, deleting anything except the successful run-scoped Job, build/push, Tencent mutation, Package C live, Package D production deploy."
         ],
         "realExecutionReady": false,
         "localGateOnlyThisCommit": true,
@@ -1048,7 +1061,8 @@
             "/opt/medopl/.runtime/package-d-run-scoped-job-preflight/pdrun-20260615-002/preflight-job-redacted.json",
             "/opt/medopl/.runtime/package-d-run-scoped-job-preflight/pdrun-20260615-002/job-manifest-redacted.json"
           ]
-        }
+        },
+        "nextRunId": "pdrun-20260615-004"
       },
       "runnerImagePublishBoundary": {
         "status": "public_repo_safe_github_actions_workflow_dispatch_authorization_required",
@@ -1164,7 +1178,9 @@
           "Run: node tests/support/cloud-prework/package-d-run-scoped-job-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id pdrun-20260615-004 --mode preflight-job"
         ],
         "realExecutionReady": false
-      }
+      },
+      "targetPlatformNodePoolId": "np-6l4nkdto",
+      "legacyProtectedPlatformNodePoolId": "np-cbk784r8"
     }
   },
   "release_readiness_state": {
@@ -1218,7 +1234,7 @@
       "postgres_execution_status": "authorized_attempt_failed_closed_connection_preflight_timeout_no_db_write"
     },
     "productionization_plan": [
-      "Package D deploy readiness planning for cluster cls-fi097sy4 platform pool np-cbk784r8 and VPC PostgreSQL 10.66.0.21:5432",
+      "Package D deploy readiness planning for cluster cls-fi097sy4 platform runner pool np-6l4nkdto and VPC PostgreSQL 10.66.0.21:5432",
       "authorized successful PostgreSQL live canary after service runs inside VPC with dedicated ledger env file and parent-row identities",
       "billing/audit ledger",
       "Portal opening entry",
@@ -1227,7 +1243,7 @@
     "package_d_deploy_readiness_plan": {
       "status": "deploy_readiness_planning_only",
       "targetClusterId": "cls-fi097sy4",
-      "targetPlatformNodePoolId": "np-cbk784r8",
+      "targetPlatformNodePoolId": "np-6l4nkdto",
       "postgresEndpoint": "10.66.0.21:5432",
       "postgresAccess": "vpc_private_only",
       "postgresLedgerCanaryTiming": "after_service_deployed_inside_vpc",
@@ -1247,10 +1263,11 @@
         "rejectsRawKubeconfigYaml": true,
         "manifestShape": {
           "targetClass": "platform_service_pool",
-          "targetPlatformNodePoolId": "np-cbk784r8",
+          "targetPlatformNodePoolId": "np-6l4nkdto",
           "tenantPoolSchedulingAllowed": false,
           "postgresEndpoint": "10.66.0.21:5432",
-          "namespace": "medopl-platform"
+          "namespace": "medopl-platform",
+          "legacyProtectedPlatformNodePoolId": "np-cbk784r8"
         },
         "rollbackPlanShapeRequired": true,
         "releasePlanReady": true,
@@ -1297,9 +1314,10 @@
           "secretRef": true,
           "plainSecretValuesAllowed": false,
           "platformPoolScheduling": {
-            "targetPlatformNodePoolId": "np-cbk784r8",
+            "targetPlatformNodePoolId": "np-6l4nkdto",
             "tenantPoolSchedulingAllowed": false,
-            "forbiddenPrefix": "medopl-tenant-"
+            "forbiddenPrefix": "medopl-tenant-",
+            "legacyProtectedPlatformNodePoolId": "np-cbk784r8"
           },
           "materializedRunnerManifestPackReady": true,
           "materializedRunnerManifestPackStatus": "redacted_non_executing_review_pack_only",
@@ -1394,14 +1412,15 @@
         "targetChecks": {
           "clusterId": "cls-fi097sy4",
           "namespace": "medopl-platform",
-          "platformNodePoolId": "np-cbk784r8",
+          "platformNodePoolId": "np-6l4nkdto",
           "postgresEndpoint": "10.66.0.21:5432",
           "imageTargets": [
             "portal-frontend",
             "medopl-go-backend",
             "opl-web-gateway",
             "opl-runtime-bridge"
-          ]
+          ],
+          "legacyProtectedPlatformNodePoolId": "np-cbk784r8"
         },
         "redactionRequired": [
           "TCR_SECRET",
@@ -1440,7 +1459,7 @@
           "RUN_TENCENT_DEPLOY_EXECUTION must equal 0",
           "cluster must equal cls-fi097sy4",
           "namespace must equal medopl-platform",
-          "scheduling target must remain node.tke.cloud.tencent.com/machineset=np-cbk784r8",
+          "scheduling target must remain node.tke.cloud.tencent.com/machineset=np-6l4nkdto",
           "manifest must not reference medopl-tenant-",
           "kubectl apply must include --server-side and --dry-run=server",
           "redaction audit must pass"
@@ -1495,7 +1514,7 @@
         "status": "repo_native_runner_landed_job_immutable_strategy_corrected_authorization_required",
         "targetClusterId": "cls-fi097sy4",
         "namespace": "medopl-platform",
-        "platformNodePoolId": "np-cbk784r8",
+        "platformNodePoolId": "np-6l4nkdto",
         "purpose": "create_or_update_idempotent_package_d_bootstrap_resources_only",
         "allowedResourceClasses": [
           "Namespace/medopl-platform",
@@ -1518,7 +1537,7 @@
         "forbiddenOperations": [
           "business Deployment rollout",
           "tenant pool or medopl-tenant- resources",
-          "modify np-cbk784r8",
+          "modify np-cbk784r8 or np-6l4nkdto",
           "kubectl delete/patch/scale outside Package D bootstrap resources",
           "deploy production workloads",
           "build/push image",
@@ -1530,14 +1549,14 @@
           "manifest references medopl-tenant-",
           "operation target is not Package D idempotent bootstrap resource in medopl-platform",
           "operation attempts business Deployment rollout",
-          "operation attempts to modify np-cbk784r8",
+          "operation attempts to modify np-cbk784r8 or np-6l4nkdto",
           "operation attempts same-name Job template update",
           "redaction audit fails"
         ],
         "rollbackPlan": [
           "If bootstrap apply fails before creating resources, stop and keep redacted evidence only.",
           "If a Package D bootstrap resource is partially created and later rejected, remove or correct only that Package D bootstrap resource after separate cleanup authorization.",
-          "Never delete, scale or modify np-cbk784r8 or any medopl-tenant- tenant pool."
+          "Never delete, scale or modify legacy protected platform node pool np-cbk784r8, runner node pool np-6l4nkdto or any medopl-tenant- tenant pool."
         ],
         "nextAuthorizationPrompt": [
           "Authorize Package D corrected bootstrap apply runner from a Tencent CloudShell, Cloud Assistant session, or VPC internal runner that can reach TKE API for cls-fi097sy4.",
@@ -1545,7 +1564,7 @@
           "Allowed reads: /home/dev/.secrets/medopl/v22/package-d-deploy.env, /home/dev/.secrets/medopl/v22/portal-runtime.env, /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy.",
           "Allowed Kubernetes operations: create/update only allowlisted idempotent Package D bootstrap resources; no same-name Job reapply.",
           "After bootstrap apply, rerun the Package D Kubernetes API server-side dry-run preflight command and write redacted evidence under .runtime.",
-          "Forbidden: business Deployment rollout, tenant pool / medopl-tenant-, modifying np-cbk784r8, same-name Job template update, kubectl delete/patch/scale outside Package D bootstrap resources, build/push, Tencent mutation, Package C live, Package D production deploy."
+          "Forbidden: business Deployment rollout, tenant pool / medopl-tenant-, modifying np-cbk784r8 or np-6l4nkdto, same-name Job template update, kubectl delete/patch/scale outside Package D bootstrap resources, build/push, Tencent mutation, Package C live, Package D production deploy."
         ],
         "realExecutionReady": false,
         "runnerCommand": "node tests/support/cloud-prework/package-d-bootstrap-apply-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode bootstrap-apply",
@@ -1582,7 +1601,8 @@
           "serverSideDryRun": "failed_job_spec_template_immutable",
           "evidencePath": "/opt/medopl/.runtime/package-d-bootstrap-apply/post-apply-server-side-dry-run/preflight-redacted.json",
           "evidenceRedacted": true
-        }
+        },
+        "legacyProtectedPlatformNodePoolId": "np-cbk784r8"
       },
       "bootstrapApplyRunner": {
         "status": "repo_native_runner_local_gate_landed_job_immutable_strategy_corrected",
@@ -1621,7 +1641,7 @@
           "namespace must equal medopl-platform",
           "manifest must not reference medopl-tenant-",
           "manifest must not include business Deployment or Service rollout",
-          "manifest must not attempt to modify np-cbk784r8",
+          "manifest must not attempt to modify np-cbk784r8 or np-6l4nkdto",
           "manifest must not include same-name Job template update",
           "all resource kind/name/namespace values must be allowlisted",
           "kubectl apply must be server-side stdin apply against Package D idempotent bootstrap manifests only",
@@ -1635,7 +1655,7 @@
           "Tencent mutation",
           "Package C live",
           "tenant pool or medopl-tenant- resources",
-          "modify np-cbk784r8",
+          "modify np-cbk784r8 or np-6l4nkdto",
           "kubectl delete/patch/scale outside Package D bootstrap resources",
           "output kubeconfig/token/cert/DB password/TCR secret/Portal admin password"
         ],
@@ -1684,9 +1704,12 @@
           "clusterId": "cls-fi097sy4",
           "namespace": "medopl-platform",
           "serviceAccountName": "medopl-platform-runner",
-          "platformNodePoolId": "np-cbk784r8",
+          "platformNodePoolId": "np-6l4nkdto",
           "schedulingClass": "platform_service_pool",
-          "postgresEndpoint": "10.66.0.21:5432"
+          "postgresEndpoint": "10.66.0.21:5432",
+          "legacyProtectedPlatformNodePoolId": "np-cbk784r8",
+          "runnerMachineId": "np-6l4nkdto-2cdtm",
+          "runnerNodeIp": "10.66.0.42"
         },
         "jobManifestShape": {
           "kind": "Job",
@@ -1694,7 +1717,7 @@
           "namespace": "medopl-platform",
           "serviceAccountName": "medopl-platform-runner",
           "nodeSelector": {
-            "node.tke.cloud.tencent.com/machineset": "np-cbk784r8"
+            "node.tke.cloud.tencent.com/machineset": "np-6l4nkdto"
           },
           "imagePullSecrets": [
             "medopl-tcr-pull-secret"
@@ -1736,7 +1759,7 @@
           "Job command must be preflight only",
           "manifest must not reference medopl-tenant-",
           "manifest must not contain plaintext secret, raw kubeconfig or full DB URL",
-          "scheduling must target node.tke.cloud.tencent.com/machineset=np-cbk784r8",
+          "scheduling must target node.tke.cloud.tencent.com/machineset=np-6l4nkdto",
           "cleanup may delete only the unique run-scoped Job after success",
           "redaction audit must pass",
           "custom medopl.io/nodepool-role platform-service selector must not be required",
@@ -1752,7 +1775,7 @@
           "Tencent mutation",
           "Package C live",
           "tenant pool or medopl-tenant- resources",
-          "modify np-cbk784r8",
+          "modify np-cbk784r8 or np-6l4nkdto",
           "kubectl apply/patch/scale",
           "kubectl delete outside the unique run-scoped Job success cleanup",
           "output kubeconfig/token/cert/DB password/TCR secret/Portal admin password"
@@ -1783,7 +1806,8 @@
           "blockedAt": "image_pull",
           "reason": "TCR image tag not found / ImagePullBackOff",
           "imageRef": "uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001"
-        }
+        },
+        "nextRunId": "pdrun-20260615-004"
       },
       "runnerImagePublishBoundary": {
         "status": "public_repo_safe_github_actions_workflow_dispatch_authorization_required",
@@ -1899,7 +1923,8 @@
           "Run: node tests/support/cloud-prework/package-d-run-scoped-job-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id pdrun-20260615-004 --mode preflight-job"
         ],
         "realExecutionReady": false
-      }
+      },
+      "legacyProtectedPlatformNodePoolId": "np-cbk784r8"
     },
     "readinessGaps": [
       "rerun corrected Package D bootstrap apply / server-side dry-run without same-name Job reapply",
@@ -2244,7 +2269,7 @@
   "package_d_deploy_readiness_plan": {
     "status": "deploy_readiness_planning_only",
     "targetClusterId": "cls-fi097sy4",
-    "targetPlatformNodePoolId": "np-cbk784r8",
+    "targetPlatformNodePoolId": "np-6l4nkdto",
     "postgresEndpoint": "10.66.0.21:5432",
     "postgresAccess": "vpc_private_only",
     "postgresLedgerCanaryTiming": "after_service_deployed_inside_vpc",
@@ -2264,10 +2289,11 @@
       "rejectsRawKubeconfigYaml": true,
       "manifestShape": {
         "targetClass": "platform_service_pool",
-        "targetPlatformNodePoolId": "np-cbk784r8",
+        "targetPlatformNodePoolId": "np-6l4nkdto",
         "tenantPoolSchedulingAllowed": false,
         "postgresEndpoint": "10.66.0.21:5432",
-        "namespace": "medopl-platform"
+        "namespace": "medopl-platform",
+        "legacyProtectedPlatformNodePoolId": "np-cbk784r8"
       },
       "rollbackPlanShapeRequired": true,
       "releasePlanReady": true,
@@ -2314,9 +2340,10 @@
         "secretRef": true,
         "plainSecretValuesAllowed": false,
         "platformPoolScheduling": {
-          "targetPlatformNodePoolId": "np-cbk784r8",
+          "targetPlatformNodePoolId": "np-6l4nkdto",
           "tenantPoolSchedulingAllowed": false,
-          "forbiddenPrefix": "medopl-tenant-"
+          "forbiddenPrefix": "medopl-tenant-",
+          "legacyProtectedPlatformNodePoolId": "np-cbk784r8"
         }
       },
       "runtimeEnvInjection": {
@@ -2408,14 +2435,15 @@
       "targetChecks": {
         "clusterId": "cls-fi097sy4",
         "namespace": "medopl-platform",
-        "platformNodePoolId": "np-cbk784r8",
+        "platformNodePoolId": "np-6l4nkdto",
         "postgresEndpoint": "10.66.0.21:5432",
         "imageTargets": [
           "portal-frontend",
           "medopl-go-backend",
           "opl-web-gateway",
           "opl-runtime-bridge"
-        ]
+        ],
+        "legacyProtectedPlatformNodePoolId": "np-cbk784r8"
       },
       "redactionRequired": [
         "TCR_SECRET",
@@ -2440,7 +2468,7 @@
       "preferredRunnerName": "medopl-platform-runner",
       "clusterId": "cls-fi097sy4",
       "namespace": "medopl-platform",
-      "platformNodePoolId": "np-cbk784r8",
+      "platformNodePoolId": "np-6l4nkdto",
       "schedulingTarget": "platform_service_pool",
       "purpose": [
         "deploy/smoke inside TKE platform pool",
@@ -2466,7 +2494,7 @@
         "executionLocation": "tke_in_cluster_platform_runner",
         "clusterId": "cls-fi097sy4",
         "namespace": "medopl-platform",
-        "platformNodePoolId": "np-cbk784r8",
+        "platformNodePoolId": "np-6l4nkdto",
         "schedulingTarget": "platform_service_pool",
         "allowedActionsAfterAuthorization": [
           "Kubernetes API connectivity preflight",
@@ -2475,7 +2503,8 @@
           "deploy/smoke",
           "rollback"
         ],
-        "executesNow": false
+        "executesNow": false,
+        "legacyProtectedPlatformNodePoolId": "np-cbk784r8"
       },
       "inClusterPlatformRunnerShape": {
         "status": "shape_gate_only",
@@ -2484,11 +2513,14 @@
         "serviceAccountName": "medopl-platform-runner",
         "scheduling": {
           "class": "platform_service_pool",
-          "nodePoolId": "np-cbk784r8",
+          "nodePoolId": "np-6l4nkdto",
+          "legacyProtectedNodePoolIds": [
+            "np-cbk784r8"
+          ],
           "tenantPoolAllowed": false,
           "forbiddenNodePoolPrefix": "medopl-tenant-",
           "nodeSelector": {
-            "node.tke.cloud.tencent.com/machineset": "np-cbk784r8"
+            "node.tke.cloud.tencent.com/machineset": "np-6l4nkdto"
           }
         },
         "podTemplate": {
@@ -2712,7 +2744,10 @@
           "kubectl"
         ]
       },
-      "realExecutionReady": false
+      "realExecutionReady": false,
+      "legacyProtectedPlatformNodePoolId": "np-cbk784r8",
+      "runnerMachineId": "np-6l4nkdto-2cdtm",
+      "runnerNodeIp": "10.66.0.42"
     },
     "runnerManifestMaterialization": {
       "status": "materialized_non_executing_review_pack_with_bootstrap_authorization",
@@ -2721,7 +2756,7 @@
       "namespace": "medopl-platform",
       "serviceAccountName": "medopl-platform-runner",
       "workloadKind": "Job",
-      "platformNodePoolId": "np-cbk784r8",
+      "platformNodePoolId": "np-6l4nkdto",
       "manifestClasses": [
         "Namespace",
         "ServiceAccount",
@@ -2770,8 +2805,9 @@
         "target": {
           "clusterId": "cls-fi097sy4",
           "namespace": "medopl-platform",
-          "platformNodePoolId": "np-cbk784r8",
-          "schedulingClass": "platform_service_pool"
+          "platformNodePoolId": "np-6l4nkdto",
+          "schedulingClass": "platform_service_pool",
+          "legacyProtectedPlatformNodePoolId": "np-cbk784r8"
         },
         "resourceTypesToCreateOrValidate": [
           "Namespace",
@@ -2792,12 +2828,12 @@
           "If server-side dry-run fails, do not create new resources and keep evidence only.",
           "If bootstrap apply fails, remove or correct only Package D idempotent bootstrap resources after separate cleanup authorization.",
           "If a run-scoped Job is created in a later authorization and fails, collect redacted logs/events, delete only that unique Job, and leave existing bootstrap resources and platform pool untouched.",
-          "Never delete, scale or modify platform node pool np-cbk784r8 or any medopl-tenant- pool."
+          "Never delete, scale or modify legacy protected platform node pool np-cbk784r8, runner node pool np-6l4nkdto or any medopl-tenant- pool."
         ],
         "stopConditions": [
           "kubeconfig context or cluster does not match cls-fi097sy4",
           "namespace target is not medopl-platform",
-          "scheduling target is not platform pool np-cbk784r8",
+          "scheduling target is not platform runner pool np-6l4nkdto",
           "manifest references medopl-tenant-",
           "manifest embeds plaintext secret or raw kubeconfig",
           "RBAC requests cluster-admin or broad wildcard",
@@ -2840,7 +2876,8 @@
           "tenant pool mutation",
           "platform pool modification"
         ]
-      }
+      },
+      "legacyProtectedPlatformNodePoolId": "np-cbk784r8"
     },
     "kubernetesApiPreflightRunner": {
       "status": "real_cloud_connectivity_passed_bootstrap_resources_present_job_immutable_blocks_old_dry_run",
@@ -2863,7 +2900,7 @@
         "RUN_TENCENT_DEPLOY_EXECUTION must equal 0",
         "cluster must equal cls-fi097sy4",
         "namespace must equal medopl-platform",
-        "scheduling target must remain node.tke.cloud.tencent.com/machineset=np-cbk784r8",
+        "scheduling target must remain node.tke.cloud.tencent.com/machineset=np-6l4nkdto",
         "manifest must not reference medopl-tenant-",
         "kubectl apply must include --server-side and --dry-run=server",
         "redaction audit must pass"
@@ -2918,7 +2955,7 @@
       "status": "repo_native_runner_landed_job_immutable_strategy_corrected_authorization_required",
       "targetClusterId": "cls-fi097sy4",
       "namespace": "medopl-platform",
-      "platformNodePoolId": "np-cbk784r8",
+      "platformNodePoolId": "np-6l4nkdto",
       "purpose": "create_or_update_idempotent_package_d_bootstrap_resources_only",
       "allowedResourceClasses": [
         "Namespace/medopl-platform",
@@ -2941,7 +2978,7 @@
       "forbiddenOperations": [
         "business Deployment rollout",
         "tenant pool or medopl-tenant- resources",
-        "modify np-cbk784r8",
+        "modify np-cbk784r8 or np-6l4nkdto",
         "kubectl delete/patch/scale outside Package D bootstrap resources",
         "deploy production workloads",
         "build/push image",
@@ -2953,14 +2990,14 @@
         "manifest references medopl-tenant-",
         "operation target is not Package D idempotent bootstrap resource in medopl-platform",
         "operation attempts business Deployment rollout",
-        "operation attempts to modify np-cbk784r8",
+        "operation attempts to modify np-cbk784r8 or np-6l4nkdto",
         "operation attempts same-name Job template update",
         "redaction audit fails"
       ],
       "rollbackPlan": [
         "If bootstrap apply fails before creating resources, stop and keep redacted evidence only.",
         "If a Package D bootstrap resource is partially created and later rejected, remove or correct only that Package D bootstrap resource after separate cleanup authorization.",
-        "Never delete, scale or modify np-cbk784r8 or any medopl-tenant- tenant pool."
+        "Never delete, scale or modify legacy protected platform node pool np-cbk784r8, runner node pool np-6l4nkdto or any medopl-tenant- tenant pool."
       ],
       "nextAuthorizationPrompt": [
         "Authorize Package D corrected bootstrap apply runner from a Tencent CloudShell, Cloud Assistant session, or VPC internal runner that can reach TKE API for cls-fi097sy4.",
@@ -2968,7 +3005,7 @@
         "Allowed reads: /home/dev/.secrets/medopl/v22/package-d-deploy.env, /home/dev/.secrets/medopl/v22/portal-runtime.env, /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy.",
         "Allowed Kubernetes operations: create/update only allowlisted idempotent Package D bootstrap resources; no same-name Job reapply.",
         "After bootstrap apply, rerun the Package D Kubernetes API server-side dry-run preflight command and write redacted evidence under .runtime.",
-        "Forbidden: business Deployment rollout, tenant pool / medopl-tenant-, modifying np-cbk784r8, same-name Job template update, kubectl delete/patch/scale outside Package D bootstrap resources, build/push, Tencent mutation, Package C live, Package D production deploy."
+        "Forbidden: business Deployment rollout, tenant pool / medopl-tenant-, modifying np-cbk784r8 or np-6l4nkdto, same-name Job template update, kubectl delete/patch/scale outside Package D bootstrap resources, build/push, Tencent mutation, Package C live, Package D production deploy."
       ],
       "realExecutionReady": false,
       "runnerCommand": "node tests/support/cloud-prework/package-d-bootstrap-apply-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode bootstrap-apply",
@@ -3005,7 +3042,8 @@
         "serverSideDryRun": "failed_job_spec_template_immutable",
         "evidencePath": "/opt/medopl/.runtime/package-d-bootstrap-apply/post-apply-server-side-dry-run/preflight-redacted.json",
         "evidenceRedacted": true
-      }
+      },
+      "legacyProtectedPlatformNodePoolId": "np-cbk784r8"
     },
     "bootstrapApplyRunner": {
       "status": "repo_native_runner_local_gate_landed_job_immutable_strategy_corrected",
@@ -3044,7 +3082,7 @@
         "namespace must equal medopl-platform",
         "manifest must not reference medopl-tenant-",
         "manifest must not include business Deployment or Service rollout",
-        "manifest must not attempt to modify np-cbk784r8",
+        "manifest must not attempt to modify np-cbk784r8 or np-6l4nkdto",
         "manifest must not include same-name Job template update",
         "all resource kind/name/namespace values must be allowlisted",
         "kubectl apply must be server-side stdin apply against Package D idempotent bootstrap manifests only",
@@ -3058,7 +3096,7 @@
         "Tencent mutation",
         "Package C live",
         "tenant pool or medopl-tenant- resources",
-        "modify np-cbk784r8",
+        "modify np-cbk784r8 or np-6l4nkdto",
         "kubectl delete/patch/scale outside Package D bootstrap resources",
         "output kubeconfig/token/cert/DB password/TCR secret/Portal admin password"
       ],
@@ -3107,9 +3145,12 @@
         "clusterId": "cls-fi097sy4",
         "namespace": "medopl-platform",
         "serviceAccountName": "medopl-platform-runner",
-        "platformNodePoolId": "np-cbk784r8",
+        "platformNodePoolId": "np-6l4nkdto",
         "schedulingClass": "platform_service_pool",
-        "postgresEndpoint": "10.66.0.21:5432"
+        "postgresEndpoint": "10.66.0.21:5432",
+        "legacyProtectedPlatformNodePoolId": "np-cbk784r8",
+        "runnerMachineId": "np-6l4nkdto-2cdtm",
+        "runnerNodeIp": "10.66.0.42"
       },
       "jobManifestShape": {
         "kind": "Job",
@@ -3117,7 +3158,7 @@
         "namespace": "medopl-platform",
         "serviceAccountName": "medopl-platform-runner",
         "nodeSelector": {
-          "node.tke.cloud.tencent.com/machineset": "np-cbk784r8"
+          "node.tke.cloud.tencent.com/machineset": "np-6l4nkdto"
         },
         "imagePullSecrets": [
           "medopl-tcr-pull-secret"
@@ -3159,7 +3200,7 @@
         "Job command must be preflight only",
         "manifest must not reference medopl-tenant-",
         "manifest must not contain plaintext secret, raw kubeconfig or full DB URL",
-        "scheduling must target node.tke.cloud.tencent.com/machineset=np-cbk784r8",
+        "scheduling must target node.tke.cloud.tencent.com/machineset=np-6l4nkdto",
         "cleanup may delete only the unique run-scoped Job after success",
         "redaction audit must pass",
         "custom medopl.io/nodepool-role platform-service selector must not be required",
@@ -3175,7 +3216,7 @@
         "Tencent mutation",
         "Package C live",
         "tenant pool or medopl-tenant- resources",
-        "modify np-cbk784r8",
+        "modify np-cbk784r8 or np-6l4nkdto",
         "kubectl apply/patch/scale",
         "kubectl delete outside the unique run-scoped Job success cleanup",
         "output kubeconfig/token/cert/DB password/TCR secret/Portal admin password"
@@ -3206,7 +3247,8 @@
         "blockedAt": "image_pull",
         "reason": "TCR image tag not found / ImagePullBackOff",
         "imageRef": "uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001"
-      }
+      },
+      "nextRunId": "pdrun-20260615-004"
     },
     "runnerImagePublishBoundary": {
       "status": "public_repo_safe_github_actions_workflow_dispatch_authorization_required",
@@ -3322,6 +3364,7 @@
         "Run: node tests/support/cloud-prework/package-d-run-scoped-job-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id pdrun-20260615-004 --mode preflight-job"
       ],
       "realExecutionReady": false
-    }
+    },
+    "legacyProtectedPlatformNodePoolId": "np-cbk784r8"
   }
 }

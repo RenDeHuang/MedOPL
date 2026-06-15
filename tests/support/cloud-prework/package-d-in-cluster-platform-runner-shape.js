@@ -7,11 +7,12 @@ export const PACKAGE_D_IN_CLUSTER_PLATFORM_RUNNER_SHAPE = Object.freeze({
   serviceAccountName: "medopl-platform-runner",
   scheduling: Object.freeze({
     class: "platform_service_pool",
-    nodePoolId: "np-cbk784r8",
+    nodePoolId: "np-6l4nkdto",
+    legacyProtectedNodePoolIds: Object.freeze(["np-cbk784r8"]),
     tenantPoolAllowed: false,
     forbiddenNodePoolPrefix: "medopl-tenant-",
     nodeSelector: Object.freeze({
-      "node.tke.cloud.tencent.com/machineset": "np-cbk784r8",
+      "node.tke.cloud.tencent.com/machineset": "np-6l4nkdto",
     }),
   }),
   podTemplate: Object.freeze({
@@ -351,12 +352,12 @@ export function materializePackageDInClusterRunnerPack(shape = PACKAGE_D_IN_CLUS
         "If server-side dry-run fails, do not create resources and keep evidence only.",
         "If bootstrap apply is separately authorized later and fails, remove only Package D idempotent bootstrap resources in medopl-platform.",
         "If a run-scoped Job is created in a later authorization and fails, collect redacted logs/events, delete only that unique Job, and leave existing bootstrap resources and platform pool untouched.",
-        "Never delete, scale or modify platform node pool np-cbk784r8 or any medopl-tenant- pool.",
+        "Never delete, scale or modify legacy protected platform node pool np-cbk784r8, runner node pool np-6l4nkdto or any medopl-tenant- pool.",
       ],
       stopConditions: [
         "kubeconfig context or cluster does not match cls-fi097sy4",
         "namespace target is not medopl-platform",
-        "scheduling target is not platform pool np-cbk784r8",
+        "scheduling target is not platform runner pool np-6l4nkdto",
         "manifest references medopl-tenant-",
         "manifest embeds plaintext secret or raw kubeconfig",
         "RBAC requests cluster-admin or broad wildcard",

@@ -181,7 +181,7 @@ try {
   assert.equal(plan.jobName, "medopl-platform-runner-preflight-20260615a", "job_name_must_be_run_scoped");
   assert.equal(plan.target.clusterId, "cls-fi097sy4", "target_cluster_fixed");
   assert.equal(plan.target.namespace, "medopl-platform", "target_namespace_fixed");
-  assert.equal(plan.target.platformNodePoolId, "np-cbk784r8", "target_platform_pool_fixed");
+  assert.equal(plan.target.platformNodePoolId, "np-6l4nkdto", "target_platform_runner_pool_fixed");
   assert.equal(plan.boundary.runTencentDeployExecution, "0", "deploy_gate_must_stay_zero");
   assert.equal(plan.boundary.realDeployAllowed, false, "real_deploy_must_be_forbidden");
   assert.equal(plan.boundary.buildPushAllowed, false, "build_push_must_be_forbidden");
@@ -196,8 +196,13 @@ try {
   assert.equal(plan.jobManifest.spec.template.spec.serviceAccountName, "medopl-platform-runner", "service_account_must_be_fixed");
   assert.deepEqual(
     plan.jobManifest.spec.template.spec.nodeSelector,
-    { "node.tke.cloud.tencent.com/machineset": "np-cbk784r8" },
+    { "node.tke.cloud.tencent.com/machineset": "np-6l4nkdto" },
     "job_must_target_tke_machineset_selector",
+  );
+  assert.notEqual(
+    plan.jobManifest.spec.template.spec.nodeSelector["node.tke.cloud.tencent.com/machineset"],
+    "np-cbk784r8",
+    "job_must_not_schedule_to_legacy_platform_pool",
   );
   assert.equal(
     Object.hasOwn(plan.jobManifest.spec.template.spec.nodeSelector, "medopl.io/nodepool-role"),
@@ -219,7 +224,7 @@ try {
   assert.equal(env.RUN_SCOPED_JOB_ID, runId, "job_must_record_runid");
   assert.equal(env.EXPECTED_NAMESPACE, "medopl-platform", "job_must_record_expected_namespace");
   assert.equal(env.EXPECTED_SERVICE_ACCOUNT, "medopl-platform-runner", "job_must_record_expected_service_account");
-  assert.equal(env.TARGET_PLATFORM_NODE_POOL_ID, "np-cbk784r8", "job_must_record_platform_pool");
+  assert.equal(env.TARGET_PLATFORM_NODE_POOL_ID, "np-6l4nkdto", "job_must_record_runner_pool");
   assert.equal(env.POSTGRES_ENDPOINT, "10.66.0.21:5432", "job_must_record_vpc_postgres_endpoint");
   assert.equal(env.PACKAGE_D_RUNNER_COMMAND, "preflight", "job_must_force_preflight_command");
   assertNoSensitiveText(JSON.stringify(plan), "plan");

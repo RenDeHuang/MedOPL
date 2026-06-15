@@ -129,7 +129,7 @@ try {
   assert.equal(plan.ok, true, "plan_ok");
   assert.equal(plan.target.clusterId, "cls-fi097sy4", "target_cluster_fixed");
   assert.equal(plan.target.namespace, "medopl-platform", "target_namespace_fixed");
-  assert.equal(plan.target.platformNodePoolId, "np-cbk784r8", "target_platform_pool_fixed");
+  assert.equal(plan.target.platformNodePoolId, "np-6l4nkdto", "target_platform_runner_pool_fixed");
   assert.equal(plan.target.postgresEndpoint, "10.66.0.21:5432", "postgres_endpoint_fixed");
   assert.equal(plan.boundary.runTencentDeployExecution, "0", "deploy_gate_must_stay_zero");
   assert.equal(plan.boundary.realDeployAllowed, false, "real_deploy_must_be_forbidden");
