@@ -36,18 +36,18 @@ const DEPLOY_RUNNER_PLACEMENT_PLAN = Object.freeze({
     "rollback",
   ]),
   buildPushPlan: Object.freeze({
-    executionLocation: "github_actions_workflow_dispatch",
+    executionLocation: "private_build_runner",
     separatedFromDeploySmoke: true,
+    secretSource: "package-d-deploy.env",
+    allowedSecretKeys: Object.freeze(["TCR_ID", "TCR_SECRET", "PACKAGE_D_RUNNER_IMAGE_REF"]),
+    forbiddenSecretClasses: Object.freeze(["kubeconfig", "DB password", "Portal admin password", "Tencent SecretId/SecretKey"]),
     imageTargets: Object.freeze([
       "portal-frontend",
       "medopl-go-backend",
       "opl-web-gateway",
       "opl-runtime-bridge",
     ]),
-    allowedMethods: Object.freeze([
-      "GitHub Actions workflow_dispatch",
-      "future Kaniko/BuildKit",
-    ]),
+    allowedMethods: Object.freeze(["private build runner", "future Kaniko/BuildKit"]),
     executesNow: false,
   }),
   deploySmokePlan: Object.freeze({
@@ -84,7 +84,7 @@ const DEPLOY_RUNNER_PLACEMENT_PLAN = Object.freeze({
     tenantPoolSchedulingAllowed: false,
   }),
   preflightOrder: Object.freeze([
-    "GitHub Actions workflow_dispatch publishes the fixed Package D runner image tag",
+    "private build runner publishes the fixed Package D runner image tag",
     "Kubernetes API connectivity preflight from TKE platform runner",
     "PostgreSQL ledger canary from TKE platform runner",
     "Package D combined preflight from TKE platform runner",
@@ -821,23 +821,19 @@ assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.clusterId, "cls-fi097sy4", "deploy_run
 assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.namespace, "medopl-platform", "deploy_runner_preferred_namespace_must_be_fixed");
 assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.platformNodePoolId, FIXED_PLATFORM_NODE_POOL_ID, "deploy_runner_preferred_platform_runner_pool_must_be_fixed");
 assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.schedulingTarget, "platform_service_pool", "deploy_runner_preferred_scheduling_must_target_platform_pool");
-assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.purpose, [
-  "deploy/smoke inside TKE platform pool",
-  "DB connectivity smoke inside VPC",
-  "rollback",
-], "deploy_runner_preferred_purpose_must_cover_deploy_smoke_loop");
-assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.executionLocation, "github_actions_workflow_dispatch", "build_push_must_be_separate_from_in_cluster_deploy_smoke");
+assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.purpose, ["deploy/smoke inside TKE platform pool", "DB connectivity smoke inside VPC", "rollback"], "deploy_runner_preferred_purpose_must_cover_deploy_smoke_loop");
+assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.executionLocation, "private_build_runner", "build_push_must_be_separate_from_in_cluster_deploy_smoke");
 assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.separatedFromDeploySmoke, true, "build_push_and_deploy_smoke_must_be_separate");
+assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.secretSource, "package-d-deploy.env", "private_build_secret_source_must_be_package_d_deploy_env");
+assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.allowedSecretKeys, ["TCR_ID", "TCR_SECRET", "PACKAGE_D_RUNNER_IMAGE_REF"], "private_build_must_only_read_tcr_and_image_ref");
+assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.forbiddenSecretClasses, ["kubeconfig", "DB password", "Portal admin password", "Tencent SecretId/SecretKey"], "private_build_must_not_hold_runtime_or_cloud_mutation_secrets");
 assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.imageTargets, [
   "portal-frontend",
   "medopl-go-backend",
   "opl-web-gateway",
   "opl-runtime-bridge",
 ], "build_push_plan_must_keep_image_targets");
-assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.allowedMethods, [
-  "GitHub Actions workflow_dispatch",
-  "future Kaniko/BuildKit",
-], "build_push_plan_must_allow_github_actions_or_future_in_cluster_builder");
+assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.allowedMethods, ["private build runner", "future Kaniko/BuildKit"], "build_push_plan_must_allow_private_build_runner_or_future_in_cluster_builder");
 assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.executesNow, false, "build_push_plan_must_not_execute_now");
 assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.deploySmokePlan, {
   executionLocation: "tke_in_cluster_platform_runner",
@@ -889,7 +885,7 @@ assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.safetyBoundary.defaultExtraCvmRunner, 
 assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.safetyBoundary.runnerStateCommittedToGit, false, "deploy_runner_state_must_not_enter_git");
 assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.safetyBoundary.tenantPoolSchedulingAllowed, false, "deploy_runner_must_not_schedule_to_tenant_pool");
 assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.preflightOrder, [
-  "GitHub Actions workflow_dispatch publishes the fixed Package D runner image tag",
+  "private build runner publishes the fixed Package D runner image tag",
   "Kubernetes API connectivity preflight from TKE platform runner",
   "PostgreSQL ledger canary from TKE platform runner",
   "Package D combined preflight from TKE platform runner",

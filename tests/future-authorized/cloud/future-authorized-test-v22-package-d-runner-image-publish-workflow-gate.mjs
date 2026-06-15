@@ -1,94 +1,57 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { stat } from "node:fs/promises";
 
-const workflowPath = ".github/workflows/package-d-runner-image-publish.yml";
-const workflow = await readFile(workflowPath, "utf8");
+import {
+  PACKAGE_D_RUNNER_IMAGE_PUBLISH_COMMAND,
+  PACKAGE_D_RUNNER_IMAGE_PUBLISH_WORKFLOW,
+  buildPackageDRunnerImagePublishPlan,
+} from "../../support/cloud-prework/package-d-runner-image-publish-runner.js";
 
 const imageRef = "uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001";
-const workflowHeader = workflow.slice(0, workflow.indexOf("permissions:"));
 
-function assertContains(value, expected, label) {
-  assert.equal(value.includes(expected), true, `${label}_must_include:${expected}`);
-}
+await assert.rejects(
+  () => stat(PACKAGE_D_RUNNER_IMAGE_PUBLISH_WORKFLOW),
+  /ENOENT/u,
+  "github_actions_image_publish_workflow_must_be_removed_from_current_live_path",
+);
 
-function assertNotContains(value, forbidden, label) {
-  assert.equal(value.includes(forbidden), false, `${label}_must_not_include:${forbidden}`);
-}
+assert.equal(
+  PACKAGE_D_RUNNER_IMAGE_PUBLISH_COMMAND,
+  "node tests/support/cloud-prework/package-d-runner-image-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-deploy.env --authorized 1",
+  "current_publish_command_must_be_private_build_runner",
+);
 
-assertContains(workflow, "workflow_dispatch:", "workflow");
-assertNotContains(workflowHeader, "pull_request", "workflow_trigger");
-assertNotContains(workflowHeader, "pull_request_target", "workflow_trigger");
-assertNotContains(workflowHeader, "\n  push:", "workflow_trigger");
-assert.equal(/on:\s*\n\s*workflow_dispatch:\s*\n\s*\npermissions:/u.test(workflow), true, "workflow_must_be_manual_dispatch_only");
-assertContains(workflow, "environment: package-d-image-publish", "workflow");
-assertContains(workflow, "package-d-image-publish requires environment secrets, not repository secrets", "workflow_environment_secret_boundary");
-assertContains(workflow, "Required reviewer and branch restriction live on the GitHub Environment.", "workflow_environment_review_boundary");
-assertContains(workflow, "github.ref_name != 'recovery/platform-v22-trunk' && !startsWith(github.ref_name, 'release/')", "workflow_branch_guard");
-assertContains(workflow, "permissions:", "workflow_permissions");
-assertContains(workflow, "contents: read", "workflow_permissions");
-assert.equal(/permissions:\s*\n\s*contents:\s*read\s*\n\s*\n/u.test(workflow), true, "workflow_permissions_must_be_contents_read_only");
+const plan = await buildPackageDRunnerImagePublishPlan({
+  imageRef,
+  deployEnvText: [
+    "TCR_ID=redacted-user",
+    "TCR_SECRET=redacted-secret",
+    `PACKAGE_D_RUNNER_IMAGE_REF=${imageRef}`,
+    "",
+  ].join("\n"),
+});
 
-assertContains(workflow, `PACKAGE_D_RUNNER_IMAGE_REF: ${imageRef}`, "workflow_image_ref");
-assertContains(workflow, "TENCENT_TCR_REGISTRY: uswccr.ccs.tencentyun.com", "workflow_registry");
-assertContains(workflow, "TENCENT_TCR_NAMESPACE: medopl", "workflow_namespace");
-assertContains(workflow, "PACKAGE_D_RUNNER_IMAGE_REPOSITORY: medopl-platform-runner", "workflow_repository");
-assertContains(workflow, "PACKAGE_D_RUNNER_IMAGE_TAG: v22-package-d-20260615-001", "workflow_tag");
-
-assertContains(workflow, "secrets.TCR_ID", "workflow_tcr_id_secret");
-assertContains(workflow, "secrets.TCR_SECRET", "workflow_tcr_secret");
-assertContains(workflow, "--password-stdin", "workflow_login");
-assertContains(workflow, "docker build", "workflow_build");
-assertContains(workflow, "docker push", "workflow_push");
-assertContains(workflow, "tests/support/cloud-prework/package-d-platform-runner.Dockerfile", "workflow_dockerfile");
-
-for (const forbidden of [
-  "kubectl",
-  "helm",
-  "deploy",
-  "CreateNodePool",
-  "RUN_TENCENT_CREATE_RELEASE_EXECUTION",
-  "TENCENT_MUTATION_SECRET_ID",
-  "TENCENT_MUTATION_SECRET_KEY",
-  "KUBECONFIG",
-  "kubeconfig-package-d-deploy",
-  "PORTAL_POSTGRES_PASSWORD",
-  "PORTAL_ADMIN_PASSWORD",
-  "PORTAL_POSTGRES_URL",
-  "package-d-deploy.env",
-  "portal-runtime.env",
-  "medopl-tenant-",
-  "secrets.KUBECONFIG",
-  "secrets.PORTAL_POSTGRES_PASSWORD",
-  "secrets.PORTAL_ADMIN_PASSWORD",
-  "secrets.PORTAL_POSTGRES_URL",
-  "secrets.TENCENT_SECRET_ID",
-  "secrets.TENCENT_SECRET_KEY",
-  "pull_request:",
-  "pull_request_target:",
-  "\n  push:",
-  "workflow_dispatch:\n    inputs:",
-  "printenv",
-  "env |",
-  "set |",
-]) {
-  assertNotContains(workflow, forbidden, "workflow_boundary");
-}
-
-assertNotContains(workflow, ":latest", "workflow_image_tag");
-assertNotContains(workflow, "PACKAGE_D_RUNNER_IMAGE_TAG: latest", "workflow_image_tag");
-assert.equal((workflow.match(/secrets\.[A-Z0-9_]+/gu) || []).sort().join(","), "secrets.TCR_ID,secrets.TCR_SECRET", "workflow_secrets_must_only_be_tcr");
-assert.equal(/echo\s+.*secrets\./u.test(workflow), false, "workflow_must_not_echo_secret_expression");
-assert.equal(/docker\s+build[\s\S]*-t\s+\$\{\{\s*env\.PACKAGE_D_RUNNER_IMAGE_REF\s*\}\}/u.test(workflow), true, "docker_build_must_use_fixed_env_image_ref");
-assert.equal(/docker\s+push\s+\$\{\{\s*env\.PACKAGE_D_RUNNER_IMAGE_REF\s*\}\}/u.test(workflow), true, "docker_push_must_use_fixed_env_image_ref");
-assert.equal(/\$\{\{\s*secrets\.TCR_SECRET\s*\}\}[\s\S]*docker\s+login/u.test(workflow), true, "tcr_secret_must_only_feed_login");
+assert.equal(plan.route, "private_build_runner", "current_live_route_must_be_private_build_runner");
+assert.equal(plan.githubActions.status, "removed_from_current_live_path", "github_actions_must_not_be_current_live_path");
+assert.equal(plan.githubActions.currentLivePath, false, "github_actions_current_live_path_false");
+assert.deepEqual(plan.privateBuildRunner.allowedEnvKeys, ["TCR_ID", "TCR_SECRET", "PACKAGE_D_RUNNER_IMAGE_REF"], "private_build_allowed_keys");
+assert.deepEqual(plan.privateBuildRunner.forbiddenSecretClasses, ["kubeconfig", "DB password", "Portal admin password", "Tencent SecretId/SecretKey"], "private_build_forbidden_secret_classes");
+assert.equal(plan.image.registry, "uswccr.ccs.tencentyun.com", "registry_fixed");
+assert.equal(plan.image.namespace, "medopl", "namespace_fixed");
+assert.equal(plan.image.repository, "medopl-platform-runner", "repository_fixed");
+assert.equal(plan.image.tag, "v22-package-d-20260615-001", "tag_fixed");
+assert.equal(plan.image.floatingTagAllowed, false, "latest_must_be_forbidden");
+assert.equal(plan.boundary.deployAllowed, false, "deploy_forbidden");
+assert.equal(plan.boundary.clusterCommandAllowed, false, "kubectl_forbidden");
+assert.equal(plan.boundary.tencentMutationAllowed, false, "tencent_mutation_forbidden");
+assert.equal(plan.boundary.packageCLiveAllowed, false, "package_c_live_forbidden");
 
 console.log(JSON.stringify({
   ok: true,
   contract: "package_d_runner_image_publish_workflow_gate",
-  workflow: workflowPath,
-  route: "github_actions_workflow_dispatch",
-  environment: "package-d-image-publish",
-  requiredSecrets: ["TCR_ID", "TCR_SECRET"],
+  route: "private_build_runner",
+  githubActions: "removed_from_current_live_path",
+  requiredEnvKeys: ["TCR_ID", "TCR_SECRET", "PACKAGE_D_RUNNER_IMAGE_REF"],
   imageRef,
   realExecutionReady: false,
 }, null, 2));

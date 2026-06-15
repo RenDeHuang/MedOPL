@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13: CreateNodePool, scale up, scale down and DeleteNodePool passed for medopl-tenant-rb-package-c-live-canary-20260613; readonly cleanup check observed platform pool np-cbk784r8 and no residual canary tenant node pool by name or id. TagResources for tke:nodepool returned InvalidParameter.UnsupportedService and remains non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound is landed in Go domain, memory store, Ent schema and baseline migration; Package C live runner projects the tenant node pool lifecycle into local ResourceBinding / CloudOperation state-machine evidence; Package C repository write wiring contract now covers create resource binding, append cloud operation event, nodePoolId update, lifecycle status update, released, failed and cleanupRequired paths through an injected ledger sink. Canonical ownership and billing truth remains PostgreSQL ledger, not cloud tags. The default runner sink is still local/dry-run and does not execute a real PostgreSQL connection, but Package C now has gated PostgreSQL ledger sink support with root pg driver dependency, RUN_MEDOPL_POSTGRES_LEDGER_EXECUTION=1, allowlisted local DB env keys, schema/write-permission preflight, explicit live canary write/read/cleanup runner, redacted .runtime evidence and fail-closed driver/gate behavior. An explicitly authorized PostgreSQL ledger canary read only the dedicated ledger env file and failed closed at connection preflight with timeout expired / network_unreachable_or_connection_preflight_failed before parent-row check or DB write. Next stable上线 plan is Package D deploy readiness planning for TKE cluster cls-fi097sy4 and VPC PostgreSQL 10.66.0.21:5432; Package D runner placement has moved to TKE node pool np-6l4nkdto / runner node 10.66.0.42, while np-cbk784r8 remains a protected legacy/platform pool and is no longer the Package D runner target; build/push image readiness is separate and can be handled by an external build runner or future Kaniko/BuildKit, while deploy/smoke/DB connectivity preflight runs inside the TKE platform pool and VPC; the previous medopl-v22-deploy-runner VPC CVM checklist is fallback-only, not the default route; the non-executing local shape gate now verifies RUN_TENCENT_DEPLOY_EXECUTION=0, deploy/runtime env allowlists, kubeconfig ref-only handling, Portal runtime PostgreSQL endpoint, manifest scheduling to the platform service pool, rollback plan shape and tenant pool scheduling rejection. The reviewable Package D release plan shape now makes releasePlanReady=true while realExecutionReady remains false, and the Package D execution preflight gate can judge split deploy/runtime env allowlists, fixed cluster/namespace/platform pool/PostgreSQL/image targets and redaction audit while keeping realExecutionReady=false. Package D in-cluster platform runner shape gate is now landed and split into a repo-local support module to keep the deploy gate under line budget: the preferred runner shape is a Kubernetes Job in namespace medopl-platform with serviceAccount medopl-platform-runner, scheduling fixed to platform runner pool np-6l4nkdto, tenant pool prefix medopl-tenant- forbidden, configMap/secretRef/imagePullSecret-only runtime inputs, no plaintext secret, no raw kubeconfig, minimal RBAC with namespace scope preferred and cluster-scope limited to read-only nodes for platform pool visibility, command allowlist limited to preflight/deploy/smoke/rollback, and redacted shape evidence written only to .runtime. It does not call kubectl, connect to Kubernetes API, deploy, build/push, execute Tencent mutation, read kubeconfig, or allow Package C live. Package D in-cluster runner manifest materialization is now a non-executing review pack: it produces Namespace, ServiceAccount, ConfigMap, redacted Secret templates, imagePullSecret template, Role/RoleBinding, nodes read-only ClusterRole/ClusterRoleBinding and Job manifest shape plus an authorization pack; after local WSL could not reach the TKE API, the same gate now includes a bootstrap authorization pack recommending Tencent CloudShell, Cloud Assistant or a VPC internal runner for server-side dry-run / later separately authorized bootstrap, with rollback plan, stop conditions, fixed target cls-fi097sy4 / medopl-platform / np-6l4nkdto, resource classes and redacted evidence path. Secret values remain key-level redacted placeholders and raw kubeconfig is forbidden. This pack now has repo-native cloud-runner execution entrypoints for later authorized Kubernetes API connectivity / server-side dry-run and bootstrap apply: it reads only the Package D deploy env, Portal runtime env and kubeconfig paths passed by flag, requires RUN_TENCENT_DEPLOY_EXECUTION=0, validates cluster cls-fi097sy4 / namespace medopl-platform / platform runner scheduling np-6l4nkdto / VPC PostgreSQL 10.66.0.21:5432, runs only kubectl client check, current-context, namespace read and kubectl apply --server-side --dry-run=server against the Package D bootstrap manifest pack, writes redacted .runtime evidence, and rejects real apply/delete/patch/scale/deploy/build-push/Tencent mutation/Package C live. This entrypoint has now been executed once from a TKE/VPC-reachable environment: Kubernetes API connectivity passed, context/cluster matched cls-fi097sy4, but namespace_read found medopl-platform missing, so server-side dry-run was not entered. Evidence is redacted at /opt/medopl/.runtime/package-d-kubernetes-api-server-side-dry-run-preflight/preflight-redacted.json. The next required boundary is authorized cloud execution of the repo-native Package D bootstrap apply runner that creates medopl-platform Namespace and only Package D bootstrap resources before rerunning the dry-run preflight. The current WSL session is no longer the Package D execution target; deploy/smoke, Kubernetes API connectivity, PostgreSQL ledger canary, DB smoke and rollback should run from the TKE platform runner after separate authorization, while image build/push remains a separate external build runner or future Kaniko/BuildKit concern; realExecutionReady stays false until bootstrap apply and subsequent dry-run / smoke preflights pass; the next boundary is authorized cloud execution of the repo-native Package D bootstrap apply runner for the missing medopl-platform namespace. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization. Starter remains starter_2c4g_10gb: 2C4G, 10GB workspace storage, TKE SA5.MEDIUM4, CLOUD_BSSD 50GB node system disk and public IP disabled; arbitrary Tencent instanceType input is rejected unless represented by a MedOPL plan catalog allowlist entry. Package D cloud bootstrap apply has now confirmed Kubernetes API connectivity, target cluster cls-fi097sy4, medopl-platform Active and allowlisted bootstrap resources. The corrected contract removes Job from idempotent bootstrap apply / server-side dry-run packs and adds a repo-native run-scoped preflight Job runner for unique names medopl-platform-runner-preflight-<runid>; Authorized cloud run-scoped Job creation first exposed the retired custom medopl.io/nodepool-role=platform-service selector gap; readonly scheduling discovery first found node.tke.cloud.tencent.com/machineset=np-cbk784r8 for the old runner, then the Package D runner target moved to node.tke.cloud.tencent.com/machineset=np-6l4nkdto after the VPC/TKE runner moved to node pool np-6l4nkdto / node 10.66.0.42; no node labels are modified. Package D run-scoped Job cloud execution pdrun-20260615-002 then scheduled on np-cbk784r8 but failed container image validation because a redacted image placeholder reached the live Job manifest; the repo contract now requires PACKAGE_D_RUNNER_IMAGE_REF for live manifests and keeps only redacted image refs in evidence. Package D run-scoped Job cloud execution pdrun-20260615-003 then reached image pull with the real allowlisted PACKAGE_D_RUNNER_IMAGE_REF but failed because the TCR tag was not found / ImagePullBackOff for uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001. The repo now has a separate public-repo-safe GitHub Actions workflow_dispatch image publish lane for that fixed non-latest tag; it uses GitHub Environment package-d-image-publish with contents: read, required reviewer, branch restriction to recovery/platform-v22-trunk / release/*, environment secrets only TCR_ID/TCR_SECRET, repository secrets forbidden, no automatic triggers, keeps build/push out of the TKE/VPC runner, and is not deploy.",
+  "current_problem": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13: CreateNodePool, scale up, scale down and DeleteNodePool passed for medopl-tenant-rb-package-c-live-canary-20260613; readonly cleanup check observed platform pool np-cbk784r8 and no residual canary tenant node pool by name or id. TagResources for tke:nodepool returned InvalidParameter.UnsupportedService and remains non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound is landed in Go domain, memory store, Ent schema and baseline migration; Package C live runner projects the tenant node pool lifecycle into local ResourceBinding / CloudOperation state-machine evidence; Package C repository write wiring contract now covers create resource binding, append cloud operation event, nodePoolId update, lifecycle status update, released, failed and cleanupRequired paths through an injected ledger sink. Canonical ownership and billing truth remains PostgreSQL ledger, not cloud tags. The default runner sink is still local/dry-run and does not execute a real PostgreSQL connection, but Package C now has gated PostgreSQL ledger sink support with root pg driver dependency, RUN_MEDOPL_POSTGRES_LEDGER_EXECUTION=1, allowlisted local DB env keys, schema/write-permission preflight, explicit live canary write/read/cleanup runner, redacted .runtime evidence and fail-closed driver/gate behavior. An explicitly authorized PostgreSQL ledger canary read only the dedicated ledger env file and failed closed at connection preflight with timeout expired / network_unreachable_or_connection_preflight_failed before parent-row check or DB write. Next stable上线 plan is Package D deploy readiness planning for TKE cluster cls-fi097sy4 and VPC PostgreSQL 10.66.0.21:5432; Package D runner placement has moved to TKE node pool np-6l4nkdto / runner node 10.66.0.42, while np-cbk784r8 remains a protected legacy/platform pool and is no longer the Package D runner target; build/push image readiness is separate and can be handled by an external build runner or future Kaniko/BuildKit, while deploy/smoke/DB connectivity preflight runs inside the TKE platform pool and VPC; the previous medopl-v22-deploy-runner VPC CVM checklist is fallback-only, not the default route; the non-executing local shape gate now verifies RUN_TENCENT_DEPLOY_EXECUTION=0, deploy/runtime env allowlists, kubeconfig ref-only handling, Portal runtime PostgreSQL endpoint, manifest scheduling to the platform service pool, rollback plan shape and tenant pool scheduling rejection. The reviewable Package D release plan shape now makes releasePlanReady=true while realExecutionReady remains false, and the Package D execution preflight gate can judge split deploy/runtime env allowlists, fixed cluster/namespace/platform pool/PostgreSQL/image targets and redaction audit while keeping realExecutionReady=false. Package D in-cluster platform runner shape gate is now landed and split into a repo-local support module to keep the deploy gate under line budget: the preferred runner shape is a Kubernetes Job in namespace medopl-platform with serviceAccount medopl-platform-runner, scheduling fixed to platform runner pool np-6l4nkdto, tenant pool prefix medopl-tenant- forbidden, configMap/secretRef/imagePullSecret-only runtime inputs, no plaintext secret, no raw kubeconfig, minimal RBAC with namespace scope preferred and cluster-scope limited to read-only nodes for platform pool visibility, command allowlist limited to preflight/deploy/smoke/rollback, and redacted shape evidence written only to .runtime. It does not call kubectl, connect to Kubernetes API, deploy, build/push, execute Tencent mutation, read kubeconfig, or allow Package C live. Package D in-cluster runner manifest materialization is now a non-executing review pack: it produces Namespace, ServiceAccount, ConfigMap, redacted Secret templates, imagePullSecret template, Role/RoleBinding, nodes read-only ClusterRole/ClusterRoleBinding and Job manifest shape plus an authorization pack; after local WSL could not reach the TKE API, the same gate now includes a bootstrap authorization pack recommending Tencent CloudShell, Cloud Assistant or a VPC internal runner for server-side dry-run / later separately authorized bootstrap, with rollback plan, stop conditions, fixed target cls-fi097sy4 / medopl-platform / np-6l4nkdto, resource classes and redacted evidence path. Secret values remain key-level redacted placeholders and raw kubeconfig is forbidden. This pack now has repo-native cloud-runner execution entrypoints for later authorized Kubernetes API connectivity / server-side dry-run and bootstrap apply: it reads only the Package D deploy env, Portal runtime env and kubeconfig paths passed by flag, requires RUN_TENCENT_DEPLOY_EXECUTION=0, validates cluster cls-fi097sy4 / namespace medopl-platform / platform runner scheduling np-6l4nkdto / VPC PostgreSQL 10.66.0.21:5432, runs only kubectl client check, current-context, namespace read and kubectl apply --server-side --dry-run=server against the Package D bootstrap manifest pack, writes redacted .runtime evidence, and rejects real apply/delete/patch/scale/deploy/build-push/Tencent mutation/Package C live. This entrypoint has now been executed once from a TKE/VPC-reachable environment: Kubernetes API connectivity passed, context/cluster matched cls-fi097sy4, but namespace_read found medopl-platform missing, so server-side dry-run was not entered. Evidence is redacted at /opt/medopl/.runtime/package-d-kubernetes-api-server-side-dry-run-preflight/preflight-redacted.json. The next required boundary is authorized cloud execution of the repo-native Package D bootstrap apply runner that creates medopl-platform Namespace and only Package D bootstrap resources before rerunning the dry-run preflight. The current WSL session is no longer the Package D execution target; deploy/smoke, Kubernetes API connectivity, PostgreSQL ledger canary, DB smoke and rollback should run from the TKE platform runner after separate authorization, while image build/push remains a separate external build runner or future Kaniko/BuildKit concern; realExecutionReady stays false until bootstrap apply and subsequent dry-run / smoke preflights pass; the next boundary is authorized cloud execution of the repo-native Package D bootstrap apply runner for the missing medopl-platform namespace. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization. Starter remains starter_2c4g_10gb: 2C4G, 10GB workspace storage, TKE SA5.MEDIUM4, CLOUD_BSSD 50GB node system disk and public IP disabled; arbitrary Tencent instanceType input is rejected unless represented by a MedOPL plan catalog allowlist entry. Package D cloud bootstrap apply has now confirmed Kubernetes API connectivity, target cluster cls-fi097sy4, medopl-platform Active and allowlisted bootstrap resources. The corrected contract removes Job from idempotent bootstrap apply / server-side dry-run packs and adds a repo-native run-scoped preflight Job runner for unique names medopl-platform-runner-preflight-<runid>; Authorized cloud run-scoped Job creation first exposed the retired custom medopl.io/nodepool-role=platform-service selector gap; readonly scheduling discovery first found node.tke.cloud.tencent.com/machineset=np-cbk784r8 for the old runner, then the Package D runner target moved to node.tke.cloud.tencent.com/machineset=np-6l4nkdto after the VPC/TKE runner moved to node pool np-6l4nkdto / node 10.66.0.42; no node labels are modified. Package D run-scoped Job cloud execution pdrun-20260615-002 then scheduled on np-cbk784r8 but failed container image validation because a redacted image placeholder reached the live Job manifest; the repo contract now requires PACKAGE_D_RUNNER_IMAGE_REF for live manifests and keeps only redacted image refs in evidence. Package D run-scoped Job cloud execution pdrun-20260615-003 then reached image pull with the real allowlisted PACKAGE_D_RUNNER_IMAGE_REF but failed because the TCR tag was not found / ImagePullBackOff for uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001. The current live image publish path is a private build runner that reads only TCR_ID, TCR_SECRET and PACKAGE_D_RUNNER_IMAGE_REF from package-d-deploy.env; GitHub Actions secrets are removed from the current live path and the TKE/VPC runner remains forbidden from build/push.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -100,7 +100,7 @@
       "depends_on": [
         "precloud-deployable-rc"
       ],
-      "history_summary": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound, runner-local state-machine evidence, repository write wiring contract and gated PostgreSQL sink support path and explicit live canary runner contract have landed. Package D release plan, execution preflight gate, in-cluster runner shape gate, non-executing runner manifest materialization / authorization pack, bootstrap authorization pack and the repo-native Kubernetes API server-side dry-run preflight runner and repo-native bootstrap apply runner have landed, so reviewable bootstrap path readiness and a single cloud-runner entrypoint are true while realExecutionReady=false. Kubernetes API connectivity now passed, context/cluster matched cls-fi097sy4, bootstrap apply confirmed medopl-platform Active and allowlisted bootstrap resources, and the same-name Job immutable finding is folded into the corrected contract: bootstrap apply / dry-run no longer reapply Job, while Job execution is a separate run-scoped authorization. Stabilization remains blocked on authorized Package D runner image publish for the fixed TCR tag, rerunning the repo-native run-scoped Job preflight after publish, service-in-VPC PostgreSQL live canary, DB connectivity smoke, rollback evidence, billing/audit ledger, Portal opening entry and workspace storage quota. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization. Package D run-scoped Job cloud execution first exposed the retired custom selector gap; readonly scheduling discovery found node.tke.cloud.tencent.com/machineset=np-cbk784r8, and the repo contract now uses the new TKE machineset label node.tke.cloud.tencent.com/machineset=np-6l4nkdto without modifying node labels. Package D run-scoped Job cloud execution pdrun-20260615-002 then scheduled on np-cbk784r8 but failed container image validation because a redacted image placeholder reached the live Job manifest; the repo contract now requires PACKAGE_D_RUNNER_IMAGE_REF for live manifests and keeps only redacted image refs in evidence. Package D run-scoped Job cloud execution pdrun-20260615-003 reached image pull but failed because the fixed TCR runner image tag was not found; the repo now has a public-repo-safe GitHub Actions workflow_dispatch runner image publish lane and local gates for that tag; TKE/VPC runner build/push remains forbidden.",
+      "history_summary": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound, runner-local state-machine evidence, repository write wiring contract and gated PostgreSQL sink support path and explicit live canary runner contract have landed. Package D release plan, execution preflight gate, in-cluster runner shape gate, non-executing runner manifest materialization / authorization pack, bootstrap authorization pack and the repo-native Kubernetes API server-side dry-run preflight runner and repo-native bootstrap apply runner have landed, so reviewable bootstrap path readiness and a single cloud-runner entrypoint are true while realExecutionReady=false. Kubernetes API connectivity now passed, context/cluster matched cls-fi097sy4, bootstrap apply confirmed medopl-platform Active and allowlisted bootstrap resources, and the same-name Job immutable finding is folded into the corrected contract: bootstrap apply / dry-run no longer reapply Job, while Job execution is a separate run-scoped authorization. Stabilization remains blocked on authorized Package D runner image publish for the fixed TCR tag, rerunning the repo-native run-scoped Job preflight after publish, service-in-VPC PostgreSQL live canary, DB connectivity smoke, rollback evidence, billing/audit ledger, Portal opening entry and workspace storage quota. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization. Package D run-scoped Job cloud execution first exposed the retired custom selector gap; readonly scheduling discovery found node.tke.cloud.tencent.com/machineset=np-cbk784r8, and the repo contract now uses the new TKE machineset label node.tke.cloud.tencent.com/machineset=np-6l4nkdto without modifying node labels. Package D run-scoped Job cloud execution pdrun-20260615-002 then scheduled on np-cbk784r8 but failed container image validation because a redacted image placeholder reached the live Job manifest; the repo contract now requires PACKAGE_D_RUNNER_IMAGE_REF for live manifests and keeps only redacted image refs in evidence. Package D run-scoped Job cloud execution pdrun-20260615-003 reached image pull but failed because the fixed TCR runner image tag was not found; the current live image publish path is private build runner with local gates for that tag; GitHub Actions is removed from current live path and TKE/VPC runner build/push remains forbidden.",
       "landed_commit": "c8c8a1466be286adfd1457a744a634bb80eadbc0"
     },
     {
@@ -171,7 +171,7 @@
     "gap_id": "real-cloud-authorization-boundary",
     "stage": "S7 real-cloud authorization boundary before readiness",
     "cursor_eligible": false,
-    "problem": "Package D run-scoped platform runner Job preflight reached image pull on pdrun-20260615-003 but the fixed TCR runner image tag was not found. The repo now owns a public-repo-safe GitHub Actions workflow_dispatch image publish lane for uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001; it uses GitHub Environment package-d-image-publish with contents: read, required reviewer, branch restriction to recovery/platform-v22-trunk / release/*, environment secrets only TCR_ID/TCR_SECRET, repository secrets forbidden, no automatic triggers, builds tests/support/cloud-prework/package-d-platform-runner.Dockerfile, and keeps Docker build/push out of the TKE/VPC runner. This is image publish only, not deploy.",
+    "problem": "Package D run-scoped platform runner Job preflight reached image pull on pdrun-20260615-003 but the fixed TCR runner image tag was not found. The current live image publish path is private build runner for uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001; it reads only TCR_ID, TCR_SECRET and PACKAGE_D_RUNNER_IMAGE_REF from package-d-deploy.env, keeps GitHub Actions secrets out of the current live path, and keeps Docker build/push out of the TKE/VPC runner. This is image publish only, not deploy.",
     "verification_commands": [
       "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
       "node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs",
@@ -264,7 +264,7 @@
       "readinessGaps": [
         "rerun corrected Package D bootstrap apply / server-side dry-run without same-name Job reapply",
         "authorize repo-native Package D run-scoped platform runner Job preflight with real PACKAGE_D_RUNNER_IMAGE_REF",
-        "dispatch GitHub Actions Package D runner image publish for fixed TCR tag v22-package-d-20260615-001",
+        "publish fixed Package D runner image tag from private build runner",
         "PostgreSQL ledger canary from TKE platform runner",
         "Package D combined preflight from TKE platform runner",
         "DB connectivity smoke execution",
@@ -284,8 +284,20 @@
           "rollback"
         ],
         "buildPushPlan": {
-          "executionLocation": "github_actions_workflow_dispatch",
+          "executionLocation": "private_build_runner",
           "separatedFromDeploySmoke": true,
+          "secretSource": "package-d-deploy.env",
+          "allowedSecretKeys": [
+            "TCR_ID",
+            "TCR_SECRET",
+            "PACKAGE_D_RUNNER_IMAGE_REF"
+          ],
+          "forbiddenSecretClasses": [
+            "kubeconfig",
+            "DB password",
+            "Portal admin password",
+            "Tencent SecretId/SecretKey"
+          ],
           "imageTargets": [
             "portal-frontend",
             "medopl-go-backend",
@@ -293,7 +305,7 @@
             "opl-runtime-bridge"
           ],
           "allowedMethods": [
-            "GitHub Actions workflow_dispatch",
+            "private build runner",
             "future Kaniko/BuildKit"
           ],
           "executesNow": false
@@ -498,7 +510,7 @@
           "tenantPoolSchedulingAllowed": false
         },
         "preflightOrder": [
-          "GitHub Actions workflow_dispatch publishes the fixed Package D runner image tag",
+          "private build runner publishes the fixed Package D runner image tag",
           "Kubernetes API connectivity preflight from TKE platform runner",
           "PostgreSQL ledger canary from TKE platform runner",
           "Package D combined preflight from TKE platform runner"
@@ -1065,14 +1077,14 @@
         "nextRunId": "pdrun-20260615-004"
       },
       "runnerImagePublishBoundary": {
-        "status": "public_repo_safe_github_actions_workflow_dispatch_authorization_required",
-        "contract": "package_d_runner_image_publish_github_actions_boundary",
-        "route": "github_actions_workflow_dispatch",
-        "workflow": ".github/workflows/package-d-runner-image-publish.yml",
-        "command": "gh workflow run package-d-runner-image-publish.yml --ref recovery/platform-v22-trunk",
+        "status": "private_build_runner_authorization_required",
+        "contract": "package_d_runner_image_publish_private_build_runner_boundary",
+        "route": "private_build_runner",
+        "workflow": "removed_from_current_live_path",
+        "command": "node tests/support/cloud-prework/package-d-runner-image-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-deploy.env --authorized 1",
         "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs",
         "workflowGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-workflow-gate.mjs",
-        "evidenceSink": ".runtime/package-d-runner-image-publish/github-actions-dispatch-redacted.json",
+        "evidenceSink": ".runtime/package-d-runner-image-publish/private-build-push-redacted.json",
         "imageRef": "uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001",
         "imageRefEvidence": "redacted",
         "imageTag": "v22-package-d-20260615-001",
@@ -1080,80 +1092,60 @@
         "registry": "uswccr.ccs.tencentyun.com",
         "namespace": "medopl",
         "region": "na-siliconvalley",
-        "githubActions": {
-          "environment": "package-d-image-publish",
-          "protectedEnvironmentRequired": true,
-          "branchRestriction": [
-            "recovery/platform-v22-trunk",
-            "release/*"
-          ],
-          "requiredSecrets": [
+        "privateBuildRunner": {
+          "secretSource": "/home/dev/.secrets/medopl/v22/package-d-deploy.env",
+          "requiredSecretKeys": [
             "TCR_ID",
-            "TCR_SECRET"
+            "TCR_SECRET",
+            "PACKAGE_D_RUNNER_IMAGE_REF"
           ],
           "forbiddenSecretClasses": [
-            "repository secret scope",
-            "cluster credential",
-            "portal runtime database credential",
-            "portal admin credential",
-            "Tencent mutation credential"
+            "kubeconfig",
+            "DB password",
+            "Portal admin password",
+            "Tencent SecretId/SecretKey"
           ],
-          "requiredReviewerRequired": true,
-          "secretsScope": "environment",
-          "repositorySecretsAllowed": false,
-          "permissions": {
-            "contents": "read"
-          },
-          "triggers": {
-            "workflowDispatchOnly": true,
-            "automaticTriggersAllowed": false,
-            "forbidden": [
-              "push",
-              "pull_request",
-              "pull_request_target"
-            ],
-            "arbitraryImageRefInputsAllowed": false
-          }
+          "publicRepoStoresCodeOnly": true
+        },
+        "githubActions": {
+          "status": "removed_from_current_live_path",
+          "currentLivePath": false,
+          "optionalFutureOnly": true
         },
         "readsWhenAuthorized": [
-          "GitHub Actions Environment package-d-image-publish secrets only; repository secrets are forbidden"
+          "/home/dev/.secrets/medopl/v22/package-d-deploy.env allowlisted keys only"
         ],
         "requiredSecretKeys": [
           "TCR_ID",
-          "TCR_SECRET"
+          "TCR_SECRET",
+          "PACKAGE_D_RUNNER_IMAGE_REF"
         ],
         "allowedCommandsAfterAuthorization": [
-          "GitHub Actions workflow_dispatch on recovery/platform-v22-trunk or release/*",
-          "docker login/build/push only inside GitHub Actions for the fixed Package D runner image"
+          "docker login to uswccr.ccs.tencentyun.com with --password-stdin",
+          "docker build fixed Package D runner image from tests/support/cloud-prework/package-d-platform-runner.Dockerfile",
+          "docker push fixed Package D runner image"
         ],
         "failClosedChecks": [
-          "workflow_dispatch only",
-          "push / pull_request / pull_request_target triggers forbidden",
-          "permissions must be contents: read only",
-          "GitHub Environment package-d-image-publish with required reviewer and branch restriction required",
-          "TCR_ID / TCR_SECRET must be environment secrets, not repository secrets",
-          "branch must be recovery/platform-v22-trunk or release/*",
           "image ref must equal the fixed Package D runner image ref",
           "registry must equal uswccr.ccs.tencentyun.com",
           "namespace must equal medopl",
           "repository must equal medopl-platform-runner",
           "tag must be non-latest and equal v22-package-d-20260615-001",
-          "publish lane secrets must be limited to TCR_ID and TCR_SECRET",
-          "workflow inputs for arbitrary image refs forbidden",
+          "private build runner env keys must be limited to TCR_ID, TCR_SECRET and PACKAGE_D_RUNNER_IMAGE_REF",
+          "private build runner must not hold kubeconfig, DB password, Portal admin password or Tencent SecretId/SecretKey",
           "TKE/VPC runner must not install Docker or execute build/push",
           "evidence must redact TCR secret and full image ref"
         ],
         "forbiddenNow": [
+          "GitHub Actions secrets as current live publish path",
           "TKE/VPC runner docker install/build/push",
           "latest tag",
           "arbitrary image ref input",
           "non-medopl namespace push",
           "non-allowlisted repository push",
-          "repository secrets in image publish lane",
           "kubeconfig in image publish lane",
           "DB or Portal admin secret in image publish lane",
           "Tencent SecretId/SecretKey in image publish lane",
-          "push / pull_request / pull_request_target automatic triggers",
           "kubectl",
           "deploy",
           "Tencent mutation",
@@ -1170,11 +1162,11 @@
           "imageRef": "uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001"
         },
         "authorizationPrompt": [
-          "Configure GitHub Environment package-d-image-publish with required reviewer, branch restriction to recovery/platform-v22-trunk / release/*, and environment secrets only TCR_ID and TCR_SECRET; do not configure them as repository secrets.",
-          "Manually dispatch Package D Runner Image Publish from GitHub Actions on recovery/platform-v22-trunk, or run: gh workflow run package-d-runner-image-publish.yml --ref recovery/platform-v22-trunk.",
-          "Do not provide kubeconfig, DB password, Portal admin password, Tencent mutation credentials, or Package C secrets to this workflow.",
+          "On a private build runner, place /home/dev/.secrets/medopl/v22/package-d-deploy.env with only TCR_ID, TCR_SECRET and PACKAGE_D_RUNNER_IMAGE_REF.",
+          "Run: node tests/support/cloud-prework/package-d-runner-image-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-deploy.env --authorized 1",
+          "Do not provide kubeconfig, DB password, Portal admin password, Tencent mutation credentials or Package C secrets to the private build runner.",
           "Do not build/push from the TKE/VPC runner and do not install Docker on TKE nodes.",
-          "After the GitHub Actions publish succeeds, rerun Package D run-scoped platform runner Job preflight with run id pdrun-20260615-004.",
+          "After private build runner publish succeeds, rerun Package D run-scoped platform runner Job preflight with run id pdrun-20260615-004.",
           "Run: node tests/support/cloud-prework/package-d-run-scoped-job-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id pdrun-20260615-004 --mode preflight-job"
         ],
         "realExecutionReady": false
@@ -1353,7 +1345,7 @@
       "readinessGaps": [
         "rerun corrected Package D bootstrap apply / server-side dry-run without same-name Job reapply",
         "authorize repo-native Package D run-scoped platform runner Job preflight with real PACKAGE_D_RUNNER_IMAGE_REF",
-        "dispatch GitHub Actions Package D runner image publish for fixed TCR tag v22-package-d-20260615-001",
+        "publish fixed Package D runner image tag from private build runner",
         "PostgreSQL ledger canary from TKE platform runner",
         "Package D combined preflight from TKE platform runner",
         "DB connectivity smoke execution",
@@ -1810,14 +1802,14 @@
         "nextRunId": "pdrun-20260615-004"
       },
       "runnerImagePublishBoundary": {
-        "status": "public_repo_safe_github_actions_workflow_dispatch_authorization_required",
-        "contract": "package_d_runner_image_publish_github_actions_boundary",
-        "route": "github_actions_workflow_dispatch",
-        "workflow": ".github/workflows/package-d-runner-image-publish.yml",
-        "command": "gh workflow run package-d-runner-image-publish.yml --ref recovery/platform-v22-trunk",
+        "status": "private_build_runner_authorization_required",
+        "contract": "package_d_runner_image_publish_private_build_runner_boundary",
+        "route": "private_build_runner",
+        "workflow": "removed_from_current_live_path",
+        "command": "node tests/support/cloud-prework/package-d-runner-image-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-deploy.env --authorized 1",
         "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs",
         "workflowGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-workflow-gate.mjs",
-        "evidenceSink": ".runtime/package-d-runner-image-publish/github-actions-dispatch-redacted.json",
+        "evidenceSink": ".runtime/package-d-runner-image-publish/private-build-push-redacted.json",
         "imageRef": "uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001",
         "imageRefEvidence": "redacted",
         "imageTag": "v22-package-d-20260615-001",
@@ -1825,80 +1817,60 @@
         "registry": "uswccr.ccs.tencentyun.com",
         "namespace": "medopl",
         "region": "na-siliconvalley",
-        "githubActions": {
-          "environment": "package-d-image-publish",
-          "protectedEnvironmentRequired": true,
-          "branchRestriction": [
-            "recovery/platform-v22-trunk",
-            "release/*"
-          ],
-          "requiredSecrets": [
+        "privateBuildRunner": {
+          "secretSource": "/home/dev/.secrets/medopl/v22/package-d-deploy.env",
+          "requiredSecretKeys": [
             "TCR_ID",
-            "TCR_SECRET"
+            "TCR_SECRET",
+            "PACKAGE_D_RUNNER_IMAGE_REF"
           ],
           "forbiddenSecretClasses": [
-            "repository secret scope",
-            "cluster credential",
-            "portal runtime database credential",
-            "portal admin credential",
-            "Tencent mutation credential"
+            "kubeconfig",
+            "DB password",
+            "Portal admin password",
+            "Tencent SecretId/SecretKey"
           ],
-          "requiredReviewerRequired": true,
-          "secretsScope": "environment",
-          "repositorySecretsAllowed": false,
-          "permissions": {
-            "contents": "read"
-          },
-          "triggers": {
-            "workflowDispatchOnly": true,
-            "automaticTriggersAllowed": false,
-            "forbidden": [
-              "push",
-              "pull_request",
-              "pull_request_target"
-            ],
-            "arbitraryImageRefInputsAllowed": false
-          }
+          "publicRepoStoresCodeOnly": true
+        },
+        "githubActions": {
+          "status": "removed_from_current_live_path",
+          "currentLivePath": false,
+          "optionalFutureOnly": true
         },
         "readsWhenAuthorized": [
-          "GitHub Actions Environment package-d-image-publish secrets only; repository secrets are forbidden"
+          "/home/dev/.secrets/medopl/v22/package-d-deploy.env allowlisted keys only"
         ],
         "requiredSecretKeys": [
           "TCR_ID",
-          "TCR_SECRET"
+          "TCR_SECRET",
+          "PACKAGE_D_RUNNER_IMAGE_REF"
         ],
         "allowedCommandsAfterAuthorization": [
-          "GitHub Actions workflow_dispatch on recovery/platform-v22-trunk or release/*",
-          "docker login/build/push only inside GitHub Actions for the fixed Package D runner image"
+          "docker login to uswccr.ccs.tencentyun.com with --password-stdin",
+          "docker build fixed Package D runner image from tests/support/cloud-prework/package-d-platform-runner.Dockerfile",
+          "docker push fixed Package D runner image"
         ],
         "failClosedChecks": [
-          "workflow_dispatch only",
-          "push / pull_request / pull_request_target triggers forbidden",
-          "permissions must be contents: read only",
-          "GitHub Environment package-d-image-publish with required reviewer and branch restriction required",
-          "TCR_ID / TCR_SECRET must be environment secrets, not repository secrets",
-          "branch must be recovery/platform-v22-trunk or release/*",
           "image ref must equal the fixed Package D runner image ref",
           "registry must equal uswccr.ccs.tencentyun.com",
           "namespace must equal medopl",
           "repository must equal medopl-platform-runner",
           "tag must be non-latest and equal v22-package-d-20260615-001",
-          "publish lane secrets must be limited to TCR_ID and TCR_SECRET",
-          "workflow inputs for arbitrary image refs forbidden",
+          "private build runner env keys must be limited to TCR_ID, TCR_SECRET and PACKAGE_D_RUNNER_IMAGE_REF",
+          "private build runner must not hold kubeconfig, DB password, Portal admin password or Tencent SecretId/SecretKey",
           "TKE/VPC runner must not install Docker or execute build/push",
           "evidence must redact TCR secret and full image ref"
         ],
         "forbiddenNow": [
+          "GitHub Actions secrets as current live publish path",
           "TKE/VPC runner docker install/build/push",
           "latest tag",
           "arbitrary image ref input",
           "non-medopl namespace push",
           "non-allowlisted repository push",
-          "repository secrets in image publish lane",
           "kubeconfig in image publish lane",
           "DB or Portal admin secret in image publish lane",
           "Tencent SecretId/SecretKey in image publish lane",
-          "push / pull_request / pull_request_target automatic triggers",
           "kubectl",
           "deploy",
           "Tencent mutation",
@@ -1915,11 +1887,11 @@
           "imageRef": "uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001"
         },
         "authorizationPrompt": [
-          "Configure GitHub Environment package-d-image-publish with required reviewer, branch restriction to recovery/platform-v22-trunk / release/*, and environment secrets only TCR_ID and TCR_SECRET; do not configure them as repository secrets.",
-          "Manually dispatch Package D Runner Image Publish from GitHub Actions on recovery/platform-v22-trunk, or run: gh workflow run package-d-runner-image-publish.yml --ref recovery/platform-v22-trunk.",
-          "Do not provide kubeconfig, DB password, Portal admin password, Tencent mutation credentials, or Package C secrets to this workflow.",
+          "On a private build runner, place /home/dev/.secrets/medopl/v22/package-d-deploy.env with only TCR_ID, TCR_SECRET and PACKAGE_D_RUNNER_IMAGE_REF.",
+          "Run: node tests/support/cloud-prework/package-d-runner-image-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-deploy.env --authorized 1",
+          "Do not provide kubeconfig, DB password, Portal admin password, Tencent mutation credentials or Package C secrets to the private build runner.",
           "Do not build/push from the TKE/VPC runner and do not install Docker on TKE nodes.",
-          "After the GitHub Actions publish succeeds, rerun Package D run-scoped platform runner Job preflight with run id pdrun-20260615-004.",
+          "After private build runner publish succeeds, rerun Package D run-scoped platform runner Job preflight with run id pdrun-20260615-004.",
           "Run: node tests/support/cloud-prework/package-d-run-scoped-job-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id pdrun-20260615-004 --mode preflight-job"
         ],
         "realExecutionReady": false
@@ -2376,7 +2348,7 @@
     "readinessGaps": [
       "rerun corrected Package D bootstrap apply / server-side dry-run without same-name Job reapply",
       "authorize repo-native Package D run-scoped platform runner Job preflight with real PACKAGE_D_RUNNER_IMAGE_REF",
-      "dispatch GitHub Actions Package D runner image publish for fixed TCR tag v22-package-d-20260615-001",
+      "publish fixed Package D runner image tag from private build runner",
       "PostgreSQL ledger canary from TKE platform runner",
       "Package D combined preflight from TKE platform runner",
       "DB connectivity smoke execution",
@@ -2476,8 +2448,20 @@
         "rollback"
       ],
       "buildPushPlan": {
-        "executionLocation": "github_actions_workflow_dispatch",
+        "executionLocation": "private_build_runner",
         "separatedFromDeploySmoke": true,
+        "secretSource": "package-d-deploy.env",
+        "allowedSecretKeys": [
+          "TCR_ID",
+          "TCR_SECRET",
+          "PACKAGE_D_RUNNER_IMAGE_REF"
+        ],
+        "forbiddenSecretClasses": [
+          "kubeconfig",
+          "DB password",
+          "Portal admin password",
+          "Tencent SecretId/SecretKey"
+        ],
         "imageTargets": [
           "portal-frontend",
           "medopl-go-backend",
@@ -2485,7 +2469,7 @@
           "opl-runtime-bridge"
         ],
         "allowedMethods": [
-          "GitHub Actions workflow_dispatch",
+          "private build runner",
           "future Kaniko/BuildKit"
         ],
         "executesNow": false
@@ -2690,7 +2674,7 @@
         "tenantPoolSchedulingAllowed": false
       },
       "preflightOrder": [
-        "GitHub Actions workflow_dispatch publishes the fixed Package D runner image tag",
+        "private build runner publishes the fixed Package D runner image tag",
         "Kubernetes API connectivity preflight from TKE platform runner",
         "PostgreSQL ledger canary from TKE platform runner",
         "Package D combined preflight from TKE platform runner"
@@ -3251,14 +3235,14 @@
       "nextRunId": "pdrun-20260615-004"
     },
     "runnerImagePublishBoundary": {
-      "status": "public_repo_safe_github_actions_workflow_dispatch_authorization_required",
-      "contract": "package_d_runner_image_publish_github_actions_boundary",
-      "route": "github_actions_workflow_dispatch",
-      "workflow": ".github/workflows/package-d-runner-image-publish.yml",
-      "command": "gh workflow run package-d-runner-image-publish.yml --ref recovery/platform-v22-trunk",
+      "status": "private_build_runner_authorization_required",
+      "contract": "package_d_runner_image_publish_private_build_runner_boundary",
+      "route": "private_build_runner",
+      "workflow": "removed_from_current_live_path",
+      "command": "node tests/support/cloud-prework/package-d-runner-image-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-deploy.env --authorized 1",
       "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs",
       "workflowGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-workflow-gate.mjs",
-      "evidenceSink": ".runtime/package-d-runner-image-publish/github-actions-dispatch-redacted.json",
+      "evidenceSink": ".runtime/package-d-runner-image-publish/private-build-push-redacted.json",
       "imageRef": "uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001",
       "imageRefEvidence": "redacted",
       "imageTag": "v22-package-d-20260615-001",
@@ -3266,80 +3250,60 @@
       "registry": "uswccr.ccs.tencentyun.com",
       "namespace": "medopl",
       "region": "na-siliconvalley",
-      "githubActions": {
-        "environment": "package-d-image-publish",
-        "protectedEnvironmentRequired": true,
-        "branchRestriction": [
-          "recovery/platform-v22-trunk",
-          "release/*"
-        ],
-        "requiredSecrets": [
+      "privateBuildRunner": {
+        "secretSource": "/home/dev/.secrets/medopl/v22/package-d-deploy.env",
+        "requiredSecretKeys": [
           "TCR_ID",
-          "TCR_SECRET"
+          "TCR_SECRET",
+          "PACKAGE_D_RUNNER_IMAGE_REF"
         ],
         "forbiddenSecretClasses": [
-          "repository secret scope",
-          "cluster credential",
-          "portal runtime database credential",
-          "portal admin credential",
-          "Tencent mutation credential"
+          "kubeconfig",
+          "DB password",
+          "Portal admin password",
+          "Tencent SecretId/SecretKey"
         ],
-        "requiredReviewerRequired": true,
-        "secretsScope": "environment",
-        "repositorySecretsAllowed": false,
-        "permissions": {
-          "contents": "read"
-        },
-        "triggers": {
-          "workflowDispatchOnly": true,
-          "automaticTriggersAllowed": false,
-          "forbidden": [
-            "push",
-            "pull_request",
-            "pull_request_target"
-          ],
-          "arbitraryImageRefInputsAllowed": false
-        }
+        "publicRepoStoresCodeOnly": true
+      },
+      "githubActions": {
+        "status": "removed_from_current_live_path",
+        "currentLivePath": false,
+        "optionalFutureOnly": true
       },
       "readsWhenAuthorized": [
-        "GitHub Actions Environment package-d-image-publish secrets only; repository secrets are forbidden"
+        "/home/dev/.secrets/medopl/v22/package-d-deploy.env allowlisted keys only"
       ],
       "requiredSecretKeys": [
         "TCR_ID",
-        "TCR_SECRET"
+        "TCR_SECRET",
+        "PACKAGE_D_RUNNER_IMAGE_REF"
       ],
       "allowedCommandsAfterAuthorization": [
-        "GitHub Actions workflow_dispatch on recovery/platform-v22-trunk or release/*",
-        "docker login/build/push only inside GitHub Actions for the fixed Package D runner image"
+        "docker login to uswccr.ccs.tencentyun.com with --password-stdin",
+        "docker build fixed Package D runner image from tests/support/cloud-prework/package-d-platform-runner.Dockerfile",
+        "docker push fixed Package D runner image"
       ],
       "failClosedChecks": [
-        "workflow_dispatch only",
-        "push / pull_request / pull_request_target triggers forbidden",
-        "permissions must be contents: read only",
-        "GitHub Environment package-d-image-publish with required reviewer and branch restriction required",
-        "TCR_ID / TCR_SECRET must be environment secrets, not repository secrets",
-        "branch must be recovery/platform-v22-trunk or release/*",
         "image ref must equal the fixed Package D runner image ref",
         "registry must equal uswccr.ccs.tencentyun.com",
         "namespace must equal medopl",
         "repository must equal medopl-platform-runner",
         "tag must be non-latest and equal v22-package-d-20260615-001",
-        "publish lane secrets must be limited to TCR_ID and TCR_SECRET",
-        "workflow inputs for arbitrary image refs forbidden",
+        "private build runner env keys must be limited to TCR_ID, TCR_SECRET and PACKAGE_D_RUNNER_IMAGE_REF",
+        "private build runner must not hold kubeconfig, DB password, Portal admin password or Tencent SecretId/SecretKey",
         "TKE/VPC runner must not install Docker or execute build/push",
         "evidence must redact TCR secret and full image ref"
       ],
       "forbiddenNow": [
+        "GitHub Actions secrets as current live publish path",
         "TKE/VPC runner docker install/build/push",
         "latest tag",
         "arbitrary image ref input",
         "non-medopl namespace push",
         "non-allowlisted repository push",
-        "repository secrets in image publish lane",
         "kubeconfig in image publish lane",
         "DB or Portal admin secret in image publish lane",
         "Tencent SecretId/SecretKey in image publish lane",
-        "push / pull_request / pull_request_target automatic triggers",
         "kubectl",
         "deploy",
         "Tencent mutation",
@@ -3356,11 +3320,11 @@
         "imageRef": "uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001"
       },
       "authorizationPrompt": [
-        "Configure GitHub Environment package-d-image-publish with required reviewer, branch restriction to recovery/platform-v22-trunk / release/*, and environment secrets only TCR_ID and TCR_SECRET; do not configure them as repository secrets.",
-        "Manually dispatch Package D Runner Image Publish from GitHub Actions on recovery/platform-v22-trunk, or run: gh workflow run package-d-runner-image-publish.yml --ref recovery/platform-v22-trunk.",
-        "Do not provide kubeconfig, DB password, Portal admin password, Tencent mutation credentials, or Package C secrets to this workflow.",
+        "On a private build runner, place /home/dev/.secrets/medopl/v22/package-d-deploy.env with only TCR_ID, TCR_SECRET and PACKAGE_D_RUNNER_IMAGE_REF.",
+        "Run: node tests/support/cloud-prework/package-d-runner-image-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-deploy.env --authorized 1",
+        "Do not provide kubeconfig, DB password, Portal admin password, Tencent mutation credentials or Package C secrets to the private build runner.",
         "Do not build/push from the TKE/VPC runner and do not install Docker on TKE nodes.",
-        "After the GitHub Actions publish succeeds, rerun Package D run-scoped platform runner Job preflight with run id pdrun-20260615-004.",
+        "After private build runner publish succeeds, rerun Package D run-scoped platform runner Job preflight with run id pdrun-20260615-004.",
         "Run: node tests/support/cloud-prework/package-d-run-scoped-job-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id pdrun-20260615-004 --mode preflight-job"
       ],
       "realExecutionReady": false

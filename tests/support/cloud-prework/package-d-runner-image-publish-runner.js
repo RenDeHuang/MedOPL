@@ -8,18 +8,30 @@ import { pathToFileURL } from "node:url";
 import { redactionAudit } from "./package-d-kubernetes-api-preflight-runner.js";
 
 export const PACKAGE_D_RUNNER_IMAGE_PUBLISH_WORKFLOW = ".github/workflows/package-d-runner-image-publish.yml";
-export const PACKAGE_D_RUNNER_IMAGE_PUBLISH_COMMAND = "gh workflow run package-d-runner-image-publish.yml --ref recovery/platform-v22-trunk";
+export const PACKAGE_D_RUNNER_IMAGE_PUBLISH_COMMAND = "node tests/support/cloud-prework/package-d-runner-image-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-deploy.env --authorized 1";
 
 const DEFAULT_EVIDENCE_DIR = ".runtime/package-d-runner-image-publish";
-const FIXED_BRANCH = "recovery/platform-v22-trunk";
 const FIXED_REGISTRY = "uswccr.ccs.tencentyun.com";
 const FIXED_NAMESPACE = "medopl";
 const FIXED_REGION = "na-siliconvalley";
 const ALLOWED_REPOSITORY = "medopl-platform-runner";
 const FIXED_TAG = "v22-package-d-20260615-001";
 const FIXED_IMAGE_REF = `${FIXED_REGISTRY}/${FIXED_NAMESPACE}/${ALLOWED_REPOSITORY}:${FIXED_TAG}`;
-const GITHUB_ENVIRONMENT = "package-d-image-publish";
-const ALLOWED_BRANCHES = Object.freeze([FIXED_BRANCH, "release/*"]);
+const ALLOWED_PRIVATE_BUILD_ENV_KEYS = Object.freeze(["TCR_ID", "TCR_SECRET", "PACKAGE_D_RUNNER_IMAGE_REF"]);
+const FORBIDDEN_PRIVATE_BUILD_ENV_KEYS = Object.freeze([
+  "KUBECONFIG",
+  "TENCENT_DEPLOY_KUBECONFIG_REF",
+  "PORTAL_POSTGRES_PASSWORD",
+  "PORTAL_POSTGRES_URL",
+  "PORTAL_ADMIN_PASSWORD",
+  "PORTAL_ADMIN_EMAIL",
+  "PORTAL_ADMIN_NAME",
+  "TENCENT_SECRET_ID",
+  "TENCENT_SECRET_KEY",
+  "TENCENT_MUTATION_SECRET_ID",
+  "TENCENT_MUTATION_SECRET_KEY",
+  "RUN_TENCENT_CREATE_RELEASE_EXECUTION",
+]);
 const FORBIDDEN_ARGS = Object.freeze(new Set([
   "--deploy",
   "--kubectl",
@@ -30,8 +42,8 @@ const FORBIDDEN_ARGS = Object.freeze(new Set([
   "--delete",
   "--patch",
   "--scale",
-  "--docker-build",
-  "--docker-push",
+  "--github-actions",
+  "--gh-workflow",
 ]));
 
 function text(value = "") {
@@ -55,6 +67,41 @@ function parseArgs(argv = []) {
 
 function assertAuthorized(authorized) {
   if (authorized !== true) throw new Error("package_d_runner_image_publish_not_authorized");
+}
+
+function parseEnvText(source = "") {
+  const parsed = {};
+  for (const rawLine of String(source || "").split(/\r?\n/u)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) continue;
+    const separator = line.indexOf("=");
+    if (separator <= 0) throw new Error("package_d_runner_image_publish_env_line_invalid");
+    const key = line.slice(0, separator).trim();
+    const value = line.slice(separator + 1);
+    if (!/^[A-Z0-9_]+$/u.test(key)) throw new Error(`package_d_runner_image_publish_env_key_invalid:${key}`);
+    parsed[key] = value;
+  }
+  return parsed;
+}
+
+function assertPrivateBuildEnv(env = {}) {
+  for (const forbidden of FORBIDDEN_PRIVATE_BUILD_ENV_KEYS) {
+    if (Object.hasOwn(env, forbidden)) throw new Error(`package_d_runner_image_publish_forbidden_env_key:${forbidden}`);
+  }
+  const keys = Object.keys(env).sort();
+  const allowed = [...ALLOWED_PRIVATE_BUILD_ENV_KEYS].sort();
+  for (const key of keys) {
+    if (!allowed.includes(key)) throw new Error(`package_d_runner_image_publish_non_allowlist_env_key:${key}`);
+  }
+  for (const key of ALLOWED_PRIVATE_BUILD_ENV_KEYS) {
+    if (!text(env[key])) throw new Error(`package_d_runner_image_publish_required_env_missing:${key}`);
+  }
+  assertImageContract(env.PACKAGE_D_RUNNER_IMAGE_REF);
+  return {
+    TCR_ID: text(env.TCR_ID),
+    TCR_SECRET: String(env.TCR_SECRET ?? ""),
+    PACKAGE_D_RUNNER_IMAGE_REF: text(env.PACKAGE_D_RUNNER_IMAGE_REF),
+  };
 }
 
 function parseImageRef(imageRef = "") {
@@ -84,95 +131,26 @@ function assertImageContract(imageRef = FIXED_IMAGE_REF) {
   return parsed;
 }
 
-function assertWorkflowText(workflowText = "") {
-  const required = [
-    "workflow_dispatch:",
-    `environment: ${GITHUB_ENVIRONMENT}`,
-    "package-d-image-publish requires environment secrets, not repository secrets",
-    "Required reviewer and branch restriction live on the GitHub Environment.",
-    "github.ref_name != 'recovery/platform-v22-trunk' && !startsWith(github.ref_name, 'release/')",
-    "permissions:",
-    "contents: read",
-    `TENCENT_TCR_REGISTRY: ${FIXED_REGISTRY}`,
-    `TENCENT_TCR_NAMESPACE: ${FIXED_NAMESPACE}`,
-    `TENCENT_TCR_REGION: ${FIXED_REGION}`,
-    `PACKAGE_D_RUNNER_IMAGE_REPOSITORY: ${ALLOWED_REPOSITORY}`,
-    `PACKAGE_D_RUNNER_IMAGE_TAG: ${FIXED_TAG}`,
-    `PACKAGE_D_RUNNER_IMAGE_REF: ${FIXED_IMAGE_REF}`,
-    "secrets.TCR_ID",
-    "secrets.TCR_SECRET",
-    "--password-stdin",
-    "docker build",
-    "docker push",
-    "tests/support/cloud-prework/package-d-platform-runner.Dockerfile",
+function dockerCommands() {
+  return [
+    ["docker", "login", FIXED_REGISTRY, "--username", "$TCR_ID", "--password-stdin"],
+    ["docker", "build", "-f", "tests/support/cloud-prework/package-d-platform-runner.Dockerfile", "-t", FIXED_IMAGE_REF, "."],
+    ["docker", "push", FIXED_IMAGE_REF],
   ];
-  for (const item of required) {
-    if (!workflowText.includes(item)) throw new Error(`package_d_runner_image_publish_workflow_missing:${item}`);
-  }
-  for (const forbidden of [
-    ":latest",
-    "PACKAGE_D_RUNNER_IMAGE_TAG: latest",
-    "kubectl",
-    "helm",
-    "CreateNodePool",
-    "RUN_TENCENT_CREATE_RELEASE_EXECUTION",
-    "TENCENT_MUTATION_SECRET_ID",
-    "TENCENT_MUTATION_SECRET_KEY",
-    "KUBECONFIG",
-    "kubeconfig-package-d-deploy",
-    "PORTAL_POSTGRES_PASSWORD",
-    "PORTAL_ADMIN_PASSWORD",
-    "PORTAL_POSTGRES_URL",
-    "package-d-deploy.env",
-    "portal-runtime.env",
-    "medopl-tenant-",
-    "pull_request:",
-    "pull_request_target:",
-    "\n  push:",
-    "workflow_dispatch:\n    inputs:",
-    "printenv",
-    "env |",
-    "set |",
-    "secrets.KUBECONFIG",
-    "secrets.PORTAL_POSTGRES_PASSWORD",
-    "secrets.PORTAL_ADMIN_PASSWORD",
-    "secrets.PORTAL_POSTGRES_URL",
-    "secrets.TENCENT_SECRET_ID",
-    "secrets.TENCENT_SECRET_KEY",
-  ]) {
-    if (workflowText.includes(forbidden)) throw new Error(`package_d_runner_image_publish_workflow_forbidden:${forbidden}`);
-  }
-  if (!/on:\s*\n\s*workflow_dispatch:\s*\n\s*\npermissions:/u.test(workflowText)) {
-    throw new Error("package_d_runner_image_publish_workflow_must_be_manual_dispatch_only");
-  }
-  if (!/permissions:\s*\n\s*contents:\s*read\s*\n\s*\n/u.test(workflowText)) {
-    throw new Error("package_d_runner_image_publish_workflow_permissions_must_be_contents_read_only");
-  }
-  const referencedSecrets = (workflowText.match(/secrets\.[A-Z0-9_]+/gu) || []).sort();
-  if (referencedSecrets.join(",") !== "secrets.TCR_ID,secrets.TCR_SECRET") {
-    throw new Error("package_d_runner_image_publish_workflow_secrets_must_only_be_tcr");
-  }
 }
 
-function dispatchCommand() {
-  return ["gh", "workflow", "run", "package-d-runner-image-publish.yml", "--ref", FIXED_BRANCH];
+function executionArgs(command, privateEnv) {
+  if (command.kind !== "docker_login") return command.args;
+  return command.args.map((arg) => (arg === "$TCR_ID" ? privateEnv.TCR_ID : arg));
 }
 
-function assertDispatchCommandAllowed(args = []) {
-  const joined = ` ${args.join(" ")} `;
-  if (JSON.stringify(args) !== JSON.stringify(dispatchCommand())) {
-    throw new Error("package_d_runner_image_publish_dispatch_command_mismatch");
-  }
-  for (const forbidden of [" kubectl ", " docker ", " deploy ", " tencent ", " CreateNodePool ", " pull "]) {
-    if (joined.includes(forbidden)) throw new Error(`package_d_runner_image_publish_dispatch_forbidden:${forbidden.trim()}`);
-  }
-}
-
-function defaultGhExecutor({ args }) {
+function defaultDockerExecutor({ args, env, stdin = "" }) {
   const result = spawnSync(args[0], args.slice(1), {
     cwd: process.cwd(),
     encoding: "utf8",
-    stdio: ["ignore", "pipe", "pipe"],
+    input: stdin,
+    stdio: ["pipe", "pipe", "pipe"],
+    env: { ...process.env, ...env },
   });
   return {
     status: result.status ?? 1,
@@ -189,30 +167,29 @@ async function writeEvidence({ evidenceDir, filename, payload }) {
 }
 
 export async function buildPackageDRunnerImagePublishPlan({
-  workflowPath = PACKAGE_D_RUNNER_IMAGE_PUBLISH_WORKFLOW,
   imageRef = FIXED_IMAGE_REF,
   evidenceDir = DEFAULT_EVIDENCE_DIR,
+  deployEnvPath = "",
+  deployEnvText = "",
   argv = [],
 } = {}) {
   parseArgs(argv);
-  const workflowText = await readFile(workflowPath, "utf8");
-  assertWorkflowText(workflowText);
+  const envText = deployEnvText || (deployEnvPath ? await readFile(deployEnvPath, "utf8") : "");
+  const env = assertPrivateBuildEnv(parseEnvText(envText));
   const image = assertImageContract(imageRef);
-  const command = dispatchCommand();
-  assertDispatchCommandAllowed(command);
+  if (env.PACKAGE_D_RUNNER_IMAGE_REF !== image.value) throw new Error("package_d_runner_image_ref_env_mismatch");
+  const commands = dockerCommands();
   return {
     ok: true,
-    contract: "package_d_runner_image_publish_github_actions_boundary",
-    route: "github_actions_workflow_dispatch",
-    mode: "dispatch-github-actions",
+    contract: "package_d_runner_image_publish_private_build_runner_boundary",
+    route: "private_build_runner",
+    mode: "private-build-push",
     command: PACKAGE_D_RUNNER_IMAGE_PUBLISH_COMMAND,
-    workflow: workflowPath,
     target: {
-      branch: FIXED_BRANCH,
-      allowedBranches: ALLOWED_BRANCHES,
       imagePublishBoundary: true,
       deployBoundary: false,
       tkeRunnerBuildBoundary: false,
+      publicRepoStoresCodeOnly: true,
     },
     image: {
       ref: "redacted",
@@ -222,44 +199,36 @@ export async function buildPackageDRunnerImagePublishPlan({
       tag: image.tag,
       floatingTagAllowed: false,
     },
-    githubActions: {
-      environment: GITHUB_ENVIRONMENT,
-      protectedEnvironmentRequired: true,
-      requiredReviewerRequired: true,
-      branchRestriction: ALLOWED_BRANCHES,
-      secretsScope: "environment",
-      repositorySecretsAllowed: false,
-      requiredSecrets: ["TCR_ID", "TCR_SECRET"],
-      forbiddenSecretClasses: [
-        "cluster credential",
-        "portal runtime database credential",
-        "portal admin credential",
-        "Tencent mutation credential",
-      ],
-      allowedWorkflowSteps: [
-        "branch guard",
-        "checkout",
-        "fixed image boundary validation",
-        "TCR login",
-        "docker build fixed runner image",
-        "docker push fixed runner image",
-      ],
+    privateBuildRunner: {
+      secretSource: "package-d-deploy.env",
+      allowedEnvKeys: [...ALLOWED_PRIVATE_BUILD_ENV_KEYS],
+      forbiddenSecretClasses: ["kubeconfig", "DB password", "Portal admin password", "Tencent SecretId/SecretKey"],
+      holdsKubeconfig: false,
+      holdsDbPassword: false,
+      holdsPortalAdminPassword: false,
+      holdsTencentMutationKeys: false,
     },
-    commands: [{
-      name: "github_actions_workflow_dispatch",
-      kind: "gh_workflow_dispatch",
-      args: command,
-    }],
+    githubActions: {
+      status: "removed_from_current_live_path",
+      currentLivePath: false,
+      optionalFutureOnly: true,
+    },
+    commands: commands.map((args, index) => ({
+      name: ["tcr_login", "runner_image_build", "runner_image_push"][index],
+      kind: ["docker_login", "docker_build", "docker_push"][index],
+      args,
+    })),
     evidence: {
       sink: ".runtime",
-      path: path.join(evidenceDir, "github-actions-dispatch-redacted.json"),
-      githubActionsRunLog: "redacted_github_actions_run",
+      path: path.join(evidenceDir, "private-build-push-redacted.json"),
+      dockerOutput: "redacted_private_build_runner_output",
     },
     boundary: {
       imagePublishAllowedAfterAuthorization: true,
       deployAllowed: false,
       clusterCommandAllowed: false,
       tkeRunnerDockerAllowed: false,
+      publicGitHubSecretsAllowed: false,
       tencentMutationAllowed: false,
       packageCLiveAllowed: false,
       tenantPoolMutationAllowed: false,
@@ -269,32 +238,41 @@ export async function buildPackageDRunnerImagePublishPlan({
   };
 }
 
-export async function runPackageDRunnerImagePublishDispatch({
-  workflowPath = PACKAGE_D_RUNNER_IMAGE_PUBLISH_WORKFLOW,
+export async function runPackageDRunnerImagePublishPrivateBuild({
   imageRef = FIXED_IMAGE_REF,
   evidenceDir = DEFAULT_EVIDENCE_DIR,
+  deployEnvPath = "",
+  deployEnvText = "",
   authorized = false,
-  gh = defaultGhExecutor,
+  docker = defaultDockerExecutor,
 } = {}) {
   assertAuthorized(authorized);
-  const plan = await buildPackageDRunnerImagePublishPlan({ workflowPath, imageRef, evidenceDir });
-  const command = plan.commands[0];
-  const result = await gh({ args: command.args });
+  const plan = await buildPackageDRunnerImagePublishPlan({ imageRef, evidenceDir, deployEnvPath, deployEnvText });
+  const envText = deployEnvText || (deployEnvPath ? await readFile(deployEnvPath, "utf8") : "");
+  const privateEnv = assertPrivateBuildEnv(parseEnvText(envText));
+  const results = [];
+  for (const command of plan.commands) {
+    const stdin = command.kind === "docker_login" ? privateEnv.TCR_SECRET : "";
+    const result = await docker({ args: executionArgs(command, privateEnv), env: privateEnv, stdin });
+    results.push({
+      kind: command.kind,
+      status: result.status,
+      stdoutClass: result.stdout ? "present_redacted" : "empty",
+      stderrClass: result.stderr ? "present_redacted" : "empty",
+    });
+    if (result.status !== 0) throw new Error(`package_d_runner_image_publish_private_build_failed:${command.kind}`);
+  }
   const summary = {
-    ok: result.status === 0,
+    ok: true,
     contract: plan.contract,
     route: plan.route,
     mode: plan.mode,
     command: plan.command,
-    workflow: plan.workflow,
     imageRef: "redacted",
-    dispatch: {
-      status: result.status,
-      stdoutClass: result.stdout ? "present_redacted" : "empty",
-      stderrClass: result.stderr ? "present_redacted" : "empty",
-    },
+    privateBuild: results,
     target: plan.target,
     image: plan.image,
+    privateBuildRunner: plan.privateBuildRunner,
     githubActions: plan.githubActions,
     boundary: plan.boundary,
     realExecutionReady: false,
@@ -309,29 +287,30 @@ export async function runPackageDRunnerImagePublishDispatch({
   if (Object.values(audit).some(Boolean)) throw new Error("package_d_runner_image_publish_redaction_audit_failed");
   const evidencePath = await writeEvidence({
     evidenceDir,
-    filename: "github-actions-dispatch-redacted.json",
+    filename: "private-build-push-redacted.json",
     payload: evidenceWithAudit,
   });
-  if (!summary.ok) throw new Error("package_d_runner_image_publish_dispatch_failed");
   return { ...summary, evidencePath };
 }
+
+export const runPackageDRunnerImagePublishDispatch = runPackageDRunnerImagePublishPrivateBuild;
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.mode === "plan") {
     const plan = await buildPackageDRunnerImagePublishPlan({
-      workflowPath: args.workflow || PACKAGE_D_RUNNER_IMAGE_PUBLISH_WORKFLOW,
       imageRef: args["image-ref"] || FIXED_IMAGE_REF,
       evidenceDir: args["evidence-dir"] || DEFAULT_EVIDENCE_DIR,
+      deployEnvPath: args.env || "",
     });
     process.stdout.write(`${JSON.stringify(plan, null, 2)}\n`);
     return;
   }
-  if (args.mode !== "dispatch-github-actions") throw new Error("package_d_runner_image_publish_mode_required");
-  const summary = await runPackageDRunnerImagePublishDispatch({
-    workflowPath: args.workflow || PACKAGE_D_RUNNER_IMAGE_PUBLISH_WORKFLOW,
+  if (args.mode !== "private-build-push") throw new Error("package_d_runner_image_publish_mode_required");
+  const summary = await runPackageDRunnerImagePublishPrivateBuild({
     imageRef: args["image-ref"] || FIXED_IMAGE_REF,
     evidenceDir: args["evidence-dir"] || DEFAULT_EVIDENCE_DIR,
+    deployEnvPath: args.env || "",
     authorized: args.authorized === "1" || args.authorized === "true",
   });
   process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);

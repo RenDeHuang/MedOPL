@@ -2092,6 +2092,7 @@ D2 的关键硬门：
 - 缺失 `acceptedPreflightId` 时 runner 必须返回 `deploy_accepted_preflight_required`。
 - local shape gate 只能证明 gate shape、唯一 tag、digest readback shape 和脱敏 report shape。
 - real mode 读取 deploy secret、docker login、docker build、docker push 和真实 TCR digest readback 都需要当前会话显式授权。
+- 当前 Package D runner image publish live path 是 private build runner：public GitHub repo 只存代码；private build runner 只读取 `package-d-deploy.env` 中的 `TCR_ID`、`TCR_SECRET`、`PACKAGE_D_RUNNER_IMAGE_REF`，不得持有 kubeconfig、DB password、Portal admin password 或 Tencent SecretId/SecretKey。GitHub Actions workflow 若再次引入，只能作为 future/optional，不能成为当前上线链路或第二 live publish 入口。
 
 D2 不授权 kubectl dry-run、rollout、runtime smoke、rollback 或 Package C 计算/存储生命周期动作。
 

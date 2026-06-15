@@ -5,9 +5,8 @@ import path from "node:path";
 
 import {
   PACKAGE_D_RUNNER_IMAGE_PUBLISH_COMMAND,
-  PACKAGE_D_RUNNER_IMAGE_PUBLISH_WORKFLOW,
   buildPackageDRunnerImagePublishPlan,
-  runPackageDRunnerImagePublishDispatch,
+  runPackageDRunnerImagePublishPrivateBuild,
 } from "../../support/cloud-prework/package-d-runner-image-publish-runner.js";
 
 const imageRef = "uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001";
@@ -31,45 +30,38 @@ function assertNoSensitiveText(text = "", label = "text") {
   }
 }
 
-function fakeGhExecutor(commandLog) {
-  return async ({ args }) => {
-    commandLog.push(args);
-    assert.deepEqual(args, [
-      "gh",
-      "workflow",
-      "run",
-      "package-d-runner-image-publish.yml",
-      "--ref",
-      "recovery/platform-v22-trunk",
-    ], "dispatch_must_use_single_workflow_command");
-    return { status: 0, stdout: "queued\n", stderr: "" };
+function fakeDockerExecutor(commandLog) {
+  return async ({ args, env }) => {
+    commandLog.push({ args, envKeys: Object.keys(env).sort() });
+    assert.equal(args[0], "docker", "private_build_must_use_docker_only");
+    assert.equal(args.includes("kubectl"), false, "private_build_must_not_call_kubectl");
+    assert.equal(args.includes("gh"), false, "private_build_must_not_call_github_actions");
+    assert.equal(args.includes("CreateNodePool"), false, "private_build_must_not_call_tencent_mutation");
+    if (args.includes("login")) {
+      assert.equal(args.includes("--password-stdin"), true, "docker_login_must_use_password_stdin");
+      assert.equal(args.includes("--username"), true, "docker_login_must_pass_username_flag");
+      assert.equal(args.includes("tcr-user"), true, "docker_login_must_use_env_tcr_id_not_placeholder");
+      assert.equal(args.includes("$TCR_ID"), false, "docker_login_must_not_send_placeholder_username");
+    }
+    if (args.includes("build")) assert.equal(args.includes(imageRef), true, "docker_build_must_use_fixed_image_ref");
+    if (args.includes("push")) assert.equal(args.includes(imageRef), true, "docker_push_must_use_fixed_image_ref");
+    assert.deepEqual(Object.keys(env).sort(), [
+      "PACKAGE_D_RUNNER_IMAGE_REF",
+      "TCR_ID",
+      "TCR_SECRET",
+    ], "private_build_env_must_only_include_tcr_and_image_ref");
+    return { status: 0, stdout: "ok\n", stderr: "" };
   };
 }
 
-const workflow = await readFile(PACKAGE_D_RUNNER_IMAGE_PUBLISH_WORKFLOW, "utf8");
 const dockerfile = await readFile(dockerfilePath, "utf8");
 const entrypoint = await readFile(entrypointPath, "utf8");
 
 assert.equal(
   PACKAGE_D_RUNNER_IMAGE_PUBLISH_COMMAND,
-  "gh workflow run package-d-runner-image-publish.yml --ref recovery/platform-v22-trunk",
-  "publish_boundary_must_use_github_actions_dispatch",
+  "node tests/support/cloud-prework/package-d-runner-image-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-deploy.env --authorized 1",
+  "publish_boundary_must_use_private_build_runner",
 );
-
-assert.equal(workflow.includes("workflow_dispatch:"), true, "workflow_dispatch_required");
-assert.equal(workflow.includes("environment: package-d-image-publish"), true, "protected_environment_anchor_required");
-assert.equal(workflow.includes("package-d-image-publish requires environment secrets, not repository secrets"), true, "environment_secrets_only_required");
-assert.equal(workflow.includes("Required reviewer and branch restriction live on the GitHub Environment."), true, "required_reviewer_boundary_required");
-assert.equal(workflow.includes("github.ref_name != 'recovery/platform-v22-trunk' && !startsWith(github.ref_name, 'release/')"), true, "branch_guard_must_allow_trunk_or_release_only");
-assert.equal(workflow.includes("secrets.TCR_ID"), true, "tcr_id_secret_required");
-assert.equal(workflow.includes("secrets.TCR_SECRET"), true, "tcr_secret_required");
-assert.equal(workflow.includes(`PACKAGE_D_RUNNER_IMAGE_REF: ${imageRef}`), true, "fixed_image_ref_required");
-assert.equal(workflow.includes("PACKAGE_D_RUNNER_IMAGE_TAG: v22-package-d-20260615-001"), true, "fixed_tag_required");
-assert.equal(workflow.includes("PACKAGE_D_RUNNER_IMAGE_REPOSITORY: medopl-platform-runner"), true, "fixed_repo_required");
-assert.equal(workflow.includes("docker build"), true, "workflow_build_step_required");
-assert.equal(workflow.includes("docker push"), true, "workflow_push_step_required");
-assert.equal(workflow.includes(dockerfilePath), true, "workflow_must_build_runner_dockerfile");
-assertNoSensitiveText(workflow, "workflow");
 
 assert.equal(dockerfile.includes("FROM node:22-bookworm-slim"), true, "runner_image_must_use_node22");
 assert.equal(dockerfile.includes(entrypointPath.split("/").at(-1)), true, "runner_image_must_copy_entrypoint");
@@ -87,45 +79,51 @@ for (const forbidden of ["kubectl", "docker", "CreateNodePool", "medopl-tenant-"
 const tmp = await mkdtemp(path.join(os.tmpdir(), "v22-package-d-runner-image-publish-"));
 try {
   const evidenceDir = path.join(tmp, "evidence");
+  const deployEnvPath = path.join(tmp, "package-d-deploy.env");
+  await writeFile(deployEnvPath, [
+    "TCR_ID=tcr-user",
+    "TCR_SECRET=tcr-secret-value",
+    `PACKAGE_D_RUNNER_IMAGE_REF=${imageRef}`,
+    "",
+  ].join("\n"));
   const plan = await buildPackageDRunnerImagePublishPlan({
     imageRef,
     evidenceDir,
+    deployEnvPath,
   });
   assert.equal(plan.ok, true, "plan_ok");
-  assert.equal(plan.route, "github_actions_workflow_dispatch", "route");
-  assert.equal(plan.mode, "dispatch-github-actions", "mode");
+  assert.equal(plan.route, "private_build_runner", "route");
+  assert.equal(plan.mode, "private-build-push", "mode");
   assert.equal(plan.image.ref, "redacted", "public_plan_must_redact_image_ref");
   assert.equal(plan.image.registry, "uswccr.ccs.tencentyun.com", "registry_fixed");
   assert.equal(plan.image.namespace, "medopl", "namespace_fixed");
   assert.equal(plan.image.repository, "medopl-platform-runner", "repo_fixed");
   assert.equal(plan.image.tag, "v22-package-d-20260615-001", "tag_fixed");
-  assert.equal(plan.githubActions.environment, "package-d-image-publish", "github_environment");
-  assert.equal(plan.githubActions.requiredReviewerRequired, true, "github_environment_required_reviewer_required");
-  assert.deepEqual(plan.githubActions.branchRestriction, ["recovery/platform-v22-trunk", "release/*"], "github_environment_branch_restriction");
-  assert.equal(plan.githubActions.secretsScope, "environment", "github_secrets_must_be_environment_scope");
-  assert.equal(plan.githubActions.repositorySecretsAllowed, false, "github_repository_secrets_forbidden");
-  assert.deepEqual(plan.githubActions.requiredSecrets, ["TCR_ID", "TCR_SECRET"], "github_secrets_only_tcr");
-  assert.equal(plan.githubActions.forbiddenSecretClasses.includes("cluster credential"), true, "cluster_credential_forbidden_in_publish_lane");
+  assert.equal(plan.privateBuildRunner.secretSource, "package-d-deploy.env", "private_build_secret_source");
+  assert.deepEqual(plan.privateBuildRunner.allowedEnvKeys, ["TCR_ID", "TCR_SECRET", "PACKAGE_D_RUNNER_IMAGE_REF"], "private_build_allowed_env_keys");
+  assert.deepEqual(plan.privateBuildRunner.forbiddenSecretClasses, ["kubeconfig", "DB password", "Portal admin password", "Tencent SecretId/SecretKey"], "private_build_forbidden_secret_classes");
+  assert.equal(plan.githubActions.status, "removed_from_current_live_path", "github_actions_must_not_be_current_live_path");
+  assert.equal(plan.githubActions.currentLivePath, false, "github_actions_current_live_path_must_be_false");
   assert.equal(plan.boundary.tkeRunnerDockerAllowed, false, "tke_runner_must_not_build");
   assert.equal(plan.boundary.deployAllowed, false, "deploy_forbidden");
   assert.equal(plan.boundary.clusterCommandAllowed, false, "cluster_command_forbidden");
   assert.equal(plan.boundary.tencentMutationAllowed, false, "tencent_mutation_forbidden");
   assert.equal(plan.boundary.packageCLiveAllowed, false, "package_c_live_forbidden");
-  assert.equal(plan.commands.length, 1, "dispatch_only");
-  assert.equal(plan.commands[0].kind, "gh_workflow_dispatch", "dispatch_kind");
+  assert.deepEqual(plan.commands.map((command) => command.kind), ["docker_login", "docker_build", "docker_push"], "private_build_commands_only");
   assertNoSensitiveText(JSON.stringify(plan), "plan");
 
   const commandLog = [];
-  const summary = await runPackageDRunnerImagePublishDispatch({
+  const summary = await runPackageDRunnerImagePublishPrivateBuild({
     imageRef,
     evidenceDir,
+    deployEnvPath,
     authorized: true,
-    gh: fakeGhExecutor(commandLog),
+    docker: fakeDockerExecutor(commandLog),
   });
   assert.equal(summary.ok, true, "summary_ok");
   assert.equal(summary.imageRef, "redacted", "summary_must_redact_image_ref");
-  assert.equal(summary.evidencePath.endsWith("github-actions-dispatch-redacted.json"), true, "evidence_path");
-  assert.equal(commandLog.length, 1, "must_dispatch_once");
+  assert.equal(summary.evidencePath.endsWith("private-build-push-redacted.json"), true, "evidence_path");
+  assert.equal(commandLog.length, 3, "must_run_login_build_push_once");
   assertNoSensitiveText(JSON.stringify(summary), "summary");
 
   const evidence = JSON.parse(await readFile(summary.evidencePath, "utf8"));
@@ -136,10 +134,11 @@ try {
   assertNoSensitiveText(JSON.stringify(evidence), "evidence");
 
   await assert.rejects(
-    () => runPackageDRunnerImagePublishDispatch({
+    () => runPackageDRunnerImagePublishPrivateBuild({
       imageRef,
       evidenceDir,
-      gh: fakeGhExecutor([]),
+      deployEnvPath,
+      docker: fakeDockerExecutor([]),
     }),
     /package_d_runner_image_publish_not_authorized/,
     "missing_publish_authorization_must_fail_closed",
@@ -156,17 +155,19 @@ try {
       () => buildPackageDRunnerImagePublishPlan({
         imageRef: badRef,
         evidenceDir,
+        deployEnvPath,
       }),
       /package_d_runner_image_ref_/,
       `bad_image_ref_must_fail_closed:${badRef}`,
     );
   }
 
-  for (const forbiddenArg of ["--deploy", "--kubectl", "--tencent-mutation", "--package-c-live", "--pull", "--latest", "--docker-build"]) {
+  for (const forbiddenArg of ["--deploy", "--kubectl", "--tencent-mutation", "--package-c-live", "--pull", "--latest", "--github-actions"]) {
     await assert.rejects(
       () => buildPackageDRunnerImagePublishPlan({
         imageRef,
         evidenceDir,
+        deployEnvPath,
         argv: [forbiddenArg],
       }),
       /package_d_runner_image_publish_forbidden_arg/,
@@ -178,9 +179,9 @@ try {
     ok: true,
     contract: "package_d_runner_image_publish_local_gate",
     command: PACKAGE_D_RUNNER_IMAGE_PUBLISH_COMMAND,
-    route: "github_actions_workflow_dispatch",
+    route: "private_build_runner",
     imageRef,
-    evidence: ".runtime/package-d-runner-image-publish/github-actions-dispatch-redacted.json",
+    evidence: ".runtime/package-d-runner-image-publish/private-build-push-redacted.json",
     realExecutionReady: false,
   }, null, 2));
 } finally {

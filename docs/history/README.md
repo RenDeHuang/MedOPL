@@ -216,6 +216,40 @@ post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 
+### 2026-06-15 package-d-private-build-runner-image-publish-path
+
+Status: `authoring / local-gated`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `b4f1506651cafa329bbe9fecbe5ac531e18f0f78`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Replaced the current Package D runner image publish live path with a private build runner.
+- Removed the GitHub Actions image publish workflow from the current live path to avoid a second publish entrypoint in the public repo.
+- Kept the fixed runner image ref `uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001`.
+- Restricted private build runner secret input to `package-d-deploy.env` keys `TCR_ID`, `TCR_SECRET` and `PACKAGE_D_RUNNER_IMAGE_REF`.
+- Kept kubeconfig, DB password, Portal admin password and Tencent SecretId/SecretKey out of the image publish lane; TKE/VPC runner still does not build or push images.
+
+Verification:
+
+- RED: `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs` failed while the runner still exposed the GitHub Actions dispatch path.
+- RED: `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-workflow-gate.mjs` failed while `.github/workflows/package-d-runner-image-publish.yml` still existed.
+
+Can-claim:
+
+- Current Package D runner image publish live path is private build runner, not GitHub Actions secrets.
+- Public repo stores code only for this lane; image publish secrets stay off GitHub Actions for the current上线 path.
+
+Cannot-claim:
+
+- This repo session read TCR secret, ran docker login/build/push, read kubeconfig/DB/Portal secrets, ran kubectl, deployed, executed Tencent mutation, ran Package C live, or completed Package D production execution.
+
+next_cursor: `real-cloud-authorization-boundary`
+
 ### 2026-05-23 changes/archive/2026-05-23-repo-native-change-lifecycle
 
 Status: `archived / local-gated`
