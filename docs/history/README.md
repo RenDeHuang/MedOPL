@@ -5971,3 +5971,52 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-15 package-d-public-repo-safe-image-publish-lane
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `03686b41d881b52be1333407fdc35bfdb690a82f`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Tightened the Package D runner image publish workflow for a public GitHub repository.
+- Kept `workflow_dispatch` as the only trigger; `push`, `pull_request` and `pull_request_target` remain forbidden.
+- Kept permissions at `contents: read` and environment `package-d-image-publish`.
+- Recorded that `TCR_ID` / `TCR_SECRET` must be configured as GitHub Environment secrets, not repository secrets; the environment must require a reviewer and restrict branches to `recovery/platform-v22-trunk` / `release/*`.
+- Kept the image ref fixed at `uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001`; `latest` and arbitrary image ref inputs remain forbidden.
+
+Verification:
+
+- RED: `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-workflow-gate.mjs` failed before the workflow recorded the public-repo-safe environment secret boundary.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-workflow-gate.mjs`: pass.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: pass.
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+Can-claim:
+
+- Package D runner image publish lane is now repo-native and public-repo-safe for manual GitHub Actions execution after the GitHub Environment is configured.
+- The workflow does not read kubeconfig, DB password, Portal admin password or Tencent SecretId/SecretKey.
+
+Cannot-claim:
+
+- This repo session configured GitHub environment secrets, dispatched GitHub Actions, read TCR secret, ran docker login/build/push, read kubeconfig, connected to Kubernetes API, ran kubectl, deployed, executed Tencent mutation, ran Package C live, or completed Package D production execution.
+
+landed_commit: `a6cf8353171a7fe5a0547ace63554db566765bea`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
