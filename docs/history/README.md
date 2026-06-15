@@ -6168,3 +6168,50 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-16 package-d-run-scoped-platform-runner-preflight-pass
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `acacfefb9b8213d0e8fdf2abb12bdba350a2f3de`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Recorded cloud evidence that Package D run-scoped platform runner preflight `pdrun-20260616-001` passed from the TKE/VPC runner at repo HEAD `acacfefb9b8213d0e8fdf2abb12bdba350a2f3de`.
+- Recorded the fixed runner image `uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001`, image platform `linux/amd64`, and scheduling selector `node.tke.cloud.tencent.com/machineset=np-6l4nkdto`.
+- Recorded that the Job completed successfully, redacted logs were collected, the successful Job was deleted, and old failed Job `pdrun-20260615-004` was cleaned and verified `NotFound`.
+- Recorded redacted evidence paths: `.runtime/package-d-run-scoped-job-preflight/pdrun-20260616-001/preflight-job-redacted.json`, `.runtime/package-d-run-scoped-job-preflight/pdrun-20260616-001/job-manifest-redacted.json` and `.runtime/package-d-run-scoped-job-cleanup/pdrun-20260615-004/cleanup-redacted.json`.
+- Advanced the active gap to Package D PostgreSQL/runtime env/combined in-cluster preflight from the platform runner.
+
+Verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+Can-claim:
+
+- Package D run-scoped platform runner preflight has passed on `pdrun-20260616-001`.
+- The runner image platform / pull / scheduling preflight gap is closed for the fixed `linux/amd64` runner image.
+- Next Package D gap is PostgreSQL/runtime env/combined in-cluster preflight from the platform runner.
+
+Cannot-claim:
+
+- This repo session read secrets or kubeconfig, connected to Kubernetes API, ran kubectl, deployed, built/pushed images, executed Tencent mutation, ran Package C live, or completed Package D production execution.
+- Platform-runner PostgreSQL/runtime env/combined preflight, DB connectivity smoke, rollback evidence, billing/audit ledger, Portal opening entry and workspace storage quota are not complete.
+
+landed_commit: `acacfefb9b8213d0e8fdf2abb12bdba350a2f3de`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
