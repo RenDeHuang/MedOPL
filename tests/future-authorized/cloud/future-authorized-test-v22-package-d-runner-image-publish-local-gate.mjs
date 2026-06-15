@@ -43,7 +43,12 @@ function fakeDockerExecutor(commandLog) {
       assert.equal(args.includes("tcr-user"), true, "docker_login_must_use_env_tcr_id_not_placeholder");
       assert.equal(args.includes("$TCR_ID"), false, "docker_login_must_not_send_placeholder_username");
     }
-    if (args.includes("build")) assert.equal(args.includes(imageRef), true, "docker_build_must_use_fixed_image_ref");
+    if (args.includes("build")) {
+      assert.deepEqual(args.slice(0, 3), ["docker", "buildx", "build"], "docker_build_must_use_buildx");
+      assert.equal(args.includes("--platform"), true, "docker_build_must_set_platform_flag");
+      assert.equal(args.includes("linux/amd64"), true, "docker_build_must_target_linux_amd64");
+      assert.equal(args.includes(imageRef), true, "docker_build_must_use_fixed_image_ref");
+    }
     if (args.includes("push")) assert.equal(args.includes(imageRef), true, "docker_push_must_use_fixed_image_ref");
     assert.deepEqual(Object.keys(env).sort(), [
       "PACKAGE_D_RUNNER_IMAGE_REF",
@@ -99,6 +104,9 @@ try {
   assert.equal(plan.image.namespace, "medopl", "namespace_fixed");
   assert.equal(plan.image.repository, "medopl-platform-runner", "repo_fixed");
   assert.equal(plan.image.tag, "v22-package-d-20260615-001", "tag_fixed");
+  assert.equal(plan.image.platform, "linux/amd64", "platform_must_be_linux_amd64");
+  assert.equal(plan.privateBuildRunner.platform, "linux/amd64", "private_build_platform_must_be_linux_amd64");
+  assert.equal(plan.boundary.implicitHostPlatformAllowed, false, "implicit_host_platform_must_be_forbidden");
   assert.equal(plan.privateBuildRunner.secretSource, "package-d-deploy.env", "private_build_secret_source");
   assert.deepEqual(plan.privateBuildRunner.allowedEnvKeys, ["TCR_ID", "TCR_SECRET", "PACKAGE_D_RUNNER_IMAGE_REF"], "private_build_allowed_env_keys");
   assert.deepEqual(plan.privateBuildRunner.forbiddenSecretClasses, ["kubeconfig", "DB password", "Portal admin password", "Tencent SecretId/SecretKey"], "private_build_forbidden_secret_classes");
@@ -122,6 +130,7 @@ try {
   });
   assert.equal(summary.ok, true, "summary_ok");
   assert.equal(summary.imageRef, "redacted", "summary_must_redact_image_ref");
+  assert.equal(summary.image.platform, "linux/amd64", "summary_platform_must_be_linux_amd64");
   assert.equal(summary.evidencePath.endsWith("private-build-push-redacted.json"), true, "evidence_path");
   assert.equal(commandLog.length, 3, "must_run_login_build_push_once");
   assertNoSensitiveText(JSON.stringify(summary), "summary");
@@ -129,6 +138,7 @@ try {
   const evidence = JSON.parse(await readFile(summary.evidencePath, "utf8"));
   assert.equal(evidence.ok, true, "evidence_ok");
   assert.equal(evidence.imageRef, "redacted", "evidence_must_redact_image_ref");
+  assert.equal(evidence.image.platform, "linux/amd64", "evidence_platform_must_be_linux_amd64");
   assert.equal(evidence.redactionAudit.tcrSecretValueExposed, false, "evidence_must_hide_tcr_secret");
   assert.equal(evidence.redactionAudit.fullImageRefExposed, false, "evidence_must_hide_full_image_ref");
   assertNoSensitiveText(JSON.stringify(evidence), "evidence");

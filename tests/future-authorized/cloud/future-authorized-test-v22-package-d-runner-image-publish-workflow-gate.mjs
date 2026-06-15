@@ -40,7 +40,9 @@ assert.equal(plan.image.registry, "uswccr.ccs.tencentyun.com", "registry_fixed")
 assert.equal(plan.image.namespace, "medopl", "namespace_fixed");
 assert.equal(plan.image.repository, "medopl-platform-runner", "repository_fixed");
 assert.equal(plan.image.tag, "v22-package-d-20260615-001", "tag_fixed");
+assert.equal(plan.image.platform, "linux/amd64", "platform_must_be_linux_amd64");
 assert.equal(plan.image.floatingTagAllowed, false, "latest_must_be_forbidden");
+assert.equal(plan.boundary.implicitHostPlatformAllowed, false, "implicit_host_platform_must_be_forbidden");
 assert.equal(plan.boundary.deployAllowed, false, "deploy_forbidden");
 assert.equal(plan.boundary.clusterCommandAllowed, false, "kubectl_forbidden");
 assert.equal(plan.boundary.tencentMutationAllowed, false, "tencent_mutation_forbidden");
@@ -52,6 +54,7 @@ console.log(JSON.stringify({
   route: "private_build_runner",
   githubActions: "removed_from_current_live_path",
   requiredEnvKeys: ["TCR_ID", "TCR_SECRET", "PACKAGE_D_RUNNER_IMAGE_REF"],
+  platform: "linux/amd64",
   imageRef,
   realExecutionReady: false,
 }, null, 2));

@@ -6120,3 +6120,38 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-16 package-d-runner-image-linux-amd64-publish-contract
+
+Status: `ready_for_landing_review`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `a00a20faf7b263e07f90b0261872edb26b81ce9b`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Recorded cloud finding `pdrun-20260615-004`: Package D run-scoped Job scheduled on `np-6l4nkdto` / `10.66.0.42` with the TCR image ref present, but image pull failed because the image manifest lacked the current node platform.
+- Tightened the private build runner image publish contract to require `docker buildx build --platform linux/amd64` for `uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001`.
+- Added local/future-authorized gates that reject implicit host platform, require redacted `platform=linux/amd64` evidence and keep the fixed image ref / no latest / no kubectl / no deploy / no Tencent mutation / no Package C live boundary.
+- Kept the TKE/VPC runner out of Docker build/push; this remains image publish only, not deploy.
+
+Verification:
+
+- RED: `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs` failed with `private_build_must_publish_linux_amd64_image` before the deploy placement plan recorded the platform.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-workflow-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs`: pass.
+
+Can-claim:
+
+- The repo-native Package D private build runner contract now requires a fixed `linux/amd64` image publish command.
+- The active machine cursor records `pdrun-20260615-004` as a platform manifest gap and suggests rerun id `pdrun-20260616-001` after publish.
+
+Cannot-claim:
+
+- This repo session read TCR secret, ran docker login/build/push, read kubeconfig/DB/Portal secrets, ran kubectl, deployed, executed Tencent mutation, ran Package C live, or completed Package D production execution.
+
+next_cursor: `real-cloud-authorization-boundary`

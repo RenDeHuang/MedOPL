@@ -17,6 +17,7 @@ const FIXED_REGION = "na-siliconvalley";
 const ALLOWED_REPOSITORY = "medopl-platform-runner";
 const FIXED_TAG = "v22-package-d-20260615-001";
 const FIXED_IMAGE_REF = `${FIXED_REGISTRY}/${FIXED_NAMESPACE}/${ALLOWED_REPOSITORY}:${FIXED_TAG}`;
+const FIXED_PLATFORM = "linux/amd64";
 const ALLOWED_PRIVATE_BUILD_ENV_KEYS = Object.freeze(["TCR_ID", "TCR_SECRET", "PACKAGE_D_RUNNER_IMAGE_REF"]);
 const FORBIDDEN_PRIVATE_BUILD_ENV_KEYS = Object.freeze([
   "KUBECONFIG",
@@ -134,7 +135,7 @@ function assertImageContract(imageRef = FIXED_IMAGE_REF) {
 function dockerCommands() {
   return [
     ["docker", "login", FIXED_REGISTRY, "--username", "$TCR_ID", "--password-stdin"],
-    ["docker", "build", "-f", "tests/support/cloud-prework/package-d-platform-runner.Dockerfile", "-t", FIXED_IMAGE_REF, "."],
+    ["docker", "buildx", "build", "--platform", FIXED_PLATFORM, "-f", "tests/support/cloud-prework/package-d-platform-runner.Dockerfile", "-t", FIXED_IMAGE_REF, "."],
     ["docker", "push", FIXED_IMAGE_REF],
   ];
 }
@@ -197,12 +198,14 @@ export async function buildPackageDRunnerImagePublishPlan({
       namespace: image.namespace,
       repository: image.repository,
       tag: image.tag,
+      platform: FIXED_PLATFORM,
       floatingTagAllowed: false,
     },
     privateBuildRunner: {
       secretSource: "package-d-deploy.env",
       allowedEnvKeys: [...ALLOWED_PRIVATE_BUILD_ENV_KEYS],
       forbiddenSecretClasses: ["kubeconfig", "DB password", "Portal admin password", "Tencent SecretId/SecretKey"],
+      platform: FIXED_PLATFORM,
       holdsKubeconfig: false,
       holdsDbPassword: false,
       holdsPortalAdminPassword: false,
@@ -228,6 +231,7 @@ export async function buildPackageDRunnerImagePublishPlan({
       deployAllowed: false,
       clusterCommandAllowed: false,
       tkeRunnerDockerAllowed: false,
+      implicitHostPlatformAllowed: false,
       publicGitHubSecretsAllowed: false,
       tencentMutationAllowed: false,
       packageCLiveAllowed: false,

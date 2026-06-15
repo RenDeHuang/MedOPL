@@ -41,6 +41,8 @@ const DEPLOY_RUNNER_PLACEMENT_PLAN = Object.freeze({
     secretSource: "package-d-deploy.env",
     allowedSecretKeys: Object.freeze(["TCR_ID", "TCR_SECRET", "PACKAGE_D_RUNNER_IMAGE_REF"]),
     forbiddenSecretClasses: Object.freeze(["kubeconfig", "DB password", "Portal admin password", "Tencent SecretId/SecretKey"]),
+    platform: "linux/amd64",
+    implicitHostPlatformAllowed: false,
     imageTargets: Object.freeze([
       "portal-frontend",
       "medopl-go-backend",
@@ -827,6 +829,8 @@ assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.separatedFromDeploySmoke
 assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.secretSource, "package-d-deploy.env", "private_build_secret_source_must_be_package_d_deploy_env");
 assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.allowedSecretKeys, ["TCR_ID", "TCR_SECRET", "PACKAGE_D_RUNNER_IMAGE_REF"], "private_build_must_only_read_tcr_and_image_ref");
 assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.forbiddenSecretClasses, ["kubeconfig", "DB password", "Portal admin password", "Tencent SecretId/SecretKey"], "private_build_must_not_hold_runtime_or_cloud_mutation_secrets");
+assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.platform, "linux/amd64", "private_build_must_publish_linux_amd64_image");
+assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.implicitHostPlatformAllowed, false, "private_build_must_forbid_implicit_host_platform");
 assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.buildPushPlan.imageTargets, [
   "portal-frontend",
   "medopl-go-backend",
