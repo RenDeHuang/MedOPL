@@ -6123,7 +6123,7 @@ next_cursor: `real-cloud-authorization-boundary`
 
 ### 2026-06-16 package-d-runner-image-linux-amd64-publish-contract
 
-Status: `ready_for_landing_review`
+Status: `landed / pushed / post-push verified`
 
 Branch: `recovery/platform-v22-trunk`
 
@@ -6153,5 +6153,18 @@ Can-claim:
 Cannot-claim:
 
 - This repo session read TCR secret, ran docker login/build/push, read kubeconfig/DB/Portal secrets, ran kubectl, deployed, executed Tencent mutation, ran Package C live, or completed Package D production execution.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+landed_commit: `73b1ea280bfc49899a8a97316754465f5af344f7`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
