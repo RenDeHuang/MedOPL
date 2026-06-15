@@ -58,6 +58,9 @@ assert.equal(
 
 assert.equal(workflow.includes("workflow_dispatch:"), true, "workflow_dispatch_required");
 assert.equal(workflow.includes("environment: package-d-image-publish"), true, "protected_environment_anchor_required");
+assert.equal(workflow.includes("package-d-image-publish requires environment secrets, not repository secrets"), true, "environment_secrets_only_required");
+assert.equal(workflow.includes("Required reviewer and branch restriction live on the GitHub Environment."), true, "required_reviewer_boundary_required");
+assert.equal(workflow.includes("github.ref_name != 'recovery/platform-v22-trunk' && !startsWith(github.ref_name, 'release/')"), true, "branch_guard_must_allow_trunk_or_release_only");
 assert.equal(workflow.includes("secrets.TCR_ID"), true, "tcr_id_secret_required");
 assert.equal(workflow.includes("secrets.TCR_SECRET"), true, "tcr_secret_required");
 assert.equal(workflow.includes(`PACKAGE_D_RUNNER_IMAGE_REF: ${imageRef}`), true, "fixed_image_ref_required");
@@ -97,6 +100,10 @@ try {
   assert.equal(plan.image.repository, "medopl-platform-runner", "repo_fixed");
   assert.equal(plan.image.tag, "v22-package-d-20260615-001", "tag_fixed");
   assert.equal(plan.githubActions.environment, "package-d-image-publish", "github_environment");
+  assert.equal(plan.githubActions.requiredReviewerRequired, true, "github_environment_required_reviewer_required");
+  assert.deepEqual(plan.githubActions.branchRestriction, ["recovery/platform-v22-trunk", "release/*"], "github_environment_branch_restriction");
+  assert.equal(plan.githubActions.secretsScope, "environment", "github_secrets_must_be_environment_scope");
+  assert.equal(plan.githubActions.repositorySecretsAllowed, false, "github_repository_secrets_forbidden");
   assert.deepEqual(plan.githubActions.requiredSecrets, ["TCR_ID", "TCR_SECRET"], "github_secrets_only_tcr");
   assert.equal(plan.githubActions.forbiddenSecretClasses.includes("cluster credential"), true, "cluster_credential_forbidden_in_publish_lane");
   assert.equal(plan.boundary.tkeRunnerDockerAllowed, false, "tke_runner_must_not_build");

@@ -1,5 +1,9 @@
 name: Package D Runner Image Publish
 
+# Public-repo-safe manual publish lane.
+# package-d-image-publish requires environment secrets, not repository secrets: TCR_ID and TCR_SECRET.
+# Required reviewer and branch restriction live on the GitHub Environment.
+# Allowed branches: recovery/platform-v22-trunk and release/*.
 on:
   workflow_dispatch:
 
@@ -19,7 +23,7 @@ jobs:
       PACKAGE_D_RUNNER_IMAGE_REF: uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001
     steps:
       - name: Guard branch
-        if: github.ref_name != 'recovery/platform-v22-trunk'
+        if: github.ref_name != 'recovery/platform-v22-trunk' && !startsWith(github.ref_name, 'release/')
         run: |
           echo "package_d_runner_image_publish_branch_mismatch"
           exit 1

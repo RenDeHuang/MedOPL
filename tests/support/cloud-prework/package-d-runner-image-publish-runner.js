@@ -19,6 +19,7 @@ const ALLOWED_REPOSITORY = "medopl-platform-runner";
 const FIXED_TAG = "v22-package-d-20260615-001";
 const FIXED_IMAGE_REF = `${FIXED_REGISTRY}/${FIXED_NAMESPACE}/${ALLOWED_REPOSITORY}:${FIXED_TAG}`;
 const GITHUB_ENVIRONMENT = "package-d-image-publish";
+const ALLOWED_BRANCHES = Object.freeze([FIXED_BRANCH, "release/*"]);
 const FORBIDDEN_ARGS = Object.freeze(new Set([
   "--deploy",
   "--kubectl",
@@ -87,7 +88,11 @@ function assertWorkflowText(workflowText = "") {
   const required = [
     "workflow_dispatch:",
     `environment: ${GITHUB_ENVIRONMENT}`,
-    "github.ref_name != 'recovery/platform-v22-trunk'",
+    "package-d-image-publish requires environment secrets, not repository secrets",
+    "Required reviewer and branch restriction live on the GitHub Environment.",
+    "github.ref_name != 'recovery/platform-v22-trunk' && !startsWith(github.ref_name, 'release/')",
+    "permissions:",
+    "contents: read",
     `TENCENT_TCR_REGISTRY: ${FIXED_REGISTRY}`,
     `TENCENT_TCR_NAMESPACE: ${FIXED_NAMESPACE}`,
     `TENCENT_TCR_REGION: ${FIXED_REGION}`,
@@ -121,8 +126,31 @@ function assertWorkflowText(workflowText = "") {
     "package-d-deploy.env",
     "portal-runtime.env",
     "medopl-tenant-",
+    "pull_request:",
+    "pull_request_target:",
+    "\n  push:",
+    "workflow_dispatch:\n    inputs:",
+    "printenv",
+    "env |",
+    "set |",
+    "secrets.KUBECONFIG",
+    "secrets.PORTAL_POSTGRES_PASSWORD",
+    "secrets.PORTAL_ADMIN_PASSWORD",
+    "secrets.PORTAL_POSTGRES_URL",
+    "secrets.TENCENT_SECRET_ID",
+    "secrets.TENCENT_SECRET_KEY",
   ]) {
     if (workflowText.includes(forbidden)) throw new Error(`package_d_runner_image_publish_workflow_forbidden:${forbidden}`);
+  }
+  if (!/on:\s*\n\s*workflow_dispatch:\s*\n\s*\npermissions:/u.test(workflowText)) {
+    throw new Error("package_d_runner_image_publish_workflow_must_be_manual_dispatch_only");
+  }
+  if (!/permissions:\s*\n\s*contents:\s*read\s*\n\s*\n/u.test(workflowText)) {
+    throw new Error("package_d_runner_image_publish_workflow_permissions_must_be_contents_read_only");
+  }
+  const referencedSecrets = (workflowText.match(/secrets\.[A-Z0-9_]+/gu) || []).sort();
+  if (referencedSecrets.join(",") !== "secrets.TCR_ID,secrets.TCR_SECRET") {
+    throw new Error("package_d_runner_image_publish_workflow_secrets_must_only_be_tcr");
   }
 }
 
@@ -181,6 +209,7 @@ export async function buildPackageDRunnerImagePublishPlan({
     workflow: workflowPath,
     target: {
       branch: FIXED_BRANCH,
+      allowedBranches: ALLOWED_BRANCHES,
       imagePublishBoundary: true,
       deployBoundary: false,
       tkeRunnerBuildBoundary: false,
@@ -196,7 +225,10 @@ export async function buildPackageDRunnerImagePublishPlan({
     githubActions: {
       environment: GITHUB_ENVIRONMENT,
       protectedEnvironmentRequired: true,
-      branchRestriction: FIXED_BRANCH,
+      requiredReviewerRequired: true,
+      branchRestriction: ALLOWED_BRANCHES,
+      secretsScope: "environment",
+      repositorySecretsAllowed: false,
       requiredSecrets: ["TCR_ID", "TCR_SECRET"],
       forbiddenSecretClasses: [
         "cluster credential",
