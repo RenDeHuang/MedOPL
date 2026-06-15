@@ -5874,3 +5874,35 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-15 package-d-runner-image-publish-boundary
+
+Status: `landed / pending push verification`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `0c491485467974d4fb01afd7e64fc6ade29abc1e`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Recorded the cloud finding from `pdrun-20260615-003`: the run-scoped Package D Job scheduled on `np-cbk784r8` with the real allowlisted `PACKAGE_D_RUNNER_IMAGE_REF`, then failed at image pull because `uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001` was not found.
+- Added the repo-native Package D runner image publish boundary at `tests/support/cloud-prework/package-d-runner-image-publish-runner.js`.
+- Added the single later-authorized command: `node tests/support/cloud-prework/package-d-runner-image-publish-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --image-ref uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001 --mode publish-image`.
+- Limited the boundary to fixed-registry docker login/build/push for the fixed non-latest `medopl-platform-runner` image tag; evidence redacts TCR secret and full image ref.
+- Registered the local/future-authorized gate in the cloud-future-authorized lane and active machine truth.
+
+Verification:
+
+- RED: `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs` failed with `ERR_MODULE_NOT_FOUND` before the runner existed.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs`: pass.
+
+Can-claim:
+
+- Package D now has a repo-native, machine-guarded single command for later authorized runner image publish.
+- The local gate proves fail-closed auth, fixed image ref, TCR credential presence checks, command allowlist and redaction with fake docker only.
+
+Cannot-claim:
+
+- This repo session read TCR secret, ran docker login/build/push, pulled/pushed images, read kubeconfig, connected to Kubernetes API, ran kubectl, deployed, executed Tencent mutation, ran Package C live, or completed Package D production execution.
