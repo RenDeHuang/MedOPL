@@ -8,12 +8,12 @@
   "last_updated_at": "2026-06-15",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "fcc608fe7ace4de237376fe918b1c439eaf20e93",
+  "base_trunk_head": "0c491485467974d4fb01afd7e64fc6ade29abc1e",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "fcc608fe7ace4de237376fe918b1c439eaf20e93",
+  "last_landed_commit": "0c491485467974d4fb01afd7e64fc6ade29abc1e",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -101,7 +101,7 @@
         "precloud-deployable-rc"
       ],
       "history_summary": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound, runner-local state-machine evidence, repository write wiring contract and gated PostgreSQL sink support path and explicit live canary runner contract have landed. Package D release plan, execution preflight gate, in-cluster runner shape gate, non-executing runner manifest materialization / authorization pack, bootstrap authorization pack and the repo-native Kubernetes API server-side dry-run preflight runner and repo-native bootstrap apply runner have landed, so reviewable bootstrap path readiness and a single cloud-runner entrypoint are true while realExecutionReady=false. Kubernetes API connectivity now passed, context/cluster matched cls-fi097sy4, bootstrap apply confirmed medopl-platform Active and allowlisted bootstrap resources, and the same-name Job immutable finding is folded into the corrected contract: bootstrap apply / dry-run no longer reapply Job, while Job execution is a separate run-scoped authorization. Stabilization remains blocked on rerunning corrected bootstrap apply / dry-run, authorizing the repo-native run-scoped Job preflight runner, service-in-VPC PostgreSQL live canary, image build execution, TCR push execution, DB connectivity smoke, rollback evidence, billing/audit ledger, Portal opening entry and workspace storage quota. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization. Package D run-scoped Job cloud execution first exposed the retired custom selector gap; readonly scheduling discovery found node.tke.cloud.tencent.com/machineset=np-cbk784r8, and the repo contract now uses that existing TKE machineset label without modifying node labels. Package D run-scoped Job cloud execution pdrun-20260615-002 then scheduled on np-cbk784r8 but failed container image validation because a redacted image placeholder reached the live Job manifest; the repo contract now requires PACKAGE_D_RUNNER_IMAGE_REF for live manifests and keeps only redacted image refs in evidence.",
-      "landed_commit": "fcc608fe7ace4de237376fe918b1c439eaf20e93"
+      "landed_commit": "0c491485467974d4fb01afd7e64fc6ade29abc1e"
     },
     {
       "id": "go-control-plane-mvp-takeover",

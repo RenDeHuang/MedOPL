@@ -5827,7 +5827,7 @@ next_cursor: `real-cloud-authorization-boundary`
 
 ### 2026-06-15 package-d-run-scoped-job-image-ref-contract
 
-Status: `landed candidate / local-gated`
+Status: `landed / pushed / post-push verified`
 
 Branch: `recovery/platform-v22-trunk`
 
@@ -5861,3 +5861,16 @@ Can-claim:
 Cannot-claim:
 
 - This repo session read real kubeconfig or secrets, connected to Kubernetes API, ran kubectl, created Kubernetes resources, deployed, built/pushed images, executed Tencent mutation, ran Package C live, ran Package D production execution, or brought production runtime online.
+
+landed_commit: `0c491485467974d4fb01afd7e64fc6ade29abc1e`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
