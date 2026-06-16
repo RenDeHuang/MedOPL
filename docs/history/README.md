@@ -6298,15 +6298,15 @@ Cannot-claim:
 - This repo session did not read secrets or kubeconfig, connect to Kubernetes API, run kubectl, deploy, build/push, execute Tencent mutation or run Package C live.
 - Production Deployment/Service rollout, post-deploy smoke, rollback evidence, billing/audit ledger, Portal opening entry and workspace storage quota are not complete.
 
-pending_landed_commit: `after_commit`
+landed_commit: `93b9a84e8c086e8170190924d23ab9bdb53c6a30`
 
-landing_gate_result: `pending local verification`
+landing_gate_result: `passed / ff-only landed / pushed`
 
 post_push_verification:
 
-- `npm run verify`: pending.
-- `npm run closeout:check -- --json`: pending.
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
 
-pending_post_merge_closeout: `after_push`
+post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
