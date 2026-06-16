@@ -8,12 +8,12 @@
   "last_updated_at": "2026-06-16",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "0e2f79194a5d6fa4f7723796200df95f34a4b5a1",
+  "base_trunk_head": "1ec86325d1d600a1c5a205415e778ec67ff952e2",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "0e2f79194a5d6fa4f7723796200df95f34a4b5a1",
+  "last_landed_commit": "1ec86325d1d600a1c5a205415e778ec67ff952e2",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical, so canonical ownership / billing truth remains PostgreSQL resource_bindings / cloud_operations ledger, not cloud tags. Package C PostgreSQL ledger lower bound, runner-local state-machine evidence, repository write wiring and gated PostgreSQL sink support are landed; the earlier direct DB canary from outside VPC failed closed at connection preflight, so successful DB canary waits for execution inside TKE/VPC. Package D deploy readiness now has bootstrap resources, run-scoped platform runner preflight and PostgreSQL/runtime env/combined in-cluster preflight proven from the cloud. Run pdrun-20260616-002 at repo HEAD 005e522c743244945a5c289cae7ce73b6a20d4a7 used selector node.tke.cloud.tencent.com/machineset=np-6l4nkdto and image uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001; image pull/run, PostgreSQL 10.66.0.21:5432 connectivity smoke, package_d_secretref_env_availability_smoke, Job completion, Job cleanup deleted_on_success / NotFound after delete and redaction audit all passed. A later cloud production-deploy-plan preflight failed closed before server-side dry-run because package-d-deploy.env lacked the four production service image refs and because the runner incorrectly required RUN_TENCENT_DEPLOY_EXECUTION=1 for plan-only mode. Repo commit 0e2f79194a5d6fa4f7723796200df95f34a4b5a1 fixes the production deploy plan contract: production-deploy-plan must keep RUN_TENCENT_DEPLOY_EXECUTION=0, while future production-deploy-apply/live modes require RUN_TENCENT_DEPLOY_EXECUTION=1 and still stop as not implemented in this local/contract runner. The same local gate fixes the four service image ref contract to exact non-latest TCR targets uswccr.ccs.tencentyun.com/medopl/portal-frontend:v22-package-d-20260616-001, uswccr.ccs.tencentyun.com/medopl/medopl-go-backend:v22-package-d-20260616-001, uswccr.ccs.tencentyun.com/medopl/opl-web-gateway:v22-package-d-20260616-001, uswccr.ccs.tencentyun.com/medopl/opl-runtime-bridge:v22-package-d-20260616-001 under uswccr.ccs.tencentyun.com/medopl and rejects latest, malformed refs, non-medopl namespace and wrong tags. Package D realExecutionReady remains false; the repo now has a Package D four service image publish private-build-runner contract/local gate, but it fails closed because portal-frontend, medopl-go-backend, opl-web-gateway and opl-runtime-bridge still lack Dockerfile/build context materialization. The next gap is Package D service Dockerfile/build context materialization before private build/push authorization and production deploy dry-run/execution evidence. Do not hand-run kubectl apply or ad hoc docker build/push. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate explicit authorization.",
+  "current_problem": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical, so canonical ownership / billing truth remains PostgreSQL resource_bindings / cloud_operations ledger, not cloud tags. Package C PostgreSQL ledger lower bound, runner-local state-machine evidence, repository write wiring and gated PostgreSQL sink support are landed; the earlier direct DB canary from outside VPC failed closed at connection preflight, so successful DB canary waits for execution inside TKE/VPC. Package D deploy readiness now has bootstrap resources, run-scoped platform runner preflight and PostgreSQL/runtime env/combined in-cluster preflight proven from the cloud. Run pdrun-20260616-002 at repo HEAD 005e522c743244945a5c289cae7ce73b6a20d4a7 used selector node.tke.cloud.tencent.com/machineset=np-6l4nkdto and image uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001; image pull/run, PostgreSQL 10.66.0.21:5432 connectivity smoke, package_d_secretref_env_availability_smoke, Job completion, Job cleanup deleted_on_success / NotFound after delete and redaction audit all passed. A later cloud production-deploy-plan preflight failed closed before server-side dry-run because package-d-deploy.env lacked the four production service image refs and because the runner incorrectly required RUN_TENCENT_DEPLOY_EXECUTION=1 for plan-only mode. Repo commit 0e2f79194a5d6fa4f7723796200df95f34a4b5a1 fixes the production deploy plan contract: production-deploy-plan must keep RUN_TENCENT_DEPLOY_EXECUTION=0, while future production-deploy-apply/live modes require RUN_TENCENT_DEPLOY_EXECUTION=1 and still stop as not implemented in this local/contract runner. The same local gate fixes the four service image ref contract to exact non-latest TCR targets uswccr.ccs.tencentyun.com/medopl/portal-frontend:v22-package-d-20260616-001, uswccr.ccs.tencentyun.com/medopl/medopl-go-backend:v22-package-d-20260616-001, uswccr.ccs.tencentyun.com/medopl/opl-web-gateway:v22-package-d-20260616-001, uswccr.ccs.tencentyun.com/medopl/opl-runtime-bridge:v22-package-d-20260616-001 under uswccr.ccs.tencentyun.com/medopl and rejects latest, malformed refs, non-medopl namespace and wrong tags. Package D realExecutionReady remains false; repo commit 1ec86325d1d600a1c5a205415e778ec67ff952e2 materializes reviewable Dockerfile/build contexts for portal-frontend, medopl-go-backend, opl-web-gateway and opl-runtime-bridge, adds service-level .dockerignore files, and keeps the private build runner lane fixed to linux/amd64 with no docker login/build/push in this repo session. The next gap is authorized Package D four service private image publish through the repo-native runner before production deploy dry-run/execution evidence. Do not hand-run kubectl apply or ad hoc docker build/push. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate explicit authorization.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -100,8 +100,8 @@
       "depends_on": [
         "precloud-deployable-rc"
       ],
-      "history_summary": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound, runner-local state-machine evidence, repository write wiring contract, gated PostgreSQL sink support path and explicit live canary runner contract have landed. Package D release plan, execution preflight gate, in-cluster runner shape gate, manifest materialization / authorization pack, bootstrap authorization pack, repo-native Kubernetes API server-side dry-run preflight runner, bootstrap apply runner, run-scoped Job runner and production deploy runner contract/local gate have landed. Kubernetes API connectivity passed, context/cluster matched cls-fi097sy4, medopl-platform is Active, allowlisted bootstrap resources are present, same-name Job immutable risk is removed from bootstrap apply/dry-run, and run-scoped Job execution is separate. Package D run-scoped platform runner preflight pdrun-20260616-001 passed; Package D PostgreSQL/runtime env/combined in-cluster preflight pdrun-20260616-002 also passed from the TKE/VPC runner with linux/amd64 image uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001, selector node.tke.cloud.tencent.com/machineset=np-6l4nkdto, PostgreSQL 10.66.0.21:5432 connectivity smoke, SecretRef/env availability smoke, redacted evidence and success cleanup. Production deploy plan-only semantics were corrected at 0e2f79194a5d6fa4f7723796200df95f34a4b5a1: production-deploy-plan requires RUN_TENCENT_DEPLOY_EXECUTION=0; future apply/live requires explicit 1 and remains a separate execution boundary. The four production service image refs are now fixed to uswccr.ccs.tencentyun.com/medopl/portal-frontend:v22-package-d-20260616-001, uswccr.ccs.tencentyun.com/medopl/medopl-go-backend:v22-package-d-20260616-001, uswccr.ccs.tencentyun.com/medopl/opl-web-gateway:v22-package-d-20260616-001, uswccr.ccs.tencentyun.com/medopl/opl-runtime-bridge:v22-package-d-20260616-001 and must stay in uswccr.ccs.tencentyun.com/medopl with non-latest tag v22-package-d-20260616-001. No secret leakage, deploy, build/push, Tencent mutation or Package C live occurred. Stabilization is now blocked on Package D service Dockerfile/build context materialization, then authorized four service image publish, explicitly authorized production deploy dry-run / execution evidence, post-deploy smoke, rollback evidence, billing/audit ledger, Portal opening entry and workspace storage quota. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization.",
-      "landed_commit": "0e2f79194a5d6fa4f7723796200df95f34a4b5a1"
+      "history_summary": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound, runner-local state-machine evidence, repository write wiring contract, gated PostgreSQL sink support path and explicit live canary runner contract have landed. Package D release plan, execution preflight gate, in-cluster runner shape gate, manifest materialization / authorization pack, bootstrap authorization pack, repo-native Kubernetes API server-side dry-run preflight runner, bootstrap apply runner, run-scoped Job runner and production deploy runner contract/local gate have landed. Kubernetes API connectivity passed, context/cluster matched cls-fi097sy4, medopl-platform is Active, allowlisted bootstrap resources are present, same-name Job immutable risk is removed from bootstrap apply/dry-run, and run-scoped Job execution is separate. Package D run-scoped platform runner preflight pdrun-20260616-001 passed; Package D PostgreSQL/runtime env/combined in-cluster preflight pdrun-20260616-002 also passed from the TKE/VPC runner with linux/amd64 image uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001, selector node.tke.cloud.tencent.com/machineset=np-6l4nkdto, PostgreSQL 10.66.0.21:5432 connectivity smoke, SecretRef/env availability smoke, redacted evidence and success cleanup. Production deploy plan-only semantics were corrected at 0e2f79194a5d6fa4f7723796200df95f34a4b5a1: production-deploy-plan requires RUN_TENCENT_DEPLOY_EXECUTION=0; future apply/live requires explicit 1 and remains a separate execution boundary. The four production service image refs are now fixed to uswccr.ccs.tencentyun.com/medopl/portal-frontend:v22-package-d-20260616-001, uswccr.ccs.tencentyun.com/medopl/medopl-go-backend:v22-package-d-20260616-001, uswccr.ccs.tencentyun.com/medopl/opl-web-gateway:v22-package-d-20260616-001, uswccr.ccs.tencentyun.com/medopl/opl-runtime-bridge:v22-package-d-20260616-001 and must stay in uswccr.ccs.tencentyun.com/medopl with non-latest tag v22-package-d-20260616-001. No secret leakage, deploy, build/push, Tencent mutation or Package C live occurred. Repo commit 1ec86325d1d600a1c5a205415e778ec67ff952e2 materializes the four Package D service Dockerfile/build contexts and service-level .dockerignore files while keeping image publish unexecuted. Stabilization is now blocked on authorized Package D four service private image publish through the repo-native runner, explicitly authorized production deploy dry-run / execution evidence, post-deploy smoke, rollback evidence, billing/audit ledger, Portal opening entry and workspace storage quota. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization.",
+      "landed_commit": "1ec86325d1d600a1c5a205415e778ec67ff952e2"
     },
     {
       "id": "go-control-plane-mvp-takeover",
@@ -171,7 +171,7 @@
     "gap_id": "real-cloud-authorization-boundary",
     "stage": "S7 real-cloud authorization boundary before readiness",
     "cursor_eligible": false,
-    "problem": "Package D PostgreSQL/runtime env/combined in-cluster preflight pdrun-20260616-002 has passed on the TKE/VPC runner. The production deploy plan-only contract is corrected, and this step adds a repo-native private build runner contract/local gate for four Package D service images. The gate fixes the four image refs, env allowlist and linux/amd64 buildx command plan, but fails closed because all four service Dockerfiles are missing. This local step did not read secrets, run docker login/build/push, deploy or hand-run kubectl apply.",
+    "problem": "Package D PostgreSQL/runtime env/combined in-cluster preflight pdrun-20260616-002 has passed on the TKE/VPC runner. The production deploy plan-only contract is corrected, and this step adds a repo-native private build runner contract/local gate for four Package D service images. The gate fixes the four image refs, env allowlist and linux/amd64 buildx command plan, and all four service Dockerfile/build contexts are now materialized with service-level .dockerignore files. This local step did not read secrets, run docker login/build/push, deploy or hand-run kubectl apply.",
     "verification_commands": [
       "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
       "node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs",
@@ -262,7 +262,6 @@
     "package_d_deploy_readiness_plan": {
       "executionEnvironment": "tke_in_cluster_platform_runner_preferred",
       "readinessGaps": [
-        "Package D service Dockerfile/build context materialization",
         "authorized Package D four service private image publish through repo-native runner",
         "authorized Package D production deploy dry-run / execution evidence through repo-native runner",
         "post-deploy DB/connectivity smoke execution from TKE platform runner",
@@ -1218,12 +1217,14 @@
           ".runtime/package-d-run-scoped-job-preflight/pdrun-20260616-002/job-manifest-redacted.json"
         ]
       },
-      "nextGap": "Package D service Dockerfile/build context materialization",
+      "nextGap": "authorized Package D four service private image publish through repo-native runner",
       "nextAuthorizationPrompt": [
-        "当前 gap：Package D service Dockerfile/build context materialization。",
-        "目标：为 portal-frontend、medopl-go-backend、opl-web-gateway、opl-runtime-bridge 落地可审查 Dockerfile/build context，仍不执行 docker login/build/push。",
-        "必须保持 image publish lane 为 private build runner，固定 linux/amd64、固定 TCR refs、禁止 latest、禁止 kubeconfig/DB/Portal/Tencent mutation secrets。",
-        "完成后再授权 private build runner 执行 node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1。"
+        "授权在 private build runner 执行 Package D four service image publish。",
+        "前置：repo HEAD 必须等于最新 origin/recovery/platform-v22-trunk，工作区必须干净，Docker/buildx 可用。",
+        "允许读取 /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env，且只允许 TCR_ID、TCR_SECRET、PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF、PACKAGE_D_GO_BACKEND_IMAGE_REF、PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF、PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF。",
+        "允许执行：node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1",
+        "目标 image refs 固定为 uswccr.ccs.tencentyun.com/medopl/{portal-frontend,medopl-go-backend,opl-web-gateway,opl-runtime-bridge}:v22-package-d-20260616-001。",
+        "禁止读取 kubeconfig/DB password/Portal admin password/Tencent SecretId/SecretKey，禁止 kubectl/deploy/Tencent mutation/Package C live，禁止 latest、非 medopl namespace、非 allowlisted repo，不输出 TCR_SECRET，evidence 只写 .runtime 且 redacted。"
       ],
       "realExecutionReady": false,
       "combinedInClusterPreflight": {
@@ -1267,7 +1268,7 @@
           "contractOnlyThisCommit": true,
           "executesKubectlNow": false,
           "handWrittenKubectlApplyAllowed": false,
-          "nextGap": "Package D service Dockerfile/build context materialization",
+          "nextGap": "authorized Package D four service private image publish through repo-native runner",
           "planOnlyRunGate": "RUN_TENCENT_DEPLOY_EXECUTION=0",
           "futureApplyLiveRunGate": "RUN_TENCENT_DEPLOY_EXECUTION=1",
           "applyLiveImplementedNow": false
@@ -1321,8 +1322,8 @@
           ],
           "publishEntrypointExistsNow": true,
           "publishEntrypoint": "node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1",
-          "publishEntrypointReadiness": "fail_closed_until_service_dockerfile_build_context_materialization",
-          "publishEntrypointGap": "Package D service Dockerfile/build context materialization"
+          "publishEntrypointReadiness": "ready_for_separate_authorized_private_build_push",
+          "publishEntrypointGap": "authorized Package D four service private image publish through repo-native runner"
         },
         "secretRefUsage": {
           "deployEnvSecretRef": "medopl-package-d-deploy-env",
@@ -1380,22 +1381,24 @@
           "deployManifestEvidence": ".runtime/package-d-production-deploy/production-manifests-redacted.json"
         },
         "nextAuthorizationPrompt": [
-          "按 active truth 继续 gap-driven execution，不新增 loop。",
-          "当前 gap：Package D service Dockerfile/build context materialization。",
-          "目标：为 portal-frontend、medopl-go-backend、opl-web-gateway、opl-runtime-bridge 落地可审查 Dockerfile/build context，仍不执行 docker login/build/push。",
-          "必须保持 image publish lane 为 private build runner，固定 linux/amd64、固定 TCR refs、禁止 latest、禁止 kubeconfig/DB/Portal/Tencent mutation secrets。",
-          "完成后再授权 private build runner 执行 node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1。"
+          "授权在 private build runner 执行 Package D four service image publish。",
+          "前置：repo HEAD 必须等于最新 origin/recovery/platform-v22-trunk，工作区必须干净，Docker/buildx 可用。",
+          "允许读取 /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env，且只允许 TCR_ID、TCR_SECRET、PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF、PACKAGE_D_GO_BACKEND_IMAGE_REF、PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF、PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF。",
+          "允许执行：node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1",
+          "目标 image refs 固定为 uswccr.ccs.tencentyun.com/medopl/{portal-frontend,medopl-go-backend,opl-web-gateway,opl-runtime-bridge}:v22-package-d-20260616-001。",
+          "禁止读取 kubeconfig/DB password/Portal admin password/Tencent SecretId/SecretKey，禁止 kubectl/deploy/Tencent mutation/Package C live，禁止 latest、非 medopl namespace、非 allowlisted repo，不输出 TCR_SECRET，evidence 只写 .runtime 且 redacted。"
         ]
       },
       "nextLocalCodexPrompt": [
-        "按 active truth 继续 gap-driven execution，不新增 loop。",
-        "当前 gap：Package D service Dockerfile/build context materialization。",
-        "目标：为 portal-frontend、medopl-go-backend、opl-web-gateway、opl-runtime-bridge 落地可审查 Dockerfile/build context，仍不执行 docker login/build/push。",
-        "必须保持 image publish lane 为 private build runner，固定 linux/amd64、固定 TCR refs、禁止 latest、禁止 kubeconfig/DB/Portal/Tencent mutation secrets。",
-        "完成后再授权 private build runner 执行 node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1。"
+        "授权在 private build runner 执行 Package D four service image publish。",
+        "前置：repo HEAD 必须等于最新 origin/recovery/platform-v22-trunk，工作区必须干净，Docker/buildx 可用。",
+        "允许读取 /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env，且只允许 TCR_ID、TCR_SECRET、PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF、PACKAGE_D_GO_BACKEND_IMAGE_REF、PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF、PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF。",
+        "允许执行：node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1",
+        "目标 image refs 固定为 uswccr.ccs.tencentyun.com/medopl/{portal-frontend,medopl-go-backend,opl-web-gateway,opl-runtime-bridge}:v22-package-d-20260616-001。",
+        "禁止读取 kubeconfig/DB password/Portal admin password/Tencent SecretId/SecretKey，禁止 kubectl/deploy/Tencent mutation/Package C live，禁止 latest、非 medopl namespace、非 allowlisted repo，不输出 TCR_SECRET，evidence 只写 .runtime 且 redacted。"
       ],
       "serviceImagesPublishBoundary": {
-        "status": "repo_native_private_build_runner_contract_landed_fail_closed_on_missing_service_dockerfiles",
+        "status": "service_dockerfile_build_context_materialized_waiting_authorized_private_build_push",
         "contract": "package_d_service_images_publish_private_build_runner_boundary",
         "route": "private_build_runner",
         "command": "node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1",
@@ -1435,25 +1438,45 @@
             "service": "portal-frontend",
             "context": "services/portal/frontend",
             "dockerfile": "services/portal/frontend/Dockerfile",
-            "dockerfilePresent": false
+            "dockerignore": "services/portal/frontend/.dockerignore",
+            "dockerfilePresent": true,
+            "dockerignorePresent": true,
+            "buildCommand": "Dockerfile installs portal frontend dependencies and invokes the service package build script",
+            "runtimeCommand": "nginx -g \"daemon off;\"",
+            "runtimePort": 8080
           },
           {
             "service": "medopl-go-backend",
             "context": "services/medopl-go-backend",
             "dockerfile": "services/medopl-go-backend/Dockerfile",
-            "dockerfilePresent": false
+            "dockerignore": "services/medopl-go-backend/.dockerignore",
+            "dockerfilePresent": true,
+            "dockerignorePresent": true,
+            "buildCommand": "CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags=\"-s -w\" -o /out/medopl-go-backend ./cmd/server",
+            "runtimeCommand": "/usr/local/bin/medopl-go-backend",
+            "runtimePort": 8080
           },
           {
             "service": "opl-web-gateway",
             "context": "services/opl-web-gateway",
             "dockerfile": "services/opl-web-gateway/Dockerfile",
-            "dockerfilePresent": false
+            "dockerignore": "services/opl-web-gateway/.dockerignore",
+            "dockerfilePresent": true,
+            "dockerignorePresent": true,
+            "buildCommand": "copy package.json and src only; no dependency install required by current package.json",
+            "runtimeCommand": "npm start",
+            "runtimePort": 8080
           },
           {
             "service": "opl-runtime-bridge",
             "context": "services/opl-runtime-bridge",
             "dockerfile": "services/opl-runtime-bridge/Dockerfile",
-            "dockerfilePresent": false
+            "dockerignore": "services/opl-runtime-bridge/.dockerignore",
+            "dockerfilePresent": true,
+            "dockerignorePresent": true,
+            "buildCommand": "copy package.json and src only; no dependency install required by current package.json",
+            "runtimeCommand": "npm start",
+            "runtimePort": 8080
           }
         ],
         "allowedCommandsAfterAuthorization": [
@@ -1467,22 +1490,23 @@
           "latest tag is forbidden",
           "non-medopl namespace and non-allowlisted repos are forbidden",
           "docker build commands must use docker buildx build --platform linux/amd64",
-          "missing Dockerfile or build context fails before docker executor runs",
+          "missing Dockerfile, .dockerignore or build context fails before docker executor runs",
           "no kubeconfig, DB password, Portal admin password or Tencent SecretId/SecretKey in image publish env",
-          "no kubectl, deploy, Tencent mutation or Package C live command shape"
+          "no kubectl, deploy, Tencent mutation or Package C live command shape",
+          "each service context must include a .dockerignore excluding .runtime, .secrets, node_modules, dist, env files, pem files and kubeconfig-like files",
+          "Dockerfiles must use non-latest pinned base images and service-real build/runtime commands"
         ],
         "readiness": {
           "realExecutionReady": false,
+          "dockerfileBuildContextReady": true,
           "imagePublishReady": false,
-          "reason": "four service Dockerfile/build context materialization is missing",
-          "missingDockerfiles": [
-            "services/portal/frontend/Dockerfile",
-            "services/medopl-go-backend/Dockerfile",
-            "services/opl-web-gateway/Dockerfile",
-            "services/opl-runtime-bridge/Dockerfile"
-          ]
+          "reason": "awaiting separate private build runner authorization for docker login/build/push",
+          "missingDockerfiles": [],
+          "missingDockerignores": [],
+          "missingContexts": []
         },
-        "nextGap": "Package D service Dockerfile/build context materialization"
+        "nextGap": "authorized Package D four service private image publish through repo-native runner",
+        "publishEntrypointGap": "authorized Package D four service private image publish through repo-native runner"
       }
     },
     "latest_local_evidence": "package-d-combined-in-cluster-preflight-pdrun-20260616-002"
@@ -1655,7 +1679,6 @@
         "realExecutionReady": false
       },
       "readinessGaps": [
-        "Package D service Dockerfile/build context materialization",
         "authorized Package D four service private image publish through repo-native runner",
         "authorized Package D production deploy dry-run / execution evidence through repo-native runner",
         "post-deploy DB/connectivity smoke execution from TKE platform runner",
@@ -2261,13 +2284,14 @@
           ".runtime/package-d-run-scoped-job-preflight/pdrun-20260616-002/job-manifest-redacted.json"
         ]
       },
-      "nextGap": "Package D service Dockerfile/build context materialization",
+      "nextGap": "authorized Package D four service private image publish through repo-native runner",
       "nextAuthorizationPrompt": [
-        "按 active truth 继续 gap-driven execution，不新增 loop。",
-        "当前 gap：Package D service Dockerfile/build context materialization。",
-        "目标：为 portal-frontend、medopl-go-backend、opl-web-gateway、opl-runtime-bridge 落地可审查 Dockerfile/build context，仍不执行 docker login/build/push。",
-        "必须保持 image publish lane 为 private build runner，固定 linux/amd64、固定 TCR refs、禁止 latest、禁止 kubeconfig/DB/Portal/Tencent mutation secrets。",
-        "完成后再授权 private build runner 执行 node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1。"
+        "授权在 private build runner 执行 Package D four service image publish。",
+        "前置：repo HEAD 必须等于最新 origin/recovery/platform-v22-trunk，工作区必须干净，Docker/buildx 可用。",
+        "允许读取 /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env，且只允许 TCR_ID、TCR_SECRET、PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF、PACKAGE_D_GO_BACKEND_IMAGE_REF、PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF、PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF。",
+        "允许执行：node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1",
+        "目标 image refs 固定为 uswccr.ccs.tencentyun.com/medopl/{portal-frontend,medopl-go-backend,opl-web-gateway,opl-runtime-bridge}:v22-package-d-20260616-001。",
+        "禁止读取 kubeconfig/DB password/Portal admin password/Tencent SecretId/SecretKey，禁止 kubectl/deploy/Tencent mutation/Package C live，禁止 latest、非 medopl namespace、非 allowlisted repo，不输出 TCR_SECRET，evidence 只写 .runtime 且 redacted。"
       ],
       "realExecutionReady": false,
       "combinedInClusterPreflight": {
@@ -2311,7 +2335,7 @@
           "contractOnlyThisCommit": true,
           "executesKubectlNow": false,
           "handWrittenKubectlApplyAllowed": false,
-          "nextGap": "Package D service Dockerfile/build context materialization",
+          "nextGap": "authorized Package D four service private image publish through repo-native runner",
           "planOnlyRunGate": "RUN_TENCENT_DEPLOY_EXECUTION=0",
           "futureApplyLiveRunGate": "RUN_TENCENT_DEPLOY_EXECUTION=1",
           "applyLiveImplementedNow": false
@@ -2365,8 +2389,8 @@
           ],
           "publishEntrypointExistsNow": true,
           "publishEntrypoint": "node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1",
-          "publishEntrypointReadiness": "fail_closed_until_service_dockerfile_build_context_materialization",
-          "publishEntrypointGap": "Package D service Dockerfile/build context materialization"
+          "publishEntrypointReadiness": "ready_for_separate_authorized_private_build_push",
+          "publishEntrypointGap": "authorized Package D four service private image publish through repo-native runner"
         },
         "secretRefUsage": {
           "deployEnvSecretRef": "medopl-package-d-deploy-env",
@@ -2424,19 +2448,21 @@
           "deployManifestEvidence": ".runtime/package-d-production-deploy/production-manifests-redacted.json"
         },
         "nextAuthorizationPrompt": [
-          "按 active truth 继续 gap-driven execution，不新增 loop。",
-          "当前 gap：Package D service Dockerfile/build context materialization。",
-          "目标：为 portal-frontend、medopl-go-backend、opl-web-gateway、opl-runtime-bridge 落地可审查 Dockerfile/build context，仍不执行 docker login/build/push。",
-          "必须保持 image publish lane 为 private build runner，固定 linux/amd64、固定 TCR refs、禁止 latest、禁止 kubeconfig/DB/Portal/Tencent mutation secrets。",
-          "完成后再授权 private build runner 执行 node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1。"
+          "授权在 private build runner 执行 Package D four service image publish。",
+          "前置：repo HEAD 必须等于最新 origin/recovery/platform-v22-trunk，工作区必须干净，Docker/buildx 可用。",
+          "允许读取 /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env，且只允许 TCR_ID、TCR_SECRET、PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF、PACKAGE_D_GO_BACKEND_IMAGE_REF、PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF、PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF。",
+          "允许执行：node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1",
+          "目标 image refs 固定为 uswccr.ccs.tencentyun.com/medopl/{portal-frontend,medopl-go-backend,opl-web-gateway,opl-runtime-bridge}:v22-package-d-20260616-001。",
+          "禁止读取 kubeconfig/DB password/Portal admin password/Tencent SecretId/SecretKey，禁止 kubectl/deploy/Tencent mutation/Package C live，禁止 latest、非 medopl namespace、非 allowlisted repo，不输出 TCR_SECRET，evidence 只写 .runtime 且 redacted。"
         ]
       },
       "nextLocalCodexPrompt": [
-        "按 active truth 继续 gap-driven execution，不新增 loop。",
-        "当前 gap：Package D service Dockerfile/build context materialization。",
-        "目标：为 portal-frontend、medopl-go-backend、opl-web-gateway、opl-runtime-bridge 落地可审查 Dockerfile/build context，仍不执行 docker login/build/push。",
-        "必须保持 image publish lane 为 private build runner，固定 linux/amd64、固定 TCR refs、禁止 latest、禁止 kubeconfig/DB/Portal/Tencent mutation secrets。",
-        "完成后再授权 private build runner 执行 node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1。"
+        "授权在 private build runner 执行 Package D four service image publish。",
+        "前置：repo HEAD 必须等于最新 origin/recovery/platform-v22-trunk，工作区必须干净，Docker/buildx 可用。",
+        "允许读取 /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env，且只允许 TCR_ID、TCR_SECRET、PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF、PACKAGE_D_GO_BACKEND_IMAGE_REF、PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF、PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF。",
+        "允许执行：node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1",
+        "目标 image refs 固定为 uswccr.ccs.tencentyun.com/medopl/{portal-frontend,medopl-go-backend,opl-web-gateway,opl-runtime-bridge}:v22-package-d-20260616-001。",
+        "禁止读取 kubeconfig/DB password/Portal admin password/Tencent SecretId/SecretKey，禁止 kubectl/deploy/Tencent mutation/Package C live，禁止 latest、非 medopl namespace、非 allowlisted repo，不输出 TCR_SECRET，evidence 只写 .runtime 且 redacted。"
       ]
     },
     "readinessGaps": [
@@ -2884,11 +2910,10 @@
       "realExecutionReady": false
     },
     "readinessGaps": [
-      "Package D service Dockerfile/build context materialization",
       "authorized Package D four service private image publish through repo-native runner",
       "authorized Package D production deploy dry-run / execution evidence through repo-native runner",
-      "post-deploy DB/connectivity smoke execution from TKE platform runner",
-      "rollback evidence after execution"
+      "post-deploy DB/smoke evidence",
+      "rollback evidence"
     ],
     "forbiddenOpsNow": [
       "Tencent mutation",
@@ -3922,12 +3947,14 @@
         ".runtime/package-d-run-scoped-job-preflight/pdrun-20260616-002/job-manifest-redacted.json"
       ]
     },
-    "nextGap": "Package D service Dockerfile/build context materialization",
+    "nextGap": "authorized Package D four service private image publish through repo-native runner",
     "nextAuthorizationPrompt": [
-      "当前 gap：Package D service Dockerfile/build context materialization。",
-      "目标：为 portal-frontend、medopl-go-backend、opl-web-gateway、opl-runtime-bridge 落地可审查 Dockerfile/build context，仍不执行 docker login/build/push。",
-      "必须保持 image publish lane 为 private build runner，固定 linux/amd64、固定 TCR refs、禁止 latest、禁止 kubeconfig/DB/Portal/Tencent mutation secrets。",
-      "完成后再授权 private build runner 执行 node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1。"
+      "授权在 private build runner 执行 Package D four service image publish。",
+      "前置：repo HEAD 必须等于最新 origin/recovery/platform-v22-trunk，工作区必须干净，Docker/buildx 可用。",
+      "允许读取 /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env，且只允许 TCR_ID、TCR_SECRET、PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF、PACKAGE_D_GO_BACKEND_IMAGE_REF、PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF、PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF。",
+      "允许执行：node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1",
+      "目标 image refs 固定为 uswccr.ccs.tencentyun.com/medopl/{portal-frontend,medopl-go-backend,opl-web-gateway,opl-runtime-bridge}:v22-package-d-20260616-001。",
+      "禁止读取 kubeconfig/DB password/Portal admin password/Tencent SecretId/SecretKey，禁止 kubectl/deploy/Tencent mutation/Package C live，禁止 latest、非 medopl namespace、非 allowlisted repo，不输出 TCR_SECRET，evidence 只写 .runtime 且 redacted。"
     ],
     "realExecutionReady": false,
     "combinedInClusterPreflight": {
@@ -3971,7 +3998,7 @@
         "contractOnlyThisCommit": true,
         "executesKubectlNow": false,
         "handWrittenKubectlApplyAllowed": false,
-        "nextGap": "Package D service Dockerfile/build context materialization",
+        "nextGap": "authorized Package D four service private image publish through repo-native runner",
         "planOnlyRunGate": "RUN_TENCENT_DEPLOY_EXECUTION=0",
         "futureApplyLiveRunGate": "RUN_TENCENT_DEPLOY_EXECUTION=1",
         "applyLiveImplementedNow": false
@@ -4025,8 +4052,8 @@
         ],
         "publishEntrypointExistsNow": true,
         "publishEntrypoint": "node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1",
-        "publishEntrypointReadiness": "fail_closed_until_service_dockerfile_build_context_materialization",
-        "publishEntrypointGap": "Package D service Dockerfile/build context materialization"
+        "publishEntrypointReadiness": "ready_for_separate_authorized_private_build_push",
+        "publishEntrypointGap": "authorized Package D four service private image publish through repo-native runner"
       },
       "secretRefUsage": {
         "deployEnvSecretRef": "medopl-package-d-deploy-env",
@@ -4084,22 +4111,24 @@
         "deployManifestEvidence": ".runtime/package-d-production-deploy/production-manifests-redacted.json"
       },
       "nextAuthorizationPrompt": [
-        "按 active truth 继续 gap-driven execution，不新增 loop。",
-        "当前 gap：Package D service Dockerfile/build context materialization。",
-        "目标：为 portal-frontend、medopl-go-backend、opl-web-gateway、opl-runtime-bridge 落地可审查 Dockerfile/build context，仍不执行 docker login/build/push。",
-        "必须保持 image publish lane 为 private build runner，固定 linux/amd64、固定 TCR refs、禁止 latest、禁止 kubeconfig/DB/Portal/Tencent mutation secrets。",
-        "完成后再授权 private build runner 执行 node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1。"
+        "授权在 private build runner 执行 Package D four service image publish。",
+        "前置：repo HEAD 必须等于最新 origin/recovery/platform-v22-trunk，工作区必须干净，Docker/buildx 可用。",
+        "允许读取 /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env，且只允许 TCR_ID、TCR_SECRET、PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF、PACKAGE_D_GO_BACKEND_IMAGE_REF、PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF、PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF。",
+        "允许执行：node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1",
+        "目标 image refs 固定为 uswccr.ccs.tencentyun.com/medopl/{portal-frontend,medopl-go-backend,opl-web-gateway,opl-runtime-bridge}:v22-package-d-20260616-001。",
+        "禁止读取 kubeconfig/DB password/Portal admin password/Tencent SecretId/SecretKey，禁止 kubectl/deploy/Tencent mutation/Package C live，禁止 latest、非 medopl namespace、非 allowlisted repo，不输出 TCR_SECRET，evidence 只写 .runtime 且 redacted。"
       ]
     },
     "nextLocalCodexPrompt": [
-      "按 active truth 继续 gap-driven execution，不新增 loop。",
-      "当前 gap：Package D service Dockerfile/build context materialization。",
-      "目标：为 portal-frontend、medopl-go-backend、opl-web-gateway、opl-runtime-bridge 落地可审查 Dockerfile/build context，仍不执行 docker login/build/push。",
-      "必须保持 image publish lane 为 private build runner，固定 linux/amd64、固定 TCR refs、禁止 latest、禁止 kubeconfig/DB/Portal/Tencent mutation secrets。",
-      "完成后再授权 private build runner 执行 node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1。"
+      "授权在 private build runner 执行 Package D four service image publish。",
+      "前置：repo HEAD 必须等于最新 origin/recovery/platform-v22-trunk，工作区必须干净，Docker/buildx 可用。",
+      "允许读取 /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env，且只允许 TCR_ID、TCR_SECRET、PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF、PACKAGE_D_GO_BACKEND_IMAGE_REF、PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF、PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF。",
+      "允许执行：node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1",
+      "目标 image refs 固定为 uswccr.ccs.tencentyun.com/medopl/{portal-frontend,medopl-go-backend,opl-web-gateway,opl-runtime-bridge}:v22-package-d-20260616-001。",
+      "禁止读取 kubeconfig/DB password/Portal admin password/Tencent SecretId/SecretKey，禁止 kubectl/deploy/Tencent mutation/Package C live，禁止 latest、非 medopl namespace、非 allowlisted repo，不输出 TCR_SECRET，evidence 只写 .runtime 且 redacted。"
     ],
     "serviceImagesPublishBoundary": {
-      "status": "repo_native_private_build_runner_contract_landed_fail_closed_on_missing_service_dockerfiles",
+      "status": "service_dockerfile_build_context_materialized_waiting_authorized_private_build_push",
       "contract": "package_d_service_images_publish_private_build_runner_boundary",
       "route": "private_build_runner",
       "command": "node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1",
@@ -4139,25 +4168,45 @@
           "service": "portal-frontend",
           "context": "services/portal/frontend",
           "dockerfile": "services/portal/frontend/Dockerfile",
-          "dockerfilePresent": false
+          "dockerignore": "services/portal/frontend/.dockerignore",
+          "dockerfilePresent": true,
+          "dockerignorePresent": true,
+          "buildCommand": "Dockerfile installs portal frontend dependencies and invokes the service package build script",
+          "runtimeCommand": "nginx -g \"daemon off;\"",
+          "runtimePort": 8080
         },
         {
           "service": "medopl-go-backend",
           "context": "services/medopl-go-backend",
           "dockerfile": "services/medopl-go-backend/Dockerfile",
-          "dockerfilePresent": false
+          "dockerignore": "services/medopl-go-backend/.dockerignore",
+          "dockerfilePresent": true,
+          "dockerignorePresent": true,
+          "buildCommand": "CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags=\"-s -w\" -o /out/medopl-go-backend ./cmd/server",
+          "runtimeCommand": "/usr/local/bin/medopl-go-backend",
+          "runtimePort": 8080
         },
         {
           "service": "opl-web-gateway",
           "context": "services/opl-web-gateway",
           "dockerfile": "services/opl-web-gateway/Dockerfile",
-          "dockerfilePresent": false
+          "dockerignore": "services/opl-web-gateway/.dockerignore",
+          "dockerfilePresent": true,
+          "dockerignorePresent": true,
+          "buildCommand": "copy package.json and src only; no dependency install required by current package.json",
+          "runtimeCommand": "npm start",
+          "runtimePort": 8080
         },
         {
           "service": "opl-runtime-bridge",
           "context": "services/opl-runtime-bridge",
           "dockerfile": "services/opl-runtime-bridge/Dockerfile",
-          "dockerfilePresent": false
+          "dockerignore": "services/opl-runtime-bridge/.dockerignore",
+          "dockerfilePresent": true,
+          "dockerignorePresent": true,
+          "buildCommand": "copy package.json and src only; no dependency install required by current package.json",
+          "runtimeCommand": "npm start",
+          "runtimePort": 8080
         }
       ],
       "allowedCommandsAfterAuthorization": [
@@ -4171,26 +4220,26 @@
         "latest tag is forbidden",
         "non-medopl namespace and non-allowlisted repos are forbidden",
         "docker build commands must use docker buildx build --platform linux/amd64",
-        "missing Dockerfile or build context fails before docker executor runs",
+        "missing Dockerfile, .dockerignore or build context fails before docker executor runs",
         "no kubeconfig, DB password, Portal admin password or Tencent SecretId/SecretKey in image publish env",
-        "no kubectl, deploy, Tencent mutation or Package C live command shape"
+        "no kubectl, deploy, Tencent mutation or Package C live command shape",
+        "each service context must include a .dockerignore excluding .runtime, .secrets, node_modules, dist, env files, pem files and kubeconfig-like files",
+        "Dockerfiles must use non-latest pinned base images and service-real build/runtime commands"
       ],
       "readiness": {
         "realExecutionReady": false,
+        "dockerfileBuildContextReady": true,
         "imagePublishReady": false,
-        "reason": "four service Dockerfile/build context materialization is missing",
-        "missingDockerfiles": [
-          "services/portal/frontend/Dockerfile",
-          "services/medopl-go-backend/Dockerfile",
-          "services/opl-web-gateway/Dockerfile",
-          "services/opl-runtime-bridge/Dockerfile"
-        ]
+        "reason": "awaiting separate private build runner authorization for docker login/build/push",
+        "missingDockerfiles": [],
+        "missingDockerignores": [],
+        "missingContexts": []
       },
-      "nextGap": "Package D service Dockerfile/build context materialization"
+      "nextGap": "authorized Package D four service private image publish through repo-native runner",
+      "publishEntrypointGap": "authorized Package D four service private image publish through repo-native runner"
     }
   },
   "readinessGaps": [
-    "Package D service Dockerfile/build context materialization",
     "authorized Package D four service private image publish through repo-native runner",
     "authorized Package D production deploy dry-run / execution evidence through repo-native runner",
     "post-deploy DB/smoke evidence",

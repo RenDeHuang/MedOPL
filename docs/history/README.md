@@ -6395,3 +6395,51 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+
+### 2026-06-16 package-d-service-dockerfile-build-context-materialization
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `093e19f2484732eb13e14f33a5a7d9d8f8c359f9`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Materialized reviewable Package D service Dockerfile/build contexts for `portal-frontend`, `medopl-go-backend`, `opl-web-gateway` and `opl-runtime-bridge`.
+- Added service-level `.dockerignore` files that exclude `.runtime`, `.secrets`, `node_modules`, `dist`, coverage, env files, pem files, kubeconfig-like files and Package D env files from image build context.
+- Kept the Package D service image publish lane as private-build-runner only: fixed `linux/amd64`, fixed non-latest TCR refs under `uswccr.ccs.tencentyun.com/medopl`, no arbitrary image ref, no non-allowlisted repo and no TKE/VPC runner Docker build/push.
+- Updated the repo-native four service image publish local gate so Dockerfile, `.dockerignore` and build context readiness are checked before a future authorized docker executor can run.
+- Did not read TCR secret, kubeconfig, DB password, Portal admin password or Tencent SecretId/SecretKey; did not run docker login/build/push, kubectl, deploy, Tencent mutation or Package C live.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs`: pass, including service Dockerfile/build context readiness assertions.
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+Can-claim:
+
+- Package D four service Dockerfile/build context materialization is closed locally for `services/portal/frontend`, `services/medopl-go-backend`, `services/opl-web-gateway` and `services/opl-runtime-bridge`.
+- The next gap is authorized Package D four service private image publish through the repo-native runner.
+
+Cannot-claim:
+
+- This repo session read secrets or kubeconfig, connected to Kubernetes API, ran kubectl, deployed, built/pushed images, executed Tencent mutation, ran Package C live or published the four service images.
+- Production Deployment/Service rollout, post-deploy smoke, rollback evidence, billing/audit ledger, Portal opening entry and workspace storage quota are not complete.
+
+landed_commit: `1ec86325d1d600a1c5a205415e778ec67ff952e2`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
