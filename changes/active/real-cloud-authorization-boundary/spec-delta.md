@@ -20,6 +20,8 @@ Target specs:
 - Package D execution boundary / preflight gate splits secret/env input into `package-d-deploy.env` and `portal-runtime.env`: deploy env is limited to TCR credentials, registry / namespace / region, cluster id and kubeconfig ref; Portal runtime env is limited to admin identity/password and PostgreSQL URL/password. The gate can judge allowlisted inputs, fixed cluster / namespace / platform pool / DB endpoint / image targets and redacted evidence, but `realExecutionReady` remains false.
 - Package D production deploy apply/live is a repo-native future-authorized entrypoint, not a hand-run kubectl path. `production-deploy-plan` requires `RUN_TENCENT_DEPLOY_EXECUTION=0`; `production-deploy-apply` / `production-deploy-live` fail closed unless a separate cloud authorization supplies `RUN_TENCENT_DEPLOY_EXECUTION=1`, target cluster `cls-fi097sy4`, namespace `medopl-platform`, platform runner pool `np-6l4nkdto`, fixed image refs and SecretRefs.
 - The Package D apply/live command plan is limited to server-side dry-run before apply, allowlisted Package D ConfigMap/Deployment/Service apply in `medopl-platform`, rollout observe for `portal-frontend`, `medopl-go-backend`, `opl-web-gateway` and `opl-runtime-bridge`, namespace-scoped deployment/service/pod smoke shape checks, and rollback plan commands using `kubectl rollout undo` for those deployments.
+- Package D readonly service reachability is a repo-native future-authorized entrypoint, not a hand-run kubectl path. `in-cluster-http-smoke` requires `RUN_TENCENT_DEPLOY_EXECUTION=0`, target cluster `cls-fi097sy4`, namespace `medopl-platform`, platform runner pool `np-6l4nkdto`, a run-scoped `medopl-service-smoke-<runid>` temporary Job, and four fixed ClusterIP service endpoints: `portal-frontend:8080/`, `medopl-go-backend:8080/readyz`, `opl-web-gateway:8080/healthz` and `opl-runtime-bridge:8080/healthz`.
+- The Package D reachability command plan is limited to readonly `kubectl get` deployment/service/pods in `medopl-platform`, `kubectl create -f -` for the single temporary smoke Job, `kubectl wait`, `kubectl logs` for allowlisted smoke containers and `kubectl delete job <run-scoped-name>` cleanup. It must reject arbitrary URLs, `kubectl exec`, deploy, rollout, rollback, build/push, Tencent mutation and Package C live.
 - Package D production manifests must provide writable runtime paths for non-root containers: `portal-frontend` nginx pid/temp paths under `/tmp/nginx`, `opl-runtime-bridge` state root under `/tmp/medopl-runtime/.runtime`, no default `/.runtime`, and a pull strategy that can pick up a republished fixed tag.
 - Package C PostgreSQL ledger canary no longer treats local-machine access to the VPC private endpoint as the goal; successful real DB canary waits until the MedOPL service runs inside the VPC.
 
@@ -34,12 +36,14 @@ Target specs:
 - `releasePlanReady=true` does not mean image build, TCR push, Kubernetes dry-run/apply, DB smoke, rollback evidence or Package D execution has happened.
 - `executionPreflightGateReady=true` does not mean real deploy execution is authorized or ready.
 - Package D production-deploy-apply/live entrypoint existence and the first authorized apply attempt do not mean rollout success, post-deploy smoke or rollback execution has happened.
+- Package D service reachability runner existence does not mean in-cluster HTTP smoke has executed or Portal external/public access exists.
 
 ## EVALS
 
 - `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --dry-run --json`
 - `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs`
 - `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs`
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs`
 - `node tests/contract/contract-test-v22-real-cloud-authorization-boundary.mjs`
 - `node tests/contract/contract-test-v22-change-package-lifecycle.mjs`
 - `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`

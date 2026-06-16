@@ -8,9 +8,27 @@ import {
   buildPackageDRunScopedJobPlan,
   runPackageDRunScopedJobPreflight,
 } from "../../support/cloud-prework/package-d-run-scoped-job-runner.js";
+import {
+  PACKAGE_D_SERVICE_REACHABILITY_COMMAND,
+  buildPackageDServiceReachabilityPlan,
+  runPackageDServiceReachabilitySmoke,
+} from "../../support/cloud-prework/package-d-service-reachability-runner.js";
 
 const kubeEnvName = ["KUBE", "CONFIG"].join("");
 const runnerImageRef = "uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-fake";
+const reachabilityRunId = "pdrun-20260617-001";
+const serviceReachabilityEndpoints = Object.freeze([
+  "http://portal-frontend.medopl-platform.svc.cluster.local:8080/",
+  "http://medopl-go-backend.medopl-platform.svc.cluster.local:8080/readyz",
+  "http://opl-web-gateway.medopl-platform.svc.cluster.local:8080/healthz",
+  "http://opl-runtime-bridge.medopl-platform.svc.cluster.local:8080/healthz",
+]);
+const serviceReachabilityContainers = Object.freeze([
+  "smoke-portal-frontend",
+  "smoke-medopl-go-backend",
+  "smoke-opl-web-gateway",
+  "smoke-opl-runtime-bridge",
+]);
 
 function assertNoSensitiveText(text = "", label = "text") {
   for (const forbidden of [
@@ -23,9 +41,11 @@ function assertNoSensitiveText(text = "", label = "text") {
     "certificate-authority-data",
     "token:",
     "raw-kubeconfig",
+    "kubectl exec",
     "kubectl apply",
     "kubectl patch",
     "kubectl scale",
+    "kubectl rollout",
     "docker build",
     "docker push",
     "CreateNodePool",
@@ -87,6 +107,88 @@ function fakeKubectlExecutor(commandLog) {
         }),
         stderr: "",
       };
+    }
+    return { status: 0, stdout: "ok\n", stderr: "" };
+  };
+}
+
+function fakeServiceReachabilityKubectlExecutor(commandLog, { failWait = false } = {}) {
+  return async ({ args, env, stdin }) => {
+    commandLog.push({
+      args,
+      env: { kubeEnvPresent: env[kubeEnvName] ? "redacted" : "" },
+      stdinClass: stdin ? "present_redacted" : "empty",
+      stdin,
+    });
+    const joined = args.join(" ");
+    assert.equal(args[0], "kubectl", "reachability_runner_must_use_kubectl_only");
+    assert.equal(joined.includes(" exec "), false, "reachability_runner_must_not_exec");
+    assert.equal(joined.includes(" apply "), false, "reachability_runner_must_not_apply");
+    assert.equal(joined.includes(" patch "), false, "reachability_runner_must_not_patch");
+    assert.equal(joined.includes(" scale "), false, "reachability_runner_must_not_scale");
+    assert.equal(joined.includes(" rollout "), false, "reachability_runner_must_not_rollout");
+    if (args.includes("create")) {
+      assert.deepEqual(args, ["kubectl", "create", "-f", "-"], "reachability_smoke_job_create_must_use_stdin_manifest");
+      const manifest = JSON.parse(stdin);
+      assert.equal(manifest.kind, "Job", "reachability_smoke_manifest_must_be_job");
+      assert.equal(manifest.metadata.name, "medopl-service-smoke-pdrun-20260617-001", "reachability_smoke_job_name_must_be_run_scoped");
+      assert.equal(manifest.metadata.namespace, "medopl-platform", "reachability_smoke_job_namespace");
+      assert.deepEqual(
+        manifest.spec.template.spec.nodeSelector,
+        { "node.tke.cloud.tencent.com/machineset": "np-6l4nkdto" },
+        "reachability_smoke_job_must_target_platform_runner_pool",
+      );
+      assert.deepEqual(manifest.spec.template.spec.containers.map((container) => container.name), serviceReachabilityContainers, "reachability_smoke_job_must_use_one_container_per_endpoint");
+      assert.deepEqual(manifest.spec.template.spec.containers.map((container) => container.args.at(-1)), serviceReachabilityEndpoints, "reachability_smoke_job_must_use_fixed_endpoints_only");
+      assert.equal(manifest.spec.template.spec.containers.every((container) => container.command.join(" ") === "curl"), true, "reachability_smoke_job_must_use_curl_without_shell");
+      assert.equal(manifest.spec.template.spec.containers.every((container) => container.args.includes("--write-out")), true, "reachability_smoke_job_must_capture_http_status");
+      assert.equal(JSON.stringify(manifest).includes("medopl-tenant-"), false, "reachability_smoke_manifest_must_not_reference_tenant_pool");
+    }
+    if (args.includes("delete")) {
+      assert.deepEqual(args, [
+        "kubectl",
+        "delete",
+        "job",
+        "medopl-service-smoke-pdrun-20260617-001",
+        "-n",
+        "medopl-platform",
+        "--ignore-not-found=true",
+        "--wait=false",
+      ], "reachability_runner_must_delete_only_the_unique_smoke_job");
+    }
+    if (args.includes("current-context")) return { status: 0, stdout: "cls-fi097sy4-context\n", stderr: "" };
+    if (args.includes("namespace")) return { status: 0, stdout: JSON.stringify({ metadata: { name: "medopl-platform" } }), stderr: "" };
+    if (args.includes("deployment")) {
+      const serviceName = args[3];
+      return {
+        status: 0,
+        stdout: JSON.stringify({
+          metadata: { name: serviceName, namespace: "medopl-platform" },
+          status: { readyReplicas: 1, replicas: 1, availableReplicas: 1 },
+        }),
+        stderr: "",
+      };
+    }
+    if (args.includes("service")) {
+      const serviceName = args[3];
+      return {
+        status: 0,
+        stdout: JSON.stringify({
+          metadata: { name: serviceName, namespace: "medopl-platform" },
+          spec: { type: "ClusterIP", ports: [{ name: "http", port: 8080 }] },
+        }),
+        stderr: "",
+      };
+    }
+    if (args.includes("pods")) return { status: 0, stdout: JSON.stringify({ items: [] }), stderr: "" };
+    if (args.includes("wait")) {
+      if (failWait) return { status: 1, stdout: "", stderr: "timed out waiting for the condition" };
+      return { status: 0, stdout: "job.batch/medopl-service-smoke-pdrun-20260617-001 condition met\n", stderr: "" };
+    }
+    if (args.includes("logs")) {
+      const containerName = args[args.indexOf("-c") + 1];
+      assert.notEqual(serviceReachabilityContainers.indexOf(containerName), -1, "logs_must_target_allowlisted_smoke_container");
+      return { status: 0, stdout: "portal-secret-like-body\nHTTP_STATUS:200\n", stderr: "" };
     }
     return { status: 0, stdout: "ok\n", stderr: "" };
   };
@@ -353,11 +455,173 @@ try {
     );
   }
 
+  await writeFile(deployEnvPath, [
+    "RUN_TENCENT_DEPLOY_EXECUTION=0",
+    "TCR_ID=100047070895",
+    "TCR_SECRET=tcr-secret-value",
+    "TENCENT_TCR_REGISTRY=uswccr.ccs.tencentyun.com",
+    "TENCENT_TCR_NAMESPACE=medopl",
+    "TENCENT_TCR_REGION=na-siliconvalley",
+    "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
+    `TENCENT_DEPLOY_KUBECONFIG_REF=${kubeconfigPath}`,
+    `PACKAGE_D_RUNNER_IMAGE_REF=${runnerImageRef}`,
+    "",
+  ].join("\n"));
+
+  assert.equal(
+    PACKAGE_D_SERVICE_REACHABILITY_COMMAND,
+    "node tests/support/cloud-prework/package-d-service-reachability-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id <runid> --mode in-cluster-http-smoke --authorized 1",
+    "reachability_runner_must_publish_single_cloud_command",
+  );
+  await assert.rejects(
+    () => buildPackageDServiceReachabilityPlan({ deployEnvPath, runtimeEnvPath, kubeconfigPath, evidenceRoot: evidenceDir, runId: reachabilityRunId, authorized: false }),
+    /package_d_service_reachability_not_authorized/,
+    "reachability_missing_authorization_must_fail_closed",
+  );
+  await assert.rejects(
+    () => buildPackageDServiceReachabilityPlan({ deployEnvPath, runtimeEnvPath, kubeconfigPath, evidenceRoot: evidenceDir, runId: "", authorized: true }),
+    /package_d_service_reachability_run_id_required/,
+    "reachability_missing_run_id_must_fail_closed",
+  );
+  await assert.rejects(
+    () => buildPackageDServiceReachabilityPlan({ deployEnvPath, runtimeEnvPath, kubeconfigPath, evidenceRoot: evidenceDir, runId: "bad/runid", authorized: true }),
+    /package_d_service_reachability_run_id_invalid/,
+    "reachability_invalid_run_id_must_fail_closed",
+  );
+  await assert.rejects(
+    () => runPackageDServiceReachabilitySmoke({
+      deployEnvPath,
+      runtimeEnvPath,
+      kubeconfigPath: path.join(tmp, "missing-kubeconfig"),
+      evidenceRoot: evidenceDir,
+      runId: reachabilityRunId,
+      authorized: true,
+      kubectlExecutor: fakeServiceReachabilityKubectlExecutor([]),
+    }),
+    /package_d_kubeconfig_missing/,
+    "reachability_missing_kubeconfig_must_fail_closed",
+  );
+
+  const reachabilityPlan = await buildPackageDServiceReachabilityPlan({
+    deployEnvPath,
+    runtimeEnvPath,
+    kubeconfigPath,
+    evidenceRoot: evidenceDir,
+    runId: reachabilityRunId,
+    authorized: true,
+  });
+  assert.equal(reachabilityPlan.ok, true, "reachability_plan_ok");
+  assert.equal(reachabilityPlan.mode, "in-cluster-http-smoke", "reachability_mode_must_be_in_cluster_http_smoke");
+  assert.equal(reachabilityPlan.target.clusterId, "cls-fi097sy4", "reachability_cluster_fixed");
+  assert.equal(reachabilityPlan.target.namespace, "medopl-platform", "reachability_namespace_fixed");
+  assert.equal(reachabilityPlan.target.platformNodePoolId, "np-6l4nkdto", "reachability_runner_pool_fixed");
+  assert.equal(reachabilityPlan.smokeJob.name, "medopl-service-smoke-pdrun-20260617-001", "reachability_smoke_job_name_run_scoped");
+  assert.equal(reachabilityPlan.smokeJob.cleanupPolicy, "delete-always-after-log-collection", "reachability_cleanup_policy_required");
+  assert.deepEqual(reachabilityPlan.endpoints.map((endpoint) => endpoint.url), serviceReachabilityEndpoints, "reachability_service_endpoints_must_be_fixed");
+  assert.equal(reachabilityPlan.boundary.runTencentDeployExecution, "0", "reachability_run_gate_must_stay_zero");
+  assert.equal(reachabilityPlan.boundary.productionDeployAllowed, false, "reachability_production_deploy_must_be_forbidden");
+  assert.equal(reachabilityPlan.boundary.rollbackAllowed, false, "reachability_rollback_must_be_forbidden");
+  assert.equal(reachabilityPlan.boundary.buildPushAllowed, false, "reachability_build_push_must_be_forbidden");
+  assert.equal(reachabilityPlan.boundary.tencentMutationAllowed, false, "reachability_tencent_mutation_must_be_forbidden");
+  assert.equal(reachabilityPlan.boundary.packageCLiveAllowed, false, "reachability_package_c_live_must_be_forbidden");
+  assert.equal(reachabilityPlan.boundary.arbitraryUrlAllowed, false, "reachability_arbitrary_url_must_be_forbidden");
+  assert.equal(reachabilityPlan.boundary.kubectlExecAllowed, false, "reachability_kubectl_exec_must_be_forbidden");
+  assert.equal(reachabilityPlan.commands.filter((command) => command.kind === "smoke_job_create").length, 1, "reachability_single_smoke_job_create_command");
+  assert.equal(reachabilityPlan.commands.some((command) => command.args.includes("exec")), false, "reachability_plan_must_not_exec");
+  assert.equal(reachabilityPlan.commands.some((command) => command.args.includes("apply")), false, "reachability_plan_must_not_apply");
+  assert.equal(reachabilityPlan.commands.some((command) => command.args.includes("rollout")), false, "reachability_plan_must_not_rollout");
+  assert.equal(reachabilityPlan.commands.some((command) => command.args.includes("patch")), false, "reachability_plan_must_not_patch");
+  assert.equal(reachabilityPlan.commands.some((command) => command.args.includes("scale")), false, "reachability_plan_must_not_scale");
+  assert.equal(reachabilityPlan.smokeJob.manifest.kind, "Job", "reachability_smoke_manifest_must_be_job");
+  assert.equal(reachabilityPlan.smokeJob.manifest.metadata.name, reachabilityPlan.smokeJob.name, "reachability_manifest_name_must_match_run_scoped_name");
+  assert.deepEqual(
+    reachabilityPlan.smokeJob.manifest.spec.template.spec.nodeSelector,
+    { "node.tke.cloud.tencent.com/machineset": "np-6l4nkdto" },
+    "reachability_smoke_manifest_must_target_runner_pool",
+  );
+  assert.equal(reachabilityPlan.smokeJob.manifest.spec.template.spec.restartPolicy, "Never", "reachability_smoke_job_restart_policy");
+  assert.deepEqual(reachabilityPlan.smokeJob.manifest.spec.template.spec.containers.map((container) => container.name), serviceReachabilityContainers, "reachability_smoke_manifest_container_names");
+  assert.equal(reachabilityPlan.smokeJob.manifest.spec.template.spec.containers.every((container) => container.image.startsWith("curlimages/curl:")), true, "reachability_smoke_image_must_be_fixed_curl_image");
+  assert.equal(reachabilityPlan.smokeJob.manifest.spec.template.spec.containers.every((container) => container.image !== "curlimages/curl:latest"), true, "reachability_smoke_image_must_not_use_latest");
+  assert.deepEqual(reachabilityPlan.smokeJob.manifest.spec.template.spec.containers.map((container) => container.args.at(-1)), serviceReachabilityEndpoints, "reachability_smoke_container_args_must_be_fixed_endpoints");
+  assert.equal(reachabilityPlan.smokeJob.manifest.spec.template.spec.containers.every((container) => container.command.join(" ") === "curl"), true, "reachability_smoke_container_must_not_use_shell");
+  assertNoSensitiveText(JSON.stringify(reachabilityPlan), "reachability_plan");
+
+  const reachabilityCommandLog = [];
+  const reachabilitySummary = await runPackageDServiceReachabilitySmoke({
+    deployEnvPath,
+    runtimeEnvPath,
+    kubeconfigPath,
+    evidenceRoot: evidenceDir,
+    runId: reachabilityRunId,
+    authorized: true,
+    kubectlExecutor: fakeServiceReachabilityKubectlExecutor(reachabilityCommandLog),
+  });
+  assert.equal(reachabilitySummary.ok, true, "reachability_summary_ok");
+  assert.equal(reachabilitySummary.reachabilityPassed, true, "reachability_must_pass");
+  assert.equal(reachabilitySummary.cleanup, "deleted_after_log_collection", "reachability_smoke_job_must_be_cleaned_after_log_collection");
+  assert.equal(reachabilitySummary.evidencePath.endsWith("readonly-service-reachability-redacted.json"), true, "reachability_evidence_path");
+  assert.equal(reachabilityCommandLog.some((entry) => entry.args.includes("create")), true, "reachability_runner_must_create_temp_smoke_job");
+  assert.equal(reachabilityCommandLog.some((entry) => entry.args.includes("logs")), true, "reachability_runner_must_collect_logs");
+  assert.equal(reachabilityCommandLog.some((entry) => entry.args.includes("delete")), true, "reachability_runner_must_cleanup_temp_smoke_job");
+  assert.equal(reachabilityCommandLog.every((entry) => entry.env.kubeEnvPresent === "redacted"), true, "reachability_kubeconfig_env_must_be_passed_but_not_exposed");
+  assertNoSensitiveText(JSON.stringify(reachabilitySummary), "reachability_summary");
+
+  const reachabilityEvidence = JSON.parse(await readFile(reachabilitySummary.evidencePath, "utf8"));
+  assert.equal(reachabilityEvidence.ok, true, "reachability_evidence_ok");
+  assert.equal(reachabilityEvidence.serviceResults.length, 4, "reachability_evidence_must_record_four_service_results");
+  assert.equal(reachabilityEvidence.serviceResults.every((result) => result.httpStatus === 200), true, "reachability_all_service_statuses_must_be_200");
+  assert.equal(reachabilityEvidence.serviceResults.every((result) => result.bodySummaryClass === "present_redacted"), true, "reachability_body_must_be_summarized_not_dumped");
+  assert.equal(JSON.stringify(reachabilityEvidence).includes("portal-secret-like-body"), false, "reachability_evidence_must_not_dump_http_body");
+  assert.equal(reachabilityEvidence.redactionAudit.tcrSecretExposed, false, "reachability_evidence_must_hide_tcr_secret");
+  assert.equal(reachabilityEvidence.redactionAudit.portalAdminPasswordExposed, false, "reachability_evidence_must_hide_portal_password");
+  assert.equal(reachabilityEvidence.redactionAudit.portalPostgresPasswordExposed, false, "reachability_evidence_must_hide_postgres_password");
+  assert.equal(reachabilityEvidence.redactionAudit.kubeconfigSecretExposed, false, "reachability_evidence_must_hide_kubeconfig");
+  assertNoSensitiveText(JSON.stringify(reachabilityEvidence), "reachability_evidence");
+
+  for (const forbiddenArg of ["--deploy", "--rollback", "--build", "--push", "--tencent-mutation", "--package-c-live", "--exec", "--apply", "--patch", "--scale"]) {
+    await assert.rejects(
+      () => buildPackageDServiceReachabilityPlan({
+        deployEnvPath,
+        runtimeEnvPath,
+        kubeconfigPath,
+        evidenceRoot: evidenceDir,
+        runId: reachabilityRunId,
+        authorized: true,
+        argv: [forbiddenArg],
+      }),
+      /package_d_service_reachability_forbidden_arg/,
+      `reachability_runner_must_reject:${forbiddenArg}`,
+    );
+  }
+
+  const reachabilityFailureCommandLog = [];
+  await assert.rejects(
+    () => runPackageDServiceReachabilitySmoke({
+      deployEnvPath,
+      runtimeEnvPath,
+      kubeconfigPath,
+      evidenceRoot: evidenceDir,
+      runId: reachabilityRunId,
+      authorized: true,
+      kubectlExecutor: fakeServiceReachabilityKubectlExecutor(reachabilityFailureCommandLog, { failWait: true }),
+    }),
+    /package_d_service_reachability_failed:smoke_job_wait_complete/,
+    "reachability_failure_after_job_create_must_fail_closed",
+  );
+  assert.equal(
+    reachabilityFailureCommandLog.some((entry) => entry.args.join(" ") === "kubectl delete job medopl-service-smoke-pdrun-20260617-001 -n medopl-platform --ignore-not-found=true --wait=false"),
+    true,
+    "reachability_failure_after_job_create_must_cleanup_unique_smoke_job",
+  );
+
   console.log(JSON.stringify({
     ok: true,
-    contract: "package_d_run_scoped_job_runner_local_gate",
+    contract: "package_d_run_scoped_job_and_service_reachability_runner_local_gate",
     runnerCommand: PACKAGE_D_RUN_SCOPED_JOB_COMMAND,
+    reachabilityRunnerCommand: PACKAGE_D_SERVICE_REACHABILITY_COMMAND,
     evidence: ".runtime/package-d-run-scoped-job-preflight/<runid>/preflight-job-redacted.json",
+    reachabilityEvidence: ".runtime/package-d-service-reachability/<runid>/readonly-service-reachability-redacted.json",
     cleanupPolicy: "delete-on-success-retain-on-failure",
     realExecutionReady: false,
   }, null, 2));

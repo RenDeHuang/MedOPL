@@ -59,6 +59,44 @@ landed 后的记录还必须补齐：
 
 ## Current Run Summaries
 
+### 2026-06-17 package-d-service-reachability-runner
+
+Status: `landed candidate / local-gated`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `1664f2e10bd71b179ce9a5bfd8b64bee492b995c`
+
+Model: `gpt-5.4`
+
+Subagents:
+
+- `explorer / gpt-5.4-mini`: read-only active truth / fixture sync check for Package D service reachability gap.
+- `explorer / gpt-5.4-mini`: read-only runner/test pattern check for Package D cloud-prework entrypoints.
+
+Scope:
+
+- Added the repo-native Package D readonly service reachability / in-cluster HTTP smoke runner: `node tests/support/cloud-prework/package-d-service-reachability-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id <runid> --mode in-cluster-http-smoke --authorized 1`.
+- The runner fail-closes unless authorized, `RUN_TENCENT_DEPLOY_EXECUTION=0`, cluster `cls-fi097sy4`, namespace `medopl-platform`, platform pool `np-6l4nkdto`, run-id shape, env allowlist and kubeconfig ref all match.
+- The runner command plan is limited to readonly `kubectl get deployment/service/pods`, creating one run-scoped `medopl-service-smoke-<runid>` curl Job, waiting/logging that Job and deleting only that Job.
+- The HTTP smoke allowlist is fixed to `portal-frontend:8080/`, `medopl-go-backend:8080/readyz`, `opl-web-gateway:8080/healthz` and `opl-runtime-bridge:8080/healthz` through ClusterIP DNS in `medopl-platform`.
+- Added the local/future-authorized gate and registered it in the cloud-future-authorized suite and verify manifest.
+- Synchronized active/delivery/change package/fixture truth so the next gap is authorized runner execution plus Portal external access strategy, not hand-written kubectl.
+- Did not read secret/kubeconfig, connect to Kubernetes API, run kubectl, deploy, build/push, execute Tencent mutation or run Package C live.
+
+Can-claim:
+
+- Package D has a repo-native readonly service reachability runner contract and local gate.
+- The runner is ready for a separately authorized cloud execution that writes redacted `.runtime/package-d-service-reachability/<runid>/readonly-service-reachability-redacted.json` evidence.
+
+Cannot-claim:
+
+- In-cluster HTTP smoke has executed.
+- External/public user access, Ingress, LoadBalancer, DNS, TLS, Portal self-service, production billing or rollback execution are complete.
+- This repo session performed new deploy, kubectl, build/push, Tencent mutation, Package C live or secret/kubeconfig reads.
+
+next_cursor: `real-cloud-authorization-boundary`
+
 ### 2026-06-17 package-d-production-deploy-success-closeout
 
 Status: `landed candidate / local-gated`

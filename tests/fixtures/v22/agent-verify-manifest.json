@@ -1404,6 +1404,7 @@
         "changes/active/real-cloud-authorization-boundary/**",
         "changes/archive/**",
         "tests/**/*.mjs",
+        "tests/support/cloud-prework/*.js",
         "tests/fixtures/v22/*.json",
         "scripts/v22-test-classification.mjs",
         "scripts/v22-verify.mjs",

@@ -11,6 +11,7 @@ Status: local_boundary_audited
 - `node tests/contract/contract-test-v22-change-package-lifecycle.mjs`: passed
 - `node tests/contract/contract-test-v22-real-cloud-authorization-boundary.mjs`: passed
 - `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs`: passed
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs`: passed
 - `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --dry-run --json`: passed
 - `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk --json`: passed
 - `npm run verify`: passed
@@ -26,7 +27,8 @@ Status: local_boundary_audited
 - Package D production deploy now has a repo-native apply/live runner entrypoint and local gate. It requires `RUN_TENCENT_DEPLOY_EXECUTION=1` for apply/live, keeps plan-only at `0`, and restricts kubectl command plans to allowlisted Package D apply, rollout observe, smoke shape checks and rollback plan commands.
 - Package D portal/runtime bridge writable path fixes are landed locally after authorized rollout diagnostics: nginx now writes pid/temp paths under `/tmp/nginx`, Runtime Bridge defaults to `/tmp/medopl-runtime/.runtime`, and production manifests mount writable `emptyDir` paths for both affected services.
 - Package D `production-deploy-apply` run `pdrun-20260616-004` is recorded as a successful in-cluster deploy: four Deployments ready `1/1`, four ClusterIP Services on `8080/http`, smoke shape checks `12/12` pass, rollback plan generated and redaction audit pass.
-- The next Package D gap is not another deploy rerun; it is readonly service reachability / in-cluster HTTP smoke plus Portal external access strategy while services remain ClusterIP-only.
+- Package D now has a repo-native readonly service reachability / in-cluster HTTP smoke runner covered by the existing run-scoped Job local/future-authorized gate. The runner is run-scoped, uses fixed ClusterIP service endpoints, writes redacted `.runtime/package-d-service-reachability/<runid>/readonly-service-reachability-redacted.json` evidence and cleans up only its temporary smoke Job.
+- The next Package D gap is not another deploy rerun; it is authorized execution of the service reachability runner plus Portal external access strategy while services remain ClusterIP-only.
 - Raw live evidence, if later authorized, must stay in `.runtime` or another approved non-git evidence sink, with only sanitized summary entering git.
 
 ## Cannot Claim
@@ -35,7 +37,7 @@ Status: local_boundary_audited
 - Any secret, provider credential, cloud resource, billing reconciliation or runtime deployment has been validated.
 - This package does not make MedOPL cloud online, production online, deploy ready, secret authorized or live-test authorized.
 - This package does not run Package D, read kubeconfig, build/push, kubectl, deploy or connect/write real PostgreSQL.
-- This package records that production deploy apply succeeded in-cluster, but it does not prove external/public user access, Ingress/LoadBalancer/DNS/TLS, Portal self-service, production billing or rollback execution.
+- This package records that production deploy apply succeeded in-cluster and that a reachability runner exists, but it does not prove the in-cluster HTTP smoke has executed, external/public user access, Ingress/LoadBalancer/DNS/TLS, Portal self-service, production billing or rollback execution.
 
 ## Archive Target
 
