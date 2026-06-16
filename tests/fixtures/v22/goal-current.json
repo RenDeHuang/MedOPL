@@ -8,12 +8,12 @@
   "last_updated_at": "2026-06-16",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "601bbc97c3d77e4aa7bb365cb60c5662582119c9",
+  "base_trunk_head": "dd76038f7667dae54bdfb9f1226cf7dfed5b9a01",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "601bbc97c3d77e4aa7bb365cb60c5662582119c9",
+  "last_landed_commit": "dd76038f7667dae54bdfb9f1226cf7dfed5b9a01",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -101,7 +101,7 @@
         "precloud-deployable-rc"
       ],
       "history_summary": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound, runner-local state-machine evidence, repository write wiring contract, gated PostgreSQL sink support path and explicit live canary runner contract have landed. Package D release plan, execution preflight gate, in-cluster runner shape gate, manifest materialization / authorization pack, bootstrap authorization pack, repo-native Kubernetes API server-side dry-run preflight runner, bootstrap apply runner, run-scoped Job runner, production deploy runner contract/local gate, four service image publish readiness and service Dockerfile/build contexts have landed. Kubernetes API connectivity passed, context/cluster matched cls-fi097sy4, medopl-platform is Active, allowlisted bootstrap resources are present, same-name Job immutable risk is removed from bootstrap apply/dry-run, and run-scoped Job execution is separate. Package D run-scoped platform runner preflight pdrun-20260616-001 passed; Package D PostgreSQL/runtime env/combined in-cluster preflight pdrun-20260616-002 also passed from the TKE/VPC runner with linux/amd64 image uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001, selector node.tke.cloud.tencent.com/machineset=np-6l4nkdto, PostgreSQL 10.66.0.21:5432 connectivity smoke, SecretRef/env availability smoke, redacted evidence and success cleanup. Cloud production-deploy-plan dry-run/preflight passed at repo HEAD 601bbc97c3d77e4aa7bb365cb60c5662582119c9 with four ConfigMaps, four Deployments and four Services for portal-frontend, medopl-go-backend, opl-web-gateway and opl-runtime-bridge, fixed image refs, SecretRefs, scheduling, rollback plan, smoke plan and redacted evidence. No secret leakage, deploy, build/push, Tencent mutation or Package C live occurred. The repo-native Package D production-deploy-apply/live single entrypoint now exists behind RUN_TENCENT_DEPLOY_EXECUTION=1 and strict kubectl allowlists. Stabilization is now blocked on explicitly authorized production deploy execution evidence, post-deploy smoke, rollback evidence, billing/audit ledger, Portal opening entry and workspace storage quota. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization.",
-      "landed_commit": "601bbc97c3d77e4aa7bb365cb60c5662582119c9"
+      "landed_commit": "dd76038f7667dae54bdfb9f1226cf7dfed5b9a01"
     },
     {
       "id": "go-control-plane-mvp-takeover",
