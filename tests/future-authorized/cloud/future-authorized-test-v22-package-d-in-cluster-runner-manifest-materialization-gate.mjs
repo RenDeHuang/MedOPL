@@ -10,11 +10,16 @@ import {
   writePackageDRunnerManifestPack,
 } from "../../support/cloud-prework/package-d-in-cluster-platform-runner-shape.js";
 import {
+  PACKAGE_D_PRODUCTION_DEPLOY_APPLY_COMMAND,
   PACKAGE_D_PRODUCTION_DEPLOY_COMMAND,
   PACKAGE_D_SERVICE_IMAGE_TARGET_TAG,
   buildPackageDProductionDeployPlan,
+  runPackageDProductionDeployExecution,
   writePackageDProductionDeployPlanEvidence,
 } from "../../support/cloud-prework/package-d-production-deploy-runner.js";
+import {
+  KUBE_ENV_NAME,
+} from "../../support/cloud-prework/package-d-kubernetes-api-preflight-runner.js";
 
 const fixedImageTag = PACKAGE_D_SERVICE_IMAGE_TARGET_TAG;
 const serviceImages = Object.freeze({
@@ -102,6 +107,17 @@ async function assertProductionDeployRunnerLocalGate() {
       "node tests/support/cloud-prework/package-d-production-deploy-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode production-deploy-plan --authorized 1",
       "runner_must_publish_single_cloud_command",
     );
+    assert.equal(
+      PACKAGE_D_PRODUCTION_DEPLOY_APPLY_COMMAND,
+      "node tests/support/cloud-prework/package-d-production-deploy-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode production-deploy-apply --run-id <runid> --authorized 1",
+      "runner_must_publish_single_cloud_apply_command",
+    );
+    const runnerSource = await readFile("tests/support/cloud-prework/package-d-production-deploy-runner.js", "utf8");
+    assert.equal(runnerSource.includes("runPackageDProductionDeployExecution"), true, "runner_cli_must_expose_apply_live_execution_path");
+    assert.equal(runnerSource.includes("args[\"run-id\"]"), true, "runner_cli_must_require_run_id_for_apply_live");
+    assert.equal(runnerSource.includes("production-deploy-apply"), true, "runner_cli_must_support_apply_mode");
+    assert.equal(runnerSource.includes("production-deploy-live"), true, "runner_cli_must_support_live_mode");
+    assert.equal(runnerSource.includes("package_d_production_deploy_kubectl_command_kind_not_allowlisted"), true, "runner_must_fail_closed_for_non_allowlisted_kubectl_kinds");
     await assert.rejects(
       () => buildPackageDProductionDeployPlan({ deployEnvPath, runtimeEnvPath, kubeconfigPath, evidenceDir, authorized: false }),
       /package_d_production_deploy_not_authorized/,
@@ -320,18 +336,129 @@ async function assertProductionDeployRunnerLocalGate() {
       ...Object.entries(serviceImages).map(([key, value]) => `${key}=${value}`),
       "",
     ].join("\n"));
+    const applyPlan = await buildPackageDProductionDeployPlan({
+      deployEnvPath,
+      runtimeEnvPath,
+      kubeconfigPath,
+      evidenceDir,
+      authorized: true,
+      mode: "production-deploy-apply",
+    });
+    assert.equal(applyPlan.mode, "production-deploy-apply", "apply_mode_must_build_authorized_command_plan");
+    assert.equal(applyPlan.command, PACKAGE_D_PRODUCTION_DEPLOY_APPLY_COMMAND, "apply_mode_must_publish_apply_command");
+    assert.equal(applyPlan.evidence.futureDeployEvidence, ".runtime/package-d-production-deploy/<runid>/deploy-redacted.json", "apply_future_deploy_evidence_path");
+    assert.equal(applyPlan.evidence.futureSmokeEvidence, ".runtime/package-d-production-deploy/<runid>/smoke-redacted.json", "apply_future_smoke_evidence_path");
+    assert.equal(applyPlan.evidence.futureRollbackEvidence, ".runtime/package-d-production-deploy/<runid>/rollback-redacted.json", "apply_future_rollback_evidence_path");
+    assert.equal(applyPlan.boundary.runTencentDeployExecution, "1", "apply_mode_must_require_run_gate_one");
+    assert.equal(applyPlan.boundary.kubectlExecutedNow, false, "apply_plan_build_must_not_execute_kubectl");
+    assert.equal(applyPlan.boundary.deployExecutedNow, false, "apply_plan_build_must_not_deploy_now");
+    assert.equal(applyPlan.commands.find((command) => command.name === "production_apply").args.includes("--dry-run=server"), false, "apply_mode_apply_command_must_not_be_dry_run");
+    assert.equal(applyPlan.commands.filter((command) => command.kind === "smoke_shape").length, 12, "apply_mode_must_plan_deployment_service_and_pod_smoke_checks");
+    for (const command of applyPlan.commands) {
+      assert.equal(command.args[0], "kubectl", `apply_command_must_use_kubectl:${command.name}`);
+      assert.equal(command.args.includes("delete"), false, `apply_command_must_not_delete:${command.name}`);
+      assert.equal(command.args.includes("patch"), false, `apply_command_must_not_patch:${command.name}`);
+      assert.equal(command.args.includes("scale"), false, `apply_command_must_not_scale:${command.name}`);
+      assert.equal(command.args.includes("--all-namespaces"), false, `apply_command_must_not_cross_namespace:${command.name}`);
+      assert.equal(command.args.join(" ").includes("medopl-tenant-"), false, `apply_command_must_not_reference_tenant_pool:${command.name}`);
+    }
+    for (const smokeCommand of applyPlan.commands.filter((command) => command.kind === "smoke_shape")) {
+      assert.equal(smokeCommand.args.includes("-n"), true, `smoke_command_must_pin_namespace:${smokeCommand.name}`);
+      assert.equal(smokeCommand.args.includes("medopl-platform"), true, `smoke_command_must_use_platform_namespace:${smokeCommand.name}`);
+    }
+
     await assert.rejects(
-      () => buildPackageDProductionDeployPlan({
+      () => runPackageDProductionDeployExecution({
         deployEnvPath,
         runtimeEnvPath,
         kubeconfigPath,
-        evidenceDir,
+        evidenceDir: path.join(tmp, "wrong-context-evidence"),
         authorized: true,
         mode: "production-deploy-apply",
+        runId: "pdrun-wrong-context",
+        kubectlExecutor: async ({ args }) => ({
+          status: 0,
+          stdout: args.join(" ").includes("config current-context") ? "wrong-cluster\n" : "{}\n",
+          stderr: "",
+        }),
       }),
-      /package_d_production_deploy_apply_not_implemented/,
-      "future_apply_mode_with_run_gate_one_must_stop_before_real_deploy_in_this_runner",
+      /package_d_production_deploy_current_context_mismatch/,
+      "execution_must_fail_closed_when_kubectl_context_does_not_match_target_cluster",
     );
+    await assert.rejects(
+      () => runPackageDProductionDeployExecution({
+        deployEnvPath,
+        runtimeEnvPath,
+        kubeconfigPath,
+        evidenceDir: path.join(tmp, "wrong-namespace-evidence"),
+        authorized: true,
+        mode: "production-deploy-apply",
+        runId: "pdrun-wrong-namespace",
+        kubectlExecutor: async ({ args }) => ({
+          status: 0,
+          stdout: args.join(" ").includes("config current-context")
+            ? "context-cls-fi097sy4\n"
+            : "{\"metadata\":{\"name\":\"other-namespace\"}}\n",
+          stderr: "",
+        }),
+      }),
+      /package_d_production_deploy_namespace_mismatch/,
+      "execution_must_fail_closed_when_namespace_read_is_not_medopl_platform",
+    );
+
+    const commandLog = [];
+    const execution = await runPackageDProductionDeployExecution({
+      deployEnvPath,
+      runtimeEnvPath,
+      kubeconfigPath,
+      evidenceDir: path.join(tmp, "execution-evidence"),
+      authorized: true,
+      mode: "production-deploy-apply",
+      runId: "pdrun-local-gate",
+      kubectlExecutor: async ({ args, stdin, env }) => {
+        commandLog.push({ args, stdin, envKeys: Object.keys(env).sort() });
+        assert.equal(args[0], "kubectl", "execution_must_use_kubectl_only");
+        assert.equal(args.includes("delete"), false, "execution_must_not_delete");
+        assert.equal(args.includes("patch"), false, "execution_must_not_patch");
+        assert.equal(args.includes("scale"), false, "execution_must_not_scale");
+        assert.equal(args.includes("exec"), false, "execution_must_not_exec");
+        assert.equal(args.join(" ").includes("medopl-tenant-"), false, "execution_must_not_reference_tenant_pool");
+        assert.deepEqual(Object.keys(env).sort(), [KUBE_ENV_NAME], "execution_env_must_only_pass_kubeconfig_path");
+        if (args.includes("apply")) {
+          assert.equal(String(stdin || "").includes(Object.values(serviceImages)[0]), true, "apply_stdin_must_use_live_image_refs");
+          assert.equal(String(stdin || "").includes("REDACTED_"), false, "apply_stdin_must_not_use_redacted_placeholders");
+        }
+        if (args.join(" ").includes("config current-context")) {
+          return { status: 0, stdout: "context-cls-fi097sy4\n", stderr: "" };
+        }
+        if (args.join(" ").includes("get namespace medopl-platform")) {
+          return { status: 0, stdout: "{\"metadata\":{\"name\":\"medopl-platform\"}}\n", stderr: "" };
+        }
+        return { status: 0, stdout: `ok ${Object.values(serviceImages)[0]}\n`, stderr: "" };
+      },
+    });
+    assert.equal(execution.ok, true, "execution_plan_with_fake_kubectl_must_pass");
+    assert.equal(execution.mode, "production-deploy-apply", "execution_mode");
+    assert.equal(execution.deployEvidencePath.endsWith("deploy-redacted.json"), true, "deploy_execution_evidence_path");
+    assert.equal(execution.smokeEvidencePath.endsWith("smoke-redacted.json"), true, "smoke_execution_evidence_path");
+    assert.equal(commandLog.some((entry) => entry.args.includes("apply") && entry.args.includes("--dry-run=server")), true, "execution_must_dry_run_before_apply");
+    assert.equal(commandLog.some((entry) => entry.args.includes("apply") && !entry.args.includes("--dry-run=server")), true, "execution_must_apply_after_dry_run");
+    assert.equal(commandLog.filter((entry) => entry.args.includes("rollout") && entry.args.includes("status")).length, 4, "execution_must_observe_four_rollouts");
+    assert.equal(commandLog.filter((entry) => entry.args[1] === "get" && ["deployment", "service", "pods"].includes(entry.args[2])).length, 12, "execution_must_run_twelve_shape_smokes");
+    const deployEvidenceText = await readFile(execution.deployEvidencePath, "utf8");
+    const smokeEvidenceText = await readFile(execution.smokeEvidencePath, "utf8");
+    assertNoSensitiveText(deployEvidenceText, "deploy_execution_evidence");
+    assertNoSensitiveText(smokeEvidenceText, "smoke_execution_evidence");
+
+    const livePlan = await buildPackageDProductionDeployPlan({
+      deployEnvPath,
+      runtimeEnvPath,
+      kubeconfigPath,
+      evidenceDir,
+      authorized: true,
+      mode: "production-deploy-live",
+    });
+    assert.equal(livePlan.mode, "production-deploy-live", "live_mode_must_share_apply_live_boundary");
     for (const forbiddenArg of ["--build", "--push", "--tencent-mutation", "--package-c-live", "--delete", "--patch", "--scale", "--arbitrary-shell"]) {
       await assert.rejects(
         () => buildPackageDProductionDeployPlan({ deployEnvPath, runtimeEnvPath, kubeconfigPath, evidenceDir, authorized: true, argv: [forbiddenArg] }),

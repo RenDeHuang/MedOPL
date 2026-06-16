@@ -59,6 +59,50 @@ landed 后的记录还必须补齐：
 
 ## Current Run Summaries
 
+### 2026-06-16 package-d-production-deploy-apply-live-runner
+
+Status: `landed candidate / local-gated`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `601bbc97c3d77e4aa7bb365cb60c5662582119c9`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Implemented the repo-native Package D `production-deploy-apply` / `production-deploy-live` runner path in `tests/support/cloud-prework/package-d-production-deploy-runner.js`.
+- Added the single later-authorized cloud command: `node tests/support/cloud-prework/package-d-production-deploy-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode production-deploy-apply --run-id <runid> --authorized 1`.
+- Kept `production-deploy-plan` at `RUN_TENCENT_DEPLOY_EXECUTION=0`; apply/live fail closed unless `RUN_TENCENT_DEPLOY_EXECUTION=1`, cluster `cls-fi097sy4`, namespace `medopl-platform`, scheduling `node.tke.cloud.tencent.com/machineset=np-6l4nkdto`, fixed image refs and SecretRefs all match.
+- Restricted apply/live command execution to `kubectl apply --server-side --dry-run=server -f -`, `kubectl apply --server-side -f -`, `kubectl rollout status deployment/<allowed-service>`, namespace-scoped `kubectl get deployment/service/pods` smoke checks, and rollback plan commands using `kubectl rollout undo deployment/<allowed-service>`.
+- Added fake-kubectl local gate coverage for run-id requirement, apply/live command allowlist, live manifest using real image refs, evidence redaction, no plaintext secret, no tenant pool, no delete/patch/scale/exec and no build/push/Tencent mutation/Package C live.
+- Standardized future deploy evidence paths under `.runtime/package-d-production-deploy/<runid>/deploy-redacted.json`, `.runtime/package-d-production-deploy/<runid>/smoke-redacted.json` and `.runtime/package-d-production-deploy/<runid>/rollback-redacted.json`.
+- Did not read secret/kubeconfig, connect to Kubernetes API, run real kubectl, deploy, build/push, execute Tencent mutation or run Package C live.
+
+Verification:
+
+- RED: focused future-authorized gate failed before the runner exposed the stricter apply/live allowlist marker.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs`: pass.
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+Can-claim:
+
+- Package D now has a repo-native `production-deploy-apply/live` single entrypoint and local/future-authorized gate.
+- The next gap is separately authorized production deploy execution evidence through that runner.
+
+Cannot-claim:
+
+- This repo session read secrets or kubeconfig, connected to Kubernetes API, ran real kubectl, deployed, built/pushed images, executed Tencent mutation, ran Package C live, completed rollout, ran post-deploy smoke or produced live rollback evidence.
+- Hand-written `kubectl apply` remains forbidden.
+
+handoff_commit: `PENDING_COMMIT`
+
+landing_gate_result: `pending final commit/push`
+
+next_cursor: `real-cloud-authorization-boundary`
+
+
 ### 2026-06-16 package-d-service-images-publish-readiness
 
 Status: `landed candidate / local-gated`

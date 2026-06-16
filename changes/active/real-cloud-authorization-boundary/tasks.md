@@ -6,6 +6,7 @@
 - [x] Step 1b: add Package D local shape gate for default-disabled deploy env, Portal runtime PostgreSQL endpoint, manifest scheduling target and rollback plan shape.
 - [x] Step 1c: add Package D reviewable release plan shape with `releasePlanReady=true` and `realExecutionReady=false`.
 - [x] Step 1d: add Package D execution boundary preflight gate for split deploy/runtime env allowlists, redaction and fixed target checks while keeping `realExecutionReady=false`.
+- [x] Step 1e: add Package D production-deploy-apply/live runner contract and local/future-authorized gate without executing deploy.
 - [ ] Step 2: receive explicit authorization for any sensitive operation class.
 - [ ] Step 3: update spec delta after authorization scope is known.
 - [x] Step 4: run local future-authorized evals.
