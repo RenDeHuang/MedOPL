@@ -6310,3 +6310,52 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+
+### 2026-06-16 package-d-production-deploy-plan-gate-and-service-images
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `03e1125d96eb4be6135aa57c202f1cd677e9e212`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Recorded the cloud production-deploy-plan fail-closed facts: `package-d-deploy.env` lacked `PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF`, `PACKAGE_D_GO_BACKEND_IMAGE_REF`, `PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF` and `PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF`; the plan-only runner also incorrectly required `RUN_TENCENT_DEPLOY_EXECUTION=1`.
+- Corrected the repo-native Package D production deploy runner contract so `production-deploy-plan` requires `RUN_TENCENT_DEPLOY_EXECUTION=0`.
+- Kept future `production-deploy-apply` / `production-deploy-live` behind `RUN_TENCENT_DEPLOY_EXECUTION=1` and an explicit not-implemented stop in this non-executing contract runner.
+- Fixed the four production service image ref contract to exact non-latest targets: `uswccr.ccs.tencentyun.com/medopl/portal-frontend:v22-package-d-20260616-001`, `uswccr.ccs.tencentyun.com/medopl/medopl-go-backend:v22-package-d-20260616-001`, `uswccr.ccs.tencentyun.com/medopl/opl-web-gateway:v22-package-d-20260616-001` and `uswccr.ccs.tencentyun.com/medopl/opl-runtime-bridge:v22-package-d-20260616-001`.
+- Confirmed the repo currently has only the Package D runner image publish lane; four service image publish readiness remains the next gap.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs`: pass.
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+Can-claim:
+
+- Package D production-deploy-plan is plan-only again and must keep `RUN_TENCENT_DEPLOY_EXECUTION=0`.
+- Future apply/live mode is still a separate authorization boundary requiring `RUN_TENCENT_DEPLOY_EXECUTION=1`.
+- The four Package D service image refs now have fixed non-latest TCR targets under `uswccr.ccs.tencentyun.com/medopl`.
+
+Cannot-claim:
+
+- This repo session read secrets or kubeconfig, connected to Kubernetes API, ran kubectl, deployed, built/pushed images, executed Tencent mutation or ran Package C live.
+- The four service images have been published, production Deployment/Service rollout has run, post-deploy smoke has run, rollback evidence exists, or Package D realExecutionReady is true.
+
+landed_commit: `0e2f79194a5d6fa4f7723796200df95f34a4b5a1`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
