@@ -172,6 +172,54 @@ async function assertProductionDeployRunnerLocalGate() {
         { secretRef: { name: "medopl-package-d-deploy-env" } },
         { secretRef: { name: "medopl-portal-runtime-env" } },
       ], "deployment_must_use_secret_refs_not_plain_secret_values");
+      assert.equal(podSpec.containers[0].imagePullPolicy, "Always", "deployment_must_pull_fixed_tag_digest_again_on_rollout");
+      if (deployment.metadata.name === "portal-frontend") {
+        assert.deepEqual(
+          podSpec.volumes,
+          [{ name: "portal-nginx-runtime", emptyDir: {} }],
+          "portal_frontend_must_mount_writable_nginx_runtime_dir",
+        );
+        assert.deepEqual(
+          podSpec.containers[0].volumeMounts,
+          [{ name: "portal-nginx-runtime", mountPath: "/tmp/nginx" }],
+          "portal_frontend_must_mount_tmp_nginx",
+        );
+        assert.deepEqual(podSpec.securityContext, { fsGroup: 101 }, "portal_frontend_must_set_nginx_fs_group");
+        assert.deepEqual(
+          podSpec.containers[0].securityContext,
+          { runAsUser: 101, runAsGroup: 101, allowPrivilegeEscalation: false },
+          "portal_frontend_must_run_as_nginx_user_not_root",
+        );
+      }
+      if (deployment.metadata.name === "opl-runtime-bridge") {
+        const configMap = plan.manifests.items.find((item) => item.kind === "ConfigMap" && item.metadata.name === "opl-runtime-bridge-config");
+        assert.equal(
+          configMap.data.PORTAL_RUNTIME_BRIDGE_STATE_ROOT,
+          "/tmp/medopl-runtime/.runtime",
+          "runtime_bridge_config_must_set_writable_state_root",
+        );
+        assert.deepEqual(
+          podSpec.volumes,
+          [{ name: "opl-runtime-bridge-runtime", emptyDir: {} }],
+          "runtime_bridge_must_mount_writable_runtime_dir",
+        );
+        assert.deepEqual(
+          podSpec.containers[0].volumeMounts,
+          [{ name: "opl-runtime-bridge-runtime", mountPath: "/tmp/medopl-runtime" }],
+          "runtime_bridge_must_mount_tmp_medopl_runtime",
+        );
+        assert.deepEqual(
+          podSpec.containers[0].env,
+          [{ name: "PORTAL_RUNTIME_BRIDGE_STATE_ROOT", value: "/tmp/medopl-runtime/.runtime" }],
+          "runtime_bridge_must_set_writable_state_root_env",
+        );
+        assert.deepEqual(podSpec.securityContext, { fsGroup: 1000 }, "runtime_bridge_must_set_node_fs_group");
+        assert.deepEqual(
+          podSpec.containers[0].securityContext,
+          { runAsUser: 1000, runAsGroup: 1000, allowPrivilegeEscalation: false },
+          "runtime_bridge_must_run_as_node_user_not_root",
+        );
+      }
       assert.equal(podSpec.containers[0].image.startsWith("REDACTED_"), true, "public_plan_manifest_must_redact_service_image_ref");
     }
 

@@ -41,6 +41,15 @@ const IMAGE_PULL_SECRET = "medopl-tcr-pull-secret";
 const DEPLOY_CONFIG_SUFFIX = "config";
 const FIXED_TCR_REGISTRY = "uswccr.ccs.tencentyun.com";
 const FIXED_TCR_NAMESPACE = "medopl";
+const PORTAL_NGINX_RUNTIME_VOLUME = "portal-nginx-runtime";
+const PORTAL_NGINX_RUNTIME_PATH = "/tmp/nginx";
+const PORTAL_NGINX_UID = 101;
+const PORTAL_NGINX_GID = 101;
+const OPL_RUNTIME_BRIDGE_RUNTIME_VOLUME = "opl-runtime-bridge-runtime";
+const OPL_RUNTIME_BRIDGE_RUNTIME_MOUNT_PATH = "/tmp/medopl-runtime";
+const OPL_RUNTIME_BRIDGE_STATE_ROOT = "/tmp/medopl-runtime/.runtime";
+const OPL_RUNTIME_BRIDGE_UID = 1000;
+const OPL_RUNTIME_BRIDGE_GID = 1000;
 export const PACKAGE_D_SERVICE_IMAGE_TARGET_TAG = "v22-package-d-20260616-001";
 const REQUIRED_PRODUCTION_DEPLOY_ENV_KEYS = Object.freeze([
   ...DEPLOY_ENV_KEYS,
@@ -173,6 +182,17 @@ function parseImageRef(imageRef = "", { deployEnv, expectedRepository }) {
 }
 
 function serviceConfigMap(service) {
+  const data = {
+    MEDOPL_COMPONENT: service.name,
+    TARGET_CLUSTER_ID: FIXED_CLUSTER_ID,
+    TARGET_NAMESPACE: FIXED_NAMESPACE,
+    TARGET_PLATFORM_NODE_POOL_ID: FIXED_PLATFORM_NODE_POOL_ID,
+    POSTGRES_ENDPOINT: FIXED_POSTGRES_ENDPOINT,
+    PACKAGE_D_DEPLOYMENT_MODE: "production",
+  };
+  if (service.name === "opl-runtime-bridge") {
+    data.PORTAL_RUNTIME_BRIDGE_STATE_ROOT = OPL_RUNTIME_BRIDGE_STATE_ROOT;
+  }
   return {
     apiVersion: "v1",
     kind: "ConfigMap",
@@ -184,18 +204,53 @@ function serviceConfigMap(service) {
         "app.kubernetes.io/part-of": "medopl-package-d",
       },
     },
-    data: {
-      MEDOPL_COMPONENT: service.name,
-      TARGET_CLUSTER_ID: FIXED_CLUSTER_ID,
-      TARGET_NAMESPACE: FIXED_NAMESPACE,
-      TARGET_PLATFORM_NODE_POOL_ID: FIXED_PLATFORM_NODE_POOL_ID,
-      POSTGRES_ENDPOINT: FIXED_POSTGRES_ENDPOINT,
-      PACKAGE_D_DEPLOYMENT_MODE: "production",
-    },
+    data,
   };
 }
 
 function serviceDeployment({ service, imageRef }) {
+  const podSpec = {
+    serviceAccountName: PACKAGE_D_IN_CLUSTER_PLATFORM_RUNNER_SHAPE.serviceAccountName,
+    nodeSelector: PACKAGE_D_IN_CLUSTER_PLATFORM_RUNNER_SHAPE.scheduling.nodeSelector,
+    imagePullSecrets: [{ name: IMAGE_PULL_SECRET }],
+    containers: [{
+      name: service.name,
+      image: imageRef,
+      imagePullPolicy: "Always",
+      ports: [{ name: "http", containerPort: service.port }],
+      envFrom: [
+        { configMapRef: { name: `${service.name}-${DEPLOY_CONFIG_SUFFIX}` } },
+        { secretRef: { name: DEPLOY_SECRET_REF } },
+        { secretRef: { name: RUNTIME_SECRET_REF } },
+      ],
+      readinessProbe: {
+        httpGet: { path: service.smokePath, port: "http" },
+        initialDelaySeconds: 5,
+        periodSeconds: 10,
+      },
+    }],
+  };
+  if (service.name === "portal-frontend") {
+    podSpec.securityContext = { fsGroup: PORTAL_NGINX_GID };
+    podSpec.volumes = [{ name: PORTAL_NGINX_RUNTIME_VOLUME, emptyDir: {} }];
+    podSpec.containers[0].securityContext = {
+      runAsUser: PORTAL_NGINX_UID,
+      runAsGroup: PORTAL_NGINX_GID,
+      allowPrivilegeEscalation: false,
+    };
+    podSpec.containers[0].volumeMounts = [{ name: PORTAL_NGINX_RUNTIME_VOLUME, mountPath: PORTAL_NGINX_RUNTIME_PATH }];
+  }
+  if (service.name === "opl-runtime-bridge") {
+    podSpec.securityContext = { fsGroup: OPL_RUNTIME_BRIDGE_GID };
+    podSpec.volumes = [{ name: OPL_RUNTIME_BRIDGE_RUNTIME_VOLUME, emptyDir: {} }];
+    podSpec.containers[0].env = [{ name: "PORTAL_RUNTIME_BRIDGE_STATE_ROOT", value: OPL_RUNTIME_BRIDGE_STATE_ROOT }];
+    podSpec.containers[0].securityContext = {
+      runAsUser: OPL_RUNTIME_BRIDGE_UID,
+      runAsGroup: OPL_RUNTIME_BRIDGE_GID,
+      allowPrivilegeEscalation: false,
+    };
+    podSpec.containers[0].volumeMounts = [{ name: OPL_RUNTIME_BRIDGE_RUNTIME_VOLUME, mountPath: OPL_RUNTIME_BRIDGE_RUNTIME_MOUNT_PATH }];
+  }
   return {
     apiVersion: "apps/v1",
     kind: "Deployment",
@@ -221,27 +276,7 @@ function serviceDeployment({ service, imageRef }) {
             "app.kubernetes.io/part-of": "medopl-package-d",
           },
         },
-        spec: {
-          serviceAccountName: PACKAGE_D_IN_CLUSTER_PLATFORM_RUNNER_SHAPE.serviceAccountName,
-          nodeSelector: PACKAGE_D_IN_CLUSTER_PLATFORM_RUNNER_SHAPE.scheduling.nodeSelector,
-          imagePullSecrets: [{ name: IMAGE_PULL_SECRET }],
-          containers: [{
-            name: service.name,
-            image: imageRef,
-            imagePullPolicy: "IfNotPresent",
-            ports: [{ name: "http", containerPort: service.port }],
-            envFrom: [
-              { configMapRef: { name: `${service.name}-${DEPLOY_CONFIG_SUFFIX}` } },
-              { secretRef: { name: DEPLOY_SECRET_REF } },
-              { secretRef: { name: RUNTIME_SECRET_REF } },
-            ],
-            readinessProbe: {
-              httpGet: { path: service.smokePath, port: "http" },
-              initialDelaySeconds: 5,
-              periodSeconds: 10,
-            },
-          }],
-        },
+        spec: podSpec,
       },
     },
   };
@@ -315,6 +350,33 @@ function assertManifestBoundary(manifests = {}, { allowRedactedImages = false } 
       throw new Error("package_d_production_manifest_uses_retired_selector");
     }
     const container = podSpec.containers?.[0] || {};
+    if (container.imagePullPolicy !== "Always") {
+      throw new Error("package_d_production_manifest_image_pull_policy_mismatch");
+    }
+    if (item.metadata?.name === "portal-frontend") {
+      const mount = container.volumeMounts?.find((candidate) => candidate.name === PORTAL_NGINX_RUNTIME_VOLUME);
+      const volume = podSpec.volumes?.find((candidate) => candidate.name === PORTAL_NGINX_RUNTIME_VOLUME);
+      if (mount?.mountPath !== PORTAL_NGINX_RUNTIME_PATH || !volume?.emptyDir) {
+        throw new Error("package_d_production_manifest_portal_nginx_writable_path_missing");
+      }
+      if (podSpec.securityContext?.fsGroup !== PORTAL_NGINX_GID || container.securityContext?.runAsUser === 0) {
+        throw new Error("package_d_production_manifest_portal_nginx_nonroot_context_missing");
+      }
+    }
+    if (item.metadata?.name === "opl-runtime-bridge") {
+      const mount = container.volumeMounts?.find((candidate) => candidate.name === OPL_RUNTIME_BRIDGE_RUNTIME_VOLUME);
+      const volume = podSpec.volumes?.find((candidate) => candidate.name === OPL_RUNTIME_BRIDGE_RUNTIME_VOLUME);
+      const stateRoot = container.env?.find((candidate) => candidate.name === "PORTAL_RUNTIME_BRIDGE_STATE_ROOT")?.value;
+      if (mount?.mountPath !== OPL_RUNTIME_BRIDGE_RUNTIME_MOUNT_PATH || !volume?.emptyDir) {
+        throw new Error("package_d_production_manifest_runtime_bridge_writable_path_missing");
+      }
+      if (stateRoot !== OPL_RUNTIME_BRIDGE_STATE_ROOT || stateRoot.startsWith("/.runtime")) {
+        throw new Error("package_d_production_manifest_runtime_bridge_state_root_mismatch");
+      }
+      if (podSpec.securityContext?.fsGroup !== OPL_RUNTIME_BRIDGE_GID || container.securityContext?.runAsUser === 0) {
+        throw new Error("package_d_production_manifest_runtime_bridge_nonroot_context_missing");
+      }
+    }
     if (!allowRedactedImages && String(container.image || "").startsWith("REDACTED_")) {
       throw new Error("package_d_production_live_manifest_redacted_image_forbidden");
     }

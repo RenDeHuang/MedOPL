@@ -59,6 +59,49 @@ landed 后的记录还必须补齐：
 
 ## Current Run Summaries
 
+### 2026-06-16 package-d-container-writable-path-fixes
+
+Status: `landed candidate / local-gated`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `4fca0092cca25ed708dbb7be6f712733ab57933c`
+
+Model: `gpt-5.4`
+
+Subagents:
+
+- `explorer / inherited model`: read-only portal nginx writable path investigation.
+- `explorer / inherited model`: read-only Runtime Bridge writable state-root investigation.
+
+Scope:
+
+- Recorded the authorized Package D `production-deploy-apply` attempt `pdrun-20260616-003`: four services were applied, `medopl-go-backend` and `opl-web-gateway` reached ready, while `portal-frontend` failed on nginx `/run/nginx.pid` permission denied and `opl-runtime-bridge` failed on `/.runtime` EACCES.
+- Added `services/portal/frontend/nginx.conf` and updated the portal Dockerfile so nginx pid/temp paths use `/tmp/nginx` while continuing to run as nginx.
+- Updated Runtime Bridge container defaults so `PORTAL_RUNTIME_BRIDGE_STATE_ROOT` uses `/tmp/medopl-runtime/.runtime` and the image prepares that path for the `node` user.
+- Updated Package D production manifest materialization to mount writable `emptyDir` paths for the two affected services, inject the Runtime Bridge state-root env, keep non-root security contexts and use `imagePullPolicy: Always` for fixed-tag republish.
+- Strengthened future-authorized gates so portal nginx does not write `/run/nginx.pid`, Runtime Bridge does not default to `/.runtime`, production manifests include the needed writable paths, and tenant pool / plaintext secret guards remain in place.
+
+Verification:
+
+- RED: `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs` failed before portal nginx config existed.
+- RED: `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs` failed before portal writable `emptyDir` was materialized.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs`: pass.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs`: pass.
+- Final `npm run verify` and `npm run closeout:check -- --json` are required before push.
+
+Can-claim:
+
+- The local code/manifest contract now fixes the two writable path blockers observed during the first Package D production apply attempt.
+- The next gap is authorized private build runner republish for `portal-frontend` and `opl-runtime-bridge`, followed by authorized repo-native `production-deploy-apply` rerun.
+
+Cannot-claim:
+
+- This repo session did not read secrets or kubeconfig, connect to Kubernetes API, run kubectl, deploy, build/push, execute Tencent mutation or run Package C live.
+- The fixed images have not been published by this repo session, rollout has not completed, post-deploy smoke has not passed and rollback evidence does not exist.
+
+next_cursor: `real-cloud-authorization-boundary`
+
 ### 2026-06-16 package-d-service-images-publish-readiness
 
 Status: `landed candidate / local-gated`

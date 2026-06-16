@@ -24,6 +24,7 @@ Status: local_boundary_audited
 - The post-boundary sequence is locked as `mock/snapshot provider -> readonly quote -> dry-run plan -> readonly inventory -> authorized create/release -> Package D deploy readiness planning for platform pool and VPC PostgreSQL -> authorized deploy -> canary / QA / status update`.
 - Package D deploy readiness planning is fixed for stable上线: cluster `cls-fi097sy4`, platform pool `np-cbk784r8`, VPC PostgreSQL `10.66.0.21:5432`, deploy secret/env allowlist, default-disabled deploy gate and readiness gaps.
 - Package D production deploy now has a repo-native apply/live runner entrypoint and local gate. It requires `RUN_TENCENT_DEPLOY_EXECUTION=1` for apply/live, keeps plan-only at `0`, and restricts kubectl command plans to allowlisted Package D apply, rollout observe, smoke shape checks and rollback plan commands.
+- Package D portal/runtime bridge writable path fixes are landed locally after authorized rollout diagnostics: nginx now writes pid/temp paths under `/tmp/nginx`, Runtime Bridge defaults to `/tmp/medopl-runtime/.runtime`, and production manifests mount writable `emptyDir` paths for both affected services.
 - Raw live evidence, if later authorized, must stay in `.runtime` or another approved non-git evidence sink, with only sanitized summary entering git.
 
 ## Cannot Claim
@@ -32,7 +33,7 @@ Status: local_boundary_audited
 - Any secret, provider credential, cloud resource, billing reconciliation or runtime deployment has been validated.
 - This package does not make MedOPL cloud online, production online, deploy ready, secret authorized or live-test authorized.
 - This package does not run Package D, read kubeconfig, build/push, kubectl, deploy or connect/write real PostgreSQL.
-- This package does not prove production deploy execution, rollout success, post-deploy smoke or rollback execution.
+- This package records that production deploy apply was authorized and reached rollout, but it does not prove rollout success, post-deploy smoke or rollback execution.
 
 ## Archive Target
 

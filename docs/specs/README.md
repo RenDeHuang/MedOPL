@@ -2052,6 +2052,8 @@ Package D manifest / scheduling shape gate 必须把 Portal / control-plane 等�
 
 当前可审查 Package D release plan shape 覆盖四个 platform service image target：`portal-frontend`、`medopl-go-backend`、`opl-web-gateway`、`opl-runtime-bridge`。每个 target 必须声明 image build plan、唯一 tag rule、TCR registry / namespace / region shape、Kubernetes deployment / service / config / secretRef shape、platform pool scheduling、runtime env secretRef、expected version marker 和 owner guard。该 shape 可把 `releasePlanReady` 推进到 true；`realExecutionReady` 仍必须保持 false，直到单独授权读取 deploy secret / kubeconfig、build/push、kubectl dry-run/apply、runtime smoke 和 rollback evidence。
 
+Package D production manifests 必须显式处理非 root 容器的可写运行目录。`portal-frontend` 的 nginx pid/temp/cache/client body 路径必须落在可写目录（当前 `/tmp/nginx`）并由 Deployment 挂载 writable `emptyDir`；`opl-runtime-bridge` 的 state root 必须落在可写目录（当前 `/tmp/medopl-runtime/.runtime`）并由 Deployment 注入非 secret env / writable `emptyDir`，禁止默认写 `/.runtime`。固定 tag 重发时 production Deployment 必须使用受控拉取策略，避免节点继续复用旧 digest。
+
 OPL / Portal / Gateway / Runtime Agent target ownership 必须同时订阅 [spec:v22-opl-deployment-ownership-release-plan-boundary](#spec-v22-opl-deployment-ownership-release-plan-boundary)。该 Level 4 子合同把 target 分为 `platform_service_target` 和 `workspace_runtime_target`：平台服务必须有 `ownerRef/operationId`，但不强制 `workspaceId/resourceBindingId`；workspace runtime target 必须额外绑定 `workspaceId/resourceBindingId`。只有 `k8s-app/qcloud-app`、deployment 名字、namespace、IP、创建时间或人工记忆时必须 fail-closed。
 
 release plan 顶层字段：

@@ -11,7 +11,7 @@ Machine boundary: 本文是人读交付入口。当前执行 cursor、branch ove
 
 最近 landed 的 `feat/v22-slide-09-precloud-readiness` 已关闭 pre-cloud readiness 本地闭环，并把临时 slide baton 折叠为 history summary；默认 current bundle 仍保留 slide-01 storage regression、slide-02 runtime real API regression、slide-03 account/wallet/billing regression、slide-04 workspace/files regression、slide-05 resource lifecycle regression、slide-06 OPL entry runtime regression、slide-07 run/artifact/trace regression 和 slide-08 admin ops regression 作为防回归命令。
 
-后续真实云工作不得继承 slide authority，也不得跳过产品化路线图；Go control-plane MVP takeover、precloud-deployable-rc、local SaaS backend RC 和 local Portal/OPL delivery RC 均只提供本地 RC evidence。下一步仍留在 `real-cloud-authorization-boundary`，下一步进入单独授权的 production deploy execution evidence，通过 repo-native `production-deploy-apply` runner 收集 deploy/smoke/rollback evidence 后再推进 productionization plan；当前 cursor 不授权新的 Tencent mutation、kubectl、deploy、build/push 或手写 Package D execution。
+后续真实云工作不得继承 slide authority，也不得跳过产品化路线图；Go control-plane MVP takeover、precloud-deployable-rc、local SaaS backend RC 和 local Portal/OPL delivery RC 均只提供本地 RC evidence。下一步仍留在 `real-cloud-authorization-boundary`：先单独授权 private build runner 重新发布 `portal-frontend` 和 `opl-runtime-bridge` 两个服务镜像，再单独授权 repo-native `production-deploy-apply` rerun 收集 deploy/smoke/rollback evidence 后推进 productionization plan；当前 cursor 不授权新的 Tencent mutation、kubectl、deploy、build/push 或手写 Package D execution。
 
 ## Default Verification
 
@@ -79,8 +79,10 @@ mock/snapshot provider
 -> Package D production deploy runner contract/local gate corrected: `production-deploy-plan` must keep `RUN_TENCENT_DEPLOY_EXECUTION=0`, future apply/live requires `1`, and the four service image refs are fixed to `uswccr.ccs.tencentyun.com/medopl/{portal-frontend,medopl-go-backend,opl-web-gateway,opl-runtime-bridge}:v22-package-d-20260616-001`
 -> Package D four service Dockerfile/build contexts and service-level .dockerignore files are materialized; do not use the TKE/VPC deploy runner for docker build/push and do not hand-run ad hoc build/push
 -> Package D production-deploy-plan dry-run/preflight passed at repo HEAD `601bbc97c3d77e4aa7bb365cb60c5662582119c9`: generated four ConfigMaps, four Deployments and four Services for `portal-frontend`, `medopl-go-backend`, `opl-web-gateway` and `opl-runtime-bridge`; image refs, SecretRefs, scheduling, rollback plan, smoke plan and redaction passed; no true apply/rollout/smoke/rollback/build-push/Tencent mutation/Package C live
--> repo-native `production-deploy-apply/live` single entrypoint landed locally; next gap is separately authorized production deploy execution evidence through that runner; do not hand-run kubectl apply
--> separately authorized production deploy execution evidence
+-> repo-native `production-deploy-apply/live` single entrypoint landed locally
+-> first authorized `production-deploy-apply` reached live apply on `pdrun-20260616-003`; `medopl-go-backend` and `opl-web-gateway` became ready, while `portal-frontend` and `opl-runtime-bridge` blocked rollout on writable path failures
+-> local writable path fixes landed for portal nginx `/tmp/nginx`, Runtime Bridge `/tmp/medopl-runtime/.runtime`, production manifest emptyDir/env/securityContext and fixed-tag `imagePullPolicy: Always`
+-> next gap is separately authorized two-service private image republish, then separately authorized repo-native `production-deploy-apply` rerun `pdrun-20260616-004`; do not hand-run kubectl apply
 -> productionize PostgreSQL live canary after service runs inside VPC / billing-audit ledger / Portal opening entry / workspace storage quota
 -> authorized deploy
 -> canary / QA / status update

@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical, so canonical ownership / billing truth remains PostgreSQL resource_bindings / cloud_operations ledger, not cloud tags. Package C PostgreSQL ledger lower bound, runner-local state-machine evidence, repository write wiring and gated PostgreSQL sink support are landed; the earlier direct DB canary from outside VPC failed closed at connection preflight, so successful DB canary waits for execution inside TKE/VPC. Package D deploy readiness now has bootstrap resources, run-scoped platform runner preflight, PostgreSQL/runtime env/combined in-cluster preflight and production-deploy-plan dry-run/preflight proven from the cloud. Run pdrun-20260616-002 at repo HEAD 005e522c743244945a5c289cae7ce73b6a20d4a7 used selector node.tke.cloud.tencent.com/machineset=np-6l4nkdto and image uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001; image pull/run, PostgreSQL 10.66.0.21:5432 connectivity smoke, package_d_secretref_env_availability_smoke, Job completion, Job cleanup deleted_on_success / NotFound after delete and redaction audit all passed. Cloud production-deploy-plan then passed at repo HEAD 601bbc97c3d77e4aa7bb365cb60c5662582119c9: deploy plan ok, manifest shape passed, generated a Kubernetes List containing four ConfigMaps, four Deployments and four Services for portal-frontend, medopl-go-backend, opl-web-gateway and opl-runtime-bridge; runner image and four service image refs matched the fixed Package D contract; SecretRefs were medopl-package-d-deploy-env, medopl-portal-runtime-env and medopl-tcr-pull-secret; scheduling stayed on node.tke.cloud.tencent.com/machineset=np-6l4nkdto; rollback and smoke plans were generated; no true apply, rollout, smoke, rollback, build/push, Tencent mutation or Package C live occurred. Package D realExecutionReady remains false. The final production deploy execution authorization pack is recorded, and the repo-native production-deploy-apply/live single entrypoint is now implemented behind RUN_TENCENT_DEPLOY_EXECUTION=1 with allowlisted kubectl apply, rollout, smoke and rollback command plans. This repo session did not execute kubectl or deploy; the next gap is separately authorized production deploy execution evidence through that runner. Do not hand-run kubectl apply. New DB secret read, Tencent mutation, kubeconfig read, kubectl apply/deploy execution, build/push, Package D production execution and live-test remain blocked without separate explicit authorization.",
+  "current_problem": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; canonical ownership / billing truth remains PostgreSQL resource_bindings / cloud_operations ledger. Package D deploy readiness has bootstrap resources, run-scoped platform runner preflight, PostgreSQL/runtime env/combined in-cluster preflight and production-deploy-plan dry-run/preflight proven from the cloud. A separately authorized Package D production-deploy-apply attempt pdrun-20260616-003 reached real Kubernetes apply for the four services in medopl-platform on cls-fi097sy4, and medopl-go-backend plus opl-web-gateway reached ready 1/1, but rollout did not complete because portal-frontend crashed on nginx /run/nginx.pid permission denied and opl-runtime-bridge crashed on mkdir '/.runtime' EACCES. RUN_TENCENT_DEPLOY_EXECUTION was restored to 0 and readonly diagnostics evidence is .runtime/package-d-production-deploy/pdrun-20260616-003-diagnostics/readonly-diagnostics-redacted.json. This local session fixes the two writable-path contracts without reading secrets/kubeconfig, connecting to Kubernetes API, running kubectl, deploying, build/push, Tencent mutation or Package C live. The next gap is to separately authorize private build runner republish for portal-frontend and opl-runtime-bridge fixed linux/amd64 images, then separately authorize repo-native production-deploy-apply rerun pdrun-20260616-004. Do not hand-run kubectl apply.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -100,7 +100,7 @@
       "depends_on": [
         "precloud-deployable-rc"
       ],
-      "history_summary": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound, runner-local state-machine evidence, repository write wiring contract, gated PostgreSQL sink support path and explicit live canary runner contract have landed. Package D release plan, execution preflight gate, in-cluster runner shape gate, manifest materialization / authorization pack, bootstrap authorization pack, repo-native Kubernetes API server-side dry-run preflight runner, bootstrap apply runner, run-scoped Job runner, production deploy runner contract/local gate, four service image publish readiness and service Dockerfile/build contexts have landed. Kubernetes API connectivity passed, context/cluster matched cls-fi097sy4, medopl-platform is Active, allowlisted bootstrap resources are present, same-name Job immutable risk is removed from bootstrap apply/dry-run, and run-scoped Job execution is separate. Package D run-scoped platform runner preflight pdrun-20260616-001 passed; Package D PostgreSQL/runtime env/combined in-cluster preflight pdrun-20260616-002 also passed from the TKE/VPC runner with linux/amd64 image uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001, selector node.tke.cloud.tencent.com/machineset=np-6l4nkdto, PostgreSQL 10.66.0.21:5432 connectivity smoke, SecretRef/env availability smoke, redacted evidence and success cleanup. Cloud production-deploy-plan dry-run/preflight passed at repo HEAD 601bbc97c3d77e4aa7bb365cb60c5662582119c9 with four ConfigMaps, four Deployments and four Services for portal-frontend, medopl-go-backend, opl-web-gateway and opl-runtime-bridge, fixed image refs, SecretRefs, scheduling, rollback plan, smoke plan and redacted evidence. No secret leakage, deploy, build/push, Tencent mutation or Package C live occurred. The repo-native Package D production-deploy-apply/live single entrypoint now exists behind RUN_TENCENT_DEPLOY_EXECUTION=1 and strict kubectl allowlists. Stabilization is now blocked on explicitly authorized production deploy execution evidence, post-deploy smoke, rollback evidence, billing/audit ledger, Portal opening entry and workspace storage quota. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization.",
+      "history_summary": "Package C live canary and Package D preflight/plan readiness are landed. Package D production-deploy-apply pdrun-20260616-003 reached real apply for four services, medopl-go-backend and opl-web-gateway became ready, but portal-frontend and opl-runtime-bridge blocked rollout on writable path failures. Local fixes now set portal nginx /tmp paths, Runtime Bridge /tmp state root, production manifest emptyDir/env/securityContext and imagePullPolicy Always. Next gaps are authorized two-service private image republish and authorized repo-native production-deploy-apply rerun; new secret/kubeconfig, kubectl, deploy, build/push and live-test remain separately authorized boundaries.",
       "landed_commit": "dd76038f7667dae54bdfb9f1226cf7dfed5b9a01"
     },
     {
@@ -171,7 +171,7 @@
     "gap_id": "real-cloud-authorization-boundary",
     "stage": "S7 real-cloud authorization boundary before readiness",
     "cursor_eligible": false,
-    "problem": "Package D production-deploy-plan dry-run/preflight has passed on the cloud runner at repo HEAD 601bbc97c3d77e4aa7bb365cb60c5662582119c9. This local closeout implements the repo-native production-deploy-apply/live single entrypoint and local/future-authorized gate without reading secrets/kubeconfig, connecting to Kubernetes API, running kubectl, deploying, build/push, Tencent mutation or Package C live. The next gap is separately authorized production deploy execution through that runner; hand-written kubectl apply remains forbidden.",
+    "problem": "Package D production-deploy-apply pdrun-20260616-003 reached real apply but rollout was blocked by container writable path failures in portal-frontend and opl-runtime-bridge. This local closeout fixes nginx /tmp path, Runtime Bridge /tmp state root and production manifest writable emptyDir/env/securityContext/pull policy contracts without reading secrets/kubeconfig, connecting to Kubernetes API, running kubectl, deploying, build/push, Tencent mutation or Package C live. The next gap is authorized private build runner republish for the two changed service images, followed by authorized repo-native production-deploy-apply rerun.",
     "verification_commands": [
       "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
       "node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs",
@@ -262,7 +262,8 @@
     "package_d_deploy_readiness_plan": {
       "executionEnvironment": "tke_in_cluster_platform_runner_preferred",
       "readinessGaps": [
-        "authorized Package D production deploy execution evidence through repo-native production-deploy-apply runner",
+        "authorized Package D two-service private image republish for portal-frontend and opl-runtime-bridge writable path fixes",
+        "authorized Package D production-deploy-apply rerun through repo-native runner pdrun-20260616-004",
         "post-deploy DB/smoke evidence",
         "rollback evidence"
       ],
@@ -1640,6 +1641,93 @@
           ".runtime/package-d-production-deploy/production-manifests-redacted.json"
         ],
         "noTrueApplyRolloutSmokeRollbackBuildPushTencentMutationOrPackageCLive": true
+      },
+      "productionDeployApplyAttempt": {
+        "status": "authorized_apply_reached_rollout_blocked_by_two_container_writable_paths",
+        "runId": "pdrun-20260616-003",
+        "target": {
+          "clusterId": "cls-fi097sy4",
+          "namespace": "medopl-platform",
+          "runnerPoolId": "np-6l4nkdto",
+          "nodeSelector": "node.tke.cloud.tencent.com/machineset=np-6l4nkdto"
+        },
+        "applyResult": {
+          "fourServicesApplied": true,
+          "servicesExist": true,
+          "readyServices": [
+            "medopl-go-backend",
+            "opl-web-gateway"
+          ],
+          "blockedServices": [
+            {
+              "service": "portal-frontend",
+              "status": "CrashLoopBackOff",
+              "reason": "nginx cannot write /run/nginx.pid permission denied"
+            },
+            {
+              "service": "opl-runtime-bridge",
+              "status": "CrashLoopBackOff",
+              "reason": "Node attempted mkdir '/.runtime' and received EACCES"
+            }
+          ]
+        },
+        "runGateRestored": "RUN_TENCENT_DEPLOY_EXECUTION=0",
+        "evidence": [
+          ".runtime/package-d-production-deploy/pdrun-20260616-003-diagnostics/readonly-diagnostics-redacted.json"
+        ],
+        "noBuildPushTencentMutationPackageCLiveDuringDiagnostics": true
+      },
+      "writablePathFixes": {
+        "status": "landed_local_contract_waiting_rebuild_push_and_reapply",
+        "localGate": [
+          "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs",
+          "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs"
+        ],
+        "portalFrontend": {
+          "dockerfile": "services/portal/frontend/Dockerfile",
+          "nginxConfig": "services/portal/frontend/nginx.conf",
+          "fix": "nginx pid and temp paths use /tmp/nginx; Deployment mounts emptyDir at /tmp/nginx and runs as nginx uid/gid 101 with fsGroup 101",
+          "forbiddenPaths": [
+            "/run/nginx.pid",
+            "/var/run/nginx.pid"
+          ]
+        },
+        "oplRuntimeBridge": {
+          "dockerfile": "services/opl-runtime-bridge/Dockerfile",
+          "stateStore": "services/opl-runtime-bridge/src/state-store-paths.mjs",
+          "fix": "default state root is /tmp/medopl-runtime/.runtime; Deployment injects PORTAL_RUNTIME_BRIDGE_STATE_ROOT and mounts emptyDir at /tmp/medopl-runtime with node uid/gid 1000 and fsGroup 1000",
+          "forbiddenPaths": [
+            "/.runtime"
+          ]
+        },
+        "productionManifest": {
+          "runner": "tests/support/cloud-prework/package-d-production-deploy-runner.js",
+          "imagePullPolicy": "Always",
+          "writablePaths": {
+            "portalFrontend": "/tmp/nginx",
+            "oplRuntimeBridge": "/tmp/medopl-runtime/.runtime"
+          },
+          "secretRefsUnchanged": [
+            "medopl-package-d-deploy-env",
+            "medopl-portal-runtime-env",
+            "medopl-tcr-pull-secret"
+          ],
+          "noPlaintextSecrets": true,
+          "noTenantPool": true
+        },
+        "requiresRebuildPush": [
+          "portal-frontend",
+          "opl-runtime-bridge"
+        ],
+        "unchangedServiceImages": [
+          "medopl-go-backend",
+          "opl-web-gateway"
+        ],
+        "fixedImageRefs": {
+          "portalFrontend": "uswccr.ccs.tencentyun.com/medopl/portal-frontend:v22-package-d-20260616-001",
+          "oplRuntimeBridge": "uswccr.ccs.tencentyun.com/medopl/opl-runtime-bridge:v22-package-d-20260616-001"
+        },
+        "note": "fixed tag is retained; production manifests use imagePullPolicy Always so the next rollout pulls the republished digest instead of reusing the old node-local image"
       }
     },
     "latest_local_evidence": "package-d-combined-in-cluster-preflight-pdrun-20260616-002"
@@ -3067,7 +3155,7 @@
     "cannot_claim": "production runtime, real cloud, real billing, deploy, kubectl, build/push or live provider readiness"
   },
   "package_d_deploy_readiness_plan": {
-    "status": "deploy_readiness_planning_only_production_plan_dry_run_passed_apply_live_runner_gap",
+    "status": "deploy_apply_attempt_blocked_by_writable_paths_local_fixes_landed_waiting_image_republish_and_reapply",
     "targetClusterId": "cls-fi097sy4",
     "targetPlatformNodePoolId": "np-6l4nkdto",
     "postgresEndpoint": "10.66.0.21:5432",
@@ -3175,7 +3263,8 @@
       "realExecutionReady": false
     },
     "readinessGaps": [
-      "authorized Package D production deploy execution evidence through repo-native production-deploy-apply runner",
+      "authorized Package D two-service private image republish for portal-frontend and opl-runtime-bridge writable path fixes",
+      "authorized Package D production-deploy-apply rerun through repo-native runner pdrun-20260616-004",
       "post-deploy DB/smoke evidence",
       "rollback evidence"
     ],
@@ -4244,7 +4333,7 @@
       ]
     },
     "deployAuthorizationPack": {
-      "status": "final_execution_authorization_pack_ready_for_separate_apply_authorization",
+      "status": "apply_attempt_blocked_waiting_two_service_republish_and_reapply_authorization",
       "path": "tests/fixtures/v22/goal-current.json#package_d_deploy_readiness_plan.deployAuthorizationPack",
       "target": {
         "clusterId": "cls-fi097sy4",
@@ -4263,7 +4352,7 @@
         "contractOnlyThisCommit": false,
         "executesKubectlNow": false,
         "handWrittenKubectlApplyAllowed": false,
-        "nextGap": "authorized Package D production deploy execution evidence through repo-native production-deploy-apply runner",
+        "nextGap": "authorized Package D production-deploy-apply rerun through repo-native runner pdrun-20260616-004 after two-service image republish",
         "planOnlyRunGate": "RUN_TENCENT_DEPLOY_EXECUTION=0",
         "futureApplyLiveRunGate": "RUN_TENCENT_DEPLOY_EXECUTION=1",
         "applyLiveImplementedNow": true,
@@ -4322,7 +4411,17 @@
         "publishEntrypointExistsNow": true,
         "publishEntrypoint": "node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1",
         "publishEntrypointReadiness": "satisfied_for_production_plan_dry_run",
-        "publishEntrypointGap": "closed_for_apply_live_runner_ready_waiting_authorized_deploy"
+        "publishEntrypointGap": "closed_for_apply_live_runner_ready_waiting_authorized_deploy",
+        "republishRequired": [
+          "portal-frontend",
+          "opl-runtime-bridge"
+        ],
+        "fixedServiceImageRefs": {
+          "portalFrontend": "uswccr.ccs.tencentyun.com/medopl/portal-frontend:v22-package-d-20260616-001",
+          "medoplGoBackend": "uswccr.ccs.tencentyun.com/medopl/medopl-go-backend:v22-package-d-20260616-001",
+          "oplWebGateway": "uswccr.ccs.tencentyun.com/medopl/opl-web-gateway:v22-package-d-20260616-001",
+          "oplRuntimeBridge": "uswccr.ccs.tencentyun.com/medopl/opl-runtime-bridge:v22-package-d-20260616-001"
+        }
       },
       "secretRefUsage": {
         "deployEnvSecretRef": "medopl-package-d-deploy-env",
@@ -4381,13 +4480,12 @@
         "productionManifestDryRunEvidence": ".runtime/package-d-production-deploy/production-manifests-redacted.json"
       },
       "nextAuthorizationPrompt": [
-        "授权在 VPC/TKE runner 10.66.0.42 执行 Package D production-deploy-apply。",
-        "前置确认：repo 必须 checkout 到 origin/recovery/platform-v22-trunk 的本轮 commit，工作区干净，RUN_TENCENT_DEPLOY_EXECUTION=1，且不提交 .runtime、secret、kubeconfig。",
-        "允许读取 /home/dev/.secrets/medopl/v22/package-d-deploy.env、/home/dev/.secrets/medopl/v22/portal-runtime.env、/home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy。",
-        "执行命令：node tests/support/cloud-prework/package-d-production-deploy-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode production-deploy-apply --run-id pdrun-20260616-003 --authorized 1",
-        "允许操作仅限 Kubernetes API connectivity、server-side dry-run、kubectl apply allowlisted Package D ConfigMap/Deployment/Service、kubectl rollout status 四个 allowlisted deployments、kubectl get deployment/service/pod smoke checks。",
-        "禁止 kubectl delete namespace、delete/patch/scale arbitrary resources、cluster-admin mutation、tenant pool/medopl-tenant-、Package C live、Tencent mutation、build/push、输出 kubeconfig/token/cert/DB password/TCR secret/Portal admin password。",
-        "evidence 只写 .runtime/package-d-production-deploy/pdrun-20260616-003/deploy-redacted.json、.runtime/package-d-production-deploy/pdrun-20260616-003/smoke-redacted.json、.runtime/package-d-production-deploy/pdrun-20260616-003/rollback-redacted.json，并通过 redaction audit。"
+        "授权在 private build runner 重新发布 Package D portal-frontend 和 opl-runtime-bridge 服务镜像，不执行 kubectl/deploy。",
+        "前置确认：repo checkout 到 origin/recovery/platform-v22-trunk 的本轮 commit，工作区干净，Docker/buildx 可用，TCR login 可用或允许 runner 用 TCR_ID/TCR_SECRET 通过 --password-stdin login。",
+        "允许读取 /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env，且只允许读取 TCR_ID、TCR_SECRET、PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF、PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF；不得读取 kubeconfig、DB password、Portal admin password、Tencent SecretId/SecretKey。",
+        "目标 images：uswccr.ccs.tencentyun.com/medopl/portal-frontend:v22-package-d-20260616-001 和 uswccr.ccs.tencentyun.com/medopl/opl-runtime-bridge:v22-package-d-20260616-001，linux/amd64，禁止 latest、任意 image ref、非 medopl namespace、非 allowlisted repo。",
+        "允许执行受控 docker login/buildx build --platform linux/amd64/docker push，仅限这两个服务；禁止 kubectl、deploy、Tencent mutation、Package C live、输出 TCR_SECRET；evidence 只写 .runtime 且 redacted。",
+        "成功后在 VPC/TKE runner 10.66.0.42 重新执行 repo-native production-deploy-apply，使用新 run-id pdrun-20260616-004，RUN_TENCENT_DEPLOY_EXECUTION=1，并只允许 Kubernetes API connectivity、server-side dry-run、allowlisted apply/rollout/smoke；禁止手写 kubectl apply/delete/patch/scale/build-push/Tencent mutation/Package C live。"
       ],
       "currentPassedEvidence": {
         "status": "passed_cloud_run",
@@ -4466,7 +4564,57 @@
         "write rollback evidence to .runtime/package-d-production-deploy/<runid>/rollback-redacted.json when rollback is authorized or triggered",
         "run redaction audit before printing or committing any summary",
         "do not commit .runtime, env files, kubeconfig, token, cert, DB password, TCR secret or Portal admin password"
-      ]
+      ],
+      "productionDeployApplyAttempt": {
+        "status": "authorized_apply_reached_rollout_blocked_by_two_container_writable_paths",
+        "runId": "pdrun-20260616-003",
+        "target": {
+          "clusterId": "cls-fi097sy4",
+          "namespace": "medopl-platform",
+          "runnerPoolId": "np-6l4nkdto",
+          "nodeSelector": "node.tke.cloud.tencent.com/machineset=np-6l4nkdto"
+        },
+        "applyResult": {
+          "fourServicesApplied": true,
+          "servicesExist": true,
+          "readyServices": [
+            "medopl-go-backend",
+            "opl-web-gateway"
+          ],
+          "blockedServices": [
+            {
+              "service": "portal-frontend",
+              "status": "CrashLoopBackOff",
+              "reason": "nginx cannot write /run/nginx.pid permission denied"
+            },
+            {
+              "service": "opl-runtime-bridge",
+              "status": "CrashLoopBackOff",
+              "reason": "Node attempted mkdir '/.runtime' and received EACCES"
+            }
+          ]
+        },
+        "runGateRestored": "RUN_TENCENT_DEPLOY_EXECUTION=0",
+        "evidence": [
+          ".runtime/package-d-production-deploy/pdrun-20260616-003-diagnostics/readonly-diagnostics-redacted.json"
+        ],
+        "noBuildPushTencentMutationPackageCLiveDuringDiagnostics": true
+      },
+      "writablePathFixes": {
+        "runner": "tests/support/cloud-prework/package-d-production-deploy-runner.js",
+        "imagePullPolicy": "Always",
+        "writablePaths": {
+          "portalFrontend": "/tmp/nginx",
+          "oplRuntimeBridge": "/tmp/medopl-runtime/.runtime"
+        },
+        "secretRefsUnchanged": [
+          "medopl-package-d-deploy-env",
+          "medopl-portal-runtime-env",
+          "medopl-tcr-pull-secret"
+        ],
+        "noPlaintextSecrets": true,
+        "noTenantPool": true
+      }
     },
     "nextLocalCodexPrompt": [
       "按 active truth 做 gap-driven execution，不新增 loop。",
@@ -4477,7 +4625,7 @@
       "执行后同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json，npm run verify 和 closeout:check -- --json 通过后 commit/push。"
     ],
     "serviceImagesPublishBoundary": {
-      "status": "service_images_available_for_production_plan_dry_run_waiting_apply_live_runner",
+      "status": "two_service_republish_required_for_writable_path_fixes",
       "contract": "package_d_service_images_publish_private_build_runner_boundary",
       "route": "private_build_runner",
       "command": "node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1",
@@ -4578,14 +4726,18 @@
       "readiness": {
         "realExecutionReady": false,
         "dockerfileBuildContextReady": true,
-        "imagePublishReady": true,
-        "reason": "cloud production-deploy-plan consumed fixed service image refs successfully; no build/push occurred in this repo session",
+        "imagePublishReady": false,
+        "reason": "portal-frontend and opl-runtime-bridge Dockerfile/runtime path fixes changed image contents and require private build runner republish before rerun deploy apply",
         "missingDockerfiles": [],
         "missingDockerignores": [],
         "missingContexts": []
       },
-      "nextGap": "authorized Package D production deploy execution evidence through repo-native production-deploy-apply runner",
-      "publishEntrypointGap": "closed_for_apply_live_runner_ready_waiting_authorized_deploy"
+      "nextGap": "authorized Package D two-service private image republish for portal-frontend and opl-runtime-bridge writable path fixes",
+      "publishEntrypointGap": "closed_for_apply_live_runner_ready_waiting_authorized_deploy",
+      "republishRequired": [
+        "portal-frontend",
+        "opl-runtime-bridge"
+      ]
     },
     "productionDeployPlanDryRun": {
       "status": "passed_cloud_run",
@@ -4635,28 +4787,114 @@
         ".runtime/package-d-production-deploy/production-manifests-redacted.json"
       ],
       "noTrueApplyRolloutSmokeRollbackBuildPushTencentMutationOrPackageCLive": true
+    },
+    "productionDeployApplyAttempt": {
+      "status": "authorized_apply_reached_rollout_blocked_by_two_container_writable_paths",
+      "runId": "pdrun-20260616-003",
+      "target": {
+        "clusterId": "cls-fi097sy4",
+        "namespace": "medopl-platform",
+        "runnerPoolId": "np-6l4nkdto",
+        "nodeSelector": "node.tke.cloud.tencent.com/machineset=np-6l4nkdto"
+      },
+      "applyResult": {
+        "fourServicesApplied": true,
+        "servicesExist": true,
+        "readyServices": [
+          "medopl-go-backend",
+          "opl-web-gateway"
+        ],
+        "blockedServices": [
+          {
+            "service": "portal-frontend",
+            "status": "CrashLoopBackOff",
+            "reason": "nginx cannot write /run/nginx.pid permission denied"
+          },
+          {
+            "service": "opl-runtime-bridge",
+            "status": "CrashLoopBackOff",
+            "reason": "Node attempted mkdir '/.runtime' and received EACCES"
+          }
+        ]
+      },
+      "runGateRestored": "RUN_TENCENT_DEPLOY_EXECUTION=0",
+      "evidence": [
+        ".runtime/package-d-production-deploy/pdrun-20260616-003-diagnostics/readonly-diagnostics-redacted.json"
+      ],
+      "noBuildPushTencentMutationPackageCLiveDuringDiagnostics": true
+    },
+    "writablePathFixes": {
+      "status": "landed_local_contract_waiting_rebuild_push_and_reapply",
+      "localGate": [
+        "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs",
+        "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs"
+      ],
+      "portalFrontend": {
+        "dockerfile": "services/portal/frontend/Dockerfile",
+        "nginxConfig": "services/portal/frontend/nginx.conf",
+        "fix": "nginx pid and temp paths use /tmp/nginx; Deployment mounts emptyDir at /tmp/nginx and runs as nginx uid/gid 101 with fsGroup 101",
+        "forbiddenPaths": [
+          "/run/nginx.pid",
+          "/var/run/nginx.pid"
+        ]
+      },
+      "oplRuntimeBridge": {
+        "dockerfile": "services/opl-runtime-bridge/Dockerfile",
+        "stateStore": "services/opl-runtime-bridge/src/state-store-paths.mjs",
+        "fix": "default state root is /tmp/medopl-runtime/.runtime; Deployment injects PORTAL_RUNTIME_BRIDGE_STATE_ROOT and mounts emptyDir at /tmp/medopl-runtime with node uid/gid 1000 and fsGroup 1000",
+        "forbiddenPaths": [
+          "/.runtime"
+        ]
+      },
+      "productionManifest": {
+        "runner": "tests/support/cloud-prework/package-d-production-deploy-runner.js",
+        "imagePullPolicy": "Always",
+        "writablePaths": {
+          "portalFrontend": "/tmp/nginx",
+          "oplRuntimeBridge": "/tmp/medopl-runtime/.runtime"
+        },
+        "secretRefsUnchanged": [
+          "medopl-package-d-deploy-env",
+          "medopl-portal-runtime-env",
+          "medopl-tcr-pull-secret"
+        ],
+        "noPlaintextSecrets": true,
+        "noTenantPool": true
+      },
+      "requiresRebuildPush": [
+        "portal-frontend",
+        "opl-runtime-bridge"
+      ],
+      "unchangedServiceImages": [
+        "medopl-go-backend",
+        "opl-web-gateway"
+      ],
+      "fixedImageRefs": {
+        "portalFrontend": "uswccr.ccs.tencentyun.com/medopl/portal-frontend:v22-package-d-20260616-001",
+        "oplRuntimeBridge": "uswccr.ccs.tencentyun.com/medopl/opl-runtime-bridge:v22-package-d-20260616-001"
+      },
+      "note": "fixed tag is retained; production manifests use imagePullPolicy Always so the next rollout pulls the republished digest instead of reusing the old node-local image"
     }
   },
   "readinessGaps": [
-    "authorized Package D production deploy execution evidence through repo-native production-deploy-apply runner",
+    "authorized Package D two-service private image republish for portal-frontend and opl-runtime-bridge writable path fixes",
+    "authorized Package D production-deploy-apply rerun through repo-native runner pdrun-20260616-004",
     "post-deploy DB/smoke evidence",
     "rollback evidence"
   ],
   "nextAuthorizationPrompt": [
-    "授权在 VPC/TKE runner 10.66.0.42 执行 Package D production-deploy-apply。",
-    "前置确认：repo 必须 checkout 到 origin/recovery/platform-v22-trunk 的本轮 commit，工作区干净，RUN_TENCENT_DEPLOY_EXECUTION=1，且不提交 .runtime、secret、kubeconfig。",
-    "允许读取 /home/dev/.secrets/medopl/v22/package-d-deploy.env、/home/dev/.secrets/medopl/v22/portal-runtime.env、/home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy。",
-    "执行命令：node tests/support/cloud-prework/package-d-production-deploy-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode production-deploy-apply --run-id pdrun-20260616-003 --authorized 1",
-    "允许操作仅限 Kubernetes API connectivity、server-side dry-run、kubectl apply allowlisted Package D ConfigMap/Deployment/Service、kubectl rollout status 四个 allowlisted deployments、kubectl get deployment/service/pod smoke checks。",
-    "禁止 kubectl delete namespace、delete/patch/scale arbitrary resources、cluster-admin mutation、tenant pool/medopl-tenant-、Package C live、Tencent mutation、build/push、输出 kubeconfig/token/cert/DB password/TCR secret/Portal admin password。",
-    "evidence 只写 .runtime/package-d-production-deploy/pdrun-20260616-003/deploy-redacted.json、.runtime/package-d-production-deploy/pdrun-20260616-003/smoke-redacted.json、.runtime/package-d-production-deploy/pdrun-20260616-003/rollback-redacted.json，并通过 redaction audit。"
+    "授权在 private build runner 重新发布 Package D portal-frontend 和 opl-runtime-bridge 服务镜像，不执行 kubectl/deploy。",
+    "前置确认：repo checkout 到 origin/recovery/platform-v22-trunk 的本轮 commit，工作区干净，Docker/buildx 可用，TCR login 可用或允许 runner 用 TCR_ID/TCR_SECRET 通过 --password-stdin login。",
+    "允许读取 /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env，且只允许读取 TCR_ID、TCR_SECRET、PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF、PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF；不得读取 kubeconfig、DB password、Portal admin password、Tencent SecretId/SecretKey。",
+    "目标 images：uswccr.ccs.tencentyun.com/medopl/portal-frontend:v22-package-d-20260616-001 和 uswccr.ccs.tencentyun.com/medopl/opl-runtime-bridge:v22-package-d-20260616-001，linux/amd64，禁止 latest、任意 image ref、非 medopl namespace、非 allowlisted repo。",
+    "允许执行受控 docker login/buildx build --platform linux/amd64/docker push，仅限这两个服务；禁止 kubectl、deploy、Tencent mutation、Package C live、输出 TCR_SECRET；evidence 只写 .runtime 且 redacted。",
+    "成功后在 VPC/TKE runner 10.66.0.42 重新执行 repo-native production-deploy-apply，使用新 run-id pdrun-20260616-004，RUN_TENCENT_DEPLOY_EXECUTION=1，并只允许 Kubernetes API connectivity、server-side dry-run、allowlisted apply/rollout/smoke；禁止手写 kubectl apply/delete/patch/scale/build-push/Tencent mutation/Package C live。"
   ],
   "nextLocalCodexPrompt": [
     "按 active truth 做 gap-driven execution，不新增 loop。",
-    "当前 gap：authorized Package D production deploy execution evidence through repo-native production-deploy-apply runner。",
-    "目标：在云端 VPC/TKE runner 通过 repo-native production-deploy-apply runner 执行真实 Package D deploy，收集 deploy/smoke/rollback redacted evidence。",
-    "执行前必须确认 HEAD、工作区、RUN_TENCENT_DEPLOY_EXECUTION=1、cluster cls-fi097sy4、namespace medopl-platform、scheduling np-6l4nkdto 和 SecretRefs。",
-    "禁止手写 kubectl apply、delete/patch/scale、build/push、Tencent mutation、Package C live、tenant pool/medopl-tenant-、输出 secret。",
-    "执行后同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json，npm run verify 和 closeout:check -- --json 通过后 commit/push。"
+    "当前 gap：Package D portal-frontend 与 opl-runtime-bridge writable path fixes 已本地落地，下一步需要 private build runner 重新发布两个服务镜像，再由 VPC/TKE runner 重新执行 production-deploy-apply。",
+    "不要手写 kubectl apply；不要在 TKE/VPC runner build/push；不要读取未授权 secret。",
+    "如果用户授权 image publish，只允许读取 package-d-service-images-publish.env 中 TCR_ID、TCR_SECRET、PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF、PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF，并只 build/push 这两个固定 linux/amd64 images。",
+    "如果用户随后授权 deploy apply，使用 repo-native package-d-production-deploy-runner，run-id pdrun-20260616-004，收集 redacted deploy/smoke/rollback evidence。"
   ]
 }

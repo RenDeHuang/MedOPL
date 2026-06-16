@@ -20,6 +20,7 @@ Target specs:
 - Package D execution boundary / preflight gate splits secret/env input into `package-d-deploy.env` and `portal-runtime.env`: deploy env is limited to TCR credentials, registry / namespace / region, cluster id and kubeconfig ref; Portal runtime env is limited to admin identity/password and PostgreSQL URL/password. The gate can judge allowlisted inputs, fixed cluster / namespace / platform pool / DB endpoint / image targets and redacted evidence, but `realExecutionReady` remains false.
 - Package D production deploy apply/live is a repo-native future-authorized entrypoint, not a hand-run kubectl path. `production-deploy-plan` requires `RUN_TENCENT_DEPLOY_EXECUTION=0`; `production-deploy-apply` / `production-deploy-live` fail closed unless a separate cloud authorization supplies `RUN_TENCENT_DEPLOY_EXECUTION=1`, target cluster `cls-fi097sy4`, namespace `medopl-platform`, platform runner pool `np-6l4nkdto`, fixed image refs and SecretRefs.
 - The Package D apply/live command plan is limited to server-side dry-run before apply, allowlisted Package D ConfigMap/Deployment/Service apply in `medopl-platform`, rollout observe for `portal-frontend`, `medopl-go-backend`, `opl-web-gateway` and `opl-runtime-bridge`, namespace-scoped deployment/service/pod smoke shape checks, and rollback plan commands using `kubectl rollout undo` for those deployments.
+- Package D production manifests must provide writable runtime paths for non-root containers: `portal-frontend` nginx pid/temp paths under `/tmp/nginx`, `opl-runtime-bridge` state root under `/tmp/medopl-runtime/.runtime`, no default `/.runtime`, and a pull strategy that can pick up a republished fixed tag.
 - Package C PostgreSQL ledger canary no longer treats local-machine access to the VPC private endpoint as the goal; successful real DB canary waits until the MedOPL service runs inside the VPC.
 
 ## REMOVED
@@ -32,7 +33,7 @@ Target specs:
 - This package does not prove provider credentials, cloud resource lifecycle, billing reconciliation or runtime deployment.
 - `releasePlanReady=true` does not mean image build, TCR push, Kubernetes dry-run/apply, DB smoke, rollback evidence or Package D execution has happened.
 - `executionPreflightGateReady=true` does not mean real deploy execution is authorized or ready.
-- Package D production-deploy-apply/live entrypoint existence does not mean deploy execution, rollout success, post-deploy smoke or rollback execution has happened.
+- Package D production-deploy-apply/live entrypoint existence and the first authorized apply attempt do not mean rollout success, post-deploy smoke or rollback execution has happened.
 
 ## EVALS
 

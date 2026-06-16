@@ -36,10 +36,11 @@ const expectedServiceImages = Object.freeze([
       "RUN npm ci",
       "RUN npm run build",
       "FROM nginx:1.27-bookworm",
+      "COPY nginx.conf /etc/nginx/nginx.conf",
       "COPY --from=build /app/dist",
-      "listen 8080",
+      "/tmp/nginx",
     ],
-    forbiddenDockerfileTokens: ["npm run dev", "vite --host", "PORTAL_POSTGRES_PASSWORD", "TCR_SECRET"],
+    forbiddenDockerfileTokens: ["npm run dev", "vite --host", "PORTAL_POSTGRES_PASSWORD", "TCR_SECRET", "/run/nginx.pid"],
   },
   {
     name: "medopl-go-backend",
@@ -87,9 +88,12 @@ const expectedServiceImages = Object.freeze([
       "COPY package.json",
       "COPY src ./src",
       "PORT=8080",
+      "PORTAL_RUNTIME_BRIDGE_STATE_ROOT=/tmp/medopl-runtime/.runtime",
+      "RUN mkdir -p /tmp/medopl-runtime/.runtime",
+      "chown -R node:node /tmp/medopl-runtime",
       "CMD [\"npm\", \"start\"]",
     ],
-    forbiddenDockerfileTokens: ["npm install", "npm run dev", "PORTAL_POSTGRES_PASSWORD", "TCR_SECRET"],
+    forbiddenDockerfileTokens: ["npm install", "npm run dev", "PORTAL_POSTGRES_PASSWORD", "TCR_SECRET", "PORTAL_RUNTIME_BRIDGE_STATE_ROOT=/.runtime"],
   },
 ]);
 
@@ -179,6 +183,36 @@ async function assertServiceDockerfileMaterialized(service) {
     "package-d-*.env",
   ]) {
     assert.equal(dockerignore.includes(requiredIgnore), true, `${service.name}_dockerignore_must_include:${requiredIgnore}`);
+  }
+  if (service.name === "portal-frontend") {
+    const nginxConfig = await readFile("services/portal/frontend/nginx.conf", "utf8");
+    for (const token of [
+      "pid /tmp/nginx/nginx.pid;",
+      "client_body_temp_path /tmp/nginx/client_body_temp;",
+      "proxy_temp_path /tmp/nginx/proxy_temp;",
+      "fastcgi_temp_path /tmp/nginx/fastcgi_temp;",
+      "uwsgi_temp_path /tmp/nginx/uwsgi_temp;",
+      "scgi_temp_path /tmp/nginx/scgi_temp;",
+      "listen 8080;",
+    ]) {
+      assert.equal(nginxConfig.includes(token), true, `portal_nginx_config_must_include:${token}`);
+    }
+    for (const forbidden of ["/run/nginx.pid", "/var/run", "/var/cache/nginx/client_temp"]) {
+      assert.equal(nginxConfig.includes(forbidden), false, `portal_nginx_config_must_not_include:${forbidden}`);
+    }
+  }
+  if (service.name === "opl-runtime-bridge") {
+    const stateStorePaths = await readFile("services/opl-runtime-bridge/src/state-store-paths.mjs", "utf8");
+    assert.equal(
+      stateStorePaths.includes('DEFAULT_RUNTIME_BRIDGE_STATE_ROOT = "/tmp/medopl-runtime/.runtime"'),
+      true,
+      "runtime_bridge_default_state_root_must_be_writable_tmp_path",
+    );
+    assert.equal(
+      stateStorePaths.includes('path.join(repoRoot, ".runtime"'),
+      false,
+      "runtime_bridge_must_not_default_to_repo_root_runtime_path",
+    );
   }
 }
 

@@ -28,6 +28,8 @@ Portal canonical truth 是 control-plane store，生产方向是 PostgreSQL-only
 
 Runtime / data readiness 必须 fail closed：缺 PostgreSQL production-mode 连接、schema、Gateway upstream URL、provider binding、Runtime Bridge capability 或明确授权时，返回稳定 gate，不允许 JSON fallback、fake 200 或隐式旧路径。
 
+Runtime Bridge 在容器内不得默认写 `/.runtime`。生产/Package D 运行形状必须把 Runtime Bridge state root 指到可写目录（当前为 `/tmp/medopl-runtime/.runtime`），并通过 non-secret env / writable volume 提供该路径；本地测试仍可用 `PORTAL_RUNTIME_BRIDGE_STATE_ROOT` 显式覆盖。
+
 数据与云控制面真相采用 Portal 内部 operation/job/projection/reconciliation 模型：
 
 - desired state：Portal 中形成的资源、文件空间、计费和释放意图。
