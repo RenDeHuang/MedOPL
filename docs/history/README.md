@@ -6215,3 +6215,51 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+
+### 2026-06-16 package-d-combined-in-cluster-preflight-pass
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `005e522c743244945a5c289cae7ce73b6a20d4a7`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Recorded cloud evidence that Package D PostgreSQL/runtime env/combined in-cluster preflight `pdrun-20260616-002` passed from the TKE/VPC runner at repo HEAD `005e522c743244945a5c289cae7ce73b6a20d4a7`.
+- Recorded selector `node.tke.cloud.tencent.com/machineset=np-6l4nkdto`, image `uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001`, image pull/run pass, PostgreSQL `10.66.0.21:5432` connectivity smoke pass and Package D SecretRef/env availability smoke pass.
+- Recorded that the Job completed, cleanup deleted the Job on success with `NotFound` after delete, redaction audit passed, and no deploy/build-push/Tencent mutation/Package C live occurred.
+- Recorded redacted evidence paths: `.runtime/package-d-run-scoped-job-preflight/pdrun-20260616-002/preflight-job-redacted.json` and `.runtime/package-d-run-scoped-job-preflight/pdrun-20260616-002/job-manifest-redacted.json`.
+- Generated the Package D deploy authorization pack inside `tests/fixtures/v22/goal-current.json#package_d_deploy_readiness_plan.deployAuthorizationPack` and identified that the repo-native production deploy runner single entrypoint is missing.
+
+Verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+Can-claim:
+
+- Package D PostgreSQL/runtime env/combined in-cluster preflight passed on `pdrun-20260616-002`.
+- The platform runner can pull/run the fixed runner image, access PostgreSQL `10.66.0.21:5432`, read required SecretRef/env inputs and redact evidence.
+- The next gap is implementing a repo-native Package D production deploy runner single entrypoint before any authorized deploy.
+
+Cannot-claim:
+
+- This repo session read secrets or kubeconfig, connected to Kubernetes API, ran kubectl, deployed, built/pushed images, executed Tencent mutation, ran Package C live, or completed Package D production execution.
+- Repo-native Package D production deploy runner, production Deployment/Service rollout, post-deploy smoke, rollback evidence, billing/audit ledger, Portal opening entry and workspace storage quota are not complete.
+
+landed_commit: `005e522c743244945a5c289cae7ce73b6a20d4a7`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
