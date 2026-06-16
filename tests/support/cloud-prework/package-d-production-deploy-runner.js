@@ -23,10 +23,22 @@ import {
 export const PACKAGE_D_PRODUCTION_DEPLOY_COMMAND = "node tests/support/cloud-prework/package-d-production-deploy-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode production-deploy-plan --authorized 1";
 
 const DEFAULT_EVIDENCE_DIR = ".runtime/package-d-production-deploy";
+const PRODUCTION_DEPLOY_PLAN_MODE = "production-deploy-plan";
+const FUTURE_DEPLOY_EXECUTION_MODES = Object.freeze(new Set([
+  "production-deploy-apply",
+  "production-deploy-live",
+]));
+const PRODUCTION_DEPLOY_MODES = Object.freeze(new Set([
+  PRODUCTION_DEPLOY_PLAN_MODE,
+  ...FUTURE_DEPLOY_EXECUTION_MODES,
+]));
 const DEPLOY_SECRET_REF = "medopl-package-d-deploy-env";
 const RUNTIME_SECRET_REF = "medopl-portal-runtime-env";
 const IMAGE_PULL_SECRET = "medopl-tcr-pull-secret";
 const DEPLOY_CONFIG_SUFFIX = "config";
+const FIXED_TCR_REGISTRY = "uswccr.ccs.tencentyun.com";
+const FIXED_TCR_NAMESPACE = "medopl";
+export const PACKAGE_D_SERVICE_IMAGE_TARGET_TAG = "v22-package-d-20260616-001";
 const REQUIRED_PRODUCTION_DEPLOY_ENV_KEYS = Object.freeze([
   ...DEPLOY_ENV_KEYS,
 ]);
@@ -99,6 +111,12 @@ function assertAuthorized(authorized) {
   if (authorized !== true) throw new Error("package_d_production_deploy_not_authorized");
 }
 
+function assertMode(mode = PRODUCTION_DEPLOY_PLAN_MODE) {
+  const normalized = text(mode);
+  if (!PRODUCTION_DEPLOY_MODES.has(normalized)) throw new Error("package_d_production_deploy_mode_required");
+  return normalized;
+}
+
 function postgresEndpoint(value = "") {
   try {
     const parsed = new URL(text(value));
@@ -108,14 +126,19 @@ function postgresEndpoint(value = "") {
   }
 }
 
-function assertTargetEnvForDeploy({ deployEnv, runtimeEnv, kubeconfigPath }) {
-  if (deployEnv.RUN_TENCENT_DEPLOY_EXECUTION !== "1") {
-    throw new Error("package_d_production_deploy_run_gate_not_authorized");
+function assertTargetEnvForDeploy({ deployEnv, runtimeEnv, kubeconfigPath, mode }) {
+  if (mode === PRODUCTION_DEPLOY_PLAN_MODE && deployEnv.RUN_TENCENT_DEPLOY_EXECUTION !== "0") {
+    throw new Error("package_d_production_deploy_plan_gate_must_remain_zero");
+  }
+  if (FUTURE_DEPLOY_EXECUTION_MODES.has(mode) && deployEnv.RUN_TENCENT_DEPLOY_EXECUTION !== "1") {
+    throw new Error("package_d_production_deploy_apply_gate_not_authorized");
   }
   if (deployEnv.TENCENT_DEPLOY_CLUSTER_ID !== FIXED_CLUSTER_ID) throw new Error("package_d_production_deploy_cluster_mismatch");
   if (path.resolve(deployEnv.TENCENT_DEPLOY_KUBECONFIG_REF) !== path.resolve(kubeconfigPath)) {
     throw new Error("package_d_production_deploy_kubeconfig_ref_mismatch");
   }
+  if (deployEnv.TENCENT_TCR_REGISTRY !== FIXED_TCR_REGISTRY) throw new Error("package_d_production_deploy_tcr_registry_mismatch");
+  if (deployEnv.TENCENT_TCR_NAMESPACE !== FIXED_TCR_NAMESPACE) throw new Error("package_d_production_deploy_tcr_namespace_mismatch");
   if (deployEnv.TENCENT_TCR_REGION !== "na-siliconvalley") throw new Error("package_d_production_deploy_tcr_region_mismatch");
   if (postgresEndpoint(runtimeEnv.PORTAL_POSTGRES_URL) !== FIXED_POSTGRES_ENDPOINT) {
     throw new Error("package_d_production_deploy_postgres_endpoint_mismatch");
@@ -140,6 +163,7 @@ function parseImageRef(imageRef = "", { deployEnv, expectedRepository }) {
   if (registry !== deployEnv.TENCENT_TCR_REGISTRY) throw new Error("package_d_production_image_registry_mismatch");
   if (namespace !== deployEnv.TENCENT_TCR_NAMESPACE) throw new Error("package_d_production_image_namespace_mismatch");
   if (repository !== expectedRepository) throw new Error(`package_d_production_image_repository_mismatch:${expectedRepository}`);
+  if (tag !== PACKAGE_D_SERVICE_IMAGE_TARGET_TAG) throw new Error(`package_d_production_image_tag_mismatch:${expectedRepository}`);
   return { value, registry, namespace, repository, tag };
 }
 
@@ -374,9 +398,11 @@ export async function buildPackageDProductionDeployPlan({
   kubeconfigPath,
   evidenceDir = DEFAULT_EVIDENCE_DIR,
   authorized = false,
+  mode = PRODUCTION_DEPLOY_PLAN_MODE,
   argv = [],
 } = {}) {
   parseArgs(argv);
+  const normalizedMode = assertMode(mode);
   assertAuthorized(authorized);
   assertFile(deployEnvPath, "package_d_deploy_env_missing");
   assertFile(runtimeEnvPath, "package_d_runtime_env_missing");
@@ -384,7 +410,10 @@ export async function buildPackageDProductionDeployPlan({
 
   const deployEnv = parseEnv(await readFile(deployEnvPath, "utf8"), DEPLOY_ENV_KEYS, REQUIRED_PRODUCTION_DEPLOY_ENV_KEYS);
   const runtimeEnv = parseEnv(await readFile(runtimeEnvPath, "utf8"), RUNTIME_ENV_KEYS);
-  assertTargetEnvForDeploy({ deployEnv, runtimeEnv, kubeconfigPath });
+  assertTargetEnvForDeploy({ deployEnv, runtimeEnv, kubeconfigPath, mode: normalizedMode });
+  if (FUTURE_DEPLOY_EXECUTION_MODES.has(normalizedMode)) {
+    throw new Error("package_d_production_deploy_apply_not_implemented");
+  }
   const clusterAuth = kubeconfigSummary(await readFile(kubeconfigPath, "utf8"));
   const live = materializeProductionManifests({ deployEnv, redacted: false });
   assertManifestBoundary(live.manifests);
@@ -409,7 +438,7 @@ export async function buildPackageDProductionDeployPlan({
   const plan = {
     ok: true,
     contract: "package_d_production_deploy_runner_contract_local_gate",
-    mode: "production-deploy-plan",
+    mode: normalizedMode,
     command: PACKAGE_D_PRODUCTION_DEPLOY_COMMAND,
     target: {
       clusterId: FIXED_CLUSTER_ID,
@@ -426,6 +455,7 @@ export async function buildPackageDProductionDeployPlan({
       tcrNamespace: deployEnv.TENCENT_TCR_NAMESPACE,
       tcrRegion: deployEnv.TENCENT_TCR_REGION,
       serviceImageRefKeys: SERVICE_TARGETS.map((service) => service.imageKey),
+      serviceImageTargetTag: PACKAGE_D_SERVICE_IMAGE_TARGET_TAG,
     },
     clusterAuth,
     services: redactedServices(live.services),
@@ -534,13 +564,14 @@ export async function writePackageDProductionDeployPlanEvidence({ plan } = {}) {
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
-  if (args.mode !== "production-deploy-plan") throw new Error("package_d_production_deploy_mode_required");
+  const mode = assertMode(args.mode);
   const plan = await buildPackageDProductionDeployPlan({
     deployEnvPath: args["deploy-env"],
     runtimeEnvPath: args["runtime-env"],
     kubeconfigPath: args.kubeconfig,
     evidenceDir: args["evidence-dir"],
     authorized: args.authorized === "1",
+    mode,
   });
   const evidence = await writePackageDProductionDeployPlanEvidence({ plan });
   process.stdout.write(`${JSON.stringify({

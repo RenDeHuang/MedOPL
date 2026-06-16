@@ -11,11 +11,12 @@ import {
 } from "../../support/cloud-prework/package-d-in-cluster-platform-runner-shape.js";
 import {
   PACKAGE_D_PRODUCTION_DEPLOY_COMMAND,
+  PACKAGE_D_SERVICE_IMAGE_TARGET_TAG,
   buildPackageDProductionDeployPlan,
   writePackageDProductionDeployPlanEvidence,
 } from "../../support/cloud-prework/package-d-production-deploy-runner.js";
 
-const fixedImageTag = "v22-package-d-20260616-fake";
+const fixedImageTag = PACKAGE_D_SERVICE_IMAGE_TARGET_TAG;
 const serviceImages = Object.freeze({
   PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF: `uswccr.ccs.tencentyun.com/medopl/portal-frontend:${fixedImageTag}`,
   PACKAGE_D_GO_BACKEND_IMAGE_REF: `uswccr.ccs.tencentyun.com/medopl/medopl-go-backend:${fixedImageTag}`,
@@ -46,7 +47,7 @@ function assertNoSensitiveText(text = "", label = "text") {
 
 async function writeValidProductionDeployInputs({ deployEnvPath, runtimeEnvPath, kubeconfigPath }) {
   await writeFile(deployEnvPath, [
-    "RUN_TENCENT_DEPLOY_EXECUTION=1",
+    "RUN_TENCENT_DEPLOY_EXECUTION=0",
     "TCR_ID=100047070895",
     "TCR_SECRET=tcr-secret-value",
     "TENCENT_TCR_REGISTRY=uswccr.ccs.tencentyun.com",
@@ -119,7 +120,7 @@ async function assertProductionDeployRunnerLocalGate() {
     assert.equal(plan.target.clusterId, "cls-fi097sy4", "target_cluster_fixed");
     assert.equal(plan.target.namespace, "medopl-platform", "target_namespace_fixed");
     assert.equal(plan.target.platformNodePoolId, "np-6l4nkdto", "target_platform_pool_fixed");
-    assert.equal(plan.boundary.runTencentDeployExecution, "1", "deploy_gate_must_be_explicitly_authorized_for_future_deploy");
+    assert.equal(plan.boundary.runTencentDeployExecution, "0", "plan_only_gate_must_remain_disabled");
     assert.equal(plan.boundary.kubectlExecutedNow, false, "runner_must_not_execute_kubectl_now");
     assert.equal(plan.boundary.deployExecutedNow, false, "runner_must_not_deploy_now");
     assert.equal(plan.boundary.buildPushAllowed, false, "runner_must_not_build_push");
@@ -133,6 +134,7 @@ async function assertProductionDeployRunnerLocalGate() {
     ], "deploy_must_cover_four_package_d_services");
     assert.equal(plan.services.every((service) => service.imageRef === "redacted"), true, "service_image_refs_must_be_redacted");
     assert.equal(plan.services.every((service) => service.imageTag === fixedImageTag), true, "service_images_must_use_fixed_non_latest_tag");
+    assert.equal(plan.env.serviceImageTargetTag, "v22-package-d-20260616-001", "service_image_target_tag_must_be_fixed");
     assert.equal(plan.services.every((service) => service.secretRefs.includes("medopl-package-d-deploy-env")), true, "deploy_secret_ref_required");
     assert.equal(plan.services.every((service) => service.secretRefs.includes("medopl-portal-runtime-env")), true, "portal_runtime_secret_ref_required");
     assert.equal(plan.services.every((service) => service.imagePullSecrets.includes("medopl-tcr-pull-secret")), true, "image_pull_secret_required");
@@ -199,7 +201,7 @@ async function assertProductionDeployRunnerLocalGate() {
     assertNoSensitiveText(JSON.stringify(evidencePayload), "evidence");
 
     await writeFile(deployEnvPath, [
-      "RUN_TENCENT_DEPLOY_EXECUTION=0",
+      "RUN_TENCENT_DEPLOY_EXECUTION=1",
       "TCR_ID=100047070895",
       "TCR_SECRET=tcr-secret-value",
       "TENCENT_TCR_REGISTRY=uswccr.ccs.tencentyun.com",
@@ -213,11 +215,98 @@ async function assertProductionDeployRunnerLocalGate() {
     ].join("\n"));
     await assert.rejects(
       () => buildPackageDProductionDeployPlan({ deployEnvPath, runtimeEnvPath, kubeconfigPath, evidenceDir, authorized: true }),
-      /package_d_production_deploy_run_gate_not_authorized/,
-      "run_gate_zero_must_fail_closed_for_production_deploy_plan",
+      /package_d_production_deploy_plan_gate_must_remain_zero/,
+      "run_gate_one_must_fail_closed_for_plan_only_mode",
     );
 
     await writeValidProductionDeployInputs({ deployEnvPath, runtimeEnvPath, kubeconfigPath });
+    await writeFile(deployEnvPath, [
+      "RUN_TENCENT_DEPLOY_EXECUTION=0",
+      "TCR_ID=100047070895",
+      "TCR_SECRET=tcr-secret-value",
+      "TENCENT_TCR_REGISTRY=uswccr.ccs.tencentyun.com",
+      "TENCENT_TCR_NAMESPACE=medopl",
+      "TENCENT_TCR_REGION=na-siliconvalley",
+      "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
+      `TENCENT_DEPLOY_KUBECONFIG_REF=${kubeconfigPath}`,
+      "PACKAGE_D_RUNNER_IMAGE_REF=uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001",
+      "PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF=uswccr.ccs.tencentyun.com/medopl/portal-frontend:latest",
+      `PACKAGE_D_GO_BACKEND_IMAGE_REF=uswccr.ccs.tencentyun.com/medopl/medopl-go-backend:${fixedImageTag}`,
+      `PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF=uswccr.ccs.tencentyun.com/medopl/opl-web-gateway:${fixedImageTag}`,
+      `PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF=uswccr.ccs.tencentyun.com/medopl/opl-runtime-bridge:${fixedImageTag}`,
+      "",
+    ].join("\n"));
+    await assert.rejects(
+      () => buildPackageDProductionDeployPlan({ deployEnvPath, runtimeEnvPath, kubeconfigPath, evidenceDir, authorized: true }),
+      /package_d_production_image_latest_forbidden/,
+      "latest_service_image_must_fail_closed",
+    );
+    await writeFile(deployEnvPath, [
+      "RUN_TENCENT_DEPLOY_EXECUTION=0",
+      "TCR_ID=100047070895",
+      "TCR_SECRET=tcr-secret-value",
+      "TENCENT_TCR_REGISTRY=uswccr.ccs.tencentyun.com",
+      "TENCENT_TCR_NAMESPACE=medopl",
+      "TENCENT_TCR_REGION=na-siliconvalley",
+      "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
+      `TENCENT_DEPLOY_KUBECONFIG_REF=${kubeconfigPath}`,
+      "PACKAGE_D_RUNNER_IMAGE_REF=uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001",
+      "PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF=uswccr.ccs.tencentyun.com/medopl/portal-frontend:v22-package-d-20260616-wrong",
+      ...Object.entries(serviceImages)
+        .filter(([key]) => key !== "PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF")
+        .map(([key, value]) => `${key}=${value}`),
+      "",
+    ].join("\n"));
+    await assert.rejects(
+      () => buildPackageDProductionDeployPlan({ deployEnvPath, runtimeEnvPath, kubeconfigPath, evidenceDir, authorized: true }),
+      /package_d_production_image_tag_mismatch:portal-frontend/,
+      "non_target_service_image_tag_must_fail_closed",
+    );
+    await writeFile(deployEnvPath, [
+      "RUN_TENCENT_DEPLOY_EXECUTION=0",
+      "TCR_ID=100047070895",
+      "TCR_SECRET=tcr-secret-value",
+      "TENCENT_TCR_REGISTRY=uswccr.ccs.tencentyun.com",
+      "TENCENT_TCR_NAMESPACE=other",
+      "TENCENT_TCR_REGION=na-siliconvalley",
+      "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
+      `TENCENT_DEPLOY_KUBECONFIG_REF=${kubeconfigPath}`,
+      "PACKAGE_D_RUNNER_IMAGE_REF=uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001",
+      "PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF=uswccr.ccs.tencentyun.com/other/portal-frontend:v22-package-d-20260616-001",
+      "PACKAGE_D_GO_BACKEND_IMAGE_REF=uswccr.ccs.tencentyun.com/other/medopl-go-backend:v22-package-d-20260616-001",
+      "PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF=uswccr.ccs.tencentyun.com/other/opl-web-gateway:v22-package-d-20260616-001",
+      "PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF=uswccr.ccs.tencentyun.com/other/opl-runtime-bridge:v22-package-d-20260616-001",
+      "",
+    ].join("\n"));
+    await assert.rejects(
+      () => buildPackageDProductionDeployPlan({ deployEnvPath, runtimeEnvPath, kubeconfigPath, evidenceDir, authorized: true }),
+      /package_d_production_deploy_tcr_namespace_mismatch/,
+      "non_medopl_tcr_namespace_must_fail_closed",
+    );
+    await assert.rejects(
+      () => buildPackageDProductionDeployPlan({
+        deployEnvPath,
+        runtimeEnvPath,
+        kubeconfigPath,
+        evidenceDir,
+        authorized: true,
+        mode: "production-deploy-apply",
+      }),
+      /package_d_production_deploy_apply_gate_not_authorized/,
+      "future_apply_mode_without_run_gate_one_must_fail_closed",
+    );
+    await assert.rejects(
+      () => buildPackageDProductionDeployPlan({
+        deployEnvPath,
+        runtimeEnvPath,
+        kubeconfigPath,
+        evidenceDir,
+        authorized: true,
+        mode: "production-deploy-live",
+      }),
+      /package_d_production_deploy_apply_gate_not_authorized/,
+      "future_live_mode_without_run_gate_one_must_fail_closed",
+    );
     await writeFile(deployEnvPath, [
       "RUN_TENCENT_DEPLOY_EXECUTION=1",
       "TCR_ID=100047070895",
@@ -228,16 +317,20 @@ async function assertProductionDeployRunnerLocalGate() {
       "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
       `TENCENT_DEPLOY_KUBECONFIG_REF=${kubeconfigPath}`,
       "PACKAGE_D_RUNNER_IMAGE_REF=uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001",
-      "PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF=uswccr.ccs.tencentyun.com/medopl/portal-frontend:latest",
-      "PACKAGE_D_GO_BACKEND_IMAGE_REF=uswccr.ccs.tencentyun.com/medopl/medopl-go-backend:v22-package-d-20260616-fake",
-      "PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF=uswccr.ccs.tencentyun.com/medopl/opl-web-gateway:v22-package-d-20260616-fake",
-      "PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF=uswccr.ccs.tencentyun.com/medopl/opl-runtime-bridge:v22-package-d-20260616-fake",
+      ...Object.entries(serviceImages).map(([key, value]) => `${key}=${value}`),
       "",
     ].join("\n"));
     await assert.rejects(
-      () => buildPackageDProductionDeployPlan({ deployEnvPath, runtimeEnvPath, kubeconfigPath, evidenceDir, authorized: true }),
-      /package_d_production_image_latest_forbidden/,
-      "latest_service_image_must_fail_closed",
+      () => buildPackageDProductionDeployPlan({
+        deployEnvPath,
+        runtimeEnvPath,
+        kubeconfigPath,
+        evidenceDir,
+        authorized: true,
+        mode: "production-deploy-apply",
+      }),
+      /package_d_production_deploy_apply_not_implemented/,
+      "future_apply_mode_with_run_gate_one_must_stop_before_real_deploy_in_this_runner",
     );
     for (const forbiddenArg of ["--build", "--push", "--tencent-mutation", "--package-c-live", "--delete", "--patch", "--scale", "--arbitrary-shell"]) {
       await assert.rejects(
