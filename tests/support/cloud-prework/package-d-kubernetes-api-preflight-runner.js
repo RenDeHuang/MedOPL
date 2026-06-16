@@ -29,6 +29,21 @@ export const DEPLOY_ENV_KEYS = Object.freeze([
   "TENCENT_DEPLOY_CLUSTER_ID",
   "TENCENT_DEPLOY_KUBECONFIG_REF",
   "PACKAGE_D_RUNNER_IMAGE_REF",
+  "PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF",
+  "PACKAGE_D_GO_BACKEND_IMAGE_REF",
+  "PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF",
+  "PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF",
+]);
+export const REQUIRED_DEPLOY_ENV_KEYS = Object.freeze([
+  "RUN_TENCENT_DEPLOY_EXECUTION",
+  "TCR_ID",
+  "TCR_SECRET",
+  "TENCENT_TCR_REGISTRY",
+  "TENCENT_TCR_NAMESPACE",
+  "TENCENT_TCR_REGION",
+  "TENCENT_DEPLOY_CLUSTER_ID",
+  "TENCENT_DEPLOY_KUBECONFIG_REF",
+  "PACKAGE_D_RUNNER_IMAGE_REF",
 ]);
 export const RUNTIME_ENV_KEYS = Object.freeze([
   "PORTAL_ADMIN_EMAIL",
@@ -83,7 +98,7 @@ function parseArgs(argv = []) {
   return args;
 }
 
-export function parseEnv(content = "", allowedKeys = []) {
+export function parseEnv(content = "", allowedKeys = [], requiredKeys = allowedKeys) {
   const allowed = new Set(allowedKeys);
   const env = {};
   const duplicates = [];
@@ -101,7 +116,7 @@ export function parseEnv(content = "", allowedKeys = []) {
     env[key] = value;
   }
   if (duplicates.length > 0) throw new Error(`package_d_env_duplicate_key:${duplicates.sort().join(",")}`);
-  const missing = allowedKeys.filter((key) => !text(env[key]));
+  const missing = requiredKeys.filter((key) => !text(env[key]));
   if (missing.length > 0) throw new Error(`package_d_env_missing:${missing.join(",")}`);
   return env;
 }
@@ -267,7 +282,7 @@ export async function buildPackageDKubernetesApiPreflightPlan({
   assertFile(runtimeEnvPath, "package_d_runtime_env_missing");
   assertFile(kubeconfigPath, "package_d_kubeconfig_missing");
 
-  const deployEnv = parseEnv(await readFile(deployEnvPath, "utf8"), DEPLOY_ENV_KEYS);
+  const deployEnv = parseEnv(await readFile(deployEnvPath, "utf8"), DEPLOY_ENV_KEYS, REQUIRED_DEPLOY_ENV_KEYS);
   const runtimeEnv = parseEnv(await readFile(runtimeEnvPath, "utf8"), RUNTIME_ENV_KEYS);
   assertTargetEnv({ deployEnv, runtimeEnv, kubeconfigPath });
   const clusterAuth = kubeconfigSummary(await readFile(kubeconfigPath, "utf8"));

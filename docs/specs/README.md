@@ -2017,6 +2017,10 @@ Package D 只能读取以下两个 env 文件的 allowlisted key，且必须按�
 - `TENCENT_DEPLOY_CLUSTER_ID`
 - `TENCENT_DEPLOY_KUBECONFIG_REF`
 - `PACKAGE_D_RUNNER_IMAGE_REF`
+- `PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF`
+- `PACKAGE_D_GO_BACKEND_IMAGE_REF`
+- `PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF`
+- `PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF`
 
 `portal-runtime.env` allowlist：
 
@@ -2029,6 +2033,8 @@ Package D 只能读取以下两个 env 文件的 allowlisted key，且必须按�
 `TENCENT_DEPLOY_KUBECONFIG_REF` 只能是后端 secret reference 或本机受控路径引用，不能把 raw kubeconfig 写入合同、日志、Portal payload、`.runtime` 或 git。
 
 `PACKAGE_D_RUNNER_IMAGE_REF` 是 run-scoped Package D platform runner Job 的非 secret image reference。它必须匹配 `TENCENT_TCR_REGISTRY` / `TENCENT_TCR_NAMESPACE` / repo / non-latest tag 形状；Kubernetes live Job manifest 必须使用真实值，`.runtime` evidence 和 docs 只能写 redacted image ref。`REDACTED_*` 占位符不得提交给 Kubernetes API。
+
+`PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF`、`PACKAGE_D_GO_BACKEND_IMAGE_REF`、`PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF` 和 `PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF` 是 Package D production deploy runner 的非 secret service image references。它们必须匹配 `TENCENT_TCR_REGISTRY` / `TENCENT_TCR_NAMESPACE` / allowlisted service repo / fixed non-latest tag 形状；Kubernetes live production manifest 必须使用真实值，redacted plan / evidence 只能写 redacted image refs。缺失、`latest`、跨 namespace、跨 repo、任意 image ref 或 `REDACTED_*` 值都必须 fail-closed。
 
 `PORTAL_ADMIN_PASSWORD`、`PORTAL_POSTGRES_PASSWORD` 和完整 DB URL 只能进入后端 secret 边界；stdout、docs、git、Portal payload 和 `.runtime` 只能出现脱敏摘要或 endpoint host:port。`PORTAL_POSTGRES_URL` 必须指向 VPC 内网 PostgreSQL endpoint `10.66.0.21:5432`，不依赖公网 PostgreSQL。Package C PostgreSQL ledger sink 的真实 DB canary 不再从本机追求连通性；它必须等 Portal / control-plane service 部署到 VPC 内、可从 TKE platform pool 访问 `medopl-postgres` 后再单独授权执行。
 

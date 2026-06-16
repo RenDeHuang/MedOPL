@@ -154,6 +154,10 @@ const PACKAGE_D_SECRET_KEY_LIST = Object.freeze([
   "TENCENT_DEPLOY_CLUSTER_ID",
   "TENCENT_DEPLOY_KUBECONFIG_REF",
   "PACKAGE_D_RUNNER_IMAGE_REF",
+  "PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF",
+  "PACKAGE_D_GO_BACKEND_IMAGE_REF",
+  "PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF",
+  "PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF",
 ]);
 
 const PORTAL_RUNTIME_SECRET_KEY_LIST = Object.freeze([
@@ -568,63 +572,51 @@ function checkExecutionPreflightGate({ deployEnv, portalRuntimeEnv, manifestPlan
   };
 }
 
+const PACKAGE_D_SERVICE_IMAGE_ENV_LINES = Object.freeze([
+  "PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF=registry-proof.example.tencentcloudcr.com/namespace-proof/portal-frontend:v22-package-d-proof",
+  "PACKAGE_D_GO_BACKEND_IMAGE_REF=registry-proof.example.tencentcloudcr.com/namespace-proof/medopl-go-backend:v22-package-d-proof",
+  "PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF=registry-proof.example.tencentcloudcr.com/namespace-proof/opl-web-gateway:v22-package-d-proof",
+  "PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF=registry-proof.example.tencentcloudcr.com/namespace-proof/opl-runtime-bridge:v22-package-d-proof",
+]);
+
+function packageDDeployEnvFixture({ runGate = "0", kubeconfigRef = "kubeconfig-ref-proof", extra = [] } = {}) {
+  return [
+    `RUN_TENCENT_DEPLOY_EXECUTION=${runGate}`,
+    "TCR_ID=deploy-id-proof",
+    "TCR_SECRET=$TCR_SECRET",
+    "TENCENT_TCR_REGISTRY=registry-proof.example.tencentcloudcr.com",
+    "TENCENT_TCR_NAMESPACE=namespace-proof",
+    "TENCENT_TCR_REGION=na-siliconvalley",
+    "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
+    `TENCENT_DEPLOY_KUBECONFIG_REF=${kubeconfigRef}`,
+    "PACKAGE_D_RUNNER_IMAGE_REF=registry-proof.example.tencentcloudcr.com/namespace-proof/medopl-platform-runner:v22-package-d-proof",
+    ...PACKAGE_D_SERVICE_IMAGE_ENV_LINES,
+    ...extra,
+  ].join("\n");
+}
+
 const checked = [
   {
     file: "package-d-deploy.env",
-    result: checkConfig([
-      "RUN_TENCENT_DEPLOY_EXECUTION=0",
-      "TCR_ID=deploy-id-proof",
-      "TCR_SECRET=$TCR_SECRET",
-      "TENCENT_TCR_REGISTRY=registry-proof.example.tencentcloudcr.com",
-      "TENCENT_TCR_NAMESPACE=namespace-proof",
-      "TENCENT_TCR_REGION=na-siliconvalley",
-      "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
-      "TENCENT_DEPLOY_KUBECONFIG_REF=kubeconfig-ref-proof",
-      "PACKAGE_D_RUNNER_IMAGE_REF=registry-proof.example.tencentcloudcr.com/namespace-proof/medopl-platform-runner:v22-package-d-proof",
-    ].join("\n")),
+    result: checkConfig(packageDDeployEnvFixture()),
   },
   {
     file: "package-d-deploy-execution-enabled.env",
-    result: checkConfig([
-      "RUN_TENCENT_DEPLOY_EXECUTION=1",
-      "TCR_ID=deploy-id-proof",
-      "TCR_SECRET=$TCR_SECRET",
-      "TENCENT_TCR_REGISTRY=registry-proof.example.tencentcloudcr.com",
-      "TENCENT_TCR_NAMESPACE=namespace-proof",
-      "TENCENT_TCR_REGION=na-siliconvalley",
-      "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
-      "TENCENT_DEPLOY_KUBECONFIG_REF=kubeconfig-ref-proof",
-      "PACKAGE_D_RUNNER_IMAGE_REF=registry-proof.example.tencentcloudcr.com/namespace-proof/medopl-platform-runner:v22-package-d-proof",
-    ].join("\n")),
+    result: checkConfig(packageDDeployEnvFixture({ runGate: "1" })),
   },
   {
     file: "package-d-deploy-raw-kubeconfig.env",
-    result: checkConfig([
-      "RUN_TENCENT_DEPLOY_EXECUTION=0",
-      "TCR_ID=deploy-id-proof",
-      "TCR_SECRET=$TCR_SECRET",
-      "TENCENT_TCR_REGISTRY=registry-proof.example.tencentcloudcr.com",
-      "TENCENT_TCR_NAMESPACE=namespace-proof",
-      "TENCENT_TCR_REGION=na-siliconvalley",
-      "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
-      "TENCENT_DEPLOY_KUBECONFIG_REF=apiVersion: v1\\nkind: Config\\nclusters: []",
-      "PACKAGE_D_RUNNER_IMAGE_REF=registry-proof.example.tencentcloudcr.com/namespace-proof/medopl-platform-runner:v22-package-d-proof",
-    ].join("\n")),
+    result: checkConfig(packageDDeployEnvFixture({
+      kubeconfigRef: "apiVersion: v1\\nkind: Config\\nclusters: []",
+    })),
   },
   {
     file: "package-d-deploy-with-runtime-secret.env",
-    result: checkConfig([
-      "RUN_TENCENT_DEPLOY_EXECUTION=0",
-      "TCR_ID=deploy-id-proof",
-      "TCR_SECRET=$TCR_SECRET",
-      "TENCENT_TCR_REGISTRY=registry-proof.example.tencentcloudcr.com",
-      "TENCENT_TCR_NAMESPACE=namespace-proof",
-      "TENCENT_TCR_REGION=na-siliconvalley",
-      "TENCENT_DEPLOY_CLUSTER_ID=cls-fi097sy4",
-      "TENCENT_DEPLOY_KUBECONFIG_REF=kubeconfig-ref-proof",
-      "PACKAGE_D_RUNNER_IMAGE_REF=registry-proof.example.tencentcloudcr.com/namespace-proof/medopl-platform-runner:v22-package-d-proof",
+    result: checkConfig(packageDDeployEnvFixture({
+      extra: [
       "PORTAL_POSTGRES_URL=postgresql://medopl:$PORTAL_POSTGRES_PASSWORD@10.66.0.21:5432/medopl",
-    ].join("\n")),
+      ],
+    })),
   },
   {
     file: "package-c-mutation.env",

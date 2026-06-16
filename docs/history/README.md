@@ -131,7 +131,7 @@ Next owner:
 
 ### 2026-05-23 changes/archive/2026-05-23-local-golden-path-release-candidate
 
-Status: `landed / pushed / post-push verified`
+Status: `authoring / local gate pending landing`
 
 Branch: `cleanup/golden-path-first-class`
 
@@ -522,7 +522,7 @@ Next recommendation:
 
 ### 2026-05-22 cleanup/v22-backend-convergence-trunk-closeout
 
-Status: `landed / pushed / post-push verified`
+Status: `authoring / local gate pending landing`
 
 Branch: `cleanup/v22-backend-convergence-trunk-closeout`
 
@@ -1003,7 +1003,7 @@ Next recommendation:
 
 ### 2026-05-22 fix/v22-user-owned-gflabtoken-provider-keys
 
-Status: `landed / pushed / post-push verified`
+Status: `authoring / local gate pending landing`
 
 Branch: `fix/v22-user-owned-gflabtoken-provider-keys`
 
@@ -6261,5 +6261,52 @@ post_push_verification:
 - `npm run closeout:check -- --json`: pass.
 
 post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
+
+### 2026-06-16 package-d-production-deploy-runner-contract
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `cb93d2fae1897a9c833ed0ed440fa7440de00883`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Added the repo-native Package D production deploy runner contract/local gate: `node tests/support/cloud-prework/package-d-production-deploy-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode production-deploy-plan --authorized 1`.
+- Materialized redacted Deployment/Service/ConfigMap manifests for `portal-frontend`, `medopl-go-backend`, `opl-web-gateway` and `opl-runtime-bridge` with namespace `medopl-platform`, selector `node.tke.cloud.tencent.com/machineset=np-6l4nkdto`, `medopl-package-d-deploy-env`, `medopl-portal-runtime-env` and `medopl-tcr-pull-secret`.
+- Extended the Package D deploy env allowlist with four non-secret service image ref keys and kept private build runner TCR secret scope unchanged.
+- Added local/future-authorized gate coverage for explicit authorization, fail-closed env/kubeconfig checks, fixed non-latest service images, redacted evidence, no plaintext secret, no tenant pool, and allowlisted deploy/smoke/rollback command plans.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs`: pass, including integrated Package D production deploy runner contract/local gate coverage.
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+Can-claim:
+
+- Package D now has a repo-native production deploy runner contract/local gate and a single command for the next authorized cloud step.
+- The local contract can produce redacted `.runtime/package-d-production-deploy/deploy-plan-redacted.json` and `.runtime/package-d-production-deploy/production-manifests-redacted.json` evidence shapes.
+
+Cannot-claim:
+
+- This repo session did not read secrets or kubeconfig, connect to Kubernetes API, run kubectl, deploy, build/push, execute Tencent mutation or run Package C live.
+- Production Deployment/Service rollout, post-deploy smoke, rollback evidence, billing/audit ledger, Portal opening entry and workspace storage quota are not complete.
+
+pending_landed_commit: `after_commit`
+
+landing_gate_result: `pending local verification`
+
+post_push_verification:
+
+- `npm run verify`: pending.
+- `npm run closeout:check -- --json`: pending.
+
+pending_post_merge_closeout: `after_push`
 
 next_cursor: `real-cloud-authorization-boundary`

@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical, so canonical ownership / billing truth remains PostgreSQL resource_bindings / cloud_operations ledger, not cloud tags. Package C PostgreSQL ledger lower bound, runner-local state-machine evidence, repository write wiring and gated PostgreSQL sink support are landed; the earlier direct DB canary from outside VPC failed closed at connection preflight, so successful DB canary waits for execution inside TKE/VPC. Package D deploy readiness now has bootstrap resources, run-scoped platform runner preflight and PostgreSQL/runtime env/combined in-cluster preflight proven from the cloud. Run pdrun-20260616-002 at repo HEAD 005e522c743244945a5c289cae7ce73b6a20d4a7 used selector node.tke.cloud.tencent.com/machineset=np-6l4nkdto and image uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001; image pull/run, PostgreSQL 10.66.0.21:5432 connectivity smoke, package_d_secretref_env_availability_smoke, Job completion, Job cleanup deleted_on_success / NotFound after delete and redaction audit all passed. Evidence paths are .runtime/package-d-run-scoped-job-preflight/pdrun-20260616-002/preflight-job-redacted.json and .runtime/package-d-run-scoped-job-preflight/pdrun-20260616-002/job-manifest-redacted.json. No secret leakage, deploy, build/push, Tencent mutation or Package C live occurred during that preflight. Package D realExecutionReady remains false; the next gap is a repo-native Package D production deploy runner single entrypoint. Do not hand-run kubectl apply. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate explicit authorization.",
+  "current_problem": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical, so canonical ownership / billing truth remains PostgreSQL resource_bindings / cloud_operations ledger, not cloud tags. Package C PostgreSQL ledger lower bound, runner-local state-machine evidence, repository write wiring and gated PostgreSQL sink support are landed; the earlier direct DB canary from outside VPC failed closed at connection preflight, so successful DB canary waits for execution inside TKE/VPC. Package D deploy readiness now has bootstrap resources, run-scoped platform runner preflight and PostgreSQL/runtime env/combined in-cluster preflight proven from the cloud. Run pdrun-20260616-002 at repo HEAD 005e522c743244945a5c289cae7ce73b6a20d4a7 used selector node.tke.cloud.tencent.com/machineset=np-6l4nkdto and image uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001; image pull/run, PostgreSQL 10.66.0.21:5432 connectivity smoke, package_d_secretref_env_availability_smoke, Job completion, Job cleanup deleted_on_success / NotFound after delete and redaction audit all passed. The repo now has a Package D production deploy runner contract/local gate that materializes redacted Deployment/Service/ConfigMap manifests for portal-frontend, medopl-go-backend, opl-web-gateway and opl-runtime-bridge, validates SecretRef/imagePullSecret/scheduling/image rules, and plans allowlisted deploy/smoke/rollback commands without executing kubectl. Evidence paths for future local/cloud runs are .runtime/package-d-production-deploy/deploy-plan-redacted.json and .runtime/package-d-production-deploy/production-manifests-redacted.json. No secret leakage, deploy, build/push, Tencent mutation or Package C live occurred during this local gate. Package D realExecutionReady remains false; the next gap is an explicitly authorized production deploy dry-run / deploy execution evidence run through the repo-native runner. Do not hand-run kubectl apply. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate explicit authorization.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -100,7 +100,7 @@
       "depends_on": [
         "precloud-deployable-rc"
       ],
-      "history_summary": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound, runner-local state-machine evidence, repository write wiring contract, gated PostgreSQL sink support path and explicit live canary runner contract have landed. Package D release plan, execution preflight gate, in-cluster runner shape gate, non-executing runner manifest materialization / authorization pack, bootstrap authorization pack, repo-native Kubernetes API server-side dry-run preflight runner, repo-native bootstrap apply runner and repo-native run-scoped Job runner have landed. Kubernetes API connectivity passed, context/cluster matched cls-fi097sy4, medopl-platform is Active, allowlisted bootstrap resources are present, same-name Job immutable risk is removed from bootstrap apply/dry-run, and run-scoped Job execution is separate. Package D run-scoped platform runner preflight pdrun-20260616-001 passed; Package D PostgreSQL/runtime env/combined in-cluster preflight pdrun-20260616-002 also passed from the TKE/VPC runner with linux/amd64 image uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001, selector node.tke.cloud.tencent.com/machineset=np-6l4nkdto, PostgreSQL 10.66.0.21:5432 connectivity smoke, SecretRef/env availability smoke, redacted evidence and success cleanup. No secret leakage, deploy, build/push, Tencent mutation or Package C live occurred. Stabilization is now blocked on a repo-native Package D production deploy runner single entrypoint, then post-deploy smoke, rollback evidence, billing/audit ledger, Portal opening entry and workspace storage quota. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization.",
+      "history_summary": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; TagResources for tke:nodepool remains unsupported and non-canonical. MedOPL PostgreSQL resource_bindings / cloud_operations ledger lower bound, runner-local state-machine evidence, repository write wiring contract, gated PostgreSQL sink support path and explicit live canary runner contract have landed. Package D release plan, execution preflight gate, in-cluster runner shape gate, manifest materialization / authorization pack, bootstrap authorization pack, repo-native Kubernetes API server-side dry-run preflight runner, bootstrap apply runner, run-scoped Job runner and production deploy runner contract/local gate have landed. Kubernetes API connectivity passed, context/cluster matched cls-fi097sy4, medopl-platform is Active, allowlisted bootstrap resources are present, same-name Job immutable risk is removed from bootstrap apply/dry-run, and run-scoped Job execution is separate. Package D run-scoped platform runner preflight pdrun-20260616-001 passed; Package D PostgreSQL/runtime env/combined in-cluster preflight pdrun-20260616-002 also passed from the TKE/VPC runner with linux/amd64 image uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001, selector node.tke.cloud.tencent.com/machineset=np-6l4nkdto, PostgreSQL 10.66.0.21:5432 connectivity smoke, SecretRef/env availability smoke, redacted evidence and success cleanup. No secret leakage, deploy, build/push, Tencent mutation or Package C live occurred. Stabilization is now blocked on an explicitly authorized Package D production deploy dry-run / execution evidence run through the repo-native runner, then post-deploy smoke, rollback evidence, billing/audit ledger, Portal opening entry and workspace storage quota. New DB secret read, Tencent mutation, kubeconfig read, kubectl, deploy, build/push, Package D execution and live-test remain blocked without separate authorization.",
       "landed_commit": "005e522c743244945a5c289cae7ce73b6a20d4a7"
     },
     {
@@ -171,7 +171,7 @@
     "gap_id": "real-cloud-authorization-boundary",
     "stage": "S7 real-cloud authorization boundary before readiness",
     "cursor_eligible": false,
-    "problem": "Package D PostgreSQL/runtime env/combined in-cluster preflight pdrun-20260616-002 has passed on the TKE/VPC runner: repo HEAD 005e522c743244945a5c289cae7ce73b6a20d4a7, selector node.tke.cloud.tencent.com/machineset=np-6l4nkdto, fixed runner image, PostgreSQL 10.66.0.21:5432 connectivity smoke, SecretRef/env availability smoke, Job completion, redaction audit and success cleanup passed. The current gap is a repo-native Package D production deploy runner single entrypoint; this local step must not deploy or hand-run kubectl apply.",
+    "problem": "Package D PostgreSQL/runtime env/combined in-cluster preflight pdrun-20260616-002 has passed on the TKE/VPC runner, and the repo now has a production deploy runner contract/local gate that materializes and validates redacted Package D Deployment/Service/ConfigMap manifests plus deploy/smoke/rollback command plans without executing kubectl. The current gap is separately authorized production deploy dry-run / execution evidence through the repo-native runner; this local step did not deploy or hand-run kubectl apply.",
     "verification_commands": [
       "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
       "node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs",
@@ -262,10 +262,9 @@
     "package_d_deploy_readiness_plan": {
       "executionEnvironment": "tke_in_cluster_platform_runner_preferred",
       "readinessGaps": [
-        "repo-native Package D production deploy runner single entrypoint",
+        "authorized Package D production deploy dry-run / execution evidence through repo-native runner",
         "post-deploy DB/connectivity smoke execution from TKE platform runner",
-        "rollback evidence after execution",
-        "authorized deploy after deploy runner and authorization pack pass"
+        "rollback evidence after execution"
       ],
       "deployRunnerPlacementPlan": {
         "status": "placement_plan_only",
@@ -1195,7 +1194,7 @@
       },
       "targetPlatformNodePoolId": "np-6l4nkdto",
       "legacyProtectedPlatformNodePoolId": "np-cbk784r8",
-      "status": "deploy_readiness_planning_only_deploy_authorization_pack_ready_deploy_runner_gap",
+      "status": "deploy_readiness_planning_only_production_deploy_runner_contract_landed",
       "latestCloudRunScopedPreflight": {
         "status": "passed_cloud_run",
         "runId": "pdrun-20260616-002",
@@ -1217,15 +1216,15 @@
           ".runtime/package-d-run-scoped-job-preflight/pdrun-20260616-002/job-manifest-redacted.json"
         ]
       },
-      "nextGap": "repo-native Package D production deploy runner single entrypoint",
+      "nextGap": "Package D authorized production deploy dry-run / deploy execution evidence",
       "nextAuthorizationPrompt": [
-        "按 active truth 做 gap-driven execution，不新增 loop。",
-        "当前 gap：Package D deploy authorization pack 已记录，但仓库缺少 repo-native Package D production deploy runner 单一入口。",
-        "目标：实现本地 repo-native Package D deploy runner contract/local gate，只生成/验证受控 deploy/rollback 命令和 manifest shape，本轮不执行 deploy。",
-        "必须复用现有 Package D manifest materialization、env allowlist、redaction、np-6l4nkdto scheduling、SecretRef 和 image ref rules。",
-        "runner 必须 fail closed：无授权、缺 kubeconfig/env、RUN_TENCENT_DEPLOY_EXECUTION 未显式授权、cluster/namespace/scheduling/image/SecretRef 不匹配、manifest 出现 medopl-tenant- 或 plaintext secret 都失败。",
-        "禁止：不读取 secret/kubeconfig、不连接 Kubernetes API、不 kubectl、不 deploy、不 build/push、不 Tencent mutation、不 Package C live。",
-        "同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json，并跑 npm run verify 和 closeout:check -- --json，commit/push。"
+        "授权在 TKE/VPC platform runner 10.66.0.42 执行 Package D production deploy runner dry-run/preflight。",
+        "前置：repo HEAD 必须等于 origin/recovery/platform-v22-trunk 的最新 landed commit，工作区干净，RUN_TENCENT_DEPLOY_EXECUTION 按授权边界设置。",
+        "允许读取 /home/dev/.secrets/medopl/v22/package-d-deploy.env、portal-runtime.env、kubeconfig-package-d-deploy；只允许 Package D deploy runner 读取 allowlisted keys。",
+        "允许执行单一入口：node tests/support/cloud-prework/package-d-production-deploy-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode production-deploy-plan --authorized 1",
+        "第一步只允许 server-side dry-run 和受控 manifest/command/evidence redaction 验证；真实 apply/rollout/smoke/rollback 需要下一条明确授权。",
+        "禁止手写 kubectl apply/delete/patch/scale，禁止 build/push，禁止 Tencent mutation，禁止 Package C live，禁止 tenant pool 或 medopl-tenant- 资源，禁止修改 np-cbk784r8 或 np-6l4nkdto。",
+        "evidence 只写 .runtime，不能输出 kubeconfig/token/cert/DB password/TCR secret/Portal admin password。"
       ],
       "realExecutionReady": false,
       "combinedInClusterPreflight": {
@@ -1250,7 +1249,7 @@
         ]
       },
       "deployAuthorizationPack": {
-        "status": "authorization_pack_ready_but_repo_native_deploy_runner_missing",
+        "status": "authorization_pack_ready_and_repo_native_deploy_runner_contract_landed",
         "path": "tests/fixtures/v22/goal-current.json#package_d_deploy_readiness_plan.deployAuthorizationPack",
         "target": {
           "clusterId": "cls-fi097sy4",
@@ -1261,22 +1260,22 @@
           "legacyProtectedPlatformNodePoolId": "np-cbk784r8"
         },
         "deployRunnerSingleEntrypoint": {
-          "exists": false,
-          "searchedSurfaces": [
-            "tests/support/cloud-prework",
-            "tests/future-authorized/cloud",
-            "scripts",
-            "package.json scripts"
-          ],
-          "nextGap": "implement repo-native Package D production deploy runner single entrypoint before any real deploy",
-          "handWrittenKubectlApplyAllowed": false
+          "exists": true,
+          "command": "node tests/support/cloud-prework/package-d-production-deploy-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode production-deploy-plan --authorized 1",
+          "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs",
+          "evidencePath": ".runtime/package-d-production-deploy/deploy-plan-redacted.json",
+          "manifestEvidencePath": ".runtime/package-d-production-deploy/production-manifests-redacted.json",
+          "contractOnlyThisCommit": true,
+          "executesKubectlNow": false,
+          "handWrittenKubectlApplyAllowed": false,
+          "nextGap": "authorized Package D production deploy dry-run / execution evidence through repo-native runner"
         },
         "allowedOperationsAfterSeparateAuthorizationAndRunnerLanding": [
           "read only allowlisted package-d-deploy.env, portal-runtime.env and kubeconfig-package-d-deploy",
           "verify RUN_TENCENT_DEPLOY_EXECUTION=1 only for explicit deploy execution authorization",
           "verify cluster cls-fi097sy4, namespace medopl-platform and runner pool np-6l4nkdto",
           "server-side dry-run Package D production manifests before apply",
-          "apply only allowlisted Package D Deployment/Service/ConfigMap/SecretRef/imagePullSecret resources in medopl-platform",
+          "apply only allowlisted Package D Deployment/Service/ConfigMap resources in medopl-platform through the repo-native runner",
           "observe rollout status for portal-frontend, medopl-go-backend, opl-web-gateway and opl-runtime-bridge",
           "run post-deploy smoke including PostgreSQL 10.66.0.21:5432 connectivity, Portal/backend health, Gateway health and Runtime Bridge health",
           "collect redacted evidence under .runtime",
@@ -1304,7 +1303,13 @@
           "serviceImageRefRule": "TENCENT_TCR_REGISTRY/TENCENT_TCR_NAMESPACE/<service>:fixed-non-latest-package-d-tag",
           "latestAllowed": false,
           "arbitraryImageRefAllowed": false,
-          "exactServiceImageRefsMaterialized": false
+          "exactServiceImageRefsMaterialized": true,
+          "serviceImageRefKeys": [
+            "PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF",
+            "PACKAGE_D_GO_BACKEND_IMAGE_REF",
+            "PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF",
+            "PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF"
+          ]
         },
         "secretRefUsage": {
           "deployEnvSecretRef": "medopl-package-d-deploy-env",
@@ -1339,7 +1344,7 @@
         "stopConditions": [
           "RUN_TENCENT_DEPLOY_EXECUTION is not explicitly authorized for deploy execution",
           "repo HEAD or working tree is not the authorized state",
-          "deploy runner single entrypoint is missing",
+          "deploy runner contract/local gate has not passed at authorized repo HEAD",
           "context or cluster does not match cls-fi097sy4",
           "namespace is not medopl-platform",
           "scheduling target is not np-6l4nkdto",
@@ -1354,18 +1359,21 @@
           "authorizationPack": "tests/fixtures/v22/goal-current.json#package_d_deploy_readiness_plan.deployAuthorizationPack",
           "futureDeployEvidence": ".runtime/package-d-deploy/<runid>/deploy-redacted.json",
           "futureSmokeEvidence": ".runtime/package-d-deploy/<runid>/smoke-redacted.json",
-          "futureRollbackEvidence": ".runtime/package-d-deploy/<runid>/rollback-redacted.json"
-        }
+          "futureRollbackEvidence": ".runtime/package-d-deploy/<runid>/rollback-redacted.json",
+          "deployPlanEvidence": ".runtime/package-d-production-deploy/deploy-plan-redacted.json",
+          "deployManifestEvidence": ".runtime/package-d-production-deploy/production-manifests-redacted.json"
+        },
+        "nextAuthorizationPrompt": [
+          "授权在 TKE/VPC platform runner 10.66.0.42 执行 Package D production deploy runner dry-run/preflight。",
+          "前置：repo HEAD 必须等于 origin/recovery/platform-v22-trunk 的最新 landed commit，工作区干净，RUN_TENCENT_DEPLOY_EXECUTION 按授权边界设置。",
+          "允许读取 /home/dev/.secrets/medopl/v22/package-d-deploy.env、portal-runtime.env、kubeconfig-package-d-deploy；只允许 Package D deploy runner 读取 allowlisted keys。",
+          "允许执行单一入口：node tests/support/cloud-prework/package-d-production-deploy-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode production-deploy-plan --authorized 1",
+          "第一步只允许 server-side dry-run 和受控 manifest/command/evidence redaction 验证；真实 apply/rollout/smoke/rollback 需要下一条明确授权。",
+          "禁止手写 kubectl apply/delete/patch/scale，禁止 build/push，禁止 Tencent mutation，禁止 Package C live，禁止 tenant pool 或 medopl-tenant- 资源，禁止修改 np-cbk784r8 或 np-6l4nkdto。",
+          "evidence 只写 .runtime，不能输出 kubeconfig/token/cert/DB password/TCR secret/Portal admin password。"
+        ]
       },
-      "nextLocalCodexPrompt": [
-        "按 active truth 做 gap-driven execution，不新增 loop。",
-        "当前 gap：Package D deploy authorization pack 已记录，但仓库缺少 repo-native Package D production deploy runner 单一入口。",
-        "目标：实现本地 repo-native Package D deploy runner contract/local gate，只生成/验证受控 deploy/rollback 命令和 manifest shape，本轮不执行 deploy。",
-        "必须复用现有 Package D manifest materialization、env allowlist、redaction、np-6l4nkdto scheduling、SecretRef 和 image ref rules。",
-        "runner 必须 fail closed：无授权、缺 kubeconfig/env、RUN_TENCENT_DEPLOY_EXECUTION 未显式授权、cluster/namespace/scheduling/image/SecretRef 不匹配、manifest 出现 medopl-tenant- 或 plaintext secret 都失败。",
-        "禁止：不读取 secret/kubeconfig、不连接 Kubernetes API、不 kubectl、不 deploy、不 build/push、不 Tencent mutation、不 Package C live。",
-        "同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json，并跑 npm run verify 和 closeout:check -- --json，commit/push。"
-      ]
+      "nextLocalCodexPrompt": []
     },
     "latest_local_evidence": "package-d-combined-in-cluster-preflight-pdrun-20260616-002"
   },
@@ -1427,7 +1435,7 @@
       "workspace storage quota"
     ],
     "package_d_deploy_readiness_plan": {
-      "status": "deploy_readiness_planning_only_deploy_authorization_pack_ready_deploy_runner_gap",
+      "status": "deploy_readiness_planning_only_production_deploy_runner_contract_landed",
       "targetClusterId": "cls-fi097sy4",
       "targetPlatformNodePoolId": "np-6l4nkdto",
       "postgresEndpoint": "10.66.0.21:5432",
@@ -1537,10 +1545,9 @@
         "realExecutionReady": false
       },
       "readinessGaps": [
-        "repo-native Package D production deploy runner single entrypoint",
+        "authorized Package D production deploy dry-run / execution evidence through repo-native runner",
         "post-deploy DB/connectivity smoke execution from TKE platform runner",
-        "rollback evidence after execution",
-        "authorized deploy after deploy runner and authorization pack pass"
+        "rollback evidence after execution"
       ],
       "forbiddenOpsNow": [
         "Tencent mutation",
@@ -1559,7 +1566,11 @@
         "TENCENT_TCR_REGION",
         "TENCENT_DEPLOY_CLUSTER_ID",
         "TENCENT_DEPLOY_KUBECONFIG_REF",
-        "PACKAGE_D_RUNNER_IMAGE_REF"
+        "PACKAGE_D_RUNNER_IMAGE_REF",
+        "PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF",
+        "PACKAGE_D_GO_BACKEND_IMAGE_REF",
+        "PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF",
+        "PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF"
       ],
       "portalRuntimeEnvAllowlist": [
         "PORTAL_ADMIN_EMAIL",
@@ -2138,15 +2149,15 @@
           ".runtime/package-d-run-scoped-job-preflight/pdrun-20260616-002/job-manifest-redacted.json"
         ]
       },
-      "nextGap": "repo-native Package D production deploy runner single entrypoint",
+      "nextGap": "Package D authorized production deploy dry-run / deploy execution evidence",
       "nextAuthorizationPrompt": [
-        "按 active truth 做 gap-driven execution，不新增 loop。",
-        "当前 gap：Package D deploy authorization pack 已记录，但仓库缺少 repo-native Package D production deploy runner 单一入口。",
-        "目标：实现本地 repo-native Package D deploy runner contract/local gate，只生成/验证受控 deploy/rollback 命令和 manifest shape，本轮不执行 deploy。",
-        "必须复用现有 Package D manifest materialization、env allowlist、redaction、np-6l4nkdto scheduling、SecretRef 和 image ref rules。",
-        "runner 必须 fail closed：无授权、缺 kubeconfig/env、RUN_TENCENT_DEPLOY_EXECUTION 未显式授权、cluster/namespace/scheduling/image/SecretRef 不匹配、manifest 出现 medopl-tenant- 或 plaintext secret 都失败。",
-        "禁止：不读取 secret/kubeconfig、不连接 Kubernetes API、不 kubectl、不 deploy、不 build/push、不 Tencent mutation、不 Package C live。",
-        "同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json，并跑 npm run verify 和 closeout:check -- --json，commit/push。"
+        "授权在 TKE/VPC platform runner 10.66.0.42 执行 Package D production deploy runner dry-run/preflight。",
+        "前置：repo HEAD 必须等于 origin/recovery/platform-v22-trunk 的最新 landed commit，工作区干净，RUN_TENCENT_DEPLOY_EXECUTION 按授权边界设置。",
+        "允许读取 /home/dev/.secrets/medopl/v22/package-d-deploy.env、portal-runtime.env、kubeconfig-package-d-deploy；只允许 Package D deploy runner 读取 allowlisted keys。",
+        "允许执行单一入口：node tests/support/cloud-prework/package-d-production-deploy-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode production-deploy-plan --authorized 1",
+        "第一步只允许 server-side dry-run 和受控 manifest/command/evidence redaction 验证；真实 apply/rollout/smoke/rollback 需要下一条明确授权。",
+        "禁止手写 kubectl apply/delete/patch/scale，禁止 build/push，禁止 Tencent mutation，禁止 Package C live，禁止 tenant pool 或 medopl-tenant- 资源，禁止修改 np-cbk784r8 或 np-6l4nkdto。",
+        "evidence 只写 .runtime，不能输出 kubeconfig/token/cert/DB password/TCR secret/Portal admin password。"
       ],
       "realExecutionReady": false,
       "combinedInClusterPreflight": {
@@ -2171,7 +2182,7 @@
         ]
       },
       "deployAuthorizationPack": {
-        "status": "authorization_pack_ready_but_repo_native_deploy_runner_missing",
+        "status": "authorization_pack_ready_and_repo_native_deploy_runner_contract_landed",
         "path": "tests/fixtures/v22/goal-current.json#package_d_deploy_readiness_plan.deployAuthorizationPack",
         "target": {
           "clusterId": "cls-fi097sy4",
@@ -2182,22 +2193,22 @@
           "legacyProtectedPlatformNodePoolId": "np-cbk784r8"
         },
         "deployRunnerSingleEntrypoint": {
-          "exists": false,
-          "searchedSurfaces": [
-            "tests/support/cloud-prework",
-            "tests/future-authorized/cloud",
-            "scripts",
-            "package.json scripts"
-          ],
-          "nextGap": "implement repo-native Package D production deploy runner single entrypoint before any real deploy",
-          "handWrittenKubectlApplyAllowed": false
+          "exists": true,
+          "command": "node tests/support/cloud-prework/package-d-production-deploy-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode production-deploy-plan --authorized 1",
+          "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs",
+          "evidencePath": ".runtime/package-d-production-deploy/deploy-plan-redacted.json",
+          "manifestEvidencePath": ".runtime/package-d-production-deploy/production-manifests-redacted.json",
+          "contractOnlyThisCommit": true,
+          "executesKubectlNow": false,
+          "handWrittenKubectlApplyAllowed": false,
+          "nextGap": "authorized Package D production deploy dry-run / execution evidence through repo-native runner"
         },
         "allowedOperationsAfterSeparateAuthorizationAndRunnerLanding": [
           "read only allowlisted package-d-deploy.env, portal-runtime.env and kubeconfig-package-d-deploy",
           "verify RUN_TENCENT_DEPLOY_EXECUTION=1 only for explicit deploy execution authorization",
           "verify cluster cls-fi097sy4, namespace medopl-platform and runner pool np-6l4nkdto",
           "server-side dry-run Package D production manifests before apply",
-          "apply only allowlisted Package D Deployment/Service/ConfigMap/SecretRef/imagePullSecret resources in medopl-platform",
+          "apply only allowlisted Package D Deployment/Service/ConfigMap resources in medopl-platform through the repo-native runner",
           "observe rollout status for portal-frontend, medopl-go-backend, opl-web-gateway and opl-runtime-bridge",
           "run post-deploy smoke including PostgreSQL 10.66.0.21:5432 connectivity, Portal/backend health, Gateway health and Runtime Bridge health",
           "collect redacted evidence under .runtime",
@@ -2225,7 +2236,13 @@
           "serviceImageRefRule": "TENCENT_TCR_REGISTRY/TENCENT_TCR_NAMESPACE/<service>:fixed-non-latest-package-d-tag",
           "latestAllowed": false,
           "arbitraryImageRefAllowed": false,
-          "exactServiceImageRefsMaterialized": false
+          "exactServiceImageRefsMaterialized": true,
+          "serviceImageRefKeys": [
+            "PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF",
+            "PACKAGE_D_GO_BACKEND_IMAGE_REF",
+            "PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF",
+            "PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF"
+          ]
         },
         "secretRefUsage": {
           "deployEnvSecretRef": "medopl-package-d-deploy-env",
@@ -2260,7 +2277,7 @@
         "stopConditions": [
           "RUN_TENCENT_DEPLOY_EXECUTION is not explicitly authorized for deploy execution",
           "repo HEAD or working tree is not the authorized state",
-          "deploy runner single entrypoint is missing",
+          "deploy runner contract/local gate has not passed at authorized repo HEAD",
           "context or cluster does not match cls-fi097sy4",
           "namespace is not medopl-platform",
           "scheduling target is not np-6l4nkdto",
@@ -2275,18 +2292,21 @@
           "authorizationPack": "tests/fixtures/v22/goal-current.json#package_d_deploy_readiness_plan.deployAuthorizationPack",
           "futureDeployEvidence": ".runtime/package-d-deploy/<runid>/deploy-redacted.json",
           "futureSmokeEvidence": ".runtime/package-d-deploy/<runid>/smoke-redacted.json",
-          "futureRollbackEvidence": ".runtime/package-d-deploy/<runid>/rollback-redacted.json"
-        }
+          "futureRollbackEvidence": ".runtime/package-d-deploy/<runid>/rollback-redacted.json",
+          "deployPlanEvidence": ".runtime/package-d-production-deploy/deploy-plan-redacted.json",
+          "deployManifestEvidence": ".runtime/package-d-production-deploy/production-manifests-redacted.json"
+        },
+        "nextAuthorizationPrompt": [
+          "授权在 TKE/VPC platform runner 10.66.0.42 执行 Package D production deploy runner dry-run/preflight。",
+          "前置：repo HEAD 必须等于 origin/recovery/platform-v22-trunk 的最新 landed commit，工作区干净，RUN_TENCENT_DEPLOY_EXECUTION 按授权边界设置。",
+          "允许读取 /home/dev/.secrets/medopl/v22/package-d-deploy.env、portal-runtime.env、kubeconfig-package-d-deploy；只允许 Package D deploy runner 读取 allowlisted keys。",
+          "允许执行单一入口：node tests/support/cloud-prework/package-d-production-deploy-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode production-deploy-plan --authorized 1",
+          "第一步只允许 server-side dry-run 和受控 manifest/command/evidence redaction 验证；真实 apply/rollout/smoke/rollback 需要下一条明确授权。",
+          "禁止手写 kubectl apply/delete/patch/scale，禁止 build/push，禁止 Tencent mutation，禁止 Package C live，禁止 tenant pool 或 medopl-tenant- 资源，禁止修改 np-cbk784r8 或 np-6l4nkdto。",
+          "evidence 只写 .runtime，不能输出 kubeconfig/token/cert/DB password/TCR secret/Portal admin password。"
+        ]
       },
-      "nextLocalCodexPrompt": [
-        "按 active truth 做 gap-driven execution，不新增 loop。",
-        "当前 gap：Package D deploy authorization pack 已记录，但仓库缺少 repo-native Package D production deploy runner 单一入口。",
-        "目标：实现本地 repo-native Package D deploy runner contract/local gate，只生成/验证受控 deploy/rollback 命令和 manifest shape，本轮不执行 deploy。",
-        "必须复用现有 Package D manifest materialization、env allowlist、redaction、np-6l4nkdto scheduling、SecretRef 和 image ref rules。",
-        "runner 必须 fail closed：无授权、缺 kubeconfig/env、RUN_TENCENT_DEPLOY_EXECUTION 未显式授权、cluster/namespace/scheduling/image/SecretRef 不匹配、manifest 出现 medopl-tenant- 或 plaintext secret 都失败。",
-        "禁止：不读取 secret/kubeconfig、不连接 Kubernetes API、不 kubectl、不 deploy、不 build/push、不 Tencent mutation、不 Package C live。",
-        "同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json，并跑 npm run verify 和 closeout:check -- --json，commit/push。"
-      ]
+      "nextLocalCodexPrompt": []
     },
     "readinessGaps": [
       "repo-native Package D production deploy runner single entrypoint",
@@ -2625,7 +2645,7 @@
     "cannot_claim": "production runtime, real cloud, real billing, deploy, kubectl, build/push or live provider readiness"
   },
   "package_d_deploy_readiness_plan": {
-    "status": "deploy_readiness_planning_only_deploy_authorization_pack_ready_deploy_runner_gap",
+    "status": "deploy_readiness_planning_only_production_deploy_runner_contract_landed",
     "targetClusterId": "cls-fi097sy4",
     "targetPlatformNodePoolId": "np-6l4nkdto",
     "postgresEndpoint": "10.66.0.21:5432",
@@ -2733,10 +2753,9 @@
       "realExecutionReady": false
     },
     "readinessGaps": [
-      "repo-native Package D production deploy runner single entrypoint",
+      "authorized Package D production deploy dry-run / execution evidence through repo-native runner",
       "post-deploy DB/connectivity smoke execution from TKE platform runner",
-      "rollback evidence after execution",
-      "authorized deploy after deploy runner and authorization pack pass"
+      "rollback evidence after execution"
     ],
     "forbiddenOpsNow": [
       "Tencent mutation",
@@ -2755,7 +2774,11 @@
       "TENCENT_TCR_REGION",
       "TENCENT_DEPLOY_CLUSTER_ID",
       "TENCENT_DEPLOY_KUBECONFIG_REF",
-      "PACKAGE_D_RUNNER_IMAGE_REF"
+      "PACKAGE_D_RUNNER_IMAGE_REF",
+      "PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF",
+      "PACKAGE_D_GO_BACKEND_IMAGE_REF",
+      "PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF",
+      "PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF"
     ],
     "portalRuntimeEnvAllowlist": [
       "PORTAL_ADMIN_EMAIL",
@@ -3766,15 +3789,15 @@
         ".runtime/package-d-run-scoped-job-preflight/pdrun-20260616-002/job-manifest-redacted.json"
       ]
     },
-    "nextGap": "repo-native Package D production deploy runner single entrypoint",
+    "nextGap": "Package D authorized production deploy dry-run / deploy execution evidence",
     "nextAuthorizationPrompt": [
-      "按 active truth 做 gap-driven execution，不新增 loop。",
-      "当前 gap：Package D deploy authorization pack 已记录，但仓库缺少 repo-native Package D production deploy runner 单一入口。",
-      "目标：实现本地 repo-native Package D deploy runner contract/local gate，只生成/验证受控 deploy/rollback 命令和 manifest shape，本轮不执行 deploy。",
-      "必须复用现有 Package D manifest materialization、env allowlist、redaction、np-6l4nkdto scheduling、SecretRef 和 image ref rules。",
-      "runner 必须 fail closed：无授权、缺 kubeconfig/env、RUN_TENCENT_DEPLOY_EXECUTION 未显式授权、cluster/namespace/scheduling/image/SecretRef 不匹配、manifest 出现 medopl-tenant- 或 plaintext secret 都失败。",
-      "禁止：不读取 secret/kubeconfig、不连接 Kubernetes API、不 kubectl、不 deploy、不 build/push、不 Tencent mutation、不 Package C live。",
-      "同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json，并跑 npm run verify 和 closeout:check -- --json，commit/push。"
+      "授权在 TKE/VPC platform runner 10.66.0.42 执行 Package D production deploy runner dry-run/preflight。",
+      "前置：repo HEAD 必须等于 origin/recovery/platform-v22-trunk 的最新 landed commit，工作区干净，RUN_TENCENT_DEPLOY_EXECUTION 按授权边界设置。",
+      "允许读取 /home/dev/.secrets/medopl/v22/package-d-deploy.env、portal-runtime.env、kubeconfig-package-d-deploy；只允许 Package D deploy runner 读取 allowlisted keys。",
+      "允许执行单一入口：node tests/support/cloud-prework/package-d-production-deploy-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode production-deploy-plan --authorized 1",
+      "第一步只允许 server-side dry-run 和受控 manifest/command/evidence redaction 验证；真实 apply/rollout/smoke/rollback 需要下一条明确授权。",
+      "禁止手写 kubectl apply/delete/patch/scale，禁止 build/push，禁止 Tencent mutation，禁止 Package C live，禁止 tenant pool 或 medopl-tenant- 资源，禁止修改 np-cbk784r8 或 np-6l4nkdto。",
+      "evidence 只写 .runtime，不能输出 kubeconfig/token/cert/DB password/TCR secret/Portal admin password。"
     ],
     "realExecutionReady": false,
     "combinedInClusterPreflight": {
@@ -3799,7 +3822,7 @@
       ]
     },
     "deployAuthorizationPack": {
-      "status": "authorization_pack_ready_but_repo_native_deploy_runner_missing",
+      "status": "authorization_pack_ready_and_repo_native_deploy_runner_contract_landed",
       "path": "tests/fixtures/v22/goal-current.json#package_d_deploy_readiness_plan.deployAuthorizationPack",
       "target": {
         "clusterId": "cls-fi097sy4",
@@ -3810,22 +3833,22 @@
         "legacyProtectedPlatformNodePoolId": "np-cbk784r8"
       },
       "deployRunnerSingleEntrypoint": {
-        "exists": false,
-        "searchedSurfaces": [
-          "tests/support/cloud-prework",
-          "tests/future-authorized/cloud",
-          "scripts",
-          "package.json scripts"
-        ],
-        "nextGap": "implement repo-native Package D production deploy runner single entrypoint before any real deploy",
-        "handWrittenKubectlApplyAllowed": false
+        "exists": true,
+        "command": "node tests/support/cloud-prework/package-d-production-deploy-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode production-deploy-plan --authorized 1",
+        "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs",
+        "evidencePath": ".runtime/package-d-production-deploy/deploy-plan-redacted.json",
+        "manifestEvidencePath": ".runtime/package-d-production-deploy/production-manifests-redacted.json",
+        "contractOnlyThisCommit": true,
+        "executesKubectlNow": false,
+        "handWrittenKubectlApplyAllowed": false,
+        "nextGap": "authorized Package D production deploy dry-run / execution evidence through repo-native runner"
       },
       "allowedOperationsAfterSeparateAuthorizationAndRunnerLanding": [
         "read only allowlisted package-d-deploy.env, portal-runtime.env and kubeconfig-package-d-deploy",
         "verify RUN_TENCENT_DEPLOY_EXECUTION=1 only for explicit deploy execution authorization",
         "verify cluster cls-fi097sy4, namespace medopl-platform and runner pool np-6l4nkdto",
         "server-side dry-run Package D production manifests before apply",
-        "apply only allowlisted Package D Deployment/Service/ConfigMap/SecretRef/imagePullSecret resources in medopl-platform",
+        "apply only allowlisted Package D Deployment/Service/ConfigMap resources in medopl-platform through the repo-native runner",
         "observe rollout status for portal-frontend, medopl-go-backend, opl-web-gateway and opl-runtime-bridge",
         "run post-deploy smoke including PostgreSQL 10.66.0.21:5432 connectivity, Portal/backend health, Gateway health and Runtime Bridge health",
         "collect redacted evidence under .runtime",
@@ -3853,7 +3876,13 @@
         "serviceImageRefRule": "TENCENT_TCR_REGISTRY/TENCENT_TCR_NAMESPACE/<service>:fixed-non-latest-package-d-tag",
         "latestAllowed": false,
         "arbitraryImageRefAllowed": false,
-        "exactServiceImageRefsMaterialized": false
+        "exactServiceImageRefsMaterialized": true,
+        "serviceImageRefKeys": [
+          "PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF",
+          "PACKAGE_D_GO_BACKEND_IMAGE_REF",
+          "PACKAGE_D_OPL_WEB_GATEWAY_IMAGE_REF",
+          "PACKAGE_D_OPL_RUNTIME_BRIDGE_IMAGE_REF"
+        ]
       },
       "secretRefUsage": {
         "deployEnvSecretRef": "medopl-package-d-deploy-env",
@@ -3888,7 +3917,7 @@
       "stopConditions": [
         "RUN_TENCENT_DEPLOY_EXECUTION is not explicitly authorized for deploy execution",
         "repo HEAD or working tree is not the authorized state",
-        "deploy runner single entrypoint is missing",
+        "deploy runner contract/local gate has not passed at authorized repo HEAD",
         "context or cluster does not match cls-fi097sy4",
         "namespace is not medopl-platform",
         "scheduling target is not np-6l4nkdto",
@@ -3903,23 +3932,25 @@
         "authorizationPack": "tests/fixtures/v22/goal-current.json#package_d_deploy_readiness_plan.deployAuthorizationPack",
         "futureDeployEvidence": ".runtime/package-d-deploy/<runid>/deploy-redacted.json",
         "futureSmokeEvidence": ".runtime/package-d-deploy/<runid>/smoke-redacted.json",
-        "futureRollbackEvidence": ".runtime/package-d-deploy/<runid>/rollback-redacted.json"
-      }
+        "futureRollbackEvidence": ".runtime/package-d-deploy/<runid>/rollback-redacted.json",
+        "deployPlanEvidence": ".runtime/package-d-production-deploy/deploy-plan-redacted.json",
+        "deployManifestEvidence": ".runtime/package-d-production-deploy/production-manifests-redacted.json"
+      },
+      "nextAuthorizationPrompt": [
+        "授权在 TKE/VPC platform runner 10.66.0.42 执行 Package D production deploy runner dry-run/preflight。",
+        "前置：repo HEAD 必须等于 origin/recovery/platform-v22-trunk 的最新 landed commit，工作区干净，RUN_TENCENT_DEPLOY_EXECUTION 按授权边界设置。",
+        "允许读取 /home/dev/.secrets/medopl/v22/package-d-deploy.env、portal-runtime.env、kubeconfig-package-d-deploy；只允许 Package D deploy runner 读取 allowlisted keys。",
+        "允许执行单一入口：node tests/support/cloud-prework/package-d-production-deploy-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --mode production-deploy-plan --authorized 1",
+        "第一步只允许 server-side dry-run 和受控 manifest/command/evidence redaction 验证；真实 apply/rollout/smoke/rollback 需要下一条明确授权。",
+        "禁止手写 kubectl apply/delete/patch/scale，禁止 build/push，禁止 Tencent mutation，禁止 Package C live，禁止 tenant pool 或 medopl-tenant- 资源，禁止修改 np-cbk784r8 或 np-6l4nkdto。",
+        "evidence 只写 .runtime，不能输出 kubeconfig/token/cert/DB password/TCR secret/Portal admin password。"
+      ]
     },
-    "nextLocalCodexPrompt": [
-      "按 active truth 做 gap-driven execution，不新增 loop。",
-      "当前 gap：Package D deploy authorization pack 已记录，但仓库缺少 repo-native Package D production deploy runner 单一入口。",
-      "目标：实现本地 repo-native Package D deploy runner contract/local gate，只生成/验证受控 deploy/rollback 命令和 manifest shape，本轮不执行 deploy。",
-      "必须复用现有 Package D manifest materialization、env allowlist、redaction、np-6l4nkdto scheduling、SecretRef 和 image ref rules。",
-      "runner 必须 fail closed：无授权、缺 kubeconfig/env、RUN_TENCENT_DEPLOY_EXECUTION 未显式授权、cluster/namespace/scheduling/image/SecretRef 不匹配、manifest 出现 medopl-tenant- 或 plaintext secret 都失败。",
-      "禁止：不读取 secret/kubeconfig、不连接 Kubernetes API、不 kubectl、不 deploy、不 build/push、不 Tencent mutation、不 Package C live。",
-      "同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json，并跑 npm run verify 和 closeout:check -- --json，commit/push。"
-    ]
+    "nextLocalCodexPrompt": []
   },
   "readinessGaps": [
-    "repo-native Package D production deploy runner single entrypoint",
+    "authorized Package D production deploy dry-run / execution evidence through repo-native runner",
     "post-deploy DB/connectivity smoke execution from TKE platform runner",
-    "rollback evidence after execution",
-    "authorized deploy after deploy runner and authorization pack pass"
+    "rollback evidence after execution"
   ]
 }

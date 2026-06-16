@@ -15,6 +15,7 @@ import {
   FIXED_PLATFORM_NODE_POOL_ID,
   FIXED_POSTGRES_ENDPOINT,
   KUBE_ENV_NAME,
+  REQUIRED_DEPLOY_ENV_KEYS,
   RUNTIME_ENV_KEYS,
   assertFile,
   assertTargetEnv,
@@ -288,7 +289,7 @@ export async function buildPackageDRunScopedJobPlan({
   assertFile(runtimeEnvPath, "package_d_runtime_env_missing");
   assertFile(kubeconfigPath, "package_d_kubeconfig_missing");
 
-  const deployEnv = parseEnv(await readFile(deployEnvPath, "utf8"), DEPLOY_ENV_KEYS);
+  const deployEnv = parseEnv(await readFile(deployEnvPath, "utf8"), DEPLOY_ENV_KEYS, REQUIRED_DEPLOY_ENV_KEYS);
   const runtimeEnv = parseEnv(await readFile(runtimeEnvPath, "utf8"), RUNTIME_ENV_KEYS);
   assertTargetEnv({ deployEnv, runtimeEnv, kubeconfigPath });
   const runnerImage = assertRunnerImageRef({ imageRef: deployEnv[RUNNER_IMAGE_REF_SOURCE_KEY], deployEnv });
