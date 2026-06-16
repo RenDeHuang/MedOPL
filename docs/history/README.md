@@ -59,6 +59,42 @@ landed 后的记录还必须补齐：
 
 ## Current Run Summaries
 
+### 2026-06-16 package-d-service-images-publish-readiness
+
+Status: `landed candidate / local-gated`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `1425dd23877902975350dab9996991ccb83d3fa4`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Added the repo-native Package D four service image publish private-build-runner contract at `tests/support/cloud-prework/package-d-service-images-publish-runner.js`.
+- Added the single later-authorized command: `node tests/support/cloud-prework/package-d-service-images-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-service-images-publish.env --authorized 1`.
+- Fixed the four image refs to `uswccr.ccs.tencentyun.com/medopl/{portal-frontend,medopl-go-backend,opl-web-gateway,opl-runtime-bridge}:v22-package-d-20260616-001`, required `docker buildx build --platform linux/amd64`, forbade `latest`, non-`medopl` namespace, non-allowlisted repos, kubectl/deploy/Tencent mutation/Package C live, and kept TKE/VPC runner out of Docker build/push.
+- Kept private build runner env limited to `TCR_ID`, `TCR_SECRET` and the four `PACKAGE_D_*_IMAGE_REF` keys; kubeconfig, DB password, Portal admin password and Tencent SecretId/SecretKey remain forbidden in this lane.
+- The local gate intentionally fails closed for real image publish readiness because the four service Dockerfiles are absent: `services/portal/frontend/Dockerfile`, `services/medopl-go-backend/Dockerfile`, `services/opl-web-gateway/Dockerfile` and `services/opl-runtime-bridge/Dockerfile`.
+
+Verification:
+
+- RED: temporary focused service-image gate failed with `ERR_MODULE_NOT_FOUND` before the service image publish runner existed; its assertions were then merged into `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs` to stay within the future-authorized file budget.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs`: pass, including the four service image publish contract/readiness assertions.
+- Final `npm run verify` and `npm run closeout:check -- --json` are required before push.
+
+Can-claim:
+
+- The repo now has a single four service image publish contract/local gate for a private build runner, with fixed image refs and linux/amd64 build command shape.
+- The next gap is service Dockerfile/build context materialization before any authorized private build/push.
+
+Cannot-claim:
+
+- This repo session cannot claim that it read TCR/kubeconfig/DB/Portal/Tencent secrets, ran docker login/build/push, ran kubectl, deployed, executed Tencent mutation, ran Package C live, or published the four service images.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+
 ### 2026-06-14 package-c-postgres-ledger-sink-support
 
 Status: `landed candidate / local-gated`
