@@ -59,6 +59,44 @@ landed 后的记录还必须补齐：
 
 ## Current Run Summaries
 
+### 2026-06-17 package-d-production-deploy-success-closeout
+
+Status: `landed candidate / local-gated`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `b992dd5f65be2de68f29bead0f56e510b4ece19a`
+
+Model: `gpt-5.4`
+
+Subagents:
+
+- `explorer / gpt-5.4`: read-only docs lifecycle check for Package D deploy success and next gap wording.
+- `explorer / gpt-5.4`: read-only `goal-current.json` structure check for Package D deploy success fields.
+
+Scope:
+
+- Recorded the authorized Package D `production-deploy-apply` rerun `pdrun-20260616-004` at repo HEAD `b992dd5f65be2de68f29bead0f56e510b4ece19a`.
+- The run completed server-side dry-run, apply and rollout for `portal-frontend`, `medopl-go-backend`, `opl-web-gateway` and `opl-runtime-bridge` in namespace `medopl-platform` on cluster `cls-fi097sy4`.
+- All four Deployments reached ready `1/1`; all four Services exist as ClusterIP Services on `8080/http`; Pods scheduled to `node.tke.cloud.tencent.com/machineset=np-6l4nkdto` / host IP `10.66.0.42`.
+- Smoke shape checks were `12/12` pass, rollback was not executed, rollback plan was generated, redaction audit passed and `RUN_TENCENT_DEPLOY_EXECUTION` was restored to `0`.
+- Evidence paths recorded: `.runtime/package-d-production-deploy/pdrun-20260616-004/deploy-redacted.json`, `.runtime/package-d-production-deploy/pdrun-20260616-004/smoke-redacted.json` and `.runtime/package-d-production-deploy/pdrun-20260616-004/rollback-redacted.json`.
+- Updated active/delivery/fixture truth to move the Package D gap from image republish / deploy rerun to readonly service reachability / in-cluster HTTP smoke and Portal external access strategy.
+- Did not read secret/kubeconfig, connect to Kubernetes API, run kubectl, deploy, build/push, execute Tencent mutation or run Package C live in this repo session.
+
+Can-claim:
+
+- Package D four-service deployment completed inside TKE for `pdrun-20260616-004`.
+- The current services are ClusterIP-only inside the cluster/VPC boundary.
+- The next gap is readonly service reachability / in-cluster HTTP smoke and Portal external access strategy.
+
+Cannot-claim:
+
+- External/public user access, Ingress, LoadBalancer, DNS, TLS, Portal self-service, production billing or rollback execution are complete.
+- This repo session performed new deploy, kubectl, build/push, Tencent mutation, Package C live or secret/kubeconfig reads.
+
+next_cursor: `real-cloud-authorization-boundary`
+
 ### 2026-06-16 package-d-container-writable-path-fixes
 
 Status: `landed candidate / local-gated`
@@ -6588,6 +6626,40 @@ post_push_verification:
 - `npm run verify`: pass.
 - `npm run closeout:check -- --json`: pass.
 - This closeout does not read secrets/kubeconfig, connect to Kubernetes API, run real kubectl, deploy, build/push, execute Tencent mutation or run Package C live.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-16 package-d-container-writable-path-fixes-landed
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `4fca0092cca25ed708dbb7be6f712733ab57933c`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Landed the Package D portal/runtime bridge writable path fixes.
+- Commit `b992dd5f65be2de68f29bead0f56e510b4ece19a` added portal nginx `/tmp/nginx` runtime paths, Runtime Bridge `/tmp/medopl-runtime/.runtime`, production manifest writable `emptyDir` mounts, non-root security contexts and `imagePullPolicy: Always`.
+- The landed fix enabled later private image republish and the successful `pdrun-20260616-004` deploy rerun.
+
+Verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+landed_commit: `b992dd5f65be2de68f29bead0f56e510b4ece19a`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
 
 post_merge_closeout: `completed`
 
