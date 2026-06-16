@@ -58,6 +58,7 @@ const SERVICE_TARGETS = Object.freeze([
     repository: "portal-frontend",
     context: "services/portal/frontend",
     dockerfile: "services/portal/frontend/Dockerfile",
+    dockerignore: "services/portal/frontend/.dockerignore",
   }),
   Object.freeze({
     name: "medopl-go-backend",
@@ -65,6 +66,7 @@ const SERVICE_TARGETS = Object.freeze([
     repository: "medopl-go-backend",
     context: "services/medopl-go-backend",
     dockerfile: "services/medopl-go-backend/Dockerfile",
+    dockerignore: "services/medopl-go-backend/.dockerignore",
   }),
   Object.freeze({
     name: "opl-web-gateway",
@@ -72,6 +74,7 @@ const SERVICE_TARGETS = Object.freeze([
     repository: "opl-web-gateway",
     context: "services/opl-web-gateway",
     dockerfile: "services/opl-web-gateway/Dockerfile",
+    dockerignore: "services/opl-web-gateway/.dockerignore",
   }),
   Object.freeze({
     name: "opl-runtime-bridge",
@@ -79,6 +82,7 @@ const SERVICE_TARGETS = Object.freeze([
     repository: "opl-runtime-bridge",
     context: "services/opl-runtime-bridge",
     dockerfile: "services/opl-runtime-bridge/Dockerfile",
+    dockerignore: "services/opl-runtime-bridge/.dockerignore",
   }),
 ]);
 
@@ -230,7 +234,8 @@ function defaultDockerExecutor({ args, env, stdin = "" }) {
 function serviceReadiness(service, fileExists = existsSync) {
   const contextPresent = fileExists(service.context);
   const dockerfilePresent = fileExists(service.dockerfile);
-  return { contextPresent, dockerfilePresent };
+  const dockerignorePresent = fileExists(service.dockerignore);
+  return { contextPresent, dockerfilePresent, dockerignorePresent };
 }
 
 function redactedService(service, privateEnv, fileExists = existsSync) {
@@ -247,6 +252,10 @@ function redactedService(service, privateEnv, fileExists = existsSync) {
     dockerfile: {
       path: service.dockerfile,
       present: readiness.dockerfilePresent,
+    },
+    dockerignore: {
+      path: service.dockerignore,
+      present: readiness.dockerignorePresent,
     },
     image: {
       ref: "redacted",
@@ -266,12 +275,14 @@ function redactedService(service, privateEnv, fileExists = existsSync) {
 
 function readinessForServices(services = []) {
   const missingDockerfiles = services.filter((service) => !service.dockerfile.present).map((service) => service.dockerfile.path);
+  const missingDockerignores = services.filter((service) => !service.dockerignore.present).map((service) => service.dockerignore.path);
   const missingContexts = services.filter((service) => !service.buildContext.present).map((service) => service.context);
   return {
-    ready: missingDockerfiles.length === 0 && missingContexts.length === 0,
+    ready: missingDockerfiles.length === 0 && missingDockerignores.length === 0 && missingContexts.length === 0,
     missingDockerfiles,
+    missingDockerignores,
     missingContexts,
-    nextGap: missingDockerfiles.length > 0 || missingContexts.length > 0
+    nextGap: missingDockerfiles.length > 0 || missingDockerignores.length > 0 || missingContexts.length > 0
       ? "package_d_service_dockerfile_build_context_materialization"
       : "package_d_service_images_private_build_push_authorization",
   };
@@ -369,6 +380,9 @@ export async function runPackageDServiceImagesPublishPrivateBuild({
   const plan = await buildPackageDServiceImagesPublishPlan({ evidenceDir, envPath, envText, fileExists });
   if (plan.readiness.missingDockerfiles.length > 0) {
     throw new Error(`package_d_service_images_publish_dockerfile_missing:${plan.readiness.missingDockerfiles.join(",")}`);
+  }
+  if (plan.readiness.missingDockerignores.length > 0) {
+    throw new Error(`package_d_service_images_publish_dockerignore_missing:${plan.readiness.missingDockerignores.join(",")}`);
   }
   if (plan.readiness.missingContexts.length > 0) {
     throw new Error(`package_d_service_images_publish_context_missing:${plan.readiness.missingContexts.join(",")}`);

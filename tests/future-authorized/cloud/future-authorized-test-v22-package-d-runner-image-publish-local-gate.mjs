@@ -30,6 +30,16 @@ const expectedServiceImages = Object.freeze([
     repository: "portal-frontend",
     context: "services/portal/frontend",
     dockerfile: "services/portal/frontend/Dockerfile",
+    dockerignore: "services/portal/frontend/.dockerignore",
+    requiredDockerfileTokens: [
+      "FROM node:22-bookworm-slim AS build",
+      "RUN npm ci",
+      "RUN npm run build",
+      "FROM nginx:1.27-bookworm",
+      "COPY --from=build /app/dist",
+      "listen 8080",
+    ],
+    forbiddenDockerfileTokens: ["npm run dev", "vite --host", "PORTAL_POSTGRES_PASSWORD", "TCR_SECRET"],
   },
   {
     name: "medopl-go-backend",
@@ -37,6 +47,17 @@ const expectedServiceImages = Object.freeze([
     repository: "medopl-go-backend",
     context: "services/medopl-go-backend",
     dockerfile: "services/medopl-go-backend/Dockerfile",
+    dockerignore: "services/medopl-go-backend/.dockerignore",
+    requiredDockerfileTokens: [
+      "FROM golang:1.22-bookworm AS build",
+      "go mod download",
+      "go build",
+      "./cmd/server",
+      "FROM debian:12-slim",
+      "MEDOPL_BACKEND_PORT=8080",
+      "ENTRYPOINT [\"/usr/local/bin/medopl-go-backend\"]",
+    ],
+    forbiddenDockerfileTokens: ["go run", "PORTAL_POSTGRES_PASSWORD", "TCR_SECRET"],
   },
   {
     name: "opl-web-gateway",
@@ -44,6 +65,15 @@ const expectedServiceImages = Object.freeze([
     repository: "opl-web-gateway",
     context: "services/opl-web-gateway",
     dockerfile: "services/opl-web-gateway/Dockerfile",
+    dockerignore: "services/opl-web-gateway/.dockerignore",
+    requiredDockerfileTokens: [
+      "FROM node:22-bookworm-slim",
+      "COPY package.json",
+      "COPY src ./src",
+      "PORT=8080",
+      "CMD [\"npm\", \"start\"]",
+    ],
+    forbiddenDockerfileTokens: ["npm install", "npm run dev", "PORTAL_POSTGRES_PASSWORD", "TCR_SECRET"],
   },
   {
     name: "opl-runtime-bridge",
@@ -51,6 +81,15 @@ const expectedServiceImages = Object.freeze([
     repository: "opl-runtime-bridge",
     context: "services/opl-runtime-bridge",
     dockerfile: "services/opl-runtime-bridge/Dockerfile",
+    dockerignore: "services/opl-runtime-bridge/.dockerignore",
+    requiredDockerfileTokens: [
+      "FROM node:22-bookworm-slim",
+      "COPY package.json",
+      "COPY src ./src",
+      "PORT=8080",
+      "CMD [\"npm\", \"start\"]",
+    ],
+    forbiddenDockerfileTokens: ["npm install", "npm run dev", "PORTAL_POSTGRES_PASSWORD", "TCR_SECRET"],
   },
 ]);
 
@@ -101,16 +140,46 @@ function fakeDockerExecutor(commandLog) {
 }
 
 function fakeServiceFileExists(pathname = "") {
-  return [
-    "services/portal/frontend",
-    "services/portal/frontend/Dockerfile",
-    "services/medopl-go-backend",
-    "services/medopl-go-backend/Dockerfile",
-    "services/opl-web-gateway",
-    "services/opl-web-gateway/Dockerfile",
-    "services/opl-runtime-bridge",
-    "services/opl-runtime-bridge/Dockerfile",
-  ].includes(pathname);
+  return expectedServiceImages.flatMap((service) => [
+    service.context,
+    service.dockerfile,
+    service.dockerignore,
+  ]).includes(pathname);
+}
+
+function assertDockerfileBaseImagesPinned(source = "", label = "dockerfile") {
+  const fromLines = source.split(/\r?\n/u).filter((line) => line.trim().startsWith("FROM "));
+  assert.equal(fromLines.length > 0, true, `${label}_must_have_base_images`);
+  for (const line of fromLines) {
+    assert.equal(/:latest(?:\s|$)/u.test(line), false, `${label}_must_not_use_latest_base:${line}`);
+    assert.equal(/^FROM\s+[^:\s]+(?:\s+AS\s+\S+)?$/u.test(line), false, `${label}_must_not_use_untagged_base:${line}`);
+    assert.equal(line.includes("$"), false, `${label}_must_not_use_dynamic_base:${line}`);
+  }
+}
+
+async function assertServiceDockerfileMaterialized(service) {
+  const dockerfile = await readFile(service.dockerfile, "utf8");
+  const dockerignore = await readFile(service.dockerignore, "utf8");
+  assertDockerfileBaseImagesPinned(dockerfile, service.name);
+  for (const token of service.requiredDockerfileTokens) {
+    assert.equal(dockerfile.includes(token), true, `${service.name}_dockerfile_must_include:${token}`);
+  }
+  for (const token of service.forbiddenDockerfileTokens) {
+    assert.equal(dockerfile.includes(token), false, `${service.name}_dockerfile_must_not_include:${token}`);
+  }
+  for (const requiredIgnore of [
+    ".runtime",
+    ".secrets",
+    "node_modules",
+    "dist",
+    "coverage",
+    "*.env",
+    "*.pem",
+    "*kubeconfig*",
+    "package-d-*.env",
+  ]) {
+    assert.equal(dockerignore.includes(requiredIgnore), true, `${service.name}_dockerignore_must_include:${requiredIgnore}`);
+  }
 }
 
 function fakeServiceDockerExecutor(commandLog) {
@@ -146,6 +215,9 @@ function fakeServiceDockerExecutor(commandLog) {
 
 const dockerfile = await readFile(dockerfilePath, "utf8");
 const entrypoint = await readFile(entrypointPath, "utf8");
+for (const service of expectedServiceImages) {
+  await assertServiceDockerfileMaterialized(service);
+}
 
 assert.equal(
   PACKAGE_D_RUNNER_IMAGE_PUBLISH_COMMAND,
@@ -293,8 +365,8 @@ try {
   assert.equal(servicePlan.imagePublishBoundary, true, "service_image_publish_boundary");
   assert.equal(servicePlan.deployBoundary, false, "service_deploy_boundary");
   assert.equal(servicePlan.realExecutionReady, false, "service_real_execution_must_remain_false");
-  assert.equal(servicePlan.readiness.ready, false, "service_missing_dockerfiles_must_fail_closed");
-  assert.equal(servicePlan.readiness.nextGap, "package_d_service_dockerfile_build_context_materialization", "service_next_gap");
+  assert.equal(servicePlan.readiness.ready, true, "service_dockerfiles_must_be_materialized");
+  assert.equal(servicePlan.readiness.nextGap, "package_d_service_images_private_build_push_authorization", "service_next_gap");
   assert.deepEqual(
     servicePlan.privateBuildRunner.allowedEnvKeys,
     [
@@ -314,25 +386,37 @@ try {
   assert.equal(servicePlan.boundary.tencentMutationAllowed, false, "service_tencent_mutation_forbidden");
   assert.equal(servicePlan.boundary.packageCLiveAllowed, false, "service_package_c_live_forbidden");
   assert.deepEqual(
-    servicePlan.services.map(({ name, imageKey, repository, context, dockerfile, image }) => ({
+    servicePlan.services.map(({ name, imageKey, repository, context, dockerfile, dockerignore, image }) => ({
       name,
       imageKey,
       repository,
       context,
       dockerfile: dockerfile.path,
+      dockerignore: dockerignore.path,
       imageTag: image.tag,
       imageRef: image.ref,
       dockerfilePresent: dockerfile.present,
+      dockerignorePresent: dockerignore.present,
     })),
     expectedServiceImages.map((service) => ({
-      ...service,
+      name: service.name,
+      imageKey: service.imageKey,
+      repository: service.repository,
+      context: service.context,
+      dockerfile: service.dockerfile,
+      dockerignore: service.dockerignore,
       imageTag: "v22-package-d-20260616-001",
       imageRef: "redacted",
-      dockerfilePresent: false,
+      dockerfilePresent: true,
+      dockerignorePresent: true,
     })),
-    "service_images_shape_and_missing_dockerfiles",
+    "service_images_shape_and_materialized_dockerfiles",
   );
-  assert.deepEqual(servicePlan.readiness.missingDockerfiles, expectedServiceImages.map((service) => service.dockerfile), "all_four_service_dockerfiles_are_missing_next_gap");
+  assert.equal(servicePlan.readiness.ready, true, "service_dockerfiles_and_contexts_ready");
+  assert.equal(servicePlan.readiness.nextGap, "package_d_service_images_private_build_push_authorization", "service_next_gap_after_dockerfiles_land");
+  assert.deepEqual(servicePlan.readiness.missingDockerfiles, [], "service_dockerfiles_materialized");
+  assert.deepEqual(servicePlan.readiness.missingDockerignores, [], "service_dockerignores_materialized");
+  assert.deepEqual(servicePlan.readiness.missingContexts, [], "service_contexts_materialized");
   assert.deepEqual(servicePlan.commands.map((command) => command.kind), [
     "docker_login",
     "docker_build",
@@ -353,26 +437,12 @@ try {
   }
   assertNoSensitiveText(JSON.stringify(servicePlan), "service_plan");
 
-  await assert.rejects(
-    () => runPackageDServiceImagesPublishPrivateBuild({
-      envPath: serviceEnvPath,
-      evidenceDir,
-      authorized: true,
-      docker: async () => {
-        throw new Error("service_docker_must_not_run_when_readiness_is_closed");
-      },
-    }),
-    /package_d_service_images_publish_dockerfile_missing/,
-    "service_private_build_must_fail_closed_before_docker_when_dockerfiles_are_missing",
-  );
-
   const serviceCommandLog = [];
   const serviceSummary = await runPackageDServiceImagesPublishPrivateBuild({
     envPath: serviceEnvPath,
     evidenceDir,
     authorized: true,
     docker: fakeServiceDockerExecutor(serviceCommandLog),
-    fileExists: fakeServiceFileExists,
   });
   assert.equal(serviceSummary.ok, true, "service_summary_ok_with_fake_dockerfiles");
   assert.equal(serviceSummary.evidencePath.endsWith("private-build-push-redacted.json"), true, "service_evidence_path");
@@ -430,7 +500,8 @@ try {
     evidence: ".runtime/package-d-runner-image-publish/private-build-push-redacted.json",
     serviceImagesCommand: PACKAGE_D_SERVICE_IMAGES_PUBLISH_COMMAND,
     serviceImagesEvidence: ".runtime/package-d-service-images-publish/private-build-push-redacted.json",
-    serviceImagesMissingDockerfiles: expectedServiceImages.map((service) => service.dockerfile),
+    serviceImagesDockerfiles: expectedServiceImages.map((service) => service.dockerfile),
+    serviceImagesDockerignores: expectedServiceImages.map((service) => service.dockerignore),
     realExecutionReady: false,
   }, null, 2));
 } finally {

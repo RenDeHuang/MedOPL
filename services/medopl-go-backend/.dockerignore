@@ -1,0 +1,11 @@
+.runtime
+.secrets
+node_modules
+dist
+coverage
+*.env
+*.pem
+*kubeconfig*
+package-d-*.env
+npm-debug.log*
+*.log
