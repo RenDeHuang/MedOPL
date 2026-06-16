@@ -6443,3 +6443,58 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+
+### 2026-06-16 package-d-production-deploy-plan-dry-run-passed
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `601bbc97c3d77e4aa7bb365cb60c5662582119c9`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Recorded the cloud Package D `production-deploy-plan` dry-run/preflight pass at repo HEAD `601bbc97c3d77e4aa7bb365cb60c5662582119c9`.
+- The plan generated a Kubernetes List containing four ConfigMaps, four Deployments and four Services for `portal-frontend`, `medopl-go-backend`, `opl-web-gateway` and `opl-runtime-bridge`.
+- Image refs matched the fixed Package D runner/service contracts; SecretRefs were `medopl-package-d-deploy-env`, `medopl-portal-runtime-env` and `medopl-tcr-pull-secret`; scheduling stayed on `node.tke.cloud.tencent.com/machineset=np-6l4nkdto`.
+- Rollback and smoke plans were generated for PostgreSQL, Portal frontend, Go backend, OPL web gateway, OPL runtime bridge and redaction audit.
+- Updated the final production deploy execution authorization pack in `tests/fixtures/v22/goal-current.json#package_d_deploy_readiness_plan.deployAuthorizationPack`.
+- Confirmed the repo still has no implemented `production-deploy-apply/live` single entrypoint: existing apply/live modes intentionally fail closed with `package_d_production_deploy_apply_not_implemented`.
+- Did not read secret/kubeconfig, connect to Kubernetes API, run kubectl, deploy, build/push, execute Tencent mutation or run Package C live.
+
+Evidence:
+
+- `.runtime/package-d-production-deploy/deploy-plan-redacted.json`
+- `.runtime/package-d-production-deploy/production-manifests-redacted.json`
+
+Verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+Can-claim:
+
+- Package D production deploy plan dry-run/preflight passed in the cloud for the four Package D services.
+- The final production deploy execution authorization pack is recorded.
+- The next gap is implementing the repo-native `production-deploy-apply/live` single entrypoint before any real deploy execution.
+
+Cannot-claim:
+
+- This repo session read secrets or kubeconfig, connected to Kubernetes API, ran kubectl, deployed, built/pushed images, executed Tencent mutation, ran Package C live, completed rollout, ran post-deploy smoke or produced rollback evidence.
+- Hand-written `kubectl apply` remains forbidden.
+
+landed_commit: `601bbc97c3d77e4aa7bb365cb60c5662582119c9`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `npm run verify`: pass.
+- `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
