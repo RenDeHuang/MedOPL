@@ -8,12 +8,12 @@
   "last_updated_at": "2026-06-17",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "a272e07c2b462c4e61315536c701f03069b5f474",
+  "base_trunk_head": "3436564b77ee46a380176542c582abcc7005d8e2",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "a272e07c2b462c4e61315536c701f03069b5f474",
+  "last_landed_commit": "3436564b77ee46a380176542c582abcc7005d8e2",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; canonical ownership / billing truth remains PostgreSQL resource_bindings / cloud_operations ledger. Package D deploy readiness has bootstrap resources, run-scoped platform runner preflight, PostgreSQL/runtime env/combined in-cluster preflight, production-deploy-plan dry-run/preflight, repo-native production-deploy-apply and readonly service reachability proven from the cloud. Authorized Package D production-deploy-apply run pdrun-20260616-004 completed server-side dry-run, apply and rollout for portal-frontend, medopl-go-backend, opl-web-gateway and opl-runtime-bridge in medopl-platform on cls-fi097sy4. All four Deployments are ready 1/1, all four Services exist as ClusterIP Services on 8080/http, Pods scheduled to node.tke.cloud.tencent.com/machineset=np-6l4nkdto / hostIP 10.66.0.42, smoke shape checks are 12/12 pass, rollback was not executed but rollback plan was generated, redaction audit passed and RUN_TENCENT_DEPLOY_EXECUTION was restored to 0. Authorized Package D readonly service reachability / in-cluster HTTP smoke run psr-20260617-004 at repo HEAD f380895ae67427d1167fb7f0c33370fe76bcc1fa passed: namespace medopl-platform, runner pool selector node.tke.cloud.tencent.com/machineset=np-6l4nkdto, four Deployments ready 1/1, four ClusterIP Services on http:8080, smoke Job medopl-service-smoke-psr-20260617-004, reachabilityPassed true, HTTP 200 for portal-frontend, medopl-go-backend, opl-web-gateway and opl-runtime-bridge, cleanup deleted the smoke Job and verified NotFound, diagnostics-redacted.json was not generated because success, redaction audit passed and no deploy/rollout/rollback/build-push/Tencent mutation/Package C live occurred during smoke. Evidence is .runtime/package-d-service-reachability/psr-20260617-004/readonly-service-reachability-redacted.json and .runtime/package-d-service-reachability/psr-20260617-004/smoke-job-manifest-redacted.json. Current state is Package D deployed inside TKE and in-cluster HTTP reachability passed, but external/public user access is not yet exposed. The next gap is Portal external access strategy authorization pack comparing admin-only port-forward, internal gateway, Ingress, LoadBalancer and HTTPS/domain without defaulting to public exposure.",
+  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed: runner image and four service images are published, four Deployments are ready 1/1, four ClusterIP Services returned HTTP 200, and redacted deploy/smoke evidence is recorded. This proves the platform control-plane can run inside TKE, but it is not enough for stable formal launch of MedOPL as a platform-provisioned, customer-dedicated, multi-tenant SaaS managed OPL workbench. The repo-native Production Launch Goal / Gap Map now defines the launch vision, ordered minimum phases and gap audit. External/public user access remains blocked until the multi-tenant launch minimum closes. The current unique gap is production-launch-gap-01-auth-tenant-workspace-bootstrap-contract: first admin identity, tenant and workspace bootstrap contract/local gate before Portal exposure, Package C production wiring, billing/audit/quota closure or external access.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -171,7 +171,7 @@
     "gap_id": "real-cloud-authorization-boundary",
     "stage": "S7 real-cloud authorization boundary before readiness",
     "cursor_eligible": false,
-    "problem": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; canonical ownership / billing truth remains PostgreSQL resource_bindings / cloud_operations ledger. Package D deploy readiness has bootstrap resources, run-scoped platform runner preflight, PostgreSQL/runtime env/combined in-cluster preflight, production-deploy-plan dry-run/preflight, repo-native production-deploy-apply and readonly service reachability proven from the cloud. Authorized Package D production-deploy-apply run pdrun-20260616-004 completed server-side dry-run, apply and rollout for portal-frontend, medopl-go-backend, opl-web-gateway and opl-runtime-bridge in medopl-platform on cls-fi097sy4. All four Deployments are ready 1/1, all four Services exist as ClusterIP Services on 8080/http, Pods scheduled to node.tke.cloud.tencent.com/machineset=np-6l4nkdto / hostIP 10.66.0.42, smoke shape checks are 12/12 pass, rollback was not executed but rollback plan was generated, redaction audit passed and RUN_TENCENT_DEPLOY_EXECUTION was restored to 0. Authorized Package D readonly service reachability / in-cluster HTTP smoke run psr-20260617-004 at repo HEAD f380895ae67427d1167fb7f0c33370fe76bcc1fa passed: namespace medopl-platform, runner pool selector node.tke.cloud.tencent.com/machineset=np-6l4nkdto, four Deployments ready 1/1, four ClusterIP Services on http:8080, smoke Job medopl-service-smoke-psr-20260617-004, reachabilityPassed true, HTTP 200 for portal-frontend, medopl-go-backend, opl-web-gateway and opl-runtime-bridge, cleanup deleted the smoke Job and verified NotFound, diagnostics-redacted.json was not generated because success, redaction audit passed and no deploy/rollout/rollback/build-push/Tencent mutation/Package C live occurred during smoke. Evidence is .runtime/package-d-service-reachability/psr-20260617-004/readonly-service-reachability-redacted.json and .runtime/package-d-service-reachability/psr-20260617-004/smoke-job-manifest-redacted.json. Current state is Package D deployed inside TKE and in-cluster HTTP reachability passed, but external/public user access is not yet exposed. The next gap is Portal external access strategy authorization pack comparing admin-only port-forward, internal gateway, Ingress, LoadBalancer and HTTPS/domain without defaulting to public exposure.",
+    "problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed: runner image and four service images are published, four Deployments are ready 1/1, four ClusterIP Services returned HTTP 200, and redacted deploy/smoke evidence is recorded. This proves the platform control-plane can run inside TKE, but it is not enough for stable formal launch of MedOPL as a platform-provisioned, customer-dedicated, multi-tenant SaaS managed OPL workbench. The repo-native Production Launch Goal / Gap Map now defines the launch vision, ordered minimum phases and gap audit. External/public user access remains blocked until the multi-tenant launch minimum closes. The current unique gap is production-launch-gap-01-auth-tenant-workspace-bootstrap-contract: first admin identity, tenant and workspace bootstrap contract/local gate before Portal exposure, Package C production wiring, billing/audit/quota closure or external access.",
     "verification_commands": [
       "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
       "node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs",
@@ -263,10 +263,13 @@
     "package_d_deploy_readiness_plan": {
       "executionEnvironment": "tke_in_cluster_platform_runner_preferred",
       "readinessGaps": [
-        "Portal external access strategy authorization pack before public/user access claim",
-        "Portal external access strategy definition before broader readiness progression",
-        "post-deploy DB/smoke evidence beyond smoke shape checks",
-        "rollback execution evidence if rollback is separately authorized or triggered"
+        "Production launch Gap 01: auth / identity / admin bootstrap plus tenant/workspace bootstrap contract",
+        "Portal -> backend -> Package C live operation wiring after bootstrap contract",
+        "ResourceBinding PostgreSQL ledger successful in-VPC write/read canary",
+        "billing/audit ledger and quota enforcement closure",
+        "workspace suspend/resume/delete lifecycle closure",
+        "production end-to-end smoke/canary and rollback/cleanup evidence",
+        "Portal external access strategy only after multi-tenant minimum launch closure"
       ],
       "deployRunnerPlacementPlan": {
         "status": "placement_plan_only",
@@ -1223,16 +1226,15 @@
           ".runtime/package-d-run-scoped-job-preflight/pdrun-20260616-002/job-manifest-redacted.json"
         ]
       },
-      "nextGap": "Portal external access strategy authorization pack after Package D in-cluster HTTP reachability passed",
+      "nextGap": "production-launch-gap-01-auth-tenant-workspace-bootstrap-contract",
       "nextAuthorizationPrompt": [
         "按 active truth 做 gap-driven execution，不新增 loop。",
-        "当前事实：Package D production deploy 已成功，readonly service reachability / in-cluster HTTP smoke run psr-20260617-004 已通过；四个 Deployment ready 1/1，四个 ClusterIP Service 在 8080/http 返回 HTTP 200，smoke Job 已清理且 redaction audit pass。",
-        "目标：生成/执行 Portal external access strategy 的 repo-native authorization pack；不要默认选择公网暴露。",
-        "本轮默认只允许 strategy/plan，本地不要读取 secret/kubeconfig，不连接 Kubernetes API，不执行 kubectl，不 deploy/rollout/rollback，不 build/push，不 Tencent mutation，不 Package C live。",
-        "必须比较 admin-only port-forward、internal gateway、Ingress、LoadBalancer、HTTPS/domain。",
-        "推荐下一步：优先 admin-only port-forward strategy 用于管理员验收 smoke；如需要持久私网访问，再评估 internal gateway。Ingress/LoadBalancer/HTTPS/domain 只能在单独明确授权后进入 dry-run 或 mutation。",
-        "pack 必须输出 allowed operations、forbidden operations、security boundary、rollback/cleanup plan、smoke plan、evidence paths、stop conditions 和 recommended next option。",
-        "evidence 只写 .runtime/package-d-external-access-strategy/<runid>/strategy-redacted.json，不输出 kubeconfig/token/cert/DB password/TCR secret/Portal admin password。"
+        "当前唯一 gap：Production launch Gap 01 - auth / identity / admin bootstrap plus tenant/workspace bootstrap contract。Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过，但 MedOPL 作为正式多租户 SaaS 还不能进入 external access；必须先收口 production control-plane bootstrap minimum。",
+        "目标：在本地实现/收敛 repo-native production launch bootstrap contract/local gate，覆盖 first admin identity bootstrap、tenant bootstrap、workspace seed、providerKeyRef boundary、no raw secret leakage、redacted evidence shape，并把 Portal/Go backend 当前 local defaults 与 production bootstrap 边界区分清楚。",
+        "本轮禁止读取 secret/kubeconfig，不连接 Kubernetes API，不执行 kubectl，不 deploy/rollout/rollback，不 build/push，不 Tencent mutation，不 Package C live，不新增 truth source，不新增 loop。",
+        "必须复用现有 Go backend control-plane、Portal typed API、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式；不得恢复 Node Portal backend 或新增兼容控制面。",
+        "验收：新增或更新本地 contract/local gate，证明未授权 fail closed、admin/tenant/workspace bootstrap shape 正确、raw provider key/DB password/token 不进入 browser storage/log/evidence/git、Portal -> backend bootstrap API shape 可追踪、external access 仍 blocked。",
+        "同步 docs/active/README.md、docs/delivery/README.md、docs/history/README.md、tests/fixtures/v22/goal-current.json，npm run verify 和 npm run closeout:check -- --json 必须通过，commit/push 到 origin/recovery/platform-v22-trunk。"
       ],
       "realExecutionReady": false,
       "combinedInClusterPreflight": {
@@ -2422,7 +2424,365 @@
         }
       }
     },
-    "latest_local_evidence": "package-d-combined-in-cluster-preflight-pdrun-20260616-002"
+    "latest_local_evidence": "package-d-combined-in-cluster-preflight-pdrun-20260616-002",
+    "production_launch_goal_gap_map": {
+      "status": "goal_gap_map_ready_no_cloud_execution",
+      "currentFacts": {
+        "packageDPlatformControlPlaneInsideTke": "deployed",
+        "inClusterHttpReachability": "preflight-passed",
+        "externalPublicUserAccess": "blocked",
+        "latestReachabilityRunId": "psr-20260617-004",
+        "evidencePaths": [
+          ".runtime/package-d-production-deploy/pdrun-20260616-004/deploy-redacted.json",
+          ".runtime/package-d-production-deploy/pdrun-20260616-004/smoke-redacted.json",
+          ".runtime/package-d-production-deploy/pdrun-20260616-004/rollback-redacted.json",
+          ".runtime/package-d-service-reachability/psr-20260617-004/readonly-service-reachability-redacted.json",
+          ".runtime/package-d-service-reachability/psr-20260617-004/smoke-job-manifest-redacted.json"
+        ]
+      },
+      "vision": {
+        "product": "MedOPL production launch is a stable multi-tenant SaaS managed OPL workbench, not a temporary page trial.",
+        "principles": [
+          "platform-provisioned",
+          "customer-dedicated",
+          "multi-tenant SaaS",
+          "Portal is the user/admin entrypoint",
+          "platform manages cloud resources instead of exposing a cloud console",
+          "workspace lifecycle is tracked through ResourceBinding and CloudOperation ledgers",
+          "billing, audit, quota, rollback, cleanup and redacted evidence are launch requirements"
+        ],
+        "cannotClaimUntilClosed": [
+          "public/user access",
+          "stable production onboarding",
+          "self-service workspace provisioning",
+          "production billing or audit closure",
+          "tenant quota enforcement",
+          "external Ingress/LoadBalancer/HTTPS readiness"
+        ]
+      },
+      "gapAudit": [
+        {
+          "id": "package-d-platform-services",
+          "label": "Package D platform control-plane deployed inside TKE",
+          "status": "deployed",
+          "evidence": [
+            "pdrun-20260616-004 deploy/rollout evidence",
+            "psr-20260617-004 in-cluster HTTP 200 evidence"
+          ],
+          "launchBlocking": false
+        },
+        {
+          "id": "auth-identity-admin-bootstrap",
+          "label": "auth / identity / admin bootstrap",
+          "status": "contract-only",
+          "evidence": [
+            "Go backend exposes /api/me and local/admin projection surfaces; no production identity provider or deterministic first-admin bootstrap evidence"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "tenant-model",
+          "label": "tenant model",
+          "status": "implemented",
+          "evidence": [
+            "Go backend ent Tenant schema and tenant IDs in ResourceBinding/CloudOperation shape exist; production tenant bootstrap evidence is missing"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "workspace-provisioning",
+          "label": "workspace provisioning",
+          "status": "contract-only",
+          "evidence": [
+            "workspace schema/projections and local RC flows exist; production create/suspend/resume/delete workflow is not proven"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "portal-backend-package-c-flow",
+          "label": "Portal -> backend -> Package C flow",
+          "status": "contract-only",
+          "evidence": [
+            "Portal typed API and Go cloud connector fail-closed surfaces exist; Portal-triggered Package C live operation is not proven"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "package-c-cloud-operation-state-machine",
+          "label": "Package C cloud operation state machine",
+          "status": "implemented",
+          "evidence": [
+            "Package C live runner projects requested/creating/created/scaling/ready/releaseRequested/deleting/released/failed/cleanupRequired and repository sink contract exists"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "tencent-tke-tenant-node-pool-lifecycle",
+          "label": "Tencent TKE tenant node pool lifecycle",
+          "status": "preflight-passed",
+          "evidence": [
+            "authorized Package C live canary completed CreateNodePool, scale up, scale down and DeleteNodePool; not yet wired to Portal production workflow"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "resourcebinding-postgresql-ledger",
+          "label": "ResourceBinding PostgreSQL ledger",
+          "status": "contract-only",
+          "evidence": [
+            "domain/repository/ent schema and gated Postgres sink support exist; authorized Postgres attempt failed closed at connection preflight before DB write"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "billing-ledger",
+          "label": "billing ledger",
+          "status": "contract-only",
+          "evidence": [
+            "BillingEvent schema and local billing projections exist; production billing freeze/charge/stop-billing ledger evidence is missing"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "audit-ledger",
+          "label": "audit ledger",
+          "status": "contract-only",
+          "evidence": [
+            "AuditEvent store/projections exist; production audit ledger write/read/closure evidence is missing"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "quota-enforcement",
+          "label": "quota enforcement",
+          "status": "missing",
+          "evidence": [
+            "workspace_storage_gb is modeled in ResourceBinding; runtime/storage quota enforcement is not proven"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "workspace-suspend-resume-delete",
+          "label": "workspace suspend / resume / delete",
+          "status": "missing",
+          "evidence": [
+            "no production workspace lifecycle runner/API evidence for suspend, resume and delete"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "external-access-ingress-https",
+          "label": "external access / Ingress / HTTPS",
+          "status": "blocked",
+          "evidence": [
+            "ClusterIP HTTP reachability passed, but external/public user access is intentionally blocked until the multi-tenant launch minimum closes"
+          ],
+          "launchBlocking": false
+        },
+        {
+          "id": "production-smoke-canary",
+          "label": "production smoke / canary",
+          "status": "preflight-passed",
+          "evidence": [
+            "Package D in-cluster HTTP smoke passed for four services; end-to-end tenant/workspace/billing canary is missing"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "rollback-cleanup",
+          "label": "rollback / cleanup",
+          "status": "contract-only",
+          "evidence": [
+            "deploy rollback plan generated and smoke Job cleanup passed; production rollback execution evidence is missing"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "observability-redaction-evidence",
+          "label": "observability / redaction evidence",
+          "status": "preflight-passed",
+          "evidence": [
+            "Package D deploy/smoke redaction audits passed; launch-level audit/observability evidence is incomplete"
+          ],
+          "launchBlocking": true
+        }
+      ],
+      "phases": [
+        {
+          "phase": 0,
+          "name": "TKE platform service baseline",
+          "status": "deployed",
+          "requiredEvidence": [
+            "Package D Deployments ready 1/1",
+            "four ClusterIP Services HTTP 200",
+            "redaction audit pass"
+          ],
+          "gaps": [
+            "package-d-platform-services"
+          ]
+        },
+        {
+          "phase": 1,
+          "name": "Production control-plane bootstrap minimum",
+          "status": "contract-only",
+          "requiredEvidence": [
+            "first admin identity bootstrap",
+            "tenant bootstrap",
+            "workspace seed",
+            "providerKeyRef boundary",
+            "no raw secret leakage"
+          ],
+          "gaps": [
+            "auth-identity-admin-bootstrap",
+            "tenant-model",
+            "workspace-provisioning"
+          ]
+        },
+        {
+          "phase": 2,
+          "name": "Workspace provisioning to Package C live operation",
+          "status": "contract-only",
+          "requiredEvidence": [
+            "Portal -> Go backend -> Package C request",
+            "ResourceBinding requested/creating/ready states",
+            "tenant node pool lifecycle evidence"
+          ],
+          "gaps": [
+            "portal-backend-package-c-flow",
+            "package-c-cloud-operation-state-machine",
+            "tencent-tke-tenant-node-pool-lifecycle",
+            "resourcebinding-postgresql-ledger"
+          ]
+        },
+        {
+          "phase": 3,
+          "name": "Commercial ledger and lifecycle closure",
+          "status": "missing",
+          "requiredEvidence": [
+            "billing ledger",
+            "audit ledger",
+            "quota enforcement",
+            "suspend/resume/delete semantics",
+            "cleanup evidence"
+          ],
+          "gaps": [
+            "billing-ledger",
+            "audit-ledger",
+            "quota-enforcement",
+            "workspace-suspend-resume-delete"
+          ]
+        },
+        {
+          "phase": 4,
+          "name": "Production smoke, canary, rollback and evidence",
+          "status": "contract-only",
+          "requiredEvidence": [
+            "end-to-end production canary",
+            "rollback execution or explicit no-rollback decision",
+            "launch redaction/observability evidence"
+          ],
+          "gaps": [
+            "production-smoke-canary",
+            "rollback-cleanup",
+            "observability-redaction-evidence"
+          ]
+        },
+        {
+          "phase": 5,
+          "name": "External access after minimum SaaS closure",
+          "status": "blocked",
+          "requiredEvidence": [
+            "chosen access strategy",
+            "Ingress/LB/HTTPS only after separate authorization",
+            "public/user access smoke"
+          ],
+          "gaps": [
+            "external-access-ingress-https"
+          ]
+        }
+      ],
+      "minimumLaunchClosureOrder": [
+        {
+          "phase": 0,
+          "name": "TKE platform service baseline",
+          "status": "deployed",
+          "gaps": [
+            "package-d-platform-services"
+          ]
+        },
+        {
+          "phase": 1,
+          "name": "Production control-plane bootstrap minimum",
+          "status": "contract-only",
+          "gaps": [
+            "auth-identity-admin-bootstrap",
+            "tenant-model",
+            "workspace-provisioning"
+          ]
+        },
+        {
+          "phase": 2,
+          "name": "Workspace provisioning to Package C live operation",
+          "status": "contract-only",
+          "gaps": [
+            "portal-backend-package-c-flow",
+            "package-c-cloud-operation-state-machine",
+            "tencent-tke-tenant-node-pool-lifecycle",
+            "resourcebinding-postgresql-ledger"
+          ]
+        },
+        {
+          "phase": 3,
+          "name": "Commercial ledger and lifecycle closure",
+          "status": "missing",
+          "gaps": [
+            "billing-ledger",
+            "audit-ledger",
+            "quota-enforcement",
+            "workspace-suspend-resume-delete"
+          ]
+        },
+        {
+          "phase": 4,
+          "name": "Production smoke, canary, rollback and evidence",
+          "status": "contract-only",
+          "gaps": [
+            "production-smoke-canary",
+            "rollback-cleanup",
+            "observability-redaction-evidence"
+          ]
+        },
+        {
+          "phase": 5,
+          "name": "External access after minimum SaaS closure",
+          "status": "blocked",
+          "gaps": [
+            "external-access-ingress-https"
+          ]
+        }
+      ],
+      "nextUniqueGap": {
+        "id": "production-launch-gap-01-auth-tenant-workspace-bootstrap-contract",
+        "title": "Production launch Gap 01: auth / identity / admin bootstrap plus tenant/workspace bootstrap contract",
+        "reason": "Package D is deployed and reachable inside TKE, but formal SaaS launch cannot expose Portal before production identity, first admin, tenant and workspace bootstrap boundaries are repo-native and testable.",
+        "boundary": "local contract and fixture readiness only; no kubeconfig, kubectl, deploy, build/push, Tencent mutation or Package C live",
+        "recommendedEntrypoint": "local Codex implementation of repo-native control-plane bootstrap contract/gate",
+        "evidencePath": ".runtime/package-d-production-launch/<runid>/launch-gap-01-bootstrap-redacted.json"
+      },
+      "externalAccessPolicy": {
+        "status": "blocked_before_multi_tenant_minimum_launch_closure",
+        "reason": "Do not default Ingress/LoadBalancer/HTTPS after ClusterIP smoke; first close identity, tenancy, workspace provisioning, ledger, billing/audit/quota, lifecycle, canary and rollback gaps.",
+        "allowedNow": [
+          "strategy comparison only under separate prompt"
+        ],
+        "forbiddenNow": [
+          "public Ingress mutation",
+          "LoadBalancer mutation",
+          "DNS/TLS mutation",
+          "public user access claim"
+        ]
+      }
+    }
   },
   "release_readiness_state": {
     "status": "authorization_required",
@@ -2455,7 +2815,7 @@
       "authorized deploy",
       "canary / QA / status update"
     ],
-    "latest_local_evidence": "package-d-production-deploy-pdrun-20260616-004",
+    "latest_local_evidence": "production-launch-goal-gap-map-no-cloud-execution",
     "package_c_live_canary": {
       "status": "authorized_live_canary_completed",
       "operation_id": "op-package-c-live-canary-live-full-lifecycle-2026-06-13",
@@ -2475,11 +2835,13 @@
       "postgres_execution_status": "authorized_attempt_failed_closed_connection_preflight_timeout_no_db_write"
     },
     "productionization_plan": [
-      "Package D PostgreSQL/runtime env/combined in-cluster preflight from cluster cls-fi097sy4 platform runner pool np-6l4nkdto and VPC PostgreSQL 10.66.0.21:5432",
-      "authorized successful PostgreSQL live canary after service runs inside VPC with dedicated ledger env file and parent-row identities",
-      "billing/audit ledger",
-      "Portal opening entry",
-      "workspace storage quota"
+      "Production launch Gap 01: admin identity / tenant / workspace bootstrap contract",
+      "Portal -> Go backend -> Package C production operation wiring",
+      "ResourceBinding PostgreSQL ledger successful in-VPC write/read canary",
+      "billing/audit ledger and quota enforcement closure",
+      "workspace suspend/resume/delete lifecycle closure",
+      "production smoke/canary plus rollback/cleanup evidence",
+      "external access strategy only after multi-tenant minimum launch closure"
     ],
     "package_d_deploy_readiness_plan": {
       "status": "deploy_apply_succeeded_waiting_readonly_service_reachability_and_portal_external_access_strategy",
@@ -4177,11 +4539,372 @@
       }
     },
     "readinessGaps": [
-      "readonly service reachability evidence for deployed Package D services",
-      "Portal external access strategy definition before broader readiness progression",
-      "post-deploy DB/smoke evidence beyond smoke shape checks",
-      "rollback execution evidence if rollback is separately authorized or triggered"
-    ]
+      "Production launch Gap 01: auth / identity / admin bootstrap plus tenant/workspace bootstrap contract",
+      "Portal -> backend -> Package C live operation wiring after bootstrap contract",
+      "ResourceBinding PostgreSQL ledger successful in-VPC write/read canary",
+      "billing/audit ledger and quota enforcement closure",
+      "workspace suspend/resume/delete lifecycle closure",
+      "production end-to-end smoke/canary and rollback/cleanup evidence",
+      "Portal external access strategy only after multi-tenant minimum launch closure"
+    ],
+    "production_launch_goal_gap_map": {
+      "status": "goal_gap_map_ready_no_cloud_execution",
+      "currentFacts": {
+        "packageDPlatformControlPlaneInsideTke": "deployed",
+        "inClusterHttpReachability": "preflight-passed",
+        "externalPublicUserAccess": "blocked",
+        "latestReachabilityRunId": "psr-20260617-004",
+        "evidencePaths": [
+          ".runtime/package-d-production-deploy/pdrun-20260616-004/deploy-redacted.json",
+          ".runtime/package-d-production-deploy/pdrun-20260616-004/smoke-redacted.json",
+          ".runtime/package-d-production-deploy/pdrun-20260616-004/rollback-redacted.json",
+          ".runtime/package-d-service-reachability/psr-20260617-004/readonly-service-reachability-redacted.json",
+          ".runtime/package-d-service-reachability/psr-20260617-004/smoke-job-manifest-redacted.json"
+        ]
+      },
+      "vision": {
+        "product": "MedOPL production launch is a stable multi-tenant SaaS managed OPL workbench, not a temporary page trial.",
+        "principles": [
+          "platform-provisioned",
+          "customer-dedicated",
+          "multi-tenant SaaS",
+          "Portal is the user/admin entrypoint",
+          "platform manages cloud resources instead of exposing a cloud console",
+          "workspace lifecycle is tracked through ResourceBinding and CloudOperation ledgers",
+          "billing, audit, quota, rollback, cleanup and redacted evidence are launch requirements"
+        ],
+        "cannotClaimUntilClosed": [
+          "public/user access",
+          "stable production onboarding",
+          "self-service workspace provisioning",
+          "production billing or audit closure",
+          "tenant quota enforcement",
+          "external Ingress/LoadBalancer/HTTPS readiness"
+        ]
+      },
+      "gapAudit": [
+        {
+          "id": "package-d-platform-services",
+          "label": "Package D platform control-plane deployed inside TKE",
+          "status": "deployed",
+          "evidence": [
+            "pdrun-20260616-004 deploy/rollout evidence",
+            "psr-20260617-004 in-cluster HTTP 200 evidence"
+          ],
+          "launchBlocking": false
+        },
+        {
+          "id": "auth-identity-admin-bootstrap",
+          "label": "auth / identity / admin bootstrap",
+          "status": "contract-only",
+          "evidence": [
+            "Go backend exposes /api/me and local/admin projection surfaces; no production identity provider or deterministic first-admin bootstrap evidence"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "tenant-model",
+          "label": "tenant model",
+          "status": "implemented",
+          "evidence": [
+            "Go backend ent Tenant schema and tenant IDs in ResourceBinding/CloudOperation shape exist; production tenant bootstrap evidence is missing"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "workspace-provisioning",
+          "label": "workspace provisioning",
+          "status": "contract-only",
+          "evidence": [
+            "workspace schema/projections and local RC flows exist; production create/suspend/resume/delete workflow is not proven"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "portal-backend-package-c-flow",
+          "label": "Portal -> backend -> Package C flow",
+          "status": "contract-only",
+          "evidence": [
+            "Portal typed API and Go cloud connector fail-closed surfaces exist; Portal-triggered Package C live operation is not proven"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "package-c-cloud-operation-state-machine",
+          "label": "Package C cloud operation state machine",
+          "status": "implemented",
+          "evidence": [
+            "Package C live runner projects requested/creating/created/scaling/ready/releaseRequested/deleting/released/failed/cleanupRequired and repository sink contract exists"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "tencent-tke-tenant-node-pool-lifecycle",
+          "label": "Tencent TKE tenant node pool lifecycle",
+          "status": "preflight-passed",
+          "evidence": [
+            "authorized Package C live canary completed CreateNodePool, scale up, scale down and DeleteNodePool; not yet wired to Portal production workflow"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "resourcebinding-postgresql-ledger",
+          "label": "ResourceBinding PostgreSQL ledger",
+          "status": "contract-only",
+          "evidence": [
+            "domain/repository/ent schema and gated Postgres sink support exist; authorized Postgres attempt failed closed at connection preflight before DB write"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "billing-ledger",
+          "label": "billing ledger",
+          "status": "contract-only",
+          "evidence": [
+            "BillingEvent schema and local billing projections exist; production billing freeze/charge/stop-billing ledger evidence is missing"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "audit-ledger",
+          "label": "audit ledger",
+          "status": "contract-only",
+          "evidence": [
+            "AuditEvent store/projections exist; production audit ledger write/read/closure evidence is missing"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "quota-enforcement",
+          "label": "quota enforcement",
+          "status": "missing",
+          "evidence": [
+            "workspace_storage_gb is modeled in ResourceBinding; runtime/storage quota enforcement is not proven"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "workspace-suspend-resume-delete",
+          "label": "workspace suspend / resume / delete",
+          "status": "missing",
+          "evidence": [
+            "no production workspace lifecycle runner/API evidence for suspend, resume and delete"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "external-access-ingress-https",
+          "label": "external access / Ingress / HTTPS",
+          "status": "blocked",
+          "evidence": [
+            "ClusterIP HTTP reachability passed, but external/public user access is intentionally blocked until the multi-tenant launch minimum closes"
+          ],
+          "launchBlocking": false
+        },
+        {
+          "id": "production-smoke-canary",
+          "label": "production smoke / canary",
+          "status": "preflight-passed",
+          "evidence": [
+            "Package D in-cluster HTTP smoke passed for four services; end-to-end tenant/workspace/billing canary is missing"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "rollback-cleanup",
+          "label": "rollback / cleanup",
+          "status": "contract-only",
+          "evidence": [
+            "deploy rollback plan generated and smoke Job cleanup passed; production rollback execution evidence is missing"
+          ],
+          "launchBlocking": true
+        },
+        {
+          "id": "observability-redaction-evidence",
+          "label": "observability / redaction evidence",
+          "status": "preflight-passed",
+          "evidence": [
+            "Package D deploy/smoke redaction audits passed; launch-level audit/observability evidence is incomplete"
+          ],
+          "launchBlocking": true
+        }
+      ],
+      "phases": [
+        {
+          "phase": 0,
+          "name": "TKE platform service baseline",
+          "status": "deployed",
+          "requiredEvidence": [
+            "Package D Deployments ready 1/1",
+            "four ClusterIP Services HTTP 200",
+            "redaction audit pass"
+          ],
+          "gaps": [
+            "package-d-platform-services"
+          ]
+        },
+        {
+          "phase": 1,
+          "name": "Production control-plane bootstrap minimum",
+          "status": "contract-only",
+          "requiredEvidence": [
+            "first admin identity bootstrap",
+            "tenant bootstrap",
+            "workspace seed",
+            "providerKeyRef boundary",
+            "no raw secret leakage"
+          ],
+          "gaps": [
+            "auth-identity-admin-bootstrap",
+            "tenant-model",
+            "workspace-provisioning"
+          ]
+        },
+        {
+          "phase": 2,
+          "name": "Workspace provisioning to Package C live operation",
+          "status": "contract-only",
+          "requiredEvidence": [
+            "Portal -> Go backend -> Package C request",
+            "ResourceBinding requested/creating/ready states",
+            "tenant node pool lifecycle evidence"
+          ],
+          "gaps": [
+            "portal-backend-package-c-flow",
+            "package-c-cloud-operation-state-machine",
+            "tencent-tke-tenant-node-pool-lifecycle",
+            "resourcebinding-postgresql-ledger"
+          ]
+        },
+        {
+          "phase": 3,
+          "name": "Commercial ledger and lifecycle closure",
+          "status": "missing",
+          "requiredEvidence": [
+            "billing ledger",
+            "audit ledger",
+            "quota enforcement",
+            "suspend/resume/delete semantics",
+            "cleanup evidence"
+          ],
+          "gaps": [
+            "billing-ledger",
+            "audit-ledger",
+            "quota-enforcement",
+            "workspace-suspend-resume-delete"
+          ]
+        },
+        {
+          "phase": 4,
+          "name": "Production smoke, canary, rollback and evidence",
+          "status": "contract-only",
+          "requiredEvidence": [
+            "end-to-end production canary",
+            "rollback execution or explicit no-rollback decision",
+            "launch redaction/observability evidence"
+          ],
+          "gaps": [
+            "production-smoke-canary",
+            "rollback-cleanup",
+            "observability-redaction-evidence"
+          ]
+        },
+        {
+          "phase": 5,
+          "name": "External access after minimum SaaS closure",
+          "status": "blocked",
+          "requiredEvidence": [
+            "chosen access strategy",
+            "Ingress/LB/HTTPS only after separate authorization",
+            "public/user access smoke"
+          ],
+          "gaps": [
+            "external-access-ingress-https"
+          ]
+        }
+      ],
+      "minimumLaunchClosureOrder": [
+        {
+          "phase": 0,
+          "name": "TKE platform service baseline",
+          "status": "deployed",
+          "gaps": [
+            "package-d-platform-services"
+          ]
+        },
+        {
+          "phase": 1,
+          "name": "Production control-plane bootstrap minimum",
+          "status": "contract-only",
+          "gaps": [
+            "auth-identity-admin-bootstrap",
+            "tenant-model",
+            "workspace-provisioning"
+          ]
+        },
+        {
+          "phase": 2,
+          "name": "Workspace provisioning to Package C live operation",
+          "status": "contract-only",
+          "gaps": [
+            "portal-backend-package-c-flow",
+            "package-c-cloud-operation-state-machine",
+            "tencent-tke-tenant-node-pool-lifecycle",
+            "resourcebinding-postgresql-ledger"
+          ]
+        },
+        {
+          "phase": 3,
+          "name": "Commercial ledger and lifecycle closure",
+          "status": "missing",
+          "gaps": [
+            "billing-ledger",
+            "audit-ledger",
+            "quota-enforcement",
+            "workspace-suspend-resume-delete"
+          ]
+        },
+        {
+          "phase": 4,
+          "name": "Production smoke, canary, rollback and evidence",
+          "status": "contract-only",
+          "gaps": [
+            "production-smoke-canary",
+            "rollback-cleanup",
+            "observability-redaction-evidence"
+          ]
+        },
+        {
+          "phase": 5,
+          "name": "External access after minimum SaaS closure",
+          "status": "blocked",
+          "gaps": [
+            "external-access-ingress-https"
+          ]
+        }
+      ],
+      "nextUniqueGap": {
+        "id": "production-launch-gap-01-auth-tenant-workspace-bootstrap-contract",
+        "title": "Production launch Gap 01: auth / identity / admin bootstrap plus tenant/workspace bootstrap contract",
+        "reason": "Package D is deployed and reachable inside TKE, but formal SaaS launch cannot expose Portal before production identity, first admin, tenant and workspace bootstrap boundaries are repo-native and testable.",
+        "boundary": "local contract and fixture readiness only; no kubeconfig, kubectl, deploy, build/push, Tencent mutation or Package C live",
+        "recommendedEntrypoint": "local Codex implementation of repo-native control-plane bootstrap contract/gate",
+        "evidencePath": ".runtime/package-d-production-launch/<runid>/launch-gap-01-bootstrap-redacted.json"
+      },
+      "externalAccessPolicy": {
+        "status": "blocked_before_multi_tenant_minimum_launch_closure",
+        "reason": "Do not default Ingress/LoadBalancer/HTTPS after ClusterIP smoke; first close identity, tenancy, workspace provisioning, ledger, billing/audit/quota, lifecycle, canary and rollback gaps.",
+        "allowedNow": [
+          "strategy comparison only under separate prompt"
+        ],
+        "forbiddenNow": [
+          "public Ingress mutation",
+          "LoadBalancer mutation",
+          "DNS/TLS mutation",
+          "public user access claim"
+        ]
+      }
+    }
   },
   "ai_mvp_readiness_state": {
     "status": "local_readiness_audited",
@@ -4513,7 +5236,7 @@
     "cannot_claim": "production runtime, real cloud, real billing, deploy, kubectl, build/push or live provider readiness"
   },
   "package_d_deploy_readiness_plan": {
-    "status": "deploy_apply_succeeded_service_reachability_wait_failure_diagnostics_ready_waiting_authorized_rerun_and_portal_external_access_strategy",
+    "status": "deployed_inside_tke_in_cluster_http_passed_production_launch_gap_map_ready",
     "targetClusterId": "cls-fi097sy4",
     "targetPlatformNodePoolId": "np-6l4nkdto",
     "postgresEndpoint": "10.66.0.21:5432",
@@ -4621,10 +5344,13 @@
       "realExecutionReady": false
     },
     "readinessGaps": [
-      "Portal external access strategy authorization pack before public/user access claim",
-      "Portal external access strategy definition before broader readiness progression",
-      "post-deploy DB/smoke evidence beyond smoke shape checks",
-      "rollback execution evidence if rollback is separately authorized or triggered"
+      "Production launch Gap 01: auth / identity / admin bootstrap plus tenant/workspace bootstrap contract",
+      "Portal -> backend -> Package C live operation wiring after bootstrap contract",
+      "ResourceBinding PostgreSQL ledger successful in-VPC write/read canary",
+      "billing/audit ledger and quota enforcement closure",
+      "workspace suspend/resume/delete lifecycle closure",
+      "production end-to-end smoke/canary and rollback/cleanup evidence",
+      "Portal external access strategy only after multi-tenant minimum launch closure"
     ],
     "forbiddenOpsNow": [
       "Tencent mutation",
@@ -5663,16 +6389,15 @@
         ".runtime/package-d-run-scoped-job-preflight/pdrun-20260616-002/job-manifest-redacted.json"
       ]
     },
-    "nextGap": "Portal external access strategy authorization pack after Package D in-cluster HTTP reachability passed",
+    "nextGap": "production-launch-gap-01-auth-tenant-workspace-bootstrap-contract",
     "nextAuthorizationPrompt": [
       "按 active truth 做 gap-driven execution，不新增 loop。",
-      "当前事实：Package D production deploy 已成功，readonly service reachability / in-cluster HTTP smoke run psr-20260617-004 已通过；四个 Deployment ready 1/1，四个 ClusterIP Service 在 8080/http 返回 HTTP 200，smoke Job 已清理且 redaction audit pass。",
-      "目标：生成/执行 Portal external access strategy 的 repo-native authorization pack；不要默认选择公网暴露。",
-      "本轮默认只允许 strategy/plan，本地不要读取 secret/kubeconfig，不连接 Kubernetes API，不执行 kubectl，不 deploy/rollout/rollback，不 build/push，不 Tencent mutation，不 Package C live。",
-      "必须比较 admin-only port-forward、internal gateway、Ingress、LoadBalancer、HTTPS/domain。",
-      "推荐下一步：优先 admin-only port-forward strategy 用于管理员验收 smoke；如需要持久私网访问，再评估 internal gateway。Ingress/LoadBalancer/HTTPS/domain 只能在单独明确授权后进入 dry-run 或 mutation。",
-      "pack 必须输出 allowed operations、forbidden operations、security boundary、rollback/cleanup plan、smoke plan、evidence paths、stop conditions 和 recommended next option。",
-      "evidence 只写 .runtime/package-d-external-access-strategy/<runid>/strategy-redacted.json，不输出 kubeconfig/token/cert/DB password/TCR secret/Portal admin password。"
+      "当前唯一 gap：Production launch Gap 01 - auth / identity / admin bootstrap plus tenant/workspace bootstrap contract。Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过，但 MedOPL 作为正式多租户 SaaS 还不能进入 external access；必须先收口 production control-plane bootstrap minimum。",
+      "目标：在本地实现/收敛 repo-native production launch bootstrap contract/local gate，覆盖 first admin identity bootstrap、tenant bootstrap、workspace seed、providerKeyRef boundary、no raw secret leakage、redacted evidence shape，并把 Portal/Go backend 当前 local defaults 与 production bootstrap 边界区分清楚。",
+      "本轮禁止读取 secret/kubeconfig，不连接 Kubernetes API，不执行 kubectl，不 deploy/rollout/rollback，不 build/push，不 Tencent mutation，不 Package C live，不新增 truth source，不新增 loop。",
+      "必须复用现有 Go backend control-plane、Portal typed API、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式；不得恢复 Node Portal backend 或新增兼容控制面。",
+      "验收：新增或更新本地 contract/local gate，证明未授权 fail closed、admin/tenant/workspace bootstrap shape 正确、raw provider key/DB password/token 不进入 browser storage/log/evidence/git、Portal -> backend bootstrap API shape 可追踪、external access 仍 blocked。",
+      "同步 docs/active/README.md、docs/delivery/README.md、docs/history/README.md、tests/fixtures/v22/goal-current.json，npm run verify 和 npm run closeout:check -- --json 必须通过，commit/push 到 origin/recovery/platform-v22-trunk。"
     ],
     "realExecutionReady": false,
     "combinedInClusterPreflight": {
@@ -6978,28 +7703,402 @@
           "redaction audit fails"
         ]
       }
+    },
+    "productionLaunchBoundary": {
+      "nextUniqueGap": {
+        "id": "production-launch-gap-01-auth-tenant-workspace-bootstrap-contract",
+        "title": "Production launch Gap 01: auth / identity / admin bootstrap plus tenant/workspace bootstrap contract",
+        "reason": "Package D is deployed and reachable inside TKE, but formal SaaS launch cannot expose Portal before production identity, first admin, tenant and workspace bootstrap boundaries are repo-native and testable.",
+        "boundary": "local contract and fixture readiness only; no kubeconfig, kubectl, deploy, build/push, Tencent mutation or Package C live",
+        "recommendedEntrypoint": "local Codex implementation of repo-native control-plane bootstrap contract/gate",
+        "evidencePath": ".runtime/package-d-production-launch/<runid>/launch-gap-01-bootstrap-redacted.json"
+      },
+      "externalAccessBlockedUntil": "multi_tenant_minimum_launch_closure"
     }
   },
   "readinessGaps": [
-    "Portal external access strategy authorization pack before public/user access claim",
-    "Portal external access strategy definition before broader readiness progression",
-    "post-deploy DB/smoke evidence beyond smoke shape checks",
-    "rollback execution evidence if rollback is separately authorized or triggered"
+    "Production launch Gap 01: auth / identity / admin bootstrap plus tenant/workspace bootstrap contract",
+    "Portal -> backend -> Package C live operation wiring after bootstrap contract",
+    "ResourceBinding PostgreSQL ledger successful in-VPC write/read canary",
+    "billing/audit ledger and quota enforcement closure",
+    "workspace suspend/resume/delete lifecycle closure",
+    "production end-to-end smoke/canary and rollback/cleanup evidence",
+    "Portal external access strategy only after multi-tenant minimum launch closure"
   ],
   "nextAuthorizationPrompt": [
     "按 active truth 做 gap-driven execution，不新增 loop。",
-    "当前事实：Package D production deploy 已成功，readonly service reachability / in-cluster HTTP smoke run psr-20260617-004 已通过；四个 Deployment ready 1/1，四个 ClusterIP Service 在 8080/http 返回 HTTP 200，smoke Job 已清理且 redaction audit pass。",
-    "目标：生成/执行 Portal external access strategy 的 repo-native authorization pack；不要默认选择公网暴露。",
-    "本轮默认只允许 strategy/plan，本地不要读取 secret/kubeconfig，不连接 Kubernetes API，不执行 kubectl，不 deploy/rollout/rollback，不 build/push，不 Tencent mutation，不 Package C live。",
-    "必须比较 admin-only port-forward、internal gateway、Ingress、LoadBalancer、HTTPS/domain。",
-    "推荐下一步：优先 admin-only port-forward strategy 用于管理员验收 smoke；如需要持久私网访问，再评估 internal gateway。Ingress/LoadBalancer/HTTPS/domain 只能在单独明确授权后进入 dry-run 或 mutation。",
-    "pack 必须输出 allowed operations、forbidden operations、security boundary、rollback/cleanup plan、smoke plan、evidence paths、stop conditions 和 recommended next option。",
-    "evidence 只写 .runtime/package-d-external-access-strategy/<runid>/strategy-redacted.json，不输出 kubeconfig/token/cert/DB password/TCR secret/Portal admin password。"
+    "当前唯一 gap：Production launch Gap 01 - auth / identity / admin bootstrap plus tenant/workspace bootstrap contract。Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过，但 MedOPL 作为正式多租户 SaaS 还不能进入 external access；必须先收口 production control-plane bootstrap minimum。",
+    "目标：在本地实现/收敛 repo-native production launch bootstrap contract/local gate，覆盖 first admin identity bootstrap、tenant bootstrap、workspace seed、providerKeyRef boundary、no raw secret leakage、redacted evidence shape，并把 Portal/Go backend 当前 local defaults 与 production bootstrap 边界区分清楚。",
+    "本轮禁止读取 secret/kubeconfig，不连接 Kubernetes API，不执行 kubectl，不 deploy/rollout/rollback，不 build/push，不 Tencent mutation，不 Package C live，不新增 truth source，不新增 loop。",
+    "必须复用现有 Go backend control-plane、Portal typed API、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式；不得恢复 Node Portal backend 或新增兼容控制面。",
+    "验收：新增或更新本地 contract/local gate，证明未授权 fail closed、admin/tenant/workspace bootstrap shape 正确、raw provider key/DB password/token 不进入 browser storage/log/evidence/git、Portal -> backend bootstrap API shape 可追踪、external access 仍 blocked。",
+    "同步 docs/active/README.md、docs/delivery/README.md、docs/history/README.md、tests/fixtures/v22/goal-current.json，npm run verify 和 npm run closeout:check -- --json 必须通过，commit/push 到 origin/recovery/platform-v22-trunk。"
   ],
   "nextLocalCodexPrompt": [
     "按 active truth 做 gap-driven execution，不新增 loop。",
-    "当前 gap：Package D in-cluster HTTP reachability 已通过；下一步是 Portal external access strategy authorization pack。",
-    "本地不要读取 secret/kubeconfig，不连接 Kubernetes API，不 kubectl，不 deploy，不 build/push，不 Tencent mutation，不 Package C live。",
-    "不要默认选择公网暴露；比较 admin-only port-forward、internal gateway、Ingress、LoadBalancer、HTTPS/domain，并输出下一次真实授权 prompt。"
-  ]
+    "当前唯一 gap：Production launch Gap 01 - auth / identity / admin bootstrap plus tenant/workspace bootstrap contract。Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过，但 MedOPL 作为正式多租户 SaaS 还不能进入 external access；必须先收口 production control-plane bootstrap minimum。",
+    "目标：在本地实现/收敛 repo-native production launch bootstrap contract/local gate，覆盖 first admin identity bootstrap、tenant bootstrap、workspace seed、providerKeyRef boundary、no raw secret leakage、redacted evidence shape，并把 Portal/Go backend 当前 local defaults 与 production bootstrap 边界区分清楚。",
+    "本轮禁止读取 secret/kubeconfig，不连接 Kubernetes API，不执行 kubectl，不 deploy/rollout/rollback，不 build/push，不 Tencent mutation，不 Package C live，不新增 truth source，不新增 loop。",
+    "必须复用现有 Go backend control-plane、Portal typed API、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式；不得恢复 Node Portal backend 或新增兼容控制面。",
+    "验收：新增或更新本地 contract/local gate，证明未授权 fail closed、admin/tenant/workspace bootstrap shape 正确、raw provider key/DB password/token 不进入 browser storage/log/evidence/git、Portal -> backend bootstrap API shape 可追踪、external access 仍 blocked。",
+    "同步 docs/active/README.md、docs/delivery/README.md、docs/history/README.md、tests/fixtures/v22/goal-current.json，npm run verify 和 npm run closeout:check -- --json 必须通过，commit/push 到 origin/recovery/platform-v22-trunk。"
+  ],
+  "production_launch_goal_gap_map": {
+    "status": "goal_gap_map_ready_no_cloud_execution",
+    "currentFacts": {
+      "packageDPlatformControlPlaneInsideTke": "deployed",
+      "inClusterHttpReachability": "preflight-passed",
+      "externalPublicUserAccess": "blocked",
+      "latestReachabilityRunId": "psr-20260617-004",
+      "evidencePaths": [
+        ".runtime/package-d-production-deploy/pdrun-20260616-004/deploy-redacted.json",
+        ".runtime/package-d-production-deploy/pdrun-20260616-004/smoke-redacted.json",
+        ".runtime/package-d-production-deploy/pdrun-20260616-004/rollback-redacted.json",
+        ".runtime/package-d-service-reachability/psr-20260617-004/readonly-service-reachability-redacted.json",
+        ".runtime/package-d-service-reachability/psr-20260617-004/smoke-job-manifest-redacted.json"
+      ]
+    },
+    "vision": {
+      "product": "MedOPL production launch is a stable multi-tenant SaaS managed OPL workbench, not a temporary page trial.",
+      "principles": [
+        "platform-provisioned",
+        "customer-dedicated",
+        "multi-tenant SaaS",
+        "Portal is the user/admin entrypoint",
+        "platform manages cloud resources instead of exposing a cloud console",
+        "workspace lifecycle is tracked through ResourceBinding and CloudOperation ledgers",
+        "billing, audit, quota, rollback, cleanup and redacted evidence are launch requirements"
+      ],
+      "cannotClaimUntilClosed": [
+        "public/user access",
+        "stable production onboarding",
+        "self-service workspace provisioning",
+        "production billing or audit closure",
+        "tenant quota enforcement",
+        "external Ingress/LoadBalancer/HTTPS readiness"
+      ]
+    },
+    "gapAudit": [
+      {
+        "id": "package-d-platform-services",
+        "label": "Package D platform control-plane deployed inside TKE",
+        "status": "deployed",
+        "evidence": [
+          "pdrun-20260616-004 deploy/rollout evidence",
+          "psr-20260617-004 in-cluster HTTP 200 evidence"
+        ],
+        "launchBlocking": false
+      },
+      {
+        "id": "auth-identity-admin-bootstrap",
+        "label": "auth / identity / admin bootstrap",
+        "status": "contract-only",
+        "evidence": [
+          "Go backend exposes /api/me and local/admin projection surfaces; no production identity provider or deterministic first-admin bootstrap evidence"
+        ],
+        "launchBlocking": true
+      },
+      {
+        "id": "tenant-model",
+        "label": "tenant model",
+        "status": "implemented",
+        "evidence": [
+          "Go backend ent Tenant schema and tenant IDs in ResourceBinding/CloudOperation shape exist; production tenant bootstrap evidence is missing"
+        ],
+        "launchBlocking": true
+      },
+      {
+        "id": "workspace-provisioning",
+        "label": "workspace provisioning",
+        "status": "contract-only",
+        "evidence": [
+          "workspace schema/projections and local RC flows exist; production create/suspend/resume/delete workflow is not proven"
+        ],
+        "launchBlocking": true
+      },
+      {
+        "id": "portal-backend-package-c-flow",
+        "label": "Portal -> backend -> Package C flow",
+        "status": "contract-only",
+        "evidence": [
+          "Portal typed API and Go cloud connector fail-closed surfaces exist; Portal-triggered Package C live operation is not proven"
+        ],
+        "launchBlocking": true
+      },
+      {
+        "id": "package-c-cloud-operation-state-machine",
+        "label": "Package C cloud operation state machine",
+        "status": "implemented",
+        "evidence": [
+          "Package C live runner projects requested/creating/created/scaling/ready/releaseRequested/deleting/released/failed/cleanupRequired and repository sink contract exists"
+        ],
+        "launchBlocking": true
+      },
+      {
+        "id": "tencent-tke-tenant-node-pool-lifecycle",
+        "label": "Tencent TKE tenant node pool lifecycle",
+        "status": "preflight-passed",
+        "evidence": [
+          "authorized Package C live canary completed CreateNodePool, scale up, scale down and DeleteNodePool; not yet wired to Portal production workflow"
+        ],
+        "launchBlocking": true
+      },
+      {
+        "id": "resourcebinding-postgresql-ledger",
+        "label": "ResourceBinding PostgreSQL ledger",
+        "status": "contract-only",
+        "evidence": [
+          "domain/repository/ent schema and gated Postgres sink support exist; authorized Postgres attempt failed closed at connection preflight before DB write"
+        ],
+        "launchBlocking": true
+      },
+      {
+        "id": "billing-ledger",
+        "label": "billing ledger",
+        "status": "contract-only",
+        "evidence": [
+          "BillingEvent schema and local billing projections exist; production billing freeze/charge/stop-billing ledger evidence is missing"
+        ],
+        "launchBlocking": true
+      },
+      {
+        "id": "audit-ledger",
+        "label": "audit ledger",
+        "status": "contract-only",
+        "evidence": [
+          "AuditEvent store/projections exist; production audit ledger write/read/closure evidence is missing"
+        ],
+        "launchBlocking": true
+      },
+      {
+        "id": "quota-enforcement",
+        "label": "quota enforcement",
+        "status": "missing",
+        "evidence": [
+          "workspace_storage_gb is modeled in ResourceBinding; runtime/storage quota enforcement is not proven"
+        ],
+        "launchBlocking": true
+      },
+      {
+        "id": "workspace-suspend-resume-delete",
+        "label": "workspace suspend / resume / delete",
+        "status": "missing",
+        "evidence": [
+          "no production workspace lifecycle runner/API evidence for suspend, resume and delete"
+        ],
+        "launchBlocking": true
+      },
+      {
+        "id": "external-access-ingress-https",
+        "label": "external access / Ingress / HTTPS",
+        "status": "blocked",
+        "evidence": [
+          "ClusterIP HTTP reachability passed, but external/public user access is intentionally blocked until the multi-tenant launch minimum closes"
+        ],
+        "launchBlocking": false
+      },
+      {
+        "id": "production-smoke-canary",
+        "label": "production smoke / canary",
+        "status": "preflight-passed",
+        "evidence": [
+          "Package D in-cluster HTTP smoke passed for four services; end-to-end tenant/workspace/billing canary is missing"
+        ],
+        "launchBlocking": true
+      },
+      {
+        "id": "rollback-cleanup",
+        "label": "rollback / cleanup",
+        "status": "contract-only",
+        "evidence": [
+          "deploy rollback plan generated and smoke Job cleanup passed; production rollback execution evidence is missing"
+        ],
+        "launchBlocking": true
+      },
+      {
+        "id": "observability-redaction-evidence",
+        "label": "observability / redaction evidence",
+        "status": "preflight-passed",
+        "evidence": [
+          "Package D deploy/smoke redaction audits passed; launch-level audit/observability evidence is incomplete"
+        ],
+        "launchBlocking": true
+      }
+    ],
+    "phases": [
+      {
+        "phase": 0,
+        "name": "TKE platform service baseline",
+        "status": "deployed",
+        "requiredEvidence": [
+          "Package D Deployments ready 1/1",
+          "four ClusterIP Services HTTP 200",
+          "redaction audit pass"
+        ],
+        "gaps": [
+          "package-d-platform-services"
+        ]
+      },
+      {
+        "phase": 1,
+        "name": "Production control-plane bootstrap minimum",
+        "status": "contract-only",
+        "requiredEvidence": [
+          "first admin identity bootstrap",
+          "tenant bootstrap",
+          "workspace seed",
+          "providerKeyRef boundary",
+          "no raw secret leakage"
+        ],
+        "gaps": [
+          "auth-identity-admin-bootstrap",
+          "tenant-model",
+          "workspace-provisioning"
+        ]
+      },
+      {
+        "phase": 2,
+        "name": "Workspace provisioning to Package C live operation",
+        "status": "contract-only",
+        "requiredEvidence": [
+          "Portal -> Go backend -> Package C request",
+          "ResourceBinding requested/creating/ready states",
+          "tenant node pool lifecycle evidence"
+        ],
+        "gaps": [
+          "portal-backend-package-c-flow",
+          "package-c-cloud-operation-state-machine",
+          "tencent-tke-tenant-node-pool-lifecycle",
+          "resourcebinding-postgresql-ledger"
+        ]
+      },
+      {
+        "phase": 3,
+        "name": "Commercial ledger and lifecycle closure",
+        "status": "missing",
+        "requiredEvidence": [
+          "billing ledger",
+          "audit ledger",
+          "quota enforcement",
+          "suspend/resume/delete semantics",
+          "cleanup evidence"
+        ],
+        "gaps": [
+          "billing-ledger",
+          "audit-ledger",
+          "quota-enforcement",
+          "workspace-suspend-resume-delete"
+        ]
+      },
+      {
+        "phase": 4,
+        "name": "Production smoke, canary, rollback and evidence",
+        "status": "contract-only",
+        "requiredEvidence": [
+          "end-to-end production canary",
+          "rollback execution or explicit no-rollback decision",
+          "launch redaction/observability evidence"
+        ],
+        "gaps": [
+          "production-smoke-canary",
+          "rollback-cleanup",
+          "observability-redaction-evidence"
+        ]
+      },
+      {
+        "phase": 5,
+        "name": "External access after minimum SaaS closure",
+        "status": "blocked",
+        "requiredEvidence": [
+          "chosen access strategy",
+          "Ingress/LB/HTTPS only after separate authorization",
+          "public/user access smoke"
+        ],
+        "gaps": [
+          "external-access-ingress-https"
+        ]
+      }
+    ],
+    "minimumLaunchClosureOrder": [
+      {
+        "phase": 0,
+        "name": "TKE platform service baseline",
+        "status": "deployed",
+        "gaps": [
+          "package-d-platform-services"
+        ]
+      },
+      {
+        "phase": 1,
+        "name": "Production control-plane bootstrap minimum",
+        "status": "contract-only",
+        "gaps": [
+          "auth-identity-admin-bootstrap",
+          "tenant-model",
+          "workspace-provisioning"
+        ]
+      },
+      {
+        "phase": 2,
+        "name": "Workspace provisioning to Package C live operation",
+        "status": "contract-only",
+        "gaps": [
+          "portal-backend-package-c-flow",
+          "package-c-cloud-operation-state-machine",
+          "tencent-tke-tenant-node-pool-lifecycle",
+          "resourcebinding-postgresql-ledger"
+        ]
+      },
+      {
+        "phase": 3,
+        "name": "Commercial ledger and lifecycle closure",
+        "status": "missing",
+        "gaps": [
+          "billing-ledger",
+          "audit-ledger",
+          "quota-enforcement",
+          "workspace-suspend-resume-delete"
+        ]
+      },
+      {
+        "phase": 4,
+        "name": "Production smoke, canary, rollback and evidence",
+        "status": "contract-only",
+        "gaps": [
+          "production-smoke-canary",
+          "rollback-cleanup",
+          "observability-redaction-evidence"
+        ]
+      },
+      {
+        "phase": 5,
+        "name": "External access after minimum SaaS closure",
+        "status": "blocked",
+        "gaps": [
+          "external-access-ingress-https"
+        ]
+      }
+    ],
+    "nextUniqueGap": {
+      "id": "production-launch-gap-01-auth-tenant-workspace-bootstrap-contract",
+      "title": "Production launch Gap 01: auth / identity / admin bootstrap plus tenant/workspace bootstrap contract",
+      "reason": "Package D is deployed and reachable inside TKE, but formal SaaS launch cannot expose Portal before production identity, first admin, tenant and workspace bootstrap boundaries are repo-native and testable.",
+      "boundary": "local contract and fixture readiness only; no kubeconfig, kubectl, deploy, build/push, Tencent mutation or Package C live",
+      "recommendedEntrypoint": "local Codex implementation of repo-native control-plane bootstrap contract/gate",
+      "evidencePath": ".runtime/package-d-production-launch/<runid>/launch-gap-01-bootstrap-redacted.json"
+    },
+    "externalAccessPolicy": {
+      "status": "blocked_before_multi_tenant_minimum_launch_closure",
+      "reason": "Do not default Ingress/LoadBalancer/HTTPS after ClusterIP smoke; first close identity, tenancy, workspace provisioning, ledger, billing/audit/quota, lifecycle, canary and rollback gaps.",
+      "allowedNow": [
+        "strategy comparison only under separate prompt"
+      ],
+      "forbiddenNow": [
+        "public Ingress mutation",
+        "LoadBalancer mutation",
+        "DNS/TLS mutation",
+        "public user access claim"
+      ]
+    }
+  }
 }

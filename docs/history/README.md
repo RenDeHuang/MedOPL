@@ -7075,3 +7075,87 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-17 production-launch-goal-gap-map
+
+Status: `landed candidate / local-gated`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `3436564b77ee46a380176542c582abcc7005d8e2`
+
+Model: `gpt-5.4`
+
+Subagents: none
+
+Scope:
+
+- Established the repo-native Production Launch Goal / Gap Map without adding a second truth source.
+- Recorded the launch vision as `platform-provisioned / customer-dedicated` multi-tenant SaaS managed OPL workbench with Portal as the entrypoint, platform-managed cloud resources, workspace lifecycle, ResourceBinding ledger, billing / audit / quota, rollback / cleanup and redacted evidence.
+- Audited launch gaps and status classes across auth / identity / admin bootstrap, tenant model, workspace provisioning, Portal -> backend -> Package C flow, Package C cloud operation state machine, Tencent TKE tenant node pool lifecycle, ResourceBinding PostgreSQL ledger, billing ledger, audit ledger, quota enforcement, workspace suspend / resume / delete, external access / Ingress / HTTPS, production smoke / canary, rollback / cleanup and observability / redaction evidence.
+- Preserved the current proven facts: Package D is deployed inside TKE, four Deployments are ready `1/1`, four ClusterIP Services returned HTTP `200`, and redacted evidence exists for `pdrun-20260616-004` and `psr-20260617-004`.
+- Reordered production launch phases so external access is blocked until the multi-tenant minimum closes.
+- Set the next unique gap to `production-launch-gap-01-auth-tenant-workspace-bootstrap-contract`.
+- Did not read secrets/kubeconfig, connect to Kubernetes API, run kubectl, deploy, rollout, rollback, build/push, execute Tencent mutation or run Package C live.
+
+Can-claim:
+
+- Package D platform services are deployed inside TKE and in-cluster HTTP reachability has passed.
+- The Production Launch Goal / Gap Map is repo-native and machine-cursor-owned by `tests/fixtures/v22/goal-current.json`.
+- The next unique gap is first admin identity / tenant / workspace bootstrap contract.
+
+Cannot-claim:
+
+- MedOPL formal production launch is complete.
+- Portal external/public access, Ingress, LoadBalancer, DNS, TLS, production billing, production tenant provisioning or rollback execution are complete.
+- This repo session performed new deploy, kubectl, build/push, Tencent mutation, Package C live or secret/kubeconfig reads.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-17 production-launch-goal-gap-map-landed
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `3436564b77ee46a380176542c582abcc7005d8e2`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Landed the Production Launch Goal / Gap Map closeout and next-gap cursor update.
+- The launch map lives in `tests/fixtures/v22/goal-current.json` as a machine cursor derivative, not a second truth source.
+- Ordered phases: TKE platform service baseline; production control-plane bootstrap minimum; workspace provisioning to Package C live operation; commercial ledger and lifecycle closure; production smoke, canary, rollback and evidence; external access after minimum SaaS closure.
+- Next unique gap is `production-launch-gap-01-auth-tenant-workspace-bootstrap-contract`.
+- External/public user access remains blocked and is not the immediate next action.
+- This closeout did not read secrets/kubeconfig, connect to Kubernetes API, run kubectl, deploy, rollout, rollback, build/push, execute Tencent mutation or run Package C live.
+
+Verification:
+
+- `npm run verify`: run before and after push.
+- `npm run closeout:check -- --json`: run before and after push.
+
+Can-claim:
+
+- Production Launch Goal / Gap Map is established.
+- Package D TKE platform service baseline and in-cluster HTTP reachability are evidence-backed.
+- Next execution should address the admin/tenant/workspace bootstrap contract before external access.
+
+Cannot-claim:
+
+- Formal production launch, public Portal access, Ingress/LB/HTTPS, production billing, production tenant provisioning or rollback execution are complete.
+
+landed_commit: `3436564b77ee46a380176542c582abcc7005d8e2`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `3436564b77ee46a380176542c582abcc7005d8e2` remains reachable from `origin/recovery/platform-v22-trunk`.
+- `npm run verify`: run after push.
+- `npm run closeout:check -- --json`: run after push.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
