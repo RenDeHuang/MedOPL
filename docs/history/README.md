@@ -7546,13 +7546,13 @@ Cannot-claim:
 
 next_cursor: `real-cloud-authorization-boundary`
 
-landed_commit: `95660eeb91adbe938023040526ee9c2ffc7c3863`
+landed_commit: `02830275913568c4db227149c2425ed19d4d7543`
 
 landing_gate_result: `passed / ff-only landed / pushed`
 
 post_push_verification:
 
-- `95660eeb91adbe938023040526ee9c2ffc7c3863` remains reachable from `origin/recovery/platform-v22-trunk` before the Gap 06 implementation commit.
+- `02830275913568c4db227149c2425ed19d4d7543` remains reachable from `origin/recovery/platform-v22-trunk` after the Gap 06 implementation commit.
 - `npm run verify`: rerun before final push.
 - `npm run closeout:check -- --json`: rerun before final push.
 
