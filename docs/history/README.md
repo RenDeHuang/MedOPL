@@ -7194,3 +7194,50 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-17 production-launch-gap-01-bootstrap-contract-landed
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `3436564b77ee46a380176542c582abcc7005d8e2`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Landed Production Launch Gap 01 bootstrap contract/local gate without reading secret/kubeconfig, connecting to Kubernetes API, running kubectl, deploy/rollout/rollback, build/push, Tencent mutation or Package C live.
+- Added `tests/support/cloud-prework/production-launch-bootstrap-runner.js` as the repo-native single command for contract-only bootstrap evidence: `node tests/support/cloud-prework/production-launch-bootstrap-runner.js --mode contract-local-gate --run-id <runid> --authorized 1`.
+- Added contract-only Portal typed API and fail-closed Go backend routes for `/api/v22/production/bootstrap/plan` and `/api/v22/production/bootstrap/commit`.
+- Gap 01 now proves first admin identity shape, tenant bootstrap shape, workspace seed shape, providerKeyRef-only public boundary, local RC fallback separation and redacted evidence shape.
+- External access, Ingress, LoadBalancer, HTTPS/domain, Package C live operations, billing, quota and workspace lifecycle remain blocked for later gaps.
+
+Verification:
+
+- `npm run verify`: passed before post-push closeout commit.
+- `npm run closeout:check -- --json`: rerun after this closeout push.
+
+Can-claim:
+
+- Production Launch Gap 01 has a repo-native contract/local gate and redacted evidence shape.
+- The next unique gap is `production-launch-gap-02-portal-backend-package-c-live-operation-contract`.
+
+Cannot-claim:
+
+- MedOPL formal production launch, public Portal access, Package C live operation, production tenant provisioning, billing/quota closure or rollback execution are complete.
+- This closeout authorized or executed cloud mutation, kubectl, deploy, build/push, live-test or secret reads.
+
+landed_commit: `59996934103e115cf822cc93e8579bc6984ba29a`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `59996934103e115cf822cc93e8579bc6984ba29a` remains reachable from `origin/recovery/platform-v22-trunk`.
+- `npm run verify`: run before this post-push closeout commit.
+- `npm run closeout:check -- --json`: run after this post-push closeout commit.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
