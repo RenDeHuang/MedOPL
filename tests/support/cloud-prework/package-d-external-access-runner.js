@@ -14,6 +14,21 @@ import {
   kubeconfigSummary,
   parseEnv,
 } from "./package-d-kubernetes-api-preflight-runner.js";
+import {
+  FIXED_PORTAL_EDGE_SERVICE_NAME,
+  PACKAGE_D_EXTERNAL_ACCESS_EDGE_NODEPORT_APPLY_COMMAND,
+  PACKAGE_D_EXTERNAL_ACCESS_EDGE_NODEPORT_DRY_RUN_COMMAND,
+  QCLOUD_EDGE_NODEPORT_APPLY_MODE,
+  QCLOUD_EDGE_NODEPORT_DRY_RUN_MODE,
+  assertPortalEdgeNodePortManifestBoundary,
+  portalEdgeNodePortServiceManifest,
+  qcloudEdgeNodePortCommandPlan,
+} from "./package-d-external-access-edge-nodeport-contract.js";
+
+export {
+  PACKAGE_D_EXTERNAL_ACCESS_EDGE_NODEPORT_APPLY_COMMAND,
+  PACKAGE_D_EXTERNAL_ACCESS_EDGE_NODEPORT_DRY_RUN_COMMAND,
+} from "./package-d-external-access-edge-nodeport-contract.js";
 
 export const PACKAGE_D_EXTERNAL_ACCESS_DRY_RUN_COMMAND = "node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-ingress-dry-run --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id <runid> --authorized 1";
 export const PACKAGE_D_EXTERNAL_ACCESS_APPLY_COMMAND = "node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-ingress-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id <runid> --authorized 1";
@@ -24,6 +39,8 @@ const QCLOUD_INGRESS_APPLY_MODE = "qcloud-ingress-apply";
 const EXTERNAL_ACCESS_MODES = Object.freeze(new Set([
   QCLOUD_INGRESS_DRY_RUN_MODE,
   QCLOUD_INGRESS_APPLY_MODE,
+  QCLOUD_EDGE_NODEPORT_DRY_RUN_MODE,
+  QCLOUD_EDGE_NODEPORT_APPLY_MODE,
 ]));
 const EXTERNAL_ACCESS_ENV_KEYS = Object.freeze([
   "PORTAL_HOST_DOMAIN",
@@ -103,6 +120,18 @@ function assertMode(mode = "") {
   return normalized;
 }
 
+function isDryRunMode(mode = "") {
+  return mode === QCLOUD_INGRESS_DRY_RUN_MODE || mode === QCLOUD_EDGE_NODEPORT_DRY_RUN_MODE;
+}
+
+function isApplyMode(mode = "") {
+  return mode === QCLOUD_INGRESS_APPLY_MODE || mode === QCLOUD_EDGE_NODEPORT_APPLY_MODE;
+}
+
+function isEdgeNodePortMode(mode = "") {
+  return mode === QCLOUD_EDGE_NODEPORT_DRY_RUN_MODE || mode === QCLOUD_EDGE_NODEPORT_APPLY_MODE;
+}
+
 function parseExternalAccessEnvObject(externalAccessEnv = {}) {
   const allowed = new Set(REQUIRED_EXTERNAL_ACCESS_ENV_KEYS);
   const env = {};
@@ -145,10 +174,10 @@ function cleanRunGateEnv({ runGateEnv = {}, runGateEnvContent = "" } = {}) {
 }
 
 function assertRunGateEnv(runGateEnv = {}, mode = "") {
-  if (mode === QCLOUD_INGRESS_DRY_RUN_MODE && runGateEnv.RUN_TENCENT_DEPLOY_EXECUTION !== DRY_RUN_GATE_VALUE) {
+  if (isDryRunMode(mode) && runGateEnv.RUN_TENCENT_DEPLOY_EXECUTION !== DRY_RUN_GATE_VALUE) {
     throw new Error("package_d_external_access_dry_run_gate_must_remain_zero");
   }
-  if (mode === QCLOUD_INGRESS_APPLY_MODE && runGateEnv.RUN_TENCENT_DEPLOY_EXECUTION !== APPLY_GATE_VALUE) {
+  if (isApplyMode(mode) && runGateEnv.RUN_TENCENT_DEPLOY_EXECUTION !== APPLY_GATE_VALUE) {
     throw new Error("package_d_external_access_apply_gate_not_authorized");
   }
 }
@@ -182,7 +211,7 @@ function qcloudCertSecret({ certId, redacted = true } = {}) {
   };
 }
 
-function portalIngressManifest() {
+function portalIngressManifest({ backendServiceName = FIXED_PORTAL_SERVICE_NAME } = {}) {
   return {
     apiVersion: "networking.k8s.io/v1",
     kind: "Ingress",
@@ -211,7 +240,7 @@ function portalIngressManifest() {
             pathType: "Prefix",
             backend: {
               service: {
-                name: FIXED_PORTAL_SERVICE_NAME,
+                name: backendServiceName,
                 port: { number: FIXED_PORTAL_SERVICE_PORT },
               },
             },
@@ -222,19 +251,21 @@ function portalIngressManifest() {
   };
 }
 
-export function assertPackageDExternalAccessManifestBoundary({ secret, ingress } = {}) {
-  if (secret?.apiVersion !== "v1" || secret?.kind !== "Secret") throw new Error("package_d_external_access_secret_kind_mismatch");
-  if (secret?.metadata?.name !== FIXED_TLS_SECRET_NAME) throw new Error("package_d_external_access_tls_secret_name_mismatch");
-  if (secret?.metadata?.namespace !== FIXED_NAMESPACE) throw new Error("package_d_external_access_tls_secret_namespace_mismatch");
-  if (secret?.type !== "Opaque") throw new Error("package_d_external_access_tls_secret_type_mismatch");
-  if (Object.hasOwn(secret, "data")) throw new Error("package_d_external_access_tls_secret_data_forbidden");
-  const secretKeys = Object.keys(secret?.stringData || {});
-  if (secretKeys.length !== 1 || secretKeys[0] !== "qcloud_cert_id") {
-    throw new Error("package_d_external_access_tls_secret_key_mismatch");
+export function assertPackageDExternalAccessManifestBoundary({ secret, ingress, edgeService } = {}) {
+  if (!edgeService || secret) {
+    if (secret?.apiVersion !== "v1" || secret?.kind !== "Secret") throw new Error("package_d_external_access_secret_kind_mismatch");
+    if (secret?.metadata?.name !== FIXED_TLS_SECRET_NAME) throw new Error("package_d_external_access_tls_secret_name_mismatch");
+    if (secret?.metadata?.namespace !== FIXED_NAMESPACE) throw new Error("package_d_external_access_tls_secret_namespace_mismatch");
+    if (secret?.type !== "Opaque") throw new Error("package_d_external_access_tls_secret_type_mismatch");
+    if (Object.hasOwn(secret, "data")) throw new Error("package_d_external_access_tls_secret_data_forbidden");
+    const secretKeys = Object.keys(secret?.stringData || {});
+    if (secretKeys.length !== 1 || secretKeys[0] !== "qcloud_cert_id") {
+      throw new Error("package_d_external_access_tls_secret_key_mismatch");
+    }
+    if (!text(secret.stringData.qcloud_cert_id)) throw new Error("package_d_external_access_tls_secret_cert_id_required");
   }
-  if (!text(secret.stringData.qcloud_cert_id)) throw new Error("package_d_external_access_tls_secret_cert_id_required");
 
-  const serialized = JSON.stringify({ secret, ingress });
+  const serialized = JSON.stringify({ secret, ingress, edgeService });
   for (const forbidden of [
     "kubernetes.io/tls",
     "tls.crt",
@@ -274,10 +305,13 @@ export function assertPackageDExternalAccessManifestBoundary({ secret, ingress }
     throw new Error("package_d_external_access_ingress_host_mismatch");
   }
   if (pathRule.path !== "/" || pathRule.pathType !== "Prefix") throw new Error("package_d_external_access_ingress_path_mismatch");
-  if (pathRule.backend?.service?.name !== FIXED_PORTAL_SERVICE_NAME) throw new Error("package_d_external_access_ingress_backend_mismatch");
+  const expectedBackendServiceName = edgeService ? FIXED_PORTAL_EDGE_SERVICE_NAME : FIXED_PORTAL_SERVICE_NAME;
+  if (pathRule.backend?.service?.name !== expectedBackendServiceName) throw new Error("package_d_external_access_ingress_backend_mismatch");
   if (pathRule.backend?.service?.port?.number !== FIXED_PORTAL_SERVICE_PORT) {
     throw new Error("package_d_external_access_ingress_backend_port_mismatch");
   }
+  if (!edgeService) return;
+  assertPortalEdgeNodePortManifestBoundary({ edgeService, fixedPortalServicePort: FIXED_PORTAL_SERVICE_PORT });
 }
 
 function commandRecord({ name, kind, args, stdinManifest = "" }) {
@@ -290,7 +324,9 @@ function commandRecord({ name, kind, args, stdinManifest = "" }) {
   };
 }
 
-function commandPlan({ mode, secretManifestPath, ingressManifestPath }) {
+function commandPlan({ mode }) {
+  const edgeMode = isEdgeNodePortMode(mode);
+  const applyMode = isApplyMode(mode);
   const readonly = [
     commandRecord({ name: "kubectl_client_available", kind: "readonly", args: ["kubectl", "version", "--client"] }),
     commandRecord({ name: "current_context", kind: "readonly", args: ["kubectl", "config", "current-context"] }),
@@ -298,6 +334,16 @@ function commandPlan({ mode, secretManifestPath, ingressManifestPath }) {
     commandRecord({ name: "portal_service_read", kind: "readonly", args: ["kubectl", "get", "service", FIXED_PORTAL_SERVICE_NAME, "-n", FIXED_NAMESPACE, "-o", "json"] }),
     commandRecord({ name: "qcloud_ingressclass_read", kind: "readonly", args: ["kubectl", "get", "ingressclass", FIXED_INGRESS_CLASS, "-o", "json"] }),
   ];
+  if (edgeMode) {
+    return qcloudEdgeNodePortCommandPlan({
+      commandRecord,
+      readonly,
+      applyMode,
+      fixedPortalHost: FIXED_PORTAL_HOST,
+      fixedPortalServiceName: FIXED_PORTAL_SERVICE_NAME,
+      fixedExternalSmokeUrl: FIXED_EXTERNAL_SMOKE_URL,
+    });
+  }
   const dryRuns = [
     commandRecord({
       name: "dry_run_qcloud_cert_secret",
@@ -312,7 +358,7 @@ function commandPlan({ mode, secretManifestPath, ingressManifestPath }) {
       stdinManifest: "ingress",
     }),
   ];
-  if (mode === QCLOUD_INGRESS_DRY_RUN_MODE) return [...readonly, ...dryRuns];
+  if (!applyMode) return [...readonly, ...dryRuns];
   return [
     ...readonly,
     ...dryRuns,
@@ -383,6 +429,8 @@ function assertCommandAllowed(command = {}) {
         "kubectl config current-context",
         `kubectl get namespace ${FIXED_NAMESPACE} -o json`,
         `kubectl get service ${FIXED_PORTAL_SERVICE_NAME} -n ${FIXED_NAMESPACE} -o json`,
+        `kubectl get service ${FIXED_PORTAL_EDGE_SERVICE_NAME} -n ${FIXED_NAMESPACE} -o json`,
+        `kubectl describe service ${FIXED_PORTAL_EDGE_SERVICE_NAME} -n ${FIXED_NAMESPACE}`,
         `kubectl get ingressclass ${FIXED_INGRESS_CLASS} -o json`,
         `kubectl get secret ${FIXED_TLS_SECRET_NAME} -n ${FIXED_NAMESPACE} -o json`,
         `kubectl describe secret ${FIXED_TLS_SECRET_NAME} -n ${FIXED_NAMESPACE}`,
@@ -398,7 +446,7 @@ function assertCommandAllowed(command = {}) {
       }
       return;
     }
-    if (["apply_secret", "apply_ingress"].includes(command.kind)) {
+    if (["apply_secret", "apply_ingress", "apply_service"].includes(command.kind)) {
       if (!(args.includes("apply") && args.includes("--server-side") && args.includes("-f") && args[args.indexOf("-f") + 1] === "-")) {
         throw new Error("package_d_external_access_apply_must_use_stdin");
       }
@@ -467,16 +515,21 @@ export async function buildPackageDExternalAccessPlan({
   assertRunGateEnv(cleanedRunGateEnv, normalizedMode);
   assertExternalAccessEnv(env);
 
-  const redactedSecret = qcloudCertSecret({ certId: env.TENCENT_SSL_CERT_ID, redacted: true });
-  const liveSecret = qcloudCertSecret({ certId: env.TENCENT_SSL_CERT_ID, redacted: false });
-  const ingress = portalIngressManifest();
-  assertPackageDExternalAccessManifestBoundary({ secret: redactedSecret, ingress });
-  assertPackageDExternalAccessManifestBoundary({ secret: liveSecret, ingress });
+  const edgeMode = isEdgeNodePortMode(normalizedMode);
+  const applyMode = isApplyMode(normalizedMode);
+  const redactedSecret = edgeMode ? undefined : qcloudCertSecret({ certId: env.TENCENT_SSL_CERT_ID, redacted: true });
+  const liveSecret = edgeMode ? undefined : qcloudCertSecret({ certId: env.TENCENT_SSL_CERT_ID, redacted: false });
+  const backendServiceName = edgeMode ? FIXED_PORTAL_EDGE_SERVICE_NAME : FIXED_PORTAL_SERVICE_NAME;
+  const ingress = portalIngressManifest({ backendServiceName });
+  const edgeService = edgeMode ? portalEdgeNodePortServiceManifest() : undefined;
+  assertPackageDExternalAccessManifestBoundary({ secret: redactedSecret, ingress, edgeService });
+  assertPackageDExternalAccessManifestBoundary({ secret: liveSecret, ingress, edgeService });
 
   const runEvidenceDir = path.join(evidenceDir, safeRunId);
-  const secretManifestPath = path.join(runEvidenceDir, "qcloud-cert-secret-redacted.json");
+  const secretManifestPath = edgeMode ? "" : path.join(runEvidenceDir, "qcloud-cert-secret-redacted.json");
   const ingressManifestPath = path.join(runEvidenceDir, "portal-ingress-redacted.json");
-  const commands = commandPlan({ mode: normalizedMode, secretManifestPath, ingressManifestPath }).map((command) => {
+  const edgeServiceManifestPath = edgeMode ? path.join(runEvidenceDir, "portal-frontend-edge-service-redacted.json") : "";
+  const commands = commandPlan({ mode: normalizedMode }).map((command) => {
     assertCommandAllowed(command);
     return {
       name: command.name,
@@ -487,22 +540,39 @@ export async function buildPackageDExternalAccessPlan({
     };
   });
 
-  const mutations = normalizedMode === QCLOUD_INGRESS_APPLY_MODE
-    ? [
-        "apply Secret/medopl-portal-tls in medopl-platform, type Opaque, stringData.qcloud_cert_id",
-        "apply Ingress/portal-frontend in medopl-platform for portal.medopl.cn -> portal-frontend:8080",
-      ]
-    : [
-        "server-side dry-run Secret/medopl-portal-tls in medopl-platform, type Opaque, stringData.qcloud_cert_id",
-        "server-side dry-run Ingress/portal-frontend in medopl-platform for portal.medopl.cn -> portal-frontend:8080",
-      ];
+  const backendTarget = `${backendServiceName}:${FIXED_PORTAL_SERVICE_PORT}`;
+  const mutations = edgeMode
+    ? applyMode
+      ? [
+          "apply Service/portal-frontend-edge type NodePort in medopl-platform",
+          "apply Ingress/portal-frontend in medopl-platform for portal.medopl.cn -> portal-frontend-edge:8080",
+        ]
+      : [
+          "server-side dry-run Service/portal-frontend-edge type NodePort in medopl-platform",
+          "server-side dry-run Ingress/portal-frontend in medopl-platform for portal.medopl.cn -> portal-frontend-edge:8080",
+        ]
+    : applyMode
+      ? [
+          "apply Secret/medopl-portal-tls in medopl-platform, type Opaque, stringData.qcloud_cert_id",
+          "apply Ingress/portal-frontend in medopl-platform for portal.medopl.cn -> portal-frontend:8080",
+        ]
+      : [
+          "server-side dry-run Secret/medopl-portal-tls in medopl-platform, type Opaque, stringData.qcloud_cert_id",
+          "server-side dry-run Ingress/portal-frontend in medopl-platform for portal.medopl.cn -> portal-frontend:8080",
+        ];
   const plan = {
     ok: true,
-    contract: "production_launch_gap_08d_qcloud_external_access_runner_contract_local_gate",
+    contract: edgeMode
+      ? "production_launch_gap_08e_qcloud_edge_nodeport_backend_contract_local_gate"
+      : "production_launch_gap_08d_qcloud_external_access_runner_contract_local_gate",
     mode: normalizedMode,
-    command: normalizedMode === QCLOUD_INGRESS_APPLY_MODE
-      ? PACKAGE_D_EXTERNAL_ACCESS_APPLY_COMMAND
-      : PACKAGE_D_EXTERNAL_ACCESS_DRY_RUN_COMMAND,
+    command: edgeMode
+      ? applyMode
+        ? PACKAGE_D_EXTERNAL_ACCESS_EDGE_NODEPORT_APPLY_COMMAND
+        : PACKAGE_D_EXTERNAL_ACCESS_EDGE_NODEPORT_DRY_RUN_COMMAND
+      : applyMode
+        ? PACKAGE_D_EXTERNAL_ACCESS_APPLY_COMMAND
+        : PACKAGE_D_EXTERNAL_ACCESS_DRY_RUN_COMMAND,
     runId: safeRunId,
     target: {
       clusterId: FIXED_CLUSTER_ID,
@@ -510,7 +580,8 @@ export async function buildPackageDExternalAccessPlan({
       portalHost: FIXED_PORTAL_HOST,
       ingressClass: FIXED_INGRESS_CLASS,
       tlsSecretName: FIXED_TLS_SECRET_NAME,
-      backendService: FIXED_PORTAL_SERVICE_NAME,
+      backendService: backendServiceName,
+      originClusterIpService: FIXED_PORTAL_SERVICE_NAME,
       backendPort: FIXED_PORTAL_SERVICE_PORT,
       externalSmokeUrl: FIXED_EXTERNAL_SMOKE_URL,
     },
@@ -524,8 +595,9 @@ export async function buildPackageDExternalAccessPlan({
       kubeconfigPath: kubeconfigPath ? "authorized_kubeconfig_ref" : "not_loaded_in_local_gate",
     },
     manifests: {
-      secret: redactedSecret,
+      ...(redactedSecret ? { secret: redactedSecret } : {}),
       ingress,
+      ...(edgeService ? { edgeService } : {}),
     },
     manifestBoundary: {
       qcloudSecretType: "Opaque",
@@ -533,15 +605,19 @@ export async function buildPackageDExternalAccessPlan({
       kubernetesTlsSecretForbidden: true,
       legacyTlsDataKeysForbidden: true,
       tlsPrivateKeyReadAllowed: false,
-      backend: "portal-frontend:8080",
+      backend: backendTarget,
+      originalClusterIpServiceMutationAllowed: false,
+      edgeNodePortServiceRequired: edgeMode,
+      loadBalancerServiceForbidden: true,
       namespace: FIXED_NAMESPACE,
     },
     allowedOperations: {
       mutations,
       verification: [
-        "get/describe Secret medopl-portal-tls in medopl-platform without printing qcloud_cert_id value",
+        ...(edgeMode ? [] : ["get/describe Secret medopl-portal-tls in medopl-platform without printing qcloud_cert_id value"]),
         "get/describe Ingress portal-frontend in medopl-platform",
         "get Service portal-frontend in medopl-platform",
+        ...(edgeMode ? ["get/describe Service portal-frontend-edge in medopl-platform"] : []),
         "get IngressClass qcloud",
         "DNS post-apply validation for portal.medopl.cn without DNS mutation",
         "HTTPS smoke for https://portal.medopl.cn/",
@@ -551,7 +627,9 @@ export async function buildPackageDExternalAccessPlan({
       "legacy Kubernetes TLS Secret shape",
       "legacy TLS certificate/key data keys",
       "TLS private key read",
-      "Deployment/Service/ConfigMap/RBAC/Namespace mutation",
+      edgeMode
+        ? "Deployment/original ClusterIP Service/ConfigMap/RBAC/Namespace mutation"
+        : "Deployment/Service/ConfigMap/RBAC/Namespace mutation",
       "DNS mutation",
       "LoadBalancer Service creation",
       "Package C or tenant resource mutation",
@@ -568,10 +646,29 @@ export async function buildPackageDExternalAccessPlan({
     rollbackCleanupPlan: {
       rollbackRequiresSeparateAuthorization: true,
       deleteIngress: "delete only Ingress/portal-frontend if created by this run and rollback is separately authorized",
-      deleteTlsSecret: "delete only Secret/medopl-portal-tls if created by this run and rollback is separately authorized",
+      deleteTlsSecret: edgeMode
+        ? "keep existing Secret/medopl-portal-tls unless a separately authorized rollback explicitly targets it"
+        : "delete only Secret/medopl-portal-tls if created by this run and rollback is separately authorized",
+      deleteEdgeService: edgeMode
+        ? "delete only Service/portal-frontend-edge if created by this run and rollback is separately authorized"
+        : "not_applicable",
+      restoreOrDeleteIngress: edgeMode
+        ? "restore/delete only Ingress/portal-frontend as needed and only with separate authorization"
+        : "delete only Ingress/portal-frontend if created by this run and rollback is separately authorized",
       deploymentServiceRollbackAllowed: false,
       dnsMutationAllowed: false,
       evidencePath: path.join(runEvidenceDir, "rollback-cleanup-redacted.json"),
+    },
+    dnsPlan: {
+      cnameHost: FIXED_PORTAL_HOST,
+      cnameTargetSource: edgeMode
+        ? "qcloud Ingress status load balancer hostname after Ready"
+        : "qcloud Ingress status load balancer hostname after apply",
+      lastObservedNewLoadBalancerHostname: edgeMode
+        ? "lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com"
+        : "not_recorded_in_local_gate",
+      dnsMutationAllowed: false,
+      requiredAfterIngressReady: "portal.medopl.cn CNAME must be updated outside this runner by separate DNS authorization",
     },
     smokePlan: {
       dnsPostApplyValidation: "resolve portal.medopl.cn and compare with qcloud Ingress status without DNS mutation",
@@ -584,9 +681,16 @@ export async function buildPackageDExternalAccessPlan({
       "context or cluster does not match cls-fi097sy4",
       "namespace is not medopl-platform",
       "portal-frontend Service 8080 is missing",
+      ...(edgeMode ? [
+        "Service/portal-frontend-edge manifest is not type NodePort",
+        "edge Service selector does not match portal-frontend",
+        "Ingress manifest does not target portal.medopl.cn -> portal-frontend-edge:8080",
+      ] : []),
       "IngressClass qcloud is missing or controller mismatches",
       "Secret manifest is not Opaque with stringData.qcloud_cert_id only",
-      "Ingress manifest does not target portal.medopl.cn -> portal-frontend:8080",
+      edgeMode
+        ? "Ingress manifest targets the original ClusterIP backend instead of portal-frontend-edge:8080"
+        : "Ingress manifest does not target portal.medopl.cn -> portal-frontend:8080",
       "unexpected existing conflicting Secret or Ingress",
       "DNS target invalid or unauthorized",
       "HTTPS smoke fails",
@@ -596,17 +700,20 @@ export async function buildPackageDExternalAccessPlan({
     evidence: {
       sink: ".runtime",
       path: path.join(runEvidenceDir, EVIDENCE_FILE),
-      secretManifestPath,
+      ...(secretManifestPath ? { secretManifestPath } : {}),
       ingressManifestPath,
+      ...(edgeServiceManifestPath ? { edgeServiceManifestPath } : {}),
       redacted: true,
     },
     boundary: {
       localGateOnly: false,
-      realMutationAllowedNow: normalizedMode === QCLOUD_INGRESS_APPLY_MODE,
+      realMutationAllowedNow: applyMode,
       kubectlExecutedByBuildPlan: false,
-      secretMutationScope: "Secret/medopl-portal-tls only",
+      secretMutationScope: edgeMode ? "not mutated in Gap 08e; existing Secret/medopl-portal-tls only referenced" : "Secret/medopl-portal-tls only",
       ingressMutationScope: "Ingress/portal-frontend only",
+      edgeServiceMutationScope: edgeMode ? "Service/portal-frontend-edge only" : "not_applicable",
       deploymentServiceMutationAllowed: false,
+      originalClusterIpServiceMutationAllowed: false,
       dnsMutationAllowed: false,
       loadBalancerMutationAllowed: false,
       tencentMutationAllowed: false,
@@ -615,14 +722,20 @@ export async function buildPackageDExternalAccessPlan({
       publicAccessClaimAllowed: false,
     },
     nextGap: {
-      id: "production-launch-gap-08d-qcloud-tls-secret-ingress-real-mutation-apply",
-      title: "Production launch Gap 08d: qcloud Opaque cert-id Secret + Portal Ingress real apply",
-      boundary: "cloud runner must place the five external access env keys into an authorized env file; apply mode requires RUN_TENCENT_DEPLOY_EXECUTION=external-access from process/deploy run gate source",
+      id: edgeMode
+        ? "production-launch-gap-08e-qcloud-edge-nodeport-apply"
+        : "production-launch-gap-08d-qcloud-tls-secret-ingress-real-mutation-apply",
+      title: edgeMode
+        ? "Production launch Gap 08e: qcloud Ingress backend NodePort edge Service apply"
+        : "Production launch Gap 08d: qcloud Opaque cert-id Secret + Portal Ingress real apply",
+      boundary: edgeMode
+        ? "cloud runner may apply only Service/portal-frontend-edge type NodePort and update Ingress/portal-frontend backend to portal-frontend-edge:8080; DNS mutation remains separate"
+        : "cloud runner must place the five external access env keys into an authorized env file; apply mode requires RUN_TENCENT_DEPLOY_EXECUTION=external-access from process/deploy run gate source",
     },
-    realExecutionReady: normalizedMode === QCLOUD_INGRESS_APPLY_MODE,
+    realExecutionReady: applyMode,
   };
   Object.defineProperty(plan, "liveManifests", {
-    value: { secret: liveSecret, ingress },
+    value: { ...(liveSecret ? { secret: liveSecret } : {}), ingress, ...(edgeService ? { edgeService } : {}) },
     enumerable: false,
   });
   Object.defineProperty(plan, "liveCommands", {
@@ -665,14 +778,20 @@ export async function writePackageDExternalAccessPlanEvidence({ plan } = {}) {
 export async function writePackageDExternalAccessManifestEvidence({ plan } = {}) {
   if (!plan?.evidence?.path) throw new Error("package_d_external_access_plan_required");
   const evidenceDir = path.dirname(plan.evidence.path);
-  await writeEvidence({ evidenceDir, filename: path.basename(plan.evidence.secretManifestPath), payload: plan.manifests.secret });
+  if (plan.evidence.secretManifestPath && plan.manifests.secret) {
+    await writeEvidence({ evidenceDir, filename: path.basename(plan.evidence.secretManifestPath), payload: plan.manifests.secret });
+  }
   await writeEvidence({ evidenceDir, filename: path.basename(plan.evidence.ingressManifestPath), payload: plan.manifests.ingress });
+  if (plan.evidence.edgeServiceManifestPath && plan.manifests.edgeService) {
+    await writeEvidence({ evidenceDir, filename: path.basename(plan.evidence.edgeServiceManifestPath), payload: plan.manifests.edgeService });
+  }
   const audit = redactionAudit(JSON.stringify(plan.manifests));
   const failedAudit = failedAuditKeys(audit);
   if (failedAudit) throw new Error(`package_d_external_access_manifest_redaction_audit_failed:${failedAudit}`);
   return {
-    secretManifestPath: plan.evidence.secretManifestPath,
+    ...(plan.evidence.secretManifestPath ? { secretManifestPath: plan.evidence.secretManifestPath } : {}),
     ingressManifestPath: plan.evidence.ingressManifestPath,
+    ...(plan.evidence.edgeServiceManifestPath ? { edgeServiceManifestPath: plan.evidence.edgeServiceManifestPath } : {}),
   };
 }
 
@@ -694,6 +813,7 @@ function defaultCommandExecutor({ args, stdin = "", env = {} }) {
 function manifestTextForCommand(command = {}, liveManifests = {}) {
   if (command.stdinManifest === "secret") return `${JSON.stringify(liveManifests.secret, null, 2)}\n`;
   if (command.stdinManifest === "ingress") return `${JSON.stringify(liveManifests.ingress, null, 2)}\n`;
+  if (command.stdinManifest === "edgeService") return `${JSON.stringify(liveManifests.edgeService, null, 2)}\n`;
   return "";
 }
 
@@ -701,6 +821,12 @@ function processRunGateEnv() {
   return {
     RUN_TENCENT_DEPLOY_EXECUTION: text(process.env.RUN_TENCENT_DEPLOY_EXECUTION),
   };
+}
+
+function executionContractForMode(mode = "") {
+  return isEdgeNodePortMode(mode)
+    ? "production_launch_gap_08e_qcloud_edge_nodeport_execution"
+    : "production_launch_gap_08d_qcloud_external_access_execution";
 }
 
 async function runCommand({ command, executor, kubeconfigPath, liveManifests, certId }) {
@@ -773,7 +899,7 @@ export async function runPackageDExternalAccessExecution({
     if (error?.record) records.push(error.record);
     const evidencePayload = {
       ok: false,
-      contract: "production_launch_gap_08d_qcloud_external_access_execution",
+      contract: executionContractForMode(normalizedMode),
       mode: normalizedMode,
       runId: plan.runId,
       target: plan.target,
@@ -790,7 +916,7 @@ export async function runPackageDExternalAccessExecution({
   }
   const evidencePayload = {
     ok: true,
-    contract: "production_launch_gap_08d_qcloud_external_access_execution",
+    contract: executionContractForMode(normalizedMode),
     mode: normalizedMode,
     runId: plan.runId,
     target: plan.target,

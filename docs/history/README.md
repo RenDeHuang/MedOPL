@@ -59,6 +59,65 @@ landed 后的记录还必须补齐：
 
 ## Current Run Summaries
 
+### 2026-06-18 production-launch-gap-08e-qcloud-edge-nodeport-prep
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `bf8c0f108c80be82cfc00e6729f8f210df23940e`
+
+Model: `gpt-5.4`
+
+Subagents: none
+
+Scope:
+
+- Recorded Gap 08d cloud real apply facts from `.runtime/package-d-external-access-strategy/gap08d-qcloud-ingress-real-004/`: `Secret/medopl-portal-tls` apply succeeded as qcloud `Opaque` with `qcloud_cert_id` key present and data unread; `Ingress/portal-frontend` apply succeeded for `portal.medopl.cn`, `ingressClass=qcloud`, `tls secret=medopl-portal-tls` and backend `portal-frontend:8080`.
+- Recorded the new blocker: qcloud assigned LB hostname `lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com`, but Ingress stayed `Ready=False` with `BackendError`, classified as qcloud requiring a backend `NodePort` or `LoadBalancer` Service while the existing backend is `ClusterIP`; `portal.medopl.cn` still pointed to old `lb-lhj3bgii...`, HTTPS smoke failed with `tls_hostname_mismatch`, no out-of-bound mutation occurred and public access is not complete.
+- Extended `tests/support/cloud-prework/package-d-external-access-runner.js` with repo-native modes `qcloud-edge-nodeport-dry-run` and `qcloud-edge-nodeport-apply`.
+- The Gap 08e runner plan materializes `Service/portal-frontend-edge` in `medopl-platform`, type `NodePort`, selector matching portal frontend, port/targetPort `8080`, plus a qcloud Ingress backend switch to `portal-frontend-edge:8080`.
+- The runner keeps the existing `Service/portal-frontend` ClusterIP unchanged, keeps `medopl-portal-tls`, host `portal.medopl.cn` and `ingressClass=qcloud`, forbids `LoadBalancer` Service creation and DNS mutation, and writes redacted `portal-frontend-edge-service-redacted.json`, `portal-ingress-redacted.json` and `real-mutation-redacted.json` evidence.
+- Updated the future-authorized local gate to prove fail-closed RUN gate behavior, edge Service manifest shape, Ingress backend switch, command allowlist, no original ClusterIP Service mutation, no Secret apply in Gap 08e, redacted evidence and no sensitive value leakage.
+- Updated active, delivery and `goal-current.json` so the next unique gap is `production-launch-gap-08e-qcloud-ingress-backend-nodeport-edge-service` with run-id `gap08e-qcloud-edge-nodeport-apply-001`.
+- This closeout did not read secrets/kubeconfig/DB password/TLS private key, connect to Kubernetes API or PostgreSQL, run kubectl, deploy, rollout, rollback, build/push, execute Tencent API mutation, run Package C live, modify DNS, create a LoadBalancer Service, modify the existing `portal-frontend` ClusterIP Service or claim public user access is complete.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs`: passed.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: passed.
+- `npm run verify`: passed before closeout pointer commit.
+- `npm run closeout:check -- --json`: rerun after closeout pointer commit and push.
+
+Can-claim:
+
+- Gap 08e qcloud edge NodePort backend strategy has a repo-native contract/local gate.
+- The single future apply command is `RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-edge-nodeport-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08e-qcloud-edge-nodeport-apply-001 --authorized 1`.
+- Future mutation is limited to `Service/portal-frontend-edge` type `NodePort` and `Ingress/portal-frontend` backend switch to `portal-frontend-edge:8080`.
+
+Cannot-claim:
+
+- Gap 08e apply has executed.
+- DNS has been changed.
+- HTTPS external smoke has passed.
+- Portal external/public user access or production launch is complete.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+landed_commit: `PENDING_GAP08E_COMMIT`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `PENDING_GAP08E_COMMIT` is the Gap 08e qcloud edge NodePort prep implementation commit and is reachable from `origin/recovery/platform-v22-trunk` after push.
+- `npm run verify`: passed before closeout pointer commit.
+- `npm run closeout:check -- --json`: rerun after closeout pointer commit and push.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
 ### 2026-06-17 production-launch-gap-02-package-c-operation-contract
 
 Status: `landed candidate / local-gated`
