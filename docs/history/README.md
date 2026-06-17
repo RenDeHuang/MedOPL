@@ -7440,3 +7440,65 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-17 production-launch-gap-05-workspace-lifecycle-contract
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `a59b6181dd4ed66f93daf8d55eda60564a1da5cc`
+
+Model: `gpt-5.4`
+
+Subagents:
+
+- `gpt-5.4-mini` explorer: audited Go backend, Portal typed API and existing workspace lifecycle surfaces for Gap 05.
+- `gpt-5.4-mini` explorer: audited Gap 04 runner, future-authorized test, docs and fixture closeout patterns.
+
+Scope:
+
+- Landed the repo-native Production Launch Gap 05 workspace suspend / resume / delete lifecycle contract/local gate without adding a loop or second truth source.
+- Added `tests/support/cloud-prework/production-launch-workspace-lifecycle-runner.js` as the single contract-only runner command: `node tests/support/cloud-prework/production-launch-workspace-lifecycle-runner.js --mode contract-local-gate --run-id <runid> --authorized 1`.
+- The local gate proves unauthorized fail-closed behavior, suspend/resume/delete request shapes, ResourceBinding lifecycle linkage, CloudOperation lifecycle linkage, billing stop/resume/finalization linkage, audit linkage, quota release/restore/final release linkage, operation idempotency, providerKeyRef-only boundary, rollback/cleanup redacted evidence shape and local dry-run repository versus future production PostgreSQL boundary.
+- Added contract-only Go routes `POST /api/v22/production/workspace-lifecycle/plan` and `POST /api/v22/production/workspace-lifecycle/commit`, plus Portal typed API shape in `services/portal/frontend/src/api/portal/production-workspace-lifecycle.ts`. These routes fail closed and do not connect to PostgreSQL, mutate lifecycle state, call Kubernetes, execute Package C live operations or expose external access.
+- Evidence sink is `.runtime/production-launch-workspace-lifecycle/<runid>/workspace-lifecycle-contract-redacted.json`.
+- The next unique gap is `production-launch-gap-06-production-canary-rollback-evidence-contract`.
+- This closeout did not read secrets/kubeconfig/DB password, connect to Kubernetes API or PostgreSQL, run kubectl, deploy, rollout, rollback, build/push, execute Tencent mutation, run Package C live, restore Node Portal backend or enter external access.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs`: passed.
+- `go test ./internal/server/handlers` from `services/medopl-go-backend`: passed.
+- `node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs`: passed.
+- `npm --prefix services/portal/frontend run typecheck`: passed.
+- `npm run verify`: run before this post-push closeout sync.
+- `npm run closeout:check -- --json`: rerun after this post-push closeout sync.
+
+Can-claim:
+
+- Production Launch Gap 05 has a repo-native contract/local gate.
+- Portal typed API and Go backend route shape for the workspace lifecycle boundary are traceable and fail closed.
+- Workspace suspend, resume and delete contract shapes are locally specified and linked to ResourceBinding, CloudOperation, billing, audit and quota identities.
+- External/public access remains blocked.
+
+Cannot-claim:
+
+- Production PostgreSQL workspace lifecycle write/read executed.
+- Real workspace suspend/resume/delete, Package C live operation, production canary, rollback execution, Ingress, LoadBalancer, DNS or TLS are complete.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+landed_commit: `c39e19f1a1e5e95e1f897f5b7c55fd4beb0a9d07`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `c39e19f1a1e5e95e1f897f5b7c55fd4beb0a9d07` remains reachable from `origin/recovery/platform-v22-trunk`.
+- `npm run verify`: passed before this post-push closeout sync.
+- `npm run closeout:check -- --json`: rerun after this post-push closeout sync.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
