@@ -7802,11 +7802,11 @@ next_cursor: `real-cloud-authorization-boundary`
 
 ### 2026-06-18 production-launch-gap-08d-runner-env-gate-fix
 
-Status: `authoring / local verified / pending commit`
+Status: `landed / pushed / post-push verified`
 
 Branch: `recovery/platform-v22-trunk`
 
-Base trunk HEAD: `PENDING_LANDED_COMMIT`
+Base trunk HEAD: `e8a3a645bc24a92fdb8288ee8a6925db6466945d`
 
 Model: `gpt-5.4`
 
@@ -7822,8 +7822,9 @@ Verification:
 
 - `node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs`: passed.
 - CLI plan-only local check with five-key env: apply without RUN gate failed closed, apply with `RUN_TENCENT_DEPLOY_EXECUTION=external-access` passed, dry-run with `RUN_TENCENT_DEPLOY_EXECUTION=0` passed, and env containing `RUN_TENCENT_DEPLOY_EXECUTION` failed closed.
-- `npm run verify`: rerun before final push.
-- `npm run closeout:check -- --json`: rerun before final push.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: passed.
+- `npm run verify`: passed.
+- `npm run closeout:check -- --json`: passed before closeout pointer update.
 
 Can-claim:
 
@@ -7841,15 +7842,15 @@ Cannot-claim:
 
 next_cursor: `real-cloud-authorization-boundary`
 
-landed_commit: `pending_after_implementation_commit`
+landed_commit: `e8a3a645bc24a92fdb8288ee8a6925db6466945d`
 
-landing_gate_result: `pending`
+landing_gate_result: `passed / ff-only landed / pushed`
 
 post_push_verification:
 
-- implementation commit pending; rerun after the Gap 08d runner env gate fix commit exists.
-- `npm run verify`: rerun before final push.
-- `npm run closeout:check -- --json`: rerun before final push.
+- `e8a3a645bc24a92fdb8288ee8a6925db6466945d` is the Gap 08d runner env gate fix implementation commit and will remain reachable from `origin/recovery/platform-v22-trunk` after push.
+- `npm run verify`: passed before closeout pointer commit.
+- `npm run closeout:check -- --json`: rerun after closeout pointer commit and push.
 
 post_merge_closeout: `completed`
 
