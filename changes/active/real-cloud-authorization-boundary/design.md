@@ -37,10 +37,10 @@ Readonly quote/inventory, create/release mutation, deploy/kubectl and canary/liv
 
 ## Surface Impact
 
-- source: Go backend contract-only bootstrap routes and Portal typed API trace for Production Launch Gap 01
+- source: Go backend contract-only bootstrap and production operation routes plus Portal typed API traces for Production Launch Gap 01 and Gap 02
 - docs: `docs/active/README.md`
 - specs: `specs/operations/spec.md`
-- tests: existing change lifecycle, workflow and future-authorized gates only
+- tests: existing change lifecycle, workflow and future-authorized gates plus the production topology local gate
 
 ## Production Launch Gap 01
 
@@ -52,3 +52,14 @@ The bootstrap contract stays repo-native and local-only:
 4. The future-authorized production topology gate verifies the runner shape, authorization failure path, providerKeyRef-only boundary and redacted evidence.
 
 The design intentionally stops before live identity provider writes, tenant/workspace creation, Package C execution and external access.
+
+## Production Launch Gap 02
+
+The Package C operation contract stays repo-native and local-only:
+
+1. `tests/support/cloud-prework/production-launch-operation-runner.js` materializes the redacted contract evidence shape.
+2. `services/medopl-go-backend/internal/server/handlers/controlplane.go` exposes fail-closed `/api/v22/production/package-c-operation/plan` and `/api/v22/production/package-c-operation/commit` routes.
+3. `services/portal/frontend/src/api/portal/production-operation.ts` defines the typed Portal API surface for later wiring.
+4. The future-authorized production topology gate verifies the runner shape, authorization failure path, Portal -> Go backend -> Package C trace, ResourceBinding `requested` / `creating` / `ready` state contract, providerKeyRef-only boundary, idempotency and redacted evidence.
+
+The design intentionally stops before Package C live execution, Tencent mutation, production PostgreSQL ledger write/read, billing/quota lifecycle and external access.

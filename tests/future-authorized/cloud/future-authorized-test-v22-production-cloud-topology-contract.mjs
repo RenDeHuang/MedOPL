@@ -8,6 +8,11 @@ import {
   buildProductionLaunchBootstrapContract,
   runProductionLaunchBootstrapContract,
 } from "../../support/cloud-prework/production-launch-bootstrap-runner.js";
+import {
+  PRODUCTION_LAUNCH_OPERATION_COMMAND,
+  buildProductionLaunchOperationContract,
+  runProductionLaunchOperationContract,
+} from "../../support/cloud-prework/production-launch-operation-runner.js";
 
 const contractPath = "docs/specs/README.md";
 const manifestPath = "tests/fixtures/v22/agent-verify-manifest.json";
@@ -56,6 +61,10 @@ function assertNoSensitiveText(text = "", label = "text") {
     "docker push",
     "CreateNodePool",
     "medopl-tenant-",
+    "TENCENT_SECRET_ID",
+    "TENCENT_SECRET_KEY",
+    "SecretId",
+    "SecretKey",
     "\"kind\":\"Ingress\"",
     "\"type\":\"LoadBalancer\"",
   ]) {
@@ -370,6 +379,165 @@ try {
   await rm(bootstrapEvidenceRoot, { recursive: true, force: true });
 }
 
+const operationEvidenceRoot = await mkdtemp(path.join(os.tmpdir(), "v22-production-launch-operation-"));
+try {
+  const evidenceDir = path.join(operationEvidenceRoot, "evidence");
+  const runId = "plo-20260617-001";
+  const rawProviderKey = "gflabtoken-raw-provider-key-material-that-must-not-leak";
+  const dbPassword = "postgres-password-that-must-not-leak";
+  const bearerToken = "bearer-token-that-must-not-leak";
+  const tencentSecretId = "TENCENT_SECRET_ID_that_must_not_leak";
+  const tencentSecretKey = "TENCENT_SECRET_KEY_that_must_not_leak";
+
+  assert.equal(
+    PRODUCTION_LAUNCH_OPERATION_COMMAND,
+    "node tests/support/cloud-prework/production-launch-operation-runner.js --mode contract-local-gate --run-id <runid> --authorized 1",
+    "operation_runner_must_publish_single_repo_native_command",
+  );
+
+  await assert.rejects(
+    () => buildProductionLaunchOperationContract({
+      runId,
+      evidenceDir,
+      authorized: false,
+    }),
+    /production_launch_operation_not_authorized/,
+    "operation_missing_authorization_must_fail_closed",
+  );
+
+  await assert.rejects(
+    () => buildProductionLaunchOperationContract({
+      runId: "",
+      evidenceDir,
+      authorized: true,
+    }),
+    /production_launch_operation_run_id_required/,
+    "operation_missing_run_id_must_fail_closed",
+  );
+
+  const plan = await buildProductionLaunchOperationContract({
+    runId,
+    evidenceDir,
+    authorized: true,
+    operation: {
+      tenantId: "tenant-production-alpha",
+      accountId: "account-production-alpha",
+      workspaceId: "workspace-production-alpha",
+      resourceBindingId: "rb-production-alpha",
+      billingAttributionId: "bill-production-alpha",
+      serverPlanId: "starter_2c4g_10gb",
+      providerKeyRef: "gflab:workspace-production-alpha:refonly001122",
+      idempotencyKey: "workspace-provision-alpha-once",
+      rawProviderKey,
+      runtime: {
+        dbPassword,
+      },
+      tokens: {
+        bearerToken,
+      },
+      tencent: {
+        SecretId: tencentSecretId,
+        SecretKey: tencentSecretKey,
+      },
+    },
+  });
+
+  assert.equal(plan.ok, true, "operation_plan_ok");
+  assert.equal(plan.contract, "production_launch_gap_02_package_c_operation_contract_local_gate", "operation_contract_name");
+  assert.equal(plan.mode, "contract-local-gate", "operation_mode");
+  assert.equal(plan.boundary.contractOnly, true, "operation_contract_only_boundary");
+  assert.equal(plan.boundary.packageCLiveAllowed, false, "operation_package_c_live_forbidden");
+  assert.equal(plan.boundary.tencentMutationAllowed, false, "operation_tencent_mutation_forbidden");
+  assert.equal(plan.boundary.kubernetesAccessAllowed, false, "operation_kubernetes_forbidden");
+  assert.equal(plan.boundary.deployAllowed, false, "operation_deploy_forbidden");
+  assert.equal(plan.boundary.externalAccessBlocked, true, "operation_external_access_blocked");
+  assert.equal(plan.productionVsLocalDefaults.localDefaultsScope, "local-rc-only", "operation_local_defaults_scope");
+  assert.equal(plan.productionVsLocalDefaults.productionOperationRequiresExplicitLedgerWrite, true, "operation_requires_future_ledger_write");
+
+  assert.deepEqual(plan.portalActionTrace.map((entry) => entry.methodPath), [
+    "POST /api/v22/production/package-c-operation/plan",
+    "POST /api/v22/production/package-c-operation/commit",
+  ], "portal_backend_operation_api_trace");
+  assert.equal(plan.portalActionTrace.every((entry) => entry.status === "contract-only"), true, "operation_api_trace_contract_only");
+  assert.equal(plan.goBackendOperationRequest.providerKeyRef, "gflab:workspace-production-alpha:refonly001122", "operation_provider_ref_only");
+  assert.equal(plan.goBackendOperationRequest.idempotencyKey, "workspace-provision-alpha-once", "operation_idempotency_key");
+  assert.deepEqual(Object.keys(plan.goBackendOperationRequest).sort(), [
+    "accountId",
+    "billingAttributionId",
+    "idempotencyKey",
+    "providerKeyRef",
+    "resourceBindingId",
+    "serverPlanId",
+    "tenantId",
+    "workspaceId",
+  ], "operation_request_public_shape");
+  assert.deepEqual(plan.resourceBindingStateContract.minimumStates, [
+    "requested",
+    "creating",
+    "ready",
+  ], "resource_binding_minimum_states");
+  assert.equal(plan.resourceBindingStateContract.transitions[0].from, "portal_action", "resource_binding_requested_from_portal_action");
+  assert.equal(plan.resourceBindingStateContract.transitions.at(-1).to, "ready", "resource_binding_ready_terminal_for_gap_02_contract");
+  assert.equal(plan.packageCRunnerInvocationBoundary.runner, "tests/support/cloud-prework/v22-package-c-live-canary-live-runner.js", "operation_reuses_package_c_runner");
+  assert.equal(plan.packageCRunnerInvocationBoundary.contractOnly, true, "operation_runner_contract_only");
+  assert.equal(plan.packageCRunnerInvocationBoundary.liveExecutionAllowedNow, false, "operation_runner_no_live");
+  assert.equal(plan.packageCRunnerInvocationBoundary.futureRunGate, "RUN_TENCENT_CREATE_RELEASE_EXECUTION=1", "operation_future_package_c_run_gate");
+  assert.deepEqual(plan.providerBoundary.publicFields, ["provider", "providerKeyRef", "boundStatus"], "operation_provider_public_fields");
+  assert.equal(plan.providerBoundary.rawSecretAcceptedByRunner, false, "operation_raw_provider_key_rejected");
+  assert.equal(plan.evidence.path, path.join(evidenceDir, runId, "operation-contract-redacted.json"), "operation_evidence_path");
+  assert.equal(plan.externalAccess.status, "blocked_until_multi_tenant_minimum_launch_closure", "operation_external_access_status");
+  assertNoSensitiveText(JSON.stringify(plan), "operation_plan");
+
+  const summary = await runProductionLaunchOperationContract({
+    runId,
+    evidenceDir,
+    authorized: true,
+  });
+  assert.equal(summary.ok, true, "operation_summary_ok");
+  assert.equal(summary.evidencePath.endsWith(`${runId}/operation-contract-redacted.json`), true, "operation_summary_evidence_path");
+  assert.equal(summary.realExecutionReady, false, "operation_real_execution_ready_false");
+  assertNoSensitiveText(JSON.stringify(summary), "operation_summary");
+
+  const evidence = JSON.parse(await readFile(summary.evidencePath, "utf8"));
+  assert.equal(evidence.ok, true, "operation_evidence_ok");
+  assert.equal(evidence.redactionAudit.rawSecretMaterialExposed, false, "operation_evidence_hides_raw_provider_key");
+  assert.equal(evidence.redactionAudit.dbPasswordExposed, false, "operation_evidence_hides_db_password");
+  assert.equal(evidence.redactionAudit.tokenExposed, false, "operation_evidence_hides_token");
+  assert.equal(evidence.redactionAudit.tencentSecretExposed, false, "operation_evidence_hides_tencent_secret");
+  assert.equal(evidence.redactionAudit.browserStorageSecretWritePresent, false, "operation_evidence_blocks_browser_storage_secret");
+  assert.equal(evidence.nextGap.id, "production-launch-gap-03-resourcebinding-postgresql-ledger-live-write-read-contract", "next_gap_after_gap_02");
+  assertNoSensitiveText(JSON.stringify(evidence), "operation_evidence");
+
+  for (const forbiddenArg of [
+    "--kubeconfig",
+    "--kubectl",
+    "--deploy",
+    "--rollout",
+    "--rollback",
+    "--build",
+    "--push",
+    "--tencent-mutation",
+    "--package-c-live",
+    "--ingress",
+    "--load-balancer",
+    "--secret-file",
+    "--env",
+  ]) {
+    await assert.rejects(
+      () => buildProductionLaunchOperationContract({
+        runId,
+        evidenceDir,
+        authorized: true,
+        argv: [forbiddenArg, "1"],
+      }),
+      /production_launch_operation_forbidden_arg/,
+      `operation_runner_must_reject:${forbiddenArg}`,
+    );
+  }
+} finally {
+  await rm(operationEvidenceRoot, { recursive: true, force: true });
+}
+
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_production_cloud_topology_boundary",
@@ -381,5 +549,6 @@ console.log(JSON.stringify({
     "future_readonly_inventory_and_deploy_plan_dimensions",
     "no_real_cloud_secret_deploy_kubectl_build_push_or_resource_mutation",
     "production_launch_gap_01_bootstrap_contract_local_gate",
+    "production_launch_gap_02_package_c_operation_contract_local_gate",
   ],
 }, null, 2));

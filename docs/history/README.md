@@ -59,6 +59,42 @@ landed 后的记录还必须补齐：
 
 ## Current Run Summaries
 
+### 2026-06-17 production-launch-gap-02-package-c-operation-contract
+
+Status: `landed candidate / local-gated`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `0b3f109d73267661b039184a6139d4086b2f501b`
+
+Model: `gpt-5.4`
+
+Subagents: none
+
+Scope:
+
+- Landed the repo-native Production Launch Gap 02 Portal -> Go backend -> Package C operation contract/local gate without adding a loop or second truth source.
+- Added `tests/support/cloud-prework/production-launch-operation-runner.js` as the single contract-only runner command: `node tests/support/cloud-prework/production-launch-operation-runner.js --mode contract-local-gate --run-id <runid> --authorized 1`.
+- The local gate proves unauthorized fail-closed behavior, Portal action shape, Go backend operation request shape, Package C runner invocation boundary, ResourceBinding `requested` / `creating` / `ready` state transition contract, providerKeyRef-only boundary, idempotency, redacted evidence shape and external-access block.
+- Added contract-only Go routes `POST /api/v22/production/package-c-operation/plan` and `POST /api/v22/production/package-c-operation/commit`, plus Portal typed API shape in `services/portal/frontend/src/api/portal/production-operation.ts`. These routes fail closed and do not execute Package C live operations.
+- Evidence sink is `.runtime/production-launch-operation/<runid>/operation-contract-redacted.json`.
+- The next unique gap is `production-launch-gap-03-resourcebinding-postgresql-ledger-live-write-read-contract`.
+- This closeout did not read secrets/kubeconfig, connect to Kubernetes API, run kubectl, deploy, rollout, rollback, build/push, execute Tencent mutation, run Package C live, restore Node Portal backend or enter external access.
+
+Can-claim:
+
+- Production Launch Gap 02 has a repo-native contract/local gate.
+- Portal typed API and Go backend route shape for the Package C production operation boundary are traceable and fail closed.
+- ResourceBinding state shape is locally specified for `requested` / `creating` / `ready`.
+- External/public access remains blocked.
+
+Cannot-claim:
+
+- Package C live operation has executed from Portal.
+- Production PostgreSQL ResourceBinding ledger write/read, billing/audit/quota, workspace lifecycle, production canary, rollback execution, Ingress, LoadBalancer, DNS or TLS are complete.
+
+next_cursor: `real-cloud-authorization-boundary`
+
 ### 2026-06-17 package-d-service-reachability-passed-external-access-pack
 
 Status: `landed candidate / local-gated`
@@ -78,6 +114,7 @@ Scope:
 - Cleanup deleted the smoke Job and verified `NotFound`; `diagnostics-redacted.json` was not generated because the run succeeded.
 - Evidence paths are `.runtime/package-d-service-reachability/psr-20260617-004/readonly-service-reachability-redacted.json` and `.runtime/package-d-service-reachability/psr-20260617-004/smoke-job-manifest-redacted.json`.
 - Generated the next Portal external access strategy authorization pack in active/delivery/fixture truth. It compares admin-only port-forward, internal gateway, Ingress, LoadBalancer and HTTPS/domain, and recommends admin-only port-forward for the next non-public admin smoke unless persistent private access requires internal gateway.
+- Superseded by later Production Launch Goal / Gap Map ordering: external access strategy remains available as historical planning, but it is no longer the current next gap until the multi-tenant minimum launch closure reaches that phase.
 - Did not read secret/kubeconfig, connect to Kubernetes API, run kubectl, deploy, rollout, rollback, build/push, execute Tencent mutation or run Package C live.
 
 Can-claim:
@@ -85,7 +122,7 @@ Can-claim:
 - Package D is deployed inside TKE.
 - Package D in-cluster HTTP reachability passed for the four ClusterIP Services.
 - External/public user access is not yet exposed.
-- Portal external access strategy is the next authorization boundary.
+- At that historical point, Portal external access strategy was drafted as an authorization boundary; current truth now defers it behind production launch gaps.
 
 Cannot-claim:
 

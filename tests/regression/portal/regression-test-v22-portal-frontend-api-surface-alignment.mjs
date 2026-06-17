@@ -103,6 +103,14 @@ const unusedAdjudications = {
     status: "future-reserved",
     reason: "Production bootstrap commit must fail closed before authorization and is tracked only as typed API shape for Gap 01.",
   },
+  "production-operation.ts:planProductionPackageCOperation": {
+    status: "future-reserved",
+    reason: "Production Package C operation planning is Gap 02 contract-only API trace; it stays unmounted until Package C live operation receives separate authorization.",
+  },
+  "production-operation.ts:commitProductionPackageCOperation": {
+    status: "future-reserved",
+    reason: "Production Package C operation commit must fail closed before authorization and is tracked only as typed API shape for Gap 02.",
+  },
   "server-plans.ts:fetchServerPlans": {
     status: "future-reserved",
     reason: "Server plan catalog remains a lower-level backend surface; current React runtime UI is package-oriented.",

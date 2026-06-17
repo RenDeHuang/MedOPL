@@ -17,6 +17,7 @@ The current cursor is the real-cloud authorization boundary. Pre-cloud local pro
 - Keep active truth limited to the current phase, cursor, blockers, next owner, cannot-claim and verification entry.
 - Fail closed until explicit user authorization is provided for each sensitive operation class.
 - Add the Production Launch Gap 01 local bootstrap contract for first admin identity shape, tenant bootstrap shape, workspace seed shape and providerKeyRef-only boundary without executing live bootstrap.
+- Add the Production Launch Gap 02 local operation contract for Portal -> Go backend -> Package C operation shape, ResourceBinding requested/creating/ready state shape, providerKeyRef-only boundary and idempotency without executing Package C live.
 
 ## Non-Goals
 
@@ -63,6 +64,8 @@ mock/snapshot provider
 ```
 
 Production Launch Gap 01 is limited to a local contract gate. It proves the bootstrap payload shape and redaction boundary, but it does not create the first admin, tenant, workspace or provider binding in a live system.
+
+Production Launch Gap 02 is limited to a local contract gate. It proves the Portal -> Go backend -> Package C operation payload shape, runner boundary, state contract and redaction boundary, but it does not execute Package C live or write the production PostgreSQL ledger.
 
 ## Subscribed Truth
 

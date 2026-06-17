@@ -82,6 +82,8 @@ func RegisterControlPlaneRoutes(api *gin.RouterGroup, service ControlPlaneServic
 	api.POST("/opl/entry/preflight", providerPreflight(service))
 	api.POST("/v22/production/bootstrap/plan", productionBootstrapContractPlan())
 	api.POST("/v22/production/bootstrap/commit", productionBootstrapContractCommit())
+	api.POST("/v22/production/package-c-operation/plan", productionPackageCOperationContractPlan())
+	api.POST("/v22/production/package-c-operation/commit", productionPackageCOperationContractCommit())
 	api.POST("/v22/users/prepare", prepareUser())
 	api.POST("/v22/users/credit", creditUser())
 	api.POST("/v22/provider-key", bindProviderKey(service))
@@ -214,6 +216,62 @@ func productionBootstrapContractCommit() gin.HandlerFunc {
 				"status": "blocked_until_multi_tenant_minimum_launch_closure",
 			},
 		})
+	}
+}
+
+func productionPackageCOperationContractPayload(errorCode string) gin.H {
+	return gin.H{
+		"ok": false,
+		"contract": "production_launch_gap_02_package_c_operation_contract_local_gate",
+		"mode": "contract-only",
+		"error": errorCode,
+		"requiredRunner": "tests/support/cloud-prework/production-launch-operation-runner.js",
+		"portalAction": gin.H{
+			"shape": "Portal workspace provisioning action",
+			"rawSecretAllowed": false,
+		},
+		"goBackendOperationRequest": gin.H{
+			"requiredFields": []string{
+				"tenantId",
+				"accountId",
+				"workspaceId",
+				"resourceBindingId",
+				"billingAttributionId",
+				"serverPlanId",
+				"providerKeyRef",
+				"idempotencyKey",
+			},
+		},
+		"packageCRunnerInvocationBoundary": gin.H{
+			"runner": "tests/support/cloud-prework/v22-package-c-live-canary-live-runner.js",
+			"contractOnly": true,
+			"liveExecutionAllowedNow": false,
+			"futureRunGate": "RUN_TENCENT_CREATE_RELEASE_EXECUTION=1",
+		},
+		"resourceBindingStateContract": gin.H{
+			"minimumStates": []string{"requested", "creating", "ready"},
+			"canonicalStore": "PostgreSQL resource_bindings/cloud_operations",
+			"productionPostgresWriteNow": false,
+		},
+		"providerBoundary": gin.H{
+			"publicFields": []string{"provider", "providerKeyRef", "boundStatus"},
+			"rawSecretBackendOnly": true,
+		},
+		"externalAccess": gin.H{
+			"status": "blocked_until_multi_tenant_minimum_launch_closure",
+		},
+	}
+}
+
+func productionPackageCOperationContractPlan() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusPreconditionRequired, productionPackageCOperationContractPayload("production_launch_operation_required"))
+	}
+}
+
+func productionPackageCOperationContractCommit() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusPreconditionRequired, productionPackageCOperationContractPayload("production_launch_operation_required"))
 	}
 }
 

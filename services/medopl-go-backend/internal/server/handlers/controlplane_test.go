@@ -219,6 +219,67 @@ func TestControlPlaneProductionBootstrapContractFailsClosed(t *testing.T) {
 	}
 }
 
+func TestControlPlaneProductionPackageCOperationContractFailsClosed(t *testing.T) {
+	router := controlPlaneHandlerTestRouter()
+	rawProviderKey := "production-operation-raw-provider-key-must-not-leak"
+
+	for _, target := range []string{
+		"/api/v22/production/package-c-operation/plan",
+		"/api/v22/production/package-c-operation/commit",
+	} {
+		rec := postRaw(router, target, map[string]any{
+			"tenantId":             "tenant-production-alpha",
+			"accountId":            "account-production-alpha",
+			"workspaceId":          "workspace-production-alpha",
+			"resourceBindingId":    "rb-production-alpha",
+			"billingAttributionId": "bill-production-alpha",
+			"serverPlanId":         "starter_2c4g_10gb",
+			"providerKeyRef":       "gflab:workspace-production-alpha:refonly001122",
+			"idempotencyKey":       "workspace-provision-alpha-once",
+			"rawProviderKey":       rawProviderKey,
+			"bearerToken":          "bearer-token-must-not-leak",
+			"tencentSecretId":      "tencent-secret-id-must-not-leak",
+			"tencentSecretKey":     "tencent-secret-key-must-not-leak",
+		})
+		if rec.Code != http.StatusPreconditionRequired {
+			t.Fatalf("%s status = %d body = %s", target, rec.Code, rec.Body.String())
+		}
+		body := rec.Body.String()
+		for _, required := range []string{
+			"production_launch_gap_02_package_c_operation_contract_local_gate",
+			"contract-only",
+			"production_launch_operation_required",
+			"production-launch-operation-runner.js",
+			"requested",
+			"creating",
+			"ready",
+			"providerKeyRef",
+			"blocked_until_multi_tenant_minimum_launch_closure",
+		} {
+			if !strings.Contains(body, required) {
+				t.Fatalf("%s response missing %q: %s", target, required, body)
+			}
+		}
+		for _, forbidden := range []string{
+			rawProviderKey,
+			"bearer-token-must-not-leak",
+			"tencent-secret-id-must-not-leak",
+			"tencent-secret-key-must-not-leak",
+			"rawProviderKey",
+			"bearerToken",
+			"tencentSecretId",
+			"tencentSecretKey",
+			"Ingress",
+			"LoadBalancer",
+			"kubectl",
+		} {
+			if strings.Contains(body, forbidden) {
+				t.Fatalf("%s response leaked forbidden marker %q: %s", target, forbidden, body)
+			}
+		}
+	}
+}
+
 func TestControlPlaneHandlersMaterializeProviderSecretBoundary(t *testing.T) {
 	secretRoot := t.TempDir()
 	router := controlPlaneHandlerTestRouterWithSecretRoot(secretRoot)

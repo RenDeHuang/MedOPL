@@ -30,7 +30,8 @@ Status: local_boundary_audited
 - Package D `production-deploy-apply` run `pdrun-20260616-004` is recorded as a successful in-cluster deploy: four Deployments ready `1/1`, four ClusterIP Services on `8080/http`, smoke shape checks `12/12` pass, rollback plan generated and redaction audit pass.
 - Package D now has a repo-native readonly service reachability / in-cluster HTTP smoke runner covered by the existing run-scoped Job local/future-authorized gate. The runner is run-scoped, uses fixed ClusterIP service endpoints, writes redacted `.runtime/package-d-service-reachability/<runid>/readonly-service-reachability-redacted.json` evidence and cleans up only its temporary smoke Job.
 - Production Launch Gap 01 now has a repo-native bootstrap contract/local gate. It covers first admin identity shape, tenant bootstrap shape, workspace seed shape, providerKeyRef-only public boundary, local RC fallback separation, Portal typed API to Go backend contract-only route traceability and redacted `.runtime/production-launch-bootstrap/<runid>/bootstrap-contract-redacted.json` evidence shape.
-- The next Package D gap is not another deploy rerun; it is authorized execution of the service reachability runner plus Portal external access strategy while services remain ClusterIP-only.
+- Production Launch Gap 02 now has a repo-native Portal -> Go backend -> Package C operation contract/local gate. It covers Portal action shape, Go backend operation request shape, Package C runner invocation boundary, ResourceBinding requested/creating/ready state contract, providerKeyRef-only boundary, idempotency, local RC fallback separation, Portal typed API to Go backend contract-only route traceability and redacted `.runtime/production-launch-operation/<runid>/operation-contract-redacted.json` evidence shape.
+- The next production launch gap is ResourceBinding PostgreSQL ledger live write/read contract. Portal external access strategy remains blocked until the multi-tenant minimum launch closure reaches that later phase.
 - Raw live evidence, if later authorized, must stay in `.runtime` or another approved non-git evidence sink, with only sanitized summary entering git.
 
 ## Cannot Claim
@@ -41,6 +42,7 @@ Status: local_boundary_audited
 - This package does not run Package D, read kubeconfig, build/push, kubectl, deploy or connect/write real PostgreSQL.
 - This package records that production deploy apply succeeded in-cluster and that a reachability runner exists, but it does not prove the in-cluster HTTP smoke has executed, external/public user access, Ingress/LoadBalancer/DNS/TLS, Portal self-service, production billing or rollback execution.
 - Production Launch Gap 01 does not execute first admin creation, tenant creation, workspace creation, provider credential binding, Package C live operation, billing, quota, workspace lifecycle or external access.
+- Production Launch Gap 02 does not execute Package C live, Tencent mutation, production PostgreSQL ledger write/read, billing, quota, workspace lifecycle or external access.
 
 ## Archive Target
 

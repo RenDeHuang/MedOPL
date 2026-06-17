@@ -26,6 +26,8 @@ Target specs:
 - Package C PostgreSQL ledger canary no longer treats local-machine access to the VPC private endpoint as the goal; successful real DB canary waits until the MedOPL service runs inside the VPC.
 - Production Launch Gap 01 is represented by the repo-native `production-launch-bootstrap-runner` contract/local gate. The gate covers first admin identity bootstrap shape, tenant bootstrap shape, workspace seed shape, providerKeyRef-only public boundary, local RC fallback separation, redacted evidence and Portal typed API to Go backend fail-closed route traceability.
 - The Production Launch Gap 01 contract keeps external access blocked. Ingress, LoadBalancer, DNS/TLS and public user access remain unavailable until the multi-tenant minimum launch closure reaches later gaps.
+- Production Launch Gap 02 is represented by the repo-native `production-launch-operation-runner` contract/local gate. The gate covers Portal action shape, Go backend operation request shape, Package C runner invocation boundary, ResourceBinding `requested` / `creating` / `ready` state transition contract, providerKeyRef-only public boundary, idempotency, local RC fallback separation, redacted evidence and Portal typed API to Go backend fail-closed route traceability.
+- The Production Launch Gap 02 contract keeps Package C live execution, Tencent mutation, production PostgreSQL ledger write/read and external access disabled. It only establishes the operation boundary for the next ResourceBinding PostgreSQL ledger live write/read contract gap.
 
 ## REMOVED
 
@@ -40,6 +42,7 @@ Target specs:
 - Package D production-deploy-apply/live entrypoint existence and the first authorized apply attempt do not mean rollout success, post-deploy smoke or rollback execution has happened.
 - Package D service reachability runner existence does not mean in-cluster HTTP smoke has executed or Portal external/public access exists.
 - Production Launch Gap 01 local gate does not execute identity provider writes, tenant creation, workspace creation, provider credential binding, Package C live operations, billing, quota, workspace lifecycle or external access.
+- Production Launch Gap 02 local gate does not execute Package C live, Tencent mutation, production PostgreSQL ledger writes, billing, quota, workspace lifecycle or external access.
 
 ## EVALS
 

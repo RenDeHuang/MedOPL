@@ -34,6 +34,8 @@ git diff --check -- docs changes specs tests scripts
 - Package D now has a repo-native production deploy apply/live entrypoint and local/future-authorized gate. Plan-only keeps `RUN_TENCENT_DEPLOY_EXECUTION=0`; apply/live requires a separately authorized `RUN_TENCENT_DEPLOY_EXECUTION=1` cloud execution.
 - The apply/live command plan is limited to server-side dry-run, allowlisted `kubectl apply` for Package D ConfigMap/Deployment/Service resources in `medopl-platform`, rollout observation, namespace-scoped smoke shape checks and rollback plan commands for allowlisted deployments.
 - Package D now has a repo-native readonly service reachability runner contract covered by the existing Package D run-scoped Job local gate for later authorized in-cluster HTTP smoke. It keeps `RUN_TENCENT_DEPLOY_EXECUTION=0`, reads only the later-authorized deploy/runtime env and kubeconfig refs, creates one run-scoped temporary smoke Job, hits only the four fixed ClusterIP service endpoints and cleans up only that Job.
+- Production Launch Gap 01 has a repo-native bootstrap contract/local gate for first admin, tenant, workspace seed and providerKeyRef-only boundary.
+- Production Launch Gap 02 has a repo-native operation contract/local gate for Portal action shape, Go backend operation request shape, Package C runner invocation boundary, ResourceBinding requested/creating/ready state contract, providerKeyRef-only boundary, idempotency and redacted evidence.
 
 ## Cannot Claim
 
@@ -46,6 +48,7 @@ git diff --check -- docs changes specs tests scripts
 - Package D production deploy apply/live local gate does not prove live deployment, rollout, post-deploy smoke or rollback execution; those require a separate cloud authorization and redacted `.runtime` evidence.
 - Package D service reachability local gate does not execute Kubernetes API calls or prove service HTTP reachability; that requires a separate cloud authorization and redacted `.runtime` evidence.
 - Production Launch Gap 01 bootstrap local gate does not execute identity provider writes, tenant creation, workspace creation, Package C live operations, billing, quota, workspace lifecycle or external access.
+- Production Launch Gap 02 operation local gate does not execute Package C live, Tencent mutation, production PostgreSQL ledger write/read, billing, quota, workspace lifecycle or external access.
 
 ## Required Future Sequence
 
