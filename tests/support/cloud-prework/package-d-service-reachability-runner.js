@@ -123,18 +123,30 @@ function endpointForService(service) {
   };
 }
 
-function curlArgs(url) {
+function curlArgs(endpoint) {
   return [
     "--silent",
     "--show-error",
     "--location",
+    "--connect-timeout",
+    "3",
     "--max-time",
     "10",
+    "--fail-with-body",
     "--output",
     "-",
     "--write-out",
-    "\nHTTP_STATUS:%{http_code}\n",
-    url,
+    [
+      "",
+      `service=${endpoint.service}`,
+      `url=${endpoint.url}`,
+      "http_code=%{http_code}",
+      "exit_code=%{exitcode}",
+      "total_time=%{time_total}",
+      "error_class=curl_exit_%{exitcode}",
+      "",
+    ].join("\n"),
+    endpoint.url,
   ];
 }
 
@@ -174,7 +186,7 @@ function materializeSmokeJobManifest({ runId }) {
               image: SMOKE_IMAGE,
               imagePullPolicy: "IfNotPresent",
               command: ["curl"],
-              args: curlArgs(endpoint.url),
+              args: curlArgs(endpoint),
               securityContext: {
                 runAsNonRoot: true,
                 allowPrivilegeEscalation: false,
@@ -223,6 +235,16 @@ function assertSmokeJobManifestBoundary(manifest = {}) {
     if (container.args?.at(-1) !== expectedEndpoints[index]) {
       throw new Error(`package_d_service_reachability_endpoint_mismatch:${service.name}`);
     }
+    if (!container.args?.includes("--connect-timeout") || !container.args?.includes("--max-time") || !container.args?.includes("--fail-with-body")) {
+      throw new Error(`package_d_service_reachability_curl_fail_fast_required:${service.name}`);
+    }
+    const writeOut = container.args?.[container.args.indexOf("--write-out") + 1] || "";
+    if (!writeOut.includes("service=")) throw new Error(`package_d_service_reachability_curl_summary_missing:${service.name}:service`);
+    if (!writeOut.includes("url=")) throw new Error(`package_d_service_reachability_curl_summary_missing:${service.name}:url`);
+    if (!writeOut.includes("http_code=")) throw new Error(`package_d_service_reachability_curl_summary_missing:${service.name}:http_code`);
+    if (!writeOut.includes("exit_code=")) throw new Error(`package_d_service_reachability_curl_summary_missing:${service.name}:exit_code`);
+    if (!writeOut.includes("total_time=")) throw new Error(`package_d_service_reachability_curl_summary_missing:${service.name}:total_time`);
+    if (!writeOut.includes("error_class=")) throw new Error(`package_d_service_reachability_curl_summary_missing:${service.name}:error_class`);
   }
 }
 
@@ -391,6 +413,13 @@ function redactCommandOutput(value = "") {
     .replaceAll(/(token|password|secret)["':=][^,\s"']+/giu, "$1=REDACTED");
 }
 
+function messageSummary(value = "", limit = 420) {
+  const redacted = redactCommandOutput(value || "")
+    .replaceAll(/\s+/gu, " ")
+    .trim();
+  return redacted ? redacted.slice(0, limit) : "";
+}
+
 function parseNamespaceName(stdout = "") {
   try {
     return JSON.parse(stdout)?.metadata?.name || "";
@@ -419,13 +448,62 @@ function parseServiceShape(stdout = "") {
 }
 
 function parseHttpStatus(stdout = "") {
-  const match = String(stdout || "").match(/HTTP_STATUS:(\d{3})/u);
+  const match = String(stdout || "").match(/(?:HTTP_STATUS:|http_code=)(\d{3})/u);
   return match ? Number(match[1]) : 0;
 }
 
+function parseCurlField(stdout = "", field = "") {
+  const escaped = field.replaceAll(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+  const match = String(stdout || "").match(new RegExp(`^${escaped}=([^\\r\\n]*)`, "mu"));
+  return match ? match[1].trim() : "";
+}
+
+function parseCurlExitCode(stdout = "") {
+  const value = parseCurlField(stdout, "exit_code");
+  const parsed = Number(value);
+  return Number.isInteger(parsed) ? parsed : null;
+}
+
+function curlErrorClassForExitCode(exitCode) {
+  if (exitCode === null || exitCode === undefined) return "";
+  if (exitCode === 0) return "";
+  if (exitCode === 6) return "dns_resolution_failed";
+  if (exitCode === 7) return "connection_failed";
+  if (exitCode === 22) return "http_status_failed";
+  if (exitCode === 28) return "timeout_or_connection_failed";
+  if (exitCode === 35 || exitCode === 60) return "tls_error";
+  return `curl_exit_${exitCode}`;
+}
+
+function parseCurlErrorClass(stdout = "", stderr = "") {
+  const explicit = parseCurlField(stdout, "error_class");
+  const exitCode = parseCurlExitCode(stdout);
+  if (explicit && !/^curl_exit_0$/u.test(explicit)) {
+    if (/^curl_exit_\d+$/u.test(explicit)) return curlErrorClassForExitCode(Number(explicit.slice("curl_exit_".length)));
+    return messageSummary(explicit, 120) || curlErrorClassForExitCode(exitCode);
+  }
+  const stderrSummary = messageSummary(stderr, 120).toLowerCase();
+  if (stderrSummary.includes("timed out") || stderrSummary.includes("timeout")) return "timeout_or_connection_failed";
+  if (stderrSummary.includes("could not resolve")) return "dns_resolution_failed";
+  if (stderrSummary.includes("connection refused") || stderrSummary.includes("failed to connect")) return "connection_failed";
+  return curlErrorClassForExitCode(exitCode);
+}
+
+function structuredCurlBody(stdout = "") {
+  return String(stdout || "")
+    .split(/\r?\n/u)
+    .filter((line) => !/^(HTTP_STATUS:\d{3}|service=|url=|http_code=|exit_code=|total_time=|error_class=)/u.test(line))
+    .join("\n")
+    .trim();
+}
+
 function bodySummaryClass(stdout = "") {
-  const body = String(stdout || "").replace(/\n?HTTP_STATUS:\d{3}\s*$/u, "").trim();
+  const body = structuredCurlBody(stdout);
   return body ? "present_redacted" : "empty";
+}
+
+function curlTotalTimeClass(stdout = "") {
+  return parseCurlField(stdout, "total_time") ? "present_redacted" : "empty";
 }
 
 function parseJson(stdout = "", fallback = {}) {
@@ -450,6 +528,7 @@ function summarizeJobGet(stdout = "") {
         type: condition.type || "",
         status: condition.status || "",
         reason: condition.reason || "",
+        messageSummary: messageSummary(condition.message || ""),
         messageClass: condition.message ? "present_redacted" : "empty",
       })),
     },
@@ -464,7 +543,11 @@ function summarizeEvents(stdout = "") {
       reason: event.reason || "",
       involvedObjectKind: event.involvedObject?.kind || "",
       involvedObjectName: event.involvedObject?.name || "",
+      messageSummary: messageSummary(event.message || ""),
       messageClass: event.message ? "present_redacted" : "empty",
+      count: Number(event.count || event.series?.count || 0),
+      firstTimestamp: event.firstTimestamp || event.eventTime || "",
+      lastTimestamp: event.lastTimestamp || event.eventTime || "",
     })),
   };
 }
@@ -475,6 +558,31 @@ function imagePullStatusForContainer(status = {}) {
   return reason ? "not_image_pull_related" : "";
 }
 
+function summarizeContainerState(state = {}) {
+  const summary = {};
+  if (state.waiting) {
+    summary.waiting = {
+      reason: state.waiting.reason || "",
+      messageSummary: messageSummary(state.waiting.message || ""),
+    };
+  }
+  if (state.running) {
+    summary.running = {
+      startedAt: state.running.startedAt || "",
+    };
+  }
+  if (state.terminated) {
+    summary.terminated = {
+      reason: state.terminated.reason || "",
+      messageSummary: messageSummary(state.terminated.message || ""),
+      exitCode: Number.isInteger(state.terminated.exitCode) ? state.terminated.exitCode : null,
+      startedAt: state.terminated.startedAt || "",
+      finishedAt: state.terminated.finishedAt || "",
+    };
+  }
+  return summary;
+}
+
 function summarizePods(stdout = "") {
   const pods = parseJson(stdout, { items: [] });
   return {
@@ -482,12 +590,17 @@ function summarizePods(stdout = "") {
       name: pod.metadata?.name || "",
       namespace: pod.metadata?.namespace || "",
       phase: pod.status?.phase || "",
+      reason: pod.status?.reason || "",
+      messageSummary: messageSummary(pod.status?.message || ""),
       nodeName: pod.status?.nodeName || "",
       hostIP: pod.status?.hostIP || "",
       containerStatuses: (pod.status?.containerStatuses || []).map((status) => ({
         name: status.name || "",
+        image: status.image || "",
         ready: status.ready === true,
         restartCount: Number(status.restartCount || 0),
+        state: summarizeContainerState(status.state || {}),
+        lastState: summarizeContainerState(status.lastState || {}),
         waitingReason: status.state?.waiting?.reason || "",
         terminatedReason: status.state?.terminated?.reason || "",
         exitCode: Number.isInteger(status.state?.terminated?.exitCode) ? status.state.terminated.exitCode : null,
@@ -508,7 +621,7 @@ function summarizeKubectlResult(command = {}, result = {}) {
   const status = Number.isInteger(result?.status) ? result.status : 1;
   const isSmokeLog = command.kind === "smoke_job_logs";
   const stdoutSummary = isSmokeLog
-    ? `HTTP_STATUS:${parseHttpStatus(result.stdout || "") || "unknown"}`
+    ? `HTTP_STATUS:${parseHttpStatus(result.stdout || "") || "unknown"} EXIT_CODE:${parseCurlExitCode(result.stdout || "") ?? "unknown"}`
     : redactCommandOutput(result.stdout || "").slice(0, 240);
   return {
     name: command.name,
@@ -584,11 +697,19 @@ async function collectWaitFailureDiagnostics({
     },
     logs: SERVICES.map((service) => {
       const result = diagnosticsResults.get(`diagnostic_logs_${service.name}`) || {};
+      const logsAvailable = Boolean(result.stdout);
+      const exitCode = parseCurlExitCode(result.stdout || "");
       return {
         service: service.name,
+        url: endpointForService(service).url,
         containerName: service.containerName,
         httpStatus: parseHttpStatus(result.stdout || ""),
+        exitCode,
+        totalTimeClass: curlTotalTimeClass(result.stdout || ""),
+        errorClass: parseCurlErrorClass(result.stdout || "", result.stderr || ""),
         bodySummaryClass: bodySummaryClass(result.stdout || ""),
+        logsAvailable,
+        unavailableReason: logsAvailable ? "" : messageSummary(result.stderr || "logs_not_available"),
         stdoutClass: result.stdout ? "present_redacted" : "empty",
         stderrClass: result.stderr ? "present_redacted" : "empty",
         stderrSummary: redactCommandOutput(result.stderr || "").slice(0, 240),
@@ -748,10 +869,14 @@ export async function runPackageDServiceReachabilitySmoke({
     }
     if (command.kind === "smoke_job_create" && result.status === 0) smokeJob = "created";
     if (command.kind === "smoke_job_logs") {
+      const exitCode = parseCurlExitCode(result.stdout || "");
       serviceResults.push({
         service: command.service,
         url: command.endpoint.url,
         httpStatus: parseHttpStatus(result.stdout || ""),
+        exitCode,
+        totalTimeClass: curlTotalTimeClass(result.stdout || ""),
+        errorClass: parseCurlErrorClass(result.stdout || "", result.stderr || ""),
         bodySummaryClass: bodySummaryClass(result.stdout || ""),
       });
     }

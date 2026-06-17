@@ -143,6 +143,12 @@ function fakeServiceReachabilityKubectlExecutor(commandLog, { failWait = false }
       assert.deepEqual(manifest.spec.template.spec.containers.map((container) => container.args.at(-1)), serviceReachabilityEndpoints, "reachability_smoke_job_must_use_fixed_endpoints_only");
       assert.equal(manifest.spec.template.spec.containers.every((container) => container.command.join(" ") === "curl"), true, "reachability_smoke_job_must_use_curl_without_shell");
       assert.equal(manifest.spec.template.spec.containers.every((container) => container.args.includes("--write-out")), true, "reachability_smoke_job_must_capture_http_status");
+      assert.equal(manifest.spec.template.spec.containers.every((container) => container.args.includes("--connect-timeout")), true, "reachability_smoke_job_must_use_connect_timeout");
+      assert.equal(manifest.spec.template.spec.containers.every((container) => container.args.includes("--max-time")), true, "reachability_smoke_job_must_use_max_time");
+      assert.equal(manifest.spec.template.spec.containers.every((container) => container.args.includes("--fail-with-body")), true, "reachability_smoke_job_must_fail_with_body");
+      assert.equal(manifest.spec.template.spec.containers.every((container) => container.args.some((arg) => arg.includes("service="))), true, "reachability_smoke_job_must_emit_service_summary");
+      assert.equal(manifest.spec.template.spec.containers.every((container) => container.args.some((arg) => arg.includes("exit_code="))), true, "reachability_smoke_job_must_emit_exit_code_summary");
+      assert.equal(manifest.spec.template.spec.containers.every((container) => container.args.some((arg) => arg.includes("total_time="))), true, "reachability_smoke_job_must_emit_timing_summary");
       assert.equal(JSON.stringify(manifest).includes("medopl-tenant-"), false, "reachability_smoke_manifest_must_not_reference_tenant_pool");
     }
     if (args.includes("delete")) {
@@ -192,9 +198,38 @@ function fakeServiceReachabilityKubectlExecutor(commandLog, { failWait = false }
       const containerName = args[args.indexOf("-c") + 1];
       assert.notEqual(serviceReachabilityContainers.indexOf(containerName), -1, "logs_must_target_allowlisted_smoke_container");
       if (failWait) {
-        return { status: 1, stdout: "curl diagnostic body must be redacted\nHTTP_STATUS:000\n", stderr: "container waiting diagnostic-marker" };
+        if (containerName === "smoke-opl-runtime-bridge") {
+          return { status: 1, stdout: "", stderr: "container smoke-opl-runtime-bridge is waiting diagnostic-marker" };
+        }
+        return {
+          status: 1,
+          stdout: [
+            "curl diagnostic body must be redacted",
+            "service=portal-frontend",
+            "url=http://portal-frontend.medopl-platform.svc.cluster.local:8080/",
+            "http_code=000",
+            "exit_code=28",
+            "total_time=10.001",
+            "error_class=timeout_or_connection_failed",
+            "",
+          ].join("\n"),
+          stderr: "curl: (28) Operation timed out after 10001 milliseconds diagnostic-marker",
+        };
       }
-      return { status: 0, stdout: "portal-secret-like-body\nHTTP_STATUS:200\n", stderr: "" };
+      return {
+        status: 0,
+        stdout: [
+          "portal-secret-like-body",
+          "service=portal-frontend",
+          "url=http://portal-frontend.medopl-platform.svc.cluster.local:8080/",
+          "http_code=200",
+          "exit_code=0",
+          "total_time=0.123",
+          "error_class=",
+          "",
+        ].join("\n"),
+        stderr: "",
+      };
     }
     if (args.join(" ") === `kubectl get job ${reachabilitySmokeJobName} -n medopl-platform -o json`) {
       return {
@@ -233,6 +268,8 @@ function fakeServiceReachabilityKubectlExecutor(commandLog, { failWait = false }
             metadata: { name: `${reachabilitySmokeJobName}-abcde`, namespace: "medopl-platform" },
             status: {
               phase: "Pending",
+              reason: "ContainersNotReady",
+              message: "containers with unready status diagnostic-marker",
               nodeName: "node-10-66-0-42",
               hostIP: "10.66.0.42",
               containerStatuses: [
@@ -242,13 +279,23 @@ function fakeServiceReachabilityKubectlExecutor(commandLog, { failWait = false }
                   ready: false,
                   restartCount: 0,
                   state: { waiting: { reason: "ImagePullBackOff", message: "pull backoff diagnostic-marker" } },
+                  lastState: { terminated: { reason: "Error", exitCode: 125, message: "previous pull failed diagnostic-marker", startedAt: "2026-06-17T00:01:00Z", finishedAt: "2026-06-17T00:01:02Z" } },
                 },
                 {
                   name: "smoke-medopl-go-backend",
                   image: "curlimages/curl:8.8.0",
                   ready: false,
                   restartCount: 1,
-                  state: { terminated: { reason: "Error", exitCode: 7, message: "curl failed diagnostic-marker" } },
+                  state: { terminated: { reason: "Error", exitCode: 7, message: "curl failed diagnostic-marker", startedAt: "2026-06-17T00:02:00Z", finishedAt: "2026-06-17T00:02:03Z" } },
+                  lastState: { waiting: { reason: "ContainerCreating", message: "container creating diagnostic-marker" } },
+                },
+                {
+                  name: "smoke-opl-web-gateway",
+                  image: "curlimages/curl:8.8.0",
+                  ready: false,
+                  restartCount: 0,
+                  state: { running: { startedAt: "2026-06-17T00:03:00Z" } },
+                  lastState: {},
                 },
               ],
             },
@@ -266,6 +313,9 @@ function fakeServiceReachabilityKubectlExecutor(commandLog, { failWait = false }
             reason: "SuccessfulCreate",
             involvedObject: { kind: "Job", name: reachabilitySmokeJobName },
             message: "Created pod diagnostic-marker",
+            count: 1,
+            firstTimestamp: "2026-06-17T00:00:01Z",
+            lastTimestamp: "2026-06-17T00:00:01Z",
           }],
         }),
         stderr: "",
@@ -279,7 +329,10 @@ function fakeServiceReachabilityKubectlExecutor(commandLog, { failWait = false }
             type: "Warning",
             reason: "Failed",
             involvedObject: { kind: "Pod", name: `${reachabilitySmokeJobName}-abcde` },
-            message: "Failed to pull image diagnostic-marker",
+            message: "Failed to pull image curlimages/curl:8.8.0 due to diagnostic-marker",
+            count: 2,
+            firstTimestamp: "2026-06-17T00:00:02Z",
+            lastTimestamp: "2026-06-17T00:00:05Z",
           }],
         }),
         stderr: "",
@@ -640,6 +693,11 @@ try {
   assert.equal(reachabilityPlan.smokeJob.manifest.spec.template.spec.containers.every((container) => container.image !== "curlimages/curl:latest"), true, "reachability_smoke_image_must_not_use_latest");
   assert.deepEqual(reachabilityPlan.smokeJob.manifest.spec.template.spec.containers.map((container) => container.args.at(-1)), serviceReachabilityEndpoints, "reachability_smoke_container_args_must_be_fixed_endpoints");
   assert.equal(reachabilityPlan.smokeJob.manifest.spec.template.spec.containers.every((container) => container.command.join(" ") === "curl"), true, "reachability_smoke_container_must_not_use_shell");
+  assert.equal(reachabilityPlan.smokeJob.manifest.spec.template.spec.containers.every((container) => container.args.includes("--connect-timeout")), true, "reachability_smoke_container_must_use_connect_timeout");
+  assert.equal(reachabilityPlan.smokeJob.manifest.spec.template.spec.containers.every((container) => container.args.includes("--max-time")), true, "reachability_smoke_container_must_use_max_time");
+  assert.equal(reachabilityPlan.smokeJob.manifest.spec.template.spec.containers.every((container) => container.args.includes("--fail-with-body")), true, "reachability_smoke_container_must_fail_fast_with_body");
+  assert.equal(reachabilityPlan.smokeJob.manifest.spec.template.spec.containers.every((container) => container.args.some((arg) => arg.includes("exit_code="))), true, "reachability_smoke_container_must_emit_exit_code");
+  assert.equal(reachabilityPlan.smokeJob.manifest.spec.template.spec.containers.every((container) => container.args.some((arg) => arg.includes("total_time="))), true, "reachability_smoke_container_must_emit_total_time");
   assertNoSensitiveText(JSON.stringify(reachabilityPlan), "reachability_plan");
 
   const reachabilityCommandLog = [];
@@ -666,6 +724,8 @@ try {
   assert.equal(reachabilityEvidence.ok, true, "reachability_evidence_ok");
   assert.equal(reachabilityEvidence.serviceResults.length, 4, "reachability_evidence_must_record_four_service_results");
   assert.equal(reachabilityEvidence.serviceResults.every((result) => result.httpStatus === 200), true, "reachability_all_service_statuses_must_be_200");
+  assert.equal(reachabilityEvidence.serviceResults.every((result) => result.exitCode === 0), true, "reachability_all_service_exit_codes_must_be_zero");
+  assert.equal(reachabilityEvidence.serviceResults.every((result) => result.totalTimeClass === "present_redacted"), true, "reachability_all_service_timings_must_be_summarized");
   assert.equal(reachabilityEvidence.serviceResults.every((result) => result.bodySummaryClass === "present_redacted"), true, "reachability_body_must_be_summarized_not_dumped");
   assert.equal(JSON.stringify(reachabilityEvidence).includes("portal-secret-like-body"), false, "reachability_evidence_must_not_dump_http_body");
   assert.equal(reachabilityEvidence.redactionAudit.tcrSecretExposed, false, "reachability_evidence_must_hide_tcr_secret");
@@ -715,18 +775,42 @@ try {
   assert.equal(diagnostics.failedStep, "smoke_job_wait_complete", "diagnostics_failed_step");
   assert.equal(diagnostics.job.name, reachabilitySmokeJobName, "diagnostics_job_name");
   assert.equal(diagnostics.job.get.status.active, 1, "diagnostics_job_get_must_summarize_status");
+  assert.equal(diagnostics.job.get.status.conditions[0].reason, "DeadlineExceeded", "diagnostics_job_condition_reason");
+  assert.equal(diagnostics.job.get.status.conditions[0].messageSummary.includes("diagnostic-marker"), true, "diagnostics_job_condition_message_must_keep_redacted_key_text");
   assert.equal(diagnostics.job.describe.stdoutClass, "present_redacted", "diagnostics_job_describe_must_be_summarized");
   assert.equal(diagnostics.pods.items[0].phase, "Pending", "diagnostics_pod_phase");
+  assert.equal(diagnostics.pods.items[0].reason, "ContainersNotReady", "diagnostics_pod_reason");
+  assert.equal(diagnostics.pods.items[0].messageSummary.includes("diagnostic-marker"), true, "diagnostics_pod_message_must_keep_redacted_key_text");
   assert.equal(diagnostics.pods.items[0].nodeName, "node-10-66-0-42", "diagnostics_node_name");
   assert.equal(diagnostics.pods.items[0].hostIP, "10.66.0.42", "diagnostics_host_ip");
+  assert.equal(diagnostics.pods.items[0].containerStatuses[0].image, "curlimages/curl:8.8.0", "diagnostics_container_image");
+  assert.equal(diagnostics.pods.items[0].containerStatuses[0].ready, false, "diagnostics_container_ready");
+  assert.equal(diagnostics.pods.items[0].containerStatuses[0].restartCount, 0, "diagnostics_container_restart_count");
   assert.equal(diagnostics.pods.items[0].containerStatuses[0].waitingReason, "ImagePullBackOff", "diagnostics_waiting_reason");
+  assert.equal(diagnostics.pods.items[0].containerStatuses[0].state.waiting.reason, "ImagePullBackOff", "diagnostics_waiting_state_reason");
+  assert.equal(diagnostics.pods.items[0].containerStatuses[0].state.waiting.messageSummary.includes("diagnostic-marker"), true, "diagnostics_waiting_state_message");
   assert.equal(diagnostics.pods.items[0].containerStatuses[0].imagePullStatus, "ImagePullBackOff", "diagnostics_image_pull_status");
   assert.equal(diagnostics.pods.items[0].containerStatuses[1].terminatedReason, "Error", "diagnostics_terminated_reason");
   assert.equal(diagnostics.pods.items[0].containerStatuses[1].exitCode, 7, "diagnostics_exit_code");
+  assert.equal(diagnostics.pods.items[0].containerStatuses[1].state.terminated.messageSummary.includes("diagnostic-marker"), true, "diagnostics_terminated_message");
+  assert.equal(diagnostics.pods.items[0].containerStatuses[1].state.terminated.startedAt, "2026-06-17T00:02:00Z", "diagnostics_terminated_started_at");
+  assert.equal(diagnostics.pods.items[0].containerStatuses[1].state.terminated.finishedAt, "2026-06-17T00:02:03Z", "diagnostics_terminated_finished_at");
+  assert.equal(diagnostics.pods.items[0].containerStatuses[2].state.running.startedAt, "2026-06-17T00:03:00Z", "diagnostics_running_started_at");
+  assert.equal(diagnostics.pods.items[0].containerStatuses[0].lastState.terminated.exitCode, 125, "diagnostics_last_state_exit_code");
+  assert.equal(diagnostics.pods.items[0].containerStatuses[1].lastState.waiting.reason, "ContainerCreating", "diagnostics_last_state_waiting_reason");
   assert.equal(diagnostics.events.job.items[0].reason, "SuccessfulCreate", "diagnostics_job_events");
+  assert.equal(diagnostics.events.job.items[0].messageSummary.includes("diagnostic-marker"), true, "diagnostics_job_event_message_must_keep_key_text");
+  assert.equal(diagnostics.events.job.items[0].count, 1, "diagnostics_job_event_count");
+  assert.equal(diagnostics.events.job.items[0].firstTimestamp, "2026-06-17T00:00:01Z", "diagnostics_job_event_first_timestamp");
+  assert.equal(diagnostics.events.job.items[0].lastTimestamp, "2026-06-17T00:00:01Z", "diagnostics_job_event_last_timestamp");
   assert.equal(diagnostics.events.pods[0].items[0].reason, "Failed", "diagnostics_pod_events");
+  assert.equal(diagnostics.events.pods[0].items[0].messageSummary.includes("diagnostic-marker"), true, "diagnostics_pod_event_message_must_keep_key_text");
+  assert.equal(diagnostics.events.pods[0].items[0].count, 2, "diagnostics_pod_event_count");
+  assert.equal(diagnostics.events.pods[0].items[0].lastTimestamp, "2026-06-17T00:00:05Z", "diagnostics_pod_event_last_timestamp");
   assert.equal(diagnostics.logs.length, serviceReachabilityContainers.length, "diagnostics_must_attempt_each_curl_container_log");
-  assert.equal(diagnostics.logs.every((entry) => entry.bodySummaryClass === "present_redacted"), true, "diagnostics_logs_must_summarize_body");
+  assert.equal(diagnostics.logs.filter((entry) => entry.logsAvailable).every((entry) => entry.bodySummaryClass === "present_redacted"), true, "diagnostics_available_logs_must_summarize_body");
+  assert.equal(diagnostics.logs.some((entry) => entry.logsAvailable === false && entry.unavailableReason.includes("waiting")), true, "diagnostics_logs_must_record_missing_log_reason");
+  assert.equal(diagnostics.logs.some((entry) => entry.exitCode === 28 && entry.errorClass === "timeout_or_connection_failed"), true, "diagnostics_logs_must_record_curl_exit_and_error_class");
   assert.equal(JSON.stringify(diagnostics).includes("curl diagnostic body must be redacted"), false, "diagnostics_must_not_dump_log_body");
   assertNoSensitiveText(JSON.stringify(diagnostics), "reachability_diagnostics");
   const diagnosticsIndex = reachabilityFailureCommandLog.findIndex((entry) => entry.args.join(" ") === `kubectl get job ${reachabilitySmokeJobName} -n medopl-platform -o json`);
