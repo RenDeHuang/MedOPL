@@ -7489,15 +7489,15 @@ Cannot-claim:
 
 next_cursor: `real-cloud-authorization-boundary`
 
-landed_commit: `c39e19f1a1e5e95e1f897f5b7c55fd4beb0a9d07`
+landed_commit: `b815563880a41b282468678ca2f881cd255e5c61`
 
 landing_gate_result: `passed / ff-only landed / pushed`
 
 post_push_verification:
 
-- `c39e19f1a1e5e95e1f897f5b7c55fd4beb0a9d07` remains reachable from `origin/recovery/platform-v22-trunk`.
-- `npm run verify`: passed before this post-push closeout sync.
-- `npm run closeout:check -- --json`: rerun after this post-push closeout sync.
+- `b815563880a41b282468678ca2f881cd255e5c61` remains reachable from `origin/recovery/platform-v22-trunk`.
+- `npm run verify`: passed for the Gap 05 local gate and closeout sync.
+- `npm run closeout:check -- --json`: passed for the Gap 05 local gate and closeout sync.
 
 post_merge_closeout: `completed`
 
