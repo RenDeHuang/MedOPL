@@ -8,12 +8,12 @@
   "last_updated_at": "2026-06-17",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "04a8d56282382aa0a49d0f3ceb4dbe73b6fe4b28",
+  "base_trunk_head": "14dbbb04377f19b96f38db9859e42b625b0d2192",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "04a8d56282382aa0a49d0f3ceb4dbe73b6fe4b28",
+  "last_landed_commit": "14dbbb04377f19b96f38db9859e42b625b0d2192",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; canonical ownership / billing truth remains PostgreSQL resource_bindings / cloud_operations ledger. Package D deploy readiness has bootstrap resources, run-scoped platform runner preflight, PostgreSQL/runtime env/combined in-cluster preflight, production-deploy-plan dry-run/preflight and repo-native production-deploy-apply proven from the cloud. Authorized Package D production-deploy-apply run pdrun-20260616-004 at repo HEAD b992dd5f65be2de68f29bead0f56e510b4ece19a completed server-side dry-run, apply and rollout for portal-frontend, medopl-go-backend, opl-web-gateway and opl-runtime-bridge in medopl-platform on cls-fi097sy4. All four Deployments are ready 1/1, all four Services exist as ClusterIP Services on 8080/http, Pods scheduled to node.tke.cloud.tencent.com/machineset=np-6l4nkdto / hostIP 10.66.0.42, smoke shape checks are 12/12 pass, rollback was not executed but rollback plan was generated, redaction audit passed and RUN_TENCENT_DEPLOY_EXECUTION was restored to 0. Current service state is deployed inside TKE only; Service type is ClusterIP and external/public user access is not yet exposed. Authorized Package D readonly service reachability run psr-20260617-001 created the run-scoped smoke Job but timed out at smoke_job_wait_complete with empty serviceResults, then deleted the Job; evidence is .runtime/package-d-service-reachability/psr-20260617-001/readonly-service-reachability-redacted.json and .runtime/package-d-service-reachability/psr-20260617-001/smoke-job-manifest-redacted.json. This local session enhanced the repo-native service reachability runner so any future wait timeout writes .runtime/package-d-service-reachability/<runid>/diagnostics-redacted.json before cleanup, with redacted Job/Pod/Event/log summaries. It did not read secrets/kubeconfig, connect to Kubernetes API, run kubectl, deploy, build/push, execute Tencent mutation or run Package C live. The next gap is authorized rerun of the repo-native service reachability runner with run-id psr-20260617-002, then Portal external access strategy if smoke passes.",
+  "current_problem": "Package C completed one authorized live tenant node pool lifecycle canary on 2026-06-13 and cleanup passed; canonical ownership / billing truth remains PostgreSQL resource_bindings / cloud_operations ledger. Package D deploy readiness has bootstrap resources, run-scoped platform runner preflight, PostgreSQL/runtime env/combined in-cluster preflight, production-deploy-plan dry-run/preflight and repo-native production-deploy-apply proven from the cloud. Authorized Package D production-deploy-apply run pdrun-20260616-004 at repo HEAD b992dd5f65be2de68f29bead0f56e510b4ece19a completed server-side dry-run, apply and rollout for portal-frontend, medopl-go-backend, opl-web-gateway and opl-runtime-bridge in medopl-platform on cls-fi097sy4. All four Deployments are ready 1/1, all four Services exist as ClusterIP Services on 8080/http, Pods scheduled to node.tke.cloud.tencent.com/machineset=np-6l4nkdto / hostIP 10.66.0.42, smoke shape checks are 12/12 pass, rollback was not executed but rollback plan was generated, redaction audit passed and RUN_TENCENT_DEPLOY_EXECUTION was restored to 0. Current service state is deployed inside TKE only; Service type is ClusterIP and external/public user access is not yet exposed. Authorized Package D readonly service reachability runs psr-20260617-001 and psr-20260617-002 both created run-scoped smoke Jobs but timed out at smoke_job_wait_complete with no HTTP endpoint status collected, then deleted the Jobs. Run psr-20260617-002 at repo HEAD 956d3724233b3306115275e938361ab4bf2fc587 confirmed the Pod was scheduled and curlimages/curl was pulled; evidence is .runtime/package-d-service-reachability/psr-20260617-002/readonly-service-reachability-redacted.json, .runtime/package-d-service-reachability/psr-20260617-002/diagnostics-redacted.json and .runtime/package-d-service-reachability/psr-20260617-002/smoke-job-manifest-redacted.json. This local session strengthened the repo-native service reachability runner so curl smoke uses fail-fast timeouts and any future wait timeout writes .runtime/package-d-service-reachability/<runid>/diagnostics-redacted.json before cleanup with redacted Job condition, Pod reason/message, container state/lastState, Events message/count/timestamps and log-unavailable summaries. It did not read secrets/kubeconfig, connect to Kubernetes API, run kubectl, deploy, rollout, rollback, build/push, execute Tencent mutation or run Package C live. The next gap is authorized rerun of the repo-native service reachability runner with run-id psr-20260617-003, then Portal external access strategy if smoke passes.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -100,8 +100,8 @@
       "depends_on": [
         "precloud-deployable-rc"
       ],
-      "history_summary": "Package C live canary and Package D preflight/plan readiness are landed. Package D production-deploy-apply pdrun-20260616-004 succeeded for four services inside TKE: Deployments are ready 1/1, Services are ClusterIP on 8080/http, Pods scheduled to np-6l4nkdto / 10.66.0.42, smoke shape checks passed and redacted evidence is recorded. External/public user access is not exposed. Package D readonly service reachability run psr-20260617-001 timed out at smoke_job_wait_complete with empty serviceResults and cleaned its Job; the runner now has a local-gated wait-failure diagnostics path that writes diagnostics-redacted.json before cleanup. Next gaps are authorized rerun psr-20260617-002 and Portal external access strategy. New secret/kubeconfig, kubectl, deploy, build/push, Ingress/LB mutation and live-test remain separately authorized boundaries.",
-      "landed_commit": "04a8d56282382aa0a49d0f3ceb4dbe73b6fe4b28"
+      "history_summary": "Package C live canary and Package D preflight/plan readiness are landed. Package D production-deploy-apply pdrun-20260616-004 succeeded for four services inside TKE: Deployments are ready 1/1, Services are ClusterIP on 8080/http, Pods scheduled to np-6l4nkdto / 10.66.0.42, smoke shape checks passed and redacted evidence is recorded. External/public user access is not exposed. Package D readonly service reachability runs psr-20260617-001 and psr-20260617-002 timed out at smoke_job_wait_complete and cleaned their Jobs; psr-20260617-002 proved scheduling and curl image pull but still lacked actionable redacted diagnostics. The runner now has local-gated fail-fast curl and stronger wait-failure diagnostics before cleanup. Next gaps are authorized rerun psr-20260617-003 and Portal external access strategy. New secret/kubeconfig, kubectl, deploy, build/push, Ingress/LB mutation and live-test remain separately authorized boundaries.",
+      "landed_commit": "14dbbb04377f19b96f38db9859e42b625b0d2192"
     },
     {
       "id": "go-control-plane-mvp-takeover",
@@ -171,7 +171,7 @@
     "gap_id": "real-cloud-authorization-boundary",
     "stage": "S7 real-cloud authorization boundary before readiness",
     "cursor_eligible": false,
-    "problem": "Package D production-deploy-apply pdrun-20260616-004 completed for all four services inside TKE, with Deployments ready 1/1, ClusterIP Services present on 8080/http, smoke shape checks 12/12 pass, rollback plan generated but not executed and redaction audit passed. Current services remain ClusterIP-only and external/public user access is not exposed. Package D readonly service reachability run psr-20260617-001 failed closed at smoke_job_wait_complete timeout with empty serviceResults and cleaned its Job; the local repo now strengthens the runner to collect redacted wait-failure diagnostics before cleanup. This local closeout did not read secrets/kubeconfig, connect to Kubernetes API, run kubectl, deploy, build/push, Tencent mutation or Package C live. The next gap is authorized rerun psr-20260617-002, then Portal external access strategy if smoke passes.",
+    "problem": "Package D production-deploy-apply pdrun-20260616-004 completed for all four services inside TKE, with Deployments ready 1/1, ClusterIP Services present on 8080/http, smoke shape checks 12/12 pass, rollback plan generated but not executed and redaction audit passed. Current services remain ClusterIP-only and external/public user access is not exposed. Package D readonly service reachability runs psr-20260617-001 and psr-20260617-002 both failed closed at smoke_job_wait_complete timeout with no HTTP endpoint status collected, then cleaned their Jobs. Run psr-20260617-002 proved Pod scheduling and curl image pull, but diagnostics still lacked enough redacted reason/message detail to isolate securityContext, command/args, DNS/network, endpoint hang or service response failure. This local session strengthens the runner so curl smoke uses fail-fast timeouts and future wait failures collect redacted Job condition, Pod reason/message, container state/lastState, Events message/count/timestamps and log-unavailable summaries before cleanup. This local closeout did not read secrets/kubeconfig, connect to Kubernetes API, run kubectl, deploy, rollout, rollback, build/push, Tencent mutation or Package C live. The next gap is authorized rerun psr-20260617-003, then Portal external access strategy if smoke passes.",
     "verification_commands": [
       "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
       "node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs",
@@ -3663,7 +3663,7 @@
       "realExecutionReady": false
     },
     "readinessGaps": [
-      "authorized readonly service reachability rerun evidence for deployed Package D services through repo-native runner with wait-failure diagnostics",
+      "authorized readonly service reachability rerun evidence for deployed Package D services through repo-native runner with fail-fast curl and stronger wait-failure diagnostics",
       "Portal external access strategy definition before broader readiness progression",
       "post-deploy DB/smoke evidence beyond smoke shape checks",
       "rollback execution evidence if rollback is separately authorized or triggered"
@@ -4700,16 +4700,16 @@
         ".runtime/package-d-run-scoped-job-preflight/pdrun-20260616-002/job-manifest-redacted.json"
       ]
     },
-    "nextGap": "authorized rerun of readonly service reachability / in-cluster HTTP smoke with wait-failure diagnostics, then Portal external access strategy",
+    "nextGap": "authorized rerun of readonly service reachability / in-cluster HTTP smoke with fail-fast curl and stronger wait-failure diagnostics, then Portal external access strategy",
     "nextAuthorizationPrompt": [
       "授权 Package D readonly service reachability / in-cluster HTTP smoke runner 重新执行；不要执行新的 deploy。",
       "前置确认：repo HEAD 等于 origin/recovery/platform-v22-trunk，RUN_TENCENT_DEPLOY_EXECUTION=0，工作区干净，不提交 .runtime、secret、kubeconfig。",
-      "当前事实：run-id psr-20260617-001 创建 medopl-service-smoke-psr-20260617-001 后在 smoke_job_wait_complete 超时，serviceResults 为空，Job 已按策略清理；本地 runner 已补 wait-failure diagnostics。",
-      "允许命令：node tests/support/cloud-prework/package-d-service-reachability-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id psr-20260617-002 --mode in-cluster-http-smoke --authorized 1",
-      "允许读取后续明确授权的 package-d-deploy.env、portal-runtime.env、kubeconfig；允许连接 Kubernetes API；允许只读 get deployment/service/pods/job/events 与 describe job；允许创建 run-scoped medopl-service-smoke-psr-20260617-002 临时 HTTP smoke Job、读取每个 allowlisted curl 容器 logs、写 redacted diagnostics evidence、删除该 Job。",
+      "当前事实：run-id psr-20260617-002 创建 medopl-service-smoke-psr-20260617-002 后在 smoke_job_wait_complete 超时；Pod 已调度且 curlimages/curl 已拉取，但 HTTP endpoint status 未收集到，Job 已按策略清理；本地 runner 已补 fail-fast curl 与更强 wait-failure diagnostics。",
+      "允许命令：node tests/support/cloud-prework/package-d-service-reachability-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id psr-20260617-003 --mode in-cluster-http-smoke --authorized 1",
+      "允许读取后续明确授权的 package-d-deploy.env、portal-runtime.env、kubeconfig；允许连接 Kubernetes API；允许只读 get deployment/service/pods/job/events 与 describe job；允许创建 run-scoped medopl-service-smoke-psr-20260617-003 临时 HTTP smoke Job、读取每个 allowlisted curl 容器 logs、写 redacted diagnostics evidence、删除该 Job。",
       "固定 endpoints：portal-frontend:8080/、medopl-go-backend:8080/readyz、opl-web-gateway:8080/healthz、opl-runtime-bridge:8080/healthz，仅限 medopl-platform ClusterIP DNS。",
       "禁止新的 deploy、production apply、rollout、rollback、build/push、Tencent mutation、Package C live、kubectl exec、任意 URL、输出 kubeconfig/token/cert/DB password/TCR secret/Portal admin password；evidence 只写 .runtime 且 redacted。",
-      "预期 evidence：.runtime/package-d-service-reachability/psr-20260617-002/readonly-service-reachability-redacted.json、smoke-job-manifest-redacted.json；若 wait 失败，还必须先写 diagnostics-redacted.json 再 cleanup。"
+      "预期 evidence：.runtime/package-d-service-reachability/psr-20260617-003/readonly-service-reachability-redacted.json、smoke-job-manifest-redacted.json；若 wait 失败，还必须先写 diagnostics-redacted.json 再 cleanup。"
     ],
     "realExecutionReady": false,
     "combinedInClusterPreflight": {
@@ -5158,7 +5158,7 @@
     },
     "nextLocalCodexPrompt": [
       "按 active truth 做 gap-driven execution，不新增 loop。",
-      "当前 gap：Package D readonly service reachability runner 已补 wait-failure diagnostics；下一步是云端授权用 psr-20260617-002 重新执行 in-cluster HTTP smoke，或在 smoke 通过后定义 Portal external access strategy。",
+      "当前 gap：Package D readonly service reachability runner 已补 fail-fast curl 与更强 wait-failure diagnostics；下一步是云端授权用 psr-20260617-003 重新执行 in-cluster HTTP smoke，或在 smoke 通过后定义 Portal external access strategy。",
       "本地不要读取 secret/kubeconfig，不连接 Kubernetes API，不 kubectl，不 deploy，不 build/push，不 Tencent mutation，不 Package C live。",
       "如果再次进入真实执行边界，只能使用 repo-native runner，不要手写 kubectl。"
     ],
@@ -5458,11 +5458,11 @@
       ]
     },
     "serviceReachabilityAndExternalAccessGap": {
-      "status": "wait_failure_diagnostics_ready_authorized_rerun_required",
+      "status": "failfast_wait_failure_diagnostics_ready_authorized_rerun_required",
       "scope": [
         "authorized readonly service reachability evidence for deployed Package D ClusterIP services",
         "in-cluster HTTP smoke for portal-frontend, medopl-go-backend, opl-web-gateway and opl-runtime-bridge through the repo-native runner",
-        "wait-failure diagnostics before cleanup if the run-scoped smoke Job times out",
+        "fail-fast curl smoke and wait-failure diagnostics before cleanup if the run-scoped smoke Job times out",
         "Portal external access strategy selection before public/user access claim"
       ],
       "currentServiceExposure": {
@@ -5471,32 +5471,42 @@
         "externalPublicUserAccessExposed": false
       },
       "latestCloudRun": {
-        "status": "failed_wait_timeout_diagnostics_gap_closed_locally",
-        "runId": "psr-20260617-001",
+        "status": "failed_wait_timeout_failfast_diagnostics_gap_closed_locally",
+        "runId": "psr-20260617-002",
         "failedStep": "smoke_job_wait_complete",
-        "jobName": "medopl-service-smoke-psr-20260617-001",
+        "jobName": "medopl-service-smoke-psr-20260617-002",
         "failure": "timed_out_waiting_for_condition",
         "serviceResults": [],
+        "podScheduled": true,
+        "curlImagePulled": true,
         "cleanup": "job_deleted_by_runner_policy",
         "evidencePaths": [
-          ".runtime/package-d-service-reachability/psr-20260617-001/readonly-service-reachability-redacted.json",
-          ".runtime/package-d-service-reachability/psr-20260617-001/smoke-job-manifest-redacted.json"
+          ".runtime/package-d-service-reachability/psr-20260617-002/readonly-service-reachability-redacted.json",
+          ".runtime/package-d-service-reachability/psr-20260617-002/diagnostics-redacted.json",
+          ".runtime/package-d-service-reachability/psr-20260617-002/smoke-job-manifest-redacted.json"
         ],
-        "missingBeforeThisChange": "wait failure path lacked enough redacted Job/Pod/Event/log diagnostics to determine timeout root cause"
+        "missingBeforeThisChange": "diagnostics confirmed scheduling and image pull but lacked enough redacted message/reason detail to classify securityContext, command/args, DNS/network, endpoint hang or service response failure"
       },
       "diagnosticsContract": {
-        "status": "local_contract_landed_wait_failure_diagnostics_required",
+        "status": "local_contract_landed_failfast_wait_failure_diagnostics_required",
         "runner": "tests/support/cloud-prework/package-d-service-reachability-runner.js",
         "diagnosticsEvidencePath": ".runtime/package-d-service-reachability/<runid>/diagnostics-redacted.json",
+        "curlFailFast": [
+          "--connect-timeout",
+          "--max-time",
+          "--fail-with-body",
+          "structured service/url/http_code/exit_code/total_time/error_class output"
+        ],
         "collectsBeforeCleanup": [
           "Job get JSON summary",
           "Job describe redacted summary",
           "Pod list by job-name summary",
-          "Pod phase, nodeName and hostIP",
-          "containerStatuses waiting.reason, terminated.reason and exitCode",
+          "Pod phase, reason, message summary, nodeName and hostIP",
+          "containerStatuses name, image, ready, restartCount, state and lastState",
+          "waiting.reason/message, running.startedAt, terminated.reason/message/exitCode/startedAt/finishedAt",
           "image pull status class",
-          "Job and Pod Events redacted summaries",
-          "each allowlisted curl container log as HTTP/body/error classes only"
+          "Job and Pod Events type/reason/message/count/timestamps redacted summaries",
+          "each allowlisted curl container log as HTTP/body/error/timing classes or log-unavailable reason"
         ],
         "cleanupPolicy": "delete-always-after-log-collection",
         "forbidden": [
@@ -5532,8 +5542,9 @@
         "secret or kubeconfig output"
       ],
       "evidencePaths": {
-        "failedReachabilityEvidence": ".runtime/package-d-service-reachability/psr-20260617-001/readonly-service-reachability-redacted.json",
-        "failedReachabilityManifestEvidence": ".runtime/package-d-service-reachability/psr-20260617-001/smoke-job-manifest-redacted.json",
+        "failedReachabilityEvidence": ".runtime/package-d-service-reachability/psr-20260617-002/readonly-service-reachability-redacted.json",
+        "failedReachabilityDiagnosticsEvidence": ".runtime/package-d-service-reachability/psr-20260617-002/diagnostics-redacted.json",
+        "failedReachabilityManifestEvidence": ".runtime/package-d-service-reachability/psr-20260617-002/smoke-job-manifest-redacted.json",
         "futureReachabilityEvidence": ".runtime/package-d-service-reachability/<runid>/readonly-service-reachability-redacted.json",
         "futureReachabilityManifestEvidence": ".runtime/package-d-service-reachability/<runid>/smoke-job-manifest-redacted.json",
         "futureWaitFailureDiagnosticsEvidence": ".runtime/package-d-service-reachability/<runid>/diagnostics-redacted.json",
@@ -5560,7 +5571,7 @@
     }
   },
   "readinessGaps": [
-    "authorized readonly service reachability rerun evidence for deployed Package D services through repo-native runner with wait-failure diagnostics",
+    "authorized readonly service reachability rerun evidence for deployed Package D services through repo-native runner with fail-fast curl and stronger wait-failure diagnostics",
     "Portal external access strategy definition before broader readiness progression",
     "post-deploy DB/smoke evidence beyond smoke shape checks",
     "rollback execution evidence if rollback is separately authorized or triggered"
@@ -5568,16 +5579,16 @@
   "nextAuthorizationPrompt": [
     "授权 Package D readonly service reachability / in-cluster HTTP smoke runner 重新执行；不要执行新的 deploy。",
     "前置确认：repo HEAD 等于 origin/recovery/platform-v22-trunk，RUN_TENCENT_DEPLOY_EXECUTION=0，工作区干净，不提交 .runtime、secret、kubeconfig。",
-    "当前事实：run-id psr-20260617-001 创建 medopl-service-smoke-psr-20260617-001 后在 smoke_job_wait_complete 超时，serviceResults 为空，Job 已按策略清理；本地 runner 已补 wait-failure diagnostics。",
-    "允许命令：node tests/support/cloud-prework/package-d-service-reachability-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id psr-20260617-002 --mode in-cluster-http-smoke --authorized 1",
-    "允许读取后续明确授权的 package-d-deploy.env、portal-runtime.env、kubeconfig；允许连接 Kubernetes API；允许只读 get deployment/service/pods/job/events 与 describe job；允许创建 run-scoped medopl-service-smoke-psr-20260617-002 临时 HTTP smoke Job、读取每个 allowlisted curl 容器 logs、写 redacted diagnostics evidence、删除该 Job。",
+    "当前事实：run-id psr-20260617-002 创建 medopl-service-smoke-psr-20260617-002 后在 smoke_job_wait_complete 超时；Pod 已调度且 curlimages/curl 已拉取，但 HTTP endpoint status 未收集到，Job 已按策略清理；本地 runner 已补 fail-fast curl 与更强 wait-failure diagnostics。",
+    "允许命令：node tests/support/cloud-prework/package-d-service-reachability-runner.js --deploy-env /home/dev/.secrets/medopl/v22/package-d-deploy.env --runtime-env /home/dev/.secrets/medopl/v22/portal-runtime.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id psr-20260617-003 --mode in-cluster-http-smoke --authorized 1",
+    "允许读取后续明确授权的 package-d-deploy.env、portal-runtime.env、kubeconfig；允许连接 Kubernetes API；允许只读 get deployment/service/pods/job/events 与 describe job；允许创建 run-scoped medopl-service-smoke-psr-20260617-003 临时 HTTP smoke Job、读取每个 allowlisted curl 容器 logs、写 redacted diagnostics evidence、删除该 Job。",
     "固定 endpoints：portal-frontend:8080/、medopl-go-backend:8080/readyz、opl-web-gateway:8080/healthz、opl-runtime-bridge:8080/healthz，仅限 medopl-platform ClusterIP DNS。",
     "禁止新的 deploy、production apply、rollout、rollback、build/push、Tencent mutation、Package C live、kubectl exec、任意 URL、输出 kubeconfig/token/cert/DB password/TCR secret/Portal admin password；evidence 只写 .runtime 且 redacted。",
-    "预期 evidence：.runtime/package-d-service-reachability/psr-20260617-002/readonly-service-reachability-redacted.json、smoke-job-manifest-redacted.json；若 wait 失败，还必须先写 diagnostics-redacted.json 再 cleanup。"
+    "预期 evidence：.runtime/package-d-service-reachability/psr-20260617-003/readonly-service-reachability-redacted.json、smoke-job-manifest-redacted.json；若 wait 失败，还必须先写 diagnostics-redacted.json 再 cleanup。"
   ],
   "nextLocalCodexPrompt": [
     "按 active truth 做 gap-driven execution，不新增 loop。",
-    "当前 gap：Package D readonly service reachability runner 已补 wait-failure diagnostics；下一步是云端授权用 psr-20260617-002 重新执行 in-cluster HTTP smoke，或在 smoke 通过后定义 Portal external access strategy。",
+    "当前 gap：Package D readonly service reachability runner 已补 fail-fast curl 与更强 wait-failure diagnostics；下一步是云端授权用 psr-20260617-003 重新执行 in-cluster HTTP smoke，或在 smoke 通过后定义 Portal external access strategy。",
     "本地不要读取 secret/kubeconfig，不连接 Kubernetes API，不 kubectl，不 deploy，不 build/push，不 Tencent mutation，不 Package C live。",
     "如果再次进入真实执行边界，只能使用 repo-native runner，不要手写 kubectl。"
   ]

@@ -59,6 +59,40 @@ landed 后的记录还必须补齐：
 
 ## Current Run Summaries
 
+### 2026-06-17 package-d-service-reachability-failfast-diagnostics
+
+Status: `landed candidate / local-gated`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `956d3724233b3306115275e938361ab4bf2fc587`
+
+Model: `gpt-5.4`
+
+Subagents: none
+
+Scope:
+
+- Recorded authorized Package D readonly service reachability rerun `psr-20260617-002`: the run-scoped `Job/medopl-service-smoke-psr-20260617-002` was created, its Pod was scheduled, `curlimages/curl` was pulled, `smoke_job_wait_complete` timed out after `120s`, HTTP endpoint status stayed uncollected and the Job was deleted by policy.
+- Recorded evidence paths: `.runtime/package-d-service-reachability/psr-20260617-002/readonly-service-reachability-redacted.json`, `.runtime/package-d-service-reachability/psr-20260617-002/diagnostics-redacted.json` and `.runtime/package-d-service-reachability/psr-20260617-002/smoke-job-manifest-redacted.json`.
+- Enhanced `tests/support/cloud-prework/package-d-service-reachability-runner.js` so curl smoke is fail-fast with connect/max timeout and fail-with-body semantics, and each endpoint emits redacted service/url/http_code/exit_code/total_time/error_class summary fields.
+- Strengthened wait-failure diagnostics so the runner records redacted Job condition messages, Pod reason/message, nodeName/hostIP, per-container image/ready/restartCount/state/lastState, Events message/count/timestamps, and allowlisted curl logs or log-unavailable reasons before cleanup.
+- Added local/future-authorized coverage in `tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs` proving the stronger diagnostics shape and fail-fast curl manifest.
+- Did not read secret/kubeconfig, connect to Kubernetes API, run kubectl, deploy, rollout, rollback, build/push, execute Tencent mutation or run Package C live.
+
+Can-claim:
+
+- The service reachability runner now has local-gated fail-fast curl and stronger wait-failure diagnostics.
+- Future wait timeouts must write `.runtime/package-d-service-reachability/<runid>/diagnostics-redacted.json` before delete-always-after-log-collection cleanup.
+
+Cannot-claim:
+
+- The in-cluster HTTP smoke passed.
+- Portal external/public access, Ingress, LoadBalancer, DNS, TLS, production billing or rollback execution are complete.
+- This repo session performed new deploy, kubectl, build/push, Tencent mutation, Package C live or secret/kubeconfig reads.
+
+next_cursor: `real-cloud-authorization-boundary`
+
 ### 2026-06-17 package-d-service-reachability-wait-diagnostics
 
 Status: `landed candidate / local-gated`
@@ -6826,6 +6860,53 @@ post_push_verification:
 - `04a8d56282382aa0a49d0f3ceb4dbe73b6fe4b28` is the implementation commit for wait-failure diagnostics and will be reachable from `origin/recovery/platform-v22-trunk` after this closeout push.
 - `npm run verify`: pass before closeout commit.
 - `npm run closeout:check -- --json`: pass before closeout commit.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-17 package-d-service-reachability-failfast-diagnostics-landed
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `956d3724233b3306115275e938361ab4bf2fc587`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Landed Package D service reachability fail-fast curl and stronger wait-failure diagnostics.
+- Commit `14dbbb04377f19b96f38db9859e42b625b0d2192` enhances `tests/support/cloud-prework/package-d-service-reachability-runner.js` so future smoke Jobs use bounded curl execution with `--connect-timeout`, `--max-time` and `--fail-with-body`, then emit service/url/http_code/exit_code/total_time/error_class summaries.
+- The local/future-authorized gate now proves wait failures preserve redacted Job condition messages, Pod reason/message, container state/lastState, Events message/count/timestamps and log-unavailable reasons before cleanup.
+- This closeout did not read secrets/kubeconfig, connect to Kubernetes API, run kubectl, deploy, rollout, rollback, build/push, execute Tencent mutation or run Package C live.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs`: pass before closeout commit.
+- `npm run verify`: expected to pass after this closeout is pushed because the closeout gate requires landed commit `14dbbb04377f19b96f38db9859e42b625b0d2192` to be reachable from `origin/recovery/platform-v22-trunk`.
+- `npm run closeout:check -- --json`: expected to pass after this closeout is pushed for the same trunk-reachability reason.
+
+Can-claim:
+
+- Package D service reachability runner has local-gated fail-fast curl and stronger wait-failure diagnostics.
+- Next cloud rerun should use `psr-20260617-003` through the repo-native runner.
+
+Cannot-claim:
+
+- In-cluster HTTP smoke has passed.
+- Portal external/public access, Ingress, LoadBalancer, DNS, TLS, production billing or rollback execution are complete.
+
+landed_commit: `14dbbb04377f19b96f38db9859e42b625b0d2192`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `14dbbb04377f19b96f38db9859e42b625b0d2192` is the implementation commit for fail-fast service smoke diagnostics and must be reachable from `origin/recovery/platform-v22-trunk` after this closeout push.
+- `npm run verify`: run after push.
+- `npm run closeout:check -- --json`: run after push.
 
 post_merge_closeout: `completed`
 
