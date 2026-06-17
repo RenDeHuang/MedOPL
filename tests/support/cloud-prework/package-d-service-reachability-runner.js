@@ -249,6 +249,32 @@ function plannedCommands({ smokeJobName }) {
   ];
 }
 
+function diagnosticsBaseCommands({ smokeJobName }) {
+  return [
+    { name: "diagnostic_job_get", args: ["kubectl", "get", "job", smokeJobName, "-n", FIXED_NAMESPACE, "-o", "json"], kind: "smoke_job_diagnostics_job_get" },
+    { name: "diagnostic_job_describe", args: ["kubectl", "describe", "job", smokeJobName, "-n", FIXED_NAMESPACE], kind: "smoke_job_diagnostics_job_describe" },
+    { name: "diagnostic_pods_get", args: ["kubectl", "get", "pods", "-n", FIXED_NAMESPACE, "-l", `job-name=${smokeJobName}`, "-o", "json"], kind: "smoke_job_diagnostics_pods_get" },
+    { name: "diagnostic_job_events", args: ["kubectl", "get", "events", "-n", FIXED_NAMESPACE, "--field-selector", `involvedObject.name=${smokeJobName}`, "-o", "json"], kind: "smoke_job_diagnostics_job_events" },
+    ...SERVICES.map((service) => ({
+      name: `diagnostic_logs_${service.name}`,
+      args: ["kubectl", "logs", `job/${smokeJobName}`, "-n", FIXED_NAMESPACE, "-c", service.containerName],
+      kind: "smoke_job_logs",
+      service: service.name,
+      endpoint: endpointForService(service),
+    })),
+  ];
+}
+
+function diagnosticPodEventCommand({ smokeJobName, podName }) {
+  if (!podName.startsWith(`${smokeJobName}-`)) throw new Error("package_d_service_reachability_pod_event_scope_mismatch");
+  return {
+    name: `diagnostic_pod_events_${podName}`,
+    args: ["kubectl", "get", "events", "-n", FIXED_NAMESPACE, "--field-selector", `involvedObject.name=${podName}`, "-o", "json"],
+    kind: "smoke_job_diagnostics_pod_events",
+    podName,
+  };
+}
+
 function assertKubectlCommandAllowed(command = {}, smokeJobName = "") {
   const args = command.args || [];
   const joined = ` ${args.join(" ")} `;
@@ -302,6 +328,33 @@ function assertKubectlCommandAllowed(command = {}, smokeJobName = "") {
       throw new Error("package_d_service_reachability_logs_scope_mismatch");
     }
     if (!expectedContainers.has(args[args.indexOf("-c") + 1])) throw new Error("package_d_service_reachability_logs_container_not_allowlisted");
+    return;
+  }
+  if (command.kind === "smoke_job_diagnostics_job_get") {
+    const expected = ["kubectl", "get", "job", smokeJobName, "-n", FIXED_NAMESPACE, "-o", "json"];
+    if (JSON.stringify(args) !== JSON.stringify(expected)) throw new Error("package_d_service_reachability_diagnostic_job_get_scope_mismatch");
+    return;
+  }
+  if (command.kind === "smoke_job_diagnostics_job_describe") {
+    const expected = ["kubectl", "describe", "job", smokeJobName, "-n", FIXED_NAMESPACE];
+    if (JSON.stringify(args) !== JSON.stringify(expected)) throw new Error("package_d_service_reachability_diagnostic_job_describe_scope_mismatch");
+    return;
+  }
+  if (command.kind === "smoke_job_diagnostics_pods_get") {
+    const expected = ["kubectl", "get", "pods", "-n", FIXED_NAMESPACE, "-l", `job-name=${smokeJobName}`, "-o", "json"];
+    if (JSON.stringify(args) !== JSON.stringify(expected)) throw new Error("package_d_service_reachability_diagnostic_pods_get_scope_mismatch");
+    return;
+  }
+  if (command.kind === "smoke_job_diagnostics_job_events") {
+    const expected = ["kubectl", "get", "events", "-n", FIXED_NAMESPACE, "--field-selector", `involvedObject.name=${smokeJobName}`, "-o", "json"];
+    if (JSON.stringify(args) !== JSON.stringify(expected)) throw new Error("package_d_service_reachability_diagnostic_job_events_scope_mismatch");
+    return;
+  }
+  if (command.kind === "smoke_job_diagnostics_pod_events") {
+    const podName = command.podName || "";
+    if (!podName.startsWith(`${smokeJobName}-`)) throw new Error("package_d_service_reachability_diagnostic_pod_events_scope_mismatch");
+    const expected = ["kubectl", "get", "events", "-n", FIXED_NAMESPACE, "--field-selector", `involvedObject.name=${podName}`, "-o", "json"];
+    if (JSON.stringify(args) !== JSON.stringify(expected)) throw new Error("package_d_service_reachability_diagnostic_pod_events_scope_mismatch");
     return;
   }
   if (command.kind === "smoke_job_cleanup") {
@@ -375,6 +428,75 @@ function bodySummaryClass(stdout = "") {
   return body ? "present_redacted" : "empty";
 }
 
+function parseJson(stdout = "", fallback = {}) {
+  try {
+    return JSON.parse(stdout);
+  } catch {
+    return fallback;
+  }
+}
+
+function summarizeJobGet(stdout = "") {
+  const job = parseJson(stdout);
+  const status = job.status || {};
+  return {
+    name: job.metadata?.name || "",
+    namespace: job.metadata?.namespace || "",
+    status: {
+      active: Number(status.active || 0),
+      succeeded: Number(status.succeeded || 0),
+      failed: Number(status.failed || 0),
+      conditions: (status.conditions || []).map((condition) => ({
+        type: condition.type || "",
+        status: condition.status || "",
+        reason: condition.reason || "",
+        messageClass: condition.message ? "present_redacted" : "empty",
+      })),
+    },
+  };
+}
+
+function summarizeEvents(stdout = "") {
+  const events = parseJson(stdout, { items: [] });
+  return {
+    items: (events.items || []).map((event) => ({
+      type: event.type || "",
+      reason: event.reason || "",
+      involvedObjectKind: event.involvedObject?.kind || "",
+      involvedObjectName: event.involvedObject?.name || "",
+      messageClass: event.message ? "present_redacted" : "empty",
+    })),
+  };
+}
+
+function imagePullStatusForContainer(status = {}) {
+  const reason = status.state?.waiting?.reason || status.lastState?.waiting?.reason || "";
+  if (["ImagePullBackOff", "ErrImagePull", "InvalidImageName"].includes(reason)) return reason;
+  return reason ? "not_image_pull_related" : "";
+}
+
+function summarizePods(stdout = "") {
+  const pods = parseJson(stdout, { items: [] });
+  return {
+    items: (pods.items || []).map((pod) => ({
+      name: pod.metadata?.name || "",
+      namespace: pod.metadata?.namespace || "",
+      phase: pod.status?.phase || "",
+      nodeName: pod.status?.nodeName || "",
+      hostIP: pod.status?.hostIP || "",
+      containerStatuses: (pod.status?.containerStatuses || []).map((status) => ({
+        name: status.name || "",
+        ready: status.ready === true,
+        restartCount: Number(status.restartCount || 0),
+        waitingReason: status.state?.waiting?.reason || "",
+        terminatedReason: status.state?.terminated?.reason || "",
+        exitCode: Number.isInteger(status.state?.terminated?.exitCode) ? status.state.terminated.exitCode : null,
+        imagePullStatus: imagePullStatusForContainer(status),
+      })),
+    })),
+  };
+}
+
 async function writeEvidence({ evidenceDir, filename, payload }) {
   await mkdir(evidenceDir, { recursive: true });
   const target = path.join(evidenceDir, filename);
@@ -405,6 +527,82 @@ function assertNoPlaintextEvidence(payload = {}) {
   const audit = redactionAudit(JSON.stringify(payload));
   if (Object.values(audit).some(Boolean)) throw new Error("package_d_service_reachability_redaction_audit_failed");
   return audit;
+}
+
+async function collectWaitFailureDiagnostics({
+  plan,
+  kubectlExecutor,
+  kubeconfigPath,
+  scopedEvidenceDir,
+  commandRecords,
+  failedStep,
+}) {
+  const smokeJobName = plan.smokeJob.name;
+  const commands = diagnosticsBaseCommands({ smokeJobName }).map((command) => {
+    assertKubectlCommandAllowed(command, smokeJobName);
+    return command;
+  });
+  const diagnosticsResults = new Map();
+  for (const command of commands) {
+    const result = await kubectlExecutor({ args: command.args, stdin: "", env: { [KUBE_ENV_NAME]: kubeconfigPath } });
+    commandRecords.push(summarizeKubectlResult(command, result));
+    diagnosticsResults.set(command.name, result);
+  }
+
+  const pods = summarizePods(diagnosticsResults.get("diagnostic_pods_get")?.stdout || "");
+  const podEvents = [];
+  for (const pod of pods.items) {
+    const podEventCommand = diagnosticPodEventCommand({ smokeJobName, podName: pod.name });
+    assertKubectlCommandAllowed(podEventCommand, smokeJobName);
+    const result = await kubectlExecutor({ args: podEventCommand.args, stdin: "", env: { [KUBE_ENV_NAME]: kubeconfigPath } });
+    commandRecords.push(summarizeKubectlResult(podEventCommand, result));
+    podEvents.push({
+      podName: pod.name,
+      ...summarizeEvents(result.stdout || ""),
+    });
+  }
+
+  const diagnostics = {
+    ok: true,
+    contract: "package_d_service_reachability_wait_failure_diagnostics",
+    runId: plan.runId,
+    failedStep,
+    target: plan.target,
+    job: {
+      name: smokeJobName,
+      namespace: FIXED_NAMESPACE,
+      get: summarizeJobGet(diagnosticsResults.get("diagnostic_job_get")?.stdout || ""),
+      describe: summarizeKubectlResult(
+        { name: "diagnostic_job_describe", args: ["kubectl", "describe", "job", smokeJobName, "-n", FIXED_NAMESPACE], kind: "smoke_job_diagnostics_job_describe" },
+        diagnosticsResults.get("diagnostic_job_describe") || {},
+      ),
+    },
+    pods,
+    events: {
+      job: summarizeEvents(diagnosticsResults.get("diagnostic_job_events")?.stdout || ""),
+      pods: podEvents,
+    },
+    logs: SERVICES.map((service) => {
+      const result = diagnosticsResults.get(`diagnostic_logs_${service.name}`) || {};
+      return {
+        service: service.name,
+        containerName: service.containerName,
+        httpStatus: parseHttpStatus(result.stdout || ""),
+        bodySummaryClass: bodySummaryClass(result.stdout || ""),
+        stdoutClass: result.stdout ? "present_redacted" : "empty",
+        stderrClass: result.stderr ? "present_redacted" : "empty",
+        stderrSummary: redactCommandOutput(result.stderr || "").slice(0, 240),
+      };
+    }),
+    redactionAudit: {},
+  };
+  diagnostics.redactionAudit = assertNoPlaintextEvidence(diagnostics);
+  const diagnosticsPath = await writeEvidence({
+    evidenceDir: scopedEvidenceDir,
+    filename: "diagnostics-redacted.json",
+    payload: diagnostics,
+  });
+  return { diagnosticsPath, diagnostics };
 }
 
 export async function buildPackageDServiceReachabilityPlan({
@@ -470,6 +668,7 @@ export async function buildPackageDServiceReachabilityPlan({
       sink: ".runtime",
       path: path.join(scopedEvidenceDir, "readonly-service-reachability-redacted.json"),
       smokeJobManifestPath: path.join(scopedEvidenceDir, "smoke-job-manifest-redacted.json"),
+      diagnosticsPath: path.join(scopedEvidenceDir, "diagnostics-redacted.json"),
     },
     boundary: {
       runTencentDeployExecution: deployEnv.RUN_TENCENT_DEPLOY_EXECUTION,
@@ -524,6 +723,7 @@ export async function runPackageDServiceReachabilitySmoke({
   let smokeJob = "not_created";
   let cleanup = "not_attempted";
   let firstFailure = "";
+  let diagnosticsPath = "";
 
   for (const command of plan.commands) {
     const stdin = command.kind === "smoke_job_create" ? manifestStdin : "";
@@ -559,6 +759,17 @@ export async function runPackageDServiceReachabilitySmoke({
     if (firstFailure && command.kind !== "smoke_job_cleanup") {
       const shouldContinueToCleanup = smokeJob === "created" && command.kind !== "smoke_job_cleanup";
       if (!shouldContinueToCleanup) break;
+      if (command.kind === "smoke_job_observe") {
+        const diagnosticsResult = await collectWaitFailureDiagnostics({
+          plan,
+          kubectlExecutor,
+          kubeconfigPath,
+          scopedEvidenceDir,
+          commandRecords,
+          failedStep: command.name,
+        });
+        diagnosticsPath = diagnosticsResult.diagnosticsPath;
+      }
       const cleanupCommand = plan.commands.find((item) => item.kind === "smoke_job_cleanup");
       if (!cleanupCommand || command === cleanupCommand) break;
       const cleanupResult = await kubectlExecutor({ args: cleanupCommand.args, stdin: "", env: { [KUBE_ENV_NAME]: kubeconfigPath } });
@@ -588,6 +799,10 @@ export async function runPackageDServiceReachabilitySmoke({
     cleanupPolicy: plan.cleanupPolicy,
     serviceResults,
     failedStep: firstFailure,
+    diagnostics: {
+      collected: Boolean(diagnosticsPath),
+      path: diagnosticsPath,
+    },
     realExecutionReady: false,
   };
   const evidence = {

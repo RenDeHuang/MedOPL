@@ -16,7 +16,8 @@ import {
 
 const kubeEnvName = ["KUBE", "CONFIG"].join("");
 const runnerImageRef = "uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-fake";
-const reachabilityRunId = "pdrun-20260617-001";
+const reachabilityRunId = "psr-20260617-001";
+const reachabilitySmokeJobName = `medopl-service-smoke-${reachabilityRunId}`;
 const serviceReachabilityEndpoints = Object.freeze([
   "http://portal-frontend.medopl-platform.svc.cluster.local:8080/",
   "http://medopl-go-backend.medopl-platform.svc.cluster.local:8080/readyz",
@@ -131,7 +132,7 @@ function fakeServiceReachabilityKubectlExecutor(commandLog, { failWait = false }
       assert.deepEqual(args, ["kubectl", "create", "-f", "-"], "reachability_smoke_job_create_must_use_stdin_manifest");
       const manifest = JSON.parse(stdin);
       assert.equal(manifest.kind, "Job", "reachability_smoke_manifest_must_be_job");
-      assert.equal(manifest.metadata.name, "medopl-service-smoke-pdrun-20260617-001", "reachability_smoke_job_name_must_be_run_scoped");
+      assert.equal(manifest.metadata.name, reachabilitySmokeJobName, "reachability_smoke_job_name_must_be_run_scoped");
       assert.equal(manifest.metadata.namespace, "medopl-platform", "reachability_smoke_job_namespace");
       assert.deepEqual(
         manifest.spec.template.spec.nodeSelector,
@@ -149,7 +150,7 @@ function fakeServiceReachabilityKubectlExecutor(commandLog, { failWait = false }
         "kubectl",
         "delete",
         "job",
-        "medopl-service-smoke-pdrun-20260617-001",
+        reachabilitySmokeJobName,
         "-n",
         "medopl-platform",
         "--ignore-not-found=true",
@@ -180,15 +181,109 @@ function fakeServiceReachabilityKubectlExecutor(commandLog, { failWait = false }
         stderr: "",
       };
     }
-    if (args.includes("pods")) return { status: 0, stdout: JSON.stringify({ items: [] }), stderr: "" };
+    if (args.includes("pods") && !args.includes(`job-name=${reachabilitySmokeJobName}`)) {
+      return { status: 0, stdout: JSON.stringify({ items: [] }), stderr: "" };
+    }
     if (args.includes("wait")) {
       if (failWait) return { status: 1, stdout: "", stderr: "timed out waiting for the condition" };
-      return { status: 0, stdout: "job.batch/medopl-service-smoke-pdrun-20260617-001 condition met\n", stderr: "" };
+      return { status: 0, stdout: `job.batch/${reachabilitySmokeJobName} condition met\n`, stderr: "" };
     }
     if (args.includes("logs")) {
       const containerName = args[args.indexOf("-c") + 1];
       assert.notEqual(serviceReachabilityContainers.indexOf(containerName), -1, "logs_must_target_allowlisted_smoke_container");
+      if (failWait) {
+        return { status: 1, stdout: "curl diagnostic body must be redacted\nHTTP_STATUS:000\n", stderr: "container waiting diagnostic-marker" };
+      }
       return { status: 0, stdout: "portal-secret-like-body\nHTTP_STATUS:200\n", stderr: "" };
+    }
+    if (args.join(" ") === `kubectl get job ${reachabilitySmokeJobName} -n medopl-platform -o json`) {
+      return {
+        status: 0,
+        stdout: JSON.stringify({
+          metadata: { name: reachabilitySmokeJobName, namespace: "medopl-platform" },
+          status: {
+            active: 1,
+            succeeded: 0,
+            failed: 0,
+            conditions: [{ type: "Complete", status: "False", reason: "DeadlineExceeded", message: "timed out diagnostic-marker" }],
+          },
+        }),
+        stderr: "",
+      };
+    }
+    if (args.join(" ") === `kubectl describe job ${reachabilitySmokeJobName} -n medopl-platform`) {
+      return {
+        status: 0,
+        stdout: [
+          `Name: ${reachabilitySmokeJobName}`,
+          "Namespace: medopl-platform",
+          "Pods Statuses: 0 Active / 0 Succeeded / 1 Failed",
+          "Events:",
+          "  Warning Failed diagnostic-marker",
+          "",
+        ].join("\n"),
+        stderr: "",
+      };
+    }
+    if (args.join(" ") === `kubectl get pods -n medopl-platform -l job-name=${reachabilitySmokeJobName} -o json`) {
+      return {
+        status: 0,
+        stdout: JSON.stringify({
+          items: [{
+            metadata: { name: `${reachabilitySmokeJobName}-abcde`, namespace: "medopl-platform" },
+            status: {
+              phase: "Pending",
+              nodeName: "node-10-66-0-42",
+              hostIP: "10.66.0.42",
+              containerStatuses: [
+                {
+                  name: "smoke-portal-frontend",
+                  image: "curlimages/curl:8.8.0",
+                  ready: false,
+                  restartCount: 0,
+                  state: { waiting: { reason: "ImagePullBackOff", message: "pull backoff diagnostic-marker" } },
+                },
+                {
+                  name: "smoke-medopl-go-backend",
+                  image: "curlimages/curl:8.8.0",
+                  ready: false,
+                  restartCount: 1,
+                  state: { terminated: { reason: "Error", exitCode: 7, message: "curl failed diagnostic-marker" } },
+                },
+              ],
+            },
+          }],
+        }),
+        stderr: "",
+      };
+    }
+    if (args.join(" ") === `kubectl get events -n medopl-platform --field-selector involvedObject.name=${reachabilitySmokeJobName} -o json`) {
+      return {
+        status: 0,
+        stdout: JSON.stringify({
+          items: [{
+            type: "Normal",
+            reason: "SuccessfulCreate",
+            involvedObject: { kind: "Job", name: reachabilitySmokeJobName },
+            message: "Created pod diagnostic-marker",
+          }],
+        }),
+        stderr: "",
+      };
+    }
+    if (args.join(" ") === `kubectl get events -n medopl-platform --field-selector involvedObject.name=${reachabilitySmokeJobName}-abcde -o json`) {
+      return {
+        status: 0,
+        stdout: JSON.stringify({
+          items: [{
+            type: "Warning",
+            reason: "Failed",
+            involvedObject: { kind: "Pod", name: `${reachabilitySmokeJobName}-abcde` },
+            message: "Failed to pull image diagnostic-marker",
+          }],
+        }),
+        stderr: "",
+      };
     }
     return { status: 0, stdout: "ok\n", stderr: "" };
   };
@@ -515,7 +610,7 @@ try {
   assert.equal(reachabilityPlan.target.clusterId, "cls-fi097sy4", "reachability_cluster_fixed");
   assert.equal(reachabilityPlan.target.namespace, "medopl-platform", "reachability_namespace_fixed");
   assert.equal(reachabilityPlan.target.platformNodePoolId, "np-6l4nkdto", "reachability_runner_pool_fixed");
-  assert.equal(reachabilityPlan.smokeJob.name, "medopl-service-smoke-pdrun-20260617-001", "reachability_smoke_job_name_run_scoped");
+  assert.equal(reachabilityPlan.smokeJob.name, reachabilitySmokeJobName, "reachability_smoke_job_name_run_scoped");
   assert.equal(reachabilityPlan.smokeJob.cleanupPolicy, "delete-always-after-log-collection", "reachability_cleanup_policy_required");
   assert.deepEqual(reachabilityPlan.endpoints.map((endpoint) => endpoint.url), serviceReachabilityEndpoints, "reachability_service_endpoints_must_be_fixed");
   assert.equal(reachabilityPlan.boundary.runTencentDeployExecution, "0", "reachability_run_gate_must_stay_zero");
@@ -610,10 +705,38 @@ try {
     "reachability_failure_after_job_create_must_fail_closed",
   );
   assert.equal(
-    reachabilityFailureCommandLog.some((entry) => entry.args.join(" ") === "kubectl delete job medopl-service-smoke-pdrun-20260617-001 -n medopl-platform --ignore-not-found=true --wait=false"),
+    reachabilityFailureCommandLog.some((entry) => entry.args.join(" ") === `kubectl delete job ${reachabilitySmokeJobName} -n medopl-platform --ignore-not-found=true --wait=false`),
     true,
     "reachability_failure_after_job_create_must_cleanup_unique_smoke_job",
   );
+  const diagnosticsPath = path.join(evidenceDir, reachabilityRunId, "diagnostics-redacted.json");
+  const diagnostics = JSON.parse(await readFile(diagnosticsPath, "utf8"));
+  assert.equal(diagnostics.contract, "package_d_service_reachability_wait_failure_diagnostics", "diagnostics_contract");
+  assert.equal(diagnostics.failedStep, "smoke_job_wait_complete", "diagnostics_failed_step");
+  assert.equal(diagnostics.job.name, reachabilitySmokeJobName, "diagnostics_job_name");
+  assert.equal(diagnostics.job.get.status.active, 1, "diagnostics_job_get_must_summarize_status");
+  assert.equal(diagnostics.job.describe.stdoutClass, "present_redacted", "diagnostics_job_describe_must_be_summarized");
+  assert.equal(diagnostics.pods.items[0].phase, "Pending", "diagnostics_pod_phase");
+  assert.equal(diagnostics.pods.items[0].nodeName, "node-10-66-0-42", "diagnostics_node_name");
+  assert.equal(diagnostics.pods.items[0].hostIP, "10.66.0.42", "diagnostics_host_ip");
+  assert.equal(diagnostics.pods.items[0].containerStatuses[0].waitingReason, "ImagePullBackOff", "diagnostics_waiting_reason");
+  assert.equal(diagnostics.pods.items[0].containerStatuses[0].imagePullStatus, "ImagePullBackOff", "diagnostics_image_pull_status");
+  assert.equal(diagnostics.pods.items[0].containerStatuses[1].terminatedReason, "Error", "diagnostics_terminated_reason");
+  assert.equal(diagnostics.pods.items[0].containerStatuses[1].exitCode, 7, "diagnostics_exit_code");
+  assert.equal(diagnostics.events.job.items[0].reason, "SuccessfulCreate", "diagnostics_job_events");
+  assert.equal(diagnostics.events.pods[0].items[0].reason, "Failed", "diagnostics_pod_events");
+  assert.equal(diagnostics.logs.length, serviceReachabilityContainers.length, "diagnostics_must_attempt_each_curl_container_log");
+  assert.equal(diagnostics.logs.every((entry) => entry.bodySummaryClass === "present_redacted"), true, "diagnostics_logs_must_summarize_body");
+  assert.equal(JSON.stringify(diagnostics).includes("curl diagnostic body must be redacted"), false, "diagnostics_must_not_dump_log_body");
+  assertNoSensitiveText(JSON.stringify(diagnostics), "reachability_diagnostics");
+  const diagnosticsIndex = reachabilityFailureCommandLog.findIndex((entry) => entry.args.join(" ") === `kubectl get job ${reachabilitySmokeJobName} -n medopl-platform -o json`);
+  const cleanupIndex = reachabilityFailureCommandLog.findIndex((entry) => entry.args.join(" ") === `kubectl delete job ${reachabilitySmokeJobName} -n medopl-platform --ignore-not-found=true --wait=false`);
+  assert.equal(diagnosticsIndex > -1, true, "reachability_failure_must_collect_diagnostics_before_cleanup");
+  assert.equal(cleanupIndex > diagnosticsIndex, true, "reachability_failure_cleanup_must_run_after_diagnostics");
+  const failureEvidence = JSON.parse(await readFile(path.join(evidenceDir, reachabilityRunId, "readonly-service-reachability-redacted.json"), "utf8"));
+  assert.equal(failureEvidence.diagnostics.collected, true, "failure_evidence_must_record_diagnostics_collection");
+  assert.equal(failureEvidence.diagnostics.path.endsWith("diagnostics-redacted.json"), true, "failure_evidence_must_link_diagnostics_path");
+  assertNoSensitiveText(JSON.stringify(failureEvidence), "reachability_failure_evidence");
 
   console.log(JSON.stringify({
     ok: true,

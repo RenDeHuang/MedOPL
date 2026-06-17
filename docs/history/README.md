@@ -59,6 +59,42 @@ landed 后的记录还必须补齐：
 
 ## Current Run Summaries
 
+### 2026-06-17 package-d-service-reachability-wait-diagnostics
+
+Status: `landed candidate / local-gated`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `1d07b9a569484e45a0dfc5abf4c7d8a9a6a2b9da`
+
+Model: `gpt-5.4`
+
+Subagents: none
+
+Scope:
+
+- Recorded the authorized Package D readonly service reachability run `psr-20260617-001`: the run-scoped `Job/medopl-service-smoke-psr-20260617-001` was created, `smoke_job_wait_complete` timed out, `serviceResults` stayed empty and the Job was deleted by policy.
+- Recorded evidence paths: `.runtime/package-d-service-reachability/psr-20260617-001/readonly-service-reachability-redacted.json` and `.runtime/package-d-service-reachability/psr-20260617-001/smoke-job-manifest-redacted.json`.
+- Enhanced `tests/support/cloud-prework/package-d-service-reachability-runner.js` so wait timeout paths collect redacted Job get/describe, Pod list/status, container waiting/terminated reasons and exitCode, image-pull status class, Events and each allowlisted curl container log summary before cleanup.
+- Added local/future-authorized coverage in `tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs` proving `diagnostics-redacted.json` is written before cleanup and that the diagnostics remain redacted.
+- Synchronized active/delivery/fixture truth so the next cloud run is a repo-native rerun with `psr-20260617-002`, not hand-written kubectl.
+- Did not read secret/kubeconfig, connect to Kubernetes API, run kubectl, deploy, build/push, execute Tencent mutation or run Package C live.
+
+Can-claim:
+
+- The service reachability runner now has a local-gated wait-failure diagnostics path.
+- Future wait timeouts must write `.runtime/package-d-service-reachability/<runid>/diagnostics-redacted.json` before delete-always-after-log-collection cleanup.
+
+Cannot-claim:
+
+- The in-cluster HTTP smoke passed.
+- Portal external/public access, Ingress, LoadBalancer, DNS, TLS, production billing or rollback execution are complete.
+- This repo session performed new deploy, kubectl, build/push, Tencent mutation, Package C live or secret/kubeconfig reads.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+next_recommendation: authorize rerun `psr-20260617-002` through the repo-native service reachability runner.
+
 ### 2026-06-17 package-d-service-reachability-runner
 
 Status: `landed candidate / local-gated`
@@ -6698,6 +6734,51 @@ post_push_verification:
 
 - `npm run verify`: pass.
 - `npm run closeout:check -- --json`: pass.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-17 package-d-service-reachability-runner-landed
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `1664f2e10bd71b179ce9a5bfd8b64bee492b995c`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Landed the repo-native Package D readonly service reachability / in-cluster HTTP smoke runner.
+- Commit `1d07b9a569484e45a0dfc5abf4c7d8a9a6a2b9da` added the single runner command, local/future-authorized gate, active/delivery/history/fixture sync and cloud-future-authorized suite registration.
+- The runner creates only run-scoped `medopl-service-smoke-<runid>` curl Jobs, uses fixed Package D ClusterIP endpoints, redacts evidence and deletes only the smoke Job.
+- This closeout did not read secrets/kubeconfig, connect to Kubernetes API, run kubectl, deploy, build/push, execute Tencent mutation or run Package C live.
+
+Verification:
+
+- `npm run verify`: pass before landing `1d07b9a569484e45a0dfc5abf4c7d8a9a6a2b9da`.
+- `npm run closeout:check -- --json`: pass before landing `1d07b9a569484e45a0dfc5abf4c7d8a9a6a2b9da`.
+
+Can-claim:
+
+- Package D has a repo-native readonly service reachability runner and local/future-authorized gate.
+
+Cannot-claim:
+
+- In-cluster HTTP smoke has passed.
+- External/public user access, Ingress, LoadBalancer, DNS, TLS, production billing or rollback execution are complete.
+
+landed_commit: `1d07b9a569484e45a0dfc5abf4c7d8a9a6a2b9da`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `1d07b9a569484e45a0dfc5abf4c7d8a9a6a2b9da` is reachable from `origin/recovery/platform-v22-trunk`.
+- `npm run verify`: pass before landing the runner commit.
+- `npm run closeout:check -- --json`: pass before landing the runner commit.
 
 post_merge_closeout: `completed`
 
