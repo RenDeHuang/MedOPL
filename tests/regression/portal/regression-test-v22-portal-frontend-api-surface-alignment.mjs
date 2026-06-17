@@ -119,6 +119,14 @@ const unusedAdjudications = {
     status: "future-reserved",
     reason: "Production ResourceBinding ledger commit must fail closed before authorization and is tracked only as typed API shape for Gap 03.",
   },
+  "production-commercial-ledger.ts:planProductionCommercialLedger": {
+    status: "future-reserved",
+    reason: "Production billing / audit / quota ledger planning is Gap 04 contract-only API trace; it stays unmounted until commercial ledger execution receives separate authorization.",
+  },
+  "production-commercial-ledger.ts:commitProductionCommercialLedger": {
+    status: "future-reserved",
+    reason: "Production billing / audit / quota ledger commit must fail closed before authorization and is tracked only as typed API shape for Gap 04.",
+  },
   "server-plans.ts:fetchServerPlans": {
     status: "future-reserved",
     reason: "Server plan catalog remains a lower-level backend surface; current React runtime UI is package-oriented.",

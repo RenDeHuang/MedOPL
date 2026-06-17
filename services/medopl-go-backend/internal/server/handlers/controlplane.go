@@ -86,6 +86,8 @@ func RegisterControlPlaneRoutes(api *gin.RouterGroup, service ControlPlaneServic
 	api.POST("/v22/production/package-c-operation/commit", productionPackageCOperationContractCommit())
 	api.POST("/v22/production/ledger/plan", productionLedgerContractPlan())
 	api.POST("/v22/production/ledger/commit", productionLedgerContractCommit())
+	api.POST("/v22/production/commercial-ledger/plan", productionCommercialLedgerContractPlan())
+	api.POST("/v22/production/commercial-ledger/commit", productionCommercialLedgerContractCommit())
 	api.POST("/v22/users/prepare", prepareUser())
 	api.POST("/v22/users/credit", creditUser())
 	api.POST("/v22/provider-key", bindProviderKey(service))
@@ -340,6 +342,88 @@ func productionLedgerContractPlan() gin.HandlerFunc {
 func productionLedgerContractCommit() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ctx.JSON(http.StatusPreconditionRequired, productionLedgerContractPayload("production_launch_ledger_required"))
+	}
+}
+
+func productionCommercialLedgerContractPayload(errorCode string) gin.H {
+	return gin.H{
+		"ok":             false,
+		"contract":       "production_launch_gap_04_billing_audit_quota_ledger_contract_local_gate",
+		"mode":           "contract-only",
+		"error":          errorCode,
+		"requiredRunner": "tests/support/cloud-prework/production-launch-commercial-ledger-runner.js",
+		"ledgerShape": gin.H{
+			"canonicalParents": "PostgreSQL resource_bindings/cloud_operations",
+			"billingEvents": gin.H{
+				"table":              "billing_events",
+				"uniqueKey":          "billing_event_id",
+				"idempotencyKey":     "idempotency_key",
+				"statusField":        "status",
+				"productionWriteNow": false,
+				"productionReadNow":  false,
+			},
+			"auditEvents": gin.H{
+				"table":              "audit_events",
+				"uniqueKey":          "audit_event_id",
+				"idempotencyKey":     "idempotency_key",
+				"statusField":        "status",
+				"productionWriteNow": false,
+				"productionReadNow":  false,
+			},
+			"quotaLedger": gin.H{
+				"table":              "quota_ledger",
+				"uniqueKey":          "quota_event_id",
+				"idempotencyKey":     "idempotency_key",
+				"decisionField":      "enforcement_decision",
+				"productionWriteNow": false,
+				"productionReadNow":  false,
+			},
+		},
+		"linkage": gin.H{
+			"resourceBindingKey":    "resource_binding_id",
+			"cloudOperationKey":     "cloud_operation_id",
+			"billingAttributionKey": "billing_attribution_id",
+			"workspaceCostScope":    "tenant/account/workspace/resourceBinding/cloudOperation/billingAttribution/serverPlan",
+		},
+		"quotaEnforcementBoundary": gin.H{
+			"quotaTypes":                     []string{"workspace_storage_gb", "cpu_cores", "memory_gb", "max_concurrent_runs"},
+			"futureDecisionValues":           []string{"allow", "deny", "manual_review"},
+			"productionEnforcementNow":       false,
+			"failClosedWhenMissingQuota":     true,
+			"packageCAdmissionDependsOnGate": true,
+		},
+		"idempotency": gin.H{
+			"operationIdRequired":    true,
+			"idempotencyKeyRequired": true,
+			"billingUniqueKey":       "idempotency_key",
+			"auditUniqueKey":         "idempotency_key",
+			"quotaUniqueKey":         "idempotency_key",
+		},
+		"providerBoundary": gin.H{
+			"publicFields":         []string{"provider", "providerKeyRef", "boundStatus"},
+			"rawSecretBackendOnly": true,
+		},
+		"localVsProductionRepository": gin.H{
+			"localRepositoryMode":        "dry-run-memory-shape-only",
+			"futureProductionRepository": "PostgreSQL billing_events/audit_events/quota_ledger",
+			"parentRepository":           "PostgreSQL resource_bindings/cloud_operations",
+			"connectsToPostgresNow":      false,
+		},
+		"externalAccess": gin.H{
+			"status": "blocked_until_multi_tenant_minimum_launch_closure",
+		},
+	}
+}
+
+func productionCommercialLedgerContractPlan() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusPreconditionRequired, productionCommercialLedgerContractPayload("production_launch_commercial_ledger_required"))
+	}
+}
+
+func productionCommercialLedgerContractCommit() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusPreconditionRequired, productionCommercialLedgerContractPayload("production_launch_commercial_ledger_required"))
 	}
 }
 
