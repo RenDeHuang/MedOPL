@@ -7278,3 +7278,50 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-17 production-launch-gap-02-package-c-operation-contract-landed
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `0b3f109d73267661b039184a6139d4086b2f501b`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Landed Production Launch Gap 02 Portal -> Go backend -> Package C operation contract/local gate without reading secret/kubeconfig, connecting to Kubernetes API, running kubectl, deploy/rollout/rollback, build/push, Tencent mutation or Package C live.
+- Added `tests/support/cloud-prework/production-launch-operation-runner.js` as the repo-native single command for contract-only operation evidence: `node tests/support/cloud-prework/production-launch-operation-runner.js --mode contract-local-gate --run-id <runid> --authorized 1`.
+- Added contract-only Portal typed API and fail-closed Go backend routes for `/api/v22/production/package-c-operation/plan` and `/api/v22/production/package-c-operation/commit`.
+- Gap 02 now proves Portal action shape, Go backend operation request shape, Package C runner invocation boundary, ResourceBinding `requested` / `creating` / `ready` state contract, providerKeyRef-only public boundary, idempotency, local RC fallback separation and redacted evidence shape.
+- External access, Ingress, LoadBalancer, HTTPS/domain, production PostgreSQL ledger write/read, Package C live operations, billing, quota and workspace lifecycle remain blocked for later gaps.
+
+Verification:
+
+- `npm run verify`: passed before and after the implementation push.
+- `npm run closeout:check -- --json`: passed before implementation push and is rerun after this closeout sync.
+
+Can-claim:
+
+- Production Launch Gap 02 has a repo-native contract/local gate and redacted evidence shape.
+- The next unique gap is `production-launch-gap-03-resourcebinding-postgresql-ledger-live-write-read-contract`.
+
+Cannot-claim:
+
+- MedOPL formal production launch, public Portal access, Package C live operation, production PostgreSQL ResourceBinding ledger write/read, billing/quota closure or rollback execution are complete.
+- This closeout authorized or executed cloud mutation, kubectl, deploy, build/push, live-test or secret reads.
+
+landed_commit: `b2e44a07b47ed1773d5a90859295fc70853076bd`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `b2e44a07b47ed1773d5a90859295fc70853076bd` remains reachable from `origin/recovery/platform-v22-trunk`.
+- `npm run verify`: run before this post-push closeout sync.
+- `npm run closeout:check -- --json`: run after this post-push closeout sync.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
