@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 first admin / tenant / workspace bootstrap contract is repo-native and local-gated. Production launch Gap 02 Portal -> Go backend -> Package C operation contract is now repo-native and local-gated: `tests/support/cloud-prework/production-launch-operation-runner.js` proves unauthorized runs fail closed, Portal action shape, Go backend operation request shape, Package C runner invocation boundary, ResourceBinding requested/creating/ready state transition contract, providerKeyRef-only boundary, idempotency, local-vs-production operation separation, redacted evidence and external-access block without reading secrets/kubeconfig or executing Kubernetes, deploy, build/push, Tencent mutation or Package C live. MedOPL still is not formally production launched: PostgreSQL ResourceBinding ledger live write/read, billing/audit/quota closure, workspace lifecycle, canary/rollback/evidence and external access remain open. The current unique gap is production-launch-gap-03-resourcebinding-postgresql-ledger-live-write-read-contract before any Package C live execution or Ingress/external access.",
+  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 first admin / tenant / workspace bootstrap contract is repo-native and local-gated. Production launch Gap 02 Portal -> Go backend -> Package C operation contract is repo-native and local-gated. Production launch Gap 03 ResourceBinding / CloudOperation PostgreSQL ledger contract is now repo-native and local-gated: `tests/support/cloud-prework/production-launch-ledger-runner.js` proves unauthorized runs fail closed, ResourceBinding and CloudOperation write/read shape, requested/creating/ready state persistence boundary, operation_id/idempotency uniqueness, providerKeyRef-only boundary, canonical ownership source, local-vs-production PostgreSQL boundary, redacted evidence and external-access block without reading secrets/kubeconfig/DB password or executing Kubernetes, deploy, build/push, Tencent mutation or Package C live. MedOPL still is not formally production launched: billing/audit/quota closure, workspace lifecycle, canary/rollback/evidence and external access remain open. The current unique gap is production-launch-gap-04-billing-audit-quota-ledger-contract before any Package C live execution or Ingress/external access.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -171,7 +171,7 @@
     "gap_id": "real-cloud-authorization-boundary",
     "stage": "S7 real-cloud authorization boundary before readiness",
     "cursor_eligible": false,
-    "problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 first admin / tenant / workspace bootstrap contract is repo-native and local-gated. Production launch Gap 02 Portal -> Go backend -> Package C operation contract is now repo-native and local-gated: `tests/support/cloud-prework/production-launch-operation-runner.js` proves unauthorized runs fail closed, Portal action shape, Go backend operation request shape, Package C runner invocation boundary, ResourceBinding requested/creating/ready state transition contract, providerKeyRef-only boundary, idempotency, local-vs-production operation separation, redacted evidence and external-access block without reading secrets/kubeconfig or executing Kubernetes, deploy, build/push, Tencent mutation or Package C live. MedOPL still is not formally production launched: PostgreSQL ResourceBinding ledger live write/read, billing/audit/quota closure, workspace lifecycle, canary/rollback/evidence and external access remain open. The current unique gap is production-launch-gap-03-resourcebinding-postgresql-ledger-live-write-read-contract before any Package C live execution or Ingress/external access.",
+    "problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 first admin / tenant / workspace bootstrap contract is repo-native and local-gated. Production launch Gap 02 Portal -> Go backend -> Package C operation contract is repo-native and local-gated. Production launch Gap 03 ResourceBinding / CloudOperation PostgreSQL ledger contract is now repo-native and local-gated: `tests/support/cloud-prework/production-launch-ledger-runner.js` proves unauthorized runs fail closed, ResourceBinding and CloudOperation write/read shape, requested/creating/ready state persistence boundary, operation_id/idempotency uniqueness, providerKeyRef-only boundary, canonical ownership source, local-vs-production PostgreSQL boundary, redacted evidence and external-access block without reading secrets/kubeconfig/DB password or executing Kubernetes, deploy, build/push, Tencent mutation or Package C live. MedOPL still is not formally production launched: billing/audit/quota closure, workspace lifecycle, canary/rollback/evidence and external access remain open. The current unique gap is production-launch-gap-04-billing-audit-quota-ledger-contract before any Package C live execution or Ingress/external access.",
     "verification_commands": [
       "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
       "node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs",
@@ -1861,13 +1861,13 @@
       },
       "nextLocalCodexPrompt": [
         "按 active truth 做 gap-driven execution，不新增 loop。",
-        "当前唯一 gap：Production launch Gap 03: ResourceBinding PostgreSQL ledger live write/read contract。",
-        "当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Production launch Gap 01 first admin / tenant / workspace bootstrap contract/local gate 已收口；Gap 02 Portal -> Go backend -> Package C operation contract/local gate 已收口。external access / Ingress / LoadBalancer / HTTPS 仍被阻断到多租户最小上线闭环之后。",
-        "目标：在本地实现/收敛 repo-native ResourceBinding PostgreSQL ledger live write/read contract/local gate，只做 contract/local readiness，不读取 secret，不连接 DB，不执行 Package C live。",
-        "必须覆盖：ResourceBinding / CloudOperation ledger write/read shape、requested/creating/ready 状态持久化边界、operation_id/idempotency 唯一性、providerKeyRef-only boundary、canonical ownership source、redacted evidence shape、local dry-run repository 与 future production PostgreSQL write/read boundary 区分。",
+        "当前唯一 gap：Production launch Gap 04: billing / audit / quota ledger contract。",
+        "当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Production launch Gap 01 first admin / tenant / workspace bootstrap contract/local gate 已收口；Gap 02 Portal -> Go backend -> Package C operation contract/local gate 已收口；Gap 03 ResourceBinding / CloudOperation PostgreSQL ledger write/read contract/local gate 已收口。external access / Ingress / LoadBalancer / HTTPS 仍被阻断到多租户最小上线闭环之后。",
+        "目标：在本地实现/收敛 repo-native billing / audit / quota ledger contract/local gate，只做 contract/local readiness，不读取 secret，不连接 DB，不执行 Package C live。",
+        "必须覆盖：billing ledger shape、audit ledger shape、quota ledger/enforcement boundary、ResourceBinding/CloudOperation linkage、workspace cost attribution、idempotency、providerKeyRef-only boundary、redacted evidence shape、local dry-run repository 与 future production PostgreSQL write/read boundary 区分。",
         "禁止：不读取 secret/kubeconfig/DB password，不连接 Kubernetes API，不连接 PostgreSQL，不执行 kubectl，不 deploy/rollout/rollback，不 build/push，不 Tencent mutation，不 Package C live，不新增 truth source，不新增 loop，不恢复 Node Portal backend，不新增兼容控制面，不进入 Ingress/external access。",
-        "复用现有 Go backend control-plane、ent ResourceBinding/CloudOperation schema、Package C ledger writer/state-machine support、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式。",
-        "验收：新增或更新本地 contract/local gate，证明未授权 fail closed、ledger write/read shape 可追踪、ResourceBinding state shape 正确、idempotency 正确、raw provider key/DB password/token/Tencent secret 不进入 logs/evidence/git、external access 仍 blocked。",
+        "复用现有 Go backend control-plane、billing/audit domain/repository shape、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式。",
+        "验收：新增或更新本地 contract/local gate，证明未授权 fail closed、billing/audit/quota shape 可追踪、ResourceBinding/CloudOperation linkage 正确、idempotency 正确、raw provider key/DB password/token/Tencent secret 不进入 logs/evidence/git、external access 仍 blocked。",
         "同步 docs/active/README.md、docs/delivery/README.md、docs/history/README.md、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
       ],
       "serviceImagesPublishBoundary": {
@@ -2432,7 +2432,7 @@
     },
     "latest_local_evidence": "package-d-combined-in-cluster-preflight-pdrun-20260616-002",
     "production_launch_goal_gap_map": {
-      "status": "goal_gap_map_ready_no_cloud_execution",
+      "status": "gap_03_resourcebinding_postgresql_ledger_contract_local_gated_no_cloud_execution",
       "currentFacts": {
         "packageDPlatformControlPlaneInsideTke": "deployed",
         "inClusterHttpReachability": "preflight-passed",
@@ -2444,7 +2444,13 @@
           ".runtime/package-d-production-deploy/pdrun-20260616-004/rollback-redacted.json",
           ".runtime/package-d-service-reachability/psr-20260617-004/readonly-service-reachability-redacted.json",
           ".runtime/package-d-service-reachability/psr-20260617-004/smoke-job-manifest-redacted.json"
-        ]
+        ],
+        "productionLaunchGap01BootstrapContract": "implemented",
+        "productionLaunchGap01EvidencePath": ".runtime/production-launch-bootstrap/<runid>/bootstrap-contract-redacted.json",
+        "productionLaunchGap02OperationContract": "implemented",
+        "productionLaunchGap02EvidencePath": ".runtime/production-launch-operation/<runid>/operation-contract-redacted.json",
+        "productionLaunchGap03LedgerContract": "implemented",
+        "productionLaunchGap03EvidencePath": ".runtime/production-launch-ledger/<runid>/resourcebinding-ledger-contract-redacted.json"
       },
       "vision": {
         "product": "MedOPL production launch is a stable multi-tenant SaaS managed OPL workbench, not a temporary page trial.",
@@ -2534,9 +2540,9 @@
         {
           "id": "resourcebinding-postgresql-ledger",
           "label": "ResourceBinding PostgreSQL ledger",
-          "status": "contract-only",
+          "status": "implemented",
           "evidence": [
-            "domain/repository/ent schema and gated Postgres sink support exist; authorized Postgres attempt failed closed at connection preflight before DB write"
+            "production-launch-ledger-runner local gate, Portal typed API production-ledger.ts and Go fail-closed /api/v22/production/ledger plan/commit routes prove ResourceBinding / CloudOperation write/read shape without PostgreSQL connection or Package C live execution"
           ],
           "launchBlocking": true
         },
@@ -2647,11 +2653,12 @@
         {
           "phase": 2,
           "name": "Workspace provisioning to Package C live operation",
-          "status": "contract-only",
+          "status": "implemented",
           "requiredEvidence": [
-            "Portal -> Go backend -> Package C request",
-            "ResourceBinding requested/creating/ready states",
-            "tenant node pool lifecycle evidence"
+            "Portal -> Go backend -> Package C request contract local gate",
+            "ResourceBinding requested/creating/ready state contract",
+            "ResourceBinding / CloudOperation PostgreSQL ledger write/read contract local gate",
+            "future tenant node pool lifecycle evidence wired to production workflow"
           ],
           "gaps": [
             "portal-backend-package-c-flow",
@@ -2663,7 +2670,7 @@
         {
           "phase": 3,
           "name": "Commercial ledger and lifecycle closure",
-          "status": "missing",
+          "status": "contract-only",
           "requiredEvidence": [
             "billing ledger",
             "audit ledger",
@@ -2729,7 +2736,7 @@
         {
           "phase": 2,
           "name": "Workspace provisioning to Package C live operation",
-          "status": "contract-only",
+          "status": "implemented",
           "gaps": [
             "portal-backend-package-c-flow",
             "package-c-cloud-operation-state-machine",
@@ -2740,7 +2747,7 @@
         {
           "phase": 3,
           "name": "Commercial ledger and lifecycle closure",
-          "status": "missing",
+          "status": "contract-only",
           "gaps": [
             "billing-ledger",
             "audit-ledger",
@@ -2768,12 +2775,12 @@
         }
       ],
       "nextUniqueGap": {
-        "id": "production-launch-gap-01-auth-tenant-workspace-bootstrap-contract",
-        "title": "Production launch Gap 01: auth / identity / admin bootstrap plus tenant/workspace bootstrap contract",
-        "reason": "Package D is deployed and reachable inside TKE, but formal SaaS launch cannot expose Portal before production identity, first admin, tenant and workspace bootstrap boundaries are repo-native and testable.",
-        "boundary": "local contract and fixture readiness only; no kubeconfig, kubectl, deploy, build/push, Tencent mutation or Package C live",
-        "recommendedEntrypoint": "local Codex implementation of repo-native control-plane bootstrap contract/gate",
-        "evidencePath": ".runtime/package-d-production-launch/<runid>/launch-gap-01-bootstrap-redacted.json"
+        "id": "production-launch-gap-04-billing-audit-quota-ledger-contract",
+        "title": "Production launch Gap 04: billing / audit / quota ledger contract",
+        "reason": "Gap 03 has a repo-native ResourceBinding / CloudOperation PostgreSQL ledger contract/local gate, but formal SaaS launch still needs billing, audit and quota ledger closure before workspace lifecycle, canary/rollback or external access.",
+        "boundary": "local contract and fixture readiness only until separately authorized; no secret/kubeconfig, no PostgreSQL connection, no kubectl, no deploy, no Tencent mutation, no Package C live execution",
+        "recommendedEntrypoint": "local Codex implementation of repo-native billing / audit / quota ledger contract/gate",
+        "evidencePath": ".runtime/production-launch-commercial-ledger/<runid>/commercial-ledger-contract-redacted.json"
       },
       "externalAccessPolicy": {
         "status": "blocked_before_multi_tenant_minimum_launch_closure",
@@ -2786,6 +2793,43 @@
           "LoadBalancer mutation",
           "DNS/TLS mutation",
           "public user access claim"
+        ]
+      },
+      "gap03LedgerContract": {
+        "status": "implemented",
+        "runnerCommand": "node tests/support/cloud-prework/production-launch-ledger-runner.js --mode contract-local-gate --run-id <runid> --authorized 1",
+        "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs",
+        "evidencePath": ".runtime/production-launch-ledger/<runid>/resourcebinding-ledger-contract-redacted.json",
+        "portalTypedApi": "services/portal/frontend/src/api/portal/production-ledger.ts",
+        "goBackendRoutes": [
+          "POST /api/v22/production/ledger/plan",
+          "POST /api/v22/production/ledger/commit"
+        ],
+        "canonicalStore": "PostgreSQL resource_bindings/cloud_operations",
+        "proves": [
+          "unauthorized fail closed",
+          "ResourceBinding ledger write/read shape",
+          "CloudOperation ledger write/read shape",
+          "requested/creating/ready state persistence boundary",
+          "operation_id and idempotency uniqueness",
+          "resource_binding_id and operation_id remain separate ledger keys",
+          "providerKeyRef-only public boundary",
+          "canonical ownership source is postgres_resource_binding_ledger",
+          "local dry-run repository is separated from future production PostgreSQL write/read",
+          "raw provider key, DB password, token and Tencent secret redaction",
+          "external access remains blocked"
+        ],
+        "nonGoals": [
+          "no secret or kubeconfig read",
+          "no Kubernetes API or kubectl",
+          "no PostgreSQL connection",
+          "no deploy/rollout/rollback",
+          "no build/push",
+          "no Tencent mutation",
+          "no Package C live",
+          "no production PostgreSQL ledger write/read",
+          "no Ingress or public access",
+          "no billing/quota/workspace lifecycle implementation"
         ]
       }
     }
@@ -4180,13 +4224,13 @@
       },
       "nextLocalCodexPrompt": [
         "按 active truth 做 gap-driven execution，不新增 loop。",
-        "当前唯一 gap：Production launch Gap 03: ResourceBinding PostgreSQL ledger live write/read contract。",
-        "当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Production launch Gap 01 first admin / tenant / workspace bootstrap contract/local gate 已收口；Gap 02 Portal -> Go backend -> Package C operation contract/local gate 已收口。external access / Ingress / LoadBalancer / HTTPS 仍被阻断到多租户最小上线闭环之后。",
-        "目标：在本地实现/收敛 repo-native ResourceBinding PostgreSQL ledger live write/read contract/local gate，只做 contract/local readiness，不读取 secret，不连接 DB，不执行 Package C live。",
-        "必须覆盖：ResourceBinding / CloudOperation ledger write/read shape、requested/creating/ready 状态持久化边界、operation_id/idempotency 唯一性、providerKeyRef-only boundary、canonical ownership source、redacted evidence shape、local dry-run repository 与 future production PostgreSQL write/read boundary 区分。",
+        "当前唯一 gap：Production launch Gap 04: billing / audit / quota ledger contract。",
+        "当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Production launch Gap 01 first admin / tenant / workspace bootstrap contract/local gate 已收口；Gap 02 Portal -> Go backend -> Package C operation contract/local gate 已收口；Gap 03 ResourceBinding / CloudOperation PostgreSQL ledger write/read contract/local gate 已收口。external access / Ingress / LoadBalancer / HTTPS 仍被阻断到多租户最小上线闭环之后。",
+        "目标：在本地实现/收敛 repo-native billing / audit / quota ledger contract/local gate，只做 contract/local readiness，不读取 secret，不连接 DB，不执行 Package C live。",
+        "必须覆盖：billing ledger shape、audit ledger shape、quota ledger/enforcement boundary、ResourceBinding/CloudOperation linkage、workspace cost attribution、idempotency、providerKeyRef-only boundary、redacted evidence shape、local dry-run repository 与 future production PostgreSQL write/read boundary 区分。",
         "禁止：不读取 secret/kubeconfig/DB password，不连接 Kubernetes API，不连接 PostgreSQL，不执行 kubectl，不 deploy/rollout/rollback，不 build/push，不 Tencent mutation，不 Package C live，不新增 truth source，不新增 loop，不恢复 Node Portal backend，不新增兼容控制面，不进入 Ingress/external access。",
-        "复用现有 Go backend control-plane、ent ResourceBinding/CloudOperation schema、Package C ledger writer/state-machine support、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式。",
-        "验收：新增或更新本地 contract/local gate，证明未授权 fail closed、ledger write/read shape 可追踪、ResourceBinding state shape 正确、idempotency 正确、raw provider key/DB password/token/Tencent secret 不进入 logs/evidence/git、external access 仍 blocked。",
+        "复用现有 Go backend control-plane、billing/audit domain/repository shape、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式。",
+        "验收：新增或更新本地 contract/local gate，证明未授权 fail closed、billing/audit/quota shape 可追踪、ResourceBinding/CloudOperation linkage 正确、idempotency 正确、raw provider key/DB password/token/Tencent secret 不进入 logs/evidence/git、external access 仍 blocked。",
         "同步 docs/active/README.md、docs/delivery/README.md、docs/history/README.md、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
       ],
       "productionDeployPlanDryRun": {
@@ -4559,7 +4603,7 @@
       "Portal external access strategy only after multi-tenant minimum launch closure"
     ],
     "production_launch_goal_gap_map": {
-      "status": "goal_gap_map_ready_no_cloud_execution",
+      "status": "gap_03_resourcebinding_postgresql_ledger_contract_local_gated_no_cloud_execution",
       "currentFacts": {
         "packageDPlatformControlPlaneInsideTke": "deployed",
         "inClusterHttpReachability": "preflight-passed",
@@ -4571,7 +4615,13 @@
           ".runtime/package-d-production-deploy/pdrun-20260616-004/rollback-redacted.json",
           ".runtime/package-d-service-reachability/psr-20260617-004/readonly-service-reachability-redacted.json",
           ".runtime/package-d-service-reachability/psr-20260617-004/smoke-job-manifest-redacted.json"
-        ]
+        ],
+        "productionLaunchGap01BootstrapContract": "implemented",
+        "productionLaunchGap01EvidencePath": ".runtime/production-launch-bootstrap/<runid>/bootstrap-contract-redacted.json",
+        "productionLaunchGap02OperationContract": "implemented",
+        "productionLaunchGap02EvidencePath": ".runtime/production-launch-operation/<runid>/operation-contract-redacted.json",
+        "productionLaunchGap03LedgerContract": "implemented",
+        "productionLaunchGap03EvidencePath": ".runtime/production-launch-ledger/<runid>/resourcebinding-ledger-contract-redacted.json"
       },
       "vision": {
         "product": "MedOPL production launch is a stable multi-tenant SaaS managed OPL workbench, not a temporary page trial.",
@@ -4661,9 +4711,9 @@
         {
           "id": "resourcebinding-postgresql-ledger",
           "label": "ResourceBinding PostgreSQL ledger",
-          "status": "contract-only",
+          "status": "implemented",
           "evidence": [
-            "domain/repository/ent schema and gated Postgres sink support exist; authorized Postgres attempt failed closed at connection preflight before DB write"
+            "production-launch-ledger-runner local gate, Portal typed API production-ledger.ts and Go fail-closed /api/v22/production/ledger plan/commit routes prove ResourceBinding / CloudOperation write/read shape without PostgreSQL connection or Package C live execution"
           ],
           "launchBlocking": true
         },
@@ -4774,11 +4824,12 @@
         {
           "phase": 2,
           "name": "Workspace provisioning to Package C live operation",
-          "status": "contract-only",
+          "status": "implemented",
           "requiredEvidence": [
-            "Portal -> Go backend -> Package C request",
-            "ResourceBinding requested/creating/ready states",
-            "tenant node pool lifecycle evidence"
+            "Portal -> Go backend -> Package C request contract local gate",
+            "ResourceBinding requested/creating/ready state contract",
+            "ResourceBinding / CloudOperation PostgreSQL ledger write/read contract local gate",
+            "future tenant node pool lifecycle evidence wired to production workflow"
           ],
           "gaps": [
             "portal-backend-package-c-flow",
@@ -4790,7 +4841,7 @@
         {
           "phase": 3,
           "name": "Commercial ledger and lifecycle closure",
-          "status": "missing",
+          "status": "contract-only",
           "requiredEvidence": [
             "billing ledger",
             "audit ledger",
@@ -4856,7 +4907,7 @@
         {
           "phase": 2,
           "name": "Workspace provisioning to Package C live operation",
-          "status": "contract-only",
+          "status": "implemented",
           "gaps": [
             "portal-backend-package-c-flow",
             "package-c-cloud-operation-state-machine",
@@ -4867,7 +4918,7 @@
         {
           "phase": 3,
           "name": "Commercial ledger and lifecycle closure",
-          "status": "missing",
+          "status": "contract-only",
           "gaps": [
             "billing-ledger",
             "audit-ledger",
@@ -4895,12 +4946,12 @@
         }
       ],
       "nextUniqueGap": {
-        "id": "production-launch-gap-01-auth-tenant-workspace-bootstrap-contract",
-        "title": "Production launch Gap 01: auth / identity / admin bootstrap plus tenant/workspace bootstrap contract",
-        "reason": "Package D is deployed and reachable inside TKE, but formal SaaS launch cannot expose Portal before production identity, first admin, tenant and workspace bootstrap boundaries are repo-native and testable.",
-        "boundary": "local contract and fixture readiness only; no kubeconfig, kubectl, deploy, build/push, Tencent mutation or Package C live",
-        "recommendedEntrypoint": "local Codex implementation of repo-native control-plane bootstrap contract/gate",
-        "evidencePath": ".runtime/package-d-production-launch/<runid>/launch-gap-01-bootstrap-redacted.json"
+        "id": "production-launch-gap-04-billing-audit-quota-ledger-contract",
+        "title": "Production launch Gap 04: billing / audit / quota ledger contract",
+        "reason": "Gap 03 has a repo-native ResourceBinding / CloudOperation PostgreSQL ledger contract/local gate, but formal SaaS launch still needs billing, audit and quota ledger closure before workspace lifecycle, canary/rollback or external access.",
+        "boundary": "local contract and fixture readiness only until separately authorized; no secret/kubeconfig, no PostgreSQL connection, no kubectl, no deploy, no Tencent mutation, no Package C live execution",
+        "recommendedEntrypoint": "local Codex implementation of repo-native billing / audit / quota ledger contract/gate",
+        "evidencePath": ".runtime/production-launch-commercial-ledger/<runid>/commercial-ledger-contract-redacted.json"
       },
       "externalAccessPolicy": {
         "status": "blocked_before_multi_tenant_minimum_launch_closure",
@@ -4913,6 +4964,43 @@
           "LoadBalancer mutation",
           "DNS/TLS mutation",
           "public user access claim"
+        ]
+      },
+      "gap03LedgerContract": {
+        "status": "implemented",
+        "runnerCommand": "node tests/support/cloud-prework/production-launch-ledger-runner.js --mode contract-local-gate --run-id <runid> --authorized 1",
+        "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs",
+        "evidencePath": ".runtime/production-launch-ledger/<runid>/resourcebinding-ledger-contract-redacted.json",
+        "portalTypedApi": "services/portal/frontend/src/api/portal/production-ledger.ts",
+        "goBackendRoutes": [
+          "POST /api/v22/production/ledger/plan",
+          "POST /api/v22/production/ledger/commit"
+        ],
+        "canonicalStore": "PostgreSQL resource_bindings/cloud_operations",
+        "proves": [
+          "unauthorized fail closed",
+          "ResourceBinding ledger write/read shape",
+          "CloudOperation ledger write/read shape",
+          "requested/creating/ready state persistence boundary",
+          "operation_id and idempotency uniqueness",
+          "resource_binding_id and operation_id remain separate ledger keys",
+          "providerKeyRef-only public boundary",
+          "canonical ownership source is postgres_resource_binding_ledger",
+          "local dry-run repository is separated from future production PostgreSQL write/read",
+          "raw provider key, DB password, token and Tencent secret redaction",
+          "external access remains blocked"
+        ],
+        "nonGoals": [
+          "no secret or kubeconfig read",
+          "no Kubernetes API or kubectl",
+          "no PostgreSQL connection",
+          "no deploy/rollout/rollback",
+          "no build/push",
+          "no Tencent mutation",
+          "no Package C live",
+          "no production PostgreSQL ledger write/read",
+          "no Ingress or public access",
+          "no billing/quota/workspace lifecycle implementation"
         ]
       }
     }
@@ -7095,13 +7183,13 @@
     },
     "nextLocalCodexPrompt": [
       "按 active truth 做 gap-driven execution，不新增 loop。",
-      "当前唯一 gap：Production launch Gap 03: ResourceBinding PostgreSQL ledger live write/read contract。",
-      "当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Production launch Gap 01 first admin / tenant / workspace bootstrap contract/local gate 已收口；Gap 02 Portal -> Go backend -> Package C operation contract/local gate 已收口。external access / Ingress / LoadBalancer / HTTPS 仍被阻断到多租户最小上线闭环之后。",
-      "目标：在本地实现/收敛 repo-native ResourceBinding PostgreSQL ledger live write/read contract/local gate，只做 contract/local readiness，不读取 secret，不连接 DB，不执行 Package C live。",
-      "必须覆盖：ResourceBinding / CloudOperation ledger write/read shape、requested/creating/ready 状态持久化边界、operation_id/idempotency 唯一性、providerKeyRef-only boundary、canonical ownership source、redacted evidence shape、local dry-run repository 与 future production PostgreSQL write/read boundary 区分。",
+      "当前唯一 gap：Production launch Gap 04: billing / audit / quota ledger contract。",
+      "当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Production launch Gap 01 first admin / tenant / workspace bootstrap contract/local gate 已收口；Gap 02 Portal -> Go backend -> Package C operation contract/local gate 已收口；Gap 03 ResourceBinding / CloudOperation PostgreSQL ledger write/read contract/local gate 已收口。external access / Ingress / LoadBalancer / HTTPS 仍被阻断到多租户最小上线闭环之后。",
+      "目标：在本地实现/收敛 repo-native billing / audit / quota ledger contract/local gate，只做 contract/local readiness，不读取 secret，不连接 DB，不执行 Package C live。",
+      "必须覆盖：billing ledger shape、audit ledger shape、quota ledger/enforcement boundary、ResourceBinding/CloudOperation linkage、workspace cost attribution、idempotency、providerKeyRef-only boundary、redacted evidence shape、local dry-run repository 与 future production PostgreSQL write/read boundary 区分。",
       "禁止：不读取 secret/kubeconfig/DB password，不连接 Kubernetes API，不连接 PostgreSQL，不执行 kubectl，不 deploy/rollout/rollback，不 build/push，不 Tencent mutation，不 Package C live，不新增 truth source，不新增 loop，不恢复 Node Portal backend，不新增兼容控制面，不进入 Ingress/external access。",
-      "复用现有 Go backend control-plane、ent ResourceBinding/CloudOperation schema、Package C ledger writer/state-machine support、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式。",
-      "验收：新增或更新本地 contract/local gate，证明未授权 fail closed、ledger write/read shape 可追踪、ResourceBinding state shape 正确、idempotency 正确、raw provider key/DB password/token/Tencent secret 不进入 logs/evidence/git、external access 仍 blocked。",
+      "复用现有 Go backend control-plane、billing/audit domain/repository shape、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式。",
+      "验收：新增或更新本地 contract/local gate，证明未授权 fail closed、billing/audit/quota shape 可追踪、ResourceBinding/CloudOperation linkage 正确、idempotency 正确、raw provider key/DB password/token/Tencent secret 不进入 logs/evidence/git、external access 仍 blocked。",
       "同步 docs/active/README.md、docs/delivery/README.md、docs/history/README.md、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
     ],
     "serviceImagesPublishBoundary": {
@@ -7723,12 +7811,12 @@
     },
     "productionLaunchBoundary": {
       "nextUniqueGap": {
-        "id": "production-launch-gap-03-resourcebinding-postgresql-ledger-live-write-read-contract",
-        "title": "Production launch Gap 03: ResourceBinding PostgreSQL ledger live write/read contract",
-        "reason": "Gap 02 has a repo-native Portal -> Go backend -> Package C operation contract/local gate, but formal SaaS launch still needs the PostgreSQL ResourceBinding / CloudOperation ledger write/read boundary before live Package C execution, billing/audit/quota closure, lifecycle, canary/rollback or external access.",
-        "boundary": "local contract and fixture readiness only until separately authorized; no secret/kubeconfig, no kubectl, no deploy, no Tencent mutation, no Package C live execution",
-        "recommendedEntrypoint": "local Codex implementation of repo-native ResourceBinding PostgreSQL ledger live write/read contract/gate",
-        "evidencePath": ".runtime/production-launch-ledger/<runid>/resourcebinding-ledger-contract-redacted.json"
+        "id": "production-launch-gap-04-billing-audit-quota-ledger-contract",
+        "title": "Production launch Gap 04: billing / audit / quota ledger contract",
+        "reason": "Gap 03 has a repo-native ResourceBinding / CloudOperation PostgreSQL ledger contract/local gate, but formal SaaS launch still needs billing, audit and quota ledger closure before workspace lifecycle, canary/rollback or external access.",
+        "boundary": "local contract and fixture readiness only until separately authorized; no secret/kubeconfig, no PostgreSQL connection, no kubectl, no deploy, no Tencent mutation, no Package C live execution",
+        "recommendedEntrypoint": "local Codex implementation of repo-native billing / audit / quota ledger contract/gate",
+        "evidencePath": ".runtime/production-launch-commercial-ledger/<runid>/commercial-ledger-contract-redacted.json"
       },
       "externalAccessBlockedUntil": "multi_tenant_minimum_launch_closure"
     }
@@ -7742,28 +7830,28 @@
   ],
   "nextAuthorizationPrompt": [
     "按 active truth 做 gap-driven execution，不新增 loop。",
-    "当前唯一 gap：Production launch Gap 03: ResourceBinding PostgreSQL ledger live write/read contract。",
-    "当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Production launch Gap 01 first admin / tenant / workspace bootstrap contract/local gate 已收口；Gap 02 Portal -> Go backend -> Package C operation contract/local gate 已收口。external access / Ingress / LoadBalancer / HTTPS 仍被阻断到多租户最小上线闭环之后。",
-    "目标：在本地实现/收敛 repo-native ResourceBinding PostgreSQL ledger live write/read contract/local gate，只做 contract/local readiness，不读取 secret，不连接 DB，不执行 Package C live。",
-    "必须覆盖：ResourceBinding / CloudOperation ledger write/read shape、requested/creating/ready 状态持久化边界、operation_id/idempotency 唯一性、providerKeyRef-only boundary、canonical ownership source、redacted evidence shape、local dry-run repository 与 future production PostgreSQL write/read boundary 区分。",
+    "当前唯一 gap：Production launch Gap 04: billing / audit / quota ledger contract。",
+    "当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Production launch Gap 01 first admin / tenant / workspace bootstrap contract/local gate 已收口；Gap 02 Portal -> Go backend -> Package C operation contract/local gate 已收口；Gap 03 ResourceBinding / CloudOperation PostgreSQL ledger write/read contract/local gate 已收口。external access / Ingress / LoadBalancer / HTTPS 仍被阻断到多租户最小上线闭环之后。",
+    "目标：在本地实现/收敛 repo-native billing / audit / quota ledger contract/local gate，只做 contract/local readiness，不读取 secret，不连接 DB，不执行 Package C live。",
+    "必须覆盖：billing ledger shape、audit ledger shape、quota ledger/enforcement boundary、ResourceBinding/CloudOperation linkage、workspace cost attribution、idempotency、providerKeyRef-only boundary、redacted evidence shape、local dry-run repository 与 future production PostgreSQL write/read boundary 区分。",
     "禁止：不读取 secret/kubeconfig/DB password，不连接 Kubernetes API，不连接 PostgreSQL，不执行 kubectl，不 deploy/rollout/rollback，不 build/push，不 Tencent mutation，不 Package C live，不新增 truth source，不新增 loop，不恢复 Node Portal backend，不新增兼容控制面，不进入 Ingress/external access。",
-    "复用现有 Go backend control-plane、ent ResourceBinding/CloudOperation schema、Package C ledger writer/state-machine support、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式。",
-    "验收：新增或更新本地 contract/local gate，证明未授权 fail closed、ledger write/read shape 可追踪、ResourceBinding state shape 正确、idempotency 正确、raw provider key/DB password/token/Tencent secret 不进入 logs/evidence/git、external access 仍 blocked。",
+    "复用现有 Go backend control-plane、billing/audit domain/repository shape、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式。",
+    "验收：新增或更新本地 contract/local gate，证明未授权 fail closed、billing/audit/quota shape 可追踪、ResourceBinding/CloudOperation linkage 正确、idempotency 正确、raw provider key/DB password/token/Tencent secret 不进入 logs/evidence/git、external access 仍 blocked。",
     "同步 docs/active/README.md、docs/delivery/README.md、docs/history/README.md、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
   ],
   "nextLocalCodexPrompt": [
     "按 active truth 做 gap-driven execution，不新增 loop。",
-    "当前唯一 gap：Production launch Gap 03: ResourceBinding PostgreSQL ledger live write/read contract。",
-    "当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Production launch Gap 01 first admin / tenant / workspace bootstrap contract/local gate 已收口；Gap 02 Portal -> Go backend -> Package C operation contract/local gate 已收口。external access / Ingress / LoadBalancer / HTTPS 仍被阻断到多租户最小上线闭环之后。",
-    "目标：在本地实现/收敛 repo-native ResourceBinding PostgreSQL ledger live write/read contract/local gate，只做 contract/local readiness，不读取 secret，不连接 DB，不执行 Package C live。",
-    "必须覆盖：ResourceBinding / CloudOperation ledger write/read shape、requested/creating/ready 状态持久化边界、operation_id/idempotency 唯一性、providerKeyRef-only boundary、canonical ownership source、redacted evidence shape、local dry-run repository 与 future production PostgreSQL write/read boundary 区分。",
+    "当前唯一 gap：Production launch Gap 04: billing / audit / quota ledger contract。",
+    "当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Production launch Gap 01 first admin / tenant / workspace bootstrap contract/local gate 已收口；Gap 02 Portal -> Go backend -> Package C operation contract/local gate 已收口；Gap 03 ResourceBinding / CloudOperation PostgreSQL ledger write/read contract/local gate 已收口。external access / Ingress / LoadBalancer / HTTPS 仍被阻断到多租户最小上线闭环之后。",
+    "目标：在本地实现/收敛 repo-native billing / audit / quota ledger contract/local gate，只做 contract/local readiness，不读取 secret，不连接 DB，不执行 Package C live。",
+    "必须覆盖：billing ledger shape、audit ledger shape、quota ledger/enforcement boundary、ResourceBinding/CloudOperation linkage、workspace cost attribution、idempotency、providerKeyRef-only boundary、redacted evidence shape、local dry-run repository 与 future production PostgreSQL write/read boundary 区分。",
     "禁止：不读取 secret/kubeconfig/DB password，不连接 Kubernetes API，不连接 PostgreSQL，不执行 kubectl，不 deploy/rollout/rollback，不 build/push，不 Tencent mutation，不 Package C live，不新增 truth source，不新增 loop，不恢复 Node Portal backend，不新增兼容控制面，不进入 Ingress/external access。",
-    "复用现有 Go backend control-plane、ent ResourceBinding/CloudOperation schema、Package C ledger writer/state-machine support、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式。",
-    "验收：新增或更新本地 contract/local gate，证明未授权 fail closed、ledger write/read shape 可追踪、ResourceBinding state shape 正确、idempotency 正确、raw provider key/DB password/token/Tencent secret 不进入 logs/evidence/git、external access 仍 blocked。",
+    "复用现有 Go backend control-plane、billing/audit domain/repository shape、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式。",
+    "验收：新增或更新本地 contract/local gate，证明未授权 fail closed、billing/audit/quota shape 可追踪、ResourceBinding/CloudOperation linkage 正确、idempotency 正确、raw provider key/DB password/token/Tencent secret 不进入 logs/evidence/git、external access 仍 blocked。",
     "同步 docs/active/README.md、docs/delivery/README.md、docs/history/README.md、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
   ],
   "production_launch_goal_gap_map": {
-    "status": "gap_02_package_c_operation_contract_local_gated_no_cloud_execution",
+    "status": "gap_03_resourcebinding_postgresql_ledger_contract_local_gated_no_cloud_execution",
     "currentFacts": {
       "packageDPlatformControlPlaneInsideTke": "deployed",
       "inClusterHttpReachability": "preflight-passed",
@@ -7779,7 +7867,9 @@
       "productionLaunchGap01BootstrapContract": "implemented",
       "productionLaunchGap01EvidencePath": ".runtime/production-launch-bootstrap/<runid>/bootstrap-contract-redacted.json",
       "productionLaunchGap02OperationContract": "implemented",
-      "productionLaunchGap02EvidencePath": ".runtime/production-launch-operation/<runid>/operation-contract-redacted.json"
+      "productionLaunchGap02EvidencePath": ".runtime/production-launch-operation/<runid>/operation-contract-redacted.json",
+      "productionLaunchGap03LedgerContract": "implemented",
+      "productionLaunchGap03EvidencePath": ".runtime/production-launch-ledger/<runid>/resourcebinding-ledger-contract-redacted.json"
     },
     "vision": {
       "product": "MedOPL production launch is a stable multi-tenant SaaS managed OPL workbench, not a temporary page trial.",
@@ -7869,9 +7959,9 @@
       {
         "id": "resourcebinding-postgresql-ledger",
         "label": "ResourceBinding PostgreSQL ledger",
-        "status": "contract-only",
+        "status": "implemented",
         "evidence": [
-          "domain/repository/ent schema, Package C ledger writer support and Gap 02 requested/creating/ready state contract exist; authorized PostgreSQL live write/read evidence is still missing"
+          "production-launch-ledger-runner local gate, Portal typed API production-ledger.ts and Go fail-closed /api/v22/production/ledger plan/commit routes prove ResourceBinding / CloudOperation write/read shape without PostgreSQL connection or Package C live execution"
         ],
         "launchBlocking": true
       },
@@ -7982,11 +8072,11 @@
       {
         "phase": 2,
         "name": "Workspace provisioning to Package C live operation",
-        "status": "contract-only",
+        "status": "implemented",
         "requiredEvidence": [
           "Portal -> Go backend -> Package C request contract local gate",
           "ResourceBinding requested/creating/ready state contract",
-          "future PostgreSQL ledger write/read evidence",
+          "ResourceBinding / CloudOperation PostgreSQL ledger write/read contract local gate",
           "future tenant node pool lifecycle evidence wired to production workflow"
         ],
         "gaps": [
@@ -7999,7 +8089,7 @@
       {
         "phase": 3,
         "name": "Commercial ledger and lifecycle closure",
-        "status": "missing",
+        "status": "contract-only",
         "requiredEvidence": [
           "billing ledger",
           "audit ledger",
@@ -8065,7 +8155,7 @@
       {
         "phase": 2,
         "name": "Workspace provisioning to Package C live operation",
-        "status": "contract-only",
+        "status": "implemented",
         "gaps": [
           "portal-backend-package-c-flow",
           "package-c-cloud-operation-state-machine",
@@ -8076,7 +8166,7 @@
       {
         "phase": 3,
         "name": "Commercial ledger and lifecycle closure",
-        "status": "missing",
+        "status": "contract-only",
         "gaps": [
           "billing-ledger",
           "audit-ledger",
@@ -8104,12 +8194,12 @@
       }
     ],
     "nextUniqueGap": {
-      "id": "production-launch-gap-03-resourcebinding-postgresql-ledger-live-write-read-contract",
-      "title": "Production launch Gap 03: ResourceBinding PostgreSQL ledger live write/read contract",
-      "reason": "Gap 02 has a repo-native Portal -> Go backend -> Package C operation contract/local gate, but formal SaaS launch still needs the PostgreSQL ResourceBinding / CloudOperation ledger write/read boundary before live Package C execution, billing/audit/quota closure, lifecycle, canary/rollback or external access.",
-      "boundary": "local contract and fixture readiness only until separately authorized; no secret/kubeconfig, no kubectl, no deploy, no Tencent mutation, no Package C live execution",
-      "recommendedEntrypoint": "local Codex implementation of repo-native ResourceBinding PostgreSQL ledger live write/read contract/gate",
-      "evidencePath": ".runtime/production-launch-ledger/<runid>/resourcebinding-ledger-contract-redacted.json"
+      "id": "production-launch-gap-04-billing-audit-quota-ledger-contract",
+      "title": "Production launch Gap 04: billing / audit / quota ledger contract",
+      "reason": "Gap 03 has a repo-native ResourceBinding / CloudOperation PostgreSQL ledger contract/local gate, but formal SaaS launch still needs billing, audit and quota ledger closure before workspace lifecycle, canary/rollback or external access.",
+      "boundary": "local contract and fixture readiness only until separately authorized; no secret/kubeconfig, no PostgreSQL connection, no kubectl, no deploy, no Tencent mutation, no Package C live execution",
+      "recommendedEntrypoint": "local Codex implementation of repo-native billing / audit / quota ledger contract/gate",
+      "evidencePath": ".runtime/production-launch-commercial-ledger/<runid>/commercial-ledger-contract-redacted.json"
     },
     "externalAccessPolicy": {
       "status": "blocked_before_multi_tenant_minimum_launch_closure",
@@ -8177,6 +8267,43 @@
       "nonGoals": [
         "no secret or kubeconfig read",
         "no Kubernetes API or kubectl",
+        "no deploy/rollout/rollback",
+        "no build/push",
+        "no Tencent mutation",
+        "no Package C live",
+        "no production PostgreSQL ledger write/read",
+        "no Ingress or public access",
+        "no billing/quota/workspace lifecycle implementation"
+      ]
+    },
+    "gap03LedgerContract": {
+      "status": "implemented",
+      "runnerCommand": "node tests/support/cloud-prework/production-launch-ledger-runner.js --mode contract-local-gate --run-id <runid> --authorized 1",
+      "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs",
+      "evidencePath": ".runtime/production-launch-ledger/<runid>/resourcebinding-ledger-contract-redacted.json",
+      "portalTypedApi": "services/portal/frontend/src/api/portal/production-ledger.ts",
+      "goBackendRoutes": [
+        "POST /api/v22/production/ledger/plan",
+        "POST /api/v22/production/ledger/commit"
+      ],
+      "canonicalStore": "PostgreSQL resource_bindings/cloud_operations",
+      "proves": [
+        "unauthorized fail closed",
+        "ResourceBinding ledger write/read shape",
+        "CloudOperation ledger write/read shape",
+        "requested/creating/ready state persistence boundary",
+        "operation_id and idempotency uniqueness",
+        "resource_binding_id and operation_id remain separate ledger keys",
+        "providerKeyRef-only public boundary",
+        "canonical ownership source is postgres_resource_binding_ledger",
+        "local dry-run repository is separated from future production PostgreSQL write/read",
+        "raw provider key, DB password, token and Tencent secret redaction",
+        "external access remains blocked"
+      ],
+      "nonGoals": [
+        "no secret or kubeconfig read",
+        "no Kubernetes API or kubectl",
+        "no PostgreSQL connection",
         "no deploy/rollout/rollback",
         "no build/push",
         "no Tencent mutation",

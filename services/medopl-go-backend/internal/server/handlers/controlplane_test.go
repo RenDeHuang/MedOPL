@@ -280,6 +280,79 @@ func TestControlPlaneProductionPackageCOperationContractFailsClosed(t *testing.T
 	}
 }
 
+func TestControlPlaneProductionLedgerContractFailsClosed(t *testing.T) {
+	router := controlPlaneHandlerTestRouter()
+	rawProviderKey := "production-ledger-raw-provider-key-must-not-leak"
+
+	for _, target := range []string{
+		"/api/v22/production/ledger/plan",
+		"/api/v22/production/ledger/commit",
+	} {
+		rec := postRaw(router, target, map[string]any{
+			"tenantId":             "tenant-production-alpha",
+			"accountId":            "account-production-alpha",
+			"workspaceId":          "workspace-production-alpha",
+			"resourceBindingId":    "rb-production-alpha",
+			"billingAttributionId": "bill-production-alpha",
+			"serverPlanId":         "starter_2c4g_10gb",
+			"workspaceStorageGb":   10,
+			"cloudProvider":        "tencent",
+			"region":               "ap-guangzhou",
+			"clusterId":            "cls-fi097sy4",
+			"nodePoolName":         "medopl-tenant-production-alpha",
+			"providerKeyRef":       "gflab:workspace-production-alpha:refonly001122",
+			"idempotencyKey":       "workspace-ledger-alpha-once",
+			"rawProviderKey":       rawProviderKey,
+			"dbPassword":           "postgres-password-must-not-leak",
+			"bearerToken":          "bearer-token-must-not-leak",
+			"tencentSecretId":      "tencent-secret-id-must-not-leak",
+			"tencentSecretKey":     "tencent-secret-key-must-not-leak",
+		})
+		if rec.Code != http.StatusPreconditionRequired {
+			t.Fatalf("%s status = %d body = %s", target, rec.Code, rec.Body.String())
+		}
+		body := rec.Body.String()
+		for _, required := range []string{
+			"production_launch_gap_03_resourcebinding_postgresql_ledger_contract_local_gate",
+			"contract-only",
+			"production_launch_ledger_required",
+			"production-launch-ledger-runner.js",
+			"resource_bindings",
+			"cloud_operations",
+			"operation_id",
+			"resource_binding_id",
+			"requested",
+			"creating",
+			"ready",
+			"providerKeyRef",
+			"blocked_until_multi_tenant_minimum_launch_closure",
+		} {
+			if !strings.Contains(body, required) {
+				t.Fatalf("%s response missing %q: %s", target, required, body)
+			}
+		}
+		for _, forbidden := range []string{
+			rawProviderKey,
+			"postgres-password-must-not-leak",
+			"bearer-token-must-not-leak",
+			"tencent-secret-id-must-not-leak",
+			"tencent-secret-key-must-not-leak",
+			"rawProviderKey",
+			"dbPassword",
+			"bearerToken",
+			"tencentSecretId",
+			"tencentSecretKey",
+			"Ingress",
+			"LoadBalancer",
+			"kubectl",
+		} {
+			if strings.Contains(body, forbidden) {
+				t.Fatalf("%s response leaked forbidden marker %q: %s", target, forbidden, body)
+			}
+		}
+	}
+}
+
 func TestControlPlaneHandlersMaterializeProviderSecretBoundary(t *testing.T) {
 	secretRoot := t.TempDir()
 	router := controlPlaneHandlerTestRouterWithSecretRoot(secretRoot)

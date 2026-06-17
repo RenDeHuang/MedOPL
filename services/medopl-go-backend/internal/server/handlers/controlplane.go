@@ -84,6 +84,8 @@ func RegisterControlPlaneRoutes(api *gin.RouterGroup, service ControlPlaneServic
 	api.POST("/v22/production/bootstrap/commit", productionBootstrapContractCommit())
 	api.POST("/v22/production/package-c-operation/plan", productionPackageCOperationContractPlan())
 	api.POST("/v22/production/package-c-operation/commit", productionPackageCOperationContractCommit())
+	api.POST("/v22/production/ledger/plan", productionLedgerContractPlan())
+	api.POST("/v22/production/ledger/commit", productionLedgerContractCommit())
 	api.POST("/v22/users/prepare", prepareUser())
 	api.POST("/v22/users/credit", creditUser())
 	api.POST("/v22/provider-key", bindProviderKey(service))
@@ -173,14 +175,14 @@ func managedEnvironmentReadiness(service ControlPlaneService) gin.HandlerFunc {
 func productionBootstrapContractPlan() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ctx.JSON(http.StatusPreconditionRequired, gin.H{
-			"ok": false,
-			"contract": "production_launch_gap_01_bootstrap_contract_local_gate",
-			"mode": "contract-only",
-			"error": "production_bootstrap_contract_only",
+			"ok":             false,
+			"contract":       "production_launch_gap_01_bootstrap_contract_local_gate",
+			"mode":           "contract-only",
+			"error":          "production_bootstrap_contract_only",
 			"requiredRunner": "tests/support/cloud-prework/production-launch-bootstrap-runner.js",
 			"firstAdmin": gin.H{
-				"status": "bootstrap_required",
-				"role": "platform_owner",
+				"status":         "bootstrap_required",
+				"role":           "platform_owner",
 				"identitySource": "production_identity_provider_required",
 			},
 			"tenant": gin.H{
@@ -190,7 +192,7 @@ func productionBootstrapContractPlan() gin.HandlerFunc {
 				"status": "seed_required",
 			},
 			"providerBoundary": gin.H{
-				"publicFields": []string{"provider", "providerKeyRef", "boundStatus"},
+				"publicFields":         []string{"provider", "providerKeyRef", "boundStatus"},
 				"rawSecretBackendOnly": true,
 			},
 			"externalAccess": gin.H{
@@ -203,13 +205,13 @@ func productionBootstrapContractPlan() gin.HandlerFunc {
 func productionBootstrapContractCommit() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ctx.JSON(http.StatusPreconditionRequired, gin.H{
-			"ok": false,
-			"contract": "production_launch_gap_01_bootstrap_contract_local_gate",
-			"mode": "contract-only",
-			"error": "production_bootstrap_apply_not_authorized",
+			"ok":             false,
+			"contract":       "production_launch_gap_01_bootstrap_contract_local_gate",
+			"mode":           "contract-only",
+			"error":          "production_bootstrap_apply_not_authorized",
 			"requiredRunner": "tests/support/cloud-prework/production-launch-bootstrap-runner.js",
 			"providerBoundary": gin.H{
-				"publicFields": []string{"provider", "providerKeyRef", "boundStatus"},
+				"publicFields":         []string{"provider", "providerKeyRef", "boundStatus"},
 				"rawSecretBackendOnly": true,
 			},
 			"externalAccess": gin.H{
@@ -221,13 +223,13 @@ func productionBootstrapContractCommit() gin.HandlerFunc {
 
 func productionPackageCOperationContractPayload(errorCode string) gin.H {
 	return gin.H{
-		"ok": false,
-		"contract": "production_launch_gap_02_package_c_operation_contract_local_gate",
-		"mode": "contract-only",
-		"error": errorCode,
+		"ok":             false,
+		"contract":       "production_launch_gap_02_package_c_operation_contract_local_gate",
+		"mode":           "contract-only",
+		"error":          errorCode,
 		"requiredRunner": "tests/support/cloud-prework/production-launch-operation-runner.js",
 		"portalAction": gin.H{
-			"shape": "Portal workspace provisioning action",
+			"shape":            "Portal workspace provisioning action",
 			"rawSecretAllowed": false,
 		},
 		"goBackendOperationRequest": gin.H{
@@ -243,18 +245,18 @@ func productionPackageCOperationContractPayload(errorCode string) gin.H {
 			},
 		},
 		"packageCRunnerInvocationBoundary": gin.H{
-			"runner": "tests/support/cloud-prework/v22-package-c-live-canary-live-runner.js",
-			"contractOnly": true,
+			"runner":                  "tests/support/cloud-prework/v22-package-c-live-canary-live-runner.js",
+			"contractOnly":            true,
 			"liveExecutionAllowedNow": false,
-			"futureRunGate": "RUN_TENCENT_CREATE_RELEASE_EXECUTION=1",
+			"futureRunGate":           "RUN_TENCENT_CREATE_RELEASE_EXECUTION=1",
 		},
 		"resourceBindingStateContract": gin.H{
-			"minimumStates": []string{"requested", "creating", "ready"},
-			"canonicalStore": "PostgreSQL resource_bindings/cloud_operations",
+			"minimumStates":              []string{"requested", "creating", "ready"},
+			"canonicalStore":             "PostgreSQL resource_bindings/cloud_operations",
 			"productionPostgresWriteNow": false,
 		},
 		"providerBoundary": gin.H{
-			"publicFields": []string{"provider", "providerKeyRef", "boundStatus"},
+			"publicFields":         []string{"provider", "providerKeyRef", "boundStatus"},
 			"rawSecretBackendOnly": true,
 		},
 		"externalAccess": gin.H{
@@ -272,6 +274,72 @@ func productionPackageCOperationContractPlan() gin.HandlerFunc {
 func productionPackageCOperationContractCommit() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ctx.JSON(http.StatusPreconditionRequired, productionPackageCOperationContractPayload("production_launch_operation_required"))
+	}
+}
+
+func productionLedgerContractPayload(errorCode string) gin.H {
+	return gin.H{
+		"ok":             false,
+		"contract":       "production_launch_gap_03_resourcebinding_postgresql_ledger_contract_local_gate",
+		"mode":           "contract-only",
+		"error":          errorCode,
+		"requiredRunner": "tests/support/cloud-prework/production-launch-ledger-runner.js",
+		"ledgerShape": gin.H{
+			"canonicalStore": "PostgreSQL resource_bindings/cloud_operations",
+			"resourceBindings": gin.H{
+				"table":              "resource_bindings",
+				"uniqueKey":          "resource_binding_id",
+				"statusField":        "status",
+				"operationReference": "operation_id",
+				"productionWriteNow": false,
+				"productionReadNow":  false,
+			},
+			"cloudOperations": gin.H{
+				"table":                    "cloud_operations",
+				"uniqueKey":                "operation_id",
+				"resourceBindingReference": "resource_binding_id",
+				"statusField":              "status",
+				"productionWriteNow":       false,
+				"productionReadNow":        false,
+			},
+		},
+		"statePersistenceBoundary": gin.H{
+			"minimumStates":              []string{"requested", "creating", "ready"},
+			"fullLifecycleStates":        []string{"requested", "creating", "created", "scaling", "ready", "releaseRequested", "deleting", "released", "failed", "cleanupRequired"},
+			"productionPostgresWriteNow": false,
+			"productionPostgresReadNow":  false,
+		},
+		"idempotency": gin.H{
+			"operationIdRequired":      true,
+			"idempotencyKeyRequired":   true,
+			"resourceBindingUniqueKey": "resource_binding_id",
+			"cloudOperationUniqueKey":  "operation_id",
+		},
+		"providerBoundary": gin.H{
+			"publicFields":         []string{"provider", "providerKeyRef", "boundStatus"},
+			"rawSecretBackendOnly": true,
+		},
+		"canonicalOwnershipSource": "postgres_resource_binding_ledger",
+		"localVsProductionRepository": gin.H{
+			"localRepositoryMode":        "dry-run-memory-shape-only",
+			"futureProductionRepository": "PostgreSQL resource_bindings/cloud_operations",
+			"connectsToPostgresNow":      false,
+		},
+		"externalAccess": gin.H{
+			"status": "blocked_until_multi_tenant_minimum_launch_closure",
+		},
+	}
+}
+
+func productionLedgerContractPlan() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusPreconditionRequired, productionLedgerContractPayload("production_launch_ledger_required"))
+	}
+}
+
+func productionLedgerContractCommit() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusPreconditionRequired, productionLedgerContractPayload("production_launch_ledger_required"))
 	}
 }
 

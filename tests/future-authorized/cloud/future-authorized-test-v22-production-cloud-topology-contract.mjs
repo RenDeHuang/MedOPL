@@ -13,6 +13,11 @@ import {
   buildProductionLaunchOperationContract,
   runProductionLaunchOperationContract,
 } from "../../support/cloud-prework/production-launch-operation-runner.js";
+import {
+  PRODUCTION_LAUNCH_LEDGER_COMMAND,
+  buildProductionLaunchLedgerContract,
+  runProductionLaunchLedgerContract,
+} from "../../support/cloud-prework/production-launch-ledger-runner.js";
 
 const contractPath = "docs/specs/README.md";
 const manifestPath = "tests/fixtures/v22/agent-verify-manifest.json";
@@ -538,6 +543,207 @@ try {
   await rm(operationEvidenceRoot, { recursive: true, force: true });
 }
 
+const ledgerEvidenceRoot = await mkdtemp(path.join(os.tmpdir(), "v22-production-launch-ledger-"));
+try {
+  const evidenceDir = path.join(ledgerEvidenceRoot, "evidence");
+  const runId = "pll-20260617-001";
+  const rawProviderKey = "gflabtoken-raw-provider-key-material-that-must-not-leak";
+  const dbPassword = "postgres-password-that-must-not-leak";
+  const bearerToken = "bearer-token-that-must-not-leak";
+  const tencentSecretId = "TENCENT_SECRET_ID_that_must_not_leak";
+  const tencentSecretKey = "TENCENT_SECRET_KEY_that_must_not_leak";
+
+  assert.equal(
+    PRODUCTION_LAUNCH_LEDGER_COMMAND,
+    "node tests/support/cloud-prework/production-launch-ledger-runner.js --mode contract-local-gate --run-id <runid> --authorized 1",
+    "ledger_runner_must_publish_single_repo_native_command",
+  );
+
+  await assert.rejects(
+    () => buildProductionLaunchLedgerContract({
+      runId,
+      evidenceDir,
+      authorized: false,
+    }),
+    /production_launch_ledger_not_authorized/,
+    "ledger_missing_authorization_must_fail_closed",
+  );
+
+  await assert.rejects(
+    () => buildProductionLaunchLedgerContract({
+      runId: "",
+      evidenceDir,
+      authorized: true,
+    }),
+    /production_launch_ledger_run_id_required/,
+    "ledger_missing_run_id_must_fail_closed",
+  );
+
+  const plan = await buildProductionLaunchLedgerContract({
+    runId,
+    evidenceDir,
+    authorized: true,
+    ledger: {
+      tenantId: "tenant-production-alpha",
+      accountId: "account-production-alpha",
+      workspaceId: "workspace-production-alpha",
+      resourceBindingId: "rb-production-alpha",
+      billingAttributionId: "bill-production-alpha",
+      serverPlanId: "starter_2c4g_10gb",
+      workspaceStorageGb: 10,
+      cloudProvider: "tencent",
+      region: "ap-guangzhou",
+      clusterId: "cls-fi097sy4",
+      nodePoolId: "np-tenant-production-alpha",
+      nodePoolName: "tenant-production-alpha-pool",
+      providerKeyRef: "gflab:workspace-production-alpha:refonly001122",
+      idempotencyKey: "workspace-ledger-alpha-once",
+      rawProviderKey,
+      runtime: {
+        dbPassword,
+      },
+      tokens: {
+        bearerToken,
+      },
+      tencent: {
+        SecretId: tencentSecretId,
+        SecretKey: tencentSecretKey,
+      },
+    },
+  });
+
+  assert.equal(plan.ok, true, "ledger_plan_ok");
+  assert.equal(plan.contract, "production_launch_gap_03_resourcebinding_postgresql_ledger_contract_local_gate", "ledger_contract_name");
+  assert.equal(plan.mode, "contract-local-gate", "ledger_mode");
+  assert.equal(plan.boundary.contractOnly, true, "ledger_contract_only_boundary");
+  assert.equal(plan.boundary.productionPostgresConnectAllowedNow, false, "ledger_postgres_connect_forbidden");
+  assert.equal(plan.boundary.productionPostgresWriteAllowedNow, false, "ledger_postgres_write_forbidden");
+  assert.equal(plan.boundary.packageCLiveAllowed, false, "ledger_package_c_live_forbidden");
+  assert.equal(plan.boundary.tencentMutationAllowed, false, "ledger_tencent_mutation_forbidden");
+  assert.equal(plan.boundary.kubernetesAccessAllowed, false, "ledger_kubernetes_forbidden");
+  assert.equal(plan.boundary.deployAllowed, false, "ledger_deploy_forbidden");
+  assert.equal(plan.boundary.externalAccessBlocked, true, "ledger_external_access_blocked");
+  assert.equal(plan.productionVsLocalRepository.localRepositoryMode, "dry-run-memory-shape-only", "ledger_local_repository_mode");
+  assert.equal(plan.productionVsLocalRepository.futureProductionRepository, "PostgreSQL resource_bindings/cloud_operations", "ledger_future_repository");
+  assert.equal(plan.productionVsLocalRepository.productionRequiresExplicitPostgresAuthorization, true, "ledger_requires_future_postgres_authorization");
+
+  assert.deepEqual(plan.portalLedgerApiTrace.map((entry) => entry.methodPath), [
+    "POST /api/v22/production/ledger/plan",
+    "POST /api/v22/production/ledger/commit",
+  ], "portal_backend_ledger_api_trace");
+  assert.equal(plan.portalLedgerApiTrace.every((entry) => entry.status === "contract-only"), true, "ledger_api_trace_contract_only");
+  assert.equal(plan.providerBoundary.rawSecretAcceptedByRunner, false, "ledger_raw_provider_key_rejected");
+  assert.deepEqual(plan.providerBoundary.publicFields, ["provider", "providerKeyRef", "boundStatus"], "ledger_provider_public_fields");
+
+  assert.deepEqual(plan.statePersistenceBoundary.minimumStates, [
+    "requested",
+    "creating",
+    "ready",
+  ], "ledger_minimum_states");
+  assert.equal(plan.statePersistenceBoundary.transitions[0].resourceBinding.status, "requested", "ledger_requested_state");
+  assert.equal(plan.statePersistenceBoundary.transitions[1].resourceBinding.status, "creating", "ledger_creating_state");
+  assert.equal(plan.statePersistenceBoundary.transitions[2].resourceBinding.status, "ready", "ledger_ready_state");
+  assert.equal(plan.statePersistenceBoundary.transitions.every((entry) => entry.cloudOperation.status === entry.resourceBinding.status), true, "ledger_resource_and_operation_status_match");
+  assert.equal(plan.statePersistenceBoundary.transitions.every((entry) => entry.persistedNow === false), true, "ledger_transitions_not_persisted_now");
+
+  assert.deepEqual(plan.resourceBindingWriteReadShape.requiredWriteFields, [
+    "tenant_id",
+    "account_id",
+    "workspace_id",
+    "resource_binding_id",
+    "billing_attribution_id",
+    "server_plan_id",
+    "workspace_storage_gb",
+    "cloud_provider",
+    "region",
+    "cluster_id",
+    "node_pool_id",
+    "node_pool_name",
+    "status",
+    "operation_id",
+    "canonical_ownership_source",
+    "cloud_tag_support",
+  ], "resource_binding_write_shape");
+  assert.deepEqual(plan.cloudOperationWriteReadShape.requiredWriteFields, [
+    "operation_id",
+    "resource_binding_id",
+    "tenant_id",
+    "account_id",
+    "workspace_id",
+    "billing_attribution_id",
+    "operation_type",
+    "server_plan_id",
+    "workspace_storage_gb",
+    "status",
+    "cloud_provider",
+    "region",
+    "cluster_id",
+    "node_pool_id",
+    "node_pool_name",
+    "cloud_tag_support",
+    "canonical_ownership_source",
+  ], "cloud_operation_write_shape");
+  assert.equal(plan.idempotency.operationId, "op:tenant-production-alpha:workspace-production-alpha:rb-production-alpha:workspace-ledger-alpha-once", "ledger_operation_id_shape");
+  assert.equal(plan.idempotency.uniqueKeys.resourceBinding, "resource_binding_id", "ledger_resource_binding_unique_key");
+  assert.equal(plan.idempotency.uniqueKeys.cloudOperation, "operation_id", "ledger_cloud_operation_unique_key");
+  assert.equal(plan.canonicalOwnershipSource, "postgres_resource_binding_ledger", "ledger_canonical_ownership_source");
+  assert.equal(plan.cloudTagSupport, "tke_nodepool_unsupported", "ledger_cloud_tag_not_truth");
+  assert.equal(plan.evidence.path, path.join(evidenceDir, runId, "resourcebinding-ledger-contract-redacted.json"), "ledger_evidence_path");
+  assert.equal(plan.externalAccess.status, "blocked_until_multi_tenant_minimum_launch_closure", "ledger_external_access_status");
+  assertNoSensitiveText(JSON.stringify(plan), "ledger_plan");
+
+  const summary = await runProductionLaunchLedgerContract({
+    runId,
+    evidenceDir,
+    authorized: true,
+  });
+  assert.equal(summary.ok, true, "ledger_summary_ok");
+  assert.equal(summary.evidencePath.endsWith(`${runId}/resourcebinding-ledger-contract-redacted.json`), true, "ledger_summary_evidence_path");
+  assert.equal(summary.realExecutionReady, false, "ledger_real_execution_ready_false");
+  assertNoSensitiveText(JSON.stringify(summary), "ledger_summary");
+
+  const evidence = JSON.parse(await readFile(summary.evidencePath, "utf8"));
+  assert.equal(evidence.ok, true, "ledger_evidence_ok");
+  assert.equal(evidence.redactionAudit.rawSecretMaterialExposed, false, "ledger_evidence_hides_raw_provider_key");
+  assert.equal(evidence.redactionAudit.dbPasswordExposed, false, "ledger_evidence_hides_db_password");
+  assert.equal(evidence.redactionAudit.tokenExposed, false, "ledger_evidence_hides_token");
+  assert.equal(evidence.redactionAudit.tencentSecretExposed, false, "ledger_evidence_hides_tencent_secret");
+  assert.equal(evidence.redactionAudit.browserStorageSecretWritePresent, false, "ledger_evidence_blocks_browser_storage_secret");
+  assert.equal(evidence.nextGap.id, "production-launch-gap-04-billing-audit-quota-ledger-contract", "next_gap_after_gap_03");
+  assertNoSensitiveText(JSON.stringify(evidence), "ledger_evidence");
+
+  for (const forbiddenArg of [
+    "--kubeconfig",
+    "--kubectl",
+    "--deploy",
+    "--rollout",
+    "--rollback",
+    "--build",
+    "--push",
+    "--tencent-mutation",
+    "--package-c-live",
+    "--postgres",
+    "--db",
+    "--ingress",
+    "--load-balancer",
+    "--secret-file",
+    "--env",
+  ]) {
+    await assert.rejects(
+      () => buildProductionLaunchLedgerContract({
+        runId,
+        evidenceDir,
+        authorized: true,
+        argv: [forbiddenArg, "1"],
+      }),
+      /production_launch_ledger_forbidden_arg/,
+      `ledger_runner_must_reject:${forbiddenArg}`,
+    );
+  }
+} finally {
+  await rm(ledgerEvidenceRoot, { recursive: true, force: true });
+}
+
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_production_cloud_topology_boundary",
@@ -550,5 +756,6 @@ console.log(JSON.stringify({
     "no_real_cloud_secret_deploy_kubectl_build_push_or_resource_mutation",
     "production_launch_gap_01_bootstrap_contract_local_gate",
     "production_launch_gap_02_package_c_operation_contract_local_gate",
+    "production_launch_gap_03_resourcebinding_postgresql_ledger_contract_local_gate",
   ],
 }, null, 2));

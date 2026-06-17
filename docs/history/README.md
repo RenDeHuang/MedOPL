@@ -59,6 +59,45 @@ landed 后的记录还必须补齐：
 
 ## Current Run Summaries
 
+### 2026-06-17 production-launch-gap-03-resourcebinding-ledger-contract
+
+Status: `landed candidate / local-gated`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `61b84ac89c4f5b0937dea530b7e62fa2e2508a1d`
+
+Model: `gpt-5.4`
+
+Subagents:
+
+- `gpt-5.4-mini` explorer: audited Go backend ResourceBinding / CloudOperation schema, repository and Package C ledger support.
+- `gpt-5.4-mini` explorer: audited test lane, docs cursor and Gap 03 fixture integration pattern.
+
+Scope:
+
+- Landed the repo-native Production Launch Gap 03 ResourceBinding / CloudOperation PostgreSQL ledger contract/local gate without adding a loop or second truth source.
+- Added `tests/support/cloud-prework/production-launch-ledger-runner.js` as the single contract-only runner command: `node tests/support/cloud-prework/production-launch-ledger-runner.js --mode contract-local-gate --run-id <runid> --authorized 1`.
+- The local gate proves unauthorized fail-closed behavior, ResourceBinding and CloudOperation write/read shape, `requested` / `creating` / `ready` state persistence boundary, `operation_id` / idempotency uniqueness, providerKeyRef-only boundary, canonical ownership source `postgres_resource_binding_ledger`, redacted evidence shape and local dry-run repository versus future production PostgreSQL boundary.
+- Added contract-only Go routes `POST /api/v22/production/ledger/plan` and `POST /api/v22/production/ledger/commit`, plus Portal typed API shape in `services/portal/frontend/src/api/portal/production-ledger.ts`. These routes fail closed and do not connect to PostgreSQL or execute Package C live operations.
+- Evidence sink is `.runtime/production-launch-ledger/<runid>/resourcebinding-ledger-contract-redacted.json`.
+- The next unique gap is `production-launch-gap-04-billing-audit-quota-ledger-contract`.
+- This closeout did not read secrets/kubeconfig/DB password, connect to Kubernetes API or PostgreSQL, run kubectl, deploy, rollout, rollback, build/push, execute Tencent mutation, run Package C live, restore Node Portal backend or enter external access.
+
+Can-claim:
+
+- Production Launch Gap 03 has a repo-native contract/local gate.
+- Portal typed API and Go backend route shape for the ResourceBinding / CloudOperation ledger boundary are traceable and fail closed.
+- ResourceBinding and CloudOperation write/read shapes are locally specified for `requested` / `creating` / `ready`.
+- External/public access remains blocked.
+
+Cannot-claim:
+
+- Production PostgreSQL ResourceBinding ledger write/read executed.
+- Billing/audit/quota, workspace lifecycle, production canary, rollback execution, Ingress, LoadBalancer, DNS or TLS are complete.
+
+next_cursor: `real-cloud-authorization-boundary`
+
 ### 2026-06-17 production-launch-gap-02-package-c-operation-contract
 
 Status: `landed candidate / local-gated`
