@@ -7584,7 +7584,7 @@ Scope:
 
 Verification:
 
-- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-external-access-strategy-local-gate.mjs`: passed.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs`: passed.
 - `node tests/contract/contract-test-v22-test-lane-registry.mjs`: passed.
 - `node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs`: passed.
 - `go test ./internal/server/handlers` from `services/medopl-go-backend`: passed.

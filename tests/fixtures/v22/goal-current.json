@@ -2943,7 +2943,7 @@
       "gap07ExternalAccessStrategyContract": {
         "status": "implemented",
         "runnerCommand": "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode strategy-contract-local-gate --run-id <runid> --authorized 1",
-        "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-external-access-strategy-local-gate.mjs",
+        "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs",
         "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json",
         "portalTypedApi": "services/portal/frontend/src/api/portal/external-access-strategy.ts",
         "goBackendRoutes": [
@@ -5258,7 +5258,7 @@
       "gap07ExternalAccessStrategyContract": {
         "status": "implemented",
         "runnerCommand": "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode strategy-contract-local-gate --run-id <runid> --authorized 1",
-        "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-external-access-strategy-local-gate.mjs",
+        "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs",
         "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json",
         "portalTypedApi": "services/portal/frontend/src/api/portal/external-access-strategy.ts",
         "goBackendRoutes": [
@@ -8128,7 +8128,7 @@
       "gap07ExternalAccessStrategyContract": {
         "status": "implemented",
         "runnerCommand": "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode strategy-contract-local-gate --run-id <runid> --authorized 1",
-        "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-external-access-strategy-local-gate.mjs",
+        "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs",
         "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json",
         "portalTypedApi": "services/portal/frontend/src/api/portal/external-access-strategy.ts",
         "goBackendRoutes": [
@@ -8798,7 +8798,7 @@
     "gap07ExternalAccessStrategyContract": {
       "status": "implemented",
       "runnerCommand": "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode strategy-contract-local-gate --run-id <runid> --authorized 1",
-      "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-external-access-strategy-local-gate.mjs",
+      "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs",
       "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json",
       "portalTypedApi": "services/portal/frontend/src/api/portal/external-access-strategy.ts",
       "goBackendRoutes": [
