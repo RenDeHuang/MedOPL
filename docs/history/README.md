@@ -7378,3 +7378,65 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-17 production-launch-gap-04-commercial-ledger-contract
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `942867630acd414721925cd45ffd6f8a93e23491`
+
+Model: `gpt-5.4`
+
+Subagents:
+
+- `gpt-5.4-mini` explorer: audited Go backend, Portal typed API and existing billing/audit/quota surfaces for Gap 04.
+- `gpt-5.4-mini` explorer: audited Gap 01/02/03 runner, future-authorized test, docs and fixture closeout patterns.
+
+Scope:
+
+- Landed the repo-native Production Launch Gap 04 billing / audit / quota ledger contract/local gate without adding a loop or second truth source.
+- Added `tests/support/cloud-prework/production-launch-commercial-ledger-runner.js` as the single contract-only runner command: `node tests/support/cloud-prework/production-launch-commercial-ledger-runner.js --mode contract-local-gate --run-id <runid> --authorized 1`.
+- The local gate proves unauthorized fail-closed behavior, billing ledger shape, audit ledger shape, quota ledger / enforcement boundary, ResourceBinding / CloudOperation linkage, workspace cost attribution, operation idempotency, providerKeyRef-only boundary, redacted evidence shape and local dry-run repository versus future production PostgreSQL boundary.
+- Added contract-only Go routes `POST /api/v22/production/commercial-ledger/plan` and `POST /api/v22/production/commercial-ledger/commit`, plus Portal typed API shape in `services/portal/frontend/src/api/portal/production-commercial-ledger.ts`. These routes fail closed and do not connect to PostgreSQL, charge billing, enforce quota or execute Package C live operations.
+- Evidence sink is `.runtime/production-launch-commercial-ledger/<runid>/commercial-ledger-contract-redacted.json`.
+- The next unique gap is `production-launch-gap-05-workspace-lifecycle-contract`.
+- This closeout did not read secrets/kubeconfig/DB password, connect to Kubernetes API or PostgreSQL, run kubectl, deploy, rollout, rollback, build/push, execute Tencent mutation, run Package C live, restore Node Portal backend or enter external access.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs`: passed.
+- `go test ./internal/server/handlers` from `services/medopl-go-backend`: passed.
+- `node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs`: passed.
+- `npm --prefix services/portal/frontend run typecheck`: passed.
+- `npm run verify`: run before this post-push closeout sync.
+- `npm run closeout:check -- --json`: rerun after this post-push closeout sync.
+
+Can-claim:
+
+- Production Launch Gap 04 has a repo-native contract/local gate.
+- Portal typed API and Go backend route shape for the billing / audit / quota ledger boundary are traceable and fail closed.
+- Billing, audit and quota ledger shapes are locally specified and linked to ResourceBinding / CloudOperation identity.
+- External/public access remains blocked.
+
+Cannot-claim:
+
+- Production PostgreSQL billing/audit/quota ledger write/read executed.
+- Real billing charge, quota enforcement, workspace lifecycle, production canary, rollback execution, Ingress, LoadBalancer, DNS or TLS are complete.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+landed_commit: `b63c267e2e85248a71e2101eb2ba6b06accb4b33`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `b63c267e2e85248a71e2101eb2ba6b06accb4b33` remains reachable from `origin/recovery/platform-v22-trunk`.
+- `npm run verify`: passed before this post-push closeout sync.
+- `npm run closeout:check -- --json`: rerun after this post-push closeout sync.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`

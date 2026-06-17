@@ -8,12 +8,12 @@
   "last_updated_at": "2026-06-17",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "c71359f260be499a29fa3e328c556964fa70c19f",
+  "base_trunk_head": "b63c267e2e85248a71e2101eb2ba6b06accb4b33",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "c71359f260be499a29fa3e328c556964fa70c19f",
+  "last_landed_commit": "b63c267e2e85248a71e2101eb2ba6b06accb4b33",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 first admin / tenant / workspace bootstrap contract is repo-native and local-gated. Production launch Gap 02 Portal -> Go backend -> Package C operation contract is repo-native and local-gated. Production launch Gap 03 ResourceBinding / CloudOperation PostgreSQL ledger contract is now repo-native and local-gated: `tests/support/cloud-prework/production-launch-ledger-runner.js` proves unauthorized runs fail closed, ResourceBinding and CloudOperation write/read shape, requested/creating/ready state persistence boundary, operation_id/idempotency uniqueness, providerKeyRef-only boundary, canonical ownership source, local-vs-production PostgreSQL boundary, redacted evidence and external-access block without reading secrets/kubeconfig/DB password or executing Kubernetes, deploy, build/push, Tencent mutation or Package C live. MedOPL still is not formally production launched: billing/audit/quota closure, workspace lifecycle, canary/rollback/evidence and external access remain open. The current unique gap is production-launch-gap-04-billing-audit-quota-ledger-contract before any Package C live execution or Ingress/external access.",
+  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 first admin / tenant / workspace bootstrap contract is repo-native and local-gated. Production launch Gap 02 Portal -> Go backend -> Package C operation contract is repo-native and local-gated. Production launch Gap 03 ResourceBinding / CloudOperation PostgreSQL ledger contract is repo-native and local-gated. Production launch Gap 04 billing / audit / quota ledger contract is now repo-native and local-gated: `tests/support/cloud-prework/production-launch-commercial-ledger-runner.js` proves unauthorized runs fail closed, billing ledger shape, audit ledger shape, quota ledger / enforcement boundary, ResourceBinding / CloudOperation linkage, workspace cost attribution, operation idempotency, providerKeyRef-only boundary, local-vs-production PostgreSQL boundary, redacted evidence and external-access block without reading secrets/kubeconfig/DB password or executing Kubernetes, PostgreSQL, deploy, build/push, Tencent mutation or Package C live. MedOPL still is not formally production launched: workspace lifecycle, production canary/rollback/evidence and external access remain open. The current unique gap is production-launch-gap-05-workspace-lifecycle-contract before any Package C live execution or Ingress/external access.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -171,7 +171,7 @@
     "gap_id": "real-cloud-authorization-boundary",
     "stage": "S7 real-cloud authorization boundary before readiness",
     "cursor_eligible": false,
-    "problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 first admin / tenant / workspace bootstrap contract is repo-native and local-gated. Production launch Gap 02 Portal -> Go backend -> Package C operation contract is repo-native and local-gated. Production launch Gap 03 ResourceBinding / CloudOperation PostgreSQL ledger contract is now repo-native and local-gated: `tests/support/cloud-prework/production-launch-ledger-runner.js` proves unauthorized runs fail closed, ResourceBinding and CloudOperation write/read shape, requested/creating/ready state persistence boundary, operation_id/idempotency uniqueness, providerKeyRef-only boundary, canonical ownership source, local-vs-production PostgreSQL boundary, redacted evidence and external-access block without reading secrets/kubeconfig/DB password or executing Kubernetes, deploy, build/push, Tencent mutation or Package C live. MedOPL still is not formally production launched: billing/audit/quota closure, workspace lifecycle, canary/rollback/evidence and external access remain open. The current unique gap is production-launch-gap-04-billing-audit-quota-ledger-contract before any Package C live execution or Ingress/external access.",
+    "problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 first admin / tenant / workspace bootstrap contract is repo-native and local-gated. Production launch Gap 02 Portal -> Go backend -> Package C operation contract is repo-native and local-gated. Production launch Gap 03 ResourceBinding / CloudOperation PostgreSQL ledger contract is repo-native and local-gated. Production launch Gap 04 billing / audit / quota ledger contract is now repo-native and local-gated: `tests/support/cloud-prework/production-launch-commercial-ledger-runner.js` proves unauthorized runs fail closed, billing ledger shape, audit ledger shape, quota ledger / enforcement boundary, ResourceBinding / CloudOperation linkage, workspace cost attribution, operation idempotency, providerKeyRef-only boundary, local-vs-production PostgreSQL boundary, redacted evidence and external-access block without reading secrets/kubeconfig/DB password or executing Kubernetes, PostgreSQL, deploy, build/push, Tencent mutation or Package C live. MedOPL still is not formally production launched: workspace lifecycle, production canary/rollback/evidence and external access remain open. The current unique gap is production-launch-gap-05-workspace-lifecycle-contract before any Package C live execution or Ingress/external access.",
     "verification_commands": [
       "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
       "node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs",
@@ -2432,7 +2432,7 @@
     },
     "latest_local_evidence": "package-d-combined-in-cluster-preflight-pdrun-20260616-002",
     "production_launch_goal_gap_map": {
-      "status": "gap_03_resourcebinding_postgresql_ledger_contract_local_gated_no_cloud_execution",
+      "status": "gap_04_billing_audit_quota_ledger_contract_local_gated_no_cloud_execution",
       "currentFacts": {
         "packageDPlatformControlPlaneInsideTke": "deployed",
         "inClusterHttpReachability": "preflight-passed",
@@ -2450,7 +2450,9 @@
         "productionLaunchGap02OperationContract": "implemented",
         "productionLaunchGap02EvidencePath": ".runtime/production-launch-operation/<runid>/operation-contract-redacted.json",
         "productionLaunchGap03LedgerContract": "implemented",
-        "productionLaunchGap03EvidencePath": ".runtime/production-launch-ledger/<runid>/resourcebinding-ledger-contract-redacted.json"
+        "productionLaunchGap03EvidencePath": ".runtime/production-launch-ledger/<runid>/resourcebinding-ledger-contract-redacted.json",
+        "productionLaunchGap04CommercialLedgerContract": "implemented",
+        "productionLaunchGap04EvidencePath": ".runtime/production-launch-commercial-ledger/<runid>/commercial-ledger-contract-redacted.json"
       },
       "vision": {
         "product": "MedOPL production launch is a stable multi-tenant SaaS managed OPL workbench, not a temporary page trial.",
@@ -2549,27 +2551,27 @@
         {
           "id": "billing-ledger",
           "label": "billing ledger",
-          "status": "contract-only",
+          "status": "implemented",
           "evidence": [
-            "BillingEvent schema and local billing projections exist; production billing freeze/charge/stop-billing ledger evidence is missing"
+            "production-launch-commercial-ledger-runner local gate, Portal typed API production-commercial-ledger.ts and Go fail-closed /api/v22/production/commercial-ledger plan/commit routes prove billing ledger shape without PostgreSQL connection, real charge or Package C live execution"
           ],
           "launchBlocking": true
         },
         {
           "id": "audit-ledger",
           "label": "audit ledger",
-          "status": "contract-only",
+          "status": "implemented",
           "evidence": [
-            "AuditEvent store/projections exist; production audit ledger write/read/closure evidence is missing"
+            "production-launch-commercial-ledger-runner local gate proves audit ledger shape, redaction status and ResourceBinding / CloudOperation linkage without PostgreSQL connection or live audit write execution"
           ],
           "launchBlocking": true
         },
         {
           "id": "quota-enforcement",
           "label": "quota enforcement",
-          "status": "missing",
+          "status": "contract-only",
           "evidence": [
-            "workspace_storage_gb is modeled in ResourceBinding; runtime/storage quota enforcement is not proven"
+            "production-launch-commercial-ledger-runner local gate proves quota ledger shape and allow/deny/manual_review enforcement boundary; production quota enforcement and Package C admission remain future-authorized"
           ],
           "launchBlocking": true
         },
@@ -2672,9 +2674,9 @@
           "name": "Commercial ledger and lifecycle closure",
           "status": "contract-only",
           "requiredEvidence": [
-            "billing ledger",
-            "audit ledger",
-            "quota enforcement",
+            "billing ledger contract/local gate",
+            "audit ledger contract/local gate",
+            "quota enforcement boundary contract/local gate",
             "suspend/resume/delete semantics",
             "cleanup evidence"
           ],
@@ -2775,12 +2777,12 @@
         }
       ],
       "nextUniqueGap": {
-        "id": "production-launch-gap-04-billing-audit-quota-ledger-contract",
-        "title": "Production launch Gap 04: billing / audit / quota ledger contract",
-        "reason": "Gap 03 has a repo-native ResourceBinding / CloudOperation PostgreSQL ledger contract/local gate, but formal SaaS launch still needs billing, audit and quota ledger closure before workspace lifecycle, canary/rollback or external access.",
+        "id": "production-launch-gap-05-workspace-lifecycle-contract",
+        "title": "Production launch Gap 05: workspace suspend / resume / delete lifecycle contract",
+        "reason": "Gap 04 has a repo-native billing / audit / quota ledger contract/local gate, but formal SaaS launch still needs workspace suspend, resume and delete lifecycle closure before production canary/rollback or external access.",
         "boundary": "local contract and fixture readiness only until separately authorized; no secret/kubeconfig, no PostgreSQL connection, no kubectl, no deploy, no Tencent mutation, no Package C live execution",
-        "recommendedEntrypoint": "local Codex implementation of repo-native billing / audit / quota ledger contract/gate",
-        "evidencePath": ".runtime/production-launch-commercial-ledger/<runid>/commercial-ledger-contract-redacted.json"
+        "recommendedEntrypoint": "local Codex implementation of repo-native workspace suspend / resume / delete lifecycle contract/gate",
+        "evidencePath": ".runtime/production-launch-workspace-lifecycle/<runid>/workspace-lifecycle-contract-redacted.json"
       },
       "externalAccessPolicy": {
         "status": "blocked_before_multi_tenant_minimum_launch_closure",
@@ -2830,6 +2832,49 @@
           "no production PostgreSQL ledger write/read",
           "no Ingress or public access",
           "no billing/quota/workspace lifecycle implementation"
+        ]
+      },
+      "gap04CommercialLedgerContract": {
+        "status": "implemented",
+        "runnerCommand": "node tests/support/cloud-prework/production-launch-commercial-ledger-runner.js --mode contract-local-gate --run-id <runid> --authorized 1",
+        "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs",
+        "evidencePath": ".runtime/production-launch-commercial-ledger/<runid>/commercial-ledger-contract-redacted.json",
+        "portalTypedApi": "services/portal/frontend/src/api/portal/production-commercial-ledger.ts",
+        "goBackendRoutes": [
+          "POST /api/v22/production/commercial-ledger/plan",
+          "POST /api/v22/production/commercial-ledger/commit"
+        ],
+        "canonicalParents": "PostgreSQL resource_bindings/cloud_operations",
+        "commercialLedgers": [
+          "billing_events",
+          "audit_events",
+          "quota_ledger"
+        ],
+        "proves": [
+          "unauthorized fail closed",
+          "billing ledger write/read shape",
+          "audit ledger write/read shape",
+          "quota ledger / enforcement boundary",
+          "ResourceBinding / CloudOperation linkage",
+          "workspace cost attribution",
+          "operation idempotency uniqueness",
+          "providerKeyRef-only public boundary",
+          "local dry-run repository is separated from future production PostgreSQL write/read",
+          "raw provider key, DB password, token and Tencent secret redaction",
+          "external access remains blocked"
+        ],
+        "nonGoals": [
+          "no secret or kubeconfig read",
+          "no Kubernetes API or kubectl",
+          "no PostgreSQL connection",
+          "no deploy/rollout/rollback",
+          "no build/push",
+          "no Tencent mutation",
+          "no Package C live",
+          "no production PostgreSQL ledger write/read",
+          "no production billing charge or quota enforcement execution",
+          "no Ingress or public access",
+          "no workspace suspend/resume/delete lifecycle implementation"
         ]
       }
     }
@@ -4603,7 +4648,7 @@
       "Portal external access strategy only after multi-tenant minimum launch closure"
     ],
     "production_launch_goal_gap_map": {
-      "status": "gap_03_resourcebinding_postgresql_ledger_contract_local_gated_no_cloud_execution",
+      "status": "gap_04_billing_audit_quota_ledger_contract_local_gated_no_cloud_execution",
       "currentFacts": {
         "packageDPlatformControlPlaneInsideTke": "deployed",
         "inClusterHttpReachability": "preflight-passed",
@@ -4621,7 +4666,9 @@
         "productionLaunchGap02OperationContract": "implemented",
         "productionLaunchGap02EvidencePath": ".runtime/production-launch-operation/<runid>/operation-contract-redacted.json",
         "productionLaunchGap03LedgerContract": "implemented",
-        "productionLaunchGap03EvidencePath": ".runtime/production-launch-ledger/<runid>/resourcebinding-ledger-contract-redacted.json"
+        "productionLaunchGap03EvidencePath": ".runtime/production-launch-ledger/<runid>/resourcebinding-ledger-contract-redacted.json",
+        "productionLaunchGap04CommercialLedgerContract": "implemented",
+        "productionLaunchGap04EvidencePath": ".runtime/production-launch-commercial-ledger/<runid>/commercial-ledger-contract-redacted.json"
       },
       "vision": {
         "product": "MedOPL production launch is a stable multi-tenant SaaS managed OPL workbench, not a temporary page trial.",
@@ -4720,27 +4767,27 @@
         {
           "id": "billing-ledger",
           "label": "billing ledger",
-          "status": "contract-only",
+          "status": "implemented",
           "evidence": [
-            "BillingEvent schema and local billing projections exist; production billing freeze/charge/stop-billing ledger evidence is missing"
+            "production-launch-commercial-ledger-runner local gate, Portal typed API production-commercial-ledger.ts and Go fail-closed /api/v22/production/commercial-ledger plan/commit routes prove billing ledger shape without PostgreSQL connection, real charge or Package C live execution"
           ],
           "launchBlocking": true
         },
         {
           "id": "audit-ledger",
           "label": "audit ledger",
-          "status": "contract-only",
+          "status": "implemented",
           "evidence": [
-            "AuditEvent store/projections exist; production audit ledger write/read/closure evidence is missing"
+            "production-launch-commercial-ledger-runner local gate proves audit ledger shape, redaction status and ResourceBinding / CloudOperation linkage without PostgreSQL connection or live audit write execution"
           ],
           "launchBlocking": true
         },
         {
           "id": "quota-enforcement",
           "label": "quota enforcement",
-          "status": "missing",
+          "status": "contract-only",
           "evidence": [
-            "workspace_storage_gb is modeled in ResourceBinding; runtime/storage quota enforcement is not proven"
+            "production-launch-commercial-ledger-runner local gate proves quota ledger shape and allow/deny/manual_review enforcement boundary; production quota enforcement and Package C admission remain future-authorized"
           ],
           "launchBlocking": true
         },
@@ -4843,9 +4890,9 @@
           "name": "Commercial ledger and lifecycle closure",
           "status": "contract-only",
           "requiredEvidence": [
-            "billing ledger",
-            "audit ledger",
-            "quota enforcement",
+            "billing ledger contract/local gate",
+            "audit ledger contract/local gate",
+            "quota enforcement boundary contract/local gate",
             "suspend/resume/delete semantics",
             "cleanup evidence"
           ],
@@ -4946,12 +4993,12 @@
         }
       ],
       "nextUniqueGap": {
-        "id": "production-launch-gap-04-billing-audit-quota-ledger-contract",
-        "title": "Production launch Gap 04: billing / audit / quota ledger contract",
-        "reason": "Gap 03 has a repo-native ResourceBinding / CloudOperation PostgreSQL ledger contract/local gate, but formal SaaS launch still needs billing, audit and quota ledger closure before workspace lifecycle, canary/rollback or external access.",
+        "id": "production-launch-gap-05-workspace-lifecycle-contract",
+        "title": "Production launch Gap 05: workspace suspend / resume / delete lifecycle contract",
+        "reason": "Gap 04 has a repo-native billing / audit / quota ledger contract/local gate, but formal SaaS launch still needs workspace suspend, resume and delete lifecycle closure before production canary/rollback or external access.",
         "boundary": "local contract and fixture readiness only until separately authorized; no secret/kubeconfig, no PostgreSQL connection, no kubectl, no deploy, no Tencent mutation, no Package C live execution",
-        "recommendedEntrypoint": "local Codex implementation of repo-native billing / audit / quota ledger contract/gate",
-        "evidencePath": ".runtime/production-launch-commercial-ledger/<runid>/commercial-ledger-contract-redacted.json"
+        "recommendedEntrypoint": "local Codex implementation of repo-native workspace suspend / resume / delete lifecycle contract/gate",
+        "evidencePath": ".runtime/production-launch-workspace-lifecycle/<runid>/workspace-lifecycle-contract-redacted.json"
       },
       "externalAccessPolicy": {
         "status": "blocked_before_multi_tenant_minimum_launch_closure",
@@ -5001,6 +5048,49 @@
           "no production PostgreSQL ledger write/read",
           "no Ingress or public access",
           "no billing/quota/workspace lifecycle implementation"
+        ]
+      },
+      "gap04CommercialLedgerContract": {
+        "status": "implemented",
+        "runnerCommand": "node tests/support/cloud-prework/production-launch-commercial-ledger-runner.js --mode contract-local-gate --run-id <runid> --authorized 1",
+        "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs",
+        "evidencePath": ".runtime/production-launch-commercial-ledger/<runid>/commercial-ledger-contract-redacted.json",
+        "portalTypedApi": "services/portal/frontend/src/api/portal/production-commercial-ledger.ts",
+        "goBackendRoutes": [
+          "POST /api/v22/production/commercial-ledger/plan",
+          "POST /api/v22/production/commercial-ledger/commit"
+        ],
+        "canonicalParents": "PostgreSQL resource_bindings/cloud_operations",
+        "commercialLedgers": [
+          "billing_events",
+          "audit_events",
+          "quota_ledger"
+        ],
+        "proves": [
+          "unauthorized fail closed",
+          "billing ledger write/read shape",
+          "audit ledger write/read shape",
+          "quota ledger / enforcement boundary",
+          "ResourceBinding / CloudOperation linkage",
+          "workspace cost attribution",
+          "operation idempotency uniqueness",
+          "providerKeyRef-only public boundary",
+          "local dry-run repository is separated from future production PostgreSQL write/read",
+          "raw provider key, DB password, token and Tencent secret redaction",
+          "external access remains blocked"
+        ],
+        "nonGoals": [
+          "no secret or kubeconfig read",
+          "no Kubernetes API or kubectl",
+          "no PostgreSQL connection",
+          "no deploy/rollout/rollback",
+          "no build/push",
+          "no Tencent mutation",
+          "no Package C live",
+          "no production PostgreSQL ledger write/read",
+          "no production billing charge or quota enforcement execution",
+          "no Ingress or public access",
+          "no workspace suspend/resume/delete lifecycle implementation"
         ]
       }
     }
@@ -7811,12 +7901,12 @@
     },
     "productionLaunchBoundary": {
       "nextUniqueGap": {
-        "id": "production-launch-gap-04-billing-audit-quota-ledger-contract",
-        "title": "Production launch Gap 04: billing / audit / quota ledger contract",
-        "reason": "Gap 03 has a repo-native ResourceBinding / CloudOperation PostgreSQL ledger contract/local gate, but formal SaaS launch still needs billing, audit and quota ledger closure before workspace lifecycle, canary/rollback or external access.",
+        "id": "production-launch-gap-05-workspace-lifecycle-contract",
+        "title": "Production launch Gap 05: workspace suspend / resume / delete lifecycle contract",
+        "reason": "Gap 04 has a repo-native billing / audit / quota ledger contract/local gate, but formal SaaS launch still needs workspace suspend, resume and delete lifecycle closure before production canary/rollback or external access.",
         "boundary": "local contract and fixture readiness only until separately authorized; no secret/kubeconfig, no PostgreSQL connection, no kubectl, no deploy, no Tencent mutation, no Package C live execution",
-        "recommendedEntrypoint": "local Codex implementation of repo-native billing / audit / quota ledger contract/gate",
-        "evidencePath": ".runtime/production-launch-commercial-ledger/<runid>/commercial-ledger-contract-redacted.json"
+        "recommendedEntrypoint": "local Codex implementation of repo-native workspace suspend / resume / delete lifecycle contract/gate",
+        "evidencePath": ".runtime/production-launch-workspace-lifecycle/<runid>/workspace-lifecycle-contract-redacted.json"
       },
       "externalAccessBlockedUntil": "multi_tenant_minimum_launch_closure"
     }
@@ -7851,7 +7941,7 @@
     "同步 docs/active/README.md、docs/delivery/README.md、docs/history/README.md、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
   ],
   "production_launch_goal_gap_map": {
-    "status": "gap_03_resourcebinding_postgresql_ledger_contract_local_gated_no_cloud_execution",
+    "status": "gap_04_billing_audit_quota_ledger_contract_local_gated_no_cloud_execution",
     "currentFacts": {
       "packageDPlatformControlPlaneInsideTke": "deployed",
       "inClusterHttpReachability": "preflight-passed",
@@ -7869,7 +7959,9 @@
       "productionLaunchGap02OperationContract": "implemented",
       "productionLaunchGap02EvidencePath": ".runtime/production-launch-operation/<runid>/operation-contract-redacted.json",
       "productionLaunchGap03LedgerContract": "implemented",
-      "productionLaunchGap03EvidencePath": ".runtime/production-launch-ledger/<runid>/resourcebinding-ledger-contract-redacted.json"
+      "productionLaunchGap03EvidencePath": ".runtime/production-launch-ledger/<runid>/resourcebinding-ledger-contract-redacted.json",
+      "productionLaunchGap04CommercialLedgerContract": "implemented",
+      "productionLaunchGap04EvidencePath": ".runtime/production-launch-commercial-ledger/<runid>/commercial-ledger-contract-redacted.json"
     },
     "vision": {
       "product": "MedOPL production launch is a stable multi-tenant SaaS managed OPL workbench, not a temporary page trial.",
@@ -7968,27 +8060,27 @@
       {
         "id": "billing-ledger",
         "label": "billing ledger",
-        "status": "contract-only",
+        "status": "implemented",
         "evidence": [
-          "BillingEvent schema and local billing projections exist; production billing freeze/charge/stop-billing ledger evidence is missing"
+          "production-launch-commercial-ledger-runner local gate, Portal typed API production-commercial-ledger.ts and Go fail-closed /api/v22/production/commercial-ledger plan/commit routes prove billing ledger shape without PostgreSQL connection, real charge or Package C live execution"
         ],
         "launchBlocking": true
       },
       {
         "id": "audit-ledger",
         "label": "audit ledger",
-        "status": "contract-only",
+        "status": "implemented",
         "evidence": [
-          "AuditEvent store/projections exist; production audit ledger write/read/closure evidence is missing"
+          "production-launch-commercial-ledger-runner local gate proves audit ledger shape, redaction status and ResourceBinding / CloudOperation linkage without PostgreSQL connection or live audit write execution"
         ],
         "launchBlocking": true
       },
       {
         "id": "quota-enforcement",
         "label": "quota enforcement",
-        "status": "missing",
+        "status": "contract-only",
         "evidence": [
-          "workspace_storage_gb is modeled in ResourceBinding; runtime/storage quota enforcement is not proven"
+          "production-launch-commercial-ledger-runner local gate proves quota ledger shape and allow/deny/manual_review enforcement boundary; production quota enforcement and Package C admission remain future-authorized"
         ],
         "launchBlocking": true
       },
@@ -8091,9 +8183,9 @@
         "name": "Commercial ledger and lifecycle closure",
         "status": "contract-only",
         "requiredEvidence": [
-          "billing ledger",
-          "audit ledger",
-          "quota enforcement",
+          "billing ledger contract/local gate",
+          "audit ledger contract/local gate",
+          "quota enforcement boundary contract/local gate",
           "suspend/resume/delete semantics",
           "cleanup evidence"
         ],
@@ -8194,12 +8286,12 @@
       }
     ],
     "nextUniqueGap": {
-      "id": "production-launch-gap-04-billing-audit-quota-ledger-contract",
-      "title": "Production launch Gap 04: billing / audit / quota ledger contract",
-      "reason": "Gap 03 has a repo-native ResourceBinding / CloudOperation PostgreSQL ledger contract/local gate, but formal SaaS launch still needs billing, audit and quota ledger closure before workspace lifecycle, canary/rollback or external access.",
+      "id": "production-launch-gap-05-workspace-lifecycle-contract",
+      "title": "Production launch Gap 05: workspace suspend / resume / delete lifecycle contract",
+      "reason": "Gap 04 has a repo-native billing / audit / quota ledger contract/local gate, but formal SaaS launch still needs workspace suspend, resume and delete lifecycle closure before production canary/rollback or external access.",
       "boundary": "local contract and fixture readiness only until separately authorized; no secret/kubeconfig, no PostgreSQL connection, no kubectl, no deploy, no Tencent mutation, no Package C live execution",
-      "recommendedEntrypoint": "local Codex implementation of repo-native billing / audit / quota ledger contract/gate",
-      "evidencePath": ".runtime/production-launch-commercial-ledger/<runid>/commercial-ledger-contract-redacted.json"
+      "recommendedEntrypoint": "local Codex implementation of repo-native workspace suspend / resume / delete lifecycle contract/gate",
+      "evidencePath": ".runtime/production-launch-workspace-lifecycle/<runid>/workspace-lifecycle-contract-redacted.json"
     },
     "externalAccessPolicy": {
       "status": "blocked_before_multi_tenant_minimum_launch_closure",
@@ -8311,6 +8403,49 @@
         "no production PostgreSQL ledger write/read",
         "no Ingress or public access",
         "no billing/quota/workspace lifecycle implementation"
+      ]
+    },
+    "gap04CommercialLedgerContract": {
+      "status": "implemented",
+      "runnerCommand": "node tests/support/cloud-prework/production-launch-commercial-ledger-runner.js --mode contract-local-gate --run-id <runid> --authorized 1",
+      "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs",
+      "evidencePath": ".runtime/production-launch-commercial-ledger/<runid>/commercial-ledger-contract-redacted.json",
+      "portalTypedApi": "services/portal/frontend/src/api/portal/production-commercial-ledger.ts",
+      "goBackendRoutes": [
+        "POST /api/v22/production/commercial-ledger/plan",
+        "POST /api/v22/production/commercial-ledger/commit"
+      ],
+      "canonicalParents": "PostgreSQL resource_bindings/cloud_operations",
+      "commercialLedgers": [
+        "billing_events",
+        "audit_events",
+        "quota_ledger"
+      ],
+      "proves": [
+        "unauthorized fail closed",
+        "billing ledger write/read shape",
+        "audit ledger write/read shape",
+        "quota ledger / enforcement boundary",
+        "ResourceBinding / CloudOperation linkage",
+        "workspace cost attribution",
+        "operation idempotency uniqueness",
+        "providerKeyRef-only public boundary",
+        "local dry-run repository is separated from future production PostgreSQL write/read",
+        "raw provider key, DB password, token and Tencent secret redaction",
+        "external access remains blocked"
+      ],
+      "nonGoals": [
+        "no secret or kubeconfig read",
+        "no Kubernetes API or kubectl",
+        "no PostgreSQL connection",
+        "no deploy/rollout/rollback",
+        "no build/push",
+        "no Tencent mutation",
+        "no Package C live",
+        "no production PostgreSQL ledger write/read",
+        "no production billing charge or quota enforcement execution",
+        "no Ingress or public access",
+        "no workspace suspend/resume/delete lifecycle implementation"
       ]
     }
   }
