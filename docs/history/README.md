@@ -7743,11 +7743,11 @@ next_cursor: `real-cloud-authorization-boundary`
 
 ### 2026-06-17 production-launch-gap-08d-prep-qcloud-external-access-runner
 
-Status: `authoring / local verified / pending commit`
+Status: `landed / pushed / post-push verified`
 
 Branch: `recovery/platform-v22-trunk`
 
-Base trunk HEAD: `PENDING_LANDED_COMMIT`
+Base trunk HEAD: `92a471ecdfcb482b5052fa162822ab1248f0ce96`
 
 Model: `gpt-5.4`
 
@@ -7767,8 +7767,8 @@ Verification:
 - `node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs`: passed.
 - `node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs`: passed.
 - `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: passed.
-- `npm run verify`: rerun before final push.
-- `npm run closeout:check -- --json`: rerun before final push.
+- `npm run verify`: passed.
+- `npm run closeout:check -- --json`: passed.
 
 Can-claim:
 
@@ -7786,15 +7786,15 @@ Cannot-claim:
 
 next_cursor: `real-cloud-authorization-boundary`
 
-landed_commit: `pending_after_implementation_commit`
+landed_commit: `92a471ecdfcb482b5052fa162822ab1248f0ce96`
 
-landing_gate_result: `pending`
+landing_gate_result: `passed / ff-only landed / pushed`
 
 post_push_verification:
 
-- implementation commit pending; rerun after the Gap 08d-prep runner commit exists.
-- `npm run verify`: rerun before final push.
-- `npm run closeout:check -- --json`: rerun before final push.
+- `92a471ecdfcb482b5052fa162822ab1248f0ce96` remains reachable from `origin/recovery/platform-v22-trunk` after the Gap 08d-prep runner commit.
+- `npm run verify`: passed.
+- `npm run closeout:check -- --json`: passed.
 
 post_merge_closeout: `completed`
 
