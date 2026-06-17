@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -26,6 +26,7 @@ import {
   PACKAGE_D_EXTERNAL_ACCESS_DRY_RUN_COMMAND,
   assertPackageDExternalAccessManifestBoundary,
   buildPackageDExternalAccessPlan,
+  runPackageDExternalAccessExecution,
   writePackageDExternalAccessPlanEvidence,
 } from "../../support/cloud-prework/package-d-external-access-runner.js";
 
@@ -787,6 +788,121 @@ try {
   assert.equal(applyEvidencePayload.redactionAudit.tencentSslCertIdExposed, false, "external_access_evidence_hides_cert_id");
   assert.equal(applyEvidencePayload.redactionAudit.tlsPrivateKeyMaterialExposed, false, "external_access_evidence_hides_tls_key");
   assertNoQcloudApplySensitiveText(JSON.stringify(applyEvidencePayload), "external_access_evidence");
+
+  const envPath = path.join(externalAccessEvidenceRoot, "package-d-external-access.env");
+  const kubeconfigPath = path.join(externalAccessEvidenceRoot, "kubeconfig-package-d-deploy");
+  await writeFile(envPath, [
+    "PORTAL_HOST_DOMAIN=portal.medopl.cn",
+    "INGRESS_CLASS=qcloud",
+    "TLS_SECRET_NAME=medopl-portal-tls",
+    "TENCENT_SSL_CERT_ID=qcloud-cert-id-must-not-leak",
+    "EXTERNAL_SMOKE_URL=https://portal.medopl.cn/",
+  ].join("\n"));
+  await writeFile(kubeconfigPath, [
+    "apiVersion: v1",
+    "current-context: cls-fi097sy4-context",
+    "clusters:",
+    "- name: cls-fi097sy4",
+    "  cluster:",
+    "    server: https://cls-fi097sy4.example.invalid",
+    "contexts:",
+    "- name: cls-fi097sy4-context",
+    "  context:",
+    "    cluster: cls-fi097sy4",
+  ].join("\n"));
+  const previousRunGate = process.env.RUN_TENCENT_DEPLOY_EXECUTION;
+  process.env.RUN_TENCENT_DEPLOY_EXECUTION = "external-access";
+  try {
+    const commandLog = [];
+    const execution = await runPackageDExternalAccessExecution({
+      envPath,
+      kubeconfigPath,
+      evidenceDir,
+      authorized: true,
+      mode: "qcloud-ingress-apply",
+      runId: "gap08d-local-execution",
+      commandExecutor: async ({ args, stdin, env }) => {
+        commandLog.push({ args, stdin, envKeys: Object.keys(env).sort() });
+        assert.equal(args[0] === "kubectl" || args[0] === "getent" || args[0] === "curl", true, "external_access_executor_command_allowlist");
+        if (args[0] === "kubectl") {
+          assert.deepEqual(Object.keys(env).sort(), ["KUBECONFIG"], "external_access_kubectl_env_only_kubeconfig");
+        }
+        if (args.includes("delete") || args.includes("patch") || args.includes("scale") || args.includes("rollout") || args.includes("exec")) {
+          throw new Error(`external_access_forbidden_fake_command:${args.join(" ")}`);
+        }
+        if (args.join(" ").includes("config current-context")) return { status: 0, stdout: "cls-fi097sy4-context\n", stderr: "" };
+        if (args.join(" ").includes("get namespace medopl-platform")) return { status: 0, stdout: "{\"metadata\":{\"name\":\"medopl-platform\"}}\n", stderr: "" };
+        if (args.join(" ").includes("get service portal-frontend")) return { status: 0, stdout: "{\"metadata\":{\"name\":\"portal-frontend\"},\"spec\":{\"ports\":[{\"port\":8080}]}}\n", stderr: "" };
+        if (args.join(" ").includes("get ingressclass qcloud")) return { status: 0, stdout: "{\"metadata\":{\"name\":\"qcloud\"},\"spec\":{\"controller\":\"cloud.tencent.com/ingress-controller\"}}\n", stderr: "" };
+        if (args.includes("apply")) {
+          assert.equal(args[args.indexOf("-f") + 1], "-", "external_access_apply_and_dry_run_must_use_stdin_manifest");
+          assert.equal(String(stdin || "").trim().startsWith("{"), true, "external_access_execution_stdin_must_include_manifest");
+          if (String(stdin || "").includes("\"kind\": \"Secret\"")) {
+            assert.equal(String(stdin || "").includes("qcloud-cert-id-must-not-leak"), true, "external_access_execution_secret_stdin_uses_live_manifest");
+          }
+          assert.equal(String(stdin || "").includes("<redacted-env:TENCENT_SSL_CERT_ID>"), false, "external_access_execution_stdin_must_not_use_redacted_manifest");
+        }
+        if (args.join(" ").includes("get secret medopl-portal-tls")) return { status: 0, stdout: "{\"metadata\":{\"name\":\"medopl-portal-tls\"},\"type\":\"Opaque\"}\n", stderr: "" };
+        if (args.join(" ").includes("describe secret medopl-portal-tls")) return { status: 0, stdout: "Name: medopl-portal-tls\nType: Opaque\n", stderr: "" };
+        if (args.join(" ").includes("get ingress portal-frontend")) return { status: 0, stdout: "{\"metadata\":{\"name\":\"portal-frontend\"}}\n", stderr: "" };
+        if (args.join(" ").includes("describe ingress portal-frontend")) return { status: 0, stdout: "Name: portal-frontend\n", stderr: "" };
+        if (args[0] === "getent") return { status: 0, stdout: "203.0.113.10 portal.medopl.cn\n", stderr: "" };
+        if (args[0] === "curl") return { status: 0, stdout: "portal ok\n", stderr: "" };
+        return { status: 0, stdout: "ok\n", stderr: "" };
+      },
+    });
+    assert.equal(execution.ok, true, "external_access_fake_execution_must_pass");
+    assert.equal(commandLog.some((entry) => entry.args.includes("--dry-run=server")), true, "external_access_execution_must_run_server_side_dry_run");
+    assert.equal(commandLog.some((entry) => entry.args.includes("apply") && !entry.args.includes("--dry-run=server")), true, "external_access_execution_must_apply_after_dry_run");
+    const runEvidenceDir = path.join(evidenceDir, "gap08d-local-execution");
+    const redactedSecretEvidence = JSON.parse(await readFile(path.join(runEvidenceDir, "qcloud-cert-secret-redacted.json"), "utf8"));
+    const redactedIngressEvidence = JSON.parse(await readFile(path.join(runEvidenceDir, "portal-ingress-redacted.json"), "utf8"));
+    assert.equal(redactedSecretEvidence.stringData.qcloud_cert_id, "<redacted-env:TENCENT_SSL_CERT_ID>", "external_access_execution_secret_manifest_evidence_redacted");
+    assert.equal(redactedIngressEvidence.kind, "Ingress", "external_access_execution_ingress_manifest_evidence_written");
+    const executionEvidenceText = await readFile(execution.evidencePath, "utf8");
+    assertNoQcloudApplySensitiveText(executionEvidenceText, "external_access_execution_evidence");
+
+    await assert.rejects(
+      runPackageDExternalAccessExecution({
+        envPath,
+        kubeconfigPath,
+        evidenceDir,
+        authorized: true,
+        mode: "qcloud-ingress-apply",
+        runId: "gap08d-local-dry-run-failure",
+        commandExecutor: async ({ args, stdin }) => {
+          if (args.join(" ").includes("config current-context")) return { status: 0, stdout: "cls-fi097sy4-context\n", stderr: "" };
+          if (args.join(" ").includes("get namespace medopl-platform")) return { status: 0, stdout: "{\"metadata\":{\"name\":\"medopl-platform\"}}\n", stderr: "" };
+          if (args.join(" ").includes("get service portal-frontend")) return { status: 0, stdout: "{\"metadata\":{\"name\":\"portal-frontend\"},\"spec\":{\"ports\":[{\"port\":8080}]}}\n", stderr: "" };
+          if (args.join(" ").includes("get ingressclass qcloud")) return { status: 0, stdout: "{\"metadata\":{\"name\":\"qcloud\"},\"spec\":{\"controller\":\"cloud.tencent.com/ingress-controller\"}}\n", stderr: "" };
+          if (args.includes("apply") && args.includes("--dry-run=server")) {
+            assert.equal(args[args.indexOf("-f") + 1], "-", "external_access_failed_dry_run_uses_stdin_manifest");
+            assert.equal(String(stdin || "").includes("qcloud-cert-id-must-not-leak"), true, "external_access_failed_dry_run_uses_live_manifest_stdin");
+            return { status: 1, stdout: "", stderr: "server dry-run rejected qcloud cert secret qcloud-cert-id-must-not-leak" };
+          }
+          return { status: 0, stdout: "ok\n", stderr: "" };
+        },
+      }),
+      /package_d_external_access_command_failed:dry_run_qcloud_cert_secret/,
+      "external_access_dry_run_failure_must_fail_closed",
+    );
+    const failureRunEvidenceDir = path.join(evidenceDir, "gap08d-local-dry-run-failure");
+    const failureSecretEvidence = await readFile(path.join(failureRunEvidenceDir, "qcloud-cert-secret-redacted.json"), "utf8");
+    const failureIngressEvidence = await readFile(path.join(failureRunEvidenceDir, "portal-ingress-redacted.json"), "utf8");
+    const failureExecutionEvidence = await readFile(path.join(failureRunEvidenceDir, "real-mutation-redacted.json"), "utf8");
+    assert.equal(failureSecretEvidence.includes("<redacted-env:TENCENT_SSL_CERT_ID>"), true, "external_access_failed_dry_run_secret_manifest_evidence_written");
+    assert.equal(failureIngressEvidence.includes("\"kind\": \"Ingress\""), true, "external_access_failed_dry_run_ingress_manifest_evidence_written");
+    assert.equal(failureExecutionEvidence.includes("dry_run_qcloud_cert_secret"), true, "external_access_failed_dry_run_execution_evidence_written");
+    assertNoQcloudApplySensitiveText(failureSecretEvidence, "external_access_failed_dry_run_secret_manifest_evidence");
+    assertNoQcloudApplySensitiveText(failureIngressEvidence, "external_access_failed_dry_run_ingress_manifest_evidence");
+    assertNoQcloudApplySensitiveText(failureExecutionEvidence, "external_access_failed_dry_run_execution_evidence");
+  } finally {
+    if (previousRunGate === undefined) {
+      delete process.env.RUN_TENCENT_DEPLOY_EXECUTION;
+    } else {
+      process.env.RUN_TENCENT_DEPLOY_EXECUTION = previousRunGate;
+    }
+  }
 } finally {
   await rm(externalAccessEvidenceRoot, { recursive: true, force: true });
 }

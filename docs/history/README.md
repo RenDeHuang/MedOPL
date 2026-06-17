@@ -59,6 +59,49 @@ landed 后的记录还必须补齐：
 
 ## Current Run Summaries
 
+### 2026-06-18 production-launch-gap-08d-runner-dryrun-manifest-file-fix
+
+Status: `landed candidate / local-gated`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `2214c3020a8e7d0593f5c60833c7649eb561ae7e`
+
+Model: `gpt-5.4`
+
+Subagents: none
+
+Scope:
+
+- Recorded the cloud fail-closed fact from `.runtime/package-d-external-access-strategy/gap08d-qcloud-ingress-real-003/real-mutation-redacted.json`: `qcloud-ingress-apply` reached `dry_run_qcloud_cert_secret` after the external access env allowlist and process `RUN_TENCENT_DEPLOY_EXECUTION=external-access` gate passed, but referenced a missing `.runtime/.../qcloud-cert-secret-redacted.json` manifest file.
+- `Secret/medopl-portal-tls` and the Portal Ingress remained `NotFound`; `TENCENT_SSL_CERT_ID` did not leak; no out-of-bound mutation occurred.
+- Fixed `tests/support/cloud-prework/package-d-external-access-runner.js` so qcloud Secret and Portal Ingress server-side dry-run/apply commands use live manifests through stdin (`-f -`) instead of a redacted evidence file path.
+- Added `writePackageDExternalAccessManifestEvidence()` and call it before kubeconfig read / command execution, so `qcloud-cert-secret-redacted.json` and `portal-ingress-redacted.json` exist before dry-run and remain redacted evidence even if dry-run fails.
+- Updated the future-authorized local gate to prove dry-run/apply use stdin, the Secret stdin carries the live cert id only inside the fake executor boundary, redacted manifest evidence exists before/through execution, dry-run failure still writes redacted manifest and execution evidence, and `TENCENT_SSL_CERT_ID` does not enter evidence.
+- Preserved the five-key `package-d-external-access.env` allowlist, process/deploy `RUN_TENCENT_DEPLOY_EXECUTION=external-access` apply gate, dry-run gate `0`, qcloud Secret `Opaque` + `stringData.qcloud_cert_id`, legacy Kubernetes TLS path rejection and public access non-claim.
+- This closeout did not read secrets/kubeconfig/DB password/TLS private key, connect to Kubernetes API or PostgreSQL, run kubectl, deploy, rollout, rollback, build/push, execute Tencent API mutation, run Package C live, create TLS Secret, create Ingress, mutate LoadBalancer/DNS/TLS or claim public user access is complete.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs`: passed.
+- Full verification pending before landing: `npm run verify`; `npm run closeout:check -- --json`.
+
+Can-claim:
+
+- Gap 08d dry-run manifest file ordering is fixed locally.
+- qcloud Secret/Ingress dry-run/apply commands no longer depend on missing redacted manifest file paths.
+- Redacted qcloud Secret and Portal Ingress manifest evidence is written before dry-run and on dry-run failure.
+- The next cloud run-id is `gap08d-qcloud-ingress-real-004`.
+
+Cannot-claim:
+
+- TLS Secret creation executed.
+- Portal Ingress creation executed.
+- DNS or LoadBalancer mutation executed.
+- Public/external user access is complete.
+
+next_cursor: `real-cloud-authorization-boundary`
+
 ### 2026-06-17 production-launch-gap-02-package-c-operation-contract
 
 Status: `landed candidate / local-gated`
@@ -7831,7 +7874,7 @@ Can-claim:
 - Gap 08d runner env gate source is corrected locally.
 - `package-d-external-access.env` is a five-business-key file only.
 - `RUN_TENCENT_DEPLOY_EXECUTION` is sourced from process/deploy run gate source, not from `package-d-external-access.env`.
-- The next cloud run-id is `gap08d-qcloud-ingress-real-003`.
+- At that historical closeout, the next cloud run-id was `gap08d-qcloud-ingress-real-003`; later Gap 08d attempts advanced the current next run-id.
 
 Cannot-claim:
 

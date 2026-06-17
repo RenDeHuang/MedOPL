@@ -302,13 +302,13 @@ function commandPlan({ mode, secretManifestPath, ingressManifestPath }) {
     commandRecord({
       name: "dry_run_qcloud_cert_secret",
       kind: "server_side_dry_run",
-      args: ["kubectl", "apply", "--server-side", "--dry-run=server", "-f", secretManifestPath, "-o", "yaml"],
+      args: ["kubectl", "apply", "--server-side", "--dry-run=server", "-f", "-", "-o", "yaml"],
       stdinManifest: "secret",
     }),
     commandRecord({
       name: "dry_run_portal_ingress",
       kind: "server_side_dry_run",
-      args: ["kubectl", "apply", "--server-side", "--dry-run=server", "-f", ingressManifestPath, "-o", "yaml"],
+      args: ["kubectl", "apply", "--server-side", "--dry-run=server", "-f", "-", "-o", "yaml"],
       stdinManifest: "ingress",
     }),
   ];
@@ -362,7 +362,10 @@ function commandPlan({ mode, secretManifestPath, ingressManifestPath }) {
 }
 
 function redactCommand(args = []) {
-  return args.map((arg, index) => (args[index - 1] === "-f" ? "REDACTED_EXTERNAL_ACCESS_MANIFEST" : arg)).join(" ").replace(" -f -", " -f REDACTED_STDIN_EXTERNAL_ACCESS_MANIFEST");
+  return args.map((arg, index) => {
+    if (args[index - 1] !== "-f") return arg;
+    return arg === "-" ? "REDACTED_STDIN_EXTERNAL_ACCESS_MANIFEST" : "REDACTED_EXTERNAL_ACCESS_MANIFEST";
+  }).join(" ");
 }
 
 function assertCommandAllowed(command = {}) {
@@ -642,8 +645,7 @@ async function writeEvidence({ evidenceDir, filename, payload }) {
 export async function writePackageDExternalAccessPlanEvidence({ plan } = {}) {
   if (!plan?.evidence?.path) throw new Error("package_d_external_access_plan_required");
   const evidenceDir = path.dirname(plan.evidence.path);
-  await writeEvidence({ evidenceDir, filename: path.basename(plan.evidence.secretManifestPath), payload: plan.manifests.secret });
-  await writeEvidence({ evidenceDir, filename: path.basename(plan.evidence.ingressManifestPath), payload: plan.manifests.ingress });
+  await writePackageDExternalAccessManifestEvidence({ plan });
   const payload = {
     ...plan,
     commands: plan.commands.map((command) => ({
@@ -658,6 +660,20 @@ export async function writePackageDExternalAccessPlanEvidence({ plan } = {}) {
   if (failedAudit) throw new Error(`package_d_external_access_redaction_audit_failed:${failedAudit}`);
   const target = await writeEvidence({ evidenceDir, filename: path.basename(plan.evidence.path), payload: evidence });
   return { path: target, report: evidence };
+}
+
+export async function writePackageDExternalAccessManifestEvidence({ plan } = {}) {
+  if (!plan?.evidence?.path) throw new Error("package_d_external_access_plan_required");
+  const evidenceDir = path.dirname(plan.evidence.path);
+  await writeEvidence({ evidenceDir, filename: path.basename(plan.evidence.secretManifestPath), payload: plan.manifests.secret });
+  await writeEvidence({ evidenceDir, filename: path.basename(plan.evidence.ingressManifestPath), payload: plan.manifests.ingress });
+  const audit = redactionAudit(JSON.stringify(plan.manifests));
+  const failedAudit = failedAuditKeys(audit);
+  if (failedAudit) throw new Error(`package_d_external_access_manifest_redaction_audit_failed:${failedAudit}`);
+  return {
+    secretManifestPath: plan.evidence.secretManifestPath,
+    ingressManifestPath: plan.evidence.ingressManifestPath,
+  };
 }
 
 function defaultCommandExecutor({ args, stdin = "", env = {} }) {
@@ -738,6 +754,7 @@ export async function runPackageDExternalAccessExecution({
     runGateEnv: processRunGateEnv(),
     kubeconfigPath,
   });
+  await writePackageDExternalAccessManifestEvidence({ plan });
   assertFile(kubeconfigPath, "package_d_external_access_kubeconfig_missing");
   const kubeconfig = await readFile(kubeconfigPath, "utf8");
   const clusterAuth = kubeconfigSummary(kubeconfig);
