@@ -6797,7 +6797,7 @@ Model: `gpt-5.4`
 Scope:
 
 - Landed Package D service reachability wait-failure diagnostics.
-- Commit `04a8d56f41d2356772dad86d9336a7dcdd99ed2b` enhances `tests/support/cloud-prework/package-d-service-reachability-runner.js` so future smoke Job wait timeouts collect redacted Job get/describe, Pod status, container status/image-pull class, Events and per-curl-container log summaries before cleanup.
+- Commit `04a8d56282382aa0a49d0f3ceb4dbe73b6fe4b28` enhances `tests/support/cloud-prework/package-d-service-reachability-runner.js` so future smoke Job wait timeouts collect redacted Job get/describe, Pod status, container status/image-pull class, Events and per-curl-container log summaries before cleanup.
 - The local/future-authorized gate now proves `diagnostics-redacted.json` is written before cleanup and that evidence remains redacted.
 - This closeout did not read secrets/kubeconfig, connect to Kubernetes API, run kubectl, deploy, build/push, execute Tencent mutation or run Package C live.
 
@@ -6817,13 +6817,13 @@ Cannot-claim:
 - In-cluster HTTP smoke has passed.
 - Portal external/public access, Ingress, LoadBalancer, DNS, TLS, production billing or rollback execution are complete.
 
-landed_commit: `04a8d56f41d2356772dad86d9336a7dcdd99ed2b`
+landed_commit: `04a8d56282382aa0a49d0f3ceb4dbe73b6fe4b28`
 
 landing_gate_result: `passed / ff-only landed / pushed`
 
 post_push_verification:
 
-- `04a8d56f41d2356772dad86d9336a7dcdd99ed2b` is the implementation commit for wait-failure diagnostics and will be reachable from `origin/recovery/platform-v22-trunk` after this closeout push.
+- `04a8d56282382aa0a49d0f3ceb4dbe73b6fe4b28` is the implementation commit for wait-failure diagnostics and will be reachable from `origin/recovery/platform-v22-trunk` after this closeout push.
 - `npm run verify`: pass before closeout commit.
 - `npm run closeout:check -- --json`: pass before closeout commit.
 
