@@ -7727,13 +7727,13 @@ Cannot-claim:
 
 next_cursor: `real-cloud-authorization-boundary`
 
-landed_commit: `pending-final-hash`
+landed_commit: `55484701a515d433aeb7fcb43dbd057153eb41ea`
 
 landing_gate_result: `passed / ff-only landed / pushed`
 
 post_push_verification:
 
-- `pending-final-hash` remains reachable from `origin/recovery/platform-v22-trunk` after the Gap 08c closeout commit.
+- `55484701a515d433aeb7fcb43dbd057153eb41ea` remains reachable from `origin/recovery/platform-v22-trunk` after the Gap 08c closeout commit.
 - `npm run verify`: rerun before final push.
 - `npm run closeout:check -- --json`: rerun before final push.
 
