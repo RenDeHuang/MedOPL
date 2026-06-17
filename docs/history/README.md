@@ -59,6 +59,41 @@ landed 后的记录还必须补齐：
 
 ## Current Run Summaries
 
+### 2026-06-17 package-d-service-reachability-passed-external-access-pack
+
+Status: `landed candidate / local-gated`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `f380895ae67427d1167fb7f0c33370fe76bcc1fa`
+
+Model: `gpt-5.4`
+
+Subagents: none
+
+Scope:
+
+- Recorded authorized Package D readonly service reachability / in-cluster HTTP smoke run `psr-20260617-004`.
+- Cloud facts: repo HEAD `f380895ae67427d1167fb7f0c33370fe76bcc1fa`, namespace `medopl-platform`, runner selector `node.tke.cloud.tencent.com/machineset=np-6l4nkdto`, smoke Job `medopl-service-smoke-psr-20260617-004`, all four Deployments ready `1/1`, all four Services are ClusterIP `8080/http`, and HTTP status was `200` for `portal-frontend`, `medopl-go-backend`, `opl-web-gateway` and `opl-runtime-bridge`.
+- Cleanup deleted the smoke Job and verified `NotFound`; `diagnostics-redacted.json` was not generated because the run succeeded.
+- Evidence paths are `.runtime/package-d-service-reachability/psr-20260617-004/readonly-service-reachability-redacted.json` and `.runtime/package-d-service-reachability/psr-20260617-004/smoke-job-manifest-redacted.json`.
+- Generated the next Portal external access strategy authorization pack in active/delivery/fixture truth. It compares admin-only port-forward, internal gateway, Ingress, LoadBalancer and HTTPS/domain, and recommends admin-only port-forward for the next non-public admin smoke unless persistent private access requires internal gateway.
+- Did not read secret/kubeconfig, connect to Kubernetes API, run kubectl, deploy, rollout, rollback, build/push, execute Tencent mutation or run Package C live.
+
+Can-claim:
+
+- Package D is deployed inside TKE.
+- Package D in-cluster HTTP reachability passed for the four ClusterIP Services.
+- External/public user access is not yet exposed.
+- Portal external access strategy is the next authorization boundary.
+
+Cannot-claim:
+
+- Portal external/public access, Ingress, LoadBalancer, DNS, TLS, production billing or rollback execution are complete.
+- This repo session performed new deploy, kubectl, build/push, Tencent mutation, Package C live or secret/kubeconfig reads.
+
+next_cursor: `real-cloud-authorization-boundary`
+
 ### 2026-06-17 package-d-service-reachability-curl-security-context
 
 Status: `landed candidate / local-gated`
@@ -6986,6 +7021,54 @@ landing_gate_result: `passed / ff-only landed / pushed`
 post_push_verification:
 
 - `a272e07c2b462c4e61315536c701f03069b5f474` is the implementation commit for curl smoke numeric non-root securityContext and must be reachable from `origin/recovery/platform-v22-trunk` after this closeout push.
+- `npm run verify`: run after push.
+- `npm run closeout:check -- --json`: run after push.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
+
+### 2026-06-17 package-d-service-reachability-passed-external-access-pack-landed
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `f380895ae67427d1167fb7f0c33370fe76bcc1fa`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Landed the Package D in-cluster HTTP reachability success closeout and Portal external access strategy authorization pack.
+- Recorded run `psr-20260617-004` evidence: `.runtime/package-d-service-reachability/psr-20260617-004/readonly-service-reachability-redacted.json` and `.runtime/package-d-service-reachability/psr-20260617-004/smoke-job-manifest-redacted.json`.
+- The strategy pack compares admin-only port-forward, internal gateway, Ingress, LoadBalancer and HTTPS/domain, with allowed operations, forbidden operations, security boundary, rollback/cleanup plan, smoke plan, evidence paths, stop conditions and recommended next option.
+- Recommended next option is admin-only port-forward strategy for non-public admin smoke, or internal gateway if persistent private access is required; public Ingress/LoadBalancer/HTTPS-domain work remains a separate explicit authorization boundary.
+- This closeout did not read secrets/kubeconfig, connect to Kubernetes API, run kubectl, deploy, rollout, rollback, build/push, execute Tencent mutation or run Package C live.
+
+Verification:
+
+- `npm run verify`: pass before closeout commit; run again after push.
+- `npm run closeout:check -- --json`: pass before closeout commit; run again after push.
+
+Can-claim:
+
+- Package D in-cluster HTTP reachability has passed.
+- Portal external access strategy authorization pack is ready for the next gap.
+- External/public user access remains unexposed.
+
+Cannot-claim:
+
+- Portal external/public access, Ingress, LoadBalancer, DNS, TLS, production billing or rollback execution are complete.
+
+landed_commit: `a272e07c2b462c4e61315536c701f03069b5f474`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `a272e07c2b462c4e61315536c701f03069b5f474` remains reachable from `origin/recovery/platform-v22-trunk`.
 - `npm run verify`: run after push.
 - `npm run closeout:check -- --json`: run after push.
 
