@@ -23,6 +23,11 @@ import {
   buildProductionLaunchCommercialLedgerContract,
   runProductionLaunchCommercialLedgerContract,
 } from "../../support/cloud-prework/production-launch-commercial-ledger-runner.js";
+import {
+  PRODUCTION_LAUNCH_WORKSPACE_LIFECYCLE_COMMAND,
+  buildProductionLaunchWorkspaceLifecycleContract,
+  runProductionLaunchWorkspaceLifecycleContract,
+} from "../../support/cloud-prework/production-launch-workspace-lifecycle-runner.js";
 
 const contractPath = "docs/specs/README.md";
 const manifestPath = "tests/fixtures/v22/agent-verify-manifest.json";
@@ -951,6 +956,175 @@ try {
   await rm(commercialLedgerEvidenceRoot, { recursive: true, force: true });
 }
 
+const workspaceLifecycleEvidenceRoot = await mkdtemp(path.join(os.tmpdir(), "v22-production-launch-workspace-lifecycle-"));
+try {
+  const evidenceDir = path.join(workspaceLifecycleEvidenceRoot, "evidence");
+  const runId = "plw-20260617-001";
+  const rawProviderKey = "gflabtoken-raw-provider-key-material-that-must-not-leak";
+  const dbPassword = "postgres-password-that-must-not-leak";
+  const bearerToken = "bearer-token-that-must-not-leak";
+  const tencentSecretId = "TENCENT_SECRET_ID_that_must_not_leak";
+  const tencentSecretKey = "TENCENT_SECRET_KEY_that_must_not_leak";
+
+  assert.equal(
+    PRODUCTION_LAUNCH_WORKSPACE_LIFECYCLE_COMMAND,
+    "node tests/support/cloud-prework/production-launch-workspace-lifecycle-runner.js --mode contract-local-gate --run-id <runid> --authorized 1",
+    "workspace_lifecycle_runner_must_publish_single_repo_native_command",
+  );
+
+  await assert.rejects(
+    () => buildProductionLaunchWorkspaceLifecycleContract({
+      runId,
+      evidenceDir,
+      authorized: false,
+    }),
+    /production_launch_workspace_lifecycle_not_authorized/,
+    "workspace_lifecycle_missing_authorization_must_fail_closed",
+  );
+
+  await assert.rejects(
+    () => buildProductionLaunchWorkspaceLifecycleContract({
+      runId: "",
+      evidenceDir,
+      authorized: true,
+    }),
+    /production_launch_workspace_lifecycle_run_id_required/,
+    "workspace_lifecycle_missing_run_id_must_fail_closed",
+  );
+
+  const plan = await buildProductionLaunchWorkspaceLifecycleContract({
+    runId,
+    evidenceDir,
+    authorized: true,
+    lifecycle: {
+      tenantId: "tenant-production-alpha",
+      accountId: "account-production-alpha",
+      workspaceId: "workspace-production-alpha",
+      resourceBindingId: "rb-production-alpha",
+      cloudOperationId: "op:tenant-production-alpha:workspace-production-alpha:rb-production-alpha:workspace-ledger-alpha-once",
+      billingAttributionId: "bill-production-alpha",
+      serverPlanId: "starter_2c4g_10gb",
+      providerKeyRef: "gflab:workspace-production-alpha:refonly001122",
+      idempotencyKey: "workspace-lifecycle-alpha-once",
+      rawProviderKey,
+      runtime: {
+        dbPassword,
+      },
+      tokens: {
+        bearerToken,
+      },
+      tencent: {
+        SecretId: tencentSecretId,
+        SecretKey: tencentSecretKey,
+      },
+    },
+  });
+
+  assert.equal(plan.ok, true, "workspace_lifecycle_plan_ok");
+  assert.equal(plan.contract, "production_launch_gap_05_workspace_lifecycle_contract_local_gate", "workspace_lifecycle_contract_name");
+  assert.equal(plan.mode, "contract-local-gate", "workspace_lifecycle_mode");
+  assert.equal(plan.boundary.contractOnly, true, "workspace_lifecycle_contract_only_boundary");
+  assert.equal(plan.boundary.productionPostgresConnectAllowedNow, false, "workspace_lifecycle_postgres_connect_forbidden");
+  assert.equal(plan.boundary.productionPostgresWriteAllowedNow, false, "workspace_lifecycle_postgres_write_forbidden");
+  assert.equal(plan.boundary.packageCLiveAllowed, false, "workspace_lifecycle_package_c_live_forbidden");
+  assert.equal(plan.boundary.tencentMutationAllowed, false, "workspace_lifecycle_tencent_mutation_forbidden");
+  assert.equal(plan.boundary.kubernetesAccessAllowed, false, "workspace_lifecycle_kubernetes_forbidden");
+  assert.equal(plan.boundary.deployAllowed, false, "workspace_lifecycle_deploy_forbidden");
+  assert.equal(plan.boundary.externalAccessBlocked, true, "workspace_lifecycle_external_access_blocked");
+  assert.equal(plan.productionVsLocalRepository.localRepositoryMode, "dry-run-memory-shape-only", "workspace_lifecycle_local_repository_mode");
+  assert.equal(plan.productionVsLocalRepository.futureProductionRepository, "PostgreSQL resource_bindings/cloud_operations/billing_events/audit_events/quota_ledger", "workspace_lifecycle_future_repository");
+  assert.equal(plan.productionVsLocalRepository.productionRequiresExplicitPostgresAuthorization, true, "workspace_lifecycle_requires_future_postgres_authorization");
+
+  assert.deepEqual(plan.portalWorkspaceLifecycleApiTrace.map((entry) => entry.methodPath), [
+    "POST /api/v22/production/workspace-lifecycle/plan",
+    "POST /api/v22/production/workspace-lifecycle/commit",
+  ], "portal_backend_workspace_lifecycle_api_trace");
+  assert.equal(plan.portalWorkspaceLifecycleApiTrace.every((entry) => entry.status === "contract-only"), true, "workspace_lifecycle_api_trace_contract_only");
+  assert.deepEqual(Object.keys(plan.requests.suspend).sort(), [
+    "accountId",
+    "billingAttributionId",
+    "cloudOperationId",
+    "idempotencyKey",
+    "providerKeyRef",
+    "resourceBindingId",
+    "serverPlanId",
+    "tenantId",
+    "workspaceId",
+  ], "suspend_request_public_shape");
+  assert.deepEqual(Object.keys(plan.requests.resume).sort(), Object.keys(plan.requests.suspend).sort(), "resume_request_public_shape");
+  assert.deepEqual(Object.keys(plan.requests.delete).sort(), Object.keys(plan.requests.suspend).sort(), "delete_request_public_shape");
+  assert.equal(plan.requests.suspend.providerKeyRef, "gflab:workspace-production-alpha:refonly001122", "suspend_provider_ref_only");
+  assert.equal(plan.requests.resume.providerKeyRef, "gflab:workspace-production-alpha:refonly001122", "resume_provider_ref_only");
+  assert.equal(plan.requests.delete.providerKeyRef, "gflab:workspace-production-alpha:refonly001122", "delete_provider_ref_only");
+
+  assert.deepEqual(plan.resourceBindingLifecycle.statesByAction.suspend, ["ready", "suspendRequested", "suspended"], "resource_binding_suspend_states");
+  assert.deepEqual(plan.resourceBindingLifecycle.statesByAction.resume, ["suspended", "resumeRequested", "ready"], "resource_binding_resume_states");
+  assert.deepEqual(plan.resourceBindingLifecycle.statesByAction.delete, ["ready", "releaseRequested", "deleting", "released"], "resource_binding_delete_states");
+  assert.equal(plan.cloudOperationLifecycle.operationTypes.suspend, "workspace_suspend", "cloud_operation_suspend_type");
+  assert.equal(plan.cloudOperationLifecycle.operationTypes.resume, "workspace_resume", "cloud_operation_resume_type");
+  assert.equal(plan.cloudOperationLifecycle.operationTypes.delete, "workspace_delete", "cloud_operation_delete_type");
+  assert.deepEqual(plan.billingLifecycle.actions, ["stop_on_suspend", "resume_on_resume", "finalize_on_delete"], "billing_lifecycle_actions");
+  assert.deepEqual(plan.auditLifecycle.actions, ["workspace_suspend_requested", "workspace_resume_requested", "workspace_delete_requested"], "audit_lifecycle_actions");
+  assert.deepEqual(plan.quotaLifecycle.actions, ["release_on_suspend", "restore_on_resume", "final_release_on_delete"], "quota_lifecycle_actions");
+  assert.equal(plan.idempotency.operationId, "lifecycle:tenant-production-alpha:workspace-production-alpha:rb-production-alpha:workspace-lifecycle-alpha-once", "workspace_lifecycle_operation_id_shape");
+  assert.equal(plan.rollbackCleanupEvidence.rollbackPlan.required, true, "workspace_lifecycle_rollback_required");
+  assert.equal(plan.rollbackCleanupEvidence.cleanupPlan.required, true, "workspace_lifecycle_cleanup_required");
+  assert.equal(plan.evidence.path, path.join(evidenceDir, runId, "workspace-lifecycle-contract-redacted.json"), "workspace_lifecycle_evidence_path");
+  assert.equal(plan.externalAccess.status, "blocked_until_multi_tenant_minimum_launch_closure", "workspace_lifecycle_external_access_status");
+  assertNoSensitiveText(JSON.stringify(plan), "workspace_lifecycle_plan");
+
+  const summary = await runProductionLaunchWorkspaceLifecycleContract({
+    runId,
+    evidenceDir,
+    authorized: true,
+  });
+  assert.equal(summary.ok, true, "workspace_lifecycle_summary_ok");
+  assert.equal(summary.evidencePath.endsWith(`${runId}/workspace-lifecycle-contract-redacted.json`), true, "workspace_lifecycle_summary_evidence_path");
+  assert.equal(summary.realExecutionReady, false, "workspace_lifecycle_real_execution_ready_false");
+  assertNoSensitiveText(JSON.stringify(summary), "workspace_lifecycle_summary");
+
+  const evidence = JSON.parse(await readFile(summary.evidencePath, "utf8"));
+  assert.equal(evidence.ok, true, "workspace_lifecycle_evidence_ok");
+  assert.equal(evidence.redactionAudit.rawSecretMaterialExposed, false, "workspace_lifecycle_evidence_hides_raw_provider_key");
+  assert.equal(evidence.redactionAudit.dbPasswordExposed, false, "workspace_lifecycle_evidence_hides_db_password");
+  assert.equal(evidence.redactionAudit.tokenExposed, false, "workspace_lifecycle_evidence_hides_token");
+  assert.equal(evidence.redactionAudit.tencentSecretExposed, false, "workspace_lifecycle_evidence_hides_tencent_secret");
+  assert.equal(evidence.redactionAudit.browserStorageSecretWritePresent, false, "workspace_lifecycle_evidence_blocks_browser_storage_secret");
+  assert.equal(evidence.nextGap.id, "production-launch-gap-06-production-canary-rollback-evidence-contract", "next_gap_after_gap_05");
+  assertNoSensitiveText(JSON.stringify(evidence), "workspace_lifecycle_evidence");
+
+  for (const forbiddenArg of [
+    "--kubeconfig",
+    "--kubectl",
+    "--deploy",
+    "--rollout",
+    "--rollback",
+    "--build",
+    "--push",
+    "--tencent-mutation",
+    "--package-c-live",
+    "--postgres",
+    "--db",
+    "--ingress",
+    "--load-balancer",
+    "--secret-file",
+    "--env",
+  ]) {
+    await assert.rejects(
+      () => buildProductionLaunchWorkspaceLifecycleContract({
+        runId,
+        evidenceDir,
+        authorized: true,
+        argv: [forbiddenArg, "1"],
+      }),
+      /production_launch_workspace_lifecycle_forbidden_arg/,
+      `workspace_lifecycle_runner_must_reject:${forbiddenArg}`,
+    );
+  }
+} finally {
+  await rm(workspaceLifecycleEvidenceRoot, { recursive: true, force: true });
+}
+
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_production_cloud_topology_boundary",
@@ -965,5 +1139,6 @@ console.log(JSON.stringify({
     "production_launch_gap_02_package_c_operation_contract_local_gate",
     "production_launch_gap_03_resourcebinding_postgresql_ledger_contract_local_gate",
     "production_launch_gap_04_billing_audit_quota_ledger_contract_local_gate",
+    "production_launch_gap_05_workspace_lifecycle_contract_local_gate",
   ],
 }, null, 2));

@@ -88,6 +88,8 @@ func RegisterControlPlaneRoutes(api *gin.RouterGroup, service ControlPlaneServic
 	api.POST("/v22/production/ledger/commit", productionLedgerContractCommit())
 	api.POST("/v22/production/commercial-ledger/plan", productionCommercialLedgerContractPlan())
 	api.POST("/v22/production/commercial-ledger/commit", productionCommercialLedgerContractCommit())
+	api.POST("/v22/production/workspace-lifecycle/plan", productionWorkspaceLifecycleContractPlan())
+	api.POST("/v22/production/workspace-lifecycle/commit", productionWorkspaceLifecycleContractCommit())
 	api.POST("/v22/users/prepare", prepareUser())
 	api.POST("/v22/users/credit", creditUser())
 	api.POST("/v22/provider-key", bindProviderKey(service))
@@ -424,6 +426,99 @@ func productionCommercialLedgerContractPlan() gin.HandlerFunc {
 func productionCommercialLedgerContractCommit() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ctx.JSON(http.StatusPreconditionRequired, productionCommercialLedgerContractPayload("production_launch_commercial_ledger_required"))
+	}
+}
+
+func productionWorkspaceLifecycleContractPayload(errorCode string) gin.H {
+	return gin.H{
+		"ok":             false,
+		"contract":       "production_launch_gap_05_workspace_lifecycle_contract_local_gate",
+		"mode":           "contract-only",
+		"error":          errorCode,
+		"requiredRunner": "tests/support/cloud-prework/production-launch-workspace-lifecycle-runner.js",
+		"requestShape": gin.H{
+			"actions": []string{"suspend", "resume", "delete"},
+			"requiredFields": []string{
+				"tenantId",
+				"accountId",
+				"workspaceId",
+				"resource_binding_id",
+				"cloud_operation_id",
+				"billingAttributionId",
+				"serverPlanId",
+				"providerKeyRef",
+				"idempotencyKey",
+			},
+			"rawSecretFieldsAllowed": false,
+		},
+		"resourceBindingLifecycle": gin.H{
+			"table": "resource_bindings",
+			"statesByAction": gin.H{
+				"suspend": []string{"ready", "suspendRequested", "suspended"},
+				"resume":  []string{"suspended", "resumeRequested", "ready"},
+				"delete":  []string{"ready", "releaseRequested", "deleting", "released"},
+			},
+			"productionWriteNow": false,
+			"productionReadNow":  false,
+		},
+		"cloudOperationLifecycle": gin.H{
+			"table": "cloud_operations",
+			"operationTypes": gin.H{
+				"suspend": "workspace_suspend",
+				"resume":  "workspace_resume",
+				"delete":  "workspace_delete",
+			},
+			"productionWriteNow": false,
+			"productionReadNow":  false,
+		},
+		"commercialLinkage": gin.H{
+			"billingEvents": gin.H{
+				"table":   "billing_events",
+				"actions": []string{"stop_on_suspend", "resume_on_resume", "finalize_on_delete"},
+			},
+			"auditEvents": gin.H{
+				"table":   "audit_events",
+				"actions": []string{"workspace_suspend_requested", "workspace_resume_requested", "workspace_delete_requested"},
+			},
+			"quotaLedger": gin.H{
+				"table":   "quota_ledger",
+				"actions": []string{"release_on_suspend", "restore_on_resume", "final_release_on_delete"},
+			},
+		},
+		"idempotency": gin.H{
+			"operationIdRequired":    true,
+			"idempotencyKeyRequired": true,
+			"perLifecycleAction":     true,
+		},
+		"providerBoundary": gin.H{
+			"publicFields":         []string{"provider", "providerKeyRef", "boundStatus"},
+			"rawSecretBackendOnly": true,
+		},
+		"localVsProductionRepository": gin.H{
+			"localRepositoryMode":        "dry-run-memory-shape-only",
+			"futureProductionRepository": "PostgreSQL resource_bindings/cloud_operations/billing_events/audit_events/quota_ledger",
+			"connectsToPostgresNow":      false,
+		},
+		"rollbackCleanupEvidence": gin.H{
+			"rollbackPlanRequired": true,
+			"cleanupPlanRequired":  true,
+			"redactedEvidenceOnly": true,
+		},
+		"externalAccess": gin.H{
+			"status": "blocked_until_multi_tenant_minimum_launch_closure",
+		},
+	}
+}
+
+func productionWorkspaceLifecycleContractPlan() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusPreconditionRequired, productionWorkspaceLifecycleContractPayload("production_launch_workspace_lifecycle_required"))
+	}
+}
+
+func productionWorkspaceLifecycleContractCommit() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusPreconditionRequired, productionWorkspaceLifecycleContractPayload("production_launch_workspace_lifecycle_required"))
 	}
 }
 

@@ -127,6 +127,14 @@ const unusedAdjudications = {
     status: "future-reserved",
     reason: "Production billing / audit / quota ledger commit must fail closed before authorization and is tracked only as typed API shape for Gap 04.",
   },
+  "production-workspace-lifecycle.ts:planProductionWorkspaceLifecycle": {
+    status: "future-reserved",
+    reason: "Production workspace suspend / resume / delete lifecycle planning is Gap 05 contract-only API trace; it stays unmounted until lifecycle execution receives separate authorization.",
+  },
+  "production-workspace-lifecycle.ts:commitProductionWorkspaceLifecycle": {
+    status: "future-reserved",
+    reason: "Production workspace suspend / resume / delete lifecycle commit must fail closed before authorization and is tracked only as typed API shape for Gap 05.",
+  },
   "server-plans.ts:fetchServerPlans": {
     status: "future-reserved",
     reason: "Server plan catalog remains a lower-level backend surface; current React runtime UI is package-oriented.",
