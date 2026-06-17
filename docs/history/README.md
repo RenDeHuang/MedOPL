@@ -7559,3 +7559,66 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-17 production-launch-gap-07-external-access-strategy-contract
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `5da59ced4ad4ef5545d1df0c8018f210b45581f1`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Landed the repo-native Production Launch Gap 07 Portal external access strategy contract/local gate without adding a loop or second truth source.
+- Added `tests/support/cloud-prework/package-d-external-access-strategy-runner.js` as the single contract-only runner command: `node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode strategy-contract-local-gate --run-id <runid> --authorized 1`.
+- The local gate compares admin-only port-forward, internal gateway, Kubernetes Ingress, LoadBalancer Service and HTTPS/domain.
+- The recommended formal launch candidate is Ingress + HTTPS/domain; admin-only port-forward is kept only as an administrator acceptance smoke option and is not a formal launch completion standard.
+- The contract records required production entry parameters: `PORTAL_HOST_DOMAIN`, `INGRESS_CLASS`, `TLS_SECRET_NAME_OR_CERT_MANAGER_ISSUER`, `ALLOWED_INGRESS_ANNOTATIONS`, `FORBIDDEN_INGRESS_ANNOTATIONS`, `EXTERNAL_SMOKE_URL` and `ROLLBACK_DELETE_INGRESS_PLAN`.
+- Added contract-only Go routes `POST /api/v22/production/external-access-strategy/plan` and `POST /api/v22/production/external-access-strategy/commit`, plus Portal typed API shape in `services/portal/frontend/src/api/portal/external-access-strategy.ts`. These routes fail closed and do not connect to PostgreSQL or Kubernetes, execute kubectl, mutate Ingress/LoadBalancer/DNS/TLS, call Package C live, mutate Tencent resources or claim public access complete.
+- Evidence sink is `.runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json`.
+- The next unique gap is `production-launch-gap-08-external-access-dry-run-authorization`; this requires separate cloud authorization and is limited to server-side dry-run / authorization evidence for the Ingress + HTTPS/domain candidate.
+- This closeout did not read secrets/kubeconfig/DB password, connect to Kubernetes API or PostgreSQL, run kubectl, deploy, rollout, rollback, build/push, execute Tencent mutation, run Package C live, restore Node Portal backend, execute Ingress/LoadBalancer/DNS/TLS mutation or claim public user access is complete.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-external-access-strategy-local-gate.mjs`: passed.
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: passed.
+- `node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs`: passed.
+- `go test ./internal/server/handlers` from `services/medopl-go-backend`: passed.
+- `npm --prefix services/portal/frontend run typecheck`: passed.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: passed.
+- `npm run verify`: rerun before final push.
+- `npm run closeout:check -- --json`: rerun before final push.
+
+Can-claim:
+
+- Production Launch Gap 07 has a repo-native contract/local gate.
+- Portal external access strategy compares all required options and records Ingress + HTTPS/domain as the formal launch candidate without executing mutation.
+- Production entry parameters, allowed/forbidden operations, security boundary, rollback/delete ingress plan, smoke plan, redaction evidence and providerKeyRef-only boundary are locally specified.
+- Portal typed API and Go backend route shape for the external access strategy boundary are traceable and fail closed.
+- External/public access remains not exposed.
+
+Cannot-claim:
+
+- Public/external user access is complete.
+- Ingress, LoadBalancer, DNS or TLS mutation executed.
+- Kubernetes API, PostgreSQL, Tencent mutation, Package C live operation, deploy, rollout or rollback executed.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+landed_commit: `c75af8a4112e20e4ad1ff88afeeb578b7d87fd7e`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `c75af8a4112e20e4ad1ff88afeeb578b7d87fd7e` remains reachable from `origin/recovery/platform-v22-trunk` after the Gap 07 implementation commit.
+- `npm run verify`: rerun before final push.
+- `npm run closeout:check -- --json`: rerun before final push.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
