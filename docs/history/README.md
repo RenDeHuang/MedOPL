@@ -59,6 +59,40 @@ landed 后的记录还必须补齐：
 
 ## Current Run Summaries
 
+### 2026-06-17 package-d-service-reachability-curl-security-context
+
+Status: `landed candidate / local-gated`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `d6e96696518036d1284f1df05926b53eb4ea156b`
+
+Model: `gpt-5.4`
+
+Subagents: none
+
+Scope:
+
+- Recorded authorized Package D readonly service reachability rerun `psr-20260617-003`: the run-scoped `Job/medopl-service-smoke-psr-20260617-003` was created and cleaned, but all four curl containers failed before start with `CreateContainerConfigError`.
+- Recorded root cause from redacted diagnostics: `curlimages/curl:8.8.0` uses non-numeric user `curl_user`; with `runAsNonRoot: true`, Kubernetes cannot verify that the image user is non-root unless the container securityContext provides a numeric `runAsUser`.
+- Recorded evidence paths: `.runtime/package-d-service-reachability/psr-20260617-003/readonly-service-reachability-redacted.json`, `.runtime/package-d-service-reachability/psr-20260617-003/diagnostics-redacted.json` and `.runtime/package-d-service-reachability/psr-20260617-003/smoke-job-manifest-redacted.json`.
+- Updated `tests/support/cloud-prework/package-d-service-reachability-runner.js` so every curl smoke container sets `runAsNonRoot: true`, `runAsUser: 1000`, `runAsGroup: 1000`, `allowPrivilegeEscalation: false`, `readOnlyRootFilesystem: true` and `capabilities.drop: ["ALL"]`.
+- Added local/future-authorized coverage proving the run-scoped smoke Job manifest contains that numeric non-root curl container securityContext while preserving fail-fast curl and diagnostics behavior.
+- Did not read secret/kubeconfig, connect to Kubernetes API, run kubectl, deploy, rollout, rollback, build/push, execute Tencent mutation or run Package C live.
+
+Can-claim:
+
+- The service reachability runner now has local-gated numeric non-root curl container securityContext.
+- Future cloud rerun should use `psr-20260617-004` through the repo-native runner.
+
+Cannot-claim:
+
+- The in-cluster HTTP smoke passed.
+- Portal external/public access, Ingress, LoadBalancer, DNS, TLS, production billing or rollback execution are complete.
+- This repo session performed new deploy, kubectl, build/push, Tencent mutation, Package C live or secret/kubeconfig reads.
+
+next_cursor: `real-cloud-authorization-boundary`
+
 ### 2026-06-17 package-d-service-reachability-failfast-diagnostics
 
 Status: `landed candidate / local-gated`
@@ -6905,6 +6939,53 @@ landing_gate_result: `passed / ff-only landed / pushed`
 post_push_verification:
 
 - `14dbbb04377f19b96f38db9859e42b625b0d2192` is the implementation commit for fail-fast service smoke diagnostics and must be reachable from `origin/recovery/platform-v22-trunk` after this closeout push.
+- `npm run verify`: run after push.
+- `npm run closeout:check -- --json`: run after push.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-17 package-d-service-reachability-curl-security-context-landed
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `d6e96696518036d1284f1df05926b53eb4ea156b`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Landed Package D service reachability curl container numeric non-root securityContext.
+- Commit `a272e07c2b462c4e61315536c701f03069b5f474` fixes `tests/support/cloud-prework/package-d-service-reachability-runner.js` so future smoke Jobs no longer rely on image user-name inference under `runAsNonRoot: true`.
+- The local/future-authorized gate proves each curl smoke container has `runAsUser: 1000`, `runAsGroup: 1000`, `allowPrivilegeEscalation: false`, `readOnlyRootFilesystem: true` and `capabilities.drop: ["ALL"]`, while keeping fail-fast curl and wait-failure diagnostics.
+- This closeout did not read secrets/kubeconfig, connect to Kubernetes API, run kubectl, deploy, rollout, rollback, build/push, execute Tencent mutation or run Package C live.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs`: pass before closeout commit.
+- `npm run verify`: expected to pass after this closeout is pushed because the closeout gate requires landed commit `a272e07c2b462c4e61315536c701f03069b5f474` to be reachable from `origin/recovery/platform-v22-trunk`.
+- `npm run closeout:check -- --json`: expected to pass after this closeout is pushed for the same trunk-reachability reason.
+
+Can-claim:
+
+- Package D service reachability runner has local-gated numeric non-root curl container securityContext.
+- Next cloud rerun should use `psr-20260617-004` through the repo-native runner.
+
+Cannot-claim:
+
+- In-cluster HTTP smoke has passed.
+- Portal external/public access, Ingress, LoadBalancer, DNS, TLS, production billing or rollback execution are complete.
+
+landed_commit: `a272e07c2b462c4e61315536c701f03069b5f474`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `a272e07c2b462c4e61315536c701f03069b5f474` is the implementation commit for curl smoke numeric non-root securityContext and must be reachable from `origin/recovery/platform-v22-trunk` after this closeout push.
 - `npm run verify`: run after push.
 - `npm run closeout:check -- --json`: run after push.
 
