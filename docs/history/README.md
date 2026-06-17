@@ -6783,3 +6783,50 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-17 package-d-service-reachability-wait-diagnostics-landed
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `1d07b9a569484e45a0dfc5abf4c7d8a9a6a2b9da`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Landed Package D service reachability wait-failure diagnostics.
+- Commit `04a8d56f41d2356772dad86d9336a7dcdd99ed2b` enhances `tests/support/cloud-prework/package-d-service-reachability-runner.js` so future smoke Job wait timeouts collect redacted Job get/describe, Pod status, container status/image-pull class, Events and per-curl-container log summaries before cleanup.
+- The local/future-authorized gate now proves `diagnostics-redacted.json` is written before cleanup and that evidence remains redacted.
+- This closeout did not read secrets/kubeconfig, connect to Kubernetes API, run kubectl, deploy, build/push, execute Tencent mutation or run Package C live.
+
+Verification:
+
+- `npm run verify`: pass before closeout commit.
+- `npm run closeout:check -- --json`: pass before closeout commit.
+- Sentrux rule check still reports pre-existing Package C cycle / quality violations, not introduced by this Package D runner change.
+
+Can-claim:
+
+- Package D service reachability runner has a local-gated wait-failure diagnostics path.
+- Next cloud rerun should use `psr-20260617-002` through the repo-native runner.
+
+Cannot-claim:
+
+- In-cluster HTTP smoke has passed.
+- Portal external/public access, Ingress, LoadBalancer, DNS, TLS, production billing or rollback execution are complete.
+
+landed_commit: `04a8d56f41d2356772dad86d9336a7dcdd99ed2b`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `04a8d56f41d2356772dad86d9336a7dcdd99ed2b` is the implementation commit for wait-failure diagnostics and will be reachable from `origin/recovery/platform-v22-trunk` after this closeout push.
+- `npm run verify`: pass before closeout commit.
+- `npm run closeout:check -- --json`: pass before closeout commit.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`

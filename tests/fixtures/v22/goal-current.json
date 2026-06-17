@@ -8,12 +8,12 @@
   "last_updated_at": "2026-06-17",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "1d07b9a569484e45a0dfc5abf4c7d8a9a6a2b9da",
+  "base_trunk_head": "04a8d56f41d2356772dad86d9336a7dcdd99ed2b",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "1d07b9a569484e45a0dfc5abf4c7d8a9a6a2b9da",
+  "last_landed_commit": "04a8d56f41d2356772dad86d9336a7dcdd99ed2b",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -101,7 +101,7 @@
         "precloud-deployable-rc"
       ],
       "history_summary": "Package C live canary and Package D preflight/plan readiness are landed. Package D production-deploy-apply pdrun-20260616-004 succeeded for four services inside TKE: Deployments are ready 1/1, Services are ClusterIP on 8080/http, Pods scheduled to np-6l4nkdto / 10.66.0.42, smoke shape checks passed and redacted evidence is recorded. External/public user access is not exposed. Package D readonly service reachability run psr-20260617-001 timed out at smoke_job_wait_complete with empty serviceResults and cleaned its Job; the runner now has a local-gated wait-failure diagnostics path that writes diagnostics-redacted.json before cleanup. Next gaps are authorized rerun psr-20260617-002 and Portal external access strategy. New secret/kubeconfig, kubectl, deploy, build/push, Ingress/LB mutation and live-test remain separately authorized boundaries.",
-      "landed_commit": "1d07b9a569484e45a0dfc5abf4c7d8a9a6a2b9da"
+      "landed_commit": "04a8d56f41d2356772dad86d9336a7dcdd99ed2b"
     },
     {
       "id": "go-control-plane-mvp-takeover",
