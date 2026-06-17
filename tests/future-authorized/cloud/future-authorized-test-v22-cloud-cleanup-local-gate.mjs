@@ -590,14 +590,15 @@ try {
   assert.equal(readinessEvidence.nextGap.id, "production-launch-gap-08c-qcloud-ingress-tls-server-side-dry-run", "qcloud_tls_next_gap_id");
   assertNoExternalAccessSensitiveText(JSON.stringify(readinessEvidence), "qcloud_tls_readiness_evidence");
 
-  const requiredExternalAccessEnv = Object.freeze({
-    RUN_TENCENT_DEPLOY_EXECUTION: "external-access",
+  const requiredExternalAccessBusinessEnv = Object.freeze({
     PORTAL_HOST_DOMAIN: "portal.medopl.cn",
     INGRESS_CLASS: "qcloud",
     TLS_SECRET_NAME: "medopl-portal-tls",
     TENCENT_SSL_CERT_ID: "qcloud-cert-id-must-not-leak",
     EXTERNAL_SMOKE_URL: "https://portal.medopl.cn/",
   });
+  const applyRunGateEnv = Object.freeze({ RUN_TENCENT_DEPLOY_EXECUTION: "external-access" });
+  const dryRunGateEnv = Object.freeze({ RUN_TENCENT_DEPLOY_EXECUTION: "0" });
   assert.equal(
     PACKAGE_D_EXTERNAL_ACCESS_DRY_RUN_COMMAND,
     "node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-ingress-dry-run --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id <runid> --authorized 1",
@@ -614,7 +615,8 @@ try {
       evidenceDir,
       authorized: false,
       mode: "qcloud-ingress-apply",
-      externalAccessEnv: requiredExternalAccessEnv,
+      externalAccessEnv: requiredExternalAccessBusinessEnv,
+      runGateEnv: applyRunGateEnv,
     }),
     /package_d_external_access_not_authorized/,
     "external_access_apply_unauthorized_must_fail_closed",
@@ -625,7 +627,8 @@ try {
       evidenceDir,
       authorized: true,
       mode: "qcloud-ingress-apply",
-      externalAccessEnv: { ...requiredExternalAccessEnv, PORTAL_HOST_DOMAIN: "" },
+      externalAccessEnv: { ...requiredExternalAccessBusinessEnv, PORTAL_HOST_DOMAIN: "" },
+      runGateEnv: applyRunGateEnv,
     }),
     /package_d_external_access_env_missing:PORTAL_HOST_DOMAIN/,
     "external_access_missing_host_must_fail_closed",
@@ -636,7 +639,19 @@ try {
       evidenceDir,
       authorized: true,
       mode: "qcloud-ingress-apply",
-      externalAccessEnv: { ...requiredExternalAccessEnv, RUN_TENCENT_DEPLOY_EXECUTION: "1" },
+      externalAccessEnv: { ...requiredExternalAccessBusinessEnv, RUN_TENCENT_DEPLOY_EXECUTION: "external-access" },
+    }),
+    /package_d_external_access_env_non_allowlist_key:RUN_TENCENT_DEPLOY_EXECUTION/,
+    "external_access_env_must_not_include_run_gate",
+  );
+  await assert.rejects(
+    () => buildPackageDExternalAccessPlan({
+      runId,
+      evidenceDir,
+      authorized: true,
+      mode: "qcloud-ingress-apply",
+      externalAccessEnv: requiredExternalAccessBusinessEnv,
+      runGateEnv: { RUN_TENCENT_DEPLOY_EXECUTION: "1" },
     }),
     /package_d_external_access_apply_gate_not_authorized/,
     "external_access_apply_generic_deploy_gate_must_fail_closed",
@@ -646,8 +661,21 @@ try {
       runId,
       evidenceDir,
       authorized: true,
+      mode: "qcloud-ingress-apply",
+      externalAccessEnv: requiredExternalAccessBusinessEnv,
+      runGateEnv: {},
+    }),
+    /package_d_external_access_apply_gate_not_authorized/,
+    "external_access_apply_missing_run_gate_must_fail_closed",
+  );
+  await assert.rejects(
+    () => buildPackageDExternalAccessPlan({
+      runId,
+      evidenceDir,
+      authorized: true,
       mode: "qcloud-ingress-dry-run",
-      externalAccessEnv: { ...requiredExternalAccessEnv, RUN_TENCENT_DEPLOY_EXECUTION: "external-access" },
+      externalAccessEnv: requiredExternalAccessBusinessEnv,
+      runGateEnv: applyRunGateEnv,
     }),
     /package_d_external_access_dry_run_gate_must_remain_zero/,
     "external_access_dry_run_must_not_use_apply_gate",
@@ -665,8 +693,27 @@ try {
         "TLS_SECRET_NAME=medopl-portal-tls",
         "TENCENT_SSL_CERT_ID=qcloud-cert-id-must-not-leak",
         "EXTERNAL_SMOKE_URL=https://portal.medopl.cn/",
+      ].join("\n"),
+      runGateEnv: dryRunGateEnv,
+    }),
+    /package_d_external_access_env_non_allowlist_key:RUN_TENCENT_DEPLOY_EXECUTION/,
+    "external_access_env_content_must_not_include_run_gate",
+  );
+  await assert.rejects(
+    () => buildPackageDExternalAccessPlan({
+      runId,
+      evidenceDir,
+      authorized: true,
+      mode: "qcloud-ingress-dry-run",
+      externalAccessEnvContent: [
+        "PORTAL_HOST_DOMAIN=portal.medopl.cn",
+        "INGRESS_CLASS=qcloud",
+        "TLS_SECRET_NAME=medopl-portal-tls",
+        "TENCENT_SSL_CERT_ID=qcloud-cert-id-must-not-leak",
+        "EXTERNAL_SMOKE_URL=https://portal.medopl.cn/",
         "TCR_SECRET=tcr-secret-that-must-not-be-read",
       ].join("\n"),
+      runGateEnv: dryRunGateEnv,
     }),
     /package_d_external_access_env_non_allowlist_key:TCR_SECRET/,
     "external_access_env_allowlist_must_reject_tcr_secret",
@@ -677,7 +724,8 @@ try {
     evidenceDir,
     authorized: true,
     mode: "qcloud-ingress-dry-run",
-    externalAccessEnv: { ...requiredExternalAccessEnv, RUN_TENCENT_DEPLOY_EXECUTION: "0" },
+    externalAccessEnv: requiredExternalAccessBusinessEnv,
+    runGateEnv: dryRunGateEnv,
   });
   assert.equal(dryRunPlan.boundary.realMutationAllowedNow, false, "external_access_dry_run_no_real_mutation");
   assert.equal(dryRunPlan.manifests.secret.type, "Opaque", "external_access_secret_type_opaque");
@@ -689,7 +737,6 @@ try {
   assert.equal(dryRunPlan.manifests.ingress.spec.rules[0].http.paths[0].backend.service.name, "portal-frontend", "external_access_ingress_backend_service");
   assert.equal(dryRunPlan.manifests.ingress.spec.rules[0].http.paths[0].backend.service.port.number, 8080, "external_access_ingress_backend_port");
   assert.deepEqual(dryRunPlan.env.allowedKeys, [
-    "RUN_TENCENT_DEPLOY_EXECUTION",
     "PORTAL_HOST_DOMAIN",
     "INGRESS_CLASS",
     "TLS_SECRET_NAME",
@@ -707,7 +754,8 @@ try {
     evidenceDir,
     authorized: true,
     mode: "qcloud-ingress-apply",
-    externalAccessEnv: requiredExternalAccessEnv,
+    externalAccessEnv: requiredExternalAccessBusinessEnv,
+    runGateEnv: applyRunGateEnv,
   });
   assert.equal(applyPlan.boundary.realMutationAllowedNow, true, "external_access_apply_real_mutation_boundary");
   assert.deepEqual(applyPlan.allowedOperations.mutations, [

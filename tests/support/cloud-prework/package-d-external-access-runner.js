@@ -25,14 +25,15 @@ const EXTERNAL_ACCESS_MODES = Object.freeze(new Set([
   QCLOUD_INGRESS_DRY_RUN_MODE,
   QCLOUD_INGRESS_APPLY_MODE,
 ]));
-const REQUIRED_EXTERNAL_ACCESS_ENV_KEYS = Object.freeze([
-  "RUN_TENCENT_DEPLOY_EXECUTION",
+const EXTERNAL_ACCESS_ENV_KEYS = Object.freeze([
   "PORTAL_HOST_DOMAIN",
   "INGRESS_CLASS",
   "TLS_SECRET_NAME",
   "TENCENT_SSL_CERT_ID",
   "EXTERNAL_SMOKE_URL",
 ]);
+const REQUIRED_EXTERNAL_ACCESS_ENV_KEYS = EXTERNAL_ACCESS_ENV_KEYS;
+const RUN_GATE_ENV_KEYS = Object.freeze(["RUN_TENCENT_DEPLOY_EXECUTION"]);
 const FIXED_PORTAL_HOST = "portal.medopl.cn";
 const FIXED_INGRESS_CLASS = "qcloud";
 const FIXED_TLS_SECRET_NAME = "medopl-portal-tls";
@@ -117,7 +118,7 @@ function parseExternalAccessEnvObject(externalAccessEnv = {}) {
 function cleanExternalAccessEnv({ externalAccessEnv = {}, externalAccessEnvContent = "" } = {}) {
   if (text(externalAccessEnvContent)) {
     try {
-      return parseEnv(externalAccessEnvContent, REQUIRED_EXTERNAL_ACCESS_ENV_KEYS, REQUIRED_EXTERNAL_ACCESS_ENV_KEYS);
+      return parseEnv(externalAccessEnvContent, EXTERNAL_ACCESS_ENV_KEYS, REQUIRED_EXTERNAL_ACCESS_ENV_KEYS);
     } catch (error) {
       const message = String(error?.message || error);
       throw new Error(message.replace(/^package_d_env_/u, "package_d_external_access_env_"));
@@ -126,13 +127,33 @@ function cleanExternalAccessEnv({ externalAccessEnv = {}, externalAccessEnvConte
   return parseExternalAccessEnvObject(externalAccessEnv);
 }
 
-function assertExternalAccessEnv(env = {}, mode = "") {
-  if (mode === QCLOUD_INGRESS_DRY_RUN_MODE && env.RUN_TENCENT_DEPLOY_EXECUTION !== DRY_RUN_GATE_VALUE) {
+function cleanRunGateEnv({ runGateEnv = {}, runGateEnvContent = "" } = {}) {
+  if (text(runGateEnvContent)) {
+    try {
+      return parseEnv(runGateEnvContent, RUN_GATE_ENV_KEYS, RUN_GATE_ENV_KEYS);
+    } catch (error) {
+      const message = String(error?.message || error);
+      throw new Error(message.replace(/^package_d_env_/u, "package_d_external_access_run_gate_env_"));
+    }
+  }
+  const env = {};
+  for (const [key, value] of Object.entries(runGateEnv || {})) {
+    if (!RUN_GATE_ENV_KEYS.includes(key)) throw new Error(`package_d_external_access_run_gate_env_non_allowlist_key:${key}`);
+    env[key] = text(value);
+  }
+  return env;
+}
+
+function assertRunGateEnv(runGateEnv = {}, mode = "") {
+  if (mode === QCLOUD_INGRESS_DRY_RUN_MODE && runGateEnv.RUN_TENCENT_DEPLOY_EXECUTION !== DRY_RUN_GATE_VALUE) {
     throw new Error("package_d_external_access_dry_run_gate_must_remain_zero");
   }
-  if (mode === QCLOUD_INGRESS_APPLY_MODE && env.RUN_TENCENT_DEPLOY_EXECUTION !== APPLY_GATE_VALUE) {
+  if (mode === QCLOUD_INGRESS_APPLY_MODE && runGateEnv.RUN_TENCENT_DEPLOY_EXECUTION !== APPLY_GATE_VALUE) {
     throw new Error("package_d_external_access_apply_gate_not_authorized");
   }
+}
+
+function assertExternalAccessEnv(env = {}) {
   if (env.PORTAL_HOST_DOMAIN !== FIXED_PORTAL_HOST) throw new Error("package_d_external_access_host_mismatch");
   if (env.INGRESS_CLASS !== FIXED_INGRESS_CLASS) throw new Error("package_d_external_access_ingress_class_mismatch");
   if (env.TLS_SECRET_NAME !== FIXED_TLS_SECRET_NAME) throw new Error("package_d_external_access_tls_secret_mismatch");
@@ -429,6 +450,8 @@ export async function buildPackageDExternalAccessPlan({
   mode = "",
   externalAccessEnv = {},
   externalAccessEnvContent = "",
+  runGateEnv = {},
+  runGateEnvContent = "",
   kubeconfigPath = "",
   argv = [],
 } = {}) {
@@ -437,7 +460,9 @@ export async function buildPackageDExternalAccessPlan({
   const safeRunId = assertRunId(runId);
   const normalizedMode = assertMode(mode);
   const env = cleanExternalAccessEnv({ externalAccessEnv, externalAccessEnvContent });
-  assertExternalAccessEnv(env, normalizedMode);
+  const cleanedRunGateEnv = cleanRunGateEnv({ runGateEnv, runGateEnvContent });
+  assertRunGateEnv(cleanedRunGateEnv, normalizedMode);
+  assertExternalAccessEnv(env);
 
   const redactedSecret = qcloudCertSecret({ certId: env.TENCENT_SSL_CERT_ID, redacted: true });
   const liveSecret = qcloudCertSecret({ certId: env.TENCENT_SSL_CERT_ID, redacted: false });
@@ -488,9 +513,10 @@ export async function buildPackageDExternalAccessPlan({
     },
     env: {
       source: "authorized_external_access_env",
-      allowedKeys: [...REQUIRED_EXTERNAL_ACCESS_ENV_KEYS],
+      allowedKeys: [...EXTERNAL_ACCESS_ENV_KEYS],
       redactedKeys: ["TENCENT_SSL_CERT_ID"],
-      runTencentDeployExecution: env.RUN_TENCENT_DEPLOY_EXECUTION,
+      runTencentDeployExecution: cleanedRunGateEnv.RUN_TENCENT_DEPLOY_EXECUTION,
+      runTencentDeployExecutionSource: "process_or_deploy_run_gate_env",
       runTencentDeployExecutionApplyValue: APPLY_GATE_VALUE,
       kubeconfigPath: kubeconfigPath ? "authorized_kubeconfig_ref" : "not_loaded_in_local_gate",
     },
@@ -551,7 +577,7 @@ export async function buildPackageDExternalAccessPlan({
       redactionAuditRequired: true,
     },
     stopConditions: [
-      "RUN_TENCENT_DEPLOY_EXECUTION is not external-access for apply mode",
+      "RUN_TENCENT_DEPLOY_EXECUTION is not external-access from process/deploy run gate source for apply mode",
       "context or cluster does not match cls-fi097sy4",
       "namespace is not medopl-platform",
       "portal-frontend Service 8080 is missing",
@@ -588,7 +614,7 @@ export async function buildPackageDExternalAccessPlan({
     nextGap: {
       id: "production-launch-gap-08d-qcloud-tls-secret-ingress-real-mutation-apply",
       title: "Production launch Gap 08d: qcloud Opaque cert-id Secret + Portal Ingress real apply",
-      boundary: "cloud runner must first place the five external access env keys into an authorized env file or a separately allowlisted env file; apply mode requires RUN_TENCENT_DEPLOY_EXECUTION=external-access",
+      boundary: "cloud runner must place the five external access env keys into an authorized env file; apply mode requires RUN_TENCENT_DEPLOY_EXECUTION=external-access from process/deploy run gate source",
     },
     realExecutionReady: normalizedMode === QCLOUD_INGRESS_APPLY_MODE,
   };
@@ -655,6 +681,12 @@ function manifestTextForCommand(command = {}, liveManifests = {}) {
   return "";
 }
 
+function processRunGateEnv() {
+  return {
+    RUN_TENCENT_DEPLOY_EXECUTION: text(process.env.RUN_TENCENT_DEPLOY_EXECUTION),
+  };
+}
+
 async function runCommand({ command, executor, kubeconfigPath, liveManifests, certId }) {
   assertCommandAllowed(command);
   const result = await executor({
@@ -695,10 +727,7 @@ export async function runPackageDExternalAccessExecution({
 } = {}) {
   const normalizedMode = assertMode(mode);
   assertFile(envPath, "package_d_external_access_env_missing");
-  assertFile(kubeconfigPath, "package_d_external_access_kubeconfig_missing");
   const envContent = await readFile(envPath, "utf8");
-  const kubeconfig = await readFile(kubeconfigPath, "utf8");
-  const clusterAuth = kubeconfigSummary(kubeconfig);
   const env = cleanExternalAccessEnv({ externalAccessEnvContent: envContent });
   const plan = await buildPackageDExternalAccessPlan({
     runId,
@@ -706,8 +735,12 @@ export async function runPackageDExternalAccessExecution({
     authorized,
     mode: normalizedMode,
     externalAccessEnv: env,
+    runGateEnv: processRunGateEnv(),
     kubeconfigPath,
   });
+  assertFile(kubeconfigPath, "package_d_external_access_kubeconfig_missing");
+  const kubeconfig = await readFile(kubeconfigPath, "utf8");
+  const clusterAuth = kubeconfigSummary(kubeconfig);
   const records = [];
   try {
     for (const command of plan.liveCommands) {
@@ -776,6 +809,7 @@ async function runPlanOnlyFromCli(args) {
     authorized: args.authorized === "1" || args.authorized === "true",
     mode: args.mode,
     externalAccessEnvContent: envContent,
+    runGateEnv: processRunGateEnv(),
     kubeconfigPath: args.kubeconfig,
   });
   const evidence = await writePackageDExternalAccessPlanEvidence({ plan });

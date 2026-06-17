@@ -7799,3 +7799,58 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-18 production-launch-gap-08d-runner-env-gate-fix
+
+Status: `authoring / local verified / pending commit`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `PENDING_LANDED_COMMIT`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Recorded the cloud fail-closed fact from `.runtime/package-d-external-access-strategy/gap08d-qcloud-ingress-real-002/real-mutation-redacted.json`: `package-d-external-access.env` correctly contained only the five external access business keys, `RUN_TENCENT_DEPLOY_EXECUTION` stayed `0`, the runner failed with `package_d_external_access_env_missing_RUN_TENCENT_DEPLOY_EXECUTION`, `medopl-portal-tls` and the Portal Ingress remained `NotFound`, and no real mutation occurred.
+- Fixed `tests/support/cloud-prework/package-d-external-access-runner.js` so `package-d-external-access.env` only allows `PORTAL_HOST_DOMAIN`, `INGRESS_CLASS`, `TLS_SECRET_NAME`, `TENCENT_SSL_CERT_ID` and `EXTERNAL_SMOKE_URL`.
+- Moved the external access RUN gate to process/deploy run gate source: `qcloud-ingress-apply` requires `RUN_TENCENT_DEPLOY_EXECUTION=external-access`, while `qcloud-ingress-dry-run` requires `RUN_TENCENT_DEPLOY_EXECUTION=0`.
+- Updated the local/future-authorized gate to prove `RUN_TENCENT_DEPLOY_EXECUTION` inside `package-d-external-access.env` fails closed, five business keys pass, missing apply RUN gate fails, apply RUN gate `external-access` passes, dry-run gate `0` passes, and `TENCENT_SSL_CERT_ID` remains redacted.
+- Preserved the qcloud Secret contract `Opaque` + `stringData.qcloud_cert_id`, rejected the legacy Kubernetes TLS Secret path, and did not connect to Kubernetes, execute kubectl, create Secret/Ingress, mutate DNS/LoadBalancer/TLS, deploy, build/push, run Tencent mutation, run Package C live or claim public access complete.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs`: passed.
+- CLI plan-only local check with five-key env: apply without RUN gate failed closed, apply with `RUN_TENCENT_DEPLOY_EXECUTION=external-access` passed, dry-run with `RUN_TENCENT_DEPLOY_EXECUTION=0` passed, and env containing `RUN_TENCENT_DEPLOY_EXECUTION` failed closed.
+- `npm run verify`: rerun before final push.
+- `npm run closeout:check -- --json`: rerun before final push.
+
+Can-claim:
+
+- Gap 08d runner env gate source is corrected locally.
+- `package-d-external-access.env` is a five-business-key file only.
+- `RUN_TENCENT_DEPLOY_EXECUTION` is sourced from process/deploy run gate source, not from `package-d-external-access.env`.
+- The next cloud run-id is `gap08d-qcloud-ingress-real-003`.
+
+Cannot-claim:
+
+- TLS Secret creation executed.
+- Portal Ingress creation executed.
+- DNS or LoadBalancer mutation executed.
+- Public/external user access is complete.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+landed_commit: `pending_after_implementation_commit`
+
+landing_gate_result: `pending`
+
+post_push_verification:
+
+- implementation commit pending; rerun after the Gap 08d runner env gate fix commit exists.
+- `npm run verify`: rerun before final push.
+- `npm run closeout:check -- --json`: rerun before final push.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
