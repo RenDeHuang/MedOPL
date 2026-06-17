@@ -7489,15 +7489,72 @@ Cannot-claim:
 
 next_cursor: `real-cloud-authorization-boundary`
 
-landed_commit: `b815563880a41b282468678ca2f881cd255e5c61`
+landed_commit: `95660eeb91adbe938023040526ee9c2ffc7c3863`
 
 landing_gate_result: `passed / ff-only landed / pushed`
 
 post_push_verification:
 
-- `b815563880a41b282468678ca2f881cd255e5c61` remains reachable from `origin/recovery/platform-v22-trunk`.
+- `95660eeb91adbe938023040526ee9c2ffc7c3863` remains reachable from `origin/recovery/platform-v22-trunk`.
 - `npm run verify`: passed for the Gap 05 local gate and closeout sync.
 - `npm run closeout:check -- --json`: passed for the Gap 05 local gate and closeout sync.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-17 production-launch-gap-06-canary-rollback-cleanup-contract
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `95660eeb91adbe938023040526ee9c2ffc7c3863`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Landed the repo-native Production Launch Gap 06 production smoke / canary / rollback / cleanup evidence contract/local gate without adding a loop or second truth source.
+- Added `tests/support/cloud-prework/production-launch-canary-runner.js` as the single contract-only runner command: `node tests/support/cloud-prework/production-launch-canary-runner.js --mode contract-local-gate --run-id <runid> --authorized 1`.
+- The local gate proves unauthorized fail-closed behavior, production canary shape, admin / tenant / workspace smoke shape, Portal -> Go backend -> Package C dry-run boundary, ResourceBinding / CloudOperation linkage, billing / audit / quota linkage, workspace lifecycle linkage, rollback command/evidence shape, cleanup command/evidence shape, redaction / observability evidence, operation idempotency, providerKeyRef-only boundary and local dry-run repository versus future production PostgreSQL/Kubernetes execution boundary.
+- Added contract-only Go routes `POST /api/v22/production/canary/plan` and `POST /api/v22/production/canary/commit`, plus Portal typed API shape in `services/portal/frontend/src/api/portal/production-canary.ts`. These routes fail closed and do not connect to PostgreSQL or Kubernetes, execute canary/rollback/cleanup, call Package C live, mutate Tencent resources or expose external access.
+- Evidence sink is `.runtime/production-launch-canary/<runid>/canary-contract-redacted.json`.
+- The next unique gap is `production-launch-gap-07-external-access-strategy-contract`; this is a strategy/authorization-pack gap and must not default to public Ingress, LoadBalancer, DNS or TLS exposure.
+- This closeout did not read secrets/kubeconfig/DB password, connect to Kubernetes API or PostgreSQL, run kubectl, deploy, rollout, rollback, build/push, execute Tencent mutation, run Package C live, restore Node Portal backend or enter external access.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs`: passed.
+- `go test ./internal/server/handlers` from `services/medopl-go-backend`: passed.
+- `node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs`: passed.
+- `npm --prefix services/portal/frontend run typecheck`: passed.
+- `npm run verify`: rerun before final push.
+- `npm run closeout:check -- --json`: rerun before final push.
+
+Can-claim:
+
+- Production Launch Gap 06 has a repo-native contract/local gate.
+- Portal typed API and Go backend route shape for the production canary / rollback / cleanup evidence boundary are traceable and fail closed.
+- Production canary, admin/tenant/workspace smoke, rollback/cleanup and redaction/observability evidence shapes are locally specified and linked to ResourceBinding, CloudOperation, billing, audit, quota and workspace lifecycle identities.
+- External/public access remains not exposed.
+
+Cannot-claim:
+
+- Production canary executed.
+- Real rollback, cleanup, Package C live operation, Kubernetes mutation, PostgreSQL write/read, Ingress, LoadBalancer, DNS or TLS are complete.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+landed_commit: `95660eeb91adbe938023040526ee9c2ffc7c3863`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `95660eeb91adbe938023040526ee9c2ffc7c3863` remains reachable from `origin/recovery/platform-v22-trunk` before the Gap 06 implementation commit.
+- `npm run verify`: rerun before final push.
+- `npm run closeout:check -- --json`: rerun before final push.
 
 post_merge_closeout: `completed`
 

@@ -8,6 +8,11 @@ import {
   buildProductionLaunchWorkspaceLifecycleContract,
   runProductionLaunchWorkspaceLifecycleContract,
 } from "../../support/cloud-prework/production-launch-workspace-lifecycle-runner.js";
+import {
+  PRODUCTION_LAUNCH_CANARY_COMMAND,
+  buildProductionLaunchCanaryContract,
+  runProductionLaunchCanaryContract,
+} from "../../support/cloud-prework/production-launch-canary-runner.js";
 
 export function evaluateCloudCleanupLocalGate({
   baseline = {},
@@ -217,10 +222,94 @@ try {
   await rm(workspaceLifecycleEvidenceRoot, { recursive: true, force: true });
 }
 
+const canaryEvidenceRoot = await mkdtemp(path.join(os.tmpdir(), "v22-production-launch-canary-"));
+try {
+  const evidenceDir = path.join(canaryEvidenceRoot, "evidence");
+  const runId = "plcny-20260617-001";
+  const canary = {
+    tenantId: "tenant-production-alpha",
+    accountId: "account-production-alpha",
+    workspaceId: "workspace-production-alpha",
+    resourceBindingId: "rb-production-alpha",
+    cloudOperationId: "op:tenant-production-alpha:workspace-production-alpha:rb-production-alpha:workspace-ledger-alpha-once",
+    billingAttributionId: "bill-production-alpha",
+    serverPlanId: "starter_2c4g_10gb",
+    providerKeyRef: "gflab:workspace-production-alpha:refonly001122",
+    idempotencyKey: "production-canary-alpha-once",
+    rawProviderKey: "gflabtoken-raw-provider-key-material-that-must-not-leak",
+    runtime: { dbPassword: "postgres-password-that-must-not-leak" },
+    tokens: { bearerToken: "bearer-token-that-must-not-leak" },
+    tencent: {
+      SecretId: "TENCENT_SECRET_ID_that_must_not_leak",
+      SecretKey: "TENCENT_SECRET_KEY_that_must_not_leak",
+    },
+  };
+  assert.equal(
+    PRODUCTION_LAUNCH_CANARY_COMMAND,
+    "node tests/support/cloud-prework/production-launch-canary-runner.js --mode contract-local-gate --run-id <runid> --authorized 1",
+    "canary_runner_must_publish_single_repo_native_command",
+  );
+  await assert.rejects(
+    () => buildProductionLaunchCanaryContract({ runId, evidenceDir, authorized: false }),
+    /production_launch_canary_not_authorized/,
+    "canary_missing_authorization_must_fail_closed",
+  );
+  await assert.rejects(
+    () => buildProductionLaunchCanaryContract({ runId: "", evidenceDir, authorized: true }),
+    /production_launch_canary_run_id_required/,
+    "canary_missing_run_id_must_fail_closed",
+  );
+
+  const plan = await buildProductionLaunchCanaryContract({ runId, evidenceDir, authorized: true, canary });
+  assert.equal(plan.contract, "production_launch_gap_06_canary_rollback_cleanup_contract_local_gate", "canary_contract_name");
+  assert.equal(plan.boundary.contractOnly, true, "canary_contract_only");
+  assert.equal(plan.boundary.kubernetesAccessAllowed, false, "canary_no_kubernetes");
+  assert.equal(plan.boundary.productionPostgresConnectAllowedNow, false, "canary_no_postgres");
+  assert.equal(plan.boundary.packageCLiveAllowed, false, "canary_no_package_c_live");
+  assert.equal(plan.boundary.externalAccessBlocked, true, "canary_external_access_blocked");
+  assert.deepEqual(plan.productionCanaryShape.stages, [
+    "admin_identity_smoke",
+    "tenant_smoke",
+    "workspace_smoke",
+    "portal_backend_package_c_dry_run_boundary",
+    "resourcebinding_cloudoperation_ledger_linkage",
+    "commercial_ledger_linkage",
+    "workspace_lifecycle_linkage",
+    "rollback_evidence",
+    "cleanup_evidence",
+    "redaction_observability_evidence",
+  ], "canary_stage_shape");
+  assert.deepEqual(plan.smokeShape.admin.requiredFields, ["adminIdentityRef", "tenantId", "auditEventId"], "admin_smoke_shape");
+  assert.deepEqual(plan.smokeShape.tenant.requiredFields, ["tenantId", "accountId", "billingAttributionId", "quotaScopeId"], "tenant_smoke_shape");
+  assert.deepEqual(plan.smokeShape.workspace.requiredFields, ["workspaceId", "resourceBindingId", "cloudOperationId", "providerKeyRef"], "workspace_smoke_shape");
+  assert.equal(plan.portalBackendPackageCDryRunBoundary.liveExecutionAllowedNow, false, "canary_package_c_dry_run_only");
+  assert.equal(plan.resourceBindingCloudOperationLinkage.resourceBindingId, canary.resourceBindingId, "canary_resource_binding_linked");
+  assert.equal(plan.commercialLedgerLinkage.billingAttributionId, canary.billingAttributionId, "canary_billing_linked");
+  assert.deepEqual(plan.workspaceLifecycleLinkage.actions, ["suspend", "resume", "delete"], "canary_lifecycle_linked");
+  assert.equal(plan.rollbackEvidence.commandPlan.allowlistedOnly, true, "canary_rollback_allowlisted");
+  assert.equal(plan.cleanupEvidence.commandPlan.allowlistedOnly, true, "canary_cleanup_allowlisted");
+  assert.equal(plan.idempotency.operationId, "canary:tenant-production-alpha:workspace-production-alpha:rb-production-alpha:production-canary-alpha-once", "canary_operation_id");
+  assert.equal(plan.providerBoundary.rawSecretAcceptedByRunner, false, "canary_raw_provider_key_rejected");
+  assertNoLifecycleSensitiveText(JSON.stringify(plan), "canary_plan");
+
+  const summary = await runProductionLaunchCanaryContract({ runId, evidenceDir, authorized: true });
+  assert.equal(summary.realExecutionReady, false, "canary_real_execution_ready_false");
+  const evidence = JSON.parse(await readFile(summary.evidencePath, "utf8"));
+  assert.equal(evidence.redactionAudit.rawSecretMaterialExposed, false, "canary_hides_raw_provider_key");
+  assert.equal(evidence.redactionAudit.dbPasswordExposed, false, "canary_hides_db_password");
+  assert.equal(evidence.redactionAudit.tokenExposed, false, "canary_hides_token");
+  assert.equal(evidence.redactionAudit.tencentSecretExposed, false, "canary_hides_tencent_secret");
+  assert.equal(evidence.nextGap.id, "production-launch-gap-07-external-access-strategy-after-minimum-saas-closure", "canary_next_gap");
+  assertNoLifecycleSensitiveText(JSON.stringify(evidence), "canary_evidence");
+} finally {
+  await rm(canaryEvidenceRoot, { recursive: true, force: true });
+}
+
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_cloud_cleanup_local_gate",
   protectedPlatformServicePool: true,
   tenantNodePoolReleased: true,
   productionWorkspaceLifecycleContract: true,
+  productionCanaryRollbackCleanupContract: true,
 }, null, 2));

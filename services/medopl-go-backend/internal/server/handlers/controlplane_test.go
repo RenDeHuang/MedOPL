@@ -494,6 +494,79 @@ func TestControlPlaneProductionWorkspaceLifecycleContractFailsClosed(t *testing.
 	}
 }
 
+func TestControlPlaneProductionCanaryContractFailsClosed(t *testing.T) {
+	router := controlPlaneHandlerTestRouter()
+	rawProviderKey := "production-canary-raw-provider-key-must-not-leak"
+
+	for _, target := range []string{
+		"/api/v22/production/canary/plan",
+		"/api/v22/production/canary/commit",
+	} {
+		rec := postRaw(router, target, map[string]any{
+			"tenantId":             "tenant-production-alpha",
+			"accountId":            "account-production-alpha",
+			"workspaceId":          "workspace-production-alpha",
+			"resourceBindingId":    "rb-production-alpha",
+			"cloudOperationId":     "op-production-alpha",
+			"billingAttributionId": "bill-production-alpha",
+			"serverPlanId":         "starter_2c4g_10gb",
+			"providerKeyRef":       "gflab:workspace-production-alpha:refonly001122",
+			"idempotencyKey":       "production-canary-alpha-once",
+			"rawProviderKey":       rawProviderKey,
+			"dbPassword":           "postgres-password-must-not-leak",
+			"bearerToken":          "bearer-token-must-not-leak",
+			"tencentSecretId":      "tencent-secret-id-must-not-leak",
+			"tencentSecretKey":     "tencent-secret-key-must-not-leak",
+		})
+		if rec.Code != http.StatusPreconditionRequired {
+			t.Fatalf("%s status = %d body = %s", target, rec.Code, rec.Body.String())
+		}
+		body := rec.Body.String()
+		for _, required := range []string{
+			"production_launch_gap_06_canary_rollback_cleanup_contract_local_gate",
+			"contract-only",
+			"production_launch_canary_required",
+			"production-launch-canary-runner.js",
+			"admin_identity_smoke",
+			"tenant_smoke",
+			"workspace_smoke",
+			"portal_backend_package_c_dry_run_boundary",
+			"resource_bindings",
+			"cloud_operations",
+			"billing_events",
+			"audit_events",
+			"quota_ledger",
+			"rollbackPlanRequired",
+			"cleanupPlanRequired",
+			"providerKeyRef",
+			"blocked_until_multi_tenant_minimum_launch_closure",
+		} {
+			if !strings.Contains(body, required) {
+				t.Fatalf("%s response missing %q: %s", target, required, body)
+			}
+		}
+		for _, forbidden := range []string{
+			rawProviderKey,
+			"postgres-password-must-not-leak",
+			"bearer-token-must-not-leak",
+			"tencent-secret-id-must-not-leak",
+			"tencent-secret-key-must-not-leak",
+			"rawProviderKey",
+			"dbPassword",
+			"bearerToken",
+			"tencentSecretId",
+			"tencentSecretKey",
+			"Ingress",
+			"LoadBalancer",
+			"kubectl",
+		} {
+			if strings.Contains(body, forbidden) {
+				t.Fatalf("%s response leaked forbidden marker %q: %s", target, forbidden, body)
+			}
+		}
+	}
+}
+
 func TestControlPlaneHandlersMaterializeProviderSecretBoundary(t *testing.T) {
 	secretRoot := t.TempDir()
 	router := controlPlaneHandlerTestRouterWithSecretRoot(secretRoot)

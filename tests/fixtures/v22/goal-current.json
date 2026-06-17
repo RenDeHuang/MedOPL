@@ -8,12 +8,12 @@
   "last_updated_at": "2026-06-17",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "b815563880a41b282468678ca2f881cd255e5c61",
+  "base_trunk_head": "95660eeb91adbe938023040526ee9c2ffc7c3863",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "b815563880a41b282468678ca2f881cd255e5c61",
+  "last_landed_commit": "95660eeb91adbe938023040526ee9c2ffc7c3863",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 first admin / tenant / workspace bootstrap contract is repo-native and local-gated. Gap 02 Portal -> Go backend -> Package C operation contract is repo-native and local-gated. Gap 03 ResourceBinding / CloudOperation PostgreSQL ledger contract is repo-native and local-gated. Gap 04 billing / audit / quota ledger contract is repo-native and local-gated. Production launch Gap 05 workspace suspend / resume / delete lifecycle contract is now repo-native and local-gated through `tests/support/cloud-prework/production-launch-workspace-lifecycle-runner.js`: it proves unauthorized runs fail closed, suspend/resume/delete request shape, ResourceBinding lifecycle linkage, CloudOperation lifecycle linkage, billing stop/resume/finalization linkage, audit linkage, quota release/restore linkage, operation idempotency, providerKeyRef-only boundary, rollback/cleanup redacted evidence shape and local dry-run repository versus future production PostgreSQL boundary without reading secrets/kubeconfig/DB password or executing Kubernetes, PostgreSQL, deploy, build/push, Tencent mutation or Package C live. MedOPL still is not formally production launched: production canary/rollback/evidence and external access remain open. The current unique gap is production-launch-gap-06-production-canary-rollback-evidence-contract before any Ingress/external access.",
+  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 first admin / tenant / workspace bootstrap contract is repo-native and local-gated. Gap 02 Portal -> Go backend -> Package C operation contract is repo-native and local-gated. Gap 03 ResourceBinding / CloudOperation PostgreSQL ledger contract is repo-native and local-gated. Gap 04 billing / audit / quota ledger contract is repo-native and local-gated. Gap 05 workspace suspend / resume / delete lifecycle contract is repo-native and local-gated. Gap 06 production smoke / canary / rollback / cleanup evidence contract is now repo-native and local-gated through `tests/support/cloud-prework/production-launch-canary-runner.js`: it proves unauthorized runs fail closed, production canary shape, admin/tenant/workspace smoke shape, Portal -> Go backend -> Package C dry-run boundary, ResourceBinding / CloudOperation linkage, billing / audit / quota linkage, workspace lifecycle linkage, rollback/cleanup redacted evidence shape, redaction/observability evidence, operation idempotency, providerKeyRef-only boundary and local dry-run repository versus future production PostgreSQL/Kubernetes execution boundary without reading secrets/kubeconfig/DB password or executing Kubernetes, PostgreSQL, deploy, rollback, build/push, Tencent mutation or Package C live. MedOPL still is not publicly exposed: external access remains a separate strategy/authorization gap and must not default to Ingress/LoadBalancer/HTTPS. The current unique gap is production-launch-gap-07-external-access-strategy-contract.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -171,7 +171,7 @@
     "gap_id": "real-cloud-authorization-boundary",
     "stage": "S7 real-cloud authorization boundary before readiness",
     "cursor_eligible": false,
-    "problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 first admin / tenant / workspace bootstrap contract is repo-native and local-gated. Gap 02 Portal -> Go backend -> Package C operation contract is repo-native and local-gated. Gap 03 ResourceBinding / CloudOperation PostgreSQL ledger contract is repo-native and local-gated. Gap 04 billing / audit / quota ledger contract is repo-native and local-gated. Production launch Gap 05 workspace suspend / resume / delete lifecycle contract is now repo-native and local-gated through `tests/support/cloud-prework/production-launch-workspace-lifecycle-runner.js`: it proves unauthorized runs fail closed, suspend/resume/delete request shape, ResourceBinding lifecycle linkage, CloudOperation lifecycle linkage, billing stop/resume/finalization linkage, audit linkage, quota release/restore linkage, operation idempotency, providerKeyRef-only boundary, rollback/cleanup redacted evidence shape and local dry-run repository versus future production PostgreSQL boundary without reading secrets/kubeconfig/DB password or executing Kubernetes, PostgreSQL, deploy, build/push, Tencent mutation or Package C live. MedOPL still is not formally production launched: production canary/rollback/evidence and external access remain open. The current unique gap is production-launch-gap-06-production-canary-rollback-evidence-contract before any Ingress/external access.",
+    "problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 first admin / tenant / workspace bootstrap contract is repo-native and local-gated. Gap 02 Portal -> Go backend -> Package C operation contract is repo-native and local-gated. Gap 03 ResourceBinding / CloudOperation PostgreSQL ledger contract is repo-native and local-gated. Gap 04 billing / audit / quota ledger contract is repo-native and local-gated. Gap 05 workspace suspend / resume / delete lifecycle contract is repo-native and local-gated. Gap 06 production smoke / canary / rollback / cleanup evidence contract is now repo-native and local-gated through `tests/support/cloud-prework/production-launch-canary-runner.js`: it proves unauthorized runs fail closed, production canary shape, admin/tenant/workspace smoke shape, Portal -> Go backend -> Package C dry-run boundary, ResourceBinding / CloudOperation linkage, billing / audit / quota linkage, workspace lifecycle linkage, rollback/cleanup redacted evidence shape, redaction/observability evidence, operation idempotency, providerKeyRef-only boundary and local dry-run repository versus future production PostgreSQL/Kubernetes execution boundary without reading secrets/kubeconfig/DB password or executing Kubernetes, PostgreSQL, deploy, rollback, build/push, Tencent mutation or Package C live. MedOPL still is not publicly exposed: external access remains a separate strategy/authorization gap and must not default to Ingress/LoadBalancer/HTTPS. The current unique gap is production-launch-gap-07-external-access-strategy-contract.",
     "verification_commands": [
       "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
       "node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs",
@@ -2452,7 +2452,9 @@
         "productionLaunchGap03LedgerContract": "implemented",
         "productionLaunchGap03EvidencePath": ".runtime/production-launch-ledger/<runid>/resourcebinding-ledger-contract-redacted.json",
         "productionLaunchGap04CommercialLedgerContract": "implemented",
-        "productionLaunchGap04EvidencePath": ".runtime/production-launch-commercial-ledger/<runid>/commercial-ledger-contract-redacted.json"
+        "productionLaunchGap04EvidencePath": ".runtime/production-launch-commercial-ledger/<runid>/commercial-ledger-contract-redacted.json",
+        "productionLaunchGap06CanaryRollbackCleanupContract": "implemented",
+        "productionLaunchGap06EvidencePath": ".runtime/production-launch-canary/<runid>/canary-contract-redacted.json"
       },
       "vision": {
         "product": "MedOPL production launch is a stable multi-tenant SaaS managed OPL workbench, not a temporary page trial.",
@@ -2690,7 +2692,7 @@
         {
           "phase": 4,
           "name": "Production smoke, canary, rollback and evidence",
-          "status": "contract-only",
+          "status": "implemented",
           "requiredEvidence": [
             "end-to-end production canary",
             "rollback execution or explicit no-rollback decision",
@@ -2705,7 +2707,7 @@
         {
           "phase": 5,
           "name": "External access after minimum SaaS closure",
-          "status": "blocked",
+          "status": "contract-only",
           "requiredEvidence": [
             "chosen access strategy",
             "Ingress/LB/HTTPS only after separate authorization",
@@ -2777,12 +2779,12 @@
         }
       ],
       "nextUniqueGap": {
-        "id": "production-launch-gap-06-production-canary-rollback-evidence-contract",
-        "title": "Production launch Gap 06: production smoke / canary / rollback / cleanup evidence contract",
-        "reason": "Gap 05 has a repo-native workspace suspend / resume / delete lifecycle contract/local gate, but formal SaaS launch still needs production canary, rollback, cleanup and redaction/observability evidence closure before external access.",
-        "boundary": "local contract and fixture readiness only until separately authorized; no secret/kubeconfig, no PostgreSQL connection, no Kubernetes API, no kubectl, no deploy/rollback execution, no Tencent mutation, no Package C live execution",
-        "recommendedEntrypoint": "local Codex implementation of repo-native production smoke / canary / rollback / cleanup evidence contract/gate",
-        "evidencePath": ".runtime/production-launch-canary-rollback/<runid>/canary-rollback-contract-redacted.json"
+        "id": "production-launch-gap-07-external-access-strategy-contract",
+        "title": "Production launch Gap 07: Portal external access strategy contract after minimum SaaS closure",
+        "reason": "Gap 06 has a repo-native production smoke / canary / rollback / cleanup evidence contract/local gate, so the next gap is external access strategy as a contract/authorization pack only; do not default to public exposure.",
+        "boundary": "local strategy contract and authorization pack only until separately authorized; no secret/kubeconfig, no Kubernetes API, no kubectl, no Ingress/LoadBalancer/DNS/TLS mutation, no deploy/rollback execution, no Tencent mutation, no Package C live execution",
+        "recommendedEntrypoint": "local Codex implementation of repo-native Portal external access strategy contract/gate comparing admin-only port-forward, internal gateway, Ingress, LoadBalancer and HTTPS/domain without default public exposure",
+        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json"
       },
       "externalAccessPolicy": {
         "status": "blocked_before_multi_tenant_minimum_launch_closure",
@@ -2875,6 +2877,62 @@
           "no production billing charge or quota enforcement execution",
           "no Ingress or public access",
           "no workspace suspend/resume/delete lifecycle implementation"
+        ]
+      },
+      "gap06CanaryRollbackCleanupContract": {
+        "status": "implemented",
+        "runnerCommand": "node tests/support/cloud-prework/production-launch-canary-runner.js --mode contract-local-gate --run-id <runid> --authorized 1",
+        "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs",
+        "evidencePath": ".runtime/production-launch-canary/<runid>/canary-contract-redacted.json",
+        "portalTypedApi": "services/portal/frontend/src/api/portal/production-canary.ts",
+        "goBackendRoutes": [
+          "POST /api/v22/production/canary/plan",
+          "POST /api/v22/production/canary/commit"
+        ],
+        "canonicalParents": "PostgreSQL resource_bindings/cloud_operations/billing_events/audit_events/quota_ledger plus future Kubernetes execution evidence",
+        "canaryStages": [
+          "admin_identity_smoke",
+          "tenant_smoke",
+          "workspace_smoke",
+          "portal_backend_package_c_dry_run_boundary",
+          "resourcebinding_cloudoperation_ledger_linkage",
+          "commercial_ledger_linkage",
+          "workspace_lifecycle_linkage",
+          "rollback_evidence",
+          "cleanup_evidence",
+          "redaction_observability_evidence"
+        ],
+        "proves": [
+          "unauthorized fail closed",
+          "production canary shape",
+          "admin smoke shape",
+          "tenant smoke shape",
+          "workspace smoke shape",
+          "Portal -> Go backend -> Package C dry-run boundary without live execution",
+          "ResourceBinding / CloudOperation linkage",
+          "billing / audit / quota linkage",
+          "workspace lifecycle linkage",
+          "rollback command and evidence shape",
+          "cleanup command and evidence shape",
+          "redaction / observability evidence shape",
+          "operation idempotency uniqueness",
+          "providerKeyRef-only public boundary",
+          "local dry-run repository is separated from future production PostgreSQL/Kubernetes execution",
+          "raw provider key, DB password, token and Tencent secret redaction",
+          "external access remains blocked until separately authorized strategy work"
+        ],
+        "nonGoals": [
+          "no secret or kubeconfig read",
+          "no Kubernetes API or kubectl",
+          "no PostgreSQL connection",
+          "no deploy/rollout/rollback execution",
+          "no build/push",
+          "no Tencent mutation",
+          "no Package C live",
+          "no production PostgreSQL ledger write/read",
+          "no production canary execution",
+          "no production rollback or cleanup execution",
+          "no Ingress, LoadBalancer, DNS, TLS or public access mutation"
         ]
       }
     }
@@ -4668,7 +4726,9 @@
         "productionLaunchGap03LedgerContract": "implemented",
         "productionLaunchGap03EvidencePath": ".runtime/production-launch-ledger/<runid>/resourcebinding-ledger-contract-redacted.json",
         "productionLaunchGap04CommercialLedgerContract": "implemented",
-        "productionLaunchGap04EvidencePath": ".runtime/production-launch-commercial-ledger/<runid>/commercial-ledger-contract-redacted.json"
+        "productionLaunchGap04EvidencePath": ".runtime/production-launch-commercial-ledger/<runid>/commercial-ledger-contract-redacted.json",
+        "productionLaunchGap06CanaryRollbackCleanupContract": "implemented",
+        "productionLaunchGap06EvidencePath": ".runtime/production-launch-canary/<runid>/canary-contract-redacted.json"
       },
       "vision": {
         "product": "MedOPL production launch is a stable multi-tenant SaaS managed OPL workbench, not a temporary page trial.",
@@ -4906,7 +4966,7 @@
         {
           "phase": 4,
           "name": "Production smoke, canary, rollback and evidence",
-          "status": "contract-only",
+          "status": "implemented",
           "requiredEvidence": [
             "end-to-end production canary",
             "rollback execution or explicit no-rollback decision",
@@ -4921,7 +4981,7 @@
         {
           "phase": 5,
           "name": "External access after minimum SaaS closure",
-          "status": "blocked",
+          "status": "contract-only",
           "requiredEvidence": [
             "chosen access strategy",
             "Ingress/LB/HTTPS only after separate authorization",
@@ -4993,12 +5053,12 @@
         }
       ],
       "nextUniqueGap": {
-        "id": "production-launch-gap-06-production-canary-rollback-evidence-contract",
-        "title": "Production launch Gap 06: production smoke / canary / rollback / cleanup evidence contract",
-        "reason": "Gap 05 has a repo-native workspace suspend / resume / delete lifecycle contract/local gate, but formal SaaS launch still needs production canary, rollback, cleanup and redaction/observability evidence closure before external access.",
-        "boundary": "local contract and fixture readiness only until separately authorized; no secret/kubeconfig, no PostgreSQL connection, no Kubernetes API, no kubectl, no deploy/rollback execution, no Tencent mutation, no Package C live execution",
-        "recommendedEntrypoint": "local Codex implementation of repo-native production smoke / canary / rollback / cleanup evidence contract/gate",
-        "evidencePath": ".runtime/production-launch-canary-rollback/<runid>/canary-rollback-contract-redacted.json"
+        "id": "production-launch-gap-07-external-access-strategy-contract",
+        "title": "Production launch Gap 07: Portal external access strategy contract after minimum SaaS closure",
+        "reason": "Gap 06 has a repo-native production smoke / canary / rollback / cleanup evidence contract/local gate, so the next gap is external access strategy as a contract/authorization pack only; do not default to public exposure.",
+        "boundary": "local strategy contract and authorization pack only until separately authorized; no secret/kubeconfig, no Kubernetes API, no kubectl, no Ingress/LoadBalancer/DNS/TLS mutation, no deploy/rollback execution, no Tencent mutation, no Package C live execution",
+        "recommendedEntrypoint": "local Codex implementation of repo-native Portal external access strategy contract/gate comparing admin-only port-forward, internal gateway, Ingress, LoadBalancer and HTTPS/domain without default public exposure",
+        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json"
       },
       "externalAccessPolicy": {
         "status": "blocked_before_multi_tenant_minimum_launch_closure",
@@ -5091,6 +5151,62 @@
           "no production billing charge or quota enforcement execution",
           "no Ingress or public access",
           "no workspace suspend/resume/delete lifecycle implementation"
+        ]
+      },
+      "gap06CanaryRollbackCleanupContract": {
+        "status": "implemented",
+        "runnerCommand": "node tests/support/cloud-prework/production-launch-canary-runner.js --mode contract-local-gate --run-id <runid> --authorized 1",
+        "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs",
+        "evidencePath": ".runtime/production-launch-canary/<runid>/canary-contract-redacted.json",
+        "portalTypedApi": "services/portal/frontend/src/api/portal/production-canary.ts",
+        "goBackendRoutes": [
+          "POST /api/v22/production/canary/plan",
+          "POST /api/v22/production/canary/commit"
+        ],
+        "canonicalParents": "PostgreSQL resource_bindings/cloud_operations/billing_events/audit_events/quota_ledger plus future Kubernetes execution evidence",
+        "canaryStages": [
+          "admin_identity_smoke",
+          "tenant_smoke",
+          "workspace_smoke",
+          "portal_backend_package_c_dry_run_boundary",
+          "resourcebinding_cloudoperation_ledger_linkage",
+          "commercial_ledger_linkage",
+          "workspace_lifecycle_linkage",
+          "rollback_evidence",
+          "cleanup_evidence",
+          "redaction_observability_evidence"
+        ],
+        "proves": [
+          "unauthorized fail closed",
+          "production canary shape",
+          "admin smoke shape",
+          "tenant smoke shape",
+          "workspace smoke shape",
+          "Portal -> Go backend -> Package C dry-run boundary without live execution",
+          "ResourceBinding / CloudOperation linkage",
+          "billing / audit / quota linkage",
+          "workspace lifecycle linkage",
+          "rollback command and evidence shape",
+          "cleanup command and evidence shape",
+          "redaction / observability evidence shape",
+          "operation idempotency uniqueness",
+          "providerKeyRef-only public boundary",
+          "local dry-run repository is separated from future production PostgreSQL/Kubernetes execution",
+          "raw provider key, DB password, token and Tencent secret redaction",
+          "external access remains blocked until separately authorized strategy work"
+        ],
+        "nonGoals": [
+          "no secret or kubeconfig read",
+          "no Kubernetes API or kubectl",
+          "no PostgreSQL connection",
+          "no deploy/rollout/rollback execution",
+          "no build/push",
+          "no Tencent mutation",
+          "no Package C live",
+          "no production PostgreSQL ledger write/read",
+          "no production canary execution",
+          "no production rollback or cleanup execution",
+          "no Ingress, LoadBalancer, DNS, TLS or public access mutation"
         ]
       }
     }
@@ -7901,40 +8017,41 @@
     },
     "productionLaunchBoundary": {
       "nextUniqueGap": {
-        "id": "production-launch-gap-06-production-canary-rollback-evidence-contract",
-        "title": "Production launch Gap 06: production smoke / canary / rollback / cleanup evidence contract",
-        "reason": "Gap 05 has a repo-native workspace suspend / resume / delete lifecycle contract/local gate, but formal SaaS launch still needs production canary, rollback, cleanup and redaction/observability evidence closure before external access.",
-        "boundary": "local contract and fixture readiness only until separately authorized; no secret/kubeconfig, no PostgreSQL connection, no Kubernetes API, no kubectl, no deploy/rollback execution, no Tencent mutation, no Package C live execution",
-        "recommendedEntrypoint": "local Codex implementation of repo-native production smoke / canary / rollback / cleanup evidence contract/gate",
-        "evidencePath": ".runtime/production-launch-canary-rollback/<runid>/canary-rollback-contract-redacted.json"
+        "id": "production-launch-gap-07-external-access-strategy-contract",
+        "title": "Production launch Gap 07: Portal external access strategy contract after minimum SaaS closure",
+        "reason": "Gap 06 has a repo-native production smoke / canary / rollback / cleanup evidence contract/local gate, so the next gap is external access strategy as a contract/authorization pack only; do not default to public exposure.",
+        "boundary": "local strategy contract and authorization pack only until separately authorized; no secret/kubeconfig, no Kubernetes API, no kubectl, no Ingress/LoadBalancer/DNS/TLS mutation, no deploy/rollback execution, no Tencent mutation, no Package C live execution",
+        "recommendedEntrypoint": "local Codex implementation of repo-native Portal external access strategy contract/gate comparing admin-only port-forward, internal gateway, Ingress, LoadBalancer and HTTPS/domain without default public exposure",
+        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json"
       },
       "externalAccessBlockedUntil": "multi_tenant_minimum_launch_closure"
     }
   },
   "readinessGaps": [
-    "production end-to-end smoke/canary and rollback/cleanup evidence",
-    "Portal external access strategy only after multi-tenant minimum launch closure"
+    "Portal external access strategy contract only after multi-tenant minimum contract closure; no default public exposure"
   ],
   "nextAuthorizationPrompt": [
     "按 active truth 做 gap-driven execution，不新增 loop。",
-    "当前唯一 gap：Production launch Gap 06: production smoke / canary / rollback / cleanup evidence contract。",
-    "当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Production launch Gap 01/02/03/04/05 contract/local gates 已收口。external access / Ingress / LoadBalancer / HTTPS 仍被阻断到多租户最小上线闭环之后。",
-    "目标：在本地实现/收敛 repo-native production smoke / canary / rollback / cleanup evidence contract/local gate。本轮只做 contract/local readiness，不读取 secret，不连接 DB/Kubernetes，不执行 Package C live。",
-    "必须覆盖：end-to-end production canary shape、admin/tenant/workspace smoke shape、Portal -> Go backend -> Package C dry-run boundary、ResourceBinding/CloudOperation/commercial ledger linkage、rollback command/evidence shape、cleanup evidence shape、redaction/observability evidence、idempotency、providerKeyRef-only boundary、local dry-run repository 与 future production PostgreSQL/Kubernetes execution boundary 区分、external access 仍 blocked。",
-    "禁止：不读取 secret/kubeconfig/DB password，不连接 Kubernetes API，不连接 PostgreSQL，不执行 kubectl，不 deploy/rollout/rollback，不 build/push，不 Tencent mutation，不 Package C live，不新增 truth source，不新增 loop，不恢复 Node Portal backend，不新增兼容控制面，不进入 Ingress/external access。",
-    "复用现有 Go backend control-plane、Portal typed API、ResourceBinding / CloudOperation / billing / audit / quota / workspace lifecycle contract shape、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式。",
-    "验收：新增或更新本地 contract/local gate，证明未授权 fail closed、production canary shape 可追踪、rollback/cleanup evidence shape 正确、raw provider key/DB password/token/Tencent secret 不进入 logs/evidence/git、external access 仍 blocked。",
+    "当前唯一 gap：Production launch Gap 07: Portal external access strategy contract after minimum SaaS closure。",
+    "当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Production launch Gap 01/02/03/04/05/06 contract/local gates 已收口。external/public user access 仍未暴露，不能默认选择公网暴露。",
+    "目标：在本地实现/收敛 repo-native Portal external access strategy contract/local gate 和 authorization pack。本轮只做 strategy/contract/readiness，不读取 secret，不连接 DB/Kubernetes，不执行 kubectl/deploy/rollout/rollback，不执行 Tencent mutation，不进入 Package C live。",
+    "必须比较：admin-only port-forward、internal gateway、Ingress、LoadBalancer、HTTPS/domain。必须给出 recommended next option，但不得默认公网暴露；公网 Ingress/LoadBalancer/DNS/TLS 只能作为后续单独授权候选。",
+    "必须覆盖：allowed operations、forbidden operations、security boundary、rollback/cleanup plan、smoke plan、evidence paths、stop conditions、redaction evidence、providerKeyRef-only boundary、external access strategy 与 production SaaS control-plane contract 的衔接。",
+    "禁止：不读取 secret/kubeconfig/DB password，不连接 Kubernetes API，不连接 PostgreSQL，不执行 kubectl，不 deploy/rollout/rollback，不 build/push，不 Tencent mutation，不 Package C live，不新增 truth source，不新增 loop，不恢复 Node Portal backend，不新增兼容控制面，不执行 Ingress/LoadBalancer/DNS/TLS mutation，不声明 public user access 已完成。",
+    "复用现有 Go backend control-plane、Portal typed API、Production Launch Goal / Gap Map、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式。",
+    "Evidence 只写 redacted runtime 路径，例如：.runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json。",
     "同步 docs/active/README.md、docs/delivery/README.md、docs/history/README.md、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
   ],
   "nextLocalCodexPrompt": [
     "按 active truth 做 gap-driven execution，不新增 loop。",
-    "当前唯一 gap：Production launch Gap 06: production smoke / canary / rollback / cleanup evidence contract。",
-    "当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Production launch Gap 01/02/03/04/05 contract/local gates 已收口。external access / Ingress / LoadBalancer / HTTPS 仍被阻断到多租户最小上线闭环之后。",
-    "目标：在本地实现/收敛 repo-native production smoke / canary / rollback / cleanup evidence contract/local gate。本轮只做 contract/local readiness，不读取 secret，不连接 DB/Kubernetes，不执行 Package C live。",
-    "必须覆盖：end-to-end production canary shape、admin/tenant/workspace smoke shape、Portal -> Go backend -> Package C dry-run boundary、ResourceBinding/CloudOperation/commercial ledger linkage、rollback command/evidence shape、cleanup evidence shape、redaction/observability evidence、idempotency、providerKeyRef-only boundary、local dry-run repository 与 future production PostgreSQL/Kubernetes execution boundary 区分、external access 仍 blocked。",
-    "禁止：不读取 secret/kubeconfig/DB password，不连接 Kubernetes API，不连接 PostgreSQL，不执行 kubectl，不 deploy/rollout/rollback，不 build/push，不 Tencent mutation，不 Package C live，不新增 truth source，不新增 loop，不恢复 Node Portal backend，不新增兼容控制面，不进入 Ingress/external access。",
-    "复用现有 Go backend control-plane、Portal typed API、ResourceBinding / CloudOperation / billing / audit / quota / workspace lifecycle contract shape、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式。",
-    "验收：新增或更新本地 contract/local gate，证明未授权 fail closed、production canary shape 可追踪、rollback/cleanup evidence shape 正确、raw provider key/DB password/token/Tencent secret 不进入 logs/evidence/git、external access 仍 blocked。",
+    "当前唯一 gap：Production launch Gap 07: Portal external access strategy contract after minimum SaaS closure。",
+    "当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Production launch Gap 01/02/03/04/05/06 contract/local gates 已收口。external/public user access 仍未暴露，不能默认选择公网暴露。",
+    "目标：在本地实现/收敛 repo-native Portal external access strategy contract/local gate 和 authorization pack。本轮只做 strategy/contract/readiness，不读取 secret，不连接 DB/Kubernetes，不执行 kubectl/deploy/rollout/rollback，不执行 Tencent mutation，不进入 Package C live。",
+    "必须比较：admin-only port-forward、internal gateway、Ingress、LoadBalancer、HTTPS/domain。必须给出 recommended next option，但不得默认公网暴露；公网 Ingress/LoadBalancer/DNS/TLS 只能作为后续单独授权候选。",
+    "必须覆盖：allowed operations、forbidden operations、security boundary、rollback/cleanup plan、smoke plan、evidence paths、stop conditions、redaction evidence、providerKeyRef-only boundary、external access strategy 与 production SaaS control-plane contract 的衔接。",
+    "禁止：不读取 secret/kubeconfig/DB password，不连接 Kubernetes API，不连接 PostgreSQL，不执行 kubectl，不 deploy/rollout/rollback，不 build/push，不 Tencent mutation，不 Package C live，不新增 truth source，不新增 loop，不恢复 Node Portal backend，不新增兼容控制面，不执行 Ingress/LoadBalancer/DNS/TLS mutation，不声明 public user access 已完成。",
+    "复用现有 Go backend control-plane、Portal typed API、Production Launch Goal / Gap Map、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式。",
+    "Evidence 只写 redacted runtime 路径，例如：.runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json。",
     "同步 docs/active/README.md、docs/delivery/README.md、docs/history/README.md、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
   ],
   "production_launch_goal_gap_map": {
@@ -7960,7 +8077,9 @@
       "productionLaunchGap04CommercialLedgerContract": "implemented",
       "productionLaunchGap04EvidencePath": ".runtime/production-launch-commercial-ledger/<runid>/commercial-ledger-contract-redacted.json",
       "productionLaunchGap05WorkspaceLifecycleContract": "implemented",
-      "productionLaunchGap05EvidencePath": ".runtime/production-launch-workspace-lifecycle/<runid>/workspace-lifecycle-contract-redacted.json"
+      "productionLaunchGap05EvidencePath": ".runtime/production-launch-workspace-lifecycle/<runid>/workspace-lifecycle-contract-redacted.json",
+      "productionLaunchGap06CanaryRollbackCleanupContract": "implemented",
+      "productionLaunchGap06EvidencePath": ".runtime/production-launch-canary/<runid>/canary-contract-redacted.json"
     },
     "vision": {
       "product": "MedOPL production launch is a stable multi-tenant SaaS managed OPL workbench, not a temporary page trial.",
@@ -8198,7 +8317,7 @@
       {
         "phase": 4,
         "name": "Production smoke, canary, rollback and evidence",
-        "status": "contract-only",
+        "status": "implemented",
         "requiredEvidence": [
           "end-to-end production canary",
           "rollback execution or explicit no-rollback decision",
@@ -8213,7 +8332,7 @@
       {
         "phase": 5,
         "name": "External access after minimum SaaS closure",
-        "status": "blocked",
+        "status": "contract-only",
         "requiredEvidence": [
           "chosen access strategy",
           "Ingress/LB/HTTPS only after separate authorization",
@@ -8285,12 +8404,12 @@
       }
     ],
     "nextUniqueGap": {
-      "id": "production-launch-gap-06-production-canary-rollback-evidence-contract",
-      "title": "Production launch Gap 06: production smoke / canary / rollback / cleanup evidence contract",
-      "reason": "Gap 05 has a repo-native workspace suspend / resume / delete lifecycle contract/local gate, but formal SaaS launch still needs production canary, rollback, cleanup and redaction/observability evidence closure before external access.",
-      "boundary": "local contract and fixture readiness only until separately authorized; no secret/kubeconfig, no PostgreSQL connection, no Kubernetes API, no kubectl, no deploy/rollback execution, no Tencent mutation, no Package C live execution",
-      "recommendedEntrypoint": "local Codex implementation of repo-native production smoke / canary / rollback / cleanup evidence contract/gate",
-      "evidencePath": ".runtime/production-launch-canary-rollback/<runid>/canary-rollback-contract-redacted.json"
+      "id": "production-launch-gap-07-external-access-strategy-contract",
+      "title": "Production launch Gap 07: Portal external access strategy contract after minimum SaaS closure",
+      "reason": "Gap 06 has a repo-native production smoke / canary / rollback / cleanup evidence contract/local gate, so the next gap is external access strategy as a contract/authorization pack only; do not default to public exposure.",
+      "boundary": "local strategy contract and authorization pack only until separately authorized; no secret/kubeconfig, no Kubernetes API, no kubectl, no Ingress/LoadBalancer/DNS/TLS mutation, no deploy/rollback execution, no Tencent mutation, no Package C live execution",
+      "recommendedEntrypoint": "local Codex implementation of repo-native Portal external access strategy contract/gate comparing admin-only port-forward, internal gateway, Ingress, LoadBalancer and HTTPS/domain without default public exposure",
+      "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json"
     },
     "externalAccessPolicy": {
       "status": "blocked_before_multi_tenant_minimum_launch_closure",
@@ -8492,6 +8611,62 @@
         "no production lifecycle mutation",
         "no Ingress or public access",
         "no production canary execution"
+      ]
+    },
+    "gap06CanaryRollbackCleanupContract": {
+      "status": "implemented",
+      "runnerCommand": "node tests/support/cloud-prework/production-launch-canary-runner.js --mode contract-local-gate --run-id <runid> --authorized 1",
+      "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs",
+      "evidencePath": ".runtime/production-launch-canary/<runid>/canary-contract-redacted.json",
+      "portalTypedApi": "services/portal/frontend/src/api/portal/production-canary.ts",
+      "goBackendRoutes": [
+        "POST /api/v22/production/canary/plan",
+        "POST /api/v22/production/canary/commit"
+      ],
+      "canonicalParents": "PostgreSQL resource_bindings/cloud_operations/billing_events/audit_events/quota_ledger plus future Kubernetes execution evidence",
+      "canaryStages": [
+        "admin_identity_smoke",
+        "tenant_smoke",
+        "workspace_smoke",
+        "portal_backend_package_c_dry_run_boundary",
+        "resourcebinding_cloudoperation_ledger_linkage",
+        "commercial_ledger_linkage",
+        "workspace_lifecycle_linkage",
+        "rollback_evidence",
+        "cleanup_evidence",
+        "redaction_observability_evidence"
+      ],
+      "proves": [
+        "unauthorized fail closed",
+        "production canary shape",
+        "admin smoke shape",
+        "tenant smoke shape",
+        "workspace smoke shape",
+        "Portal -> Go backend -> Package C dry-run boundary without live execution",
+        "ResourceBinding / CloudOperation linkage",
+        "billing / audit / quota linkage",
+        "workspace lifecycle linkage",
+        "rollback command and evidence shape",
+        "cleanup command and evidence shape",
+        "redaction / observability evidence shape",
+        "operation idempotency uniqueness",
+        "providerKeyRef-only public boundary",
+        "local dry-run repository is separated from future production PostgreSQL/Kubernetes execution",
+        "raw provider key, DB password, token and Tencent secret redaction",
+        "external access remains blocked until separately authorized strategy work"
+      ],
+      "nonGoals": [
+        "no secret or kubeconfig read",
+        "no Kubernetes API or kubectl",
+        "no PostgreSQL connection",
+        "no deploy/rollout/rollback execution",
+        "no build/push",
+        "no Tencent mutation",
+        "no Package C live",
+        "no production PostgreSQL ledger write/read",
+        "no production canary execution",
+        "no production rollback or cleanup execution",
+        "no Ingress, LoadBalancer, DNS, TLS or public access mutation"
       ]
     }
   }

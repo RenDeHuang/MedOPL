@@ -90,6 +90,8 @@ func RegisterControlPlaneRoutes(api *gin.RouterGroup, service ControlPlaneServic
 	api.POST("/v22/production/commercial-ledger/commit", productionCommercialLedgerContractCommit())
 	api.POST("/v22/production/workspace-lifecycle/plan", productionWorkspaceLifecycleContractPlan())
 	api.POST("/v22/production/workspace-lifecycle/commit", productionWorkspaceLifecycleContractCommit())
+	api.POST("/v22/production/canary/plan", productionCanaryContractPlan())
+	api.POST("/v22/production/canary/commit", productionCanaryContractCommit())
 	api.POST("/v22/users/prepare", prepareUser())
 	api.POST("/v22/users/credit", creditUser())
 	api.POST("/v22/provider-key", bindProviderKey(service))
@@ -519,6 +521,96 @@ func productionWorkspaceLifecycleContractPlan() gin.HandlerFunc {
 func productionWorkspaceLifecycleContractCommit() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ctx.JSON(http.StatusPreconditionRequired, productionWorkspaceLifecycleContractPayload("production_launch_workspace_lifecycle_required"))
+	}
+}
+
+func productionCanaryContractPayload(errorCode string) gin.H {
+	return gin.H{
+		"ok":             false,
+		"contract":       "production_launch_gap_06_canary_rollback_cleanup_contract_local_gate",
+		"mode":           "contract-only",
+		"error":          errorCode,
+		"requiredRunner": "tests/support/cloud-prework/production-launch-canary-runner.js",
+		"productionCanaryShape": gin.H{
+			"stages": []string{
+				"admin_identity_smoke",
+				"tenant_smoke",
+				"workspace_smoke",
+				"portal_backend_package_c_dry_run_boundary",
+				"resourcebinding_cloudoperation_ledger_linkage",
+				"commercial_ledger_linkage",
+				"workspace_lifecycle_linkage",
+				"rollback_evidence",
+				"cleanup_evidence",
+				"redaction_observability_evidence",
+			},
+			"contractOnly":           true,
+			"rawSecretFieldsAllowed": false,
+		},
+		"smokeShape": gin.H{
+			"admin": gin.H{
+				"requiredFields": []string{"adminIdentityRef", "tenantId", "auditEventId"},
+			},
+			"tenant": gin.H{
+				"requiredFields": []string{"tenantId", "accountId", "billingAttributionId", "quotaScopeId"},
+			},
+			"workspace": gin.H{
+				"requiredFields": []string{"workspaceId", "resourceBindingId", "cloudOperationId", "providerKeyRef"},
+			},
+		},
+		"portalBackendPackageCDryRunBoundary": gin.H{
+			"liveExecutionAllowedNow":    false,
+			"packageCLiveAllowedNow":     false,
+			"tencentMutationAllowedNow":  false,
+			"futurePackageCRunnerStatus": "contract_only",
+		},
+		"resourceBindingCloudOperationLinkage": gin.H{
+			"tables":       []string{"resource_bindings", "cloud_operations"},
+			"states":       []string{"requested", "creating", "ready"},
+			"persistedNow": false,
+		},
+		"commercialLedgerLinkage": gin.H{
+			"tables":       []string{"billing_events", "audit_events", "quota_ledger"},
+			"persistedNow": false,
+		},
+		"workspaceLifecycleLinkage": gin.H{
+			"actions":             []string{"suspend", "resume", "delete"},
+			"lifecycleMutationNow": false,
+		},
+		"rollbackCleanupEvidence": gin.H{
+			"rollbackPlanRequired": true,
+			"cleanupPlanRequired":  true,
+			"redactedEvidenceOnly": true,
+		},
+		"idempotency": gin.H{
+			"operationIdRequired":    true,
+			"idempotencyKeyRequired": true,
+		},
+		"providerBoundary": gin.H{
+			"publicFields":         []string{"provider", "providerKeyRef", "boundStatus"},
+			"rawSecretBackendOnly": true,
+		},
+		"localVsProductionRepository": gin.H{
+			"localRepositoryMode":        "dry-run-memory-shape-only",
+			"futureProductionRepository": "PostgreSQL ledgers plus future Kubernetes execution evidence",
+			"connectsToPostgresNow":      false,
+			"connectsToKubernetesNow":    false,
+		},
+		"externalAccess": gin.H{
+			"status": "blocked_until_multi_tenant_minimum_launch_closure",
+		},
+	}
+}
+
+func productionCanaryContractPlan() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusPreconditionRequired, productionCanaryContractPayload("production_launch_canary_required"))
+	}
+}
+
+func productionCanaryContractCommit() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusPreconditionRequired, productionCanaryContractPayload("production_launch_canary_required"))
 	}
 }
 

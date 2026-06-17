@@ -135,6 +135,14 @@ const unusedAdjudications = {
     status: "future-reserved",
     reason: "Production workspace suspend / resume / delete lifecycle commit must fail closed before authorization and is tracked only as typed API shape for Gap 05.",
   },
+  "production-canary.ts:planProductionCanary": {
+    status: "future-reserved",
+    reason: "Production smoke / canary / rollback / cleanup evidence planning is Gap 06 contract-only API trace; it stays unmounted until canary execution receives separate authorization.",
+  },
+  "production-canary.ts:commitProductionCanary": {
+    status: "future-reserved",
+    reason: "Production smoke / canary / rollback / cleanup evidence commit must fail closed before authorization and is tracked only as typed API shape for Gap 06.",
+  },
   "server-plans.ts:fetchServerPlans": {
     status: "future-reserved",
     reason: "Server plan catalog remains a lower-level backend surface; current React runtime UI is package-oriented.",
