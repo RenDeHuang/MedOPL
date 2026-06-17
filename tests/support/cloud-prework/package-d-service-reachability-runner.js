@@ -189,8 +189,11 @@ function materializeSmokeJobManifest({ runId }) {
               args: curlArgs(endpoint),
               securityContext: {
                 runAsNonRoot: true,
+                runAsUser: 1000,
+                runAsGroup: 1000,
                 allowPrivilegeEscalation: false,
                 readOnlyRootFilesystem: true,
+                capabilities: { drop: ["ALL"] },
               },
             };
           }),
@@ -237,6 +240,16 @@ function assertSmokeJobManifestBoundary(manifest = {}) {
     }
     if (!container.args?.includes("--connect-timeout") || !container.args?.includes("--max-time") || !container.args?.includes("--fail-with-body")) {
       throw new Error(`package_d_service_reachability_curl_fail_fast_required:${service.name}`);
+    }
+    const securityContext = container.securityContext || {};
+    if (securityContext.runAsNonRoot !== true || securityContext.runAsUser !== 1000 || securityContext.runAsGroup !== 1000) {
+      throw new Error(`package_d_service_reachability_numeric_non_root_security_context_required:${service.name}`);
+    }
+    if (securityContext.allowPrivilegeEscalation !== false || securityContext.readOnlyRootFilesystem !== true) {
+      throw new Error(`package_d_service_reachability_restricted_security_context_required:${service.name}`);
+    }
+    if (JSON.stringify(securityContext.capabilities?.drop || []) !== JSON.stringify(["ALL"])) {
+      throw new Error(`package_d_service_reachability_capabilities_drop_all_required:${service.name}`);
     }
     const writeOut = container.args?.[container.args.indexOf("--write-out") + 1] || "";
     if (!writeOut.includes("service=")) throw new Error(`package_d_service_reachability_curl_summary_missing:${service.name}:service`);

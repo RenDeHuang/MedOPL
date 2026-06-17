@@ -149,6 +149,12 @@ function fakeServiceReachabilityKubectlExecutor(commandLog, { failWait = false }
       assert.equal(manifest.spec.template.spec.containers.every((container) => container.args.some((arg) => arg.includes("service="))), true, "reachability_smoke_job_must_emit_service_summary");
       assert.equal(manifest.spec.template.spec.containers.every((container) => container.args.some((arg) => arg.includes("exit_code="))), true, "reachability_smoke_job_must_emit_exit_code_summary");
       assert.equal(manifest.spec.template.spec.containers.every((container) => container.args.some((arg) => arg.includes("total_time="))), true, "reachability_smoke_job_must_emit_timing_summary");
+      assert.equal(manifest.spec.template.spec.containers.every((container) => container.securityContext?.runAsNonRoot === true), true, "reachability_smoke_job_must_run_as_non_root");
+      assert.equal(manifest.spec.template.spec.containers.every((container) => container.securityContext?.runAsUser === 1000), true, "reachability_smoke_job_must_use_numeric_non_root_user");
+      assert.equal(manifest.spec.template.spec.containers.every((container) => container.securityContext?.runAsGroup === 1000), true, "reachability_smoke_job_must_use_numeric_non_root_group");
+      assert.equal(manifest.spec.template.spec.containers.every((container) => container.securityContext?.allowPrivilegeEscalation === false), true, "reachability_smoke_job_must_disallow_privilege_escalation");
+      assert.equal(manifest.spec.template.spec.containers.every((container) => container.securityContext?.readOnlyRootFilesystem === true), true, "reachability_smoke_job_must_use_readonly_root_filesystem");
+      assert.equal(manifest.spec.template.spec.containers.every((container) => JSON.stringify(container.securityContext?.capabilities?.drop || []) === JSON.stringify(["ALL"])), true, "reachability_smoke_job_must_drop_all_capabilities");
       assert.equal(JSON.stringify(manifest).includes("medopl-tenant-"), false, "reachability_smoke_manifest_must_not_reference_tenant_pool");
     }
     if (args.includes("delete")) {
@@ -698,6 +704,12 @@ try {
   assert.equal(reachabilityPlan.smokeJob.manifest.spec.template.spec.containers.every((container) => container.args.includes("--fail-with-body")), true, "reachability_smoke_container_must_fail_fast_with_body");
   assert.equal(reachabilityPlan.smokeJob.manifest.spec.template.spec.containers.every((container) => container.args.some((arg) => arg.includes("exit_code="))), true, "reachability_smoke_container_must_emit_exit_code");
   assert.equal(reachabilityPlan.smokeJob.manifest.spec.template.spec.containers.every((container) => container.args.some((arg) => arg.includes("total_time="))), true, "reachability_smoke_container_must_emit_total_time");
+  assert.equal(reachabilityPlan.smokeJob.manifest.spec.template.spec.containers.every((container) => container.securityContext?.runAsNonRoot === true), true, "reachability_smoke_container_must_run_as_non_root");
+  assert.equal(reachabilityPlan.smokeJob.manifest.spec.template.spec.containers.every((container) => container.securityContext?.runAsUser === 1000), true, "reachability_smoke_container_must_use_numeric_non_root_user");
+  assert.equal(reachabilityPlan.smokeJob.manifest.spec.template.spec.containers.every((container) => container.securityContext?.runAsGroup === 1000), true, "reachability_smoke_container_must_use_numeric_non_root_group");
+  assert.equal(reachabilityPlan.smokeJob.manifest.spec.template.spec.containers.every((container) => container.securityContext?.allowPrivilegeEscalation === false), true, "reachability_smoke_container_must_disallow_privilege_escalation");
+  assert.equal(reachabilityPlan.smokeJob.manifest.spec.template.spec.containers.every((container) => container.securityContext?.readOnlyRootFilesystem === true), true, "reachability_smoke_container_must_use_readonly_root_filesystem");
+  assert.equal(reachabilityPlan.smokeJob.manifest.spec.template.spec.containers.every((container) => JSON.stringify(container.securityContext?.capabilities?.drop || []) === JSON.stringify(["ALL"])), true, "reachability_smoke_container_must_drop_all_capabilities");
   assertNoSensitiveText(JSON.stringify(reachabilityPlan), "reachability_plan");
 
   const reachabilityCommandLog = [];
