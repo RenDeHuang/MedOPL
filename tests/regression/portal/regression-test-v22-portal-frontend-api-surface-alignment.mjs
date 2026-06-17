@@ -143,6 +143,14 @@ const unusedAdjudications = {
     status: "future-reserved",
     reason: "Production smoke / canary / rollback / cleanup evidence commit must fail closed before authorization and is tracked only as typed API shape for Gap 06.",
   },
+  "external-access-strategy.ts:planExternalAccessStrategy": {
+    status: "future-reserved",
+    reason: "Portal external access strategy planning is Gap 07 contract-only API trace; it stays unmounted until Ingress/HTTPS dry-run or execution receives separate authorization.",
+  },
+  "external-access-strategy.ts:commitExternalAccessStrategy": {
+    status: "future-reserved",
+    reason: "Portal external access strategy commit must fail closed before authorization and is tracked only as typed API shape for Gap 07.",
+  },
   "server-plans.ts:fetchServerPlans": {
     status: "future-reserved",
     reason: "Server plan catalog remains a lower-level backend surface; current React runtime UI is package-oriented.",

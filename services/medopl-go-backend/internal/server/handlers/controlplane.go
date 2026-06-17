@@ -92,6 +92,8 @@ func RegisterControlPlaneRoutes(api *gin.RouterGroup, service ControlPlaneServic
 	api.POST("/v22/production/workspace-lifecycle/commit", productionWorkspaceLifecycleContractCommit())
 	api.POST("/v22/production/canary/plan", productionCanaryContractPlan())
 	api.POST("/v22/production/canary/commit", productionCanaryContractCommit())
+	api.POST("/v22/production/external-access-strategy/plan", productionExternalAccessStrategyContractPlan())
+	api.POST("/v22/production/external-access-strategy/commit", productionExternalAccessStrategyContractCommit())
 	api.POST("/v22/users/prepare", prepareUser())
 	api.POST("/v22/users/credit", creditUser())
 	api.POST("/v22/provider-key", bindProviderKey(service))
@@ -611,6 +613,103 @@ func productionCanaryContractPlan() gin.HandlerFunc {
 func productionCanaryContractCommit() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		ctx.JSON(http.StatusPreconditionRequired, productionCanaryContractPayload("production_launch_canary_required"))
+	}
+}
+
+func productionExternalAccessStrategyContractPayload(errorCode string) gin.H {
+	return gin.H{
+		"ok":             false,
+		"contract":       "production_launch_gap_07_external_access_strategy_contract_local_gate",
+		"mode":           "contract-only",
+		"error":          errorCode,
+		"requiredRunner": "tests/support/cloud-prework/package-d-external-access-strategy-runner.js",
+		"strategyComparison": []gin.H{
+			{"id": "admin_only_port_forward", "executionNow": false, "formalLaunchCompletionStandard": false},
+			{"id": "internal_gateway", "executionNow": false, "formalLaunchCompletionStandard": false},
+			{"id": "kubernetes_ingress", "executionNow": false, "formalLaunchCompletionStandard": false},
+			{"id": "loadbalancer_service", "executionNow": false, "formalLaunchCompletionStandard": false},
+			{"id": "https_domain", "executionNow": false, "formalLaunchCompletionStandard": true},
+		},
+		"recommendedNextOption": gin.H{
+			"id":                              "ingress_https_domain_formal_candidate",
+			"executionNow":                    false,
+			"requiresSeparateAuthorization":   true,
+			"publicExposureClaimAllowedNow":   false,
+			"adminPortForwardFormalStandard":  false,
+			"reason":                          "formal SaaS launch requires Kubernetes Ingress plus HTTPS/domain after separate authorization",
+		},
+		"productionEntryParameters": gin.H{
+			"requiredKeys": []string{
+				"PORTAL_HOST_DOMAIN",
+				"INGRESS_CLASS",
+				"TLS_SECRET_NAME_OR_CERT_MANAGER_ISSUER",
+				"ALLOWED_INGRESS_ANNOTATIONS",
+				"FORBIDDEN_INGRESS_ANNOTATIONS",
+				"EXTERNAL_SMOKE_URL",
+				"ROLLBACK_DELETE_INGRESS_PLAN",
+			},
+			"allowedAnnotationBoundary":   "allowlisted annotations only",
+			"forbiddenAnnotationBoundary": "server-snippet/configuration-snippet/auth-snippet and arbitrary annotations are forbidden",
+		},
+		"allowedOperations": []string{
+			"local strategy contract generation",
+			"redacted authorization pack generation",
+			"future server-side dry-run planning for allowlisted Ingress/TLS shapes",
+		},
+		"forbiddenOperations": []string{
+			"secret/kubeconfig/DB password read",
+			"Kubernetes API connection",
+			"kubectl",
+			"deploy/rollout/rollback execution",
+			"build/push",
+			"Tencent mutation",
+			"Package C live",
+			"Ingress/LoadBalancer/DNS/TLS mutation",
+			"public user access completion claim",
+		},
+		"providerBoundary": gin.H{
+			"publicFields":         []string{"provider", "providerKeyRef", "boundStatus"},
+			"rawSecretBackendOnly": true,
+		},
+		"securityBoundary": gin.H{
+			"providerKeyRefOnly":       true,
+			"browserStorageSecret":     false,
+			"rawSecretEvidenceAllowed": false,
+		},
+		"rollbackCleanupPlan": gin.H{
+			"rollbackDeleteIngressPlanRequired": true,
+			"deleteScope":                       "future Portal Ingress only",
+			"serviceDeletionAllowed":            false,
+			"namespaceDeletionAllowed":          false,
+		},
+		"smokePlan": gin.H{
+			"internalPrerequisite": "portal-frontend ClusterIP HTTP 200",
+			"external":            []string{"GET https://<portal-host>/health", "Portal login page shape", "redaction audit"},
+		},
+		"evidence": gin.H{
+			"path":     ".runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json",
+			"redacted": true,
+		},
+		"boundary": gin.H{
+			"contractOnly":                  true,
+			"kubernetesAccessAllowed":       false,
+			"ingressMutationAllowedNow":     false,
+			"loadBalancerMutationAllowedNow": false,
+			"dnsTlsMutationAllowedNow":      false,
+			"publicAccessClaimAllowedNow":   false,
+		},
+	}
+}
+
+func productionExternalAccessStrategyContractPlan() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusPreconditionRequired, productionExternalAccessStrategyContractPayload("package_d_external_access_strategy_required"))
+	}
+}
+
+func productionExternalAccessStrategyContractCommit() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusPreconditionRequired, productionExternalAccessStrategyContractPayload("package_d_external_access_strategy_required"))
 	}
 }
 

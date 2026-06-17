@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 first admin / tenant / workspace bootstrap contract is repo-native and local-gated. Gap 02 Portal -> Go backend -> Package C operation contract is repo-native and local-gated. Gap 03 ResourceBinding / CloudOperation PostgreSQL ledger contract is repo-native and local-gated. Gap 04 billing / audit / quota ledger contract is repo-native and local-gated. Gap 05 workspace suspend / resume / delete lifecycle contract is repo-native and local-gated. Gap 06 production smoke / canary / rollback / cleanup evidence contract is now repo-native and local-gated through `tests/support/cloud-prework/production-launch-canary-runner.js`: it proves unauthorized runs fail closed, production canary shape, admin/tenant/workspace smoke shape, Portal -> Go backend -> Package C dry-run boundary, ResourceBinding / CloudOperation linkage, billing / audit / quota linkage, workspace lifecycle linkage, rollback/cleanup redacted evidence shape, redaction/observability evidence, operation idempotency, providerKeyRef-only boundary and local dry-run repository versus future production PostgreSQL/Kubernetes execution boundary without reading secrets/kubeconfig/DB password or executing Kubernetes, PostgreSQL, deploy, rollback, build/push, Tencent mutation or Package C live. MedOPL still is not publicly exposed: external access remains a separate strategy/authorization gap and must not default to Ingress/LoadBalancer/HTTPS. The current unique gap is production-launch-gap-07-external-access-strategy-contract.",
+  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 first admin / tenant / workspace bootstrap contract is repo-native and local-gated. Gap 02 Portal -> Go backend -> Package C operation contract is repo-native and local-gated. Gap 03 ResourceBinding / CloudOperation PostgreSQL ledger contract is repo-native and local-gated. Gap 04 billing / audit / quota ledger contract is repo-native and local-gated. Gap 05 workspace suspend / resume / delete lifecycle contract is repo-native and local-gated. Gap 06 production smoke / canary / rollback / cleanup evidence contract is repo-native and local-gated. Gap 07 Portal external access strategy contract is now repo-native and local-gated through `tests/support/cloud-prework/package-d-external-access-strategy-runner.js`: it compares admin-only port-forward, internal gateway, Kubernetes Ingress, LoadBalancer Service and HTTPS/domain; recommends Ingress + HTTPS/domain as the formal launch candidate; proves required production entry parameters, allowed/forbidden operations, security boundary, rollback/delete ingress plan, smoke plan, redaction evidence, providerKeyRef-only boundary and Portal typed API -> Go fail-closed route trace. This is still strategy/contract readiness only: no secret/kubeconfig/DB password read, no Kubernetes/PostgreSQL connection, no kubectl, no deploy/rollout/rollback, no build/push, no Tencent mutation, no Package C live, no Ingress/LoadBalancer/DNS/TLS mutation and no public access completion claim. The current unique gap is production-launch-gap-08-external-access-dry-run-authorization.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -171,7 +171,7 @@
     "gap_id": "real-cloud-authorization-boundary",
     "stage": "S7 real-cloud authorization boundary before readiness",
     "cursor_eligible": false,
-    "problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 first admin / tenant / workspace bootstrap contract is repo-native and local-gated. Gap 02 Portal -> Go backend -> Package C operation contract is repo-native and local-gated. Gap 03 ResourceBinding / CloudOperation PostgreSQL ledger contract is repo-native and local-gated. Gap 04 billing / audit / quota ledger contract is repo-native and local-gated. Gap 05 workspace suspend / resume / delete lifecycle contract is repo-native and local-gated. Gap 06 production smoke / canary / rollback / cleanup evidence contract is now repo-native and local-gated through `tests/support/cloud-prework/production-launch-canary-runner.js`: it proves unauthorized runs fail closed, production canary shape, admin/tenant/workspace smoke shape, Portal -> Go backend -> Package C dry-run boundary, ResourceBinding / CloudOperation linkage, billing / audit / quota linkage, workspace lifecycle linkage, rollback/cleanup redacted evidence shape, redaction/observability evidence, operation idempotency, providerKeyRef-only boundary and local dry-run repository versus future production PostgreSQL/Kubernetes execution boundary without reading secrets/kubeconfig/DB password or executing Kubernetes, PostgreSQL, deploy, rollback, build/push, Tencent mutation or Package C live. MedOPL still is not publicly exposed: external access remains a separate strategy/authorization gap and must not default to Ingress/LoadBalancer/HTTPS. The current unique gap is production-launch-gap-07-external-access-strategy-contract.",
+    "problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 first admin / tenant / workspace bootstrap contract is repo-native and local-gated. Gap 02 Portal -> Go backend -> Package C operation contract is repo-native and local-gated. Gap 03 ResourceBinding / CloudOperation PostgreSQL ledger contract is repo-native and local-gated. Gap 04 billing / audit / quota ledger contract is repo-native and local-gated. Gap 05 workspace suspend / resume / delete lifecycle contract is repo-native and local-gated. Gap 06 production smoke / canary / rollback / cleanup evidence contract is repo-native and local-gated. Gap 07 Portal external access strategy contract is now repo-native and local-gated through `tests/support/cloud-prework/package-d-external-access-strategy-runner.js`: it compares admin-only port-forward, internal gateway, Kubernetes Ingress, LoadBalancer Service and HTTPS/domain; recommends Ingress + HTTPS/domain as the formal launch candidate; proves required production entry parameters, allowed/forbidden operations, security boundary, rollback/delete ingress plan, smoke plan, redaction evidence, providerKeyRef-only boundary and Portal typed API -> Go fail-closed route trace. This is still strategy/contract readiness only: no secret/kubeconfig/DB password read, no Kubernetes/PostgreSQL connection, no kubectl, no deploy/rollout/rollback, no build/push, no Tencent mutation, no Package C live, no Ingress/LoadBalancer/DNS/TLS mutation and no public access completion claim. The current unique gap is production-launch-gap-08-external-access-dry-run-authorization.",
     "verification_commands": [
       "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
       "node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs",
@@ -2779,24 +2779,29 @@
         }
       ],
       "nextUniqueGap": {
-        "id": "production-launch-gap-07-external-access-strategy-contract",
-        "title": "Production launch Gap 07: Portal external access strategy contract after minimum SaaS closure",
-        "reason": "Gap 06 has a repo-native production smoke / canary / rollback / cleanup evidence contract/local gate, so the next gap is external access strategy as a contract/authorization pack only; do not default to public exposure.",
-        "boundary": "local strategy contract and authorization pack only until separately authorized; no secret/kubeconfig, no Kubernetes API, no kubectl, no Ingress/LoadBalancer/DNS/TLS mutation, no deploy/rollback execution, no Tencent mutation, no Package C live execution",
-        "recommendedEntrypoint": "local Codex implementation of repo-native Portal external access strategy contract/gate comparing admin-only port-forward, internal gateway, Ingress, LoadBalancer and HTTPS/domain without default public exposure",
-        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json"
+        "id": "production-launch-gap-08-external-access-dry-run-authorization",
+        "title": "Production launch Gap 08: authorized external access dry-run for Ingress + HTTPS/domain candidate",
+        "reason": "Gap 07 has a repo-native Portal external access strategy contract/local gate and recommends Ingress + HTTPS/domain as the formal launch candidate, so the next gap is a separately authorized server-side dry-run/authorization pack; do not execute mutation or claim public access complete.",
+        "boundary": "separate cloud authorization required before kubeconfig read, Kubernetes API access, kubectl server-side dry-run, Ingress/LoadBalancer/DNS/TLS changes, deploy/rollback execution, Tencent mutation or Package C live execution",
+        "recommendedEntrypoint": "cloud Codex authorized dry-run using repo-native Package D external access runner/authorization pack for allowlisted Portal Ingress + HTTPS/domain shape only",
+        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/dry-run-redacted.json"
       },
       "externalAccessPolicy": {
-        "status": "blocked_before_multi_tenant_minimum_launch_closure",
-        "reason": "Do not default Ingress/LoadBalancer/HTTPS after ClusterIP smoke; first close identity, tenancy, workspace provisioning, ledger, billing/audit/quota, lifecycle, canary and rollback gaps.",
+        "status": "strategy_contract_landed_waiting_separate_dry_run_authorization",
+        "reason": "Formal SaaS user entry should use Ingress + HTTPS/domain as the candidate after strategy review, but this repo state still has no public/external user access and no mutation has executed.",
+        "recommendedFormalCandidate": "ingress_https_domain_formal_candidate",
+        "adminOnlyPortForwardRole": "administrator acceptance smoke only, not formal launch completion standard",
         "allowedNow": [
-          "strategy comparison only under separate prompt"
+          "local strategy contract generation",
+          "redacted authorization pack generation",
+          "future server-side dry-run planning for allowlisted Ingress/TLS shapes only after separate authorization"
         ],
         "forbiddenNow": [
-          "public Ingress mutation",
-          "LoadBalancer mutation",
-          "DNS/TLS mutation",
-          "public user access claim"
+          "secret/kubeconfig/DB password read without authorization",
+          "Kubernetes API connection without authorization",
+          "Ingress/LoadBalancer/DNS/TLS mutation",
+          "public user access completion claim",
+          "Package C live execution"
         ]
       },
       "gap03LedgerContract": {
@@ -2933,6 +2938,42 @@
           "no production canary execution",
           "no production rollback or cleanup execution",
           "no Ingress, LoadBalancer, DNS, TLS or public access mutation"
+        ]
+      },
+      "gap07ExternalAccessStrategyContract": {
+        "status": "implemented",
+        "runnerCommand": "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode strategy-contract-local-gate --run-id <runid> --authorized 1",
+        "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-external-access-strategy-local-gate.mjs",
+        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json",
+        "portalTypedApi": "services/portal/frontend/src/api/portal/external-access-strategy.ts",
+        "goBackendRoutes": [
+          "POST /api/v22/production/external-access-strategy/plan",
+          "POST /api/v22/production/external-access-strategy/commit"
+        ],
+        "comparedOptions": [
+          "admin-only port-forward",
+          "internal gateway",
+          "Kubernetes Ingress",
+          "LoadBalancer Service",
+          "HTTPS/domain"
+        ],
+        "recommendedFormalCandidate": "Ingress + HTTPS/domain",
+        "adminOnlyPortForwardRole": "administrator acceptance smoke only, not formal launch completion standard",
+        "requiredProductionEntryParameters": [
+          "PORTAL_HOST_DOMAIN",
+          "INGRESS_CLASS",
+          "TLS_SECRET_NAME_OR_CERT_MANAGER_ISSUER",
+          "ALLOWED_INGRESS_ANNOTATIONS",
+          "FORBIDDEN_INGRESS_ANNOTATIONS",
+          "EXTERNAL_SMOKE_URL",
+          "ROLLBACK_DELETE_INGRESS_PLAN"
+        ],
+        "forbiddenNow": [
+          "secret/kubeconfig/DB password read",
+          "Kubernetes API connection",
+          "kubectl",
+          "Ingress/LoadBalancer/DNS/TLS mutation",
+          "public user access completion claim"
         ]
       }
     }
@@ -5053,24 +5094,29 @@
         }
       ],
       "nextUniqueGap": {
-        "id": "production-launch-gap-07-external-access-strategy-contract",
-        "title": "Production launch Gap 07: Portal external access strategy contract after minimum SaaS closure",
-        "reason": "Gap 06 has a repo-native production smoke / canary / rollback / cleanup evidence contract/local gate, so the next gap is external access strategy as a contract/authorization pack only; do not default to public exposure.",
-        "boundary": "local strategy contract and authorization pack only until separately authorized; no secret/kubeconfig, no Kubernetes API, no kubectl, no Ingress/LoadBalancer/DNS/TLS mutation, no deploy/rollback execution, no Tencent mutation, no Package C live execution",
-        "recommendedEntrypoint": "local Codex implementation of repo-native Portal external access strategy contract/gate comparing admin-only port-forward, internal gateway, Ingress, LoadBalancer and HTTPS/domain without default public exposure",
-        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json"
+        "id": "production-launch-gap-08-external-access-dry-run-authorization",
+        "title": "Production launch Gap 08: authorized external access dry-run for Ingress + HTTPS/domain candidate",
+        "reason": "Gap 07 has a repo-native Portal external access strategy contract/local gate and recommends Ingress + HTTPS/domain as the formal launch candidate, so the next gap is a separately authorized server-side dry-run/authorization pack; do not execute mutation or claim public access complete.",
+        "boundary": "separate cloud authorization required before kubeconfig read, Kubernetes API access, kubectl server-side dry-run, Ingress/LoadBalancer/DNS/TLS changes, deploy/rollback execution, Tencent mutation or Package C live execution",
+        "recommendedEntrypoint": "cloud Codex authorized dry-run using repo-native Package D external access runner/authorization pack for allowlisted Portal Ingress + HTTPS/domain shape only",
+        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/dry-run-redacted.json"
       },
       "externalAccessPolicy": {
-        "status": "blocked_before_multi_tenant_minimum_launch_closure",
-        "reason": "Do not default Ingress/LoadBalancer/HTTPS after ClusterIP smoke; first close identity, tenancy, workspace provisioning, ledger, billing/audit/quota, lifecycle, canary and rollback gaps.",
+        "status": "strategy_contract_landed_waiting_separate_dry_run_authorization",
+        "reason": "Formal SaaS user entry should use Ingress + HTTPS/domain as the candidate after strategy review, but this repo state still has no public/external user access and no mutation has executed.",
+        "recommendedFormalCandidate": "ingress_https_domain_formal_candidate",
+        "adminOnlyPortForwardRole": "administrator acceptance smoke only, not formal launch completion standard",
         "allowedNow": [
-          "strategy comparison only under separate prompt"
+          "local strategy contract generation",
+          "redacted authorization pack generation",
+          "future server-side dry-run planning for allowlisted Ingress/TLS shapes only after separate authorization"
         ],
         "forbiddenNow": [
-          "public Ingress mutation",
-          "LoadBalancer mutation",
-          "DNS/TLS mutation",
-          "public user access claim"
+          "secret/kubeconfig/DB password read without authorization",
+          "Kubernetes API connection without authorization",
+          "Ingress/LoadBalancer/DNS/TLS mutation",
+          "public user access completion claim",
+          "Package C live execution"
         ]
       },
       "gap03LedgerContract": {
@@ -5207,6 +5253,42 @@
           "no production canary execution",
           "no production rollback or cleanup execution",
           "no Ingress, LoadBalancer, DNS, TLS or public access mutation"
+        ]
+      },
+      "gap07ExternalAccessStrategyContract": {
+        "status": "implemented",
+        "runnerCommand": "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode strategy-contract-local-gate --run-id <runid> --authorized 1",
+        "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-external-access-strategy-local-gate.mjs",
+        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json",
+        "portalTypedApi": "services/portal/frontend/src/api/portal/external-access-strategy.ts",
+        "goBackendRoutes": [
+          "POST /api/v22/production/external-access-strategy/plan",
+          "POST /api/v22/production/external-access-strategy/commit"
+        ],
+        "comparedOptions": [
+          "admin-only port-forward",
+          "internal gateway",
+          "Kubernetes Ingress",
+          "LoadBalancer Service",
+          "HTTPS/domain"
+        ],
+        "recommendedFormalCandidate": "Ingress + HTTPS/domain",
+        "adminOnlyPortForwardRole": "administrator acceptance smoke only, not formal launch completion standard",
+        "requiredProductionEntryParameters": [
+          "PORTAL_HOST_DOMAIN",
+          "INGRESS_CLASS",
+          "TLS_SECRET_NAME_OR_CERT_MANAGER_ISSUER",
+          "ALLOWED_INGRESS_ANNOTATIONS",
+          "FORBIDDEN_INGRESS_ANNOTATIONS",
+          "EXTERNAL_SMOKE_URL",
+          "ROLLBACK_DELETE_INGRESS_PLAN"
+        ],
+        "forbiddenNow": [
+          "secret/kubeconfig/DB password read",
+          "Kubernetes API connection",
+          "kubectl",
+          "Ingress/LoadBalancer/DNS/TLS mutation",
+          "public user access completion claim"
         ]
       }
     }
@@ -8017,43 +8099,82 @@
     },
     "productionLaunchBoundary": {
       "nextUniqueGap": {
-        "id": "production-launch-gap-07-external-access-strategy-contract",
-        "title": "Production launch Gap 07: Portal external access strategy contract after minimum SaaS closure",
-        "reason": "Gap 06 has a repo-native production smoke / canary / rollback / cleanup evidence contract/local gate, so the next gap is external access strategy as a contract/authorization pack only; do not default to public exposure.",
-        "boundary": "local strategy contract and authorization pack only until separately authorized; no secret/kubeconfig, no Kubernetes API, no kubectl, no Ingress/LoadBalancer/DNS/TLS mutation, no deploy/rollback execution, no Tencent mutation, no Package C live execution",
-        "recommendedEntrypoint": "local Codex implementation of repo-native Portal external access strategy contract/gate comparing admin-only port-forward, internal gateway, Ingress, LoadBalancer and HTTPS/domain without default public exposure",
-        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json"
+        "id": "production-launch-gap-08-external-access-dry-run-authorization",
+        "title": "Production launch Gap 08: authorized external access dry-run for Ingress + HTTPS/domain candidate",
+        "reason": "Gap 07 has a repo-native Portal external access strategy contract/local gate and recommends Ingress + HTTPS/domain as the formal launch candidate, so the next gap is a separately authorized server-side dry-run/authorization pack; do not execute mutation or claim public access complete.",
+        "boundary": "separate cloud authorization required before kubeconfig read, Kubernetes API access, kubectl server-side dry-run, Ingress/LoadBalancer/DNS/TLS changes, deploy/rollback execution, Tencent mutation or Package C live execution",
+        "recommendedEntrypoint": "cloud Codex authorized dry-run using repo-native Package D external access runner/authorization pack for allowlisted Portal Ingress + HTTPS/domain shape only",
+        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/dry-run-redacted.json"
       },
-      "externalAccessBlockedUntil": "multi_tenant_minimum_launch_closure"
+      "externalAccessBlockedUntil": "multi_tenant_minimum_launch_closure",
+      "externalAccessPolicy": {
+        "status": "strategy_contract_landed_waiting_separate_dry_run_authorization",
+        "reason": "Formal SaaS user entry should use Ingress + HTTPS/domain as the candidate after strategy review, but this repo state still has no public/external user access and no mutation has executed.",
+        "recommendedFormalCandidate": "ingress_https_domain_formal_candidate",
+        "adminOnlyPortForwardRole": "administrator acceptance smoke only, not formal launch completion standard",
+        "allowedNow": [
+          "local strategy contract generation",
+          "redacted authorization pack generation",
+          "future server-side dry-run planning for allowlisted Ingress/TLS shapes only after separate authorization"
+        ],
+        "forbiddenNow": [
+          "secret/kubeconfig/DB password read without authorization",
+          "Kubernetes API connection without authorization",
+          "Ingress/LoadBalancer/DNS/TLS mutation",
+          "public user access completion claim",
+          "Package C live execution"
+        ]
+      },
+      "gap07ExternalAccessStrategyContract": {
+        "status": "implemented",
+        "runnerCommand": "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode strategy-contract-local-gate --run-id <runid> --authorized 1",
+        "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-external-access-strategy-local-gate.mjs",
+        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json",
+        "portalTypedApi": "services/portal/frontend/src/api/portal/external-access-strategy.ts",
+        "goBackendRoutes": [
+          "POST /api/v22/production/external-access-strategy/plan",
+          "POST /api/v22/production/external-access-strategy/commit"
+        ],
+        "comparedOptions": [
+          "admin-only port-forward",
+          "internal gateway",
+          "Kubernetes Ingress",
+          "LoadBalancer Service",
+          "HTTPS/domain"
+        ],
+        "recommendedFormalCandidate": "Ingress + HTTPS/domain",
+        "adminOnlyPortForwardRole": "administrator acceptance smoke only, not formal launch completion standard",
+        "requiredProductionEntryParameters": [
+          "PORTAL_HOST_DOMAIN",
+          "INGRESS_CLASS",
+          "TLS_SECRET_NAME_OR_CERT_MANAGER_ISSUER",
+          "ALLOWED_INGRESS_ANNOTATIONS",
+          "FORBIDDEN_INGRESS_ANNOTATIONS",
+          "EXTERNAL_SMOKE_URL",
+          "ROLLBACK_DELETE_INGRESS_PLAN"
+        ],
+        "forbiddenNow": [
+          "secret/kubeconfig/DB password read",
+          "Kubernetes API connection",
+          "kubectl",
+          "Ingress/LoadBalancer/DNS/TLS mutation",
+          "public user access completion claim"
+        ]
+      }
     }
   },
   "readinessGaps": [
     "Portal external access strategy contract only after multi-tenant minimum contract closure; no default public exposure"
   ],
-  "nextAuthorizationPrompt": [
-    "按 active truth 做 gap-driven execution，不新增 loop。",
-    "当前唯一 gap：Production launch Gap 07: Portal external access strategy contract after minimum SaaS closure。",
-    "当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Production launch Gap 01/02/03/04/05/06 contract/local gates 已收口。external/public user access 仍未暴露，不能默认选择公网暴露。",
-    "目标：在本地实现/收敛 repo-native Portal external access strategy contract/local gate 和 authorization pack。本轮只做 strategy/contract/readiness，不读取 secret，不连接 DB/Kubernetes，不执行 kubectl/deploy/rollout/rollback，不执行 Tencent mutation，不进入 Package C live。",
-    "必须比较：admin-only port-forward、internal gateway、Ingress、LoadBalancer、HTTPS/domain。必须给出 recommended next option，但不得默认公网暴露；公网 Ingress/LoadBalancer/DNS/TLS 只能作为后续单独授权候选。",
-    "必须覆盖：allowed operations、forbidden operations、security boundary、rollback/cleanup plan、smoke plan、evidence paths、stop conditions、redaction evidence、providerKeyRef-only boundary、external access strategy 与 production SaaS control-plane contract 的衔接。",
-    "禁止：不读取 secret/kubeconfig/DB password，不连接 Kubernetes API，不连接 PostgreSQL，不执行 kubectl，不 deploy/rollout/rollback，不 build/push，不 Tencent mutation，不 Package C live，不新增 truth source，不新增 loop，不恢复 Node Portal backend，不新增兼容控制面，不执行 Ingress/LoadBalancer/DNS/TLS mutation，不声明 public user access 已完成。",
-    "复用现有 Go backend control-plane、Portal typed API、Production Launch Goal / Gap Map、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式。",
-    "Evidence 只写 redacted runtime 路径，例如：.runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json。",
-    "同步 docs/active/README.md、docs/delivery/README.md、docs/history/README.md、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
-  ],
-  "nextLocalCodexPrompt": [
-    "按 active truth 做 gap-driven execution，不新增 loop。",
-    "当前唯一 gap：Production launch Gap 07: Portal external access strategy contract after minimum SaaS closure。",
-    "当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Production launch Gap 01/02/03/04/05/06 contract/local gates 已收口。external/public user access 仍未暴露，不能默认选择公网暴露。",
-    "目标：在本地实现/收敛 repo-native Portal external access strategy contract/local gate 和 authorization pack。本轮只做 strategy/contract/readiness，不读取 secret，不连接 DB/Kubernetes，不执行 kubectl/deploy/rollout/rollback，不执行 Tencent mutation，不进入 Package C live。",
-    "必须比较：admin-only port-forward、internal gateway、Ingress、LoadBalancer、HTTPS/domain。必须给出 recommended next option，但不得默认公网暴露；公网 Ingress/LoadBalancer/DNS/TLS 只能作为后续单独授权候选。",
-    "必须覆盖：allowed operations、forbidden operations、security boundary、rollback/cleanup plan、smoke plan、evidence paths、stop conditions、redaction evidence、providerKeyRef-only boundary、external access strategy 与 production SaaS control-plane contract 的衔接。",
-    "禁止：不读取 secret/kubeconfig/DB password，不连接 Kubernetes API，不连接 PostgreSQL，不执行 kubectl，不 deploy/rollout/rollback，不 build/push，不 Tencent mutation，不 Package C live，不新增 truth source，不新增 loop，不恢复 Node Portal backend，不新增兼容控制面，不执行 Ingress/LoadBalancer/DNS/TLS mutation，不声明 public user access 已完成。",
-    "复用现有 Go backend control-plane、Portal typed API、Production Launch Goal / Gap Map、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式。",
-    "Evidence 只写 redacted runtime 路径，例如：.runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json。",
-    "同步 docs/active/README.md、docs/delivery/README.md、docs/history/README.md、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
-  ],
+  "nextAuthorizationPrompt": {
+    "target": "cloud-codex",
+    "runIdHint": "peas-dryrun-20260617-001",
+    "prompt": "按 active truth 做 gap-driven execution，不新增 loop。\n\n当前唯一 gap：Production launch Gap 08: authorized external access dry-run for Ingress + HTTPS/domain candidate。\n\n当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Production launch Gap 01/02/03/04/05/06/07 contract/local gates 已收口。Gap 07 已推荐 Ingress + HTTPS/domain 作为正式上线入口候选，但 external/public user access 仍未暴露。\n\n目标：在云端授权边界内执行 repo-native Portal external access dry-run/authorization pack，只做 server-side dry-run 或等价只读/干跑验证，不执行真实 Ingress/LoadBalancer/DNS/TLS mutation，不声明 public access 已完成。\n\n必须使用 Gap 07 strategy contract 的参数边界：PORTAL_HOST_DOMAIN、INGRESS_CLASS、TLS_SECRET_NAME_OR_CERT_MANAGER_ISSUER、ALLOWED_INGRESS_ANNOTATIONS、FORBIDDEN_INGRESS_ANNOTATIONS、EXTERNAL_SMOKE_URL、ROLLBACK_DELETE_INGRESS_PLAN。\n\n允许：读取本次明确授权的 kubeconfig/env allowlist；验证 cluster cls-fi097sy4、namespace medopl-platform、portal-frontend service:8080、Ingress manifest shape；执行 kubectl server-side dry-run only；写 redacted evidence。\n\n禁止：不读取 DB password/Portal admin password/Tencent SecretId/SecretKey；不执行 kubectl apply；不 deploy/rollout/rollback；不 build/push；不 Tencent mutation；不 Package C live；不创建/修改 Ingress/LoadBalancer/DNS/TLS；不输出 secret；不声明 public access complete。\n\nEvidence 写入 .runtime/package-d-external-access-strategy/<runid>/dry-run-redacted.json，并同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
+  },
+  "nextLocalCodexPrompt": {
+    "target": "local-codex",
+    "prompt": "按 active truth 做 gap-driven execution，不新增 loop。\n\n当前唯一 gap：Production launch Gap 08: authorized external access dry-run for Ingress + HTTPS/domain candidate。\n\n当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Production launch Gap 01/02/03/04/05/06/07 contract/local gates 已收口。Gap 07 已推荐 Ingress + HTTPS/domain 作为正式上线入口候选，但 external/public user access 仍未暴露。\n\n目标：在云端授权边界内执行 repo-native Portal external access dry-run/authorization pack，只做 server-side dry-run 或等价只读/干跑验证，不执行真实 Ingress/LoadBalancer/DNS/TLS mutation，不声明 public access 已完成。\n\n必须使用 Gap 07 strategy contract 的参数边界：PORTAL_HOST_DOMAIN、INGRESS_CLASS、TLS_SECRET_NAME_OR_CERT_MANAGER_ISSUER、ALLOWED_INGRESS_ANNOTATIONS、FORBIDDEN_INGRESS_ANNOTATIONS、EXTERNAL_SMOKE_URL、ROLLBACK_DELETE_INGRESS_PLAN。\n\n允许：读取本次明确授权的 kubeconfig/env allowlist；验证 cluster cls-fi097sy4、namespace medopl-platform、portal-frontend service:8080、Ingress manifest shape；执行 kubectl server-side dry-run only；写 redacted evidence。\n\n禁止：不读取 DB password/Portal admin password/Tencent SecretId/SecretKey；不执行 kubectl apply；不 deploy/rollout/rollback；不 build/push；不 Tencent mutation；不 Package C live；不创建/修改 Ingress/LoadBalancer/DNS/TLS；不输出 secret；不声明 public access complete。\n\nEvidence 写入 .runtime/package-d-external-access-strategy/<runid>/dry-run-redacted.json，并同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
+  },
   "production_launch_goal_gap_map": {
     "status": "gap_05_workspace_lifecycle_contract_local_gated_no_cloud_execution",
     "currentFacts": {
@@ -8404,24 +8525,29 @@
       }
     ],
     "nextUniqueGap": {
-      "id": "production-launch-gap-07-external-access-strategy-contract",
-      "title": "Production launch Gap 07: Portal external access strategy contract after minimum SaaS closure",
-      "reason": "Gap 06 has a repo-native production smoke / canary / rollback / cleanup evidence contract/local gate, so the next gap is external access strategy as a contract/authorization pack only; do not default to public exposure.",
-      "boundary": "local strategy contract and authorization pack only until separately authorized; no secret/kubeconfig, no Kubernetes API, no kubectl, no Ingress/LoadBalancer/DNS/TLS mutation, no deploy/rollback execution, no Tencent mutation, no Package C live execution",
-      "recommendedEntrypoint": "local Codex implementation of repo-native Portal external access strategy contract/gate comparing admin-only port-forward, internal gateway, Ingress, LoadBalancer and HTTPS/domain without default public exposure",
-      "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json"
+      "id": "production-launch-gap-08-external-access-dry-run-authorization",
+      "title": "Production launch Gap 08: authorized external access dry-run for Ingress + HTTPS/domain candidate",
+      "reason": "Gap 07 has a repo-native Portal external access strategy contract/local gate and recommends Ingress + HTTPS/domain as the formal launch candidate, so the next gap is a separately authorized server-side dry-run/authorization pack; do not execute mutation or claim public access complete.",
+      "boundary": "separate cloud authorization required before kubeconfig read, Kubernetes API access, kubectl server-side dry-run, Ingress/LoadBalancer/DNS/TLS changes, deploy/rollback execution, Tencent mutation or Package C live execution",
+      "recommendedEntrypoint": "cloud Codex authorized dry-run using repo-native Package D external access runner/authorization pack for allowlisted Portal Ingress + HTTPS/domain shape only",
+      "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/dry-run-redacted.json"
     },
     "externalAccessPolicy": {
-      "status": "blocked_before_multi_tenant_minimum_launch_closure",
-      "reason": "Do not default Ingress/LoadBalancer/HTTPS after ClusterIP smoke; first close identity, tenancy, workspace provisioning, ledger, billing/audit/quota, lifecycle, canary and rollback gaps.",
+      "status": "strategy_contract_landed_waiting_separate_dry_run_authorization",
+      "reason": "Formal SaaS user entry should use Ingress + HTTPS/domain as the candidate after strategy review, but this repo state still has no public/external user access and no mutation has executed.",
+      "recommendedFormalCandidate": "ingress_https_domain_formal_candidate",
+      "adminOnlyPortForwardRole": "administrator acceptance smoke only, not formal launch completion standard",
       "allowedNow": [
-        "strategy comparison only under separate prompt"
+        "local strategy contract generation",
+        "redacted authorization pack generation",
+        "future server-side dry-run planning for allowlisted Ingress/TLS shapes only after separate authorization"
       ],
       "forbiddenNow": [
-        "public Ingress mutation",
-        "LoadBalancer mutation",
-        "DNS/TLS mutation",
-        "public user access claim"
+        "secret/kubeconfig/DB password read without authorization",
+        "Kubernetes API connection without authorization",
+        "Ingress/LoadBalancer/DNS/TLS mutation",
+        "public user access completion claim",
+        "Package C live execution"
       ]
     },
     "gap01BootstrapContract": {
@@ -8667,6 +8793,42 @@
         "no production canary execution",
         "no production rollback or cleanup execution",
         "no Ingress, LoadBalancer, DNS, TLS or public access mutation"
+      ]
+    },
+    "gap07ExternalAccessStrategyContract": {
+      "status": "implemented",
+      "runnerCommand": "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode strategy-contract-local-gate --run-id <runid> --authorized 1",
+      "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-external-access-strategy-local-gate.mjs",
+      "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json",
+      "portalTypedApi": "services/portal/frontend/src/api/portal/external-access-strategy.ts",
+      "goBackendRoutes": [
+        "POST /api/v22/production/external-access-strategy/plan",
+        "POST /api/v22/production/external-access-strategy/commit"
+      ],
+      "comparedOptions": [
+        "admin-only port-forward",
+        "internal gateway",
+        "Kubernetes Ingress",
+        "LoadBalancer Service",
+        "HTTPS/domain"
+      ],
+      "recommendedFormalCandidate": "Ingress + HTTPS/domain",
+      "adminOnlyPortForwardRole": "administrator acceptance smoke only, not formal launch completion standard",
+      "requiredProductionEntryParameters": [
+        "PORTAL_HOST_DOMAIN",
+        "INGRESS_CLASS",
+        "TLS_SECRET_NAME_OR_CERT_MANAGER_ISSUER",
+        "ALLOWED_INGRESS_ANNOTATIONS",
+        "FORBIDDEN_INGRESS_ANNOTATIONS",
+        "EXTERNAL_SMOKE_URL",
+        "ROLLBACK_DELETE_INGRESS_PLAN"
+      ],
+      "forbiddenNow": [
+        "secret/kubeconfig/DB password read",
+        "Kubernetes API connection",
+        "kubectl",
+        "Ingress/LoadBalancer/DNS/TLS mutation",
+        "public user access completion claim"
       ]
     }
   }

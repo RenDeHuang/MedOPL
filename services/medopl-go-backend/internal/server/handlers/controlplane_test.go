@@ -567,6 +567,79 @@ func TestControlPlaneProductionCanaryContractFailsClosed(t *testing.T) {
 	}
 }
 
+func TestControlPlaneExternalAccessStrategyContractFailsClosed(t *testing.T) {
+	router := controlPlaneHandlerTestRouter()
+	rawProviderKey := "external-access-raw-provider-key-must-not-leak"
+
+	for _, target := range []string{
+		"/api/v22/production/external-access-strategy/plan",
+		"/api/v22/production/external-access-strategy/commit",
+	} {
+		rec := postRaw(router, target, map[string]any{
+			"portalHost":          "portal.medopl.example.com",
+			"ingressClass":        "nginx",
+			"tlsSecretName":       "medopl-portal-tls",
+			"externalSmokeUrl":    "https://portal.medopl.example.com/health",
+			"providerKeyRef":      "gflab:workspace-production-alpha:refonly001122",
+			"rawProviderKey":      rawProviderKey,
+			"kubeconfig":          "kubeconfig-must-not-leak",
+			"dbPassword":          "postgres-password-must-not-leak",
+			"bearerToken":         "bearer-token-must-not-leak",
+			"portalAdminPassword": "portal-admin-password-must-not-leak",
+			"tencentSecretId":     "tencent-secret-id-must-not-leak",
+			"tencentSecretKey":    "tencent-secret-key-must-not-leak",
+		})
+		if rec.Code != http.StatusPreconditionRequired {
+			t.Fatalf("%s status = %d body = %s", target, rec.Code, rec.Body.String())
+		}
+		body := rec.Body.String()
+		for _, required := range []string{
+			"production_launch_gap_07_external_access_strategy_contract_local_gate",
+			"contract-only",
+			"package_d_external_access_strategy_required",
+			"package-d-external-access-strategy-runner.js",
+			"admin_only_port_forward",
+			"internal_gateway",
+			"kubernetes_ingress",
+			"loadbalancer_service",
+			"https_domain",
+			"ingress_https_domain_formal_candidate",
+			"PORTAL_HOST_DOMAIN",
+			"INGRESS_CLASS",
+			"TLS_SECRET_NAME_OR_CERT_MANAGER_ISSUER",
+			"ALLOWED_INGRESS_ANNOTATIONS",
+			"FORBIDDEN_INGRESS_ANNOTATIONS",
+			"EXTERNAL_SMOKE_URL",
+			"ROLLBACK_DELETE_INGRESS_PLAN",
+			"providerKeyRef",
+			"Ingress/LoadBalancer/DNS/TLS mutation",
+			"public user access completion claim",
+		} {
+			if !strings.Contains(body, required) {
+				t.Fatalf("%s response missing %q: %s", target, required, body)
+			}
+		}
+		for _, forbidden := range []string{
+			rawProviderKey,
+			"kubeconfig-must-not-leak",
+			"postgres-password-must-not-leak",
+			"bearer-token-must-not-leak",
+			"portal-admin-password-must-not-leak",
+			"tencent-secret-id-must-not-leak",
+			"tencent-secret-key-must-not-leak",
+			"rawProviderKey",
+			"dbPassword",
+			"bearerToken",
+			"tencentSecretId",
+			"tencentSecretKey",
+		} {
+			if strings.Contains(body, forbidden) {
+				t.Fatalf("%s response leaked forbidden marker %q: %s", target, forbidden, body)
+			}
+		}
+	}
+}
+
 func TestControlPlaneHandlersMaterializeProviderSecretBoundary(t *testing.T) {
 	secretRoot := t.TempDir()
 	router := controlPlaneHandlerTestRouterWithSecretRoot(secretRoot)
