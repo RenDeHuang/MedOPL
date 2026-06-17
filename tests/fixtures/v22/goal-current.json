@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 through Gap 07 contract/local gates are closed. Gap 08a external access prerequisites discovery passed in cloud with qcloud IngressClass, portal-frontend ClusterIP 172.21.5.91:8080, cert-manager absent and medopl-portal-tls absent. Gap 08b qcloud Ingress + TLS Secret material readiness is repo-native and local-gated through `tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode qcloud-tls-readiness-contract-local-gate`: it fixes PORTAL_HOST_DOMAIN=portal.medopl.cn, INGRESS_CLASS=qcloud, TLS_SECRET_NAME=medopl-portal-tls and EXTERNAL_SMOKE_URL=https://portal.medopl.cn/; recommends Tencent SSL or manual certificate material through an authorized Kubernetes TLS Secret path; and proves no TLS cert/key material enters git, docs, runtime evidence or logs. This is still contract/readiness only: no secret/kubeconfig/TLS private key read, no Kubernetes/PostgreSQL connection, no kubectl, no deploy/rollout/rollback, no build/push, no Tencent mutation, no Package C live, no Ingress/LoadBalancer/DNS/TLS mutation and no public access completion claim. The current unique gap is production-launch-gap-08c-qcloud-ingress-tls-server-side-dry-run.",
+  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 through Gap 08b contract/local gates are closed. Gap 08c qcloud TLS Secret and Ingress server-side dry-run passed in cloud at HEAD abbc82f3bbd39d2c659c514476153f36ccb63d9f: TLS Secret manifest shape, TLS Secret server-side dry-run/validation, Ingress manifest shape and Ingress server-side dry-run passed; medopl-portal-tls and the Portal Ingress remained NotFound after dry-run; no real mutation occurred; redaction audit passed. Fixed parameters are PORTAL_HOST_DOMAIN=portal.medopl.cn, INGRESS_CLASS=qcloud, TLS_SECRET_NAME=medopl-portal-tls and EXTERNAL_SMOKE_URL=https://portal.medopl.cn/; TENCENT_SSL_CERT_ID is allowed only as a redacted authorized env key. External/public user access remains not exposed. The current unique gap is production-launch-gap-08d-qcloud-tls-secret-ingress-real-mutation-authorization.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -171,7 +171,7 @@
     "gap_id": "real-cloud-authorization-boundary",
     "stage": "S7 real-cloud authorization boundary before readiness",
     "cursor_eligible": false,
-    "problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 through Gap 07 contract/local gates are closed. Gap 08a external access prerequisites discovery passed in cloud with qcloud IngressClass, portal-frontend ClusterIP 172.21.5.91:8080, cert-manager absent and medopl-portal-tls absent. Gap 08b qcloud Ingress + TLS Secret material readiness is repo-native and local-gated through `tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode qcloud-tls-readiness-contract-local-gate`: it fixes PORTAL_HOST_DOMAIN=portal.medopl.cn, INGRESS_CLASS=qcloud, TLS_SECRET_NAME=medopl-portal-tls and EXTERNAL_SMOKE_URL=https://portal.medopl.cn/; recommends Tencent SSL or manual certificate material through an authorized Kubernetes TLS Secret path; and proves no TLS cert/key material enters git, docs, runtime evidence or logs. This is still contract/readiness only: no secret/kubeconfig/TLS private key read, no Kubernetes/PostgreSQL connection, no kubectl, no deploy/rollout/rollback, no build/push, no Tencent mutation, no Package C live, no Ingress/LoadBalancer/DNS/TLS mutation and no public access completion claim. The current unique gap is production-launch-gap-08c-qcloud-ingress-tls-server-side-dry-run.",
+    "problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 through Gap 08b contract/local gates are closed. Gap 08c qcloud TLS Secret and Ingress server-side dry-run passed in cloud at HEAD abbc82f3bbd39d2c659c514476153f36ccb63d9f: TLS Secret manifest shape, TLS Secret server-side dry-run/validation, Ingress manifest shape and Ingress server-side dry-run passed; medopl-portal-tls and the Portal Ingress remained NotFound after dry-run; no real mutation occurred; redaction audit passed. Fixed parameters are PORTAL_HOST_DOMAIN=portal.medopl.cn, INGRESS_CLASS=qcloud, TLS_SECRET_NAME=medopl-portal-tls and EXTERNAL_SMOKE_URL=https://portal.medopl.cn/; TENCENT_SSL_CERT_ID is allowed only as a redacted authorized env key. External/public user access remains not exposed. The current unique gap is production-launch-gap-08d-qcloud-tls-secret-ingress-real-mutation-authorization.",
     "verification_commands": [
       "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
       "node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs",
@@ -2432,7 +2432,7 @@
     },
     "latest_local_evidence": "package-d-combined-in-cluster-preflight-pdrun-20260616-002",
     "production_launch_goal_gap_map": {
-      "status": "gap_08b_qcloud_tls_readiness_contract_local_gated_no_cloud_execution",
+      "status": "gap_08c_qcloud_tls_ingress_dry_run_passed_waiting_gap_08d_real_mutation_authorization",
       "currentFacts": {
         "packageDPlatformControlPlaneInsideTke": "deployed",
         "inClusterHttpReachability": "preflight-passed",
@@ -2779,20 +2779,19 @@
         }
       ],
       "nextUniqueGap": {
-        "id": "production-launch-gap-08c-qcloud-ingress-tls-server-side-dry-run",
-        "title": "Production launch Gap 08c: qcloud TLS Secret and Ingress server-side dry-run authorization",
-        "reason": "Gap 08a discovered qcloud Ingress prerequisites and Gap 08b locally closed qcloud Ingress + TLS Secret material readiness; the next gap is separately authorized server-side dry-run/manifest validation only, with TLS Secret dry-run before Ingress dry-run and no real mutation.",
-        "boundary": "separate cloud authorization required before kubeconfig read, TLS cert/key material read, Kubernetes API access or kubectl server-side dry-run; no kubectl apply, no real TLS Secret/Ingress/LoadBalancer/DNS/TLS mutation and no public access completion claim",
-        "recommendedEntrypoint": "cloud Codex authorized dry-run using repo-native Package D external access runner/authorization pack for qcloud Ingress + medopl-portal-tls shape only",
-        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/dry-run-redacted.json",
-        "sequence": [
-          "TLS Secret creation server-side dry-run or manifest validation",
-          "Ingress server-side dry-run",
-          "no real mutation"
+        "id": "production-launch-gap-08d-qcloud-tls-secret-ingress-real-mutation-authorization",
+        "title": "Production launch Gap 08d: qcloud TLS Secret + Portal Ingress real mutation authorization",
+        "reason": "Gap 08c passed server-side dry-run/manifest validation for both the TLS Secret and qcloud Portal Ingress, so the next gap is a tightly allowlisted real mutation authorization pack for creating only Secret/medopl-portal-tls and the Portal Ingress, followed by get/describe, DNS post-apply validation and HTTPS smoke.",
+        "boundary": "separate cloud authorization required before kubeconfig, TLS cert/key material read or kubectl apply/create; mutation is limited to Secret/medopl-portal-tls and the Portal qcloud Ingress in medopl-platform; no Deployment/Service/DNS/LoadBalancer/Package C/tenant mutation and no public access completion claim before smoke evidence",
+        "recommendedEntrypoint": "cloud Codex authorized real mutation using repo-native Package D external access authorization pack for qcloud TLS Secret + Portal Ingress only",
+        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/real-mutation-redacted.json",
+        "allowedMutations": [
+          "create/apply Secret medopl-portal-tls in medopl-platform, type kubernetes.io/tls",
+          "create/apply qcloud Ingress in medopl-platform for portal.medopl.cn -> portal-frontend:8080"
         ]
       },
       "externalAccessPolicy": {
-        "status": "qcloud_tls_readiness_contract_landed_waiting_server_side_dry_run_authorization",
+        "status": "qcloud_tls_ingress_dry_run_passed_waiting_real_mutation_authorization",
         "reason": "Formal SaaS user entry should use Ingress + HTTPS/domain as the candidate after strategy review, but this repo state still has no public/external user access and no mutation has executed.",
         "recommendedFormalCandidate": "qcloud Ingress + HTTPS/domain via medopl-portal-tls",
         "adminOnlyPortForwardRole": "administrator acceptance smoke only, not formal launch completion standard",
@@ -2811,7 +2810,8 @@
         "qcloudIngressClass": "qcloud",
         "portalHost": "portal.medopl.cn",
         "tlsSecretName": "medopl-portal-tls",
-        "externalSmokeUrl": "https://portal.medopl.cn/"
+        "externalSmokeUrl": "https://portal.medopl.cn/",
+        "ingressClass": "qcloud"
       },
       "gap03LedgerContract": {
         "status": "implemented",
@@ -3035,6 +3035,123 @@
           "Ingress/LoadBalancer/DNS/TLS mutation",
           "public user access completion claim"
         ]
+      },
+      "gap08cQcloudIngressTlsDryRun": {
+        "status": "preflight-passed",
+        "runId": "gap08c-qcloud-ingress-dry-run-001",
+        "repoHead": "abbc82f3bbd39d2c659c514476153f36ccb63d9f",
+        "evidencePath": ".runtime/package-d-external-access-strategy/gap08c-qcloud-ingress-dry-run-001/dry-run-redacted.json",
+        "facts": {
+          "workspaceClean": true,
+          "cluster": "cls-fi097sy4",
+          "namespace": "medopl-platform",
+          "portalFrontendService": "ClusterIP http:8080/TCP",
+          "ingressClass": "qcloud",
+          "ingressController": "cloud.tencent.com/ingress-controller",
+          "tlsSecretManifestShape": "passed",
+          "tlsSecretServerSideDryRun": "passed",
+          "ingressManifestShape": "passed",
+          "ingressServerSideDryRun": "passed",
+          "tlsSecretAfterDryRun": "NotFound",
+          "ingressAfterDryRun": "NotFound",
+          "realMutationOccurred": false,
+          "redactionAudit": "passed"
+        }
+      },
+      "gap08dQcloudTlsSecretIngressAuthorizationPack": {
+        "status": "authorization-pack-ready",
+        "target": {
+          "cluster": "cls-fi097sy4",
+          "namespace": "medopl-platform",
+          "portalHostDomain": "portal.medopl.cn",
+          "ingressClass": "qcloud",
+          "tlsSecretName": "medopl-portal-tls",
+          "externalSmokeUrl": "https://portal.medopl.cn/",
+          "tencentSslCertId": "<redacted-env:TENCENT_SSL_CERT_ID>"
+        },
+        "allowedOperations": [
+          "read explicitly authorized kubeconfig/env allowlist and TLS cert/key material path only in cloud runner",
+          "create/apply Secret medopl-portal-tls in medopl-platform, type kubernetes.io/tls",
+          "create/apply qcloud Ingress in medopl-platform for portal.medopl.cn -> portal-frontend:8080",
+          "get/describe Secret, Ingress, Service and IngressClass only for verification with redaction",
+          "DNS post-apply validation without DNS mutation",
+          "HTTPS external smoke for https://portal.medopl.cn/"
+        ],
+        "forbiddenOperations": [
+          "DB password, Portal admin password, Tencent SecretId/SecretKey read",
+          "output TLS cert/key, Secret data or TENCENT_SSL_CERT_ID raw value",
+          "modify Deployment, Service, ConfigMap, RBAC or Namespace",
+          "modify Package C or tenant resources",
+          "modify DNS",
+          "create LoadBalancer Service",
+          "deploy, rollout or rollback application workloads",
+          "build/push",
+          "Tencent mutation",
+          "Package C live",
+          "public access completion claim before evidence closeout"
+        ],
+        "secretManifestBoundary": {
+          "apiVersion": "v1",
+          "kind": "Secret",
+          "name": "medopl-portal-tls",
+          "namespace": "medopl-platform",
+          "type": "kubernetes.io/tls",
+          "allowedDataKeys": [
+            "tls.crt",
+            "tls.key"
+          ],
+          "rawDataAllowedInEvidence": false
+        },
+        "ingressManifestBoundary": {
+          "apiVersion": "networking.k8s.io/v1",
+          "kind": "Ingress",
+          "namespace": "medopl-platform",
+          "ingressClass": "qcloud",
+          "host": "portal.medopl.cn",
+          "tlsSecretName": "medopl-portal-tls",
+          "backendService": "portal-frontend",
+          "backendPort": 8080,
+          "serviceMutationAllowed": false,
+          "loadBalancerServiceAllowed": false
+        },
+        "rollbackDeletePlan": {
+          "rollbackAllowedOnlyForCreatedResources": true,
+          "deleteIngress": "delete only the Portal qcloud Ingress created by Gap 08d if stop condition requires rollback",
+          "deleteTlsSecret": "delete only Secret/medopl-portal-tls if created by Gap 08d and rollback is explicitly required",
+          "namespaceDeletionAllowed": false,
+          "serviceDeletionAllowed": false,
+          "deploymentMutationAllowed": false
+        },
+        "dnsPostApplyValidationPlan": [
+          "resolve portal.medopl.cn after Ingress apply",
+          "compare resolved target with qcloud Ingress/load balancer status without mutating DNS",
+          "stop if DNS target is missing, stale or unauthorized"
+        ],
+        "httpsExternalSmokePlan": [
+          "GET https://portal.medopl.cn/",
+          "verify TLS hostname validity without logging certificate private material",
+          "verify Portal response shape",
+          "redaction audit"
+        ],
+        "stopConditions": [
+          "kube context is not cls-fi097sy4",
+          "namespace medopl-platform missing",
+          "portal-frontend:8080 service missing",
+          "IngressClass qcloud missing or controller mismatch",
+          "TLS material missing or would be printed",
+          "existing Secret or Ingress conflicts with expected ownership",
+          "kubectl command outside allowlist",
+          "DNS target invalid or unauthorized",
+          "HTTPS smoke fails",
+          "any secret leakage"
+        ],
+        "redactionEvidence": {
+          "required": true,
+          "tencentSslCertIdRawAllowed": false,
+          "tlsCertKeyRawAllowed": false,
+          "secretDataAllowed": false,
+          "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/real-mutation-redacted.json"
+        }
       }
     }
   },
@@ -4807,7 +4924,7 @@
       "Portal external access strategy only after multi-tenant minimum launch closure"
     ],
     "production_launch_goal_gap_map": {
-      "status": "gap_08b_qcloud_tls_readiness_contract_local_gated_no_cloud_execution",
+      "status": "gap_08c_qcloud_tls_ingress_dry_run_passed_waiting_gap_08d_real_mutation_authorization",
       "currentFacts": {
         "packageDPlatformControlPlaneInsideTke": "deployed",
         "inClusterHttpReachability": "preflight-passed",
@@ -5154,20 +5271,19 @@
         }
       ],
       "nextUniqueGap": {
-        "id": "production-launch-gap-08c-qcloud-ingress-tls-server-side-dry-run",
-        "title": "Production launch Gap 08c: qcloud TLS Secret and Ingress server-side dry-run authorization",
-        "reason": "Gap 08a discovered qcloud Ingress prerequisites and Gap 08b locally closed qcloud Ingress + TLS Secret material readiness; the next gap is separately authorized server-side dry-run/manifest validation only, with TLS Secret dry-run before Ingress dry-run and no real mutation.",
-        "boundary": "separate cloud authorization required before kubeconfig read, TLS cert/key material read, Kubernetes API access or kubectl server-side dry-run; no kubectl apply, no real TLS Secret/Ingress/LoadBalancer/DNS/TLS mutation and no public access completion claim",
-        "recommendedEntrypoint": "cloud Codex authorized dry-run using repo-native Package D external access runner/authorization pack for qcloud Ingress + medopl-portal-tls shape only",
-        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/dry-run-redacted.json",
-        "sequence": [
-          "TLS Secret creation server-side dry-run or manifest validation",
-          "Ingress server-side dry-run",
-          "no real mutation"
+        "id": "production-launch-gap-08d-qcloud-tls-secret-ingress-real-mutation-authorization",
+        "title": "Production launch Gap 08d: qcloud TLS Secret + Portal Ingress real mutation authorization",
+        "reason": "Gap 08c passed server-side dry-run/manifest validation for both the TLS Secret and qcloud Portal Ingress, so the next gap is a tightly allowlisted real mutation authorization pack for creating only Secret/medopl-portal-tls and the Portal Ingress, followed by get/describe, DNS post-apply validation and HTTPS smoke.",
+        "boundary": "separate cloud authorization required before kubeconfig, TLS cert/key material read or kubectl apply/create; mutation is limited to Secret/medopl-portal-tls and the Portal qcloud Ingress in medopl-platform; no Deployment/Service/DNS/LoadBalancer/Package C/tenant mutation and no public access completion claim before smoke evidence",
+        "recommendedEntrypoint": "cloud Codex authorized real mutation using repo-native Package D external access authorization pack for qcloud TLS Secret + Portal Ingress only",
+        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/real-mutation-redacted.json",
+        "allowedMutations": [
+          "create/apply Secret medopl-portal-tls in medopl-platform, type kubernetes.io/tls",
+          "create/apply qcloud Ingress in medopl-platform for portal.medopl.cn -> portal-frontend:8080"
         ]
       },
       "externalAccessPolicy": {
-        "status": "qcloud_tls_readiness_contract_landed_waiting_server_side_dry_run_authorization",
+        "status": "qcloud_tls_ingress_dry_run_passed_waiting_real_mutation_authorization",
         "reason": "Formal SaaS user entry should use Ingress + HTTPS/domain as the candidate after strategy review, but this repo state still has no public/external user access and no mutation has executed.",
         "recommendedFormalCandidate": "qcloud Ingress + HTTPS/domain via medopl-portal-tls",
         "adminOnlyPortForwardRole": "administrator acceptance smoke only, not formal launch completion standard",
@@ -5186,7 +5302,8 @@
         "qcloudIngressClass": "qcloud",
         "portalHost": "portal.medopl.cn",
         "tlsSecretName": "medopl-portal-tls",
-        "externalSmokeUrl": "https://portal.medopl.cn/"
+        "externalSmokeUrl": "https://portal.medopl.cn/",
+        "ingressClass": "qcloud"
       },
       "gap03LedgerContract": {
         "status": "implemented",
@@ -5410,6 +5527,123 @@
           "Ingress/LoadBalancer/DNS/TLS mutation",
           "public user access completion claim"
         ]
+      },
+      "gap08cQcloudIngressTlsDryRun": {
+        "status": "preflight-passed",
+        "runId": "gap08c-qcloud-ingress-dry-run-001",
+        "repoHead": "abbc82f3bbd39d2c659c514476153f36ccb63d9f",
+        "evidencePath": ".runtime/package-d-external-access-strategy/gap08c-qcloud-ingress-dry-run-001/dry-run-redacted.json",
+        "facts": {
+          "workspaceClean": true,
+          "cluster": "cls-fi097sy4",
+          "namespace": "medopl-platform",
+          "portalFrontendService": "ClusterIP http:8080/TCP",
+          "ingressClass": "qcloud",
+          "ingressController": "cloud.tencent.com/ingress-controller",
+          "tlsSecretManifestShape": "passed",
+          "tlsSecretServerSideDryRun": "passed",
+          "ingressManifestShape": "passed",
+          "ingressServerSideDryRun": "passed",
+          "tlsSecretAfterDryRun": "NotFound",
+          "ingressAfterDryRun": "NotFound",
+          "realMutationOccurred": false,
+          "redactionAudit": "passed"
+        }
+      },
+      "gap08dQcloudTlsSecretIngressAuthorizationPack": {
+        "status": "authorization-pack-ready",
+        "target": {
+          "cluster": "cls-fi097sy4",
+          "namespace": "medopl-platform",
+          "portalHostDomain": "portal.medopl.cn",
+          "ingressClass": "qcloud",
+          "tlsSecretName": "medopl-portal-tls",
+          "externalSmokeUrl": "https://portal.medopl.cn/",
+          "tencentSslCertId": "<redacted-env:TENCENT_SSL_CERT_ID>"
+        },
+        "allowedOperations": [
+          "read explicitly authorized kubeconfig/env allowlist and TLS cert/key material path only in cloud runner",
+          "create/apply Secret medopl-portal-tls in medopl-platform, type kubernetes.io/tls",
+          "create/apply qcloud Ingress in medopl-platform for portal.medopl.cn -> portal-frontend:8080",
+          "get/describe Secret, Ingress, Service and IngressClass only for verification with redaction",
+          "DNS post-apply validation without DNS mutation",
+          "HTTPS external smoke for https://portal.medopl.cn/"
+        ],
+        "forbiddenOperations": [
+          "DB password, Portal admin password, Tencent SecretId/SecretKey read",
+          "output TLS cert/key, Secret data or TENCENT_SSL_CERT_ID raw value",
+          "modify Deployment, Service, ConfigMap, RBAC or Namespace",
+          "modify Package C or tenant resources",
+          "modify DNS",
+          "create LoadBalancer Service",
+          "deploy, rollout or rollback application workloads",
+          "build/push",
+          "Tencent mutation",
+          "Package C live",
+          "public access completion claim before evidence closeout"
+        ],
+        "secretManifestBoundary": {
+          "apiVersion": "v1",
+          "kind": "Secret",
+          "name": "medopl-portal-tls",
+          "namespace": "medopl-platform",
+          "type": "kubernetes.io/tls",
+          "allowedDataKeys": [
+            "tls.crt",
+            "tls.key"
+          ],
+          "rawDataAllowedInEvidence": false
+        },
+        "ingressManifestBoundary": {
+          "apiVersion": "networking.k8s.io/v1",
+          "kind": "Ingress",
+          "namespace": "medopl-platform",
+          "ingressClass": "qcloud",
+          "host": "portal.medopl.cn",
+          "tlsSecretName": "medopl-portal-tls",
+          "backendService": "portal-frontend",
+          "backendPort": 8080,
+          "serviceMutationAllowed": false,
+          "loadBalancerServiceAllowed": false
+        },
+        "rollbackDeletePlan": {
+          "rollbackAllowedOnlyForCreatedResources": true,
+          "deleteIngress": "delete only the Portal qcloud Ingress created by Gap 08d if stop condition requires rollback",
+          "deleteTlsSecret": "delete only Secret/medopl-portal-tls if created by Gap 08d and rollback is explicitly required",
+          "namespaceDeletionAllowed": false,
+          "serviceDeletionAllowed": false,
+          "deploymentMutationAllowed": false
+        },
+        "dnsPostApplyValidationPlan": [
+          "resolve portal.medopl.cn after Ingress apply",
+          "compare resolved target with qcloud Ingress/load balancer status without mutating DNS",
+          "stop if DNS target is missing, stale or unauthorized"
+        ],
+        "httpsExternalSmokePlan": [
+          "GET https://portal.medopl.cn/",
+          "verify TLS hostname validity without logging certificate private material",
+          "verify Portal response shape",
+          "redaction audit"
+        ],
+        "stopConditions": [
+          "kube context is not cls-fi097sy4",
+          "namespace medopl-platform missing",
+          "portal-frontend:8080 service missing",
+          "IngressClass qcloud missing or controller mismatch",
+          "TLS material missing or would be printed",
+          "existing Secret or Ingress conflicts with expected ownership",
+          "kubectl command outside allowlist",
+          "DNS target invalid or unauthorized",
+          "HTTPS smoke fails",
+          "any secret leakage"
+        ],
+        "redactionEvidence": {
+          "required": true,
+          "tencentSslCertIdRawAllowed": false,
+          "tlsCertKeyRawAllowed": false,
+          "secretDataAllowed": false,
+          "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/real-mutation-redacted.json"
+        }
       }
     }
   },
@@ -8219,21 +8453,20 @@
     },
     "productionLaunchBoundary": {
       "nextUniqueGap": {
-        "id": "production-launch-gap-08c-qcloud-ingress-tls-server-side-dry-run",
-        "title": "Production launch Gap 08c: qcloud TLS Secret and Ingress server-side dry-run authorization",
-        "reason": "Gap 08a discovered qcloud Ingress prerequisites and Gap 08b locally closed qcloud Ingress + TLS Secret material readiness; the next gap is separately authorized server-side dry-run/manifest validation only, with TLS Secret dry-run before Ingress dry-run and no real mutation.",
-        "boundary": "separate cloud authorization required before kubeconfig read, TLS cert/key material read, Kubernetes API access or kubectl server-side dry-run; no kubectl apply, no real TLS Secret/Ingress/LoadBalancer/DNS/TLS mutation and no public access completion claim",
-        "recommendedEntrypoint": "cloud Codex authorized dry-run using repo-native Package D external access runner/authorization pack for qcloud Ingress + medopl-portal-tls shape only",
-        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/dry-run-redacted.json",
-        "sequence": [
-          "TLS Secret creation server-side dry-run or manifest validation",
-          "Ingress server-side dry-run",
-          "no real mutation"
+        "id": "production-launch-gap-08d-qcloud-tls-secret-ingress-real-mutation-authorization",
+        "title": "Production launch Gap 08d: qcloud TLS Secret + Portal Ingress real mutation authorization",
+        "reason": "Gap 08c passed server-side dry-run/manifest validation for both the TLS Secret and qcloud Portal Ingress, so the next gap is a tightly allowlisted real mutation authorization pack for creating only Secret/medopl-portal-tls and the Portal Ingress, followed by get/describe, DNS post-apply validation and HTTPS smoke.",
+        "boundary": "separate cloud authorization required before kubeconfig, TLS cert/key material read or kubectl apply/create; mutation is limited to Secret/medopl-portal-tls and the Portal qcloud Ingress in medopl-platform; no Deployment/Service/DNS/LoadBalancer/Package C/tenant mutation and no public access completion claim before smoke evidence",
+        "recommendedEntrypoint": "cloud Codex authorized real mutation using repo-native Package D external access authorization pack for qcloud TLS Secret + Portal Ingress only",
+        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/real-mutation-redacted.json",
+        "allowedMutations": [
+          "create/apply Secret medopl-portal-tls in medopl-platform, type kubernetes.io/tls",
+          "create/apply qcloud Ingress in medopl-platform for portal.medopl.cn -> portal-frontend:8080"
         ]
       },
       "externalAccessBlockedUntil": "multi_tenant_minimum_launch_closure",
       "externalAccessPolicy": {
-        "status": "qcloud_tls_readiness_contract_landed_waiting_server_side_dry_run_authorization",
+        "status": "qcloud_tls_ingress_dry_run_passed_waiting_real_mutation_authorization",
         "reason": "Formal SaaS user entry should use Ingress + HTTPS/domain as the candidate after strategy review, but this repo state still has no public/external user access and no mutation has executed.",
         "recommendedFormalCandidate": "qcloud Ingress + HTTPS/domain via medopl-portal-tls",
         "adminOnlyPortForwardRole": "administrator acceptance smoke only, not formal launch completion standard",
@@ -8336,6 +8569,123 @@
           "Ingress/LoadBalancer/DNS/TLS mutation",
           "public user access completion claim"
         ]
+      },
+      "gap08cQcloudIngressTlsDryRun": {
+        "status": "preflight-passed",
+        "runId": "gap08c-qcloud-ingress-dry-run-001",
+        "repoHead": "abbc82f3bbd39d2c659c514476153f36ccb63d9f",
+        "evidencePath": ".runtime/package-d-external-access-strategy/gap08c-qcloud-ingress-dry-run-001/dry-run-redacted.json",
+        "facts": {
+          "workspaceClean": true,
+          "cluster": "cls-fi097sy4",
+          "namespace": "medopl-platform",
+          "portalFrontendService": "ClusterIP http:8080/TCP",
+          "ingressClass": "qcloud",
+          "ingressController": "cloud.tencent.com/ingress-controller",
+          "tlsSecretManifestShape": "passed",
+          "tlsSecretServerSideDryRun": "passed",
+          "ingressManifestShape": "passed",
+          "ingressServerSideDryRun": "passed",
+          "tlsSecretAfterDryRun": "NotFound",
+          "ingressAfterDryRun": "NotFound",
+          "realMutationOccurred": false,
+          "redactionAudit": "passed"
+        }
+      },
+      "gap08dQcloudTlsSecretIngressAuthorizationPack": {
+        "status": "authorization-pack-ready",
+        "target": {
+          "cluster": "cls-fi097sy4",
+          "namespace": "medopl-platform",
+          "portalHostDomain": "portal.medopl.cn",
+          "ingressClass": "qcloud",
+          "tlsSecretName": "medopl-portal-tls",
+          "externalSmokeUrl": "https://portal.medopl.cn/",
+          "tencentSslCertId": "<redacted-env:TENCENT_SSL_CERT_ID>"
+        },
+        "allowedOperations": [
+          "read explicitly authorized kubeconfig/env allowlist and TLS cert/key material path only in cloud runner",
+          "create/apply Secret medopl-portal-tls in medopl-platform, type kubernetes.io/tls",
+          "create/apply qcloud Ingress in medopl-platform for portal.medopl.cn -> portal-frontend:8080",
+          "get/describe Secret, Ingress, Service and IngressClass only for verification with redaction",
+          "DNS post-apply validation without DNS mutation",
+          "HTTPS external smoke for https://portal.medopl.cn/"
+        ],
+        "forbiddenOperations": [
+          "DB password, Portal admin password, Tencent SecretId/SecretKey read",
+          "output TLS cert/key, Secret data or TENCENT_SSL_CERT_ID raw value",
+          "modify Deployment, Service, ConfigMap, RBAC or Namespace",
+          "modify Package C or tenant resources",
+          "modify DNS",
+          "create LoadBalancer Service",
+          "deploy, rollout or rollback application workloads",
+          "build/push",
+          "Tencent mutation",
+          "Package C live",
+          "public access completion claim before evidence closeout"
+        ],
+        "secretManifestBoundary": {
+          "apiVersion": "v1",
+          "kind": "Secret",
+          "name": "medopl-portal-tls",
+          "namespace": "medopl-platform",
+          "type": "kubernetes.io/tls",
+          "allowedDataKeys": [
+            "tls.crt",
+            "tls.key"
+          ],
+          "rawDataAllowedInEvidence": false
+        },
+        "ingressManifestBoundary": {
+          "apiVersion": "networking.k8s.io/v1",
+          "kind": "Ingress",
+          "namespace": "medopl-platform",
+          "ingressClass": "qcloud",
+          "host": "portal.medopl.cn",
+          "tlsSecretName": "medopl-portal-tls",
+          "backendService": "portal-frontend",
+          "backendPort": 8080,
+          "serviceMutationAllowed": false,
+          "loadBalancerServiceAllowed": false
+        },
+        "rollbackDeletePlan": {
+          "rollbackAllowedOnlyForCreatedResources": true,
+          "deleteIngress": "delete only the Portal qcloud Ingress created by Gap 08d if stop condition requires rollback",
+          "deleteTlsSecret": "delete only Secret/medopl-portal-tls if created by Gap 08d and rollback is explicitly required",
+          "namespaceDeletionAllowed": false,
+          "serviceDeletionAllowed": false,
+          "deploymentMutationAllowed": false
+        },
+        "dnsPostApplyValidationPlan": [
+          "resolve portal.medopl.cn after Ingress apply",
+          "compare resolved target with qcloud Ingress/load balancer status without mutating DNS",
+          "stop if DNS target is missing, stale or unauthorized"
+        ],
+        "httpsExternalSmokePlan": [
+          "GET https://portal.medopl.cn/",
+          "verify TLS hostname validity without logging certificate private material",
+          "verify Portal response shape",
+          "redaction audit"
+        ],
+        "stopConditions": [
+          "kube context is not cls-fi097sy4",
+          "namespace medopl-platform missing",
+          "portal-frontend:8080 service missing",
+          "IngressClass qcloud missing or controller mismatch",
+          "TLS material missing or would be printed",
+          "existing Secret or Ingress conflicts with expected ownership",
+          "kubectl command outside allowlist",
+          "DNS target invalid or unauthorized",
+          "HTTPS smoke fails",
+          "any secret leakage"
+        ],
+        "redactionEvidence": {
+          "required": true,
+          "tencentSslCertIdRawAllowed": false,
+          "tlsCertKeyRawAllowed": false,
+          "secretDataAllowed": false,
+          "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/real-mutation-redacted.json"
+        }
       }
     }
   },
@@ -8344,15 +8694,15 @@
   ],
   "nextAuthorizationPrompt": {
     "target": "cloud-codex",
-    "runIdHint": "peas-dryrun-20260617-002",
-    "prompt": "按 active truth 做 gap-driven execution，不新增 loop。\n\n当前唯一 gap：Production launch Gap 08c: qcloud TLS Secret and Ingress server-side dry-run authorization。\n\n当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Gap 08a external access prerequisites discovery 已完成；Gap 08b qcloud Ingress + TLS Secret material readiness contract/local gate 已收口。固定参数为 PORTAL_HOST_DOMAIN=portal.medopl.cn，INGRESS_CLASS=qcloud，TLS_SECRET_NAME=medopl-portal-tls，EXTERNAL_SMOKE_URL=https://portal.medopl.cn/。cert-manager 当前不可用；推荐 TLS 路径是腾讯云 SSL 证书或人工签发证书材料，通过授权路径创建 Kubernetes TLS Secret。external/public user access 仍未暴露。\n\n目标：在云端授权边界内执行 repo-native qcloud TLS Secret 和 Ingress server-side dry-run/manifest validation。顺序必须是：1. TLS Secret creation server-side dry-run 或 manifest validation；2. Ingress server-side dry-run；3. 不执行真实 mutation。\n\n允许：读取本次明确授权的 kubeconfig/env allowlist 与 TLS cert/key 材料路径；验证 cluster cls-fi097sy4、namespace medopl-platform、portal-frontend Service 172.21.5.91:8080、IngressClass qcloud、TLS Secret manifest shape、Ingress manifest shape；执行 kubectl server-side dry-run only 或等价 manifest validation；写 redacted evidence。\n\n禁止：不读取 DB password/Portal admin password/Tencent SecretId/SecretKey；不输出 TLS cert/key 或 secret；不把 TLS cert/key 写入 git/docs/runtime evidence/log；不执行 kubectl apply；不创建 TLS Secret；不创建 Ingress；不创建/修改 LoadBalancer/DNS/TLS；不 deploy/rollout/rollback；不 build/push；不 Tencent mutation；不 Package C live；不声明 public access complete。\n\nEvidence 写入 .runtime/package-d-external-access-strategy/<runid>/dry-run-redacted.json，并同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
+    "runIdHint": "gap08d-qcloud-ingress-real-001",
+    "prompt": "按 active truth 做 gap-driven execution，不新增 loop。\n\n当前唯一 gap：Production launch Gap 08d: qcloud TLS Secret + Portal Ingress real mutation authorization。\n\n当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Gap 08a prerequisites discovery 已通过；Gap 08b qcloud TLS readiness contract/local gate 已收口；Gap 08c qcloud TLS Secret and Ingress server-side dry-run 已通过。Dry-run evidence: .runtime/package-d-external-access-strategy/gap08c-qcloud-ingress-dry-run-001/dry-run-redacted.json。TLS Secret manifest shape、TLS Secret server-side dry-run/validation、Ingress manifest shape、Ingress server-side dry-run 均通过；medopl-portal-tls 与 Portal Ingress 均未真实创建，确认 NotFound；无真实 mutation；redaction audit 通过。external/public user access 仍未完成。\n\n固定参数：PORTAL_HOST_DOMAIN=portal.medopl.cn，INGRESS_CLASS=qcloud，TLS_SECRET_NAME=medopl-portal-tls，EXTERNAL_SMOKE_URL=https://portal.medopl.cn/。TENCENT_SSL_CERT_ID 只能作为本次授权 env allowlist 值读取，禁止输出原文到 docs/evidence/logs。\n\n目标：在云端授权边界内真实创建/应用 Kubernetes TLS Secret medopl-portal-tls 和 qcloud Portal Ingress，并执行只读验证、DNS post-apply validation 与 HTTPS external smoke。完成后仍需基于 smoke evidence 才能声明 public access 状态，不得提前声明 public access complete。\n\n允许读取：本次明确授权的 kubeconfig/env allowlist 与 TLS cert/key 材料路径；TENCENT_SSL_CERT_ID 仅允许用于证书材料定位/校验，输出必须脱敏。\n\n允许真实 mutation 严格限定为：\n- create/apply Secret medopl-portal-tls in namespace medopl-platform，type kubernetes.io/tls\n- create/apply qcloud Ingress in namespace medopl-platform for host portal.medopl.cn -> service portal-frontend:8080，ingressClassName/class qcloud\n- get/describe Secret/Ingress/Service/IngressClass only for verification\n\n必须按顺序执行：\n1. preflight：确认 context cls-fi097sy4、namespace medopl-platform、portal-frontend Service 8080、IngressClass qcloud、redaction guard\n2. apply/create Secret medopl-portal-tls only\n3. verify Secret exists without printing cert/key/data\n4. apply/create Portal qcloud Ingress only\n5. get/describe Ingress only with redacted output\n6. DNS post-apply validation for portal.medopl.cn without DNS mutation\n7. HTTPS smoke https://portal.medopl.cn/ and redaction audit\n8. write redacted evidence and rollback/delete plan\n\n禁止：不读取 DB password/Portal admin password/Tencent SecretId/SecretKey；不输出 TLS cert/key、Secret data 或 TENCENT_SSL_CERT_ID 原文；不修改 Deployment/Service/ConfigMap/RBAC/Namespace；不修改 Package C 或 tenant resources；不修改 DNS；不创建 LoadBalancer Service；不 deploy/rollout/rollback；不 build/push；不 Tencent mutation；不 Package C live；不删除 namespace；不声明 public access complete before evidence closeout。\n\nStop conditions：context/namespace/service/IngressClass mismatch；TLS material missing or would leak；Secret dry-run/apply mismatch；Ingress dry-run/apply mismatch；unexpected existing conflicting Secret/Ingress；DNS target invalid or unauthorized; HTTPS smoke fails; any secret leakage; any command outside allowlist。\n\nEvidence 写入 .runtime/package-d-external-access-strategy/<runid>/real-mutation-redacted.json，并同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
   },
   "nextLocalCodexPrompt": {
     "target": "local-codex",
-    "prompt": "按 active truth 做 gap-driven execution，不新增 loop。\n\n当前唯一 gap：Production launch Gap 08c: qcloud TLS Secret and Ingress server-side dry-run authorization。\n\n当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Gap 08a external access prerequisites discovery 已完成；Gap 08b qcloud Ingress + TLS Secret material readiness contract/local gate 已收口。固定参数为 PORTAL_HOST_DOMAIN=portal.medopl.cn，INGRESS_CLASS=qcloud，TLS_SECRET_NAME=medopl-portal-tls，EXTERNAL_SMOKE_URL=https://portal.medopl.cn/。cert-manager 当前不可用；推荐 TLS 路径是腾讯云 SSL 证书或人工签发证书材料，通过授权路径创建 Kubernetes TLS Secret。external/public user access 仍未暴露。\n\n目标：在云端授权边界内执行 repo-native qcloud TLS Secret 和 Ingress server-side dry-run/manifest validation。顺序必须是：1. TLS Secret creation server-side dry-run 或 manifest validation；2. Ingress server-side dry-run；3. 不执行真实 mutation。\n\n允许：读取本次明确授权的 kubeconfig/env allowlist 与 TLS cert/key 材料路径；验证 cluster cls-fi097sy4、namespace medopl-platform、portal-frontend Service 172.21.5.91:8080、IngressClass qcloud、TLS Secret manifest shape、Ingress manifest shape；执行 kubectl server-side dry-run only 或等价 manifest validation；写 redacted evidence。\n\n禁止：不读取 DB password/Portal admin password/Tencent SecretId/SecretKey；不输出 TLS cert/key 或 secret；不把 TLS cert/key 写入 git/docs/runtime evidence/log；不执行 kubectl apply；不创建 TLS Secret；不创建 Ingress；不创建/修改 LoadBalancer/DNS/TLS；不 deploy/rollout/rollback；不 build/push；不 Tencent mutation；不 Package C live；不声明 public access complete。\n\nEvidence 写入 .runtime/package-d-external-access-strategy/<runid>/dry-run-redacted.json，并同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
+    "prompt": "按 active truth 做 gap-driven execution，不新增 loop。\n\n当前唯一 gap：Production launch Gap 08d: qcloud TLS Secret + Portal Ingress real mutation authorization。\n\n当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Gap 08a prerequisites discovery 已通过；Gap 08b qcloud TLS readiness contract/local gate 已收口；Gap 08c qcloud TLS Secret and Ingress server-side dry-run 已通过。Dry-run evidence: .runtime/package-d-external-access-strategy/gap08c-qcloud-ingress-dry-run-001/dry-run-redacted.json。TLS Secret manifest shape、TLS Secret server-side dry-run/validation、Ingress manifest shape、Ingress server-side dry-run 均通过；medopl-portal-tls 与 Portal Ingress 均未真实创建，确认 NotFound；无真实 mutation；redaction audit 通过。external/public user access 仍未完成。\n\n固定参数：PORTAL_HOST_DOMAIN=portal.medopl.cn，INGRESS_CLASS=qcloud，TLS_SECRET_NAME=medopl-portal-tls，EXTERNAL_SMOKE_URL=https://portal.medopl.cn/。TENCENT_SSL_CERT_ID 只能作为本次授权 env allowlist 值读取，禁止输出原文到 docs/evidence/logs。\n\n目标：在云端授权边界内真实创建/应用 Kubernetes TLS Secret medopl-portal-tls 和 qcloud Portal Ingress，并执行只读验证、DNS post-apply validation 与 HTTPS external smoke。完成后仍需基于 smoke evidence 才能声明 public access 状态，不得提前声明 public access complete。\n\n允许读取：本次明确授权的 kubeconfig/env allowlist 与 TLS cert/key 材料路径；TENCENT_SSL_CERT_ID 仅允许用于证书材料定位/校验，输出必须脱敏。\n\n允许真实 mutation 严格限定为：\n- create/apply Secret medopl-portal-tls in namespace medopl-platform，type kubernetes.io/tls\n- create/apply qcloud Ingress in namespace medopl-platform for host portal.medopl.cn -> service portal-frontend:8080，ingressClassName/class qcloud\n- get/describe Secret/Ingress/Service/IngressClass only for verification\n\n必须按顺序执行：\n1. preflight：确认 context cls-fi097sy4、namespace medopl-platform、portal-frontend Service 8080、IngressClass qcloud、redaction guard\n2. apply/create Secret medopl-portal-tls only\n3. verify Secret exists without printing cert/key/data\n4. apply/create Portal qcloud Ingress only\n5. get/describe Ingress only with redacted output\n6. DNS post-apply validation for portal.medopl.cn without DNS mutation\n7. HTTPS smoke https://portal.medopl.cn/ and redaction audit\n8. write redacted evidence and rollback/delete plan\n\n禁止：不读取 DB password/Portal admin password/Tencent SecretId/SecretKey；不输出 TLS cert/key、Secret data 或 TENCENT_SSL_CERT_ID 原文；不修改 Deployment/Service/ConfigMap/RBAC/Namespace；不修改 Package C 或 tenant resources；不修改 DNS；不创建 LoadBalancer Service；不 deploy/rollout/rollback；不 build/push；不 Tencent mutation；不 Package C live；不删除 namespace；不声明 public access complete before evidence closeout。\n\nStop conditions：context/namespace/service/IngressClass mismatch；TLS material missing or would leak；Secret dry-run/apply mismatch；Ingress dry-run/apply mismatch；unexpected existing conflicting Secret/Ingress；DNS target invalid or unauthorized; HTTPS smoke fails; any secret leakage; any command outside allowlist。\n\nEvidence 写入 .runtime/package-d-external-access-strategy/<runid>/real-mutation-redacted.json，并同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
   },
   "production_launch_goal_gap_map": {
-    "status": "gap_08b_qcloud_tls_readiness_contract_local_gated_no_cloud_execution",
+    "status": "gap_08c_qcloud_tls_ingress_dry_run_passed_waiting_gap_08d_real_mutation_authorization",
     "currentFacts": {
       "packageDPlatformControlPlaneInsideTke": "deployed",
       "inClusterHttpReachability": "preflight-passed",
@@ -8701,20 +9051,19 @@
       }
     ],
     "nextUniqueGap": {
-      "id": "production-launch-gap-08c-qcloud-ingress-tls-server-side-dry-run",
-      "title": "Production launch Gap 08c: qcloud TLS Secret and Ingress server-side dry-run authorization",
-      "reason": "Gap 08a discovered qcloud Ingress prerequisites and Gap 08b locally closed qcloud Ingress + TLS Secret material readiness; the next gap is separately authorized server-side dry-run/manifest validation only, with TLS Secret dry-run before Ingress dry-run and no real mutation.",
-      "boundary": "separate cloud authorization required before kubeconfig read, TLS cert/key material read, Kubernetes API access or kubectl server-side dry-run; no kubectl apply, no real TLS Secret/Ingress/LoadBalancer/DNS/TLS mutation and no public access completion claim",
-      "recommendedEntrypoint": "cloud Codex authorized dry-run using repo-native Package D external access runner/authorization pack for qcloud Ingress + medopl-portal-tls shape only",
-      "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/dry-run-redacted.json",
-      "sequence": [
-        "TLS Secret creation server-side dry-run or manifest validation",
-        "Ingress server-side dry-run",
-        "no real mutation"
+      "id": "production-launch-gap-08d-qcloud-tls-secret-ingress-real-mutation-authorization",
+      "title": "Production launch Gap 08d: qcloud TLS Secret + Portal Ingress real mutation authorization",
+      "reason": "Gap 08c passed server-side dry-run/manifest validation for both the TLS Secret and qcloud Portal Ingress, so the next gap is a tightly allowlisted real mutation authorization pack for creating only Secret/medopl-portal-tls and the Portal Ingress, followed by get/describe, DNS post-apply validation and HTTPS smoke.",
+      "boundary": "separate cloud authorization required before kubeconfig, TLS cert/key material read or kubectl apply/create; mutation is limited to Secret/medopl-portal-tls and the Portal qcloud Ingress in medopl-platform; no Deployment/Service/DNS/LoadBalancer/Package C/tenant mutation and no public access completion claim before smoke evidence",
+      "recommendedEntrypoint": "cloud Codex authorized real mutation using repo-native Package D external access authorization pack for qcloud TLS Secret + Portal Ingress only",
+      "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/real-mutation-redacted.json",
+      "allowedMutations": [
+        "create/apply Secret medopl-portal-tls in medopl-platform, type kubernetes.io/tls",
+        "create/apply qcloud Ingress in medopl-platform for portal.medopl.cn -> portal-frontend:8080"
       ]
     },
     "externalAccessPolicy": {
-      "status": "qcloud_tls_readiness_contract_landed_waiting_server_side_dry_run_authorization",
+      "status": "qcloud_tls_ingress_dry_run_passed_waiting_real_mutation_authorization",
       "reason": "Formal SaaS user entry should use Ingress + HTTPS/domain as the candidate after strategy review, but this repo state still has no public/external user access and no mutation has executed.",
       "recommendedFormalCandidate": "qcloud Ingress + HTTPS/domain via medopl-portal-tls",
       "adminOnlyPortForwardRole": "administrator acceptance smoke only, not formal launch completion standard",
@@ -8733,7 +9082,8 @@
       "qcloudIngressClass": "qcloud",
       "portalHost": "portal.medopl.cn",
       "tlsSecretName": "medopl-portal-tls",
-      "externalSmokeUrl": "https://portal.medopl.cn/"
+      "externalSmokeUrl": "https://portal.medopl.cn/",
+      "ingressClass": "qcloud"
     },
     "gap01BootstrapContract": {
       "status": "implemented",
@@ -9066,6 +9416,123 @@
         "Ingress/LoadBalancer/DNS/TLS mutation",
         "public user access completion claim"
       ]
+    },
+    "gap08cQcloudIngressTlsDryRun": {
+      "status": "preflight-passed",
+      "runId": "gap08c-qcloud-ingress-dry-run-001",
+      "repoHead": "abbc82f3bbd39d2c659c514476153f36ccb63d9f",
+      "evidencePath": ".runtime/package-d-external-access-strategy/gap08c-qcloud-ingress-dry-run-001/dry-run-redacted.json",
+      "facts": {
+        "workspaceClean": true,
+        "cluster": "cls-fi097sy4",
+        "namespace": "medopl-platform",
+        "portalFrontendService": "ClusterIP http:8080/TCP",
+        "ingressClass": "qcloud",
+        "ingressController": "cloud.tencent.com/ingress-controller",
+        "tlsSecretManifestShape": "passed",
+        "tlsSecretServerSideDryRun": "passed",
+        "ingressManifestShape": "passed",
+        "ingressServerSideDryRun": "passed",
+        "tlsSecretAfterDryRun": "NotFound",
+        "ingressAfterDryRun": "NotFound",
+        "realMutationOccurred": false,
+        "redactionAudit": "passed"
+      }
+    },
+    "gap08dQcloudTlsSecretIngressAuthorizationPack": {
+      "status": "authorization-pack-ready",
+      "target": {
+        "cluster": "cls-fi097sy4",
+        "namespace": "medopl-platform",
+        "portalHostDomain": "portal.medopl.cn",
+        "ingressClass": "qcloud",
+        "tlsSecretName": "medopl-portal-tls",
+        "externalSmokeUrl": "https://portal.medopl.cn/",
+        "tencentSslCertId": "<redacted-env:TENCENT_SSL_CERT_ID>"
+      },
+      "allowedOperations": [
+        "read explicitly authorized kubeconfig/env allowlist and TLS cert/key material path only in cloud runner",
+        "create/apply Secret medopl-portal-tls in medopl-platform, type kubernetes.io/tls",
+        "create/apply qcloud Ingress in medopl-platform for portal.medopl.cn -> portal-frontend:8080",
+        "get/describe Secret, Ingress, Service and IngressClass only for verification with redaction",
+        "DNS post-apply validation without DNS mutation",
+        "HTTPS external smoke for https://portal.medopl.cn/"
+      ],
+      "forbiddenOperations": [
+        "DB password, Portal admin password, Tencent SecretId/SecretKey read",
+        "output TLS cert/key, Secret data or TENCENT_SSL_CERT_ID raw value",
+        "modify Deployment, Service, ConfigMap, RBAC or Namespace",
+        "modify Package C or tenant resources",
+        "modify DNS",
+        "create LoadBalancer Service",
+        "deploy, rollout or rollback application workloads",
+        "build/push",
+        "Tencent mutation",
+        "Package C live",
+        "public access completion claim before evidence closeout"
+      ],
+      "secretManifestBoundary": {
+        "apiVersion": "v1",
+        "kind": "Secret",
+        "name": "medopl-portal-tls",
+        "namespace": "medopl-platform",
+        "type": "kubernetes.io/tls",
+        "allowedDataKeys": [
+          "tls.crt",
+          "tls.key"
+        ],
+        "rawDataAllowedInEvidence": false
+      },
+      "ingressManifestBoundary": {
+        "apiVersion": "networking.k8s.io/v1",
+        "kind": "Ingress",
+        "namespace": "medopl-platform",
+        "ingressClass": "qcloud",
+        "host": "portal.medopl.cn",
+        "tlsSecretName": "medopl-portal-tls",
+        "backendService": "portal-frontend",
+        "backendPort": 8080,
+        "serviceMutationAllowed": false,
+        "loadBalancerServiceAllowed": false
+      },
+      "rollbackDeletePlan": {
+        "rollbackAllowedOnlyForCreatedResources": true,
+        "deleteIngress": "delete only the Portal qcloud Ingress created by Gap 08d if stop condition requires rollback",
+        "deleteTlsSecret": "delete only Secret/medopl-portal-tls if created by Gap 08d and rollback is explicitly required",
+        "namespaceDeletionAllowed": false,
+        "serviceDeletionAllowed": false,
+        "deploymentMutationAllowed": false
+      },
+      "dnsPostApplyValidationPlan": [
+        "resolve portal.medopl.cn after Ingress apply",
+        "compare resolved target with qcloud Ingress/load balancer status without mutating DNS",
+        "stop if DNS target is missing, stale or unauthorized"
+      ],
+      "httpsExternalSmokePlan": [
+        "GET https://portal.medopl.cn/",
+        "verify TLS hostname validity without logging certificate private material",
+        "verify Portal response shape",
+        "redaction audit"
+      ],
+      "stopConditions": [
+        "kube context is not cls-fi097sy4",
+        "namespace medopl-platform missing",
+        "portal-frontend:8080 service missing",
+        "IngressClass qcloud missing or controller mismatch",
+        "TLS material missing or would be printed",
+        "existing Secret or Ingress conflicts with expected ownership",
+        "kubectl command outside allowlist",
+        "DNS target invalid or unauthorized",
+        "HTTPS smoke fails",
+        "any secret leakage"
+      ],
+      "redactionEvidence": {
+        "required": true,
+        "tencentSslCertIdRawAllowed": false,
+        "tlsCertKeyRawAllowed": false,
+        "secretDataAllowed": false,
+        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/real-mutation-redacted.json"
+      }
     }
   }
 }

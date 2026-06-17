@@ -7684,3 +7684,59 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-17 production-launch-gap-08c-qcloud-ingress-tls-server-side-dry-run
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `abbc82f3bbd39d2c659c514476153f36ccb63d9f`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Closed the cloud Gap 08c qcloud TLS Secret and Portal Ingress server-side dry-run into active/delivery/fixture truth.
+- Recorded cloud evidence `.runtime/package-d-external-access-strategy/gap08c-qcloud-ingress-dry-run-001/dry-run-redacted.json`.
+- Dry-run facts: kube context matched `cls-fi097sy4`, namespace `medopl-platform` existed, `portal-frontend` Service existed as ClusterIP `http:8080/TCP`, IngressClass `qcloud` existed with controller `cloud.tencent.com/ingress-controller`, TLS Secret manifest shape passed, TLS Secret server-side dry-run / validation passed, Ingress manifest shape passed and Ingress server-side dry-run passed.
+- Confirmed `medopl-portal-tls` was not created and the Portal Ingress was not created after dry-run; both were verified `NotFound`.
+- No real mutation occurred, redaction audit passed and external/public user access remains not exposed.
+- Generated the Gap 08d authorization pack for real mutation. The only allowed real mutations are creating/applying `Secret/medopl-portal-tls` in `medopl-platform` and creating/applying the qcloud Portal Ingress for `portal.medopl.cn -> portal-frontend:8080`, plus get/describe verification.
+- The authorization pack forbids Deployment/Service changes, Package C or tenant resources, DNS mutation, LoadBalancer Service creation, raw TLS cert/key output, raw certificate-id output, DB password, Portal admin password, Tencent SecretId/SecretKey, deploy/rollout/rollback, build/push, Tencent mutation, Package C live and public access completion claim before evidence closeout.
+- This local closeout did not read secrets/kubeconfig/DB password/TLS private key, connect to Kubernetes API or PostgreSQL, run kubectl, deploy, rollout, rollback, build/push, execute Tencent mutation, run Package C live, create TLS Secret, create Ingress, mutate LoadBalancer/DNS/TLS or claim public user access is complete.
+
+Verification:
+
+- `npm run verify`: rerun before final push.
+- `npm run closeout:check -- --json`: rerun before final push.
+
+Can-claim:
+
+- Gap 08c dry-run passed and is recorded with redacted evidence.
+- The TLS Secret and Ingress manifest shapes passed server-side dry-run / validation.
+- No real TLS Secret, Ingress, LoadBalancer, DNS or TLS mutation occurred.
+- Gap 08d has an authorization pack for the tightly scoped real mutation path.
+
+Cannot-claim:
+
+- TLS Secret creation executed.
+- Portal Ingress creation executed.
+- DNS or LoadBalancer mutation executed.
+- Public/external user access is complete.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+landed_commit: `pending-final-hash`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `pending-final-hash` remains reachable from `origin/recovery/platform-v22-trunk` after the Gap 08c closeout commit.
+- `npm run verify`: rerun before final push.
+- `npm run closeout:check -- --json`: rerun before final push.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
