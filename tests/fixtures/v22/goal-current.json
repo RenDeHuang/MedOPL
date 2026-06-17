@@ -2777,12 +2777,12 @@
         }
       ],
       "nextUniqueGap": {
-        "id": "production-launch-gap-05-workspace-lifecycle-contract",
-        "title": "Production launch Gap 05: workspace suspend / resume / delete lifecycle contract",
-        "reason": "Gap 04 has a repo-native billing / audit / quota ledger contract/local gate, but formal SaaS launch still needs workspace suspend, resume and delete lifecycle closure before production canary/rollback or external access.",
-        "boundary": "local contract and fixture readiness only until separately authorized; no secret/kubeconfig, no PostgreSQL connection, no kubectl, no deploy, no Tencent mutation, no Package C live execution",
-        "recommendedEntrypoint": "local Codex implementation of repo-native workspace suspend / resume / delete lifecycle contract/gate",
-        "evidencePath": ".runtime/production-launch-workspace-lifecycle/<runid>/workspace-lifecycle-contract-redacted.json"
+        "id": "production-launch-gap-06-production-canary-rollback-evidence-contract",
+        "title": "Production launch Gap 06: production smoke / canary / rollback / cleanup evidence contract",
+        "reason": "Gap 05 has a repo-native workspace suspend / resume / delete lifecycle contract/local gate, but formal SaaS launch still needs production canary, rollback, cleanup and redaction/observability evidence closure before external access.",
+        "boundary": "local contract and fixture readiness only until separately authorized; no secret/kubeconfig, no PostgreSQL connection, no Kubernetes API, no kubectl, no deploy/rollback execution, no Tencent mutation, no Package C live execution",
+        "recommendedEntrypoint": "local Codex implementation of repo-native production smoke / canary / rollback / cleanup evidence contract/gate",
+        "evidencePath": ".runtime/production-launch-canary-rollback/<runid>/canary-rollback-contract-redacted.json"
       },
       "externalAccessPolicy": {
         "status": "blocked_before_multi_tenant_minimum_launch_closure",
@@ -4993,12 +4993,12 @@
         }
       ],
       "nextUniqueGap": {
-        "id": "production-launch-gap-05-workspace-lifecycle-contract",
-        "title": "Production launch Gap 05: workspace suspend / resume / delete lifecycle contract",
-        "reason": "Gap 04 has a repo-native billing / audit / quota ledger contract/local gate, but formal SaaS launch still needs workspace suspend, resume and delete lifecycle closure before production canary/rollback or external access.",
-        "boundary": "local contract and fixture readiness only until separately authorized; no secret/kubeconfig, no PostgreSQL connection, no kubectl, no deploy, no Tencent mutation, no Package C live execution",
-        "recommendedEntrypoint": "local Codex implementation of repo-native workspace suspend / resume / delete lifecycle contract/gate",
-        "evidencePath": ".runtime/production-launch-workspace-lifecycle/<runid>/workspace-lifecycle-contract-redacted.json"
+        "id": "production-launch-gap-06-production-canary-rollback-evidence-contract",
+        "title": "Production launch Gap 06: production smoke / canary / rollback / cleanup evidence contract",
+        "reason": "Gap 05 has a repo-native workspace suspend / resume / delete lifecycle contract/local gate, but formal SaaS launch still needs production canary, rollback, cleanup and redaction/observability evidence closure before external access.",
+        "boundary": "local contract and fixture readiness only until separately authorized; no secret/kubeconfig, no PostgreSQL connection, no Kubernetes API, no kubectl, no deploy/rollback execution, no Tencent mutation, no Package C live execution",
+        "recommendedEntrypoint": "local Codex implementation of repo-native production smoke / canary / rollback / cleanup evidence contract/gate",
+        "evidencePath": ".runtime/production-launch-canary-rollback/<runid>/canary-rollback-contract-redacted.json"
       },
       "externalAccessPolicy": {
         "status": "blocked_before_multi_tenant_minimum_launch_closure",
@@ -7901,12 +7901,12 @@
     },
     "productionLaunchBoundary": {
       "nextUniqueGap": {
-        "id": "production-launch-gap-05-workspace-lifecycle-contract",
-        "title": "Production launch Gap 05: workspace suspend / resume / delete lifecycle contract",
-        "reason": "Gap 04 has a repo-native billing / audit / quota ledger contract/local gate, but formal SaaS launch still needs workspace suspend, resume and delete lifecycle closure before production canary/rollback or external access.",
-        "boundary": "local contract and fixture readiness only until separately authorized; no secret/kubeconfig, no PostgreSQL connection, no kubectl, no deploy, no Tencent mutation, no Package C live execution",
-        "recommendedEntrypoint": "local Codex implementation of repo-native workspace suspend / resume / delete lifecycle contract/gate",
-        "evidencePath": ".runtime/production-launch-workspace-lifecycle/<runid>/workspace-lifecycle-contract-redacted.json"
+        "id": "production-launch-gap-06-production-canary-rollback-evidence-contract",
+        "title": "Production launch Gap 06: production smoke / canary / rollback / cleanup evidence contract",
+        "reason": "Gap 05 has a repo-native workspace suspend / resume / delete lifecycle contract/local gate, but formal SaaS launch still needs production canary, rollback, cleanup and redaction/observability evidence closure before external access.",
+        "boundary": "local contract and fixture readiness only until separately authorized; no secret/kubeconfig, no PostgreSQL connection, no Kubernetes API, no kubectl, no deploy/rollback execution, no Tencent mutation, no Package C live execution",
+        "recommendedEntrypoint": "local Codex implementation of repo-native production smoke / canary / rollback / cleanup evidence contract/gate",
+        "evidencePath": ".runtime/production-launch-canary-rollback/<runid>/canary-rollback-contract-redacted.json"
       },
       "externalAccessBlockedUntil": "multi_tenant_minimum_launch_closure"
     }
