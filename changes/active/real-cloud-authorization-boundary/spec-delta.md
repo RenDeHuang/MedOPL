@@ -24,6 +24,8 @@ Target specs:
 - The Package D reachability command plan is limited to readonly `kubectl get` deployment/service/pods in `medopl-platform`, `kubectl create -f -` for the single temporary smoke Job, `kubectl wait`, `kubectl logs` for allowlisted smoke containers and `kubectl delete job <run-scoped-name>` cleanup. It must reject arbitrary URLs, `kubectl exec`, deploy, rollout, rollback, build/push, Tencent mutation and Package C live.
 - Package D production manifests must provide writable runtime paths for non-root containers: `portal-frontend` nginx pid/temp paths under `/tmp/nginx`, `opl-runtime-bridge` state root under `/tmp/medopl-runtime/.runtime`, no default `/.runtime`, and a pull strategy that can pick up a republished fixed tag.
 - Package C PostgreSQL ledger canary no longer treats local-machine access to the VPC private endpoint as the goal; successful real DB canary waits until the MedOPL service runs inside the VPC.
+- Production Launch Gap 01 is represented by the repo-native `production-launch-bootstrap-runner` contract/local gate. The gate covers first admin identity bootstrap shape, tenant bootstrap shape, workspace seed shape, providerKeyRef-only public boundary, local RC fallback separation, redacted evidence and Portal typed API to Go backend fail-closed route traceability.
+- The Production Launch Gap 01 contract keeps external access blocked. Ingress, LoadBalancer, DNS/TLS and public user access remain unavailable until the multi-tenant minimum launch closure reaches later gaps.
 
 ## REMOVED
 
@@ -37,6 +39,7 @@ Target specs:
 - `executionPreflightGateReady=true` does not mean real deploy execution is authorized or ready.
 - Package D production-deploy-apply/live entrypoint existence and the first authorized apply attempt do not mean rollout success, post-deploy smoke or rollback execution has happened.
 - Package D service reachability runner existence does not mean in-cluster HTTP smoke has executed or Portal external/public access exists.
+- Production Launch Gap 01 local gate does not execute identity provider writes, tenant creation, workspace creation, provider credential binding, Package C live operations, billing, quota, workspace lifecycle or external access.
 
 ## EVALS
 
@@ -44,6 +47,7 @@ Target specs:
 - `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs`
 - `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs`
 - `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs`
+- `node tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs`
 - `node tests/contract/contract-test-v22-real-cloud-authorization-boundary.mjs`
 - `node tests/contract/contract-test-v22-change-package-lifecycle.mjs`
 - `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`

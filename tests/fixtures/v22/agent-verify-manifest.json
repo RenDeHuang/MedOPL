@@ -1410,7 +1410,9 @@
         "scripts/v22-verify.mjs",
         "scripts/v22-workflow-gate.mjs",
         "scripts/v22-landing-closeout.mjs",
-        "package.json"
+        "package.json",
+        "services/portal/frontend/src/api/portal/*",
+        "services/medopl-go-backend/internal/server/handlers/*"
       ],
       "forbidden_files": [
         "deploy/*",
@@ -1466,6 +1468,7 @@
         "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs",
         "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs",
         "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-workflow-gate.mjs",
+        "node tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs",
         "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
@@ -1529,6 +1532,7 @@
         "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs",
         "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs",
         "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-workflow-gate.mjs",
+        "node tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs",
         "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",

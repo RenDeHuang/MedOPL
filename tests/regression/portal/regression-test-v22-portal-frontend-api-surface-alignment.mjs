@@ -95,6 +95,14 @@ const unusedAdjudications = {
     status: "backend-only",
     reason: "Public settings are consumed by the server-rendered public home and admin system payload, not directly by the React app.",
   },
+  "production-bootstrap.ts:planProductionBootstrap": {
+    status: "future-reserved",
+    reason: "Production bootstrap is a Gap 01 contract-only API trace; it stays unmounted until admin/tenant/workspace bootstrap receives separate execution authorization.",
+  },
+  "production-bootstrap.ts:commitProductionBootstrap": {
+    status: "future-reserved",
+    reason: "Production bootstrap commit must fail closed before authorization and is tracked only as typed API shape for Gap 01.",
+  },
   "server-plans.ts:fetchServerPlans": {
     status: "future-reserved",
     reason: "Server plan catalog remains a lower-level backend surface; current React runtime UI is package-oriented.",

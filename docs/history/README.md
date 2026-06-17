@@ -94,6 +94,41 @@ Cannot-claim:
 
 next_cursor: `real-cloud-authorization-boundary`
 
+### 2026-06-17 production-launch-gap-01-bootstrap-contract
+
+Status: `landed candidate / local-gated`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `31198b7f08c0aa60be8f1f442d968e4706e3b5c3`
+
+Model: `gpt-5.4`
+
+Subagents: none
+
+Scope:
+
+- Landed the repo-native Production Launch Gap 01 bootstrap contract/local gate without adding a loop or second truth source.
+- Added `tests/support/cloud-prework/production-launch-bootstrap-runner.js` as the single contract-only runner command: `node tests/support/cloud-prework/production-launch-bootstrap-runner.js --mode contract-local-gate --run-id <runid> --authorized 1`.
+- The local gate proves unauthorized fail-closed behavior, first admin identity bootstrap shape, tenant bootstrap shape, workspace seed shape, providerKeyRef-only public boundary, redacted evidence shape and external-access block.
+- Added contract-only Go routes `POST /api/v22/production/bootstrap/plan` and `POST /api/v22/production/bootstrap/commit`, plus Portal typed API shape in `services/portal/frontend/src/api/portal/production-bootstrap.ts`. These routes fail closed and do not execute production bootstrap writes.
+- Evidence sink is `.runtime/production-launch-bootstrap/<runid>/bootstrap-contract-redacted.json`.
+- The next unique gap is `production-launch-gap-02-portal-backend-package-c-live-operation-contract`.
+- This closeout did not read secrets/kubeconfig, connect to Kubernetes API, run kubectl, deploy, rollout, rollback, build/push, execute Tencent mutation, run Package C live, restore Node Portal backend or enter external access.
+
+Can-claim:
+
+- Production Launch Gap 01 has a repo-native contract/local gate.
+- Portal typed API and Go backend route shape for production bootstrap are traceable and fail closed.
+- External/public access remains blocked.
+
+Cannot-claim:
+
+- Production admin/tenant/workspace bootstrap has executed against a production database.
+- Package C production operation wiring, PostgreSQL live ledger write/read, billing/audit/quota, workspace lifecycle, production canary, rollback execution, Ingress, LoadBalancer, DNS or TLS are complete.
+
+next_cursor: `real-cloud-authorization-boundary`
+
 ### 2026-06-17 package-d-service-reachability-curl-security-context
 
 Status: `landed candidate / local-gated`

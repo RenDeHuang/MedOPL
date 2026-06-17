@@ -13,3 +13,10 @@
 - model: gpt-5
 - result: local boundary accepted; live execution remains blocked
 - blockers: explicit authorization is still required before any sensitive operation; authorization must name operation class, target environment, secret allowlist, API allowlist, budget, evidence sink and rollback owner.
+
+## Production Launch Gap 01 Self Review
+
+- runner boundary: pass; `production-launch-bootstrap-runner` rejects missing authorization and forbidden kubeconfig/kubectl/deploy/build/Package C arguments.
+- Portal / Go backend traceability: pass; typed Portal API and fail-closed Go routes expose contract-only shape without restoring Node Portal backend or adding a second control plane.
+- secret hygiene: pass; providerKeyRef is public reference-only, raw credential material is not accepted by the runner and redacted evidence records the audit result.
+- scope control: pass; external access, Package C live, billing/quota/workspace lifecycle and cloud mutation remain blocked for later gaps.

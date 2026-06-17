@@ -10,6 +10,7 @@
 - [x] Step 1f: fix Package D portal/runtime bridge writable path contract after authorized production deploy rollout diagnostics.
 - [x] Step 1g: record Package D production-deploy-apply success and next ClusterIP reachability / external access strategy gap.
 - [x] Step 1h: add Package D repo-native readonly service reachability / in-cluster HTTP smoke runner contract and local/future-authorized gate without executing smoke.
+- [x] Step 1i: add Production Launch Gap 01 bootstrap contract/local gate for first admin, tenant, workspace seed and providerKeyRef-only boundary without executing live bootstrap.
 - [ ] Step 2: receive explicit authorization for any sensitive operation class.
 - [ ] Step 3: update spec delta after authorization scope is known.
 - [x] Step 4: run local future-authorized evals.

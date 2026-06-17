@@ -8,6 +8,7 @@ node tests/contract/contract-test-v22-real-cloud-authorization-boundary.mjs
 node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs
 node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs
 node tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs
+node tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs
 node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --dry-run --json
 node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk
 npm run verify
@@ -44,6 +45,7 @@ git diff --check -- docs changes specs tests scripts
 - Package D execution preflight readiness does not authorize reading kubeconfig contents, build/push, kubectl, deploy, Tencent mutation or Package D execution.
 - Package D production deploy apply/live local gate does not prove live deployment, rollout, post-deploy smoke or rollback execution; those require a separate cloud authorization and redacted `.runtime` evidence.
 - Package D service reachability local gate does not execute Kubernetes API calls or prove service HTTP reachability; that requires a separate cloud authorization and redacted `.runtime` evidence.
+- Production Launch Gap 01 bootstrap local gate does not execute identity provider writes, tenant creation, workspace creation, Package C live operations, billing, quota, workspace lifecycle or external access.
 
 ## Required Future Sequence
 

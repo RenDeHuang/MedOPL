@@ -16,6 +16,7 @@ The current cursor is the real-cloud authorization boundary. Pre-cloud local pro
 - Define the subscribed truth, spec delta target and eval plan before any real-cloud work.
 - Keep active truth limited to the current phase, cursor, blockers, next owner, cannot-claim and verification entry.
 - Fail closed until explicit user authorization is provided for each sensitive operation class.
+- Add the Production Launch Gap 01 local bootstrap contract for first admin identity shape, tenant bootstrap shape, workspace seed shape and providerKeyRef-only boundary without executing live bootstrap.
 
 ## Non-Goals
 
@@ -23,6 +24,7 @@ The current cursor is the real-cloud authorization boundary. Pre-cloud local pro
 - Do not call real cloud, real OPL, provider APIs, Langfuse, COS or production APIs.
 - Do not run build/push, kubectl, deploy or live-test.
 - Do not change Portal, Gateway, Runtime Bridge or cloud runtime behavior.
+- Do not expose Portal through Ingress, LoadBalancer, DNS, TLS or public access before the multi-tenant minimum launch closure.
 
 ## Golden Path Impact
 
@@ -59,6 +61,8 @@ mock/snapshot provider
 -> authorized deploy
 -> canary / QA / status update
 ```
+
+Production Launch Gap 01 is limited to a local contract gate. It proves the bootstrap payload shape and redaction boundary, but it does not create the first admin, tenant, workspace or provider binding in a live system.
 
 ## Subscribed Truth
 

@@ -167,6 +167,58 @@ func TestControlPlaneHandlersExposeV22GoTakeoverProviderOpenShape(t *testing.T) 
 	}
 }
 
+func TestControlPlaneProductionBootstrapContractFailsClosed(t *testing.T) {
+	router := controlPlaneHandlerTestRouter()
+	rawProviderKey := "production-bootstrap-raw-provider-key-must-not-leak"
+
+	for _, target := range []string{
+		"/api/v22/production/bootstrap/plan",
+		"/api/v22/production/bootstrap/commit",
+	} {
+		rec := postRaw(router, target, map[string]any{
+			"firstAdmin": map[string]any{
+				"email":    "founder@example.invalid",
+				"password": "portal-admin-password-must-not-leak",
+			},
+			"tenant": map[string]any{
+				"id": "tenant-production-seed",
+			},
+			"workspace": map[string]any{
+				"id":             "workspace-production-seed",
+				"providerKeyRef": "gflab:workspace-production-seed:refonly001122",
+			},
+			"rawProviderKey": rawProviderKey,
+		})
+		if rec.Code != http.StatusPreconditionRequired {
+			t.Fatalf("%s status = %d body = %s", target, rec.Code, rec.Body.String())
+		}
+		body := rec.Body.String()
+		for _, required := range []string{
+			"production_launch_gap_01_bootstrap_contract_local_gate",
+			"contract-only",
+			"blocked_until_multi_tenant_minimum_launch_closure",
+			"providerKeyRef",
+		} {
+			if !strings.Contains(body, required) {
+				t.Fatalf("%s response missing %q: %s", target, required, body)
+			}
+		}
+		for _, forbidden := range []string{
+			rawProviderKey,
+			"portal-admin-password-must-not-leak",
+			"rawProviderKey",
+			"launchToken",
+			"runtimeToken",
+			"Ingress",
+			"LoadBalancer",
+		} {
+			if strings.Contains(body, forbidden) {
+				t.Fatalf("%s response leaked forbidden marker %q: %s", target, forbidden, body)
+			}
+		}
+	}
+}
+
 func TestControlPlaneHandlersMaterializeProviderSecretBoundary(t *testing.T) {
 	secretRoot := t.TempDir()
 	router := controlPlaneHandlerTestRouterWithSecretRoot(secretRoot)

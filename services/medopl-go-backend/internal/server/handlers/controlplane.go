@@ -80,6 +80,8 @@ func RegisterControlPlaneRoutes(api *gin.RouterGroup, service ControlPlaneServic
 	api.POST("/provider/bind", bindProviderKey(service))
 	api.POST("/provider/preflight", providerPreflight(service))
 	api.POST("/opl/entry/preflight", providerPreflight(service))
+	api.POST("/v22/production/bootstrap/plan", productionBootstrapContractPlan())
+	api.POST("/v22/production/bootstrap/commit", productionBootstrapContractCommit())
 	api.POST("/v22/users/prepare", prepareUser())
 	api.POST("/v22/users/credit", creditUser())
 	api.POST("/v22/provider-key", bindProviderKey(service))
@@ -163,6 +165,55 @@ func managedEnvironmentReadiness(service ControlPlaneService) gin.HandlerFunc {
 			return
 		}
 		ctx.JSON(http.StatusOK, result)
+	}
+}
+
+func productionBootstrapContractPlan() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusPreconditionRequired, gin.H{
+			"ok": false,
+			"contract": "production_launch_gap_01_bootstrap_contract_local_gate",
+			"mode": "contract-only",
+			"error": "production_bootstrap_contract_only",
+			"requiredRunner": "tests/support/cloud-prework/production-launch-bootstrap-runner.js",
+			"firstAdmin": gin.H{
+				"status": "bootstrap_required",
+				"role": "platform_owner",
+				"identitySource": "production_identity_provider_required",
+			},
+			"tenant": gin.H{
+				"status": "bootstrap_required",
+			},
+			"workspace": gin.H{
+				"status": "seed_required",
+			},
+			"providerBoundary": gin.H{
+				"publicFields": []string{"provider", "providerKeyRef", "boundStatus"},
+				"rawSecretBackendOnly": true,
+			},
+			"externalAccess": gin.H{
+				"status": "blocked_until_multi_tenant_minimum_launch_closure",
+			},
+		})
+	}
+}
+
+func productionBootstrapContractCommit() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusPreconditionRequired, gin.H{
+			"ok": false,
+			"contract": "production_launch_gap_01_bootstrap_contract_local_gate",
+			"mode": "contract-only",
+			"error": "production_bootstrap_apply_not_authorized",
+			"requiredRunner": "tests/support/cloud-prework/production-launch-bootstrap-runner.js",
+			"providerBoundary": gin.H{
+				"publicFields": []string{"provider", "providerKeyRef", "boundStatus"},
+				"rawSecretBackendOnly": true,
+			},
+			"externalAccess": gin.H{
+				"status": "blocked_until_multi_tenant_minimum_launch_closure",
+			},
+		})
 	}
 }
 

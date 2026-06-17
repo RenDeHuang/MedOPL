@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed: runner image and four service images are published, four Deployments are ready 1/1, four ClusterIP Services returned HTTP 200, and redacted deploy/smoke evidence is recorded. This proves the platform control-plane can run inside TKE, but it is not enough for stable formal launch of MedOPL as a platform-provisioned, customer-dedicated, multi-tenant SaaS managed OPL workbench. The repo-native Production Launch Goal / Gap Map now defines the launch vision, ordered minimum phases and gap audit. External/public user access remains blocked until the multi-tenant launch minimum closes. The current unique gap is production-launch-gap-01-auth-tenant-workspace-bootstrap-contract: first admin identity, tenant and workspace bootstrap contract/local gate before Portal exposure, Package C production wiring, billing/audit/quota closure or external access.",
+  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed, and Production launch Gap 01 now has a repo-native contract/local gate for first admin identity, tenant bootstrap, workspace seed and providerKeyRef-only boundary. The gate is contract-only and redacted: it proves unauthorized runs fail closed, Portal -> Go backend bootstrap API shape is traceable through typed API plus fail-closed Go routes, local RC fallback IDs are not production bootstrap truth, raw provider key/DB password/token/admin password do not enter browser storage/log/evidence/git, and external access remains blocked. MedOPL still is not formally production launched: Portal -> backend -> Package C live operation wiring, PostgreSQL ResourceBinding ledger live write/read, billing/audit/quota closure, workspace lifecycle, canary/rollback/evidence and external access remain open. The current unique gap is production-launch-gap-02-portal-backend-package-c-live-operation-contract before any Package C live execution or Ingress/external access.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -171,7 +171,7 @@
     "gap_id": "real-cloud-authorization-boundary",
     "stage": "S7 real-cloud authorization boundary before readiness",
     "cursor_eligible": false,
-    "problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed: runner image and four service images are published, four Deployments are ready 1/1, four ClusterIP Services returned HTTP 200, and redacted deploy/smoke evidence is recorded. This proves the platform control-plane can run inside TKE, but it is not enough for stable formal launch of MedOPL as a platform-provisioned, customer-dedicated, multi-tenant SaaS managed OPL workbench. The repo-native Production Launch Goal / Gap Map now defines the launch vision, ordered minimum phases and gap audit. External/public user access remains blocked until the multi-tenant launch minimum closes. The current unique gap is production-launch-gap-01-auth-tenant-workspace-bootstrap-contract: first admin identity, tenant and workspace bootstrap contract/local gate before Portal exposure, Package C production wiring, billing/audit/quota closure or external access.",
+    "problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed, and Production launch Gap 01 now has a repo-native contract/local gate for first admin identity, tenant bootstrap, workspace seed and providerKeyRef-only boundary. The gate is contract-only and redacted: it proves unauthorized runs fail closed, Portal -> Go backend bootstrap API shape is traceable through typed API plus fail-closed Go routes, local RC fallback IDs are not production bootstrap truth, raw provider key/DB password/token/admin password do not enter browser storage/log/evidence/git, and external access remains blocked. MedOPL still is not formally production launched: Portal -> backend -> Package C live operation wiring, PostgreSQL ResourceBinding ledger live write/read, billing/audit/quota closure, workspace lifecycle, canary/rollback/evidence and external access remain open. The current unique gap is production-launch-gap-02-portal-backend-package-c-live-operation-contract before any Package C live execution or Ingress/external access.",
     "verification_commands": [
       "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
       "node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs",
@@ -206,6 +206,7 @@
       "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs",
       "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs",
       "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-workflow-gate.mjs",
+      "node tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs",
       "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json",
       "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
       "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
@@ -226,7 +227,9 @@
       "scripts/v22-verify.mjs",
       "scripts/v22-workflow-gate.mjs",
       "scripts/v22-landing-closeout.mjs",
-      "package.json"
+      "package.json",
+      "services/portal/frontend/src/api/portal/*",
+      "services/medopl-go-backend/internal/server/handlers/*"
     ],
     "forbidden_files": [
       "deploy/*",
@@ -2815,7 +2818,7 @@
       "authorized deploy",
       "canary / QA / status update"
     ],
-    "latest_local_evidence": "production-launch-goal-gap-map-no-cloud-execution",
+    "latest_local_evidence": "production-launch-gap-01-bootstrap-contract-local-gate",
     "package_c_live_canary": {
       "status": "authorized_live_canary_completed",
       "operation_id": "op-package-c-live-canary-live-full-lifecycle-2026-06-13",
@@ -2835,8 +2838,8 @@
       "postgres_execution_status": "authorized_attempt_failed_closed_connection_preflight_timeout_no_db_write"
     },
     "productionization_plan": [
-      "Production launch Gap 01: admin identity / tenant / workspace bootstrap contract",
-      "Portal -> Go backend -> Package C production operation wiring",
+      "Production launch Gap 01: admin identity / tenant / workspace bootstrap contract local gate passed",
+      "Production launch Gap 02: Portal -> Go backend -> Package C production operation wiring contract",
       "ResourceBinding PostgreSQL ledger successful in-VPC write/read canary",
       "billing/audit ledger and quota enforcement closure",
       "workspace suspend/resume/delete lifecycle closure",
@@ -4971,6 +4974,7 @@
     "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs",
     "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs",
     "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-workflow-gate.mjs",
+    "node tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs",
     "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json",
     "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
     "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
@@ -7717,8 +7721,7 @@
     }
   },
   "readinessGaps": [
-    "Production launch Gap 01: auth / identity / admin bootstrap plus tenant/workspace bootstrap contract",
-    "Portal -> backend -> Package C live operation wiring after bootstrap contract",
+    "Production launch Gap 02: Portal -> backend -> Package C live operation wiring contract after bootstrap contract local gate",
     "ResourceBinding PostgreSQL ledger successful in-VPC write/read canary",
     "billing/audit ledger and quota enforcement closure",
     "workspace suspend/resume/delete lifecycle closure",
@@ -7727,24 +7730,28 @@
   ],
   "nextAuthorizationPrompt": [
     "按 active truth 做 gap-driven execution，不新增 loop。",
-    "当前唯一 gap：Production launch Gap 01 - auth / identity / admin bootstrap plus tenant/workspace bootstrap contract。Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过，但 MedOPL 作为正式多租户 SaaS 还不能进入 external access；必须先收口 production control-plane bootstrap minimum。",
-    "目标：在本地实现/收敛 repo-native production launch bootstrap contract/local gate，覆盖 first admin identity bootstrap、tenant bootstrap、workspace seed、providerKeyRef boundary、no raw secret leakage、redacted evidence shape，并把 Portal/Go backend 当前 local defaults 与 production bootstrap 边界区分清楚。",
-    "本轮禁止读取 secret/kubeconfig，不连接 Kubernetes API，不执行 kubectl，不 deploy/rollout/rollback，不 build/push，不 Tencent mutation，不 Package C live，不新增 truth source，不新增 loop。",
-    "必须复用现有 Go backend control-plane、Portal typed API、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式；不得恢复 Node Portal backend 或新增兼容控制面。",
-    "验收：新增或更新本地 contract/local gate，证明未授权 fail closed、admin/tenant/workspace bootstrap shape 正确、raw provider key/DB password/token 不进入 browser storage/log/evidence/git、Portal -> backend bootstrap API shape 可追踪、external access 仍 blocked。",
-    "同步 docs/active/README.md、docs/delivery/README.md、docs/history/README.md、tests/fixtures/v22/goal-current.json，npm run verify 和 npm run closeout:check -- --json 必须通过，commit/push 到 origin/recovery/platform-v22-trunk。"
+    "当前唯一 gap：Production launch Gap 02: Portal -> Go backend -> Package C live operation contract。",
+    "当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Production launch Gap 01 first admin / tenant / workspace bootstrap contract/local gate 已在本地收口。external access / Ingress / LoadBalancer / HTTPS 仍被阻断到多租户最小上线闭环之后。",
+    "目标：在本地实现/收敛 repo-native Portal -> Go backend -> Package C live operation contract/local gate，只做 contract/local readiness，不执行 Package C live。",
+    "必须覆盖：Portal action shape、Go backend control-plane operation request shape、ResourceBinding requested/creating/ready state transition contract、Package C runner invocation boundary、providerKeyRef boundary、idempotency、redacted evidence shape、local defaults 与 production operation boundary 区分。",
+    "禁止：不读取 secret/kubeconfig，不连接 Kubernetes API，不执行 kubectl，不 deploy/rollout/rollback，不 build/push，不 Tencent mutation，不 Package C live，不新增 truth source，不新增 loop，不恢复 Node Portal backend，不新增兼容控制面，不进入 Ingress/external access。",
+    "复用现有 Go backend control-plane、Portal typed API、Package C state-machine/runner support、ResourceBinding ledger shape、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式。",
+    "验收：新增或更新本地 contract/local gate，证明未授权 fail closed、Portal -> backend -> Package C operation shape 可追踪、ResourceBinding state shape 正确、raw provider key/DB password/token/Tencent secret 不进入 browser storage/log/evidence/git、external access 仍 blocked。",
+    "同步 docs/active/README.md、docs/delivery/README.md、docs/history/README.md、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
   ],
   "nextLocalCodexPrompt": [
     "按 active truth 做 gap-driven execution，不新增 loop。",
-    "当前唯一 gap：Production launch Gap 01 - auth / identity / admin bootstrap plus tenant/workspace bootstrap contract。Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过，但 MedOPL 作为正式多租户 SaaS 还不能进入 external access；必须先收口 production control-plane bootstrap minimum。",
-    "目标：在本地实现/收敛 repo-native production launch bootstrap contract/local gate，覆盖 first admin identity bootstrap、tenant bootstrap、workspace seed、providerKeyRef boundary、no raw secret leakage、redacted evidence shape，并把 Portal/Go backend 当前 local defaults 与 production bootstrap 边界区分清楚。",
-    "本轮禁止读取 secret/kubeconfig，不连接 Kubernetes API，不执行 kubectl，不 deploy/rollout/rollback，不 build/push，不 Tencent mutation，不 Package C live，不新增 truth source，不新增 loop。",
-    "必须复用现有 Go backend control-plane、Portal typed API、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式；不得恢复 Node Portal backend 或新增兼容控制面。",
-    "验收：新增或更新本地 contract/local gate，证明未授权 fail closed、admin/tenant/workspace bootstrap shape 正确、raw provider key/DB password/token 不进入 browser storage/log/evidence/git、Portal -> backend bootstrap API shape 可追踪、external access 仍 blocked。",
-    "同步 docs/active/README.md、docs/delivery/README.md、docs/history/README.md、tests/fixtures/v22/goal-current.json，npm run verify 和 npm run closeout:check -- --json 必须通过，commit/push 到 origin/recovery/platform-v22-trunk。"
+    "当前唯一 gap：Production launch Gap 02: Portal -> Go backend -> Package C live operation contract。",
+    "当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability 已通过；Production launch Gap 01 first admin / tenant / workspace bootstrap contract/local gate 已在本地收口。external access / Ingress / LoadBalancer / HTTPS 仍被阻断到多租户最小上线闭环之后。",
+    "目标：在本地实现/收敛 repo-native Portal -> Go backend -> Package C live operation contract/local gate，只做 contract/local readiness，不执行 Package C live。",
+    "必须覆盖：Portal action shape、Go backend control-plane operation request shape、ResourceBinding requested/creating/ready state transition contract、Package C runner invocation boundary、providerKeyRef boundary、idempotency、redacted evidence shape、local defaults 与 production operation boundary 区分。",
+    "禁止：不读取 secret/kubeconfig，不连接 Kubernetes API，不执行 kubectl，不 deploy/rollout/rollback，不 build/push，不 Tencent mutation，不 Package C live，不新增 truth source，不新增 loop，不恢复 Node Portal backend，不新增兼容控制面，不进入 Ingress/external access。",
+    "复用现有 Go backend control-plane、Portal typed API、Package C state-machine/runner support、ResourceBinding ledger shape、tests/fixtures/v22/goal-current.json、test lane registry 和 local/future-authorized gate 模式。",
+    "验收：新增或更新本地 contract/local gate，证明未授权 fail closed、Portal -> backend -> Package C operation shape 可追踪、ResourceBinding state shape 正确、raw provider key/DB password/token/Tencent secret 不进入 browser storage/log/evidence/git、external access 仍 blocked。",
+    "同步 docs/active/README.md、docs/delivery/README.md、docs/history/README.md、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
   ],
   "production_launch_goal_gap_map": {
-    "status": "goal_gap_map_ready_no_cloud_execution",
+    "status": "gap_01_bootstrap_contract_local_gated_no_cloud_execution",
     "currentFacts": {
       "packageDPlatformControlPlaneInsideTke": "deployed",
       "inClusterHttpReachability": "preflight-passed",
@@ -7756,7 +7763,9 @@
         ".runtime/package-d-production-deploy/pdrun-20260616-004/rollback-redacted.json",
         ".runtime/package-d-service-reachability/psr-20260617-004/readonly-service-reachability-redacted.json",
         ".runtime/package-d-service-reachability/psr-20260617-004/smoke-job-manifest-redacted.json"
-      ]
+      ],
+      "productionLaunchGap01BootstrapContract": "implemented",
+      "productionLaunchGap01EvidencePath": ".runtime/production-launch-bootstrap/<runid>/bootstrap-contract-redacted.json"
     },
     "vision": {
       "product": "MedOPL production launch is a stable multi-tenant SaaS managed OPL workbench, not a temporary page trial.",
@@ -7792,9 +7801,9 @@
       {
         "id": "auth-identity-admin-bootstrap",
         "label": "auth / identity / admin bootstrap",
-        "status": "contract-only",
+        "status": "implemented",
         "evidence": [
-          "Go backend exposes /api/me and local/admin projection surfaces; no production identity provider or deterministic first-admin bootstrap evidence"
+          "production-launch-bootstrap-runner local gate proves first-admin bootstrap shape, unauthorized fail-closed and secret redaction; production identity provider execution is still future-authorized"
         ],
         "launchBlocking": true
       },
@@ -7803,7 +7812,7 @@
         "label": "tenant model",
         "status": "implemented",
         "evidence": [
-          "Go backend ent Tenant schema and tenant IDs in ResourceBinding/CloudOperation shape exist; production tenant bootstrap evidence is missing"
+          "Go backend tenant model exists and Gap 01 runner proves production tenant bootstrap shape without treating local fallback tenant IDs as production truth"
         ],
         "launchBlocking": true
       },
@@ -7812,7 +7821,7 @@
         "label": "workspace provisioning",
         "status": "contract-only",
         "evidence": [
-          "workspace schema/projections and local RC flows exist; production create/suspend/resume/delete workflow is not proven"
+          "Gap 01 runner proves workspace seed shape and providerKeyRef boundary; Package C live provisioning and workspace lifecycle remain Gap 02+"
         ],
         "launchBlocking": true
       },
@@ -7942,13 +7951,13 @@
       {
         "phase": 1,
         "name": "Production control-plane bootstrap minimum",
-        "status": "contract-only",
+        "status": "implemented",
         "requiredEvidence": [
-          "first admin identity bootstrap",
-          "tenant bootstrap",
-          "workspace seed",
-          "providerKeyRef boundary",
-          "no raw secret leakage"
+          "first admin identity bootstrap shape local gate",
+          "tenant bootstrap shape local gate",
+          "workspace seed shape local gate",
+          "providerKeyRef boundary local gate",
+          "no raw secret leakage redaction audit"
         ],
         "gaps": [
           "auth-identity-admin-bootstrap",
@@ -8031,7 +8040,7 @@
       {
         "phase": 1,
         "name": "Production control-plane bootstrap minimum",
-        "status": "contract-only",
+        "status": "implemented",
         "gaps": [
           "auth-identity-admin-bootstrap",
           "tenant-model",
@@ -8080,12 +8089,12 @@
       }
     ],
     "nextUniqueGap": {
-      "id": "production-launch-gap-01-auth-tenant-workspace-bootstrap-contract",
-      "title": "Production launch Gap 01: auth / identity / admin bootstrap plus tenant/workspace bootstrap contract",
-      "reason": "Package D is deployed and reachable inside TKE, but formal SaaS launch cannot expose Portal before production identity, first admin, tenant and workspace bootstrap boundaries are repo-native and testable.",
-      "boundary": "local contract and fixture readiness only; no kubeconfig, kubectl, deploy, build/push, Tencent mutation or Package C live",
-      "recommendedEntrypoint": "local Codex implementation of repo-native control-plane bootstrap contract/gate",
-      "evidencePath": ".runtime/package-d-production-launch/<runid>/launch-gap-01-bootstrap-redacted.json"
+      "id": "production-launch-gap-02-portal-backend-package-c-live-operation-contract",
+      "title": "Production launch Gap 02: Portal -> Go backend -> Package C live operation contract",
+      "reason": "Gap 01 has a repo-native contract/local gate, but formal SaaS launch still needs Portal-triggered Package C production operation wiring before ledger, billing/audit/quota, lifecycle, canary/rollback or external access.",
+      "boundary": "local contract and fixture readiness only; no secret/kubeconfig, no kubectl, no deploy, no Tencent mutation, no Package C live execution",
+      "recommendedEntrypoint": "local Codex implementation of repo-native Portal -> Go backend -> Package C operation contract/gate",
+      "evidencePath": ".runtime/production-launch-package-c-operation/<runid>/operation-contract-redacted.json"
     },
     "externalAccessPolicy": {
       "status": "blocked_before_multi_tenant_minimum_launch_closure",
@@ -8098,6 +8107,33 @@
         "LoadBalancer mutation",
         "DNS/TLS mutation",
         "public user access claim"
+      ]
+    },
+    "gap01BootstrapContract": {
+      "status": "implemented",
+      "runnerCommand": "node tests/support/cloud-prework/production-launch-bootstrap-runner.js --mode contract-local-gate --run-id <runid> --authorized 1",
+      "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs",
+      "evidencePath": ".runtime/production-launch-bootstrap/<runid>/bootstrap-contract-redacted.json",
+      "proves": [
+        "unauthorized fail closed",
+        "first admin bootstrap shape",
+        "tenant bootstrap shape",
+        "workspace seed shape",
+        "providerKeyRef-only public boundary",
+        "raw provider key, DB password, token and Portal admin password redaction",
+        "Portal typed API -> Go backend contract-only bootstrap route traceability",
+        "local RC fallback IDs are not production bootstrap truth",
+        "external access remains blocked"
+      ],
+      "nonGoals": [
+        "no secret or kubeconfig read",
+        "no Kubernetes API or kubectl",
+        "no deploy/rollout/rollback",
+        "no build/push",
+        "no Tencent mutation",
+        "no Package C live",
+        "no Ingress or public access",
+        "no full billing/quota/workspace lifecycle implementation"
       ]
     }
   }
