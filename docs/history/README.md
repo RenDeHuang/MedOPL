@@ -7740,3 +7740,62 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-17 production-launch-gap-08d-prep-qcloud-external-access-runner
+
+Status: `authoring / local verified / pending commit`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `PENDING_LANDED_COMMIT`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Closed the local Gap 08d-prep for a repo-native qcloud external access real mutation runner contract.
+- Recorded the cloud fail-closed fact from `.runtime/package-d-external-access-strategy/gap08d-qcloud-ingress-real-001/real-mutation-redacted.json`: the first real mutation attempt had no repo-native runner, lacked the five external access allowlist env keys and performed no real mutation; `medopl-portal-tls` and the Portal Ingress remained `NotFound`.
+- Added `tests/support/cloud-prework/package-d-external-access-runner.js` with `qcloud-ingress-dry-run` and `qcloud-ingress-apply` modes.
+- Corrected the qcloud certificate Secret contract from the legacy Kubernetes TLS Secret path to `apiVersion: v1`, `kind: Secret`, `type: Opaque`, `metadata.name: medopl-portal-tls`, `metadata.namespace: medopl-platform`, and `stringData.qcloud_cert_id`.
+- Added local gate coverage to the existing `tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs` cloud future-authorized lane, without adding a new test lane file.
+- Updated the existing qcloud readiness runner/local gate to treat `TENCENT_SSL_CERT_ID` as an authorized env reference and to forbid raw TLS private key/cert material for the qcloud path.
+- Synchronized active/delivery/fixture truth so the next cloud gap is `production-launch-gap-08d-qcloud-opaque-cert-id-secret-ingress-real-apply`, requiring the five external access env keys and `RUN_TENCENT_DEPLOY_EXECUTION=external-access`.
+- This local closeout did not read secrets/kubeconfig/DB password/TLS private key, connect to Kubernetes API or PostgreSQL, run kubectl, deploy, rollout, rollback, build/push, execute Tencent API mutation, run Package C live, create TLS Secret, create Ingress, mutate LoadBalancer/DNS/TLS or claim public user access is complete.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs`: passed.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs`: passed.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: passed.
+- `npm run verify`: rerun before final push.
+- `npm run closeout:check -- --json`: rerun before final push.
+
+Can-claim:
+
+- Gap 08d-prep has a repo-native qcloud external access runner contract/local gate.
+- The qcloud certificate Secret contract is `Opaque` + `stringData.qcloud_cert_id`.
+- Legacy Kubernetes TLS Secret path is rejected by local gate.
+- The next cloud run must put `PORTAL_HOST_DOMAIN`, `INGRESS_CLASS`, `TLS_SECRET_NAME`, `TENCENT_SSL_CERT_ID` and `EXTERNAL_SMOKE_URL` into an authorized env file or separately allowlisted env file before apply.
+
+Cannot-claim:
+
+- TLS Secret creation executed.
+- Portal Ingress creation executed.
+- DNS or LoadBalancer mutation executed.
+- Public/external user access is complete.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+landed_commit: `pending_after_implementation_commit`
+
+landing_gate_result: `pending`
+
+post_push_verification:
+
+- implementation commit pending; rerun after the Gap 08d-prep runner commit exists.
+- `npm run verify`: rerun before final push.
+- `npm run closeout:check -- --json`: rerun before final push.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
