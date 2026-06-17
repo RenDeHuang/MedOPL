@@ -7579,6 +7579,7 @@ Scope:
 - The contract records required production entry parameters: `PORTAL_HOST_DOMAIN`, `INGRESS_CLASS`, `TLS_SECRET_NAME_OR_CERT_MANAGER_ISSUER`, `ALLOWED_INGRESS_ANNOTATIONS`, `FORBIDDEN_INGRESS_ANNOTATIONS`, `EXTERNAL_SMOKE_URL` and `ROLLBACK_DELETE_INGRESS_PLAN`.
 - Added contract-only Go routes `POST /api/v22/production/external-access-strategy/plan` and `POST /api/v22/production/external-access-strategy/commit`, plus Portal typed API shape in `services/portal/frontend/src/api/portal/external-access-strategy.ts`. These routes fail closed and do not connect to PostgreSQL or Kubernetes, execute kubectl, mutate Ingress/LoadBalancer/DNS/TLS, call Package C live, mutate Tencent resources or claim public access complete.
 - Evidence sink is `.runtime/package-d-external-access-strategy/<runid>/strategy-contract-redacted.json`.
+- Merged the Gap 07 local gate assertions into the existing cloud cleanup local gate so the `cloud-future-authorized` lane stays within the repo bloat budget while preserving the external access strategy contract coverage.
 - The next unique gap is `production-launch-gap-08-external-access-dry-run-authorization`; this requires separate cloud authorization and is limited to server-side dry-run / authorization evidence for the Ingress + HTTPS/domain candidate.
 - This closeout did not read secrets/kubeconfig/DB password, connect to Kubernetes API or PostgreSQL, run kubectl, deploy, rollout, rollback, build/push, execute Tencent mutation, run Package C live, restore Node Portal backend, execute Ingress/LoadBalancer/DNS/TLS mutation or claim public user access is complete.
 
@@ -7609,13 +7610,13 @@ Cannot-claim:
 
 next_cursor: `real-cloud-authorization-boundary`
 
-landed_commit: `c75af8a4112e20e4ad1ff88afeeb578b7d87fd7e`
+landed_commit: `d3cec18b31fa2f1f6c81a9ca1a5a1c8100420cc6`
 
 landing_gate_result: `passed / ff-only landed / pushed`
 
 post_push_verification:
 
-- `c75af8a4112e20e4ad1ff88afeeb578b7d87fd7e` remains reachable from `origin/recovery/platform-v22-trunk` after the Gap 07 implementation commit.
+- `d3cec18b31fa2f1f6c81a9ca1a5a1c8100420cc6` remains reachable from `origin/recovery/platform-v22-trunk` after the Gap 07 implementation and gate lane merge commits.
 - `npm run verify`: rerun before final push.
 - `npm run closeout:check -- --json`: rerun before final push.
 
