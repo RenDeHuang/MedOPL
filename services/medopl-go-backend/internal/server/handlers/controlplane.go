@@ -651,6 +651,16 @@ func productionExternalAccessStrategyContractPayload(errorCode string) gin.H {
 			"allowedAnnotationBoundary":   "allowlisted annotations only",
 			"forbiddenAnnotationBoundary": "server-snippet/configuration-snippet/auth-snippet and arbitrary annotations are forbidden",
 		},
+		"qcloudTlsReadiness": gin.H{
+			"status":                    "contract-only",
+			"portalHost":                "portal.medopl.cn",
+			"ingressClass":              "qcloud",
+			"tlsSecretName":             "medopl-portal-tls",
+			"externalSmokeUrl":          "https://portal.medopl.cn/",
+			"certManagerRecommendedNow": false,
+			"recommendedTlsPath":        "tencent_ssl_or_manual_certificate_material_to_authorized_kubernetes_tls_secret",
+			"evidencePath":              ".runtime/package-d-external-access-strategy/<runid>/qcloud-tls-readiness-contract-redacted.json",
+		},
 		"allowedOperations": []string{
 			"local strategy contract generation",
 			"redacted authorization pack generation",

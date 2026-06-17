@@ -7623,3 +7623,64 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-17 production-launch-gap-08b-qcloud-tls-readiness-contract
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `9bf7ae4a8683e08a67b03695c6eb44bd0f512b53`
+
+Model: `gpt-5.4`
+
+Scope:
+
+- Closed Gap 08a external access prerequisites discovery into active/delivery/fixture truth using cloud evidence `.runtime/package-d-external-access-strategy/gap08a-prereq-discovery-001/prereq-discovery-redacted.json`.
+- Recorded discovered target shape: cluster context `cls-fi097sy4`, namespace `medopl-platform`, `portal-frontend` Service `172.21.5.91:8080/TCP`, IngressClass `qcloud` with controller `cloud.tencent.com/ingress-controller`, no cert-manager, no `kubernetes.io/tls` Secret in `medopl-platform`, and no `medopl-portal-tls`.
+- Extended the single repo-native external access runner with `qcloud-tls-readiness-contract-local-gate`: `node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode qcloud-tls-readiness-contract-local-gate --run-id <runid> --authorized 1`.
+- Fixed the Gap 08b contract parameters to `PORTAL_HOST_DOMAIN=portal.medopl.cn`, `INGRESS_CLASS=qcloud`, `TLS_SECRET_NAME=medopl-portal-tls` and `EXTERNAL_SMOKE_URL=https://portal.medopl.cn/`.
+- Recorded the TLS strategy: cert-manager is not the current recommended path; use Tencent Cloud SSL certificate or manually issued certificate material through a separately authorized Kubernetes TLS Secret path.
+- Added local gate coverage for qcloud Ingress strategy, TLS Secret readiness, TLS cert/key handling boundary, no plaintext cert private key in repo/evidence/logs, Ingress manifest plan boundary, DNS readiness, rollback/delete ingress plan, external smoke plan, stop conditions and redaction evidence.
+- Updated Portal typed API and Go backend fail-closed payload so the qcloud/TLS readiness boundary is visible from the control-plane contract without enabling execution.
+- The next unique gap is `production-launch-gap-08c-qcloud-ingress-tls-server-side-dry-run`: first TLS Secret creation server-side dry-run or manifest validation, then Ingress server-side dry-run, with no real mutation.
+- This closeout did not read secrets/kubeconfig/DB password/TLS private key, connect to Kubernetes API or PostgreSQL, run kubectl, deploy, rollout, rollback, build/push, execute Tencent mutation, run Package C live, create TLS Secret, create Ingress, mutate LoadBalancer/DNS/TLS or claim public user access is complete.
+
+Verification:
+
+- `node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs`: passed.
+- `go test ./internal/server/handlers` from `services/medopl-go-backend`: passed.
+- `npm --prefix services/portal/frontend run typecheck`: passed.
+- `npm run verify`: rerun before final push.
+- `npm run closeout:check -- --json`: rerun before final push.
+
+Can-claim:
+
+- Gap 08a discovery facts are recorded as redacted cloud evidence.
+- Gap 08b has a repo-native qcloud Ingress + TLS Secret readiness contract/local gate.
+- The fixed qcloud/TLS parameters and TLS material redaction boundary are locally specified.
+- Portal typed API and Go backend route shape expose the qcloud/TLS readiness boundary while failing closed.
+- External/public access remains not exposed.
+
+Cannot-claim:
+
+- TLS Secret creation executed.
+- Ingress server-side dry-run executed.
+- Ingress, LoadBalancer, DNS or TLS mutation executed.
+- Public/external user access is complete.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+landed_commit: `pending-final-hash`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `pending-final-hash` remains reachable from `origin/recovery/platform-v22-trunk` after the Gap 08b implementation commit.
+- `npm run verify`: rerun before final push.
+- `npm run closeout:check -- --json`: rerun before final push.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`

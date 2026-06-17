@@ -11,6 +11,17 @@ export interface ExternalAccessStrategyInput {
   providerKeyRef: string;
 }
 
+export interface QcloudTlsReadinessContract {
+  status: "contract-only";
+  portalHost: "portal.medopl.cn";
+  ingressClass: "qcloud";
+  tlsSecretName: "medopl-portal-tls";
+  externalSmokeUrl: "https://portal.medopl.cn/";
+  certManagerRecommendedNow: false;
+  recommendedTlsPath: "tencent_ssl_or_manual_certificate_material_to_authorized_kubernetes_tls_secret";
+  evidencePath: ".runtime/package-d-external-access-strategy/<runid>/qcloud-tls-readiness-contract-redacted.json";
+}
+
 export interface ExternalAccessStrategyContractPayload {
   ok: false;
   contract: "production_launch_gap_07_external_access_strategy_contract_local_gate";
@@ -44,6 +55,7 @@ export interface ExternalAccessStrategyContractPayload {
     publicFields: Array<"provider" | "providerKeyRef" | "boundStatus">;
     rawSecretBackendOnly: true;
   };
+  qcloudTlsReadiness?: QcloudTlsReadinessContract;
 }
 
 export async function planExternalAccessStrategy(input: ExternalAccessStrategyInput) {

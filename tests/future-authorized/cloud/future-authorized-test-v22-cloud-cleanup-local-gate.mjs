@@ -15,8 +15,11 @@ import {
 } from "../../support/cloud-prework/production-launch-canary-runner.js";
 import {
   PACKAGE_D_EXTERNAL_ACCESS_STRATEGY_COMMAND,
+  PACKAGE_D_QCLOUD_TLS_READINESS_COMMAND,
   buildPackageDExternalAccessStrategyContract,
+  buildPackageDQcloudTlsReadinessContract,
   runPackageDExternalAccessStrategyContract,
+  runPackageDQcloudTlsReadinessContract,
 } from "../../support/cloud-prework/package-d-external-access-strategy-runner.js";
 
 export function evaluateCloudCleanupLocalGate({
@@ -170,6 +173,12 @@ function assertNoExternalAccessSensitiveText(text = "", label = "text") {
     "bearerToken",
     "localStorage.setItem",
     "sessionStorage.setItem",
+    "-----BEGIN CERTIFICATE-----",
+    "-----BEGIN PRIVATE KEY-----",
+    "tls-cert-that-must-not-leak",
+    "tls-private-key-that-must-not-leak",
+    "\"tlsCertificatePem\":",
+    "\"tlsPrivateKeyPem\":",
     "kubectl apply",
     "kubectl delete",
     "CreateLoadBalancer",
@@ -455,6 +464,89 @@ try {
   assert.equal(evidence.redactionAudit.tencentSecretExposed, false, "external_access_strategy_evidence_hides_tencent_secret");
   assert.equal(evidence.nextGap.id, "production-launch-gap-08-external-access-dry-run-authorization", "external_access_strategy_next_gap");
   assertNoExternalAccessSensitiveText(JSON.stringify(evidence), "external_access_strategy_evidence");
+
+  const readinessInput = {
+    discoveryEvidencePath: ".runtime/package-d-external-access-strategy/gap08a-prereq-discovery-001/prereq-discovery-redacted.json",
+    portalHost: "portal.medopl.cn",
+    ingressClass: "qcloud",
+    ingressController: "cloud.tencent.com/ingress-controller",
+    namespace: "medopl-platform",
+    serviceName: "portal-frontend",
+    serviceClusterIP: "172.21.5.91",
+    servicePort: 8080,
+    tlsSecretName: "medopl-portal-tls",
+    certManagerAvailable: false,
+    kubernetesTlsSecretPresent: false,
+    portalTlsSecretPresent: false,
+    externalSmokeUrl: "https://portal.medopl.cn/",
+    providerKeyRef: "gflab:workspace-production-alpha:refonly001122",
+    tlsCertificatePem: "-----BEGIN CERTIFICATE----- tls-cert-that-must-not-leak -----END CERTIFICATE-----",
+    tlsPrivateKeyPem: "-----BEGIN PRIVATE KEY----- tls-private-key-that-must-not-leak -----END PRIVATE KEY-----",
+    kubeconfig: "kubeconfig-must-not-leak",
+    dbPassword: "postgres-password-that-must-not-leak",
+    tencent: {
+      SecretId: "tencent-secret-id-that-must-not-leak",
+      SecretKey: "tencent-secret-key-that-must-not-leak",
+    },
+  };
+
+  assert.equal(
+    PACKAGE_D_QCLOUD_TLS_READINESS_COMMAND,
+    "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode qcloud-tls-readiness-contract-local-gate --run-id <runid> --authorized 1",
+    "qcloud_tls_readiness_runner_must_publish_single_repo_native_command",
+  );
+  await assert.rejects(
+    () => buildPackageDQcloudTlsReadinessContract({ runId, evidenceDir, authorized: false, readinessInput }),
+    /package_d_qcloud_tls_readiness_not_authorized/,
+    "qcloud_tls_readiness_missing_authorization_must_fail_closed",
+  );
+  await assert.rejects(
+    () => buildPackageDQcloudTlsReadinessContract({
+      runId,
+      evidenceDir,
+      authorized: true,
+      readinessInput: { ...readinessInput, ingressClass: "nginx" },
+    }),
+    /package_d_qcloud_tls_readiness_ingress_class_must_be_qcloud/,
+    "qcloud_tls_readiness_non_qcloud_must_fail_closed",
+  );
+
+  const readiness = await buildPackageDQcloudTlsReadinessContract({ runId, evidenceDir, authorized: true, readinessInput });
+  assert.equal(readiness.contract, "production_launch_gap_08b_qcloud_tls_readiness_contract_local_gate", "qcloud_tls_readiness_contract_name");
+  assert.equal(readiness.mode, "qcloud-tls-readiness-contract-local-gate", "qcloud_tls_readiness_mode");
+  assert.equal(readiness.target.portalHost, "portal.medopl.cn", "qcloud_tls_portal_host");
+  assert.equal(readiness.target.ingressClass, "qcloud", "qcloud_tls_ingress_class");
+  assert.equal(readiness.target.tlsSecretName, "medopl-portal-tls", "qcloud_tls_secret_name");
+  assert.equal(readiness.target.externalSmokeUrl, "https://portal.medopl.cn/", "qcloud_tls_smoke_url");
+  assert.equal(readiness.discovery.ingressClassController, "cloud.tencent.com/ingress-controller", "qcloud_tls_controller");
+  assert.equal(readiness.qcloudIngressStrategy.recommended, true, "qcloud_tls_qcloud_recommended");
+  assert.equal(readiness.tlsSecretReadiness.certManagerRecommendedNow, false, "qcloud_tls_cert_manager_not_recommended");
+  assert.equal(readiness.tlsSecretReadiness.recommendedTlsPath, "tencent_ssl_or_manual_certificate_material_to_authorized_kubernetes_tls_secret", "qcloud_tls_recommended_path");
+  assert.equal(readiness.tlsMaterialBoundary.rawTlsMaterialAllowedInGit, false, "qcloud_tls_no_git_material");
+  assert.equal(readiness.tlsMaterialBoundary.rawTlsMaterialAllowedInEvidence, false, "qcloud_tls_no_evidence_material");
+  assert.equal(readiness.ingressManifestPlan.kind, "Ingress", "qcloud_tls_ingress_manifest_kind");
+  assert.equal(readiness.ingressManifestPlan.serverSideDryRunOnlyNext, true, "qcloud_tls_ingress_dry_run_only");
+  assert.equal(readiness.dnsReadiness.requiredHost, "portal.medopl.cn", "qcloud_tls_dns_host");
+  assert.equal(readiness.rollbackCleanupPlan.deleteIngressPlan.required, true, "qcloud_tls_delete_ingress_required");
+  assert.deepEqual(readiness.nextGap.sequence, [
+    "TLS Secret creation server-side dry-run or manifest validation",
+    "Ingress server-side dry-run",
+    "no real mutation",
+  ], "qcloud_tls_next_gap_sequence");
+  assert.equal(readiness.boundary.kubernetesAccessAllowed, false, "qcloud_tls_no_kubernetes_access");
+  assert.equal(readiness.boundary.tlsSecretMutationAllowedNow, false, "qcloud_tls_no_secret_mutation");
+  assert.equal(readiness.boundary.ingressMutationAllowedNow, false, "qcloud_tls_no_ingress_mutation");
+  assert.equal(readiness.boundary.publicAccessClaimAllowedNow, false, "qcloud_tls_no_public_access_claim");
+  assertNoExternalAccessSensitiveText(JSON.stringify(readiness), "qcloud_tls_readiness_plan");
+
+  const readinessSummary = await runPackageDQcloudTlsReadinessContract({ runId, evidenceDir, authorized: true, readinessInput });
+  assert.equal(readinessSummary.realExecutionReady, false, "qcloud_tls_real_execution_ready_false");
+  assert.equal(readinessSummary.evidencePath.endsWith("qcloud-tls-readiness-contract-redacted.json"), true, "qcloud_tls_evidence_file");
+  const readinessEvidence = JSON.parse(await readFile(readinessSummary.evidencePath, "utf8"));
+  assert.equal(readinessEvidence.redactionAudit.tlsCertificateMaterialExposed, false, "qcloud_tls_evidence_hides_cert_material");
+  assert.equal(readinessEvidence.redactionAudit.tlsPrivateKeyMaterialExposed, false, "qcloud_tls_evidence_hides_key_material");
+  assert.equal(readinessEvidence.nextGap.id, "production-launch-gap-08c-qcloud-ingress-tls-server-side-dry-run", "qcloud_tls_next_gap_id");
+  assertNoExternalAccessSensitiveText(JSON.stringify(readinessEvidence), "qcloud_tls_readiness_evidence");
 } finally {
   await rm(externalAccessEvidenceRoot, { recursive: true, force: true });
 }
@@ -467,4 +559,5 @@ console.log(JSON.stringify({
   productionWorkspaceLifecycleContract: true,
   productionCanaryRollbackCleanupContract: true,
   packageDExternalAccessStrategyContract: true,
+  packageDQcloudTlsReadinessContract: true,
 }, null, 2));
