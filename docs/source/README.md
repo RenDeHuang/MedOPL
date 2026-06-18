@@ -5,6 +5,8 @@ Purpose: `source_surface_truth_view`
 State: `hard_compacted_view`
 Machine boundary: 本文是 source surface 视角入口，不是第二份 current truth。实际允许写入范围仍由 `AGENTS.md`、contracts、branch manifest 和 landing gate 裁定；authoring branch 必须先按当前 truth / gap / eval 声明写入范围。
 
+当前被 tests/runner 直接消费的大型机器 owner payload 已拆到 root `contracts/**`；`tests/fixtures/v22/goal-current.json` 只保 machine cursor 与这些合同的引用字段，不再充当巨型 owner payload 仓库。
+
 ## Active Source Surface
 
 当前 v22 active service surface：

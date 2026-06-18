@@ -40,6 +40,8 @@ README files are human truth, not machine APIs. Tests and workflow gates may ver
 
 机器判断优先使用 `tests/fixtures/v22/goal-current.json`、`tests/fixtures/v22/agent-verify-manifest.json`、`tests/**`、source code and runner behavior。Markdown 文档负责解释事实与边界；如果需要可执行判断，必须把判断下沉到 JSON fixture、test registry、source contract 或 explicit gate。
 
+当 machine cursor 需要引用大型 owner payload 时，允许通过 root `contracts/**` 持有被 tests/source/runner 直接消费的 JSON 合同；`goal-current.json` 应保引用而不是复制大对象。
+
 History 中的旧路线只能作为 provenance，不得反向恢复 active owner、default verify、compat alias 或 product mainline。
 
 ## Repo-Native Change Package Policy

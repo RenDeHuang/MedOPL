@@ -143,6 +143,9 @@ const DEPLOY_RUNNER_PLACEMENT_PLAN = Object.freeze({
   realExecutionReady: false,
 });
 const currentGoal = JSON.parse(readFileSync(new URL("../../fixtures/v22/goal-current.json", import.meta.url), "utf8"));
+const packageDDeployReadinessContract = JSON.parse(
+  readFileSync(new URL("../../../contracts/medopl-package-d-deploy-readiness.json", import.meta.url), "utf8"),
+);
 
 const PACKAGE_D_SECRET_KEY_LIST = Object.freeze([
   "RUN_TENCENT_DEPLOY_EXECUTION",
@@ -930,7 +933,12 @@ assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.vpcCvmRunnerFallback.forbiddenNow,
   "kubectl",
 ], "vpc_cvm_runner_fallback_must_remain_non_executing");
 assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.realExecutionReady, false, "deploy_runner_placement_plan_must_not_mark_real_execution_ready");
-const currentPackageDPlan = currentGoal.package_d_deploy_readiness_plan;
+assert.equal(
+  currentGoal.package_d_deploy_readiness_plan_ref?.contract_path,
+  "contracts/medopl-package-d-deploy-readiness.json",
+  "current_goal_must_point_to_package_d_contract",
+);
+const currentPackageDPlan = packageDDeployReadinessContract.package_d_deploy_readiness_plan;
 assert.equal(currentPackageDPlan?.executionEnvironment, "tke_in_cluster_platform_runner_preferred", "deploy_runner_execution_environment_mismatch:top_level");
 assert.deepEqual(currentPackageDPlan?.deployRunnerPlacementPlan, DEPLOY_RUNNER_PLACEMENT_PLAN, "deploy_runner_goal_placement_plan_mismatch:top_level");
 assert.equal(currentPackageDPlan?.deployRunnerPlacementPlan?.realExecutionReady, false, "deploy_runner_goal_real_execution_must_stay_false:top_level");

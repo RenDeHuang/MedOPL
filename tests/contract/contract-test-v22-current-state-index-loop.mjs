@@ -17,6 +17,8 @@ const files = {
   testsReadme: "tests/README.md",
   manifest: "tests/fixtures/v22/agent-verify-manifest.json",
   current: "tests/fixtures/v22/goal-current.json",
+  packageDContract: "contracts/medopl-package-d-deploy-readiness.json",
+  productionLaunchContract: "contracts/medopl-production-launch-gap-map.json",
 };
 
 const indexLoopGate = "node tests/contract/contract-test-v22-current-state-index-loop.mjs";
@@ -64,6 +66,8 @@ const [
   testsReadme,
   manifest,
   current,
+  packageDContract,
+  productionLaunchContract,
 ] = await Promise.all([
   readRepoFile(files.docsIndex),
   readRepoFile(files.active),
@@ -74,6 +78,8 @@ const [
   readRepoFile(files.testsReadme),
   readJson(files.manifest),
   readJson(files.current),
+  readJson(files.packageDContract),
+  readJson(files.productionLaunchContract),
 ]);
 
 const closeoutCheck = assertLandingCloseoutCheckPasses();
@@ -147,6 +153,46 @@ assert.equal(latestCloseout.next_cursor, currentCursor, "latest_closeout_next_cu
 assert(Array.isArray(latestCloseout.post_push_verification), "latest_closeout_post_push_verification_must_be_array");
 assert(latestCloseout.post_push_verification.length > 0, "latest_closeout_post_push_verification_required");
 assert.equal(current.release_readiness_state.cursor_eligible, false, "release_readiness_must_not_be_cursor_eligible");
+assert.equal(
+  current.package_d_deploy_readiness_plan_ref?.contract_path,
+  files.packageDContract,
+  "current_must_point_to_package_d_contract",
+);
+assert.equal(
+  current.production_launch_goal_gap_map_ref?.contract_path,
+  files.productionLaunchContract,
+  "current_must_point_to_production_launch_contract",
+);
+assert.equal(
+  current.package_d_deploy_readiness_plan_ref?.owner_field,
+  "package_d_deploy_readiness_plan",
+  "package_d_contract_owner_field_mismatch",
+);
+assert.equal(
+  current.production_launch_goal_gap_map_ref?.owner_field,
+  "production_launch_goal_gap_map",
+  "production_launch_contract_owner_field_mismatch",
+);
+assert.equal(
+  packageDContract.schema_version,
+  current.package_d_deploy_readiness_plan_ref?.schema_version,
+  "package_d_contract_schema_mismatch",
+);
+assert.equal(
+  productionLaunchContract.schema_version,
+  current.production_launch_goal_gap_map_ref?.schema_version,
+  "production_launch_contract_schema_mismatch",
+);
+assert.equal(
+  Object.hasOwn(packageDContract, "package_d_deploy_readiness_plan"),
+  true,
+  "package_d_contract_payload_missing",
+);
+assert.equal(
+  Object.hasOwn(productionLaunchContract, "production_launch_goal_gap_map"),
+  true,
+  "production_launch_contract_payload_missing",
+);
 for (const duplicatedPayload of [
   "package_d_deploy_readiness_plan",
   "production_launch_goal_gap_map",
@@ -174,6 +220,16 @@ for (const duplicatedPayload of [
 assert(
   serializedLineCount(current.current_leaf) <= 140,
   `current_leaf_must_remain_metadata_sized:${serializedLineCount(current.current_leaf)}`,
+);
+assert.equal(
+  Object.hasOwn(current, "package_d_deploy_readiness_plan"),
+  false,
+  "current_must_not_embed_package_d_contract",
+);
+assert.equal(
+  Object.hasOwn(current, "production_launch_goal_gap_map"),
+  false,
+  "current_must_not_embed_production_launch_contract",
 );
 assert.equal(closeoutCheck.lastLandedCommit, latestLandedCommit, "closeout_check_commit_mismatch");
 assert.equal(closeoutCheck.lastLandedBranch, latestLandedBranch, "closeout_check_branch_mismatch");
