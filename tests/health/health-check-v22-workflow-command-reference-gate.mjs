@@ -32,6 +32,11 @@ assert.deepEqual(missing, [], `current_commands_reference_missing_local_targets:
 assert.deepEqual(await findMissingLocalTestCommandReferences(), missing, "legacy_test_command_reference_alias_must_match_local_command_reference_gate");
 
 const workflowSource = await readFile(path.join(repoRoot, "scripts/v22-workflow-gate.mjs"), "utf8");
+const workflowModuleSources = await Promise.all([
+  "scripts/workflow-gate/command-reference.mjs",
+  "scripts/workflow-gate/report.mjs",
+].map((repoPath) => readFile(path.join(repoRoot, repoPath), "utf8")));
+const combinedWorkflowSource = [workflowSource, ...workflowModuleSources].join("\n");
 for (const expected of [
   "findMissingLocalCommandReferences",
   "findMissingLocalTestCommandReferences",
@@ -40,7 +45,7 @@ for (const expected of [
   "package_script_missing",
   "node_entry_missing",
 ]) {
-  assert(workflowSource.includes(expected), `workflow_gate_reference_integrity_source_missing:${expected}`);
+  assert(combinedWorkflowSource.includes(expected), `workflow_gate_reference_integrity_source_missing:${expected}`);
 }
 
 for (const expected of [

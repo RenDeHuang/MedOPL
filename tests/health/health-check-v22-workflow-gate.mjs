@@ -13,6 +13,13 @@ import {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
+const workflowModuleFiles = [
+  "scripts/workflow-gate/git-diff.mjs",
+  "scripts/workflow-gate/policy.mjs",
+  "scripts/workflow-gate/change-package.mjs",
+  "scripts/workflow-gate/command-reference.mjs",
+  "scripts/workflow-gate/report.mjs",
+];
 
 function runGate(args) {
   return spawnSync(process.execPath, ["scripts/v22-workflow-gate.mjs", ...args], {
@@ -361,6 +368,24 @@ assert.equal(checkpointBlocked.checks.remoteNoToken.ok, false, "checkpoint_must_
 
 const gateSource = await readFile(path.join(repoRoot, "scripts/v22-workflow-gate.mjs"), "utf8");
 const workflowSmokeSource = await readFile(fileURLToPath(import.meta.url), "utf8");
+const gateLineCount = gateSource.trimEnd().split("\n").length;
+assert(gateLineCount < 400, `workflow_gate_cli_must_be_thin:${gateLineCount}`);
+assertIncludesAll(gateSource, [
+  "from \"./workflow-gate/git-diff.mjs\"",
+  "from \"./workflow-gate/policy.mjs\"",
+  "from \"./workflow-gate/change-package.mjs\"",
+  "from \"./workflow-gate/command-reference.mjs\"",
+  "from \"./workflow-gate/report.mjs\"",
+  "export {",
+  "findMissingLocalCommandReferences",
+  "evaluateReview",
+  "evaluateCheckpoint",
+], "workflow_gate_cli_split_source");
+for (const repoPath of workflowModuleFiles) {
+  await access(path.join(repoRoot, repoPath)).catch((error) => {
+    throw new Error(`workflow_gate_split_module_missing:${repoPath}:${error.message}`);
+  });
+}
 assertNotIncludesAny(workflowSmokeSource, [
   ["deploy/tke-package", "/values.yaml"].join(""),
 ], "workflow_gate_smoke_source");
@@ -383,6 +408,7 @@ console.log(JSON.stringify({
     "start_template_stage_docs_change_package_eval_commands",
     "review_forbidden_paths_secret_like_paths_service_and_spec_eval_updates",
     "checkpoint_trunk_clean_ahead_ssh_token_free_remote",
+    "thin_cli_with_split_modules_and_compatible_exports",
     "no_secret_file_read_no_push_build_kubectl_live_test",
   ],
 }, null, 2));
