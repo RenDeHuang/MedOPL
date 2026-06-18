@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. MedOPL Portal external access remains incomplete: portal-frontend-edge NodePort direct HTTP is 200, DNS portal.medopl.cn points to the qcloud CLB, TLS verification passes, Ingress is Ready=True, and qcloud console reports backend 10.66.0.42:30336 healthy, but the qcloud CLB lb-b33auprw still returns stgw 504. K8s-visible Ingress/Service shape now matches the working OPL-Webui entry closely; OPL-Webui HTTPS 200 is on lb-lhj3bgii, while the Portal failed LB has already gone through ClusterIP backend, NodePort backend, TkeServiceConfig add/remove and health-check annotation changes. Continuing to repair lb-b33auprw has low expected yield; directly reusing the OPL-Webui CLB would mix historical OPL-Webui and MedOPL Portal edge ownership. External/public user access remains not complete. The current unique gap is production-launch-gap-08n-medopl-shared-edge-clb-strategy: implement repo-native shared edge CLB strategy/local gate and authorization pack with explicit no-compat cleanup policy.",
+  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. MedOPL Portal external access remains incomplete: NodePort direct and CLB-like header matrix requests return HTTP 200, Portal Pod access logs show those NodePort requests as 200, and qcloud CLB health checks reach the Pod as HEAD / HTTP/1.1 user-agent clb-healthcheck with 200. DNS/TLS/Ingress/edge Service/Endpoint/Pod readiness are not the active blocker. The current Portal CLB lb-pwv9zgky still returns HTTPS 504 stgw while working OPL-Webui CLB lb-lhj3bgii returns HTTPS 200. The issue is concentrated in the Tencent/qcloud CLB listener, rule, target, health, security group or data-plane layer. The current unique gap is production-launch-gap-08o-tencent-clb-readonly-diagnostics: implement repo-native Tencent CLB read-only diagnostics runner/local gate for comparing failing Portal CLB with working OPL-Webui CLB without reading secrets or calling Tencent API locally.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -10568,15 +10568,15 @@
   ],
   "nextAuthorizationPrompt": {
     "target": "cloud-codex",
-    "runIdHint": "gap08n-shared-edge-dry-run-001",
-    "prompt": "按 active truth 做 gap-driven execution，不新增 loop。\n\n当前唯一 gap：Production launch Gap 08n-1: MedOPL shared edge CLB dry-run / creation strategy。\n\n当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability passed。portal-frontend-edge NodePort direct HTTP 200；DNS portal.medopl.cn 已指向 qcloud CLB；TLS 校验通过；Ingress Ready=True；qcloud CLB lb-b33auprw 仍返回 stgw 504；CLB backend 10.66.0.42:30336 控制台 healthy。K8s-visible Ingress/Service 与 working OPL-Webui 基本一致；OPL-Webui working CLB lb-lhj3bgii HTTPS 200。Portal 失败 LB lb-b33auprw 已经历 ClusterIP backend、NodePort backend、TkeServiceConfig add/remove、health-check annotation 等多轮变更后仍 504，继续修该 LB 收益低。直接复用 OPL-Webui CLB 可能短期可用，但不适合作为正式稳定上线架构。\n\n本地 Gap 08n-prep 已收口：repo-native shared edge strategy local gate 已实现。单一入口：\nnode tests/support/cloud-prework/package-d-external-access-strategy-runner.js \\\n  --mode shared-edge-strategy-contract-local-gate \\\n  --run-id <runid> \\\n  --authorized 1\n\n推荐长期策略：建立或指定 MedOPL shared edge CLB 作为正式生产 edge，承载 portal.medopl.cn -> portal-frontend-edge:8080、opl.medopl.cn -> OPL-Webui backend、trace.medopl.cn -> future trace backend，并统一 TLS、WAF/security boundary、monitoring/logs、DNS cutover、rollback 和 host routing。\n\n下一步只允许做 shared edge dry-run / creation strategy，不执行真实 mutation。允许操作：只读发现/验证 shared edge 候选、生成 shared edge creation/designation dry-run plan、生成 portal route attach plan、生成 DNS cutover/rollback/smoke/evidence plan、记录 redacted evidence。\n\n禁止：不读取 secret/kubeconfig/DB password/Tencent credentials；不连接 Kubernetes API；不执行 kubectl；不调用 Tencent API；不修改 DNS；不修改 CLB；不修改 Ingress/Service/Deployment；不 build/push；不 Package C live；不声明 public access complete；不新增第二 truth source；不新增 loop；不新增兼容层；不新增 fallback route；不把 lb-b33auprw 作为长期入口；不长期双 CLB 并行；不做双写 route；不破坏 current OPL-Webui working entry。\n\nStop conditions：方案继续把 lb-b33auprw 作为长期 Portal entry；方案复用 OPL-Webui CLB 作为隐藏 Portal fallback；方案创建长期双 CLB 或双写 route；方案会中断 opl.medopl.cn HTTPS 200；任何 secret 泄漏；任何 DNS/CLB/Ingress/Service mutation 请求；任何 public access completion claim。\n\nEvidence 写入 .runtime/package-d-external-access-strategy/<runid>/shared-edge-strategy-redacted.json。完成后同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
+    "runIdHint": "gap08o-tencent-clb-readonly-diagnostics-001",
+    "prompt": "按 active truth 做 gap-driven execution，不新增 loop。\n\n当前唯一 gap：Production launch Gap 08o: Tencent CLB read-only diagnostics for Portal external access 504。\n\n当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability passed。Portal NodePort direct 所有 header matrix 均 HTTP 200，CLB-like headers 直打 NodePort 也 HTTP 200，Portal Pod access logs 记录所有 NodePort 请求均 200，CLB healthcheck 持续进入 Pod 并以 HEAD / HTTP/1.1 user-agent clb-healthcheck 返回 200。New/current Portal CLB lb-pwv9zgky 仍 HTTPS 504 stgw；previous Portal CLB lb-b33auprw 已非当前 DNS 目标或不可用；working OPL-Webui CLB lb-lhj3bgii HTTPS 200。问题集中在 qcloud CLB listener/rule/target/health/security-group/data-plane 层。\n\n本地 Gap 08o-prep 已收口：repo-native Tencent CLB readonly diagnostics runner/local gate 已实现。单一入口：\nnode tests/support/cloud-prework/tencent-clb-readonly-diagnostics-runner.js \\\n  --env /home/dev/.secrets/medopl/v22/tencent-clb-readonly.env \\\n  --run-id gap08o-tencent-clb-readonly-diagnostics-001 \\\n  --authorized 1 \\\n  --sdk-mode tencent-official-sdk-readonly \\\n  --enable-official-sdk-loader\n\n云端 env 文件仅允许这些 key：TENCENTCLOUD_SECRET_ID, TENCENTCLOUD_SECRET_KEY, TENCENTCLOUD_REGION, PORTAL_CLB_INSTANCE_ID, OPL_CLB_INSTANCE_ID, PORTAL_HOST_DOMAIN, OPL_HOST_DOMAIN, EXPECTED_PORTAL_NODE_IP, EXPECTED_PORTAL_NODE_PORT, EXPECTED_OPL_NODE_PORT。固定值应包括 PORTAL_CLB_INSTANCE_ID=lb-pwv9zgky，OPL_CLB_INSTANCE_ID=lb-lhj3bgii，PORTAL_HOST_DOMAIN=portal.medopl.cn，OPL_HOST_DOMAIN=opl.medopl.cn，EXPECTED_PORTAL_NODE_IP=10.66.0.42，EXPECTED_PORTAL_NODE_PORT=30336，EXPECTED_OPL_NODE_PORT=32258。\n\n只允许 Tencent CLB read-only APIs：DescribeLoadBalancers, DescribeListeners, DescribeRules, DescribeTargets, DescribeTargetsHealth 或等价 target health query, DescribeLoadBalancerSecurityGroups 或等价 readonly security group binding query, DescribeTargetGroups if relevant, DescribeCustomizedConfigAssociateList if relevant。\n\n必须对比：Portal current CLB lb-pwv9zgky，Portal previous CLB lb-b33auprw if discoverable，working OPL CLB lb-lhj3bgii，host portal.medopl.cn / opl.medopl.cn，Portal expected backend 10.66.0.42:30336，OPL backend from service opl-webui-control-plane / nodePort 32258。\n\n必须输出 redacted evidence：.runtime/package-d-external-access-strategy/gap08o-tencent-clb-readonly-diagnostics-001/tencent-clb-readonly-diagnostics-redacted.json。诊断需包含 CLB exists/status/VIP/domain、listener 443、host/path/backend rule、registered targets、target health/failure reason、security group binding/default allow state、forwarding protocol/session/gzip/HTTP2/XFF/source IP mode diff、classified root cause 与 recommended next repair action。\n\n禁止：不修改 CLB；不修改 DNS；不修改 Kubernetes；不执行 kubectl；不 build/push；不 Package C live；不输出 Tencent SecretId/SecretKey；不输出 cert id 原文；不调用 Create*/Modify*/Delete*/Register*/Deregister*/Attach*/Detach*/Set*/Associate*/Disassociate*/Rewrite*/Batch*；不声明 public access complete。\n\n完成后同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
   },
   "nextLocalCodexPrompt": {
     "target": "local-codex",
-    "prompt": "当前唯一 gap 已进入 Gap 08n-1 shared edge dry-run / creation strategy 授权；本地 repo-native shared-edge strategy contract/local gate 已收口。除非云端 evidence 暴露新的 fail-closed gap，本地不要新增 loop。"
+    "prompt": "当前唯一 gap 已进入 Gap 08o Tencent CLB readonly diagnostics 云端授权；本地 repo-native CLB readonly diagnostics runner/local gate 已收口。除非云端 evidence 暴露新的 fail-closed gap，本地不要新增 loop。"
   },
   "production_launch_goal_gap_map": {
-    "status": "gap_08n_shared_edge_clb_strategy_contract_ready_waiting_authorized_shared_edge_dry_run",
+    "status": "gap_08o_tencent_clb_readonly_diagnostics_runner_local_gate_ready_waiting_authorized_readonly_run",
     "currentFacts": {
       "packageDPlatformControlPlaneInsideTke": "deployed",
       "inClusterHttpReachability": "preflight-passed",
@@ -10592,7 +10592,8 @@
         ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-frontend-edge-service-redacted.json",
         ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-ingress-redacted.json",
         ".runtime/package-d-external-access-strategy/gap08g-ingress-504-diagnostics-001/readonly-diagnostics-redacted.json",
-        ".runtime/package-d-external-access-strategy/gap08k-opl-webui-vs-portal-compare-001/readonly-compare-redacted.json"
+        ".runtime/package-d-external-access-strategy/gap08k-opl-webui-vs-portal-compare-001/readonly-compare-redacted.json",
+        ".runtime/package-d-external-access-strategy/operator-campaign-portal-external-access-001/portal-nodeport-clb-header-diagnostics-redacted.json"
       ],
       "productionLaunchGap01BootstrapContract": "implemented",
       "productionLaunchGap01EvidencePath": ".runtime/production-launch-bootstrap/<runid>/bootstrap-contract-redacted.json",
@@ -10637,7 +10638,21 @@
       "portalFailedClbBackendHealthyInConsole": true,
       "oplWebuiWorkingClbHttpsStatus": 200,
       "failedPortalClbFixYield": "low",
-      "noCompatPolicy": "no fallback host, no long-term dual CLB, no dual-write route, explicit failed Portal CLB cleanup gap after shared edge smoke"
+      "noCompatPolicy": "no fallback host, no long-term dual CLB, no dual-write route, explicit failed Portal CLB cleanup gap after shared edge smoke",
+      "gap08oPrepStatus": "implemented_local_gate",
+      "gap08oRunnerCommand": "node tests/support/cloud-prework/tencent-clb-readonly-diagnostics-runner.js --env /home/dev/.secrets/medopl/v22/tencent-clb-readonly.env --run-id <runid> --authorized 1",
+      "gap08oLocalGate": "node tests/contract/contract-test-v22-tencent-clb-readonly-diagnostics-local-gate.mjs",
+      "gap08oEvidencePath": ".runtime/package-d-external-access-strategy/<runid>/tencent-clb-readonly-diagnostics-redacted.json",
+      "gap08oInputEvidencePath": ".runtime/package-d-external-access-strategy/operator-campaign-portal-external-access-001/portal-nodeport-clb-header-diagnostics-redacted.json",
+      "portalCurrentClbInstanceId": "lb-pwv9zgky",
+      "portalPreviousClbInstanceId": "lb-b33auprw",
+      "oplWorkingClbInstanceId": "lb-lhj3bgii",
+      "portalNodePortDirectHeaderMatrixHttp": 200,
+      "portalClbLikeHeadersDirectNodePortHttp": 200,
+      "portalClbHealthcheckToPod": "HEAD / HTTP/1.1 clb-healthcheck -> 200",
+      "portalCurrentClbHttpsStatus": 504,
+      "oplWorkingClbHttpsStatus": 200,
+      "gap08oLikelyLayer": "Tencent CLB listener/rule/target/health/security-group/data-plane"
     },
     "vision": {
       "product": "MedOPL production launch is a stable multi-tenant SaaS managed OPL workbench, not a temporary page trial.",
@@ -10962,24 +10977,71 @@
       }
     ],
     "nextUniqueGap": {
-      "id": "production-launch-gap-08n-medopl-shared-edge-clb-strategy",
-      "title": "Production launch Gap 08n: MedOPL shared edge CLB strategy and controlled migration plan",
-      "reason": "Portal still returns stgw 504 through failed qcloud CLB lb-b33auprw after backend, NodePort, TkeServiceConfig and health-check annotation attempts; the working OPL-Webui CLB is not a suitable long-term Portal fallback because it mixes edge ownership. Formal production stability needs a MedOPL-owned shared edge boundary.",
-      "boundary": "local strategy/local gate only; no Kubernetes API, kubectl, Tencent API, DNS, CLB, Ingress, Service or Deployment mutation; no compatibility layer, fallback route or long-term dual CLB",
-      "recommendedEntrypoint": "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode shared-edge-strategy-contract-local-gate --run-id <runid> --authorized 1",
-      "localGate": "node tests/contract/contract-test-v22-package-d-shared-edge-strategy-local-gate.mjs",
-      "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/shared-edge-strategy-redacted.json",
-      "recommendedOption": "create_or_designate_medopl_shared_edge_clb",
-      "nextCloudGap": "gap-08n-1-shared-edge-dry-run-creation-strategy",
-      "orderedNextGaps": [
-        "gap-08n-1-shared-edge-dry-run-creation-strategy",
-        "gap-08n-2-portal-route-attach",
-        "gap-08n-3-portal-dns-cutover",
-        "gap-08n-4-portal-https-smoke",
-        "gap-08n-5-opl-route-migration-decision",
-        "gap-08n-6-external-access-closeout",
-        "gap-08n-7-cleanup-failed-portal-clb"
-      ]
+      "id": "production-launch-gap-08o-tencent-clb-readonly-diagnostics",
+      "title": "Production launch Gap 08o: Tencent CLB read-only diagnostics runner for external access 504",
+      "reason": "Portal NodePort direct traffic, CLB-like headers, Pod access logs and CLB health checks all return 200, while the current Portal CLB lb-pwv9zgky still returns HTTPS 504 and working OPL-Webui CLB lb-lhj3bgii returns HTTPS 200; the remaining gap is Tencent CLB listener/rule/target/health/security-group/data-plane comparison.",
+      "boundary": "local runner/local gate only in this repo session; future cloud run may read only the allowlisted Tencent CLB env file and call only allowlisted Tencent CLB read-only APIs; no Tencent mutation, DNS mutation, Kubernetes access, kubectl, deploy, build/push or Package C live",
+      "recommendedEntrypoint": "node tests/support/cloud-prework/tencent-clb-readonly-diagnostics-runner.js --env /home/dev/.secrets/medopl/v22/tencent-clb-readonly.env --run-id <runid> --authorized 1",
+      "localGate": "node tests/contract/contract-test-v22-tencent-clb-readonly-diagnostics-local-gate.mjs",
+      "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/tencent-clb-readonly-diagnostics-redacted.json",
+      "envAllowlist": [
+        "TENCENTCLOUD_SECRET_ID",
+        "TENCENTCLOUD_SECRET_KEY",
+        "TENCENTCLOUD_REGION",
+        "PORTAL_CLB_INSTANCE_ID",
+        "OPL_CLB_INSTANCE_ID",
+        "PORTAL_HOST_DOMAIN",
+        "OPL_HOST_DOMAIN",
+        "EXPECTED_PORTAL_NODE_IP",
+        "EXPECTED_PORTAL_NODE_PORT",
+        "EXPECTED_OPL_NODE_PORT"
+      ],
+      "allowedApis": [
+        "DescribeLoadBalancers",
+        "DescribeListeners",
+        "DescribeRules",
+        "DescribeTargets",
+        "DescribeTargetsHealth",
+        "DescribeLoadBalancerSecurityGroups",
+        "DescribeTargetGroups",
+        "DescribeCustomizedConfigAssociateList"
+      ],
+      "forbiddenMutationPrefixes": [
+        "Create",
+        "Modify",
+        "Delete",
+        "Register",
+        "Deregister",
+        "Attach",
+        "Detach",
+        "Set",
+        "Associate",
+        "Disassociate",
+        "Rewrite",
+        "Batch"
+      ],
+      "compareObjects": {
+        "portalCurrentClb": "lb-pwv9zgky",
+        "portalPreviousClb": "lb-b33auprw if discoverable",
+        "oplWorkingClb": "lb-lhj3bgii",
+        "portalHost": "portal.medopl.cn",
+        "oplHost": "opl.medopl.cn",
+        "expectedPortalBackend": "10.66.0.42:30336",
+        "expectedOplBackend": "discover service opl-webui-control-plane, nodePort 32258"
+      },
+      "classifiedRootCauses": [
+        "listener_missing",
+        "rule_missing",
+        "target_missing",
+        "target_unhealthy",
+        "wrong_target_port",
+        "wrong_target_ip",
+        "security_group_block",
+        "source_ip_passthrough_mismatch",
+        "listener_rule_mismatch",
+        "unknown_clb_data_plane_504"
+      ],
+      "nextCloudGap": "gap-08o-tencent-clb-readonly-diagnostics-001"
     },
     "externalAccessPolicy": {
       "status": "qcloud_tls_ingress_dry_run_passed_waiting_real_mutation_authorization",
@@ -12047,6 +12109,69 @@
         "Package C live",
         "public access completion claim",
         "compatibility layer, fallback host or long-term dual CLB"
+      ],
+      "publicAccessComplete": false
+    },
+    "gap08oTencentClbReadonlyDiagnostics": {
+      "status": "repo_native_runner_contract_local_gate_ready_waiting_authorized_readonly_cloud_run",
+      "runnerCommand": "node tests/support/cloud-prework/tencent-clb-readonly-diagnostics-runner.js --env /home/dev/.secrets/medopl/v22/tencent-clb-readonly.env --run-id <runid> --authorized 1",
+      "envFile": "/home/dev/.secrets/medopl/v22/tencent-clb-readonly.env",
+      "localGate": "node tests/contract/contract-test-v22-tencent-clb-readonly-diagnostics-local-gate.mjs",
+      "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/tencent-clb-readonly-diagnostics-redacted.json",
+      "observedEvidencePath": ".runtime/package-d-external-access-strategy/operator-campaign-portal-external-access-001/portal-nodeport-clb-header-diagnostics-redacted.json",
+      "compare": {
+        "portalCurrentClb": "lb-pwv9zgky",
+        "portalPreviousClb": "lb-b33auprw if discoverable",
+        "oplWorkingClb": "lb-lhj3bgii",
+        "portalHost": "portal.medopl.cn",
+        "oplHost": "opl.medopl.cn",
+        "expectedPortalBackend": "10.66.0.42:30336",
+        "expectedOplBackend": "discover service opl-webui-control-plane, nodePort 32258"
+      },
+      "allowedApis": [
+        "DescribeLoadBalancers",
+        "DescribeListeners",
+        "DescribeRules",
+        "DescribeTargets",
+        "DescribeTargetsHealth",
+        "DescribeLoadBalancerSecurityGroups",
+        "DescribeTargetGroups",
+        "DescribeCustomizedConfigAssociateList"
+      ],
+      "forbiddenMutationPrefixes": [
+        "Create",
+        "Modify",
+        "Delete",
+        "Register",
+        "Deregister",
+        "Attach",
+        "Detach",
+        "Set",
+        "Associate",
+        "Disassociate",
+        "Rewrite",
+        "Batch"
+      ],
+      "diagnosticsShape": [
+        "Portal CLB exists/status/VIP/domain",
+        "OPL CLB exists/status/VIP/domain",
+        "Portal and OPL listener 443 details",
+        "Portal and OPL host/path/backend mapping",
+        "registered target IP/port/weight",
+        "target health and failure reason",
+        "security group binding/default allow state if exposed",
+        "forwarding protocol/session/gzip/HTTP2/XFF/source IP mode diff",
+        "classified root cause and recommended next repair action"
+      ],
+      "forbiddenOperationsNow": [
+        "Tencent mutation API",
+        "DNS mutation",
+        "Kubernetes API or kubectl",
+        "build/push",
+        "Package C live",
+        "Tencent SecretId/SecretKey output",
+        "cert id raw output",
+        "public access completion claim"
       ],
       "publicAccessComplete": false
     }
