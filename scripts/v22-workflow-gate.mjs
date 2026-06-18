@@ -467,12 +467,13 @@ function activePackageWasArchived({ id, changedFiles, changedStatuses, archivePa
 }
 
 function reviewChangePackageRecords(changedFiles, changedStatuses = new Map()) {
+  const normalizedChangedFiles = changedFiles.map(normalizePath);
   const archivePackageIds = changedArchivePackages(changedFiles);
   const active = changedActivePackages(changedFiles)
     .filter((id) => !activePackageWasArchived({ id, changedFiles, changedStatuses, archivePackageIds }))
-    .map((id) => ({ id, root: "changes/active", path: `changes/active/${id}` }));
+    .map((id) => ({ id, root: "changes/active", path: `changes/active/${id}`, changedFiles: normalizedChangedFiles, changedStatuses }));
   const archive = archivePackageIds
-    .map((id) => ({ id, root: "changes/archive", path: `changes/archive/${id}` }));
+    .map((id) => ({ id, root: "changes/archive", path: `changes/archive/${id}`, changedFiles: normalizedChangedFiles, changedStatuses }));
   return [...active, ...archive].sort((left, right) => left.path.localeCompare(right.path));
 }
 
@@ -482,11 +483,27 @@ function readOptionalRepoFile(repoPath) {
   return readFileSync(absolutePath, "utf8");
 }
 
+function closeoutHasCompletionAudit(closeout) {
+  const source = String(closeout || "");
+  const requiredStatuses = ["functional", "code_cleanup", "docs_foldback", "verification", "retired_entrypoints", "cannot_claim"];
+  const statusPattern = "(?:done|partial|not_started|blocked)";
+  return /## Plan Completion Audit/u.test(source)
+    && requiredStatuses.every((field) => new RegExp(`${field}\\s*:\\s*${statusPattern}`, "u").test(source));
+}
+
+function closeoutHasCleanupResult(closeout) {
+  const source = String(closeout || "");
+  return /## Cleanup Result/u.test(source)
+    && ["deleted", "folded", "retained", "reason", "next"].every((field) => new RegExp(`${field}\\s*:`, "u").test(source));
+}
+
 function validateReviewChangePackage(record) {
   const proposal = readOptionalRepoFile(`${record.path}/proposal.md`);
   const specDelta = readOptionalRepoFile(`${record.path}/spec-delta.md`);
   const evalPlan = readOptionalRepoFile(`${record.path}/eval-plan.md`);
   const closeout = readOptionalRepoFile(`${record.path}/closeout.md`);
+  const closeoutStatus = String(record.changedStatuses?.get(`${record.path}/closeout.md`) || "");
+  const closeoutChanged = Boolean(closeoutStatus && !closeoutStatus.startsWith("D"));
   const missingFiles = [
     "proposal.md",
     "spec-delta.md",
@@ -502,13 +519,16 @@ function validateReviewChangePackage(record) {
     hasOwner: /Owner:/u.test(proposal),
     hasAuthorizationBoundary: /## Authorization Boundary/u.test(proposal),
     hasCannotClaim: /## CANNOT-CLAIM/u.test(specDelta) || /## Cannot Claim/u.test(closeout),
+    hasCompletionAudit: closeoutHasCompletionAudit(closeout),
+    hasCleanupResult: closeoutHasCleanupResult(closeout),
     targetSpecs,
     evalCommands,
     ok: missingFiles.length === 0
       && /Owner:/u.test(proposal)
       && /## Authorization Boundary/u.test(proposal)
       && targetSpecs.length > 0
-      && evalCommands.length > 0,
+      && evalCommands.length > 0
+      && (!closeoutChanged || (closeoutHasCompletionAudit(closeout) && closeoutHasCleanupResult(closeout))),
   };
 }
 
@@ -732,17 +752,21 @@ export function evaluateReview({
   }
   if (formalEngineeringChanged && reviewPackages.some((record) => !record.ok)) {
     findings.push({
-      code: "formal_change_package_missing_spec_or_eval_plan",
+      code: reviewPackages.some((record) => record.missingFiles.length === 0 && (!record.hasCompletionAudit || !record.hasCleanupResult))
+        ? "formal_change_package_missing_completion_audit"
+        : "formal_change_package_missing_spec_or_eval_plan",
       severity: "blocker",
       packages: reviewPackages.filter((record) => !record.ok).map((record) => ({
         path: record.path,
         missingFiles: record.missingFiles,
         hasOwner: record.hasOwner,
         hasAuthorizationBoundary: record.hasAuthorizationBoundary,
+        hasCompletionAudit: record.hasCompletionAudit,
+        hasCleanupResult: record.hasCleanupResult,
         targetSpecs: record.targetSpecs,
         evalCommands: record.evalCommands,
       })),
-      message: "本次 formal change 的 change package 必须声明 owner、authorization boundary、target specs 和本地 eval commands。",
+      message: "本次 formal change 的 change package 必须声明 owner、authorization boundary、target specs、本地 eval commands、Plan Completion Audit 和 Cleanup Result。",
     });
   }
 

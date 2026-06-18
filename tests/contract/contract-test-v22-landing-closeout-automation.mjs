@@ -166,6 +166,20 @@ assertCloseoutFailure([
   "--json",
 ], /missing_next_cursor/u);
 
+assertCloseoutFailure([
+  "generate",
+  "--branch",
+  handoffBranch,
+  "--landed-commit",
+  handoffCommit,
+  "--next-cursor",
+  "leaf-portal-postgres-only-local-production-data-closure",
+  "--verification-summary",
+  "negative missing plan completion audit dry run",
+  "--dry-run",
+  "--json",
+], /missing_plan_completion_audit/u);
+
 const generateDryRun = runCloseout([
   "generate",
   "--branch",
@@ -176,6 +190,10 @@ const generateDryRun = runCloseout([
   "leaf-portal-postgres-only-local-production-data-closure",
   "--verification-summary",
   "positive branch handoff dry run",
+  "--completion-audit",
+  "functional:done;code_cleanup:done;docs_foldback:done;verification:done;retired_entrypoints:partial;cannot_claim:done",
+  "--cleanup-result",
+  "deleted:obsolete active baton;folded:history summary;retained:runtime evidence;reason:external runtime not authorized;next:manifest compaction",
   "--dry-run",
   "--json",
 ]);
@@ -186,6 +204,10 @@ assert.equal(generatePayload.landedCommit, handoffCommit, "valid_landing_closeou
 assert(generatePayload.updatedCurrentProblem.includes(handoffBranch), "valid_landing_closeout_generate_must_update_problem_branch");
 assert(generatePayload.updatedCurrentProblem.includes(handoffCommit), "valid_landing_closeout_generate_must_update_problem_commit");
 assert.equal(generatePayload.dryRun, true, "valid_landing_closeout_generate_must_stay_dry_run");
+assert.equal(generatePayload.completionAudit.functional, "done", "valid_landing_closeout_must_parse_completion_audit");
+assert.equal(generatePayload.completionAudit.retired_entrypoints, "partial", "valid_landing_closeout_must_allow_partial_audit");
+assert.equal(generatePayload.cleanupResult.deleted, "obsolete active baton", "valid_landing_closeout_must_parse_cleanup_result");
+assert.equal(generatePayload.cleanupResult.next, "manifest compaction", "valid_landing_closeout_must_parse_cleanup_next_gate");
 
 const result = runCloseout([
   "check",

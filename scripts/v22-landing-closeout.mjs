@@ -24,6 +24,16 @@ const defaultRequiredPostMergeFields = Object.freeze([
 ]);
 
 const fullCommitPattern = /^[a-f0-9]{40}$/u;
+const completionAuditFields = Object.freeze([
+  "functional",
+  "code_cleanup",
+  "docs_foldback",
+  "verification",
+  "retired_entrypoints",
+  "cannot_claim",
+]);
+const completionAuditStatuses = new Set(["done", "partial", "not_started", "blocked"]);
+const cleanupResultFields = Object.freeze(["deleted", "folded", "retained", "reason", "next"]);
 
 function parseArgs(argv) {
   const [mode, ...rest] = argv;
@@ -123,6 +133,44 @@ function isAncestor(commit, ref) {
 
 function normalizeBackticks(value) {
   return String(value || "").replace(/`/gu, "").trim();
+}
+
+function parseSemicolonFields(value, label) {
+  const entries = String(value || "")
+    .split(";")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const result = {};
+  for (const entry of entries) {
+    const separator = entry.indexOf(":");
+    if (separator <= 0) throw new Error(`invalid_${label}_entry:${entry}`);
+    const key = entry.slice(0, separator).trim();
+    const fieldValue = entry.slice(separator + 1).trim();
+    if (!key || !fieldValue) throw new Error(`invalid_${label}_entry:${entry}`);
+    result[key] = fieldValue;
+  }
+  return result;
+}
+
+function parseCompletionAudit(value) {
+  if (!String(value || "").trim()) throw new Error("missing_plan_completion_audit");
+  const audit = parseSemicolonFields(value, "plan_completion_audit");
+  for (const field of completionAuditFields) {
+    if (!audit[field]) throw new Error(`missing_plan_completion_audit_field:${field}`);
+    if (!completionAuditStatuses.has(audit[field])) {
+      throw new Error(`invalid_plan_completion_audit_status:${field}:${audit[field]}`);
+    }
+  }
+  return audit;
+}
+
+function parseCleanupResult(value) {
+  if (!String(value || "").trim()) throw new Error("missing_cleanup_result");
+  const cleanup = parseSemicolonFields(value, "cleanup_result");
+  for (const field of cleanupResultFields) {
+    if (!cleanup[field]) throw new Error(`missing_cleanup_result_field:${field}`);
+  }
+  return cleanup;
 }
 
 function extractInlineField(section, field) {
@@ -353,7 +401,7 @@ function validateGenerateInput({ history, branch, landedCommit, trunkRef }) {
   return { section, branchHead, expectedCommit };
 }
 
-function renderCloseoutBlock({ landedCommit, nextCursor, verificationSummary }) {
+function renderCloseoutBlock({ landedCommit, nextCursor, verificationSummary, completionAudit, cleanupResult }) {
   const verificationLines = verificationSummary
     .split(";")
     .map((item) => item.trim())
@@ -368,6 +416,14 @@ function renderCloseoutBlock({ landedCommit, nextCursor, verificationSummary }) 
     "post_push_verification:",
     "",
     ...(verificationLines.length > 0 ? verificationLines : ["- post-push workflow gate and required verify commands passed."]),
+    "",
+    "plan_completion_audit:",
+    "",
+    ...completionAuditFields.map((field) => `- ${field}: ${completionAudit[field]}`),
+    "",
+    "cleanup_result:",
+    "",
+    ...cleanupResultFields.map((field) => `- ${field}: ${cleanupResult[field]}`),
     "",
     "post_merge_closeout: `completed`",
     "",
@@ -389,6 +445,8 @@ function generateCloseout({
   nextCursor,
   trunkRef,
   verificationSummary,
+  completionAudit: completionAuditInput,
+  cleanupResult: cleanupResultInput,
   dryRun = false,
 } = {}) {
   if (!branch) throw new Error("missing_branch");
@@ -397,12 +455,14 @@ function generateCloseout({
 
   const history = readRepoFile(files.history);
   const validation = validateGenerateInput({ history, branch, landedCommit, trunkRef });
+  const completionAudit = parseCompletionAudit(completionAuditInput);
+  const cleanupResult = parseCleanupResult(cleanupResultInput);
   const current = readJson(files.current);
   const active = readRepoFile(files.active);
   const updatedHistory = replaceSection(history, branch, (section) => {
     let next = section.replace("Status: `ready_for_landing_review`", "Status: `landed / pushed / post-push verified`");
     if (!next.includes("landed_commit:")) {
-      next = `${next.trimEnd()}\n${renderCloseoutBlock({ landedCommit, nextCursor, verificationSummary })}`;
+      next = `${next.trimEnd()}\n${renderCloseoutBlock({ landedCommit, nextCursor, verificationSummary, completionAudit, cleanupResult })}`;
     }
     return next;
   });
@@ -442,6 +502,8 @@ function generateCloseout({
     nextCursor,
     trunkRef: trunkRef || "",
     dryRun,
+    completionAudit,
+    cleanupResult,
     updatedCurrentProblem: updatedCurrent.current_problem,
     files: [files.history, files.current, files.active],
   };
@@ -451,7 +513,7 @@ function printUsage() {
   process.stderr.write([
     "Usage:",
     "  node scripts/v22-landing-closeout.mjs check [--trunk-ref origin/recovery/platform-v22-trunk] [--json]",
-    "  node scripts/v22-landing-closeout.mjs generate --branch <branch> --landed-commit <sha> --next-cursor <leaf> [--trunk-ref <ref>] [--verification-summary <a; b>] [--dry-run] [--json]",
+    "  node scripts/v22-landing-closeout.mjs generate --branch <branch> --landed-commit <sha> --next-cursor <leaf> --completion-audit <functional:done;...> --cleanup-result <deleted:x;...> [--trunk-ref <ref>] [--verification-summary <a; b>] [--dry-run] [--json]",
     "",
   ].join("\n"));
 }
@@ -470,6 +532,8 @@ try {
       nextCursor: options["next-cursor"],
       trunkRef: options["trunk-ref"] || "",
       verificationSummary: options["verification-summary"] || "",
+      completionAudit: options["completion-audit"] || "",
+      cleanupResult: options["cleanup-result"] || "",
       dryRun: Boolean(options["dry-run"]),
     });
     process.stdout.write(options.json ? `${JSON.stringify(payload, null, 2)}\n` : `${JSON.stringify(payload, null, 2)}\n`);

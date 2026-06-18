@@ -34,7 +34,7 @@ proposal -> spec delta -> design -> tasks -> eval plan -> implementation -> veri
 | `tasks.md` | 可单独 commit、可验证的任务列表。 |
 | `eval-plan.md` | 新增或复用哪些 eval、verify 命令、evidence level 和不能宣称什么。 |
 | `review.md` | 自审、独立 review、blocker 处理和剩余风险。 |
-| `closeout.md` | commits、验证结果、can-claim、cannot-claim、archive target、history handoff 和 next owner。 |
+| `closeout.md` | commits、验证结果、Plan Completion Audit、Cleanup Result、can-claim、cannot-claim、archive target、history handoff 和 next owner。 |
 
 ## File Templates
 
@@ -216,6 +216,23 @@ Status: ready_for_landing_review | landed | archived
 ## Cannot Claim
 
 - <unsupported claim>
+
+## Plan Completion Audit
+
+- functional: done | partial | not_started | blocked
+- code_cleanup: done | partial | not_started | blocked
+- docs_foldback: done | partial | not_started | blocked
+- verification: done | partial | not_started | blocked
+- retired_entrypoints: done | partial | not_started | blocked
+- cannot_claim: done | partial | not_started | blocked
+
+## Cleanup Result
+
+- deleted: <what was deleted, or none with reason>
+- folded: <what was folded into history/current cursor, or none with reason>
+- retained: <what remains and why>
+- reason: <why retained surfaces are still active>
+- next: <next cleanup gate or owner>
 
 ## Archive Target
 

@@ -182,6 +182,26 @@ const reviewWithUnboundChangePackage = evaluateReview({
 assert.equal(reviewWithUnboundChangePackage.ok, false, "review_must_block_unbound_change_package");
 assert(reviewWithUnboundChangePackage.findings.some((finding) => finding.code === "formal_change_package_missing_spec_or_eval_plan"), "review_must_require_change_package_spec_and_eval_binding");
 
+const reviewWithMissingCompletionAudit = evaluateReview({
+  base: "recovery/platform-v22-trunk",
+  changedFiles: [
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/proposal.md",
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/spec-delta.md",
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/eval-plan.md",
+    "changes/archive/2026-05-23-repo-native-change-lifecycle/closeout.md",
+    "services/portal/src/domain/example.mjs",
+    "tests/contract/contract-test-v22-example-boundary.mjs",
+  ],
+  changedStatuses: new Map([
+    ["changes/archive/2026-05-23-repo-native-change-lifecycle/closeout.md", "M"],
+  ]),
+});
+assert.equal(reviewWithMissingCompletionAudit.ok, false, "review_must_block_change_package_without_completion_audit");
+assert(
+  reviewWithMissingCompletionAudit.findings.some((finding) => finding.code === "formal_change_package_missing_completion_audit"),
+  "review_must_report_missing_completion_audit",
+);
+
 const fullTaxonomyAuthorizedDeletes = evaluateReview({
   base: "origin/recovery/platform-v22-trunk",
   branchName: "cleanup/v22-full-taxonomy-hard-retirement",
