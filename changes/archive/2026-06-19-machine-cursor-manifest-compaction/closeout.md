@@ -1,6 +1,6 @@
 # machine-cursor-manifest-compaction Closeout
 
-Status: ready_for_landing_review
+Status: archived
 
 ## Commits
 
@@ -48,4 +48,4 @@ Status: ready_for_landing_review
 
 ## Archive Target
 
-- changes/archive/2026-06-18-machine-cursor-manifest-compaction
+- changes/archive/2026-06-19-machine-cursor-manifest-compaction

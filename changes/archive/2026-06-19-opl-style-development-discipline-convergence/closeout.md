@@ -1,6 +1,6 @@
 # opl-style-development-discipline-convergence Closeout
 
-Status: ready_for_landing_review
+Status: archived
 
 ## Commits
 
@@ -45,4 +45,4 @@ Status: ready_for_landing_review
 
 ## Archive Target
 
-- changes/archive/2026-06-18-opl-style-development-discipline-convergence
+- changes/archive/2026-06-19-opl-style-development-discipline-convergence

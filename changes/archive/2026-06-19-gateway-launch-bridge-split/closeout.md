@@ -1,6 +1,6 @@
 # gateway-launch-bridge-split Closeout
 
-Status: ready_for_landing_review
+Status: archived
 
 ## Commits
 

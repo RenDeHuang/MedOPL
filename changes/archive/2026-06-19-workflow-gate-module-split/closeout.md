@@ -1,6 +1,6 @@
 # workflow-gate-module-split Closeout
 
-Status: ready_for_landing_review
+Status: archived
 
 ## Verification
 
@@ -29,7 +29,7 @@ Status: ready_for_landing_review
 
 ## Archive Target
 
-- `changes/archive/YYYY-MM-DD-workflow-gate-module-split`
+- changes/archive/2026-06-19-workflow-gate-module-split
 
 ## Plan Completion Audit
 

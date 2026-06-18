@@ -1,6 +1,6 @@
 # docs-history-summary-only Closeout
 
-Status: ready_for_landing_review
+Status: archived
 
 ## Commits
 
@@ -48,4 +48,4 @@ Status: ready_for_landing_review
 
 ## Archive Target
 
-- changes/archive/2026-06-18-docs-history-summary-only
+- changes/archive/2026-06-19-docs-history-summary-only

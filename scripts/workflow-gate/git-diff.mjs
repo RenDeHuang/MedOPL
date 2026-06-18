@@ -56,16 +56,23 @@ export function changedFilesSince(repoRoot, base) {
 
 export function changedFileStatusesSince(repoRoot, base) {
   const outputs = [
-    runGit(repoRoot, ["diff", "--name-status", `${base}...HEAD`], { fallback: "" }),
-    runGit(repoRoot, ["diff", "--name-status", "--cached"], { fallback: "" }),
-    runGit(repoRoot, ["diff", "--name-status"], { fallback: "" }),
+    { output: runGit(repoRoot, ["diff", "--name-status", `${base}...HEAD`], { fallback: "" }), override: false },
+    { output: runGit(repoRoot, ["diff", "--name-status", "--cached"], { fallback: "" }), override: true },
+    { output: runGit(repoRoot, ["diff", "--name-status"], { fallback: "" }), override: true },
   ];
   const statuses = new Map();
-  for (const output of outputs) {
+  for (const { output, override } of outputs) {
     for (const line of output.split("\n").map((item) => item.trim()).filter(Boolean)) {
       const [status, ...paths] = line.split(/\s+/u);
+      if (status.startsWith("R") && paths.length >= 2) {
+        const oldPath = normalizePath(paths.at(-2));
+        const newPath = normalizePath(paths.at(-1));
+        if (oldPath && (override || !statuses.has(oldPath))) statuses.set(oldPath, "D");
+        if (newPath && (override || !statuses.has(newPath))) statuses.set(newPath, status);
+        continue;
+      }
       const filePath = normalizePath(paths.at(-1));
-      if (filePath && !statuses.has(filePath)) statuses.set(filePath, status);
+      if (filePath && (override || !statuses.has(filePath))) statuses.set(filePath, status);
     }
   }
   for (const filePath of changedFilesSince(repoRoot, base)) {

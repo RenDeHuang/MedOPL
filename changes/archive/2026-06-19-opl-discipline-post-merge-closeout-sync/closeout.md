@@ -1,6 +1,6 @@
 # opl-discipline-post-merge-closeout-sync Closeout
 
-Status: ready_for_landing_review
+Status: archived
 
 ## Commits
 
@@ -41,7 +41,7 @@ Status: ready_for_landing_review
 
 ## Archive Target
 
-- changes/archive/2026-06-18-opl-discipline-post-merge-closeout-sync
+- changes/archive/2026-06-19-opl-discipline-post-merge-closeout-sync
 
 ## History Handoff
 

@@ -1,6 +1,6 @@
 # goal-current-contract-extraction Closeout
 
-Status: ready_for_landing_review
+Status: archived
 
 ## Commits
 
