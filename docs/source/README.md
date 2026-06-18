@@ -51,6 +51,7 @@ Retirement surface：
 - Node Portal v22 control-plane routes and domains for `/portal/api/v22/users/*`, `/portal/api/v22/provider-key`, `/portal/api/v22/managed-environment/readiness`, `/portal/api/v22/managed-environment/open`, `/portal/api/v22/managed-environment/release` and `/portal/api/v22/opl-work/*` are physically retired from active code. 当前 owner 是 `services/medopl-go-backend` 的 `/api/v22/*`、`/api/provider/*` 和 `/api/opl/*`。
 - `services/portal/src/app/portal-runtime.mjs` 已物理删除，不得作为部署入口、typed API owner 或当前 verify owner。
 - `services/opl-web-gateway` 继续作为 Gateway / clean upstream anti-corruption boundary，优先保持薄边界。
+- `services/opl-web-gateway/src/launch-client-script.mjs` 是 gateway launch bridge browser script 的稳定 public entrypoint；carrier 细节拆分到 `services/opl-web-gateway/src/launch-client-script/**`，避免把 direct entry shell、provider key panel、portal API client、native bridge 和 telemetry 长期堆叠在一个千行模板文件里。
 - `services/opl-runtime-bridge` 继续作为 Runtime Bridge / Runtime Agent integration boundary；它不是 billing ledger truth 或 cloud inventory truth。容器默认 state root 是 `/tmp/medopl-runtime/.runtime`，Package D manifest 必须通过非 secret env 和 writable volume 保持该路径可写，不能默认写 `/.runtime`。
 - `real-cloud-authorization-boundary` 仍是单独 Operations cursor；本地 Portal/OPL delivery source 不能授权 secret、真实云、deploy、kubectl、build/push 或 live-test。
 

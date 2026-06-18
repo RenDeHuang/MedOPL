@@ -23,11 +23,11 @@ const [scriptSource, baselineSource, manifest] = await Promise.all([
 const baseline = JSON.parse(baselineSource);
 
 assert.equal(baseline.default_limit, 1000, "line_budget_default_limit_mismatch");
-for (const expected of [
-  "services/opl-web-gateway/src/launch-client-script.mjs",
-]) {
-  assert(Number.isInteger(baseline.files[expected]), `line_budget_baseline_missing:${expected}`);
-}
+assert.equal(
+  "services/opl-web-gateway/src/launch-client-script.mjs" in baseline.files,
+  false,
+  "line_budget_baseline_must_retire_gateway_launch_client_main",
+);
 for (const expected of [".mjs", ".ts", ".tsx", ".sh", ".ps1"]) {
   assert(scriptSource.includes(expected), `line_budget_extension_missing:${expected}`);
 }
@@ -40,11 +40,7 @@ assert.equal(result.status, 0, result.stderr || result.stdout);
 const payload = JSON.parse(result.stdout);
 assert.equal(payload.ok, true, "line_budget_payload_ok");
 assert.equal(payload.contract, "v22_line_budget", "line_budget_contract_mismatch");
-assert.equal(
-  payload.oversize.length,
-  Object.keys(baseline.files).length,
-  "line_budget_must_report_current_baseline_oversize_files",
-);
+assert.equal(payload.oversize.some((entry) => entry.file === "services/opl-web-gateway/src/launch-client-script.mjs"), false, "line_budget_must_not_report_gateway_launch_client_main");
 for (const expected of Object.keys(baseline.files)) {
   assert(
     payload.oversize.some((entry) => entry.file === expected),

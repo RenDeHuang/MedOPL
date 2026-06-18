@@ -2,7 +2,5 @@
   "schema_version": 1,
   "default_limit": 1000,
   "purpose": "Lock existing oversized tracked code files so no file can grow silently while future new oversized files fail closed.",
-  "files": {
-    "services/opl-web-gateway/src/launch-client-script.mjs": 1063
-  }
+  "files": {}
 }

@@ -115,10 +115,19 @@ function startUpstreamFixture(calls) {
 }
 
 async function readGatewaySourceCorpus() {
-  const entries = await readdir(gatewaySrcRoot, { withFileTypes: true });
-  const files = entries
-    .filter((entry) => entry.isFile() && entry.name.endsWith(".mjs"))
-    .map((entry) => path.join(gatewaySrcRoot, entry.name));
+  const files = [];
+  async function walk(dir) {
+    const entries = await readdir(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        await walk(fullPath);
+        continue;
+      }
+      if (entry.isFile() && entry.name.endsWith(".mjs")) files.push(fullPath);
+    }
+  }
+  await walk(gatewaySrcRoot);
   const pairs = await Promise.all(files.map(async (file) => [file, await readFile(file, "utf8")]));
   return {
     files,
@@ -187,6 +196,15 @@ function assertPublicContextWhitelist(source) {
 }
 
 function assertGatewayStaticBoundaries(corpus) {
+  const launchClientMain = corpus.byFile[path.join(gatewaySrcRoot, "launch-client-script.mjs")];
+  assert(launchClientMain, "gateway_launch_client_main_missing");
+  const launchClientMainLines = launchClientMain.split("\n").length;
+  assert(launchClientMainLines < 400, `gateway_launch_client_main_must_stay_thin:${launchClientMainLines}`);
+  assert(launchClientMain.includes('./launch-client-script/'), "gateway_launch_client_main_must_import_split_modules");
+  assert(
+    corpus.files.some((file) => file.startsWith(path.join(gatewaySrcRoot, "launch-client-script"))),
+    "gateway_launch_client_split_modules_missing",
+  );
   assert(corpus.text.includes("OPL_UPSTREAM_URL"), "gateway_must_read_opl_upstream_url_config");
   assert.equal(corpus.byFile[path.join(gatewaySrcRoot, "config.mjs")].includes("OPL_WEB_UPSTREAM_URL"), false, "gateway_config_must_not_read_or_export_legacy_upstream_env");
   assert.equal(corpus.text.includes("127.0.0.1:13030"), false, "gateway_must_not_fallback_to_hardcoded_local_upstream");
@@ -195,7 +213,7 @@ function assertGatewayStaticBoundaries(corpus) {
   assert.equal(/from\s+["'][^"']*one-person-lab[^"']*["']/.test(corpus.text), false, "gateway_must_not_import_one_person_lab");
   assert.equal(/from\s+["'][^"']*(?:v19|v20|v21)[^"']*["']/.test(corpus.text), false, "gateway_must_not_import_legacy_upstream_path");
   assertNoForbiddenStorageSecretWrite(corpus.text);
-  assertPublicContextWhitelist(corpus.byFile[path.join(gatewaySrcRoot, "launch-client-script.mjs")]);
+  assertPublicContextWhitelist(launchClientMain);
 }
 
 async function assertUnconfiguredGatewayFailsWithStableError() {
