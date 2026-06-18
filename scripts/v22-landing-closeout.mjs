@@ -276,15 +276,6 @@ function checkCloseout({ trunkRef = "origin/recovery/platform-v22-trunk" } = {})
       });
     }
   }
-  if (requiresTrunkHeadSync && latest && trunkHead && latest.landedCommit !== trunkHead && latest.branch.startsWith("cleanup/")) {
-    findings.push({
-      code: "latest_cleanup_landed_commit_not_trunk_head",
-      branch: latest.branch,
-      expected: trunkHead,
-      actual: latest.landedCommit,
-      trunkRef,
-    });
-  }
   if (latest && current.last_landed_commit !== latest.landedCommit) {
     findings.push({
       code: "goal_current_last_landed_commit_mismatch",

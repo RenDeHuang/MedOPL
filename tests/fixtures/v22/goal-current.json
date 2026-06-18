@@ -8,12 +8,12 @@
   "last_updated_at": "2026-06-18",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "138d18e8d3df72bb615fac9da561e77189f2effe",
+  "base_trunk_head": "b68768be93680d723685d7c3d681e2937522d96f",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "138d18e8d3df72bb615fac9da561e77189f2effe",
+  "last_landed_commit": "b68768be93680d723685d7c3d681e2937522d96f",
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",
@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. MedOPL Portal external access remains incomplete: Portal NodePort direct and CLB-like header matrix requests return HTTP 200, Portal Pod access logs show those NodePort requests as 200, and qcloud CLB health checks reach the Pod as HEAD / HTTP/1.1 user-agent clb-healthcheck with 200. DNS/TLS/Ingress/edge Service/Endpoint/Pod readiness are not the active blocker. The current Portal CLB lb-pwv9zgky still returns HTTPS 504 stgw while working OPL-Webui CLB lb-lhj3bgii returns HTTPS 200. Gap 08o run gap08o-tencent-clb-readonly-diagnostics-003 authenticated to Tencent API and confirmed CLBs, HTTPS listeners and registered targets, but runner/API shape gaps made rule, target-health and security-group diagnostics incomplete and rule_missing untrustworthy. The current unique gap remains production-launch-gap-08o-runner-fix; the latest governance closeout only landed OPL-style development discipline at 138d18e8d3df72bb615fac9da561e77189f2effe and does not complete runtime, deploy, billing, public access or production readiness.",
+  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. MedOPL Portal external access remains incomplete: Portal NodePort direct and CLB-like header matrix requests return HTTP 200, Portal Pod access logs show those NodePort requests as 200, and qcloud CLB health checks reach the Pod as HEAD / HTTP/1.1 user-agent clb-healthcheck with 200. DNS/TLS/Ingress/edge Service/Endpoint/Pod readiness are not the active blocker. The current Portal CLB lb-pwv9zgky still returns HTTPS 504 stgw while working OPL-Webui CLB lb-lhj3bgii returns HTTPS 200. Gap 08o run gap08o-tencent-clb-readonly-diagnostics-003 authenticated to Tencent API and confirmed CLBs, HTTPS listeners and registered targets, but runner/API shape gaps made rule, target-health and security-group diagnostics incomplete and rule_missing untrustworthy. The current unique gap remains production-launch-gap-08o-runner-fix; the latest cleanup closeout only compacted current_leaf owner payloads at b68768be93680d723685d7c3d681e2937522d96f and does not complete runtime, deploy, billing, public access or production readiness.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -429,9 +429,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/opl-style-development-discipline-convergence",
+  "last_landed_branch": "cleanup/v22-current-leaf-owner-compaction",
   "last_landed_at": "2026-06-18",
-  "history_latest_branch": "feat/opl-style-development-discipline-convergence",
+  "history_latest_branch": "cleanup/v22-current-leaf-owner-compaction",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,

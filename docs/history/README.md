@@ -8403,3 +8403,75 @@ cleanup_result:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-18 cleanup/v22-current-leaf-owner-compaction
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `cleanup/v22-current-leaf-owner-compaction`
+
+Base trunk HEAD: `18f7f1a1f8c2f84d579cc60ff21b4e28b64db5d4`
+
+Model: `gpt-5.3-codex`
+
+Subagents: `none`
+
+Scope:
+
+- Removed duplicate `current_leaf.package_d_deploy_readiness_plan` from `tests/fixtures/v22/goal-current.json`.
+- Removed duplicate `current_leaf.production_launch_goal_gap_map` from `tests/fixtures/v22/goal-current.json`.
+- Migrated the Package D execution config local gate to read the top-level Package D readiness owner payload.
+- Added current-state index-loop assertions so large owner payloads cannot return under `current_leaf`.
+- Added framework spec and change package evidence for current leaf owner compaction.
+- This cleanup did not remove the canonical top-level owner payloads, compact agent verify manifest, compact docs/specs/history, split Go handlers or change runtime/deploy/cloud behavior.
+
+Verification:
+
+- `node tests/contract/contract-test-v22-current-state-index-loop.mjs`: passed.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs`: passed.
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`: passed.
+- `npm run verify`: passed before push and after ff-only landing to trunk.
+
+Can-claim:
+
+- `current_leaf` no longer duplicates Package D readiness or production launch owner payloads.
+- `goal-current.json` is reduced to 5626 lines after this package.
+
+Cannot-claim:
+
+- `goal-current.json` is fully compact.
+- `agent-verify-manifest.json`, docs/specs, docs/history, Go handlers or workflow gate source are compacted.
+- Runtime behavior, deploy, live cloud behavior, billing or production readiness is complete.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+landed_commit: `b68768be93680d723685d7c3d681e2937522d96f`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk: passed after ff-only landing
+- npm run verify: passed after ff-only landing
+- git push origin recovery/platform-v22-trunk: pushed 18f7f1a..b68768b
+
+plan_completion_audit:
+
+- functional: done
+- code_cleanup: partial
+- docs_foldback: done
+- verification: done
+- retired_entrypoints: partial
+- cannot_claim: done
+
+cleanup_result:
+
+- deleted: duplicate current_leaf Package D and production launch owner payloads
+- folded: current_leaf now retains cursor metadata and verification boundary only
+- retained: top-level owner payloads manifest docs handlers and workflow gate
+- reason: retained surfaces still have direct consumers and separate cleanup packages
+- next: agent-verify-manifest compaction
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`

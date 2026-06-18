@@ -226,6 +226,22 @@ assert.equal(payload.lastLandedBranch, current.last_landed_branch, "landing_clos
 assert.equal(payload.postMergeCloseoutCompleted, true, "landing_closeout_must_confirm_truth_closeout");
 assert.deepEqual(payload.missingPostMergeFields, [], "landing_closeout_missing_required_fields");
 
+const headResult = runCloseout([
+  "check",
+  "--trunk-ref",
+  "HEAD",
+  "--json",
+]);
+
+assert.equal(headResult.status, 0, `landing_closeout_head_check_failed:${headResult.stderr || headResult.stdout}`);
+const headPayload = JSON.parse(headResult.stdout);
+assert.equal(headPayload.ok, true, "landing_closeout_head_payload_must_be_ok");
+assert.equal(
+  headPayload.findings.some((finding) => finding.code === "latest_cleanup_landed_commit_not_trunk_head"),
+  false,
+  "cleanup_closeout_must_allow_closeout_commit_after_landed_cleanup_commit",
+);
+
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_landing_closeout_automation",
