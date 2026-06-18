@@ -7976,7 +7976,7 @@ next_cursor: `real-cloud-authorization-boundary`
 
 ### 2026-06-18 production-launch-gap-08f-dns-https-smoke-prep
 
-Status: `authoring / local-gated pending landing`
+Status: `landed / pushed / post-push verified`
 
 Branch: `recovery/platform-v22-trunk`
 
@@ -8001,8 +8001,8 @@ Verification:
 
 - `node tests/contract/contract-test-v22-package-d-external-access-edge-nodeport-local-gate.mjs`: passed.
 - `node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs`: passed.
-- `npm run verify`: pending.
-- `npm run closeout:check -- --json`: pending.
+- `npm run verify`: passed before closeout pointer commit.
+- `npm run closeout:check -- --json`: rerun after closeout pointer commit and push.
 
 Can-claim:
 
@@ -8015,5 +8015,19 @@ Cannot-claim:
 - DNS has been changed.
 - HTTPS external smoke has passed.
 - Portal external/public user access or production launch is complete.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+landed_commit: `db3de48c83fc0285977c72d8f8f9553eea780257`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `db3de48c83fc0285977c72d8f8f9553eea780257` is the Gap 08f DNS/HTTPS smoke compatibility implementation commit and is reachable from `origin/recovery/platform-v22-trunk` after push.
+- `npm run verify`: passed before closeout pointer commit.
+- `npm run closeout:check -- --json`: rerun after closeout pointer commit and push.
+
+post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
