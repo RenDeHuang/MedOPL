@@ -8153,66 +8153,6 @@ post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
 
-### 2026-06-18 production-launch-gap-08o-tencent-clb-readonly-diagnostics-prep
-
-Status: `landed / pushed / post-push verified`
-
-Branch: `recovery/platform-v22-trunk`
-
-Base trunk HEAD: `97838d75634eae53b1cf6c274f569f5d9add2053`
-
-Model: `gpt-5.4`
-
-Subagents: `Kant` / `gpt-5.4-mini` readonly explorer for docs/fixture closeout pointer locations.
-
-Scope:
-
-- Recorded current Portal external access facts from operator diagnostics: NodePort direct and CLB-like header matrix requests return HTTP `200`, Portal Pod access logs record those requests as `200`, qcloud CLB health checks reach the Pod and return `200`, but current Portal CLB `lb-pwv9zgky` still returns HTTPS `504` while working OPL-Webui CLB `lb-lhj3bgii` returns HTTPS `200`.
-- Added repo-native Tencent CLB readonly diagnostics runner `tests/support/cloud-prework/tencent-clb-readonly-diagnostics-runner.js`.
-- Added `tests/contract/contract-test-v22-tencent-clb-readonly-diagnostics-local-gate.mjs` and registered it in the existing `cloud-future-authorized` suite and verify manifest.
-- The runner uses the single entrypoint `node tests/support/cloud-prework/tencent-clb-readonly-diagnostics-runner.js --env /home/dev/.secrets/medopl/v22/tencent-clb-readonly.env --run-id <runid> --authorized 1`.
-- The env allowlist is limited to `TENCENTCLOUD_SECRET_ID`, `TENCENTCLOUD_SECRET_KEY`, `TENCENTCLOUD_REGION`, Portal/OPL CLB IDs, Portal/OPL host domains and expected NodePort targets.
-- The future official SDK path only allows Tencent CLB read-only APIs: `DescribeLoadBalancers`, `DescribeListeners`, `DescribeRules`, `DescribeTargets`, `DescribeTargetsHealth`, `DescribeLoadBalancerSecurityGroups`, `DescribeTargetGroups` and `DescribeCustomizedConfigAssociateList`.
-- The local gate proves unauthorized fail-closed before env read, env allowlist enforcement, mutation API prefix rejection, fixed Portal/OPL CLB comparison inputs, structured diagnostics shape, root-cause classification enum and redacted evidence at `.runtime/package-d-external-access-strategy/<runid>/tencent-clb-readonly-diagnostics-redacted.json`.
-- Updated active, delivery and `goal-current.json` so the current unique gap is `production-launch-gap-08o-tencent-clb-readonly-diagnostics`.
-- This closeout did not read secrets/kubeconfig/DB password/TLS private key/Tencent credentials, connect to Kubernetes API or PostgreSQL, run kubectl, deploy, rollout, rollback, build/push, execute Tencent API calls or mutation, run Package C live, modify DNS/CLB/Ingress/Service/Deployment or claim public user access is complete.
-
-Verification:
-
-- `node tests/contract/contract-test-v22-tencent-clb-readonly-diagnostics-local-gate.mjs`: passed.
-- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: passed.
-- `node tests/health/health-check-v22-line-budget-gate.mjs`: passed.
-- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: passed.
-- `npm run verify`: passed before implementation closeout pointer commit.
-- `npm run closeout:check -- --json`: passed before implementation closeout pointer commit and will be rerun after closeout pointer commit.
-
-Can-claim:
-
-- Gap 08o Tencent CLB readonly diagnostics has a repo-native runner and local/future-authorized gate.
-- The next cloud run can perform read-only CLB diagnostics under the explicit env/API allowlist and write redacted evidence.
-
-Cannot-claim:
-
-- Tencent CLB readonly diagnostics has run in cloud.
-- Any CLB, DNS, Kubernetes, Ingress, Service or Deployment resource has been modified by this repo session.
-- Portal external/public user access or production launch is complete.
-
-next_cursor: `real-cloud-authorization-boundary`
-
-landed_commit: `PENDING_GAP08O_IMPLEMENTATION_COMMIT`
-
-landing_gate_result: `passed / ff-only landed / pushed`
-
-post_push_verification:
-
-- `PENDING_GAP08O_IMPLEMENTATION_COMMIT` is the Gap 08o Tencent CLB readonly diagnostics implementation commit and is reachable from `origin/recovery/platform-v22-trunk` after push.
-- `npm run verify`: passed before implementation closeout pointer commit.
-- `npm run closeout:check -- --json`: passed before implementation closeout pointer commit and will be rerun after closeout pointer commit.
-
-post_merge_closeout: `completed`
-
-next_cursor: `real-cloud-authorization-boundary`
-
 ### 2026-06-18 production-launch-gap-08n-shared-edge-clb-strategy-prep
 
 Status: `landed / pushed / post-push verified`
@@ -8268,6 +8208,66 @@ landing_gate_result: `passed / ff-only landed / pushed`
 post_push_verification:
 
 - `96aac636d868d6e3da4bccea31e94476a4b38c80` is the Gap 08n shared edge CLB strategy implementation commit and is reachable from `origin/recovery/platform-v22-trunk` after push.
+- `npm run verify`: passed before implementation closeout pointer commit.
+- `npm run closeout:check -- --json`: passed before implementation closeout pointer commit and will be rerun after closeout pointer commit.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-18 production-launch-gap-08o-tencent-clb-readonly-diagnostics-prep
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `97838d75634eae53b1cf6c274f569f5d9add2053`
+
+Model: `gpt-5.4`
+
+Subagents: `Kant` / `gpt-5.4-mini` readonly explorer for docs/fixture closeout pointer locations.
+
+Scope:
+
+- Recorded current Portal external access facts from operator diagnostics: NodePort direct and CLB-like header matrix requests return HTTP `200`, Portal Pod access logs record those requests as `200`, qcloud CLB health checks reach the Pod and return `200`, but current Portal CLB `lb-pwv9zgky` still returns HTTPS `504` while working OPL-Webui CLB `lb-lhj3bgii` returns HTTPS `200`.
+- Added repo-native Tencent CLB readonly diagnostics runner `tests/support/cloud-prework/tencent-clb-readonly-diagnostics-runner.js`.
+- Added `tests/contract/contract-test-v22-tencent-clb-readonly-diagnostics-local-gate.mjs` and registered it in the existing `cloud-future-authorized` suite and verify manifest.
+- The runner uses the single entrypoint `node tests/support/cloud-prework/tencent-clb-readonly-diagnostics-runner.js --env /home/dev/.secrets/medopl/v22/tencent-clb-readonly.env --run-id <runid> --authorized 1`.
+- The env allowlist is limited to `TENCENTCLOUD_SECRET_ID`, `TENCENTCLOUD_SECRET_KEY`, `TENCENTCLOUD_REGION`, Portal/OPL CLB IDs, Portal/OPL host domains and expected NodePort targets.
+- The future official SDK path only allows Tencent CLB read-only APIs: `DescribeLoadBalancers`, `DescribeListeners`, `DescribeRules`, `DescribeTargets`, `DescribeTargetsHealth`, `DescribeLoadBalancerSecurityGroups`, `DescribeTargetGroups` and `DescribeCustomizedConfigAssociateList`.
+- The local gate proves unauthorized fail-closed before env read, env allowlist enforcement, mutation API prefix rejection, fixed Portal/OPL CLB comparison inputs, structured diagnostics shape, root-cause classification enum and redacted evidence at `.runtime/package-d-external-access-strategy/<runid>/tencent-clb-readonly-diagnostics-redacted.json`.
+- Updated active, delivery and `goal-current.json` so the current unique gap is `production-launch-gap-08o-tencent-clb-readonly-diagnostics`.
+- This closeout did not read secrets/kubeconfig/DB password/TLS private key/Tencent credentials, connect to Kubernetes API or PostgreSQL, run kubectl, deploy, rollout, rollback, build/push, execute Tencent API calls or mutation, run Package C live, modify DNS/CLB/Ingress/Service/Deployment or claim public user access is complete.
+
+Verification:
+
+- `node tests/contract/contract-test-v22-tencent-clb-readonly-diagnostics-local-gate.mjs`: passed.
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: passed.
+- `node tests/health/health-check-v22-line-budget-gate.mjs`: passed.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: passed.
+- `npm run verify`: passed before implementation closeout pointer commit.
+- `npm run closeout:check -- --json`: passed before implementation closeout pointer commit and will be rerun after closeout pointer commit.
+
+Can-claim:
+
+- Gap 08o Tencent CLB readonly diagnostics has a repo-native runner and local/future-authorized gate.
+- The next cloud run can perform read-only CLB diagnostics under the explicit env/API allowlist and write redacted evidence.
+
+Cannot-claim:
+
+- Tencent CLB readonly diagnostics has run in cloud.
+- Any CLB, DNS, Kubernetes, Ingress, Service or Deployment resource has been modified by this repo session.
+- Portal external/public user access or production launch is complete.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+landed_commit: `2fa6747c5482aeb92c571d827e207d0ec7bf280e`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `2fa6747c5482aeb92c571d827e207d0ec7bf280e` is the Gap 08o Tencent CLB readonly diagnostics implementation commit and is reachable from `origin/recovery/platform-v22-trunk` after push.
 - `npm run verify`: passed before implementation closeout pointer commit.
 - `npm run closeout:check -- --json`: passed before implementation closeout pointer commit and will be rerun after closeout pointer commit.
 
