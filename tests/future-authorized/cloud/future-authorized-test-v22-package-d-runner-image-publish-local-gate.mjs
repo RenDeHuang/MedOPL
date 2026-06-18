@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
@@ -17,6 +17,7 @@ import {
 const imageRef = "uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001";
 const dockerfilePath = "tests/support/cloud-prework/package-d-platform-runner.Dockerfile";
 const entrypointPath = "tests/support/cloud-prework/package-d-platform-runner-entrypoint.js";
+const retiredWorkflowPath = ".github/workflows/package-d-runner-image-publish.yml";
 const serviceImageRefs = Object.freeze({
   PACKAGE_D_PORTAL_FRONTEND_IMAGE_REF: "uswccr.ccs.tencentyun.com/medopl/portal-frontend:v22-package-d-20260616-001",
   PACKAGE_D_GO_BACKEND_IMAGE_REF: "uswccr.ccs.tencentyun.com/medopl/medopl-go-backend:v22-package-d-20260616-001",
@@ -257,6 +258,11 @@ assert.equal(
   PACKAGE_D_RUNNER_IMAGE_PUBLISH_COMMAND,
   "node tests/support/cloud-prework/package-d-runner-image-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-deploy.env --authorized 1",
   "publish_boundary_must_use_private_build_runner",
+);
+await assert.rejects(
+  () => stat(retiredWorkflowPath),
+  /ENOENT/u,
+  "github_actions_image_publish_workflow_must_be_removed_from_current_live_path",
 );
 
 assert.equal(dockerfile.includes("FROM node:22-bookworm-slim"), true, "runner_image_must_use_node22");

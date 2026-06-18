@@ -1041,7 +1041,6 @@
       "workflow": "removed_from_current_live_path",
       "command": "node tests/support/cloud-prework/package-d-runner-image-publish-runner.js --mode private-build-push --env /home/dev/.secrets/medopl/v22/package-d-deploy.env --authorized 1",
       "localGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs",
-      "workflowGate": "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-workflow-gate.mjs",
       "evidenceSink": ".runtime/package-d-runner-image-publish/private-build-push-redacted.json",
       "imageRef": "uswccr.ccs.tencentyun.com/medopl/medopl-platform-runner:v22-package-d-20260615-001",
       "imageRefEvidence": "redacted",
