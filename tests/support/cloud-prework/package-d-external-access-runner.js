@@ -27,6 +27,7 @@ import {
   qcloudEdgeNodePortCommandPlan,
 } from "./package-d-external-access-edge-nodeport-contract.js";
 import { PACKAGE_D_EXTERNAL_ACCESS_HEALTHCHECK_APPLY_COMMAND, PACKAGE_D_EXTERNAL_ACCESS_HEALTHCHECK_DRY_RUN_COMMAND, QCLOUD_HEALTHCHECK_APPLY_MODE, QCLOUD_HEALTHCHECK_DRY_RUN_MODE, QCLOUD_TKE_SERVICE_CONFIG_CRD_NAME, QCLOUD_TKE_SERVICE_CONFIG_NAME, assertQcloudHealthcheckManifestBoundary, qcloudHealthcheckCommandPlan, qcloudHealthcheckIngressManifest, qcloudHealthcheckStrategy, qcloudHealthcheckTkeServiceConfigManifest } from "./package-d-external-access-healthcheck-contract.js";
+import { PACKAGE_D_EXTERNAL_ACCESS_REMOVE_HEALTHCHECK_APPLY_COMMAND, PACKAGE_D_EXTERNAL_ACCESS_REMOVE_HEALTHCHECK_DRY_RUN_COMMAND, QCLOUD_REMOVE_HEALTHCHECK_APPLY_MODE, QCLOUD_REMOVE_HEALTHCHECK_DRY_RUN_MODE, assertQcloudRemoveHealthcheckManifestBoundary, qcloudRemoveHealthcheckCommandPlan, qcloudRemoveHealthcheckIngressManifest, qcloudRemoveHealthcheckStrategy } from "./package-d-external-access-remove-healthcheck-contract.js";
 import {
   FIXED_EXTERNAL_SMOKE_URL,
   FIXED_INGRESS_CLASS,
@@ -50,6 +51,7 @@ export {
   PACKAGE_D_EXTERNAL_ACCESS_EDGE_NODEPORT_DRY_RUN_COMMAND,
 } from "./package-d-external-access-edge-nodeport-contract.js";
 export { PACKAGE_D_EXTERNAL_ACCESS_HEALTHCHECK_APPLY_COMMAND, PACKAGE_D_EXTERNAL_ACCESS_HEALTHCHECK_DRY_RUN_COMMAND } from "./package-d-external-access-healthcheck-contract.js";
+export { PACKAGE_D_EXTERNAL_ACCESS_REMOVE_HEALTHCHECK_APPLY_COMMAND, PACKAGE_D_EXTERNAL_ACCESS_REMOVE_HEALTHCHECK_DRY_RUN_COMMAND } from "./package-d-external-access-remove-healthcheck-contract.js";
 export { assertPackageDExternalAccessManifestBoundary } from "./package-d-external-access-ingress-contract.js";
 
 export const PACKAGE_D_EXTERNAL_ACCESS_DRY_RUN_COMMAND = "node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-ingress-dry-run --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id <runid> --authorized 1";
@@ -65,36 +67,16 @@ const EXTERNAL_ACCESS_MODES = Object.freeze(new Set([
   QCLOUD_EDGE_NODEPORT_APPLY_MODE,
   QCLOUD_HEALTHCHECK_DRY_RUN_MODE,
   QCLOUD_HEALTHCHECK_APPLY_MODE,
+  QCLOUD_REMOVE_HEALTHCHECK_DRY_RUN_MODE,
+  QCLOUD_REMOVE_HEALTHCHECK_APPLY_MODE,
 ]));
-const EXTERNAL_ACCESS_ENV_KEYS = Object.freeze([
-  "PORTAL_HOST_DOMAIN",
-  "INGRESS_CLASS",
-  "TLS_SECRET_NAME",
-  "TENCENT_SSL_CERT_ID",
-  "EXTERNAL_SMOKE_URL",
-]);
+const EXTERNAL_ACCESS_ENV_KEYS = Object.freeze(["PORTAL_HOST_DOMAIN", "INGRESS_CLASS", "TLS_SECRET_NAME", "TENCENT_SSL_CERT_ID", "EXTERNAL_SMOKE_URL"]);
 const REQUIRED_EXTERNAL_ACCESS_ENV_KEYS = EXTERNAL_ACCESS_ENV_KEYS;
 const RUN_GATE_ENV_KEYS = Object.freeze(["RUN_TENCENT_DEPLOY_EXECUTION"]);
 const APPLY_GATE_VALUE = "external-access";
 const DRY_RUN_GATE_VALUE = "0";
 const EVIDENCE_FILE = "real-mutation-redacted.json";
-const FORBIDDEN_ARGS = Object.freeze(new Set([
-  "--deploy",
-  "--rollout",
-  "--rollback",
-  "--build",
-  "--push",
-  "--tencent-mutation",
-  "--package-c-live",
-  "--delete",
-  "--patch",
-  "--scale",
-  "--loadbalancer",
-  "--dns-mutation",
-  "--tls-cert",
-  "--tls-key",
-  "--secret-file",
-]));
+const FORBIDDEN_ARGS = Object.freeze(new Set(["--deploy", "--rollout", "--rollback", "--build", "--push", "--tencent-mutation", "--package-c-live", "--delete", "--patch", "--scale", "--loadbalancer", "--dns-mutation", "--tls-cert", "--tls-key", "--secret-file"]));
 
 function text(value = "") {
   return String(value ?? "").trim();
@@ -132,11 +114,11 @@ function assertMode(mode = "") {
 }
 
 function isDryRunMode(mode = "") {
-  return mode === QCLOUD_INGRESS_DRY_RUN_MODE || mode === QCLOUD_EDGE_NODEPORT_DRY_RUN_MODE || mode === QCLOUD_HEALTHCHECK_DRY_RUN_MODE;
+  return mode === QCLOUD_INGRESS_DRY_RUN_MODE || mode === QCLOUD_EDGE_NODEPORT_DRY_RUN_MODE || mode === QCLOUD_HEALTHCHECK_DRY_RUN_MODE || mode === QCLOUD_REMOVE_HEALTHCHECK_DRY_RUN_MODE;
 }
 
 function isApplyMode(mode = "") {
-  return mode === QCLOUD_INGRESS_APPLY_MODE || mode === QCLOUD_EDGE_NODEPORT_APPLY_MODE || mode === QCLOUD_HEALTHCHECK_APPLY_MODE;
+  return mode === QCLOUD_INGRESS_APPLY_MODE || mode === QCLOUD_EDGE_NODEPORT_APPLY_MODE || mode === QCLOUD_HEALTHCHECK_APPLY_MODE || mode === QCLOUD_REMOVE_HEALTHCHECK_APPLY_MODE;
 }
 
 function isEdgeNodePortMode(mode = "") {
@@ -145,6 +127,10 @@ function isEdgeNodePortMode(mode = "") {
 
 function isHealthcheckMode(mode = "") {
   return mode === QCLOUD_HEALTHCHECK_DRY_RUN_MODE || mode === QCLOUD_HEALTHCHECK_APPLY_MODE;
+}
+
+function isRemoveHealthcheckMode(mode = "") {
+  return mode === QCLOUD_REMOVE_HEALTHCHECK_DRY_RUN_MODE || mode === QCLOUD_REMOVE_HEALTHCHECK_APPLY_MODE;
 }
 
 function parseExternalAccessEnvObject(externalAccessEnv = {}) {
@@ -240,6 +226,9 @@ function commandPlan({ mode }) {
   }
   if (healthcheckMode) {
     return qcloudHealthcheckCommandPlan({ commandRecord, readonly, applyMode, fixedPortalHost: FIXED_PORTAL_HOST, fixedPortalServiceName: FIXED_PORTAL_SERVICE_NAME, fixedExternalSmokeUrl: FIXED_EXTERNAL_SMOKE_URL });
+  }
+  if (isRemoveHealthcheckMode(mode)) {
+    return qcloudRemoveHealthcheckCommandPlan({ commandRecord, readonly, applyMode, fixedPortalHost: FIXED_PORTAL_HOST, fixedPortalServiceName: FIXED_PORTAL_SERVICE_NAME, fixedExternalSmokeUrl: FIXED_EXTERNAL_SMOKE_URL });
   }
   const dryRuns = [
     commandRecord({
@@ -428,17 +417,20 @@ export async function buildPackageDExternalAccessPlan({
 
   const edgeMode = isEdgeNodePortMode(normalizedMode);
   const healthcheckMode = isHealthcheckMode(normalizedMode);
+  const removeHealthcheckMode = isRemoveHealthcheckMode(normalizedMode);
   const applyMode = isApplyMode(normalizedMode);
-  const secretMode = !edgeMode && !healthcheckMode;
+  const secretMode = !edgeMode && !healthcheckMode && !removeHealthcheckMode;
   const redactedSecret = secretMode ? qcloudCertSecret({ certId: env.TENCENT_SSL_CERT_ID, redacted: true }) : undefined;
   const liveSecret = secretMode ? qcloudCertSecret({ certId: env.TENCENT_SSL_CERT_ID, redacted: false }) : undefined;
-  const backendServiceName = edgeMode || healthcheckMode ? FIXED_PORTAL_EDGE_SERVICE_NAME : FIXED_PORTAL_SERVICE_NAME;
-  const ingress = healthcheckMode ? qcloudHealthcheckIngressManifest() : portalIngressManifest({ backendServiceName });
+  const edgeBackendMode = edgeMode || healthcheckMode || removeHealthcheckMode;
+  const backendServiceName = edgeBackendMode ? FIXED_PORTAL_EDGE_SERVICE_NAME : FIXED_PORTAL_SERVICE_NAME;
+  const ingress = removeHealthcheckMode ? qcloudRemoveHealthcheckIngressManifest() : healthcheckMode ? qcloudHealthcheckIngressManifest() : portalIngressManifest({ backendServiceName });
   const edgeService = edgeMode ? portalEdgeNodePortServiceManifest() : undefined;
   const tkeServiceConfig = healthcheckMode ? qcloudHealthcheckTkeServiceConfigManifest() : undefined;
-  assertPackageDExternalAccessManifestBoundary({ secret: redactedSecret, ingress, edgeService, edgeBackendRequired: healthcheckMode });
-  assertPackageDExternalAccessManifestBoundary({ secret: liveSecret, ingress, edgeService, edgeBackendRequired: healthcheckMode });
+  assertPackageDExternalAccessManifestBoundary({ secret: redactedSecret, ingress, edgeService, edgeBackendRequired: healthcheckMode || removeHealthcheckMode });
+  assertPackageDExternalAccessManifestBoundary({ secret: liveSecret, ingress, edgeService, edgeBackendRequired: healthcheckMode || removeHealthcheckMode });
   if (healthcheckMode) assertQcloudHealthcheckManifestBoundary({ tkeServiceConfig, ingress });
+  if (removeHealthcheckMode) assertQcloudRemoveHealthcheckManifestBoundary({ ingress });
 
   const runEvidenceDir = path.join(evidenceDir, safeRunId);
   const secretManifestPath = secretMode ? path.join(runEvidenceDir, "qcloud-cert-secret-redacted.json") : "";
@@ -447,13 +439,7 @@ export async function buildPackageDExternalAccessPlan({
   const healthcheckManifestPath = healthcheckMode ? path.join(runEvidenceDir, "qcloud-healthcheck-redacted.json") : "";
   const commands = commandPlan({ mode: normalizedMode }).map((command) => {
     assertCommandAllowed(command);
-    return {
-      name: command.name,
-      kind: command.kind,
-      stdinManifest: command.stdinManifest,
-      command: command.command,
-      args: command.args,
-    };
+    return { name: command.name, kind: command.kind, stdinManifest: command.stdinManifest, command: command.command, args: command.args };
   });
 
   const backendTarget = `${backendServiceName}:${FIXED_PORTAL_SERVICE_PORT}`;
@@ -467,6 +453,10 @@ export async function buildPackageDExternalAccessPlan({
           "server-side dry-run TkeServiceConfig/portal-frontend-edge-healthcheck in medopl-platform",
           "server-side dry-run Ingress/portal-frontend health-check annotation binding in medopl-platform",
         ]
+    : removeHealthcheckMode
+    ? applyMode
+      ? ["apply Ingress/portal-frontend only to remove qcloud health-check annotation in medopl-platform"]
+      : ["server-side dry-run Ingress/portal-frontend with qcloud health-check annotation removed in medopl-platform"]
     : edgeMode
     ? applyMode
       ? [
@@ -490,6 +480,8 @@ export async function buildPackageDExternalAccessPlan({
     ok: true,
     contract: healthcheckMode
       ? "production_launch_gap_08h_qcloud_healthcheck_contract_local_gate"
+      : removeHealthcheckMode
+      ? "production_launch_gap_08l_qcloud_remove_healthcheck_annotation_contract_local_gate"
       : edgeMode
       ? "production_launch_gap_08e_qcloud_edge_nodeport_backend_contract_local_gate"
       : "production_launch_gap_08d_qcloud_external_access_runner_contract_local_gate",
@@ -498,6 +490,10 @@ export async function buildPackageDExternalAccessPlan({
       ? applyMode
         ? PACKAGE_D_EXTERNAL_ACCESS_HEALTHCHECK_APPLY_COMMAND
         : PACKAGE_D_EXTERNAL_ACCESS_HEALTHCHECK_DRY_RUN_COMMAND
+      : removeHealthcheckMode
+      ? applyMode
+        ? PACKAGE_D_EXTERNAL_ACCESS_REMOVE_HEALTHCHECK_APPLY_COMMAND
+        : PACKAGE_D_EXTERNAL_ACCESS_REMOVE_HEALTHCHECK_DRY_RUN_COMMAND
       : edgeMode
       ? applyMode
         ? PACKAGE_D_EXTERNAL_ACCESS_EDGE_NODEPORT_APPLY_COMMAND
@@ -533,6 +529,7 @@ export async function buildPackageDExternalAccessPlan({
       ...(tkeServiceConfig ? { tkeServiceConfig } : {}),
     },
     ...(healthcheckMode ? { healthcheckStrategy: qcloudHealthcheckStrategy() } : {}),
+    ...(removeHealthcheckMode ? { removeHealthcheckStrategy: qcloudRemoveHealthcheckStrategy() } : {}),
     manifestBoundary: {
       qcloudSecretType: "Opaque",
       qcloudCertIdDataKey: "qcloud_cert_id",
@@ -544,6 +541,7 @@ export async function buildPackageDExternalAccessPlan({
       edgeNodePortServiceRequired: edgeMode,
       healthcheckConfigRequired: healthcheckMode,
       tkeServiceConfigCrdRequired: healthcheckMode,
+      removeHealthcheckAnnotationRequired: removeHealthcheckMode,
       loadBalancerServiceForbidden: true,
       namespace: FIXED_NAMESPACE,
     },
@@ -553,7 +551,7 @@ export async function buildPackageDExternalAccessPlan({
         ...(secretMode ? ["get/describe Secret medopl-portal-tls in medopl-platform without printing qcloud_cert_id value"] : []),
         "get/describe Ingress portal-frontend in medopl-platform",
         "get Service portal-frontend in medopl-platform",
-        ...(edgeMode || healthcheckMode ? ["get/describe Service portal-frontend-edge in medopl-platform"] : []),
+        ...(edgeBackendMode ? ["get/describe Service portal-frontend-edge in medopl-platform"] : []),
         ...(healthcheckMode ? ["get/describe TkeServiceConfig portal-frontend-edge-healthcheck in medopl-platform", "get TkeServiceConfig CRD before dry-run/apply"] : []),
         "get IngressClass qcloud",
         "DNS post-apply validation for portal.medopl.cn without DNS mutation",
@@ -564,7 +562,7 @@ export async function buildPackageDExternalAccessPlan({
       "legacy Kubernetes TLS Secret shape",
       "legacy TLS certificate/key data keys",
       "TLS private key read",
-      edgeMode || healthcheckMode
+      edgeBackendMode
         ? "Deployment/original ClusterIP Service/ConfigMap/RBAC/Namespace mutation"
         : "Deployment/Service/ConfigMap/RBAC/Namespace mutation",
       "DNS mutation",
@@ -583,16 +581,16 @@ export async function buildPackageDExternalAccessPlan({
     rollbackCleanupPlan: {
       rollbackRequiresSeparateAuthorization: true,
       deleteIngress: "delete only Ingress/portal-frontend if created by this run and rollback is separately authorized",
-      deleteTlsSecret: edgeMode || healthcheckMode
+      deleteTlsSecret: edgeBackendMode
         ? "keep existing Secret/medopl-portal-tls unless a separately authorized rollback explicitly targets it"
         : "delete only Secret/medopl-portal-tls if created by this run and rollback is separately authorized",
       deleteEdgeService: edgeMode
         ? "delete only Service/portal-frontend-edge if created by this run and rollback is separately authorized"
         : "not_applicable",
-      deleteHealthcheckConfig: healthcheckMode ? "delete only TkeServiceConfig/portal-frontend-edge-healthcheck with separate authorization" : "not_applicable",
-      removeHealthcheckBinding: healthcheckMode ? "remove only health-check annotation binding from Ingress/portal-frontend with separate authorization" : "not_applicable",
-      preserveSecretIngressEdgeService: healthcheckMode,
-      restoreOrDeleteIngress: edgeMode || healthcheckMode
+      deleteHealthcheckConfig: removeHealthcheckMode ? "not_allowed_in_this_gap" : healthcheckMode ? "delete only TkeServiceConfig/portal-frontend-edge-healthcheck with separate authorization" : "not_applicable",
+      removeHealthcheckBinding: removeHealthcheckMode ? "authorized action in this gap: remove only health-check annotation binding from Ingress/portal-frontend" : healthcheckMode ? "remove only health-check annotation binding from Ingress/portal-frontend with separate authorization" : "not_applicable",
+      preserveSecretIngressEdgeService: healthcheckMode || removeHealthcheckMode,
+      restoreOrDeleteIngress: edgeBackendMode
         ? "restore/delete only Ingress/portal-frontend as needed and only with separate authorization"
         : "delete only Ingress/portal-frontend if created by this run and rollback is separately authorized",
       deploymentServiceRollbackAllowed: false,
@@ -601,10 +599,10 @@ export async function buildPackageDExternalAccessPlan({
     },
     dnsPlan: {
       cnameHost: FIXED_PORTAL_HOST,
-      cnameTargetSource: edgeMode
+      cnameTargetSource: edgeBackendMode
         ? "qcloud Ingress status load balancer hostname after Ready"
         : "qcloud Ingress status load balancer hostname after apply",
-      lastObservedNewLoadBalancerHostname: edgeMode
+      lastObservedNewLoadBalancerHostname: edgeBackendMode
         ? "lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com"
         : "not_recorded_in_local_gate",
       dnsMutationAllowed: false,
@@ -621,7 +619,7 @@ export async function buildPackageDExternalAccessPlan({
       "context or cluster does not match cls-fi097sy4",
       "namespace is not medopl-platform",
       "portal-frontend Service 8080 is missing",
-      ...(edgeMode || healthcheckMode ? [
+      ...(edgeBackendMode ? [
         "Service/portal-frontend-edge manifest is not type NodePort",
         "edge Service selector does not match portal-frontend",
         "Ingress manifest does not target portal.medopl.cn -> portal-frontend-edge:8080",
@@ -633,7 +631,7 @@ export async function buildPackageDExternalAccessPlan({
       ] : []),
       "IngressClass qcloud is missing or controller mismatches",
       "Secret manifest is not Opaque with stringData.qcloud_cert_id only",
-      edgeMode || healthcheckMode
+      edgeBackendMode
         ? "Ingress manifest targets the original ClusterIP backend instead of portal-frontend-edge:8080"
         : "Ingress manifest does not target portal.medopl.cn -> portal-frontend:8080",
       "unexpected existing conflicting Secret or Ingress",
@@ -655,10 +653,10 @@ export async function buildPackageDExternalAccessPlan({
       localGateOnly: false,
       realMutationAllowedNow: applyMode,
       kubectlExecutedByBuildPlan: false,
-      secretMutationScope: edgeMode || healthcheckMode ? "not mutated in this mode; existing Secret/medopl-portal-tls only referenced" : "Secret/medopl-portal-tls only",
-      ingressMutationScope: healthcheckMode ? "Ingress/portal-frontend health-check annotation binding only" : "Ingress/portal-frontend only",
+      secretMutationScope: edgeBackendMode ? "not mutated in this mode; existing Secret/medopl-portal-tls only referenced" : "Secret/medopl-portal-tls only",
+      ingressMutationScope: removeHealthcheckMode ? "Ingress/portal-frontend remove health-check annotation only" : healthcheckMode ? "Ingress/portal-frontend health-check annotation binding only" : "Ingress/portal-frontend only",
       edgeServiceMutationScope: edgeMode ? "Service/portal-frontend-edge only" : "not_applicable",
-      healthcheckMutationScope: healthcheckMode ? "TkeServiceConfig/portal-frontend-edge-healthcheck only" : "not_applicable",
+      healthcheckMutationScope: removeHealthcheckMode ? "not mutated; TkeServiceConfig is preserved for separate cleanup authorization" : healthcheckMode ? "TkeServiceConfig/portal-frontend-edge-healthcheck only" : "not_applicable",
       deploymentServiceMutationAllowed: false,
       originalClusterIpServiceMutationAllowed: false,
       dnsMutationAllowed: false,
@@ -669,9 +667,9 @@ export async function buildPackageDExternalAccessPlan({
       publicAccessClaimAllowed: false,
     },
     nextGap: {
-      id: healthcheckMode ? "production-launch-gap-08h-qcloud-healthcheck-dry-run-apply" : edgeMode ? "production-launch-gap-08e-qcloud-edge-nodeport-apply" : "production-launch-gap-08d-qcloud-tls-secret-ingress-real-mutation-apply",
-      title: healthcheckMode ? "Production launch Gap 08h: qcloud Ingress backend health-check configuration dry-run/apply" : edgeMode ? "Production launch Gap 08e: qcloud Ingress backend NodePort edge Service apply" : "Production launch Gap 08d: qcloud Opaque cert-id Secret + Portal Ingress real apply",
-      boundary: healthcheckMode ? "cloud runner may apply only TkeServiceConfig/portal-frontend-edge-healthcheck and Ingress/portal-frontend health-check annotation binding; DNS mutation remains forbidden" : edgeMode ? "cloud runner may apply only Service/portal-frontend-edge type NodePort and update Ingress/portal-frontend backend to portal-frontend-edge:8080; DNS mutation remains separate" : "cloud runner must place the five external access env keys into an authorized env file; apply mode requires RUN_TENCENT_DEPLOY_EXECUTION=external-access from process/deploy run gate source",
+      id: removeHealthcheckMode ? "production-launch-gap-08l-remove-qcloud-healthcheck-annotation" : healthcheckMode ? "production-launch-gap-08h-qcloud-healthcheck-dry-run-apply" : edgeMode ? "production-launch-gap-08e-qcloud-edge-nodeport-apply" : "production-launch-gap-08d-qcloud-tls-secret-ingress-real-mutation-apply",
+      title: removeHealthcheckMode ? "Production launch Gap 08l: remove Portal qcloud TkeServiceConfig Ingress annotation" : healthcheckMode ? "Production launch Gap 08h: qcloud Ingress backend health-check configuration dry-run/apply" : edgeMode ? "Production launch Gap 08e: qcloud Ingress backend NodePort edge Service apply" : "Production launch Gap 08d: qcloud Opaque cert-id Secret + Portal Ingress real apply",
+      boundary: removeHealthcheckMode ? "cloud runner may apply only Ingress/portal-frontend with qcloud health-check annotation removed; Secret, Service, TkeServiceConfig and DNS mutation remain forbidden" : healthcheckMode ? "cloud runner may apply only TkeServiceConfig/portal-frontend-edge-healthcheck and Ingress/portal-frontend health-check annotation binding; DNS mutation remains forbidden" : edgeMode ? "cloud runner may apply only Service/portal-frontend-edge type NodePort and update Ingress/portal-frontend backend to portal-frontend-edge:8080; DNS mutation remains separate" : "cloud runner must place the five external access env keys into an authorized env file; apply mode requires RUN_TENCENT_DEPLOY_EXECUTION=external-access from process/deploy run gate source",
     },
     realExecutionReady: applyMode,
   };
@@ -679,10 +677,7 @@ export async function buildPackageDExternalAccessPlan({
     value: { ...(liveSecret ? { secret: liveSecret } : {}), ingress, ...(edgeService ? { edgeService } : {}), ...(tkeServiceConfig ? { tkeServiceConfig } : {}) },
     enumerable: false,
   });
-  Object.defineProperty(plan, "liveCommands", {
-    value: commands,
-    enumerable: false,
-  });
+  Object.defineProperty(plan, "liveCommands", { value: commands, enumerable: false });
   const audit = redactionAudit(JSON.stringify(plan), { certId: env.TENCENT_SSL_CERT_ID });
   const failedAudit = failedAuditKeys(audit);
   if (failedAudit) throw new Error(`package_d_external_access_plan_redaction_audit_failed:${failedAudit}`);
@@ -770,6 +765,7 @@ function processRunGateEnv() {
 }
 
 function executionContractForMode(mode = "") {
+  if (isRemoveHealthcheckMode(mode)) return "production_launch_gap_08l_qcloud_remove_healthcheck_annotation_execution";
   if (isHealthcheckMode(mode)) return "production_launch_gap_08h_qcloud_healthcheck_execution";
   return isEdgeNodePortMode(mode)
     ? "production_launch_gap_08e_qcloud_edge_nodeport_execution"

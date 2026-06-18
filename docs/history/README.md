@@ -95,6 +95,65 @@ Cannot-claim:
 
 next_cursor: `real-cloud-authorization-boundary`
 
+### 2026-06-18 production-launch-gap-08l-remove-qcloud-healthcheck-annotation-prep
+
+Status: `landed candidate / local-gated`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `d4ba8d8bc4cd6658a9622d6bbeb40cb0398d4419`
+
+Model: `gpt-5.4`
+
+Subagents: none
+
+Scope:
+
+- Recorded Gap 08k cloud readonly compare evidence from `.runtime/package-d-external-access-strategy/gap08k-opl-webui-vs-portal-compare-001/readonly-compare-redacted.json`: working `opl.medopl.cn` uses qcloud Ingress + NodePort without `TkeServiceConfig` and returns HTTPS `200`, while `portal.medopl.cn` uses qcloud Ingress + NodePort with `ingress.cloud.tencent.com/tke-service-config=portal-frontend-edge-healthcheck` and still returns HTTPS `504`.
+- Added repo-native qcloud remove-healthcheck-annotation modes to `tests/support/cloud-prework/package-d-external-access-runner.js`: `qcloud-remove-healthcheck-annotation-dry-run` and `qcloud-remove-healthcheck-annotation-apply`.
+- Added `tests/support/cloud-prework/package-d-external-access-remove-healthcheck-contract.js` with the reviewed Ingress manifest shape: preserve `host=portal.medopl.cn`, `ingressClass=qcloud`, `tls secret=medopl-portal-tls`, backend `portal-frontend-edge:8080`, and remove only `ingress.cloud.tencent.com/tke-service-config`.
+- Added `tests/contract/contract-test-v22-package-d-external-access-remove-healthcheck-local-gate.mjs` and registered it in the cloud future-authorized lane and verify manifest.
+- The new local gate proves unauthorized fail-closed, dry-run gate requires `RUN_TENCENT_DEPLOY_EXECUTION=0`, apply gate requires `RUN_TENCENT_DEPLOY_EXECUTION=external-access`, command allowlist, redacted `portal-ingress-redacted.json` and `real-mutation-redacted.json` evidence, no raw cert id or secret leakage, no delete/patch, no Secret/Service/TkeServiceConfig/Deployment/DNS mutation, and HTTPS smoke remains fixed to `https://portal.medopl.cn/`.
+- Updated active, delivery and `goal-current.json` so the next unique gap is `production-launch-gap-08l-remove-qcloud-healthcheck-annotation` with run-id `gap08l-remove-healthcheck-annotation-apply-001`.
+- This closeout did not read secrets/kubeconfig/DB password/TLS private key, connect to Kubernetes API or PostgreSQL, run kubectl, deploy, rollout, rollback, build/push, execute Tencent API mutation, run Package C live, modify DNS, delete TkeServiceConfig, create a LoadBalancer Service, modify any Service/Deployment or claim public user access is complete.
+
+Verification:
+
+- `node tests/contract/contract-test-v22-package-d-external-access-remove-healthcheck-local-gate.mjs`: passed.
+- `node tests/contract/contract-test-v22-package-d-external-access-healthcheck-local-gate.mjs`: passed.
+- `node tests/contract/contract-test-v22-package-d-external-access-edge-nodeport-local-gate.mjs`: passed.
+- `node tests/health/health-check-v22-line-budget-gate.mjs`: passed.
+- `npm run verify`: run before implementation commit.
+- `npm run closeout:check -- --json`: rerun after implementation commit push and closeout pointer update.
+
+Can-claim:
+
+- Gap 08l qcloud remove-healthcheck-annotation has a repo-native contract/local gate.
+- The future dry-run command is `RUN_TENCENT_DEPLOY_EXECUTION=0 node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-remove-healthcheck-annotation-dry-run --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08l-remove-healthcheck-annotation-dry-run-001 --authorized 1`.
+- The future apply command is `RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-remove-healthcheck-annotation-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08l-remove-healthcheck-annotation-apply-001 --authorized 1`.
+
+Cannot-claim:
+
+- Gap 08l dry-run or apply has executed in cloud.
+- HTTPS external smoke has passed.
+- Portal external/public user access or production launch is complete.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+handoff_commit: `TO_BE_FILLED_AFTER_IMPLEMENTATION_COMMIT`
+
+landing_gate_result: `pending`
+
+post_push_verification:
+
+- `TO_BE_FILLED_AFTER_IMPLEMENTATION_COMMIT` will be the Gap 08l remove-healthcheck-annotation prep implementation commit and will be recorded after the implementation commit is created.
+- `npm run verify`: run before implementation commit and rerun after push.
+- `npm run closeout:check -- --json`: rerun after implementation commit push and closeout pointer update.
+
+post_merge_closeout: `pending`
+
+next_cursor: `real-cloud-authorization-boundary`
+
 ### 2026-06-17 package-d-service-reachability-passed-external-access-pack
 
 Status: `landed candidate / local-gated`
