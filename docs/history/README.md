@@ -1452,7 +1452,7 @@ next_cursor: `real-cloud-authorization-boundary`
 
 ### 2026-05-22 feat/v22-slide-09-precloud-readiness
 
-Status: `landed / pushed / post-push verified`
+Status: `authoring / local gate pending landing`
 
 Branch: `feat/v22-slide-09-precloud-readiness`
 
@@ -8274,3 +8274,50 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-18 production-launch-gap-08o-runner-fix
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `8d0709e767a5709ccb19f5f469f613d7a187f862`
+
+Model: `gpt-5.4`
+
+Subagents: `none`
+
+Scope:
+
+- Recorded Gap 08o cloud run `gap08o-tencent-clb-readonly-diagnostics-003`: Tencent API auth succeeded; Portal CLB `lb-pwv9zgky` and OPL CLB `lb-lhj3bgii` both existed and were active; both HTTPS:443 listeners existed with HTTPS -> HTTP forwarding and NORMAL session; registered targets were `eks-pnrndv6u:30336` and `eks-pnrndv6u:32258`; no CLB/DNS/Kubernetes mutation occurred; evidence is `.runtime/package-d-external-access-strategy/gap08o-tencent-clb-readonly-diagnostics-003/tencent-clb-readonly-diagnostics-redacted.json`.
+- Fixed the repo-native Tencent CLB readonly diagnostics runner so the official SDK path no longer TypeErrors on rule, target-health or security-group collection.
+- Added `DescribeTargetHealth` as the primary target-health SDK call while retaining legacy/compat `DescribeTargetsHealth` in the allowlist enum for evidence continuity.
+- Added injectable official collector coverage for `DescribeRules` parameter shape, `DescribeTargets` `location-id` filtering, `DescribeTargetHealth` `LoadBalancerIds` / `ListenerIds` / `LocationIds` shape, target-health unhealthy and unsupported paths, security group unsupported/no-binding paths and mutation API fail-closed behavior.
+- The runner now parses listener-embedded rules when the SDK lacks an independent `DescribeRules` method, records `unsupported_api` / `unsupported_or_not_applicable` for unavailable readonly APIs, treats customized config `UnknownParameter` as non-fatal, and returns `incomplete_readonly_diagnosis` when required readonly data is unavailable.
+- Root-cause classification now compares Portal vs working OPL evidence; if working OPL is also missing rule evidence, Portal cannot be classified as trustworthy `rule_missing`.
+- Updated active, delivery and `goal-current.json` so the next authorized cloud run is `gap08o-tencent-clb-readonly-diagnostics-004`.
+- This closeout did not read secrets/kubeconfig/DB password/TLS private key/Tencent credentials, connect to Kubernetes API or PostgreSQL, run kubectl, deploy, rollout, rollback, build/push, execute Tencent API calls or mutation, run Package C live, modify DNS/CLB/Ingress/Service/Deployment or claim public user access is complete.
+
+Verification:
+
+- `node tests/contract/contract-test-v22-tencent-clb-readonly-diagnostics-local-gate.mjs`: passed.
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: passed.
+- `node tests/health/health-check-v22-line-budget-gate.mjs`: passed.
+- `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json`: passed.
+- `npm run verify`: passed.
+- `npm run closeout:check -- --json`: passed.
+
+Can-claim:
+
+- Gap 08o runner fix has local/future-authorized test coverage for rules, target health, security group unsupported handling and diff-based classification.
+- The next cloud run can rerun read-only CLB diagnostics under the explicit env/API allowlist with run id `gap08o-tencent-clb-readonly-diagnostics-004`.
+
+Cannot-claim:
+
+- Tencent CLB readonly rerun `gap08o-tencent-clb-readonly-diagnostics-004` has executed.
+- Any CLB, DNS, Kubernetes, Ingress, Service or Deployment resource has been modified by this repo session.
+- Portal external/public user access or production launch is complete.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+handoff_commit: `PENDING_GAP08O_RUNNER_FIX_COMMIT`

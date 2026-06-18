@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. MedOPL Portal external access remains incomplete: NodePort direct and CLB-like header matrix requests return HTTP 200, Portal Pod access logs show those NodePort requests as 200, and qcloud CLB health checks reach the Pod as HEAD / HTTP/1.1 user-agent clb-healthcheck with 200. DNS/TLS/Ingress/edge Service/Endpoint/Pod readiness are not the active blocker. The current Portal CLB lb-pwv9zgky still returns HTTPS 504 stgw while working OPL-Webui CLB lb-lhj3bgii returns HTTPS 200. The issue is concentrated in the Tencent/qcloud CLB listener, rule, target, health, security group or data-plane layer. The current unique gap is production-launch-gap-08o-tencent-clb-readonly-diagnostics: implement repo-native Tencent CLB read-only diagnostics runner/local gate for comparing failing Portal CLB with working OPL-Webui CLB without reading secrets or calling Tencent API locally.",
+  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. MedOPL Portal external access remains incomplete: Portal NodePort direct and CLB-like header matrix requests return HTTP 200, Portal Pod access logs show those NodePort requests as 200, and qcloud CLB health checks reach the Pod as HEAD / HTTP/1.1 user-agent clb-healthcheck with 200. DNS/TLS/Ingress/edge Service/Endpoint/Pod readiness are not the active blocker. The current Portal CLB lb-pwv9zgky still returns HTTPS 504 stgw while working OPL-Webui CLB lb-lhj3bgii returns HTTPS 200. Gap 08o run gap08o-tencent-clb-readonly-diagnostics-003 authenticated to Tencent API and confirmed CLBs, HTTPS listeners and registered targets, but runner/API shape gaps made rule, target-health and security-group diagnostics incomplete and rule_missing untrustworthy. The current unique gap is production-launch-gap-08o-runner-fix: repair repo-native Tencent CLB readonly diagnostics SDK calls and Portal-vs-OPL diff classification before rerun gap08o-tencent-clb-readonly-diagnostics-004.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -10568,15 +10568,15 @@
   ],
   "nextAuthorizationPrompt": {
     "target": "cloud-codex",
-    "runIdHint": "gap08o-tencent-clb-readonly-diagnostics-001",
-    "prompt": "按 active truth 做 gap-driven execution，不新增 loop。\n\n当前唯一 gap：Production launch Gap 08o: Tencent CLB read-only diagnostics for Portal external access 504。\n\n当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability passed。Portal NodePort direct 所有 header matrix 均 HTTP 200，CLB-like headers 直打 NodePort 也 HTTP 200，Portal Pod access logs 记录所有 NodePort 请求均 200，CLB healthcheck 持续进入 Pod 并以 HEAD / HTTP/1.1 user-agent clb-healthcheck 返回 200。New/current Portal CLB lb-pwv9zgky 仍 HTTPS 504 stgw；previous Portal CLB lb-b33auprw 已非当前 DNS 目标或不可用；working OPL-Webui CLB lb-lhj3bgii HTTPS 200。问题集中在 qcloud CLB listener/rule/target/health/security-group/data-plane 层。\n\n本地 Gap 08o-prep 已收口：repo-native Tencent CLB readonly diagnostics runner/local gate 已实现。单一入口：\nnode tests/support/cloud-prework/tencent-clb-readonly-diagnostics-runner.js \\\n  --env /home/dev/.secrets/medopl/v22/tencent-clb-readonly.env \\\n  --run-id gap08o-tencent-clb-readonly-diagnostics-001 \\\n  --authorized 1 \\\n  --sdk-mode tencent-official-sdk-readonly \\\n  --enable-official-sdk-loader\n\n云端 env 文件仅允许这些 key：TENCENTCLOUD_SECRET_ID, TENCENTCLOUD_SECRET_KEY, TENCENTCLOUD_REGION, PORTAL_CLB_INSTANCE_ID, OPL_CLB_INSTANCE_ID, PORTAL_HOST_DOMAIN, OPL_HOST_DOMAIN, EXPECTED_PORTAL_NODE_IP, EXPECTED_PORTAL_NODE_PORT, EXPECTED_OPL_NODE_PORT。固定值应包括 PORTAL_CLB_INSTANCE_ID=lb-pwv9zgky，OPL_CLB_INSTANCE_ID=lb-lhj3bgii，PORTAL_HOST_DOMAIN=portal.medopl.cn，OPL_HOST_DOMAIN=opl.medopl.cn，EXPECTED_PORTAL_NODE_IP=10.66.0.42，EXPECTED_PORTAL_NODE_PORT=30336，EXPECTED_OPL_NODE_PORT=32258。\n\n只允许 Tencent CLB read-only APIs：DescribeLoadBalancers, DescribeListeners, DescribeRules, DescribeTargets, DescribeTargetsHealth 或等价 target health query, DescribeLoadBalancerSecurityGroups 或等价 readonly security group binding query, DescribeTargetGroups if relevant, DescribeCustomizedConfigAssociateList if relevant。\n\n必须对比：Portal current CLB lb-pwv9zgky，Portal previous CLB lb-b33auprw if discoverable，working OPL CLB lb-lhj3bgii，host portal.medopl.cn / opl.medopl.cn，Portal expected backend 10.66.0.42:30336，OPL backend from service opl-webui-control-plane / nodePort 32258。\n\n必须输出 redacted evidence：.runtime/package-d-external-access-strategy/gap08o-tencent-clb-readonly-diagnostics-001/tencent-clb-readonly-diagnostics-redacted.json。诊断需包含 CLB exists/status/VIP/domain、listener 443、host/path/backend rule、registered targets、target health/failure reason、security group binding/default allow state、forwarding protocol/session/gzip/HTTP2/XFF/source IP mode diff、classified root cause 与 recommended next repair action。\n\n禁止：不修改 CLB；不修改 DNS；不修改 Kubernetes；不执行 kubectl；不 build/push；不 Package C live；不输出 Tencent SecretId/SecretKey；不输出 cert id 原文；不调用 Create*/Modify*/Delete*/Register*/Deregister*/Attach*/Detach*/Set*/Associate*/Disassociate*/Rewrite*/Batch*；不声明 public access complete。\n\n完成后同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
+    "runIdHint": "gap08o-tencent-clb-readonly-diagnostics-004",
+    "prompt": "按 active truth 做 gap-driven execution，不新增 loop。\n\n当前唯一 gap：Production launch Gap 08o rerun: Tencent CLB read-only diagnostics after runner SDK-call fix。\n\n当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability passed。Portal NodePort direct 和 CLB-like header matrix 均 HTTP 200，Portal Pod access logs 记录 NodePort 请求 200，CLB healthcheck 持续进入 Pod 并返回 200。New/current Portal CLB lb-pwv9zgky 仍 HTTPS 504 stgw；working OPL-Webui CLB lb-lhj3bgii HTTPS 200。Gap 08o run gap08o-tencent-clb-readonly-diagnostics-003 已通过 Tencent API 认证并确认 Portal/OPL CLB、HTTPS:443 listener 和 registered target 存在，但 runner/API shape 对 DescribeRules、DescribeTargetsHealth、security group diagnostics 处理不正确，classification 不可信。\n\n本地 Gap 08o-runner-fix 已收口：runner 已改为使用/兼容 Tencent CLB readonly SDK shape：DescribeListeners/DescribeRules 等价解析 rules，DescribeTargets 按 location-id 过滤，DescribeTargetHealth 查询 target health，security-group 使用支持的 readonly 等价来源或明确 unsupported_api，customized config UnknownParameter 分类 unsupported_or_not_applicable 且不影响主诊断；如果 working OPL 也缺 rule evidence，不得输出 trustworthy rule_missing，必要 API 不完整时分类 incomplete_readonly_diagnosis。\n\n运行：\nnode tests/support/cloud-prework/tencent-clb-readonly-diagnostics-runner.js \\\n  --env /home/dev/.secrets/medopl/v22/tencent-clb-readonly.env \\\n  --run-id gap08o-tencent-clb-readonly-diagnostics-004 \\\n  --authorized 1 \\\n  --sdk-mode tencent-official-sdk-readonly \\\n  --enable-official-sdk-loader\n\n只允许 env key：TENCENTCLOUD_SECRET_ID, TENCENTCLOUD_SECRET_KEY, TENCENTCLOUD_REGION, PORTAL_CLB_INSTANCE_ID, OPL_CLB_INSTANCE_ID, PORTAL_HOST_DOMAIN, OPL_HOST_DOMAIN, EXPECTED_PORTAL_NODE_IP, EXPECTED_PORTAL_NODE_PORT, EXPECTED_OPL_NODE_PORT。固定值应包括 PORTAL_CLB_INSTANCE_ID=lb-pwv9zgky，OPL_CLB_INSTANCE_ID=lb-lhj3bgii，PORTAL_HOST_DOMAIN=portal.medopl.cn，OPL_HOST_DOMAIN=opl.medopl.cn，EXPECTED_PORTAL_NODE_IP=10.66.0.42，EXPECTED_PORTAL_NODE_PORT=30336，EXPECTED_OPL_NODE_PORT=32258。\n\n只允许 Tencent CLB read-only APIs：DescribeLoadBalancers, DescribeListeners, DescribeRules if available, DescribeTargets, DescribeTargetHealth, DescribeTargetsHealth only as legacy/compat enum not primary SDK call, DescribeLoadBalancerSecurityGroups if available/equivalent readonly security-group source, DescribeTargetGroups if relevant, DescribeCustomizedConfigAssociateList if relevant。\n\n必须输出 redacted evidence：.runtime/package-d-external-access-strategy/gap08o-tencent-clb-readonly-diagnostics-004/tencent-clb-readonly-diagnostics-redacted.json。诊断需包含 CLB exists/status/VIP/domain、listener 443、host/path/backend rule、registered targets、target health/failure reason、security group binding/default allow state、forwarding protocol/session/gzip/HTTP2/XFF/source IP mode diff、classified root cause 与 recommended next repair action。\n\n禁止：不修改 CLB；不修改 DNS；不修改 Kubernetes；不执行 kubectl；不 build/push；不 Package C live；不输出 Tencent SecretId/SecretKey；不输出 cert id 原文；不调用 Create*/Modify*/Delete*/Register*/Deregister*/Attach*/Detach*/Set*/Associate*/Disassociate*/Rewrite*/Batch*；不声明 public access complete。\n\n完成后同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
   },
   "nextLocalCodexPrompt": {
     "target": "local-codex",
-    "prompt": "当前唯一 gap 已进入 Gap 08o Tencent CLB readonly diagnostics 云端授权；本地 repo-native CLB readonly diagnostics runner/local gate 已收口。除非云端 evidence 暴露新的 fail-closed gap，本地不要新增 loop。"
+    "prompt": "当前唯一 gap 是 Gap 08o-runner-fix：修复 Tencent CLB readonly diagnostics runner 的 rules/target-health/security-group SDK 调用和 diff-based classification，然后授权云端 rerun gap08o-tencent-clb-readonly-diagnostics-004；不新增 loop，不执行云端 mutation。"
   },
   "production_launch_goal_gap_map": {
-    "status": "gap_08o_tencent_clb_readonly_diagnostics_runner_local_gate_ready_waiting_authorized_readonly_run",
+    "status": "gap_08o_runner_fix_local_gate_for_rerun_ready",
     "currentFacts": {
       "packageDPlatformControlPlaneInsideTke": "deployed",
       "inClusterHttpReachability": "preflight-passed",
@@ -10639,7 +10639,7 @@
       "oplWebuiWorkingClbHttpsStatus": 200,
       "failedPortalClbFixYield": "low",
       "noCompatPolicy": "no fallback host, no long-term dual CLB, no dual-write route, explicit failed Portal CLB cleanup gap after shared edge smoke",
-      "gap08oPrepStatus": "implemented_local_gate",
+      "gap08oPrepStatus": "implemented_local_gate_after_runner_fix",
       "gap08oRunnerCommand": "node tests/support/cloud-prework/tencent-clb-readonly-diagnostics-runner.js --env /home/dev/.secrets/medopl/v22/tencent-clb-readonly.env --run-id <runid> --authorized 1",
       "gap08oLocalGate": "node tests/contract/contract-test-v22-tencent-clb-readonly-diagnostics-local-gate.mjs",
       "gap08oEvidencePath": ".runtime/package-d-external-access-strategy/<runid>/tencent-clb-readonly-diagnostics-redacted.json",
@@ -10652,7 +10652,19 @@
       "portalClbHealthcheckToPod": "HEAD / HTTP/1.1 clb-healthcheck -> 200",
       "portalCurrentClbHttpsStatus": 504,
       "oplWorkingClbHttpsStatus": 200,
-      "gap08oLikelyLayer": "Tencent CLB listener/rule/target/health/security-group/data-plane"
+      "gap08oLikelyLayer": "Tencent CLB listener/rule/target/health/security-group/data-plane",
+      "gap08oCloudRun003Status": "authenticated_readonly_partial_diagnostics_incomplete_due_runner_api_shape",
+      "gap08oCloudRun003EvidencePath": ".runtime/package-d-external-access-strategy/gap08o-tencent-clb-readonly-diagnostics-003/tencent-clb-readonly-diagnostics-redacted.json",
+      "gap08oCloudRun003PortalClbExists": true,
+      "gap08oCloudRun003OplClbExists": true,
+      "gap08oCloudRun003PortalListener443": "exists HTTPS forwarding HTTP session NORMAL",
+      "gap08oCloudRun003OplListener443": "exists HTTPS forwarding HTTP session NORMAL",
+      "gap08oCloudRun003PortalRegisteredTarget": "eks-pnrndv6u:30336 weight 10",
+      "gap08oCloudRun003OplRegisteredTarget": "eks-pnrndv6u:32258 weight 10",
+      "gap08oCloudRun003RunnerGap": "DescribeRules / target health / security group diagnostics were incomplete or TypeError-class failures; rule_missing was untrustworthy because working OPL was also marked missing",
+      "gap08oRunnerFix": "uses DescribeTargetHealth, parses listener/rule/targets, handles unsupported_api without TypeError, and classifies from Portal-vs-OPL diff",
+      "gap08oNextRunId": "gap08o-tencent-clb-readonly-diagnostics-004",
+      "gap08oNextEvidencePath": ".runtime/package-d-external-access-strategy/gap08o-tencent-clb-readonly-diagnostics-004/tencent-clb-readonly-diagnostics-redacted.json"
     },
     "vision": {
       "product": "MedOPL production launch is a stable multi-tenant SaaS managed OPL workbench, not a temporary page trial.",
@@ -10977,10 +10989,10 @@
       }
     ],
     "nextUniqueGap": {
-      "id": "production-launch-gap-08o-tencent-clb-readonly-diagnostics",
-      "title": "Production launch Gap 08o: Tencent CLB read-only diagnostics runner for external access 504",
-      "reason": "Portal NodePort direct traffic, CLB-like headers, Pod access logs and CLB health checks all return 200, while the current Portal CLB lb-pwv9zgky still returns HTTPS 504 and working OPL-Webui CLB lb-lhj3bgii returns HTTPS 200; the remaining gap is Tencent CLB listener/rule/target/health/security-group/data-plane comparison.",
-      "boundary": "local runner/local gate only in this repo session; future cloud run may read only the allowlisted Tencent CLB env file and call only allowlisted Tencent CLB read-only APIs; no Tencent mutation, DNS mutation, Kubernetes access, kubectl, deploy, build/push or Package C live",
+      "id": "production-launch-gap-08o-runner-fix",
+      "title": "Production launch Gap 08o runner fix: Tencent CLB readonly diagnostics SDK calls and diff classification",
+      "reason": "Gap 08o run gap08o-tencent-clb-readonly-diagnostics-003 authenticated and read basic CLB/listener/target data, but rules, target health and security-group diagnostics were incomplete or TypeError-class failures; working OPL was also classified rule_missing so root cause classification was untrustworthy.",
+      "boundary": "local runner/local gate only in this repo session; future cloud rerun may read only the allowlisted Tencent CLB env file and call only allowlisted Tencent CLB read-only APIs; no Tencent mutation, DNS mutation, Kubernetes access, kubectl, deploy, build/push or Package C live",
       "recommendedEntrypoint": "node tests/support/cloud-prework/tencent-clb-readonly-diagnostics-runner.js --env /home/dev/.secrets/medopl/v22/tencent-clb-readonly.env --run-id <runid> --authorized 1",
       "localGate": "node tests/contract/contract-test-v22-tencent-clb-readonly-diagnostics-local-gate.mjs",
       "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/tencent-clb-readonly-diagnostics-redacted.json",
@@ -11001,6 +11013,7 @@
         "DescribeListeners",
         "DescribeRules",
         "DescribeTargets",
+        "DescribeTargetHealth",
         "DescribeTargetsHealth",
         "DescribeLoadBalancerSecurityGroups",
         "DescribeTargetGroups",
@@ -11020,15 +11033,6 @@
         "Rewrite",
         "Batch"
       ],
-      "compareObjects": {
-        "portalCurrentClb": "lb-pwv9zgky",
-        "portalPreviousClb": "lb-b33auprw if discoverable",
-        "oplWorkingClb": "lb-lhj3bgii",
-        "portalHost": "portal.medopl.cn",
-        "oplHost": "opl.medopl.cn",
-        "expectedPortalBackend": "10.66.0.42:30336",
-        "expectedOplBackend": "discover service opl-webui-control-plane, nodePort 32258"
-      },
       "classifiedRootCauses": [
         "listener_missing",
         "rule_missing",
@@ -11039,9 +11043,10 @@
         "security_group_block",
         "source_ip_passthrough_mismatch",
         "listener_rule_mismatch",
+        "incomplete_readonly_diagnosis",
         "unknown_clb_data_plane_504"
       ],
-      "nextCloudGap": "gap-08o-tencent-clb-readonly-diagnostics-001"
+      "nextCloudGap": "gap-08o-tencent-clb-readonly-diagnostics-004"
     },
     "externalAccessPolicy": {
       "status": "qcloud_tls_ingress_dry_run_passed_waiting_real_mutation_authorization",
@@ -12113,7 +12118,7 @@
       "publicAccessComplete": false
     },
     "gap08oTencentClbReadonlyDiagnostics": {
-      "status": "repo_native_runner_contract_local_gate_ready_waiting_authorized_readonly_cloud_run",
+      "status": "runner_fixed_local_gate_ready_for_authorized_readonly_rerun",
       "runnerCommand": "node tests/support/cloud-prework/tencent-clb-readonly-diagnostics-runner.js --env /home/dev/.secrets/medopl/v22/tencent-clb-readonly.env --run-id <runid> --authorized 1",
       "envFile": "/home/dev/.secrets/medopl/v22/tencent-clb-readonly.env",
       "localGate": "node tests/contract/contract-test-v22-tencent-clb-readonly-diagnostics-local-gate.mjs",
@@ -12133,6 +12138,7 @@
         "DescribeListeners",
         "DescribeRules",
         "DescribeTargets",
+        "DescribeTargetHealth",
         "DescribeTargetsHealth",
         "DescribeLoadBalancerSecurityGroups",
         "DescribeTargetGroups",
@@ -12173,7 +12179,45 @@
         "cert id raw output",
         "public access completion claim"
       ],
-      "publicAccessComplete": false
+      "publicAccessComplete": false,
+      "lastCloudRunId": "gap08o-tencent-clb-readonly-diagnostics-003",
+      "lastCloudEvidencePath": ".runtime/package-d-external-access-strategy/gap08o-tencent-clb-readonly-diagnostics-003/tencent-clb-readonly-diagnostics-redacted.json",
+      "nextRunId": "gap08o-tencent-clb-readonly-diagnostics-004",
+      "nextEvidencePath": ".runtime/package-d-external-access-strategy/gap08o-tencent-clb-readonly-diagnostics-004/tencent-clb-readonly-diagnostics-redacted.json",
+      "runnerFixes": [
+        "DescribeRules parameter shape or DescribeListeners Rules fallback",
+        "DescribeTargets location-id filter shape",
+        "DescribeTargetHealth primary SDK call instead of DescribeTargetsHealth",
+        "security group unsupported/no binding summary without TypeError",
+        "customized config UnknownParameter classified unsupported_or_not_applicable",
+        "Portal-vs-OPL diff classification; no rule_missing if working OPL also lacks rule evidence",
+        "incomplete_readonly_diagnosis when required readonly APIs are unavailable"
+      ],
+      "classifiedRootCauses": [
+        "listener_missing",
+        "rule_missing",
+        "target_missing",
+        "target_unhealthy",
+        "wrong_target_port",
+        "wrong_target_ip",
+        "security_group_block",
+        "source_ip_passthrough_mismatch",
+        "listener_rule_mismatch",
+        "incomplete_readonly_diagnosis",
+        "unknown_clb_data_plane_504"
+      ],
+      "envAllowlist": [
+        "TENCENTCLOUD_SECRET_ID",
+        "TENCENTCLOUD_SECRET_KEY",
+        "TENCENTCLOUD_REGION",
+        "PORTAL_CLB_INSTANCE_ID",
+        "OPL_CLB_INSTANCE_ID",
+        "PORTAL_HOST_DOMAIN",
+        "OPL_HOST_DOMAIN",
+        "EXPECTED_PORTAL_NODE_IP",
+        "EXPECTED_PORTAL_NODE_PORT",
+        "EXPECTED_OPL_NODE_PORT"
+      ]
     }
   }
 }

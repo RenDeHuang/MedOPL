@@ -7,6 +7,7 @@ import { spawnSync } from "node:child_process";
 import {
   TENCENT_CLB_READONLY_DIAGNOSTICS_COMMAND,
   buildTencentClbReadonlyDiagnostics,
+  collectTencentClbReadonlyOfficialObservations,
   runTencentClbReadonlyDiagnostics,
 } from "../support/cloud-prework/tencent-clb-readonly-diagnostics-runner.js";
 
@@ -28,6 +29,7 @@ const allowedApis = Object.freeze([
   "DescribeListeners",
   "DescribeRules",
   "DescribeTargets",
+  "DescribeTargetHealth",
   "DescribeTargetsHealth",
   "DescribeLoadBalancerSecurityGroups",
   "DescribeTargetGroups",
@@ -76,6 +78,124 @@ function assertNoSensitiveText(value = "", label = "text") {
   ]) {
     assert.equal(String(value).includes(forbidden), false, `${label}_must_not_include:${forbidden}`);
   }
+}
+
+function fakeClbResponse(instanceId) {
+  const isPortal = instanceId === "lb-pwv9zgky";
+  return {
+    LoadBalancerId: instanceId,
+    Status: 1,
+    Domain: isPortal ? "lb-pwv9zgky.clb.usw-tencentclb.com" : "lb-lhj3bgii.clb.usw-tencentclb.com",
+    SecurityGroup: isPortal ? ["sg-portal-redacted"] : [],
+    LoadBalancerPassToTarget: isPortal ? 0 : 1,
+  };
+}
+
+function fakeListener(instanceId) {
+  const isPortal = instanceId === "lb-pwv9zgky";
+  return {
+    ListenerId: isPortal ? "lbl-portal-443" : "lbl-opl-443",
+    Protocol: "HTTPS",
+    Port: 443,
+    SessionType: "NORMAL",
+    Rules: [{
+      LocationId: isPortal ? "loc-portal-root" : "loc-opl-root",
+      ListenerId: isPortal ? "lbl-portal-443" : "lbl-opl-443",
+      Domain: isPortal ? "portal.medopl.cn" : "opl.medopl.cn",
+      Url: "/",
+      ForwardType: "HTTP",
+      Http2: false,
+      HttpGzip: true,
+    }],
+  };
+}
+
+function fakeTarget(instanceId) {
+  const isPortal = instanceId === "lb-pwv9zgky";
+  return {
+    InstanceId: isPortal ? "eks-pnrndv6u" : "eks-pnrndv6u",
+    EniIp: isPortal ? "10.66.0.42" : "10.66.0.42",
+    PrivateIpAddresses: [isPortal ? "10.66.0.42" : "10.66.0.42"],
+    Port: isPortal ? 30336 : 32258,
+    Weight: 10,
+  };
+}
+
+function createFakeReadonlyClbClient({ unhealthyPortal = false, unsupportedHealth = false, unsupportedSecurityGroups = false } = {}) {
+  const calls = [];
+  return {
+    calls,
+    async DescribeLoadBalancers(request) {
+      calls.push(["DescribeLoadBalancers", request]);
+      return { LoadBalancerSet: request.LoadBalancerIds.map(fakeClbResponse) };
+    },
+    async DescribeListeners(request) {
+      calls.push(["DescribeListeners", request]);
+      return { Listeners: [fakeListener(request.LoadBalancerId)] };
+    },
+    async DescribeRules(request) {
+      calls.push(["DescribeRules", request]);
+      return { Rules: fakeListener(request.LoadBalancerId).Rules };
+    },
+    async DescribeTargets(request) {
+      calls.push(["DescribeTargets", request]);
+      return {
+        Listeners: [{
+          ListenerId: request.ListenerIds[0],
+          Rules: [{
+            LocationId: request.Filters?.find((filter) => filter.Name === "location-id")?.Values?.[0],
+            Targets: [fakeTarget(request.LoadBalancerId)],
+          }],
+        }],
+      };
+    },
+    async DescribeTargetHealth(request) {
+      calls.push(["DescribeTargetHealth", request]);
+      if (unsupportedHealth) {
+        const error = new Error("health unsupported by this CLB type");
+        error.code = "UnsupportedOperation";
+        throw error;
+      }
+      const isPortal = request.LoadBalancerIds[0] === "lb-pwv9zgky";
+      return {
+        LoadBalancers: [{
+          LoadBalancerId: request.LoadBalancerIds[0],
+          Listeners: [{
+            ListenerId: request.ListenerIds[0],
+            Rules: [{
+              LocationId: request.LocationIds[0],
+              Targets: [{
+                IP: "10.66.0.42",
+                Port: isPortal ? 30336 : 32258,
+                Weight: 10,
+                HealthStatus: !(isPortal && unhealthyPortal),
+                HealthStatusDetail: isPortal && unhealthyPortal ? "Dead" : "Alive",
+              }],
+            }],
+          }],
+        }],
+      };
+    },
+    async DescribeLoadBalancerSecurityGroups(request) {
+      calls.push(["DescribeLoadBalancerSecurityGroups", request]);
+      if (unsupportedSecurityGroups) {
+        const error = new Error("security group query unsupported");
+        error.code = "UnsupportedOperation";
+        throw error;
+      }
+      return { SecurityGroupSet: [{ SecurityGroupId: `${request.LoadBalancerId}-sg-redacted`, Policy: "observed_binding" }] };
+    },
+    async DescribeTargetGroups(request) {
+      calls.push(["DescribeTargetGroups", request]);
+      return { TargetGroupSet: [] };
+    },
+    async DescribeCustomizedConfigAssociateList(request) {
+      calls.push(["DescribeCustomizedConfigAssociateList", request]);
+      const error = new Error("unknown parameter for this account/LB shape");
+      error.code = "InvalidParameter.UnknownParameter";
+      throw error;
+    },
+  };
 }
 
 const evidenceRoot = await mkdtemp(path.join(os.tmpdir(), "v22-tencent-clb-readonly-"));
@@ -207,6 +327,78 @@ try {
     },
   });
   assert.equal(wrongPort.classification.rootCause, "wrong_target_port", "diagnostics_wrong_port_classification");
+
+  const bothRulesMissing = await buildTencentClbReadonlyDiagnostics({
+    runId: "gap08o-both-rules-missing",
+    evidenceDir: evidenceRoot,
+    authorized: true,
+    envValues,
+    observations: {
+      portalRuleBackend: { exists: false },
+      oplRuleBackend: { exists: false },
+    },
+  });
+  assert.equal(bothRulesMissing.classification.rootCause, "incomplete_readonly_diagnosis", "working_opl_rule_missing_must_not_make_portal_rule_missing_trustworthy");
+
+  const fakeClient = createFakeReadonlyClbClient();
+  const official = await collectTencentClbReadonlyOfficialObservations({ env: envValues, client: fakeClient });
+  assert.equal(official.blockers.some((blocker) => blocker.code === "TypeError"), false, "official_collector_must_not_return_typeerror");
+  assert.equal(official.blockers.some((blocker) => blocker.code === "unsupported_or_not_applicable" && blocker.operation === "DescribeCustomizedConfigAssociateList"), true, "official_customized_config_unknown_parameter_non_fatal");
+  assert.equal(official.observations.portalRuleBackend.exists, true, "official_collector_portal_rule_exists");
+  assert.equal(official.observations.oplRuleBackend.exists, true, "official_collector_opl_rule_exists");
+  assert.equal(official.observations.portalRuleBackend.locationId, "loc-portal-root", "official_collector_portal_location_id");
+  assert.equal(official.observations.oplRuleBackend.locationId, "loc-opl-root", "official_collector_opl_location_id");
+  assert.equal(official.observations.portalRegisteredTargets[0].port, 30336, "official_collector_portal_target_port");
+  assert.equal(official.observations.oplRegisteredTargets[0].port, 32258, "official_collector_opl_target_port");
+  assert.equal(official.observations.portalTargetHealth.state, "healthy", "official_collector_portal_health");
+  assert.equal(official.observations.oplTargetHealth.state, "healthy", "official_collector_opl_health");
+  assert.equal(official.observations.portalSecurityGroup.status, "observed", "official_collector_sg_observed");
+  assert.deepEqual(
+    fakeClient.calls.find(([operation]) => operation === "DescribeRules")?.[1],
+    { LoadBalancerId: "lb-pwv9zgky", ListenerId: "lbl-portal-443" },
+    "official_collector_describe_rules_params",
+  );
+  assert.deepEqual(
+    fakeClient.calls.find(([operation]) => operation === "DescribeTargetHealth")?.[1],
+    { LoadBalancerIds: ["lb-pwv9zgky"], ListenerIds: ["lbl-portal-443"], LocationIds: ["loc-portal-root"] },
+    "official_collector_describe_target_health_params",
+  );
+
+  const officialDiagnostics = await buildTencentClbReadonlyDiagnostics({
+    runId: "gap08o-official-success",
+    evidenceDir: evidenceRoot,
+    authorized: true,
+    envValues,
+    observations: official.observations,
+  });
+  assert.equal(officialDiagnostics.classification.rootCause, "unknown_clb_data_plane_504", "official_success_default_root_cause");
+
+  const unhealthy = await collectTencentClbReadonlyOfficialObservations({ env: envValues, client: createFakeReadonlyClbClient({ unhealthyPortal: true }) });
+  const unhealthyDiagnostics = await buildTencentClbReadonlyDiagnostics({
+    runId: "gap08o-unhealthy",
+    evidenceDir: evidenceRoot,
+    authorized: true,
+    envValues,
+    observations: unhealthy.observations,
+  });
+  assert.equal(unhealthyDiagnostics.classification.rootCause, "target_unhealthy", "official_unhealthy_target_classification");
+
+  const unsupported = await collectTencentClbReadonlyOfficialObservations({
+    env: envValues,
+    client: createFakeReadonlyClbClient({ unsupportedHealth: true, unsupportedSecurityGroups: true }),
+  });
+  assert.equal(unsupported.blockers.some((blocker) => blocker.code === "unsupported_api" && blocker.operation === "DescribeTargetHealth"), true, "official_health_unsupported_blocker");
+  assert.equal(unsupported.blockers.some((blocker) => blocker.code === "unsupported_api" && blocker.operation === "DescribeLoadBalancerSecurityGroups"), true, "official_sg_unsupported_blocker");
+  assert.equal(unsupported.observations.portalTargetHealth.state, "unsupported_api", "official_health_unsupported_shape");
+  assert.equal(unsupported.observations.portalSecurityGroup.status, "unsupported_api", "official_sg_unsupported_shape");
+  const incompleteDiagnostics = await buildTencentClbReadonlyDiagnostics({
+    runId: "gap08o-incomplete",
+    evidenceDir: evidenceRoot,
+    authorized: true,
+    envValues,
+    observations: unsupported.observations,
+  });
+  assert.equal(incompleteDiagnostics.classification.rootCause, "incomplete_readonly_diagnosis", "unsupported_required_api_makes_diagnosis_incomplete");
 
   const result = await runTencentClbReadonlyDiagnostics({
     runId,

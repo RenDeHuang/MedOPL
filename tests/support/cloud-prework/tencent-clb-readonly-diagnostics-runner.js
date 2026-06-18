@@ -37,6 +37,7 @@ export const TENCENT_CLB_READONLY_ALLOWED_APIS = Object.freeze([
   "DescribeListeners",
   "DescribeRules",
   "DescribeTargets",
+  "DescribeTargetHealth",
   "DescribeTargetsHealth",
   "DescribeLoadBalancerSecurityGroups",
   "DescribeTargetGroups",
@@ -68,6 +69,7 @@ const ROOT_CAUSES = Object.freeze([
   "security_group_block",
   "source_ip_passthrough_mismatch",
   "listener_rule_mismatch",
+  "incomplete_readonly_diagnosis",
   "unknown_clb_data_plane_504",
 ]);
 
@@ -276,20 +278,38 @@ function mergeObservations(overrides = {}) {
 function targetList(value = []) {
   return (Array.isArray(value) ? value : []).map((target = {}) => ({
     ip: text(target.ip) || "unknown",
+    targetId: text(target.targetId || target.id || ""),
     port: Number(target.port) || 0,
     weight: Number(target.weight) || 0,
   }));
 }
 
+function isKnownValue(value) {
+  const normalized = text(value).toLowerCase();
+  return normalized && !["unknown", "unknown_or_api_dependent", "api_dependent", "unsupported_api"].includes(normalized);
+}
+
+function isIncompleteReadonlyObservation(obs = {}) {
+  if (!obs.portalListener443?.exists && !obs.oplListener443?.exists) return true;
+  if (!obs.portalRuleBackend?.exists && !obs.oplRuleBackend?.exists) return true;
+  if (["unsupported_api", "unknown"].includes(text(obs.portalTargetHealth?.state).toLowerCase())) return true;
+  if (["unsupported_api", "unknown"].includes(text(obs.oplTargetHealth?.state).toLowerCase())) return true;
+  if (text(obs.portalSecurityGroup?.status).toLowerCase() === "unsupported_api") return true;
+  if (text(obs.oplSecurityGroup?.status).toLowerCase() === "unsupported_api") return true;
+  return false;
+}
+
 function classifyRootCause(obs = {}) {
   const portalTargets = targetList(obs.portalRegisteredTargets);
-  if (!obs.portalListener443?.exists) return "listener_missing";
-  if (!obs.portalRuleBackend?.exists) return "rule_missing";
-  if (!portalTargets.length) return "target_missing";
-  if (portalTargets.some((target) => target.ip !== FIXED_PORTAL_NODE_IP)) return "wrong_target_ip";
+  const oplTargets = targetList(obs.oplRegisteredTargets);
+  if (isIncompleteReadonlyObservation(obs)) return "incomplete_readonly_diagnosis";
+  if (!obs.portalListener443?.exists && obs.oplListener443?.exists) return "listener_missing";
+  if (!obs.portalRuleBackend?.exists && obs.oplRuleBackend?.exists) return "rule_missing";
+  if (!portalTargets.length && oplTargets.length) return "target_missing";
+  if (portalTargets.some((target) => isKnownValue(target.ip) && target.ip !== FIXED_PORTAL_NODE_IP)) return "wrong_target_ip";
   if (portalTargets.some((target) => target.port !== FIXED_PORTAL_NODE_PORT)) return "wrong_target_port";
-  if (text(obs.portalTargetHealth?.state).toLowerCase() !== "healthy") return "target_unhealthy";
-  if (obs.portalSecurityGroup?.blocked === true) return "security_group_block";
+  if (text(obs.portalTargetHealth?.state).toLowerCase() !== "healthy" && text(obs.oplTargetHealth?.state).toLowerCase() === "healthy") return "target_unhealthy";
+  if (obs.portalSecurityGroup?.blocked === true && obs.oplSecurityGroup?.blocked !== true) return "security_group_block";
   if (obs.portalListener443?.sourceIpMode && obs.oplListener443?.sourceIpMode && obs.portalListener443.sourceIpMode !== "api_dependent" && obs.oplListener443.sourceIpMode !== "api_dependent" && obs.portalListener443.sourceIpMode !== obs.oplListener443.sourceIpMode) {
     return "source_ip_passthrough_mismatch";
   }
@@ -310,6 +330,7 @@ function recommendedAction(rootCause) {
     security_group_block: "repair CLB/backend security group reachability under a separate authorization",
     source_ip_passthrough_mismatch: "align source IP passthrough behavior with the working OPL CLB under a separate authorization",
     listener_rule_mismatch: "align Portal CLB listener/rule/backend mapping with the working OPL CLB under separate authorization",
+    incomplete_readonly_diagnosis: "rerun Tencent CLB readonly diagnostics after the required listener/rule/target-health/security-group readonly APIs return usable data",
     unknown_clb_data_plane_504: "compare Tencent CLB listener/rule/target/security-group data-plane details and repair the first mismatched CLB layer under separate authorization",
   };
   return actions[rootCause] || actions.unknown_clb_data_plane_504;
@@ -486,13 +507,21 @@ async function officialLoaderObservations({ env }) {
     region: env.TENCENTCLOUD_REGION,
     profile: { httpProfile: { reqTimeout: 30 } },
   });
+  return collectTencentClbReadonlyOfficialObservations({ env, client });
+}
+
+export async function collectTencentClbReadonlyOfficialObservations({ env, client }) {
   const blockers = [];
   async function call(operation, req = {}) {
     assertApiPlan([operation]);
+    if (typeof client?.[operation] !== "function") {
+      blockers.push({ code: "unsupported_api", operation, detail: "sdk_method_missing" });
+      return null;
+    }
     try {
       return await client[operation](req);
     } catch (error) {
-      blockers.push({ code: text(error?.code || error?.name || "clb_readonly_call_failed"), operation });
+      blockers.push({ code: classifyReadonlyCallError(error, operation), operation });
       return null;
     }
   }
@@ -509,12 +538,14 @@ async function officialLoaderObservations({ env }) {
   const oplListener = sanitizeListener(oplListeners);
   const portalRules = portalListenerId ? await call("DescribeRules", { LoadBalancerId: env.PORTAL_CLB_INSTANCE_ID, ListenerId: portalListenerId }) : null;
   const oplRules = oplListenerId ? await call("DescribeRules", { LoadBalancerId: env.OPL_CLB_INSTANCE_ID, ListenerId: oplListenerId }) : null;
-  const portalTargets = portalListenerId ? await call("DescribeTargets", { LoadBalancerId: env.PORTAL_CLB_INSTANCE_ID, ListenerIds: [portalListenerId] }) : null;
-  const oplTargets = oplListenerId ? await call("DescribeTargets", { LoadBalancerId: env.OPL_CLB_INSTANCE_ID, ListenerIds: [oplListenerId] }) : null;
-  const portalHealth = await call("DescribeTargetsHealth", { LoadBalancerIds: [env.PORTAL_CLB_INSTANCE_ID] });
-  const oplHealth = await call("DescribeTargetsHealth", { LoadBalancerIds: [env.OPL_CLB_INSTANCE_ID] });
-  const portalSecurityGroup = await call("DescribeLoadBalancerSecurityGroups", { LoadBalancerId: env.PORTAL_CLB_INSTANCE_ID });
-  const oplSecurityGroup = await call("DescribeLoadBalancerSecurityGroups", { LoadBalancerId: env.OPL_CLB_INSTANCE_ID });
+  const portalRule = sanitizeRule(portalRules || portalListeners, FIXED_PORTAL_HOST, "portal-frontend-edge", portalListenerId);
+  const oplRule = sanitizeRule(oplRules || oplListeners, FIXED_OPL_HOST, "opl-webui-control-plane", oplListenerId);
+  const portalTargets = portalListenerId ? await call("DescribeTargets", targetRequest(env.PORTAL_CLB_INSTANCE_ID, portalListenerId, portalRule.locationId)) : null;
+  const oplTargets = oplListenerId ? await call("DescribeTargets", targetRequest(env.OPL_CLB_INSTANCE_ID, oplListenerId, oplRule.locationId)) : null;
+  const portalHealth = portalListenerId ? await call("DescribeTargetHealth", healthRequest(env.PORTAL_CLB_INSTANCE_ID, portalListenerId, portalRule.locationId)) : null;
+  const oplHealth = oplListenerId ? await call("DescribeTargetHealth", healthRequest(env.OPL_CLB_INSTANCE_ID, oplListenerId, oplRule.locationId)) : null;
+  const portalSecurityGroup = await callOptional("DescribeLoadBalancerSecurityGroups", { LoadBalancerId: env.PORTAL_CLB_INSTANCE_ID });
+  const oplSecurityGroup = await callOptional("DescribeLoadBalancerSecurityGroups", { LoadBalancerId: env.OPL_CLB_INSTANCE_ID });
   await call("DescribeTargetGroups", {});
   await call("DescribeCustomizedConfigAssociateList", { LoadBalancerId: env.PORTAL_CLB_INSTANCE_ID });
   return {
@@ -523,17 +554,49 @@ async function officialLoaderObservations({ env }) {
       oplClb,
       portalListener443: portalListener,
       oplListener443: oplListener,
-      portalRuleBackend: sanitizeRule(portalRules, FIXED_PORTAL_HOST, "portal-frontend-edge"),
-      oplRuleBackend: sanitizeRule(oplRules, FIXED_OPL_HOST, "opl-webui-control-plane"),
+      portalRuleBackend: portalRule,
+      oplRuleBackend: oplRule,
       portalRegisteredTargets: sanitizeTargets(portalTargets),
       oplRegisteredTargets: sanitizeTargets(oplTargets),
       portalTargetHealth: sanitizeHealth(portalHealth),
       oplTargetHealth: sanitizeHealth(oplHealth),
-      portalSecurityGroup: sanitizeSecurityGroup(portalSecurityGroup),
-      oplSecurityGroup: sanitizeSecurityGroup(oplSecurityGroup),
+      portalSecurityGroup: sanitizeSecurityGroup(portalSecurityGroup, portalClb),
+      oplSecurityGroup: sanitizeSecurityGroup(oplSecurityGroup, oplClb),
     },
     blockers,
   };
+
+  async function callOptional(operation, req = {}) {
+    const before = blockers.length;
+    const result = await call(operation, req);
+    const added = blockers.slice(before);
+    if (added.some((blocker) => blocker.operation === operation && blocker.detail === "sdk_method_missing")) {
+      return { unsupportedBySdk: true };
+    }
+    return result;
+  }
+}
+
+function classifyReadonlyCallError(error, operation = "") {
+  const code = text(error?.code || error?.name || "clb_readonly_call_failed");
+  const message = text(error?.message || "");
+  const combined = `${code} ${message}`;
+  if (operation === "DescribeCustomizedConfigAssociateList" && /UnknownParameter/iu.test(combined)) return "unsupported_or_not_applicable";
+  if (/TypeError/iu.test(combined)) return "clb_readonly_call_failed";
+  if (/UnknownParameter|Unsupported|NotFound|InvalidAction|InvalidParameterValue/iu.test(combined)) return "unsupported_api";
+  return code || "clb_readonly_call_failed";
+}
+
+function targetRequest(loadBalancerId, listenerId, locationId) {
+  const req = { LoadBalancerId: loadBalancerId, ListenerIds: [listenerId] };
+  if (locationId) req.Filters = [{ Name: "location-id", Values: [locationId] }];
+  return req;
+}
+
+function healthRequest(loadBalancerId, listenerId, locationId) {
+  const req = { LoadBalancerIds: [loadBalancerId], ListenerIds: [listenerId] };
+  if (locationId) req.LocationIds = [locationId];
+  return req;
 }
 
 function firstArray(value = {}, keys = []) {
@@ -555,6 +618,8 @@ function sanitizeClb(response, instanceId) {
     status: text(item.Status || item.LoadBalancerStatus || "unknown"),
     vip: item.LoadBalancerVips?.length ? "observed_redacted" : "unknown_or_api_dependent",
     domain: text(item.Domain || item.LoadBalancerDomain || "unknown_or_api_dependent"),
+    securityGroupRefs: (Array.isArray(item.SecurityGroup) ? item.SecurityGroup : []).map((_, index) => `security-group-${index + 1}`),
+    loadBalancerPassToTarget: Number.isInteger(item.LoadBalancerPassToTarget) ? item.LoadBalancerPassToTarget : "unknown_or_api_dependent",
   };
 }
 
@@ -576,11 +641,21 @@ function sanitizeListener(response) {
   };
 }
 
-function sanitizeRule(response, host, backendService) {
-  const rules = firstArray(response, ["Rules"]);
-  const item = rules.find((entry) => entry?.Domain === host || entry?.Url === "/" || entry?.Path === "/") || {};
+function rulesFromResponse(response, listenerId = "") {
+  const direct = firstArray(response, ["Rules"]);
+  if (direct.length) return direct;
+  const listeners = firstArray(response, ["Listeners"]);
+  const listener = listeners.find((entry) => !listenerId || entry?.ListenerId === listenerId) || listeners[0] || {};
+  return firstArray(listener, ["Rules"]);
+}
+
+function sanitizeRule(response, host, backendService, listenerId = "") {
+  const rules = rulesFromResponse(response, listenerId);
+  const item = rules.find((entry) => entry?.Domain === host) || rules.find((entry) => entry?.Url === "/" || entry?.Path === "/") || {};
   return {
     exists: Boolean(item.LocationId || item.RuleId || item.Domain),
+    locationId: text(item.LocationId || item.RuleId || ""),
+    listenerId: text(item.ListenerId || listenerId),
     host,
     path: text(item.Url || item.Path || "/"),
     backendService,
@@ -596,35 +671,80 @@ function sanitizeTargets(response) {
   for (const listener of listeners) {
     for (const rule of firstArray(listener, ["Rules"])) {
       for (const target of firstArray(rule, ["Targets"])) {
-        targets.push({ ip: text(target.InstanceId || target.EniIp || target.PrivateIpAddresses?.[0] || "unknown"), port: Number(target.Port) || 0, weight: Number(target.Weight) || 0 });
+        targets.push({
+          ip: text(target.EniIp || target.PrivateIpAddresses?.[0] || target.TargetAddress || "unknown"),
+          targetId: text(target.InstanceId || target.TargetId || ""),
+          port: Number(target.Port || target.TargetPort) || 0,
+          weight: Number(target.Weight || target.TargetWeight) || 0,
+        });
       }
     }
     for (const target of firstArray(listener, ["Targets"])) {
-      targets.push({ ip: text(target.InstanceId || target.EniIp || target.PrivateIpAddresses?.[0] || "unknown"), port: Number(target.Port) || 0, weight: Number(target.Weight) || 0 });
+      targets.push({
+        ip: text(target.EniIp || target.PrivateIpAddresses?.[0] || target.TargetAddress || "unknown"),
+        targetId: text(target.InstanceId || target.TargetId || ""),
+        port: Number(target.Port || target.TargetPort) || 0,
+        weight: Number(target.Weight || target.TargetWeight) || 0,
+      });
     }
   }
   return targets;
 }
 
 function sanitizeHealth(response) {
+  if (!response) {
+    return {
+      state: "unsupported_api",
+      reason: "unsupported_or_not_applicable",
+      failureReason: "unsupported_or_not_applicable",
+    };
+  }
   const healthItems = firstArray(response, ["LoadBalancers", "TargetHealthSet", "Targets"]);
   const serialized = JSON.stringify(healthItems).toLowerCase();
   const unhealthy = /unhealthy|fail|timeout|blocked/u.test(serialized);
+  const targets = [];
+  for (const lb of firstArray(response, ["LoadBalancers"])) {
+    for (const listener of firstArray(lb, ["Listeners"])) {
+      for (const rule of firstArray(listener, ["Rules"])) {
+        for (const target of firstArray(rule, ["Targets"])) targets.push(target);
+      }
+    }
+  }
+  const targetUnhealthy = targets.some((target) => target?.HealthStatus === false || /dead|fail|unhealthy/iu.test(text(target?.HealthStatusDetail || target?.HealthStatusDetial)));
+  const failedTarget = targets.find((target) => target?.HealthStatus === false);
   return {
-    state: unhealthy ? "unhealthy" : healthItems.length ? "healthy" : "unknown",
-    reason: unhealthy ? "api_reported_unhealthy" : "",
-    failureReason: unhealthy ? "api_reported_unhealthy" : "",
+    state: unhealthy || targetUnhealthy ? "unhealthy" : healthItems.length ? "healthy" : "unknown",
+    reason: unhealthy || targetUnhealthy ? text(failedTarget?.HealthStatusDetail || "api_reported_unhealthy") : "",
+    failureReason: unhealthy || targetUnhealthy ? text(failedTarget?.HealthStatusDetail || "api_reported_unhealthy") : "",
   };
 }
 
-function sanitizeSecurityGroup(response) {
+function sanitizeSecurityGroup(response, clb = {}) {
+  const clbRefs = Array.isArray(clb.securityGroupRefs) ? clb.securityGroupRefs : [];
+  if (response?.unsupportedBySdk && clbRefs.length) {
+    return {
+      status: "observed_from_describe_load_balancers",
+      bindings: clbRefs.map((ref) => ({ ref, policy: "observed_binding" })),
+      defaultAllowObserved: Number(clb.loadBalancerPassToTarget) === 1 ? "pass_to_target_enabled" : "api_exposes_bindings_only",
+      blocked: false,
+    };
+  }
+  if (!response) {
+    return {
+      status: "unsupported_api",
+      bindings: [],
+      defaultAllowObserved: "unsupported_or_not_applicable",
+      blocked: false,
+    };
+  }
   const bindings = firstArray(response, ["SecurityGroupSet", "SecurityGroups"]).map((item, index) => ({
     ref: `security-group-${index + 1}`,
-    policy: text(item?.Policy || item?.SecurityGroupPolicySet?.Version || "unknown"),
+    policy: text(item?.Policy || item?.SecurityGroupPolicySet?.Version || item?.SecurityGroupId || "unknown"),
   }));
   return {
+    status: bindings.length ? "observed" : "no_binding_observed",
     bindings,
-    defaultAllowObserved: bindings.length ? "api_exposes_bindings_only" : "unknown_or_api_dependent",
+    defaultAllowObserved: bindings.length ? "api_exposes_bindings_only" : "no_binding_or_default_allow_unknown",
     blocked: false,
   };
 }
