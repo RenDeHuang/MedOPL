@@ -183,6 +183,11 @@ assert.equal(closeoutCheck.latestHistoryLandedCommit, "", "closeout_check_must_n
 
 const leaf = manifest.leaves.find((item) => item.leaf_id === current.current_cursor);
 assert(leaf, `manifest_current_leaf_missing:${current.current_cursor}`);
+assert.deepEqual(
+  manifest.leaves.map((item) => item.leaf_id),
+  [current.current_cursor],
+  "manifest_leaves_must_only_hold_current_cursor",
+);
 assert.deepEqual(leaf.verification_commands, current.current_leaf.verification_commands, "current_leaf_commands_mismatch");
 assert(leaf.verification_commands.includes(indexLoopGate), "current_leaf_must_run_index_loop_gate");
 assert(leaf.verification_commands.includes("node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs"), "current_leaf_must_run_lifecycle_gate");
