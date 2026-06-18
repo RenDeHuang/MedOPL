@@ -95,53 +95,6 @@ Cannot-claim:
 
 next_cursor: `real-cloud-authorization-boundary`
 
-### 2026-06-18 production-launch-gap-08n-shared-edge-clb-strategy-prep
-
-Status: `authoring / local verification pending`
-
-Branch: `recovery/platform-v22-trunk`
-
-Base trunk HEAD: `9d36cb818a5b54b14cd1bfb777be49003baedfe1`
-
-Model: `gpt-5.4`
-
-Subagents: `Darwin` / `gpt-5.4-mini` readonly explorer for external access strategy registration and minimal integration points.
-
-Scope:
-
-- Recorded current Portal external access facts: Package D is deployed inside TKE, in-cluster HTTP reachability passed, `portal-frontend-edge` NodePort direct HTTP is `200`, DNS/TLS/Ingress Ready are aligned, qcloud console reports backend `10.66.0.42:30336` healthy, but failed Portal CLB `lb-b33auprw` still returns stgw `504`.
-- Recorded that working OPL-Webui remains on CLB `lb-lhj3bgii` with HTTPS `200`, and direct reuse as a Portal shortcut is not a formal production architecture because it mixes historical OPL-Webui and MedOPL Portal edge ownership.
-- Added repo-native Gap 08n shared edge CLB strategy/local gate through the existing external-access strategy single command rather than a parallel runner.
-- Added `tests/support/cloud-prework/package-d-shared-edge-strategy-contract.js` to keep the existing runner thin and under line budget while preserving the single entrypoint `node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode shared-edge-strategy-contract-local-gate --run-id <runid> --authorized 1`.
-- Added `tests/contract/contract-test-v22-package-d-shared-edge-strategy-local-gate.mjs` and registered it in `cloud-future-authorized` and `agent-verify-manifest.json`.
-- The local gate compares A continue fixing `lb-b33auprw`, B reuse OPL-Webui working CLB `lb-lhj3bgii`, and C create/designate a MedOPL shared edge CLB; it recommends C for formal production stability.
-- The strategy enforces no compatibility layer, no fallback host, no legacy route, no long-term dual CLB, no dual-write route, no `lb-b33auprw` long-term Portal entry, no hidden OPL-Webui fallback, and a separate explicit cleanup gap for failed Portal CLB resources after shared edge HTTPS smoke.
-- Updated active, delivery and `goal-current.json` so the next unique gap is `production-launch-gap-08n-1-shared-edge-dry-run-creation-strategy`.
-- This closeout did not read secrets/kubeconfig/DB password/TLS private key/Tencent credentials, connect to Kubernetes API or PostgreSQL, run kubectl, deploy, rollout, rollback, build/push, execute Tencent API mutation, run Package C live, modify DNS/CLB/Ingress/Service/Deployment or claim public user access is complete.
-
-Verification:
-
-- `node tests/contract/contract-test-v22-package-d-shared-edge-strategy-local-gate.mjs`: passed.
-- `node tests/health/health-check-v22-line-budget-gate.mjs`: passed.
-- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: passed.
-- `node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs`: passed.
-- `npm run verify`: pending.
-- `npm run closeout:check -- --json`: pending.
-
-Can-claim:
-
-- Gap 08n shared edge CLB strategy has a repo-native contract/local gate.
-- The recommended next option is create/designate a MedOPL shared edge CLB.
-- The next cloud gap is shared edge dry-run / creation strategy, not direct public access completion.
-
-Cannot-claim:
-
-- A shared edge CLB has been created or designated.
-- Portal route attach, DNS cutover or HTTPS external smoke has passed.
-- Failed `lb-b33auprw` resources have been cleaned up.
-- Portal external/public user access or production launch is complete.
-
-next_cursor: `real-cloud-authorization-boundary`
 
 ### 2026-06-17 package-d-service-reachability-passed-external-access-pack
 
@@ -8195,6 +8148,68 @@ post_push_verification:
 - `9d36cb818a5b54b14cd1bfb777be49003baedfe1` is the Gap 08l remove-healthcheck-annotation prep implementation commit and is reachable from `origin/recovery/platform-v22-trunk` after push.
 - `npm run verify`: passed before implementation commit and will be rerun after closeout pointer commit.
 - `npm run closeout:check -- --json`: passed before implementation commit and will be rerun after closeout pointer commit.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-18 production-launch-gap-08n-shared-edge-clb-strategy-prep
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `9d36cb818a5b54b14cd1bfb777be49003baedfe1`
+
+Model: `gpt-5.4`
+
+Subagents: `Darwin` / `gpt-5.4-mini` readonly explorer for external access strategy registration and minimal integration points.
+
+Scope:
+
+- Recorded current Portal external access facts: Package D is deployed inside TKE, in-cluster HTTP reachability passed, `portal-frontend-edge` NodePort direct HTTP is `200`, DNS/TLS/Ingress Ready are aligned, qcloud console reports backend `10.66.0.42:30336` healthy, but failed Portal CLB `lb-b33auprw` still returns stgw `504`.
+- Recorded that working OPL-Webui remains on CLB `lb-lhj3bgii` with HTTPS `200`, and direct reuse as a Portal shortcut is not a formal production architecture because it mixes historical OPL-Webui and MedOPL Portal edge ownership.
+- Added repo-native Gap 08n shared edge CLB strategy/local gate through the existing external-access strategy single command rather than a parallel runner.
+- Added `tests/support/cloud-prework/package-d-shared-edge-strategy-contract.js` to keep the existing runner thin and under line budget while preserving the single entrypoint `node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode shared-edge-strategy-contract-local-gate --run-id <runid> --authorized 1`.
+- Added `tests/contract/contract-test-v22-package-d-shared-edge-strategy-local-gate.mjs` and registered it in `cloud-future-authorized` and `agent-verify-manifest.json`.
+- The local gate compares A continue fixing `lb-b33auprw`, B reuse OPL-Webui working CLB `lb-lhj3bgii`, and C create/designate a MedOPL shared edge CLB; it recommends C for formal production stability.
+- The strategy enforces no compatibility layer, no fallback host, no legacy route, no long-term dual CLB, no dual-write route, no `lb-b33auprw` long-term Portal entry, no hidden OPL-Webui fallback, and a separate explicit cleanup gap for failed Portal CLB resources after shared edge HTTPS smoke.
+- Updated active, delivery and `goal-current.json` so the next unique gap is `production-launch-gap-08n-1-shared-edge-dry-run-creation-strategy`.
+- This closeout did not read secrets/kubeconfig/DB password/TLS private key/Tencent credentials, connect to Kubernetes API or PostgreSQL, run kubectl, deploy, rollout, rollback, build/push, execute Tencent API mutation, run Package C live, modify DNS/CLB/Ingress/Service/Deployment or claim public user access is complete.
+
+Verification:
+
+- `node tests/contract/contract-test-v22-package-d-shared-edge-strategy-local-gate.mjs`: passed.
+- `node tests/health/health-check-v22-line-budget-gate.mjs`: passed.
+- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: passed.
+- `node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs`: passed.
+- `npm run verify`: passed before implementation closeout pointer commit.
+- `npm run closeout:check -- --json`: passed before implementation closeout pointer commit and will be rerun after closeout pointer commit.
+
+Can-claim:
+
+- Gap 08n shared edge CLB strategy has a repo-native contract/local gate.
+- The recommended next option is create/designate a MedOPL shared edge CLB.
+- The next cloud gap is shared edge dry-run / creation strategy, not direct public access completion.
+
+Cannot-claim:
+
+- A shared edge CLB has been created or designated.
+- Portal route attach, DNS cutover or HTTPS external smoke has passed.
+- Failed `lb-b33auprw` resources have been cleaned up.
+- Portal external/public user access or production launch is complete.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+landed_commit: `96aac636d868d6e3da4bccea31e94476a4b38c80`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `96aac636d868d6e3da4bccea31e94476a4b38c80` is the Gap 08n shared edge CLB strategy implementation commit and is reachable from `origin/recovery/platform-v22-trunk` after push.
+- `npm run verify`: passed before implementation closeout pointer commit.
+- `npm run closeout:check -- --json`: passed before implementation closeout pointer commit and will be rerun after closeout pointer commit.
 
 post_merge_closeout: `completed`
 
