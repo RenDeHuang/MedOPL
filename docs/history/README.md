@@ -95,67 +95,6 @@ Cannot-claim:
 
 next_cursor: `real-cloud-authorization-boundary`
 
-### 2026-06-18 production-launch-gap-08h-qcloud-healthcheck-prep
-
-Status: `in_progress / local`
-
-Branch: `recovery/platform-v22-trunk`
-
-Base trunk HEAD: `db3de48c83fc0285977c72d8f8f9553eea780257`
-
-Model: `gpt-5.4`
-
-Subagents: none
-
-Scope:
-
-- Recorded Gap 08g cloud readonly diagnostics from `.runtime/package-d-external-access-strategy/gap08g-ingress-504-diagnostics-001/readonly-diagnostics-redacted.json`: Ingress backend stayed `portal-frontend-edge:8080`, Ingress was `Ready=True`, DNS `portal.medopl.cn` pointed to `lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com`, TLS verification passed with `ssl_verify_result=0`, and external HTTPS still returned stable `504`.
-- Recorded that `Service/portal-frontend-edge` is `NodePort` on port `8080` / targetPort `8080` / nodePort `30336`, endpoint `10.66.0.44:8080` exists, EndpointSlice ready/serving is true, portal frontend Pod is ready on node `10.66.0.42` with podIP `10.66.0.44`, labels match, and no related Ingress/Service/Pod error events were found.
-- Added repo-native qcloud health-check modes to `tests/support/cloud-prework/package-d-external-access-runner.js`: `qcloud-healthcheck-dry-run` and `qcloud-healthcheck-apply`.
-- Added `tests/support/cloud-prework/package-d-external-access-healthcheck-contract.js` with qcloud `TkeServiceConfig` manifest shape: `apiVersion: cloud.tencent.com/v1alpha1`, `kind: TkeServiceConfig`, `metadata.name: portal-frontend-edge-healthcheck`, namespace `medopl-platform`, HTTPS listener `443`, domain `portal.medopl.cn`, rule path `/`, backend forward type `HTTP`, health check path `/`, health check domain `portal.medopl.cn`, method `GET`, accepted codes `2xx/3xx` via `httpCode: 6`, and `checkType: HTTP`.
-- The health-check Ingress binding uses `ingress.cloud.tencent.com/tke-service-config: portal-frontend-edge-healthcheck`, keeps backend `portal-frontend-edge:8080`, keeps `medopl-portal-tls`, does not materialize a new Secret and does not mutate either `Service/portal-frontend` or `Service/portal-frontend-edge`.
-- Added `tests/contract/contract-test-v22-package-d-external-access-healthcheck-local-gate.mjs` and registered it in the existing cloud future-authorized lane and verify manifest.
-- The new local gate proves unauthorized fail-closed, dry-run gate requires `RUN_TENCENT_DEPLOY_EXECUTION=0`, apply gate requires `RUN_TENCENT_DEPLOY_EXECUTION=external-access`, CRD missing fail-closed before apply, command allowlist, redacted `qcloud-healthcheck-redacted.json` and `portal-ingress-redacted.json` evidence, no raw cert id or secret leakage, and HTTPS smoke remains fixed to `https://portal.medopl.cn/`.
-- Updated active, delivery and `goal-current.json` so the next unique gap is `production-launch-gap-08h-qcloud-healthcheck-config` with run-id `gap08h-qcloud-healthcheck-apply-001`.
-- This closeout did not read secrets/kubeconfig/DB password/TLS private key, connect to Kubernetes API or PostgreSQL, run kubectl, deploy, rollout, rollback, build/push, execute Tencent API mutation, run Package C live, modify DNS, create a LoadBalancer Service, modify any Service/Deployment or claim public user access is complete.
-
-Verification:
-
-- `node tests/contract/contract-test-v22-package-d-external-access-healthcheck-local-gate.mjs`: passed.
-- `node tests/contract/contract-test-v22-package-d-external-access-edge-nodeport-local-gate.mjs`: passed.
-- `node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs`: passed.
-- `node tests/health/health-check-v22-line-budget-gate.mjs`: passed.
-- `npm run verify`: run before closeout pointer commit.
-- `npm run closeout:check -- --json`: rerun after closeout pointer commit and push.
-
-Can-claim:
-
-- Gap 08h qcloud health-check configuration has a repo-native contract/local gate.
-- The future dry-run command is `node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-healthcheck-dry-run --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id <runid> --authorized 1`.
-- The future apply command is `RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-healthcheck-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08h-qcloud-healthcheck-apply-001 --authorized 1`.
-
-Cannot-claim:
-
-- Gap 08h dry-run or apply has executed in cloud.
-- HTTPS external smoke has passed.
-- Portal external/public user access or production launch is complete.
-
-next_cursor: `real-cloud-authorization-boundary`
-
-handoff_commit: `TO_BE_FILLED_AFTER_IMPLEMENTATION_COMMIT`
-
-landing_gate_result: `passed / ff-only landed / pushed`
-
-post_push_verification:
-
-- `TO_BE_FILLED_AFTER_IMPLEMENTATION_COMMIT` is the Gap 08h qcloud health-check prep implementation commit and will be recorded after the implementation commit is created.
-- `npm run verify`: passed before closeout pointer commit.
-- `npm run closeout:check -- --json`: rerun after closeout pointer commit and push.
-
-post_merge_closeout: `completed`
-
-next_cursor: `real-cloud-authorization-boundary`
-
 ### 2026-06-17 package-d-service-reachability-passed-external-access-pack
 
 Status: `landed candidate / local-gated`
@@ -8086,6 +8025,67 @@ landing_gate_result: `passed / ff-only landed / pushed`
 post_push_verification:
 
 - `db3de48c83fc0285977c72d8f8f9553eea780257` is the Gap 08f DNS/HTTPS smoke compatibility implementation commit and is reachable from `origin/recovery/platform-v22-trunk` after push.
+- `npm run verify`: passed before closeout pointer commit.
+- `npm run closeout:check -- --json`: rerun after closeout pointer commit and push.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-18 production-launch-gap-08h-qcloud-healthcheck-prep
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `db3de48c83fc0285977c72d8f8f9553eea780257`
+
+Model: `gpt-5.4`
+
+Subagents: none
+
+Scope:
+
+- Recorded Gap 08g cloud readonly diagnostics from `.runtime/package-d-external-access-strategy/gap08g-ingress-504-diagnostics-001/readonly-diagnostics-redacted.json`: Ingress backend stayed `portal-frontend-edge:8080`, Ingress was `Ready=True`, DNS `portal.medopl.cn` pointed to `lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com`, TLS verification passed with `ssl_verify_result=0`, and external HTTPS still returned stable `504`.
+- Recorded that `Service/portal-frontend-edge` is `NodePort` on port `8080` / targetPort `8080` / nodePort `30336`, endpoint `10.66.0.44:8080` exists, EndpointSlice ready/serving is true, portal frontend Pod is ready on node `10.66.0.42` with podIP `10.66.0.44`, labels match, and no related Ingress/Service/Pod error events were found.
+- Added repo-native qcloud health-check modes to `tests/support/cloud-prework/package-d-external-access-runner.js`: `qcloud-healthcheck-dry-run` and `qcloud-healthcheck-apply`.
+- Added `tests/support/cloud-prework/package-d-external-access-healthcheck-contract.js` with qcloud `TkeServiceConfig` manifest shape: `apiVersion: cloud.tencent.com/v1alpha1`, `kind: TkeServiceConfig`, `metadata.name: portal-frontend-edge-healthcheck`, namespace `medopl-platform`, HTTPS listener `443`, domain `portal.medopl.cn`, rule path `/`, backend forward type `HTTP`, health check path `/`, health check domain `portal.medopl.cn`, method `GET`, accepted codes `2xx/3xx` via `httpCode: 6`, and `checkType: HTTP`.
+- The health-check Ingress binding uses `ingress.cloud.tencent.com/tke-service-config: portal-frontend-edge-healthcheck`, keeps backend `portal-frontend-edge:8080`, keeps `medopl-portal-tls`, does not materialize a new Secret and does not mutate either `Service/portal-frontend` or `Service/portal-frontend-edge`.
+- Added `tests/contract/contract-test-v22-package-d-external-access-healthcheck-local-gate.mjs` and registered it in the existing cloud future-authorized lane and verify manifest.
+- The new local gate proves unauthorized fail-closed, dry-run gate requires `RUN_TENCENT_DEPLOY_EXECUTION=0`, apply gate requires `RUN_TENCENT_DEPLOY_EXECUTION=external-access`, CRD missing fail-closed before apply, command allowlist, redacted `qcloud-healthcheck-redacted.json` and `portal-ingress-redacted.json` evidence, no raw cert id or secret leakage, and HTTPS smoke remains fixed to `https://portal.medopl.cn/`.
+- Updated active, delivery and `goal-current.json` so the next unique gap is `production-launch-gap-08h-qcloud-healthcheck-config` with run-id `gap08h-qcloud-healthcheck-apply-001`.
+- This closeout did not read secrets/kubeconfig/DB password/TLS private key, connect to Kubernetes API or PostgreSQL, run kubectl, deploy, rollout, rollback, build/push, execute Tencent API mutation, run Package C live, modify DNS, create a LoadBalancer Service, modify any Service/Deployment or claim public user access is complete.
+
+Verification:
+
+- `node tests/contract/contract-test-v22-package-d-external-access-healthcheck-local-gate.mjs`: passed.
+- `node tests/contract/contract-test-v22-package-d-external-access-edge-nodeport-local-gate.mjs`: passed.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs`: passed.
+- `node tests/health/health-check-v22-line-budget-gate.mjs`: passed.
+- `npm run verify`: run before closeout pointer commit.
+- `npm run closeout:check -- --json`: rerun after closeout pointer commit and push.
+
+Can-claim:
+
+- Gap 08h qcloud health-check configuration has a repo-native contract/local gate.
+- The future dry-run command is `node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-healthcheck-dry-run --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id <runid> --authorized 1`.
+- The future apply command is `RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-healthcheck-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08h-qcloud-healthcheck-apply-001 --authorized 1`.
+
+Cannot-claim:
+
+- Gap 08h dry-run or apply has executed in cloud.
+- HTTPS external smoke has passed.
+- Portal external/public user access or production launch is complete.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+landed_commit: `5e31cda0ae3cc31ab6cd6a023dc0bcc6f3b5a514`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `5e31cda0ae3cc31ab6cd6a023dc0bcc6f3b5a514` is the Gap 08h qcloud health-check prep implementation commit and is reachable from `origin/recovery/platform-v22-trunk` after push.
 - `npm run verify`: passed before closeout pointer commit.
 - `npm run closeout:check -- --json`: rerun after closeout pointer commit and push.
 
