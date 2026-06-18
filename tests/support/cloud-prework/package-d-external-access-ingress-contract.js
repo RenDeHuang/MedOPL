@@ -81,8 +81,8 @@ export function portalIngressManifest({ backendServiceName = FIXED_PORTAL_SERVIC
   };
 }
 
-export function assertPackageDExternalAccessManifestBoundary({ secret, ingress, edgeService } = {}) {
-  if (!edgeService || secret) {
+export function assertPackageDExternalAccessManifestBoundary({ secret, ingress, edgeService, edgeBackendRequired = false } = {}) {
+  if (secret) {
     if (secret?.apiVersion !== "v1" || secret?.kind !== "Secret") throw new Error("package_d_external_access_secret_kind_mismatch");
     if (secret?.metadata?.name !== FIXED_TLS_SECRET_NAME) throw new Error("package_d_external_access_tls_secret_name_mismatch");
     if (secret?.metadata?.namespace !== FIXED_NAMESPACE) throw new Error("package_d_external_access_tls_secret_namespace_mismatch");
@@ -135,7 +135,7 @@ export function assertPackageDExternalAccessManifestBoundary({ secret, ingress, 
     throw new Error("package_d_external_access_ingress_host_mismatch");
   }
   if (pathRule.path !== "/" || pathRule.pathType !== "Prefix") throw new Error("package_d_external_access_ingress_path_mismatch");
-  const expectedBackendServiceName = edgeService ? FIXED_PORTAL_EDGE_SERVICE_NAME : FIXED_PORTAL_SERVICE_NAME;
+  const expectedBackendServiceName = edgeService || edgeBackendRequired ? FIXED_PORTAL_EDGE_SERVICE_NAME : FIXED_PORTAL_SERVICE_NAME;
   if (pathRule.backend?.service?.name !== expectedBackendServiceName) throw new Error("package_d_external_access_ingress_backend_mismatch");
   if (pathRule.backend?.service?.port?.number !== FIXED_PORTAL_SERVICE_PORT) {
     throw new Error("package_d_external_access_ingress_backend_port_mismatch");
