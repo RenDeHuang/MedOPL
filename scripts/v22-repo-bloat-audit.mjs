@@ -11,6 +11,7 @@ const repoRoot = path.resolve(__dirname, "..");
 const budgets = Object.freeze({
   docsMarkdownFiles: 16,
   scriptsFiles: 8,
+  scriptsModuleFiles: 8,
   testsMjsFiles: 111,
   testsRegressionPortalFiles: 32,
   testsFutureAuthorizedCloudFiles: 24,
@@ -95,6 +96,14 @@ function countMatching(files, predicate) {
   return files.filter(predicate).length;
 }
 
+function isTopLevelScript(file) {
+  return /^scripts\/[^/]+$/u.test(file);
+}
+
+function isScriptModule(file) {
+  return /^scripts\/[^/]+\/[^/]+$/u.test(file);
+}
+
 function largestAreas(files) {
   const areas = new Map();
   for (const file of files) {
@@ -138,7 +147,8 @@ function slideDocFindings(files) {
 const tracked = runGit(["ls-files", "--cached", "--others", "--exclude-standard"]);
 const counts = {
   docsMarkdownFiles: countMatching(tracked, (file) => file.startsWith("docs/") && file.endsWith(".md")),
-  scriptsFiles: countMatching(tracked, (file) => file.startsWith("scripts/")),
+  scriptsFiles: countMatching(tracked, isTopLevelScript),
+  scriptsModuleFiles: countMatching(tracked, isScriptModule),
   testsMjsFiles: countMatching(tracked, (file) => file.startsWith("tests/") && file.endsWith(".mjs")),
   testsRegressionPortalFiles: countMatching(tracked, (file) => file.startsWith("tests/regression/portal/") && file.endsWith(".mjs")),
   testsFutureAuthorizedCloudFiles: countMatching(tracked, (file) => file.startsWith("tests/future-authorized/cloud/") && file.endsWith(".mjs")),

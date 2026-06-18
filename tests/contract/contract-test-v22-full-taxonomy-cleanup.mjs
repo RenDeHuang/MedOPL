@@ -53,6 +53,14 @@ const allowedScripts = [
   "scripts/v22-workflow-gate.mjs",
 ];
 
+const allowedWorkflowGateModules = [
+  "scripts/workflow-gate/change-package.mjs",
+  "scripts/workflow-gate/command-reference.mjs",
+  "scripts/workflow-gate/git-diff.mjs",
+  "scripts/workflow-gate/policy.mjs",
+  "scripts/workflow-gate/report.mjs",
+];
+
 const oldLiteralFragments = [
   ["docs", "contracts"].join("/"),
   ["docs", "recovery"].join("/"),
@@ -125,7 +133,12 @@ for (const dir of taxonomyDirs) {
 }
 
 const scripts = (await listFiles("scripts")).sort();
-assert.deepEqual(scripts, allowedScripts, "scripts_root_must_only_keep_runner_classifier_and_workflow_gate");
+const topLevelScripts = scripts.filter((file) => /^scripts\/[^/]+$/u.test(file));
+const workflowGateModules = scripts.filter((file) => /^scripts\/workflow-gate\/[^/]+$/u.test(file));
+const otherScriptModules = scripts.filter((file) => file.includes("/") && !topLevelScripts.includes(file) && !workflowGateModules.includes(file));
+assert.deepEqual(topLevelScripts, allowedScripts, "scripts_root_must_only_keep_runner_classifier_and_workflow_gate");
+assert.deepEqual(workflowGateModules, allowedWorkflowGateModules, "workflow_gate_modules_must_remain_bounded_owner_surface");
+assert.deepEqual(otherScriptModules, [], "unexpected_script_module_owner_surface");
 
 const fixtureFiles = (await listFiles("tests/fixtures/v22")).sort();
 assert.deepEqual(fixtureFiles, [

@@ -104,7 +104,10 @@ for (const dir of testsTaxonomyDirs) {
 }
 
 const scriptFiles = await listFiles("scripts");
-assert.deepEqual(scriptFiles, [
+const topLevelScriptFiles = scriptFiles.filter((file) => /^scripts\/[^/]+$/u.test(file));
+const workflowGateModuleFiles = scriptFiles.filter((file) => /^scripts\/workflow-gate\/[^/]+$/u.test(file));
+const otherScriptModuleFiles = scriptFiles.filter((file) => file.includes("/") && !topLevelScriptFiles.includes(file) && !workflowGateModuleFiles.includes(file));
+assert.deepEqual(topLevelScriptFiles, [
   "scripts/v22-landing-closeout.mjs",
   "scripts/v22-line-budget.mjs",
   "scripts/v22-local-services.mjs",
@@ -114,6 +117,14 @@ assert.deepEqual(scriptFiles, [
   "scripts/v22-verify.mjs",
   "scripts/v22-workflow-gate.mjs",
 ], "scripts_must_remain_v22_control_plane_only");
+assert.deepEqual(workflowGateModuleFiles, [
+  "scripts/workflow-gate/change-package.mjs",
+  "scripts/workflow-gate/command-reference.mjs",
+  "scripts/workflow-gate/git-diff.mjs",
+  "scripts/workflow-gate/policy.mjs",
+  "scripts/workflow-gate/report.mjs",
+], "workflow_gate_modules_must_remain_bounded_owner_surface");
+assert.deepEqual(otherScriptModuleFiles, [], "unexpected_script_module_owner_surface");
 assert.equal(scriptFiles.some((file) => /^scripts\/smoke-test-v22-.*\.mjs$/u.test(file)), false, "legacy_smoke_script_must_not_return");
 
 const [

@@ -44,6 +44,8 @@ import { printUsage, renderCheckpointReport, renderReviewReport } from "./workfl
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
+// Source-level command reference retained for contract traceability:
+// node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk
 
 function changedArchivePackages(changedFiles) {
   return unique(changedFiles

@@ -24,6 +24,7 @@ for (const expected of [
   "docsMarkdownFiles",
   "testsMjsFiles",
   "scriptsFiles",
+  "scriptsModuleFiles",
   "servicesPortalFiles",
   "servicesPortalBytes",
   "largestAreas",
@@ -42,6 +43,7 @@ assert.equal(payload.ok, true, "repo_bloat_audit_payload_ok");
 assert.equal(payload.contract, "v22_repo_bloat_audit", "repo_bloat_audit_contract_mismatch");
 assert(payload.counts.docsMarkdownFiles <= payload.budgets.docsMarkdownFiles, "docs_markdown_budget_exceeded");
 assert(payload.counts.scriptsFiles <= payload.budgets.scriptsFiles, "scripts_file_budget_exceeded");
+assert(payload.counts.scriptsModuleFiles <= payload.budgets.scriptsModuleFiles, "scripts_module_file_budget_exceeded");
 assert(payload.counts.testsMjsFiles <= payload.budgets.testsMjsFiles, "tests_mjs_budget_exceeded");
 assert(payload.counts.servicesPortalFiles <= payload.budgets.servicesPortalFiles, "services_portal_file_budget_exceeded");
 assert(payload.counts.servicesPortalBytes <= payload.budgets.servicesPortalBytes, "services_portal_byte_budget_exceeded");
