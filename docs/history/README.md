@@ -8261,13 +8261,13 @@ Cannot-claim:
 
 next_cursor: `real-cloud-authorization-boundary`
 
-landed_commit: `2fa6747c5482aeb92c571d827e207d0ec7bf280e`
+landed_commit: `942bd64e04d01fc704ed4514e2b804cdbfa1109b`
 
 landing_gate_result: `passed / ff-only landed / pushed`
 
 post_push_verification:
 
-- `2fa6747c5482aeb92c571d827e207d0ec7bf280e` is the Gap 08o Tencent CLB readonly diagnostics implementation commit and is reachable from `origin/recovery/platform-v22-trunk` after push.
+- `942bd64e04d01fc704ed4514e2b804cdbfa1109b` is the Gap 08o Tencent CLB readonly diagnostics implementation commit and is reachable from `origin/recovery/platform-v22-trunk` after push.
 - `npm run verify`: passed before implementation closeout pointer commit.
 - `npm run closeout:check -- --json`: passed before implementation closeout pointer commit and will be rerun after closeout pointer commit.
 
@@ -8320,4 +8320,16 @@ Cannot-claim:
 
 next_cursor: `real-cloud-authorization-boundary`
 
-handoff_commit: `PENDING_GAP08O_RUNNER_FIX_COMMIT`
+landed_commit: `942bd64e04d01fc704ed4514e2b804cdbfa1109b`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- `942bd64e04d01fc704ed4514e2b804cdbfa1109b` is the Gap 08o runner fix implementation commit and is reachable from `origin/recovery/platform-v22-trunk` after push.
+- `npm run verify`: passed before implementation closeout pointer commit.
+- `npm run closeout:check -- --json`: passed before implementation closeout pointer commit and will be rerun after closeout pointer commit.
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
