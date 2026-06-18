@@ -1697,6 +1697,7 @@
         "node tests/contract/contract-test-v22-package-d-external-access-edge-nodeport-local-gate.mjs",
         "node tests/contract/contract-test-v22-package-d-external-access-healthcheck-local-gate.mjs",
         "node tests/contract/contract-test-v22-package-d-external-access-remove-healthcheck-local-gate.mjs",
+        "node tests/contract/contract-test-v22-package-d-shared-edge-strategy-local-gate.mjs",
         "node tests/future-authorized/cloud/future-authorized-test-v22-package-c-live-canary-readiness-local-gate.mjs",
         "node tests/future-authorized/cloud/future-authorized-test-v22-package-c-live-canary-live-runner-local-gate.mjs",
         "node tests/future-authorized/cloud/future-authorized-test-v22-package-c-postgres-ledger-sink-local-gate.mjs",

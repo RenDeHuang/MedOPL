@@ -4,8 +4,20 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 
+import {
+  PACKAGE_D_SHARED_EDGE_STRATEGY_COMMAND,
+  SHARED_EDGE_STRATEGY_MODE,
+  buildPackageDSharedEdgeStrategyContract,
+  runPackageDSharedEdgeStrategyContract,
+} from "./package-d-shared-edge-strategy-contract.js";
+
 export const PACKAGE_D_EXTERNAL_ACCESS_STRATEGY_COMMAND = "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode strategy-contract-local-gate --run-id <runid> --authorized 1";
 export const PACKAGE_D_QCLOUD_TLS_READINESS_COMMAND = "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode qcloud-tls-readiness-contract-local-gate --run-id <runid> --authorized 1";
+export {
+  PACKAGE_D_SHARED_EDGE_STRATEGY_COMMAND,
+  buildPackageDSharedEdgeStrategyContract,
+  runPackageDSharedEdgeStrategyContract,
+};
 
 const DEFAULT_EVIDENCE_DIR = ".runtime/package-d-external-access-strategy";
 const FIXED_MODE = "strategy-contract-local-gate";
@@ -697,9 +709,11 @@ async function main() {
     evidenceDir: args["evidence-dir"] || DEFAULT_EVIDENCE_DIR,
     authorized: args.authorized === "1" || args.authorized === "true",
   };
-  const summary = args.mode === QCLOUD_TLS_READINESS_MODE
-    ? await runPackageDQcloudTlsReadinessContract(options)
-    : await runPackageDExternalAccessStrategyContract(options);
+  const summary = args.mode === SHARED_EDGE_STRATEGY_MODE
+    ? await runPackageDSharedEdgeStrategyContract(options)
+    : args.mode === QCLOUD_TLS_READINESS_MODE
+      ? await runPackageDQcloudTlsReadinessContract(options)
+      : await runPackageDExternalAccessStrategyContract(options);
   process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
 }
 

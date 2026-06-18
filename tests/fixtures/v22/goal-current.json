@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 through Gap 08k has reached the cloud boundary. OPL-Webui qcloud Ingress for opl.medopl.cn is working with HTTPS 200 on backend opl-webui-control-plane:4173 and no TkeServiceConfig. MedOPL Portal qcloud Ingress for portal.medopl.cn is Ready=True on backend portal-frontend-edge:8080 with TLS verified and DNS aligned, but HTTPS still returns 504 and has ingress.cloud.tencent.com/tke-service-config=portal-frontend-edge-healthcheck. Gap 08k evidence .runtime/package-d-external-access-strategy/gap08k-opl-webui-vs-portal-compare-001/readonly-compare-redacted.json identifies the Portal TkeServiceConfig annotation binding as the strongest Kubernetes-visible diff. External/public user access remains not complete. The current unique gap is production-launch-gap-08l-remove-qcloud-healthcheck-annotation: implement repo-native runner/local gate to remove only ingress.cloud.tencent.com/tke-service-config from Ingress/portal-frontend while preserving Secret/medopl-portal-tls, Service/portal-frontend-edge, Ingress/portal-frontend, host/tls/backend and existing TkeServiceConfig.",
+  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. MedOPL Portal external access remains incomplete: portal-frontend-edge NodePort direct HTTP is 200, DNS portal.medopl.cn points to the qcloud CLB, TLS verification passes, Ingress is Ready=True, and qcloud console reports backend 10.66.0.42:30336 healthy, but the qcloud CLB lb-b33auprw still returns stgw 504. K8s-visible Ingress/Service shape now matches the working OPL-Webui entry closely; OPL-Webui HTTPS 200 is on lb-lhj3bgii, while the Portal failed LB has already gone through ClusterIP backend, NodePort backend, TkeServiceConfig add/remove and health-check annotation changes. Continuing to repair lb-b33auprw has low expected yield; directly reusing the OPL-Webui CLB would mix historical OPL-Webui and MedOPL Portal edge ownership. External/public user access remains not complete. The current unique gap is production-launch-gap-08n-medopl-shared-edge-clb-strategy: implement repo-native shared edge CLB strategy/local gate and authorization pack with explicit no-compat cleanup policy.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -171,7 +171,7 @@
     "gap_id": "real-cloud-authorization-boundary",
     "stage": "S7 real-cloud authorization boundary before readiness",
     "cursor_eligible": false,
-    "problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 through Gap 08k has reached the cloud boundary. OPL-Webui qcloud Ingress for opl.medopl.cn is working with HTTPS 200 on backend opl-webui-control-plane:4173 and no TkeServiceConfig. MedOPL Portal qcloud Ingress for portal.medopl.cn is Ready=True on backend portal-frontend-edge:8080 with TLS verified and DNS aligned, but HTTPS still returns 504 and has ingress.cloud.tencent.com/tke-service-config=portal-frontend-edge-healthcheck. Gap 08k evidence .runtime/package-d-external-access-strategy/gap08k-opl-webui-vs-portal-compare-001/readonly-compare-redacted.json identifies the Portal TkeServiceConfig annotation binding as the strongest Kubernetes-visible diff. External/public user access remains not complete. The current unique gap is production-launch-gap-08l-remove-qcloud-healthcheck-annotation: implement repo-native runner/local gate to remove only ingress.cloud.tencent.com/tke-service-config from Ingress/portal-frontend while preserving Secret/medopl-portal-tls, Service/portal-frontend-edge, Ingress/portal-frontend, host/tls/backend and existing TkeServiceConfig.",
+    "problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. MedOPL Portal external access remains incomplete: portal-frontend-edge NodePort direct HTTP is 200, DNS portal.medopl.cn points to the qcloud CLB, TLS verification passes, Ingress is Ready=True, and qcloud console reports backend 10.66.0.42:30336 healthy, but the qcloud CLB lb-b33auprw still returns stgw 504. K8s-visible Ingress/Service shape now matches the working OPL-Webui entry closely; OPL-Webui HTTPS 200 is on lb-lhj3bgii, while the Portal failed LB has already gone through ClusterIP backend, NodePort backend, TkeServiceConfig add/remove and health-check annotation changes. Continuing to repair lb-b33auprw has low expected yield; directly reusing the OPL-Webui CLB would mix historical OPL-Webui and MedOPL Portal edge ownership. External/public user access remains not complete. The current unique gap is production-launch-gap-08n-medopl-shared-edge-clb-strategy: implement repo-native shared edge CLB strategy/local gate and authorization pack with explicit no-compat cleanup policy.",
     "verification_commands": [
       "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
       "node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs",
@@ -2432,7 +2432,7 @@
     },
     "latest_local_evidence": "package-d-combined-in-cluster-preflight-pdrun-20260616-002",
     "production_launch_goal_gap_map": {
-      "status": "gap_08l_remove_qcloud_healthcheck_annotation_contract_ready_waiting_authorized_cloud_dry_run_apply",
+      "status": "gap_08n_shared_edge_clb_strategy_contract_ready_waiting_authorized_shared_edge_dry_run",
       "currentFacts": {
         "packageDPlatformControlPlaneInsideTke": "deployed",
         "inClusterHttpReachability": "preflight-passed",
@@ -2482,7 +2482,16 @@
         "gap08kEvidencePath": ".runtime/package-d-external-access-strategy/gap08k-opl-webui-vs-portal-compare-001/readonly-compare-redacted.json",
         "gap08kStrongestVisibleDiff": "Portal has ingress.cloud.tencent.com/tke-service-config binding while working OPL-Webui has no TkeServiceConfig",
         "gap08lRemoveHealthcheckAnnotationContract": "implemented_local_gate",
-        "gap08lRunId": "gap08l-remove-healthcheck-annotation-apply-001"
+        "gap08lRunId": "gap08l-remove-healthcheck-annotation-apply-001",
+        "gap08nSharedEdgeStrategyContract": "implemented_local_gate",
+        "gap08nRunnerCommand": "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode shared-edge-strategy-contract-local-gate --run-id <runid> --authorized 1",
+        "gap08nEvidencePath": ".runtime/package-d-external-access-strategy/<runid>/shared-edge-strategy-redacted.json",
+        "portalNodePortDirectHttp": 200,
+        "portalFailedClbHttpsStatus": 504,
+        "portalFailedClbBackendHealthyInConsole": true,
+        "oplWebuiWorkingClbHttpsStatus": 200,
+        "failedPortalClbFixYield": "low",
+        "noCompatPolicy": "no fallback host, no long-term dual CLB, no dual-write route, explicit failed Portal CLB cleanup gap after shared edge smoke"
       },
       "vision": {
         "product": "MedOPL production launch is a stable multi-tenant SaaS managed OPL workbench, not a temporary page trial.",
@@ -2807,20 +2816,23 @@
         }
       ],
       "nextUniqueGap": {
-        "id": "production-launch-gap-08l-remove-qcloud-healthcheck-annotation",
-        "title": "Production launch Gap 08l: remove Portal qcloud TkeServiceConfig Ingress annotation",
-        "reason": "Gap 08k compared working OPL-Webui qcloud Ingress with Portal and found the strongest Kubernetes-visible diff is Portal custom ingress.cloud.tencent.com/tke-service-config binding; OPL-Webui has no TkeServiceConfig and returns HTTPS 200, while Portal has the binding and returns 504.",
-        "boundary": "cloud runner may server-side dry-run/apply only Ingress/portal-frontend with ingress.cloud.tencent.com/tke-service-config removed while preserving medopl-portal-tls, Service/portal-frontend-edge, existing TkeServiceConfig/portal-frontend-edge-healthcheck, host portal.medopl.cn, tls secret medopl-portal-tls and backend portal-frontend-edge:8080; DNS validation and HTTPS smoke are allowed, DNS mutation and public access completion claim remain forbidden",
-        "recommendedEntrypoint": "RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-remove-healthcheck-annotation-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08l-remove-healthcheck-annotation-apply-001 --authorized 1",
-        "dryRunEntrypoint": "node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-remove-healthcheck-annotation-dry-run --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id <runid> --authorized 1",
-        "evidencePath": ".runtime/package-d-external-access-strategy/gap08l-remove-healthcheck-annotation-apply-001/real-mutation-redacted.json",
-        "ingressManifestEvidence": ".runtime/package-d-external-access-strategy/gap08l-remove-healthcheck-annotation-apply-001/portal-ingress-redacted.json",
-        "allowedOperations": [
-          "get/describe Service portal-frontend and Service portal-frontend-edge in medopl-platform only",
-          "get/describe Ingress portal-frontend and IngressClass qcloud only",
-          "server-side dry-run/apply Ingress/portal-frontend only with ingress.cloud.tencent.com/tke-service-config annotation removed",
-          "DNS validation for portal.medopl.cn only, no DNS mutation inside this runner",
-          "HTTPS smoke only for https://portal.medopl.cn/ using curl compatibility fallback when --fail-with-body is unsupported"
+        "id": "production-launch-gap-08n-medopl-shared-edge-clb-strategy",
+        "title": "Production launch Gap 08n: MedOPL shared edge CLB strategy and controlled migration plan",
+        "reason": "Portal still returns stgw 504 through failed qcloud CLB lb-b33auprw after backend, NodePort, TkeServiceConfig and health-check annotation attempts; the working OPL-Webui CLB is not a suitable long-term Portal fallback because it mixes edge ownership. Formal production stability needs a MedOPL-owned shared edge boundary.",
+        "boundary": "local strategy/local gate only; no Kubernetes API, kubectl, Tencent API, DNS, CLB, Ingress, Service or Deployment mutation; no compatibility layer, fallback route or long-term dual CLB",
+        "recommendedEntrypoint": "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode shared-edge-strategy-contract-local-gate --run-id <runid> --authorized 1",
+        "localGate": "node tests/contract/contract-test-v22-package-d-shared-edge-strategy-local-gate.mjs",
+        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/shared-edge-strategy-redacted.json",
+        "recommendedOption": "create_or_designate_medopl_shared_edge_clb",
+        "nextCloudGap": "gap-08n-1-shared-edge-dry-run-creation-strategy",
+        "orderedNextGaps": [
+          "gap-08n-1-shared-edge-dry-run-creation-strategy",
+          "gap-08n-2-portal-route-attach",
+          "gap-08n-3-portal-dns-cutover",
+          "gap-08n-4-portal-https-smoke",
+          "gap-08n-5-opl-route-migration-decision",
+          "gap-08n-6-external-access-closeout",
+          "gap-08n-7-cleanup-failed-portal-clb"
         ]
       },
       "externalAccessPolicy": {
@@ -3711,6 +3723,75 @@
           "DNS target unexpected",
           "HTTPS smoke fails or stays 504",
           "secret leakage detected"
+        ],
+        "publicAccessComplete": false
+      },
+      "gap08nSharedEdgeClbStrategy": {
+        "status": "repo_native_strategy_contract_local_gate_ready_waiting_authorized_shared_edge_dry_run",
+        "runnerCommand": "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode shared-edge-strategy-contract-local-gate --run-id <runid> --authorized 1",
+        "localGate": "node tests/contract/contract-test-v22-package-d-shared-edge-strategy-local-gate.mjs",
+        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/shared-edge-strategy-redacted.json",
+        "optionsCompared": [
+          {
+            "id": "continue_fixing_failed_portal_clb",
+            "label": "A. continue fixing lb-b33auprw",
+            "recommended": false,
+            "reason": "low expected yield after multiple backend and health-check attempts still return stgw 504"
+          },
+          {
+            "id": "reuse_opl_webui_working_clb",
+            "label": "B. reuse OPL-Webui working CLB lb-lhj3bgii",
+            "recommended": false,
+            "reason": "may be short-term reachable but mixes historical OPL-Webui and MedOPL Portal edge ownership"
+          },
+          {
+            "id": "create_or_designate_medopl_shared_edge_clb",
+            "label": "C. create/designate MedOPL shared edge CLB",
+            "recommended": true,
+            "reason": "creates one MedOPL-owned production edge boundary for TLS, WAF/security, monitoring/logs, DNS cutover, rollback and host routing"
+          }
+        ],
+        "hostRoutingModel": {
+          "portal": "portal.medopl.cn -> portal-frontend-edge:8080",
+          "opl": "opl.medopl.cn -> OPL-Webui backend",
+          "trace": "trace.medopl.cn -> future trace backend",
+          "futureHosts": [
+            "api.medopl.cn",
+            "admin.medopl.cn"
+          ]
+        },
+        "noCompatPolicy": {
+          "noCompatibilityLayer": true,
+          "noFallbackHost": true,
+          "noLegacyRoute": true,
+          "noDualWriteRoute": true,
+          "noDualClbParallelLongTerm": true,
+          "failedPortalClbLongTermEntryAllowed": false,
+          "cleanupGapRequiredAfterSharedEdgeSmoke": true,
+          "oplMigrationMustBeSeparateGap": true
+        },
+        "orderedNextGaps": [
+          "gap-08n-1-shared-edge-dry-run-creation-strategy",
+          "gap-08n-2-portal-route-attach",
+          "gap-08n-3-portal-dns-cutover",
+          "gap-08n-4-portal-https-smoke",
+          "gap-08n-5-opl-route-migration-decision",
+          "gap-08n-6-external-access-closeout",
+          "gap-08n-7-cleanup-failed-portal-clb"
+        ],
+        "allowedOperationsNow": [
+          "local strategy contract generation",
+          "redacted authorization pack generation",
+          "future dry-run planning only"
+        ],
+        "forbiddenOperationsNow": [
+          "secret/kubeconfig/DB password/Tencent credential read",
+          "Kubernetes API connection or kubectl",
+          "Tencent API, DNS, CLB, Ingress, Service or Deployment mutation",
+          "build/push",
+          "Package C live",
+          "public access completion claim",
+          "compatibility layer, fallback host or long-term dual CLB"
         ],
         "publicAccessComplete": false
       }
@@ -5485,7 +5566,7 @@
       "Portal external access strategy only after multi-tenant minimum launch closure"
     ],
     "production_launch_goal_gap_map": {
-      "status": "gap_08l_remove_qcloud_healthcheck_annotation_contract_ready_waiting_authorized_cloud_dry_run_apply",
+      "status": "gap_08n_shared_edge_clb_strategy_contract_ready_waiting_authorized_shared_edge_dry_run",
       "currentFacts": {
         "packageDPlatformControlPlaneInsideTke": "deployed",
         "inClusterHttpReachability": "preflight-passed",
@@ -5535,7 +5616,16 @@
         "gap08kEvidencePath": ".runtime/package-d-external-access-strategy/gap08k-opl-webui-vs-portal-compare-001/readonly-compare-redacted.json",
         "gap08kStrongestVisibleDiff": "Portal has ingress.cloud.tencent.com/tke-service-config binding while working OPL-Webui has no TkeServiceConfig",
         "gap08lRemoveHealthcheckAnnotationContract": "implemented_local_gate",
-        "gap08lRunId": "gap08l-remove-healthcheck-annotation-apply-001"
+        "gap08lRunId": "gap08l-remove-healthcheck-annotation-apply-001",
+        "gap08nSharedEdgeStrategyContract": "implemented_local_gate",
+        "gap08nRunnerCommand": "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode shared-edge-strategy-contract-local-gate --run-id <runid> --authorized 1",
+        "gap08nEvidencePath": ".runtime/package-d-external-access-strategy/<runid>/shared-edge-strategy-redacted.json",
+        "portalNodePortDirectHttp": 200,
+        "portalFailedClbHttpsStatus": 504,
+        "portalFailedClbBackendHealthyInConsole": true,
+        "oplWebuiWorkingClbHttpsStatus": 200,
+        "failedPortalClbFixYield": "low",
+        "noCompatPolicy": "no fallback host, no long-term dual CLB, no dual-write route, explicit failed Portal CLB cleanup gap after shared edge smoke"
       },
       "vision": {
         "product": "MedOPL production launch is a stable multi-tenant SaaS managed OPL workbench, not a temporary page trial.",
@@ -5860,20 +5950,23 @@
         }
       ],
       "nextUniqueGap": {
-        "id": "production-launch-gap-08l-remove-qcloud-healthcheck-annotation",
-        "title": "Production launch Gap 08l: remove Portal qcloud TkeServiceConfig Ingress annotation",
-        "reason": "Gap 08k compared working OPL-Webui qcloud Ingress with Portal and found the strongest Kubernetes-visible diff is Portal custom ingress.cloud.tencent.com/tke-service-config binding; OPL-Webui has no TkeServiceConfig and returns HTTPS 200, while Portal has the binding and returns 504.",
-        "boundary": "cloud runner may server-side dry-run/apply only Ingress/portal-frontend with ingress.cloud.tencent.com/tke-service-config removed while preserving medopl-portal-tls, Service/portal-frontend-edge, existing TkeServiceConfig/portal-frontend-edge-healthcheck, host portal.medopl.cn, tls secret medopl-portal-tls and backend portal-frontend-edge:8080; DNS validation and HTTPS smoke are allowed, DNS mutation and public access completion claim remain forbidden",
-        "recommendedEntrypoint": "RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-remove-healthcheck-annotation-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08l-remove-healthcheck-annotation-apply-001 --authorized 1",
-        "dryRunEntrypoint": "node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-remove-healthcheck-annotation-dry-run --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id <runid> --authorized 1",
-        "evidencePath": ".runtime/package-d-external-access-strategy/gap08l-remove-healthcheck-annotation-apply-001/real-mutation-redacted.json",
-        "ingressManifestEvidence": ".runtime/package-d-external-access-strategy/gap08l-remove-healthcheck-annotation-apply-001/portal-ingress-redacted.json",
-        "allowedOperations": [
-          "get/describe Service portal-frontend and Service portal-frontend-edge in medopl-platform only",
-          "get/describe Ingress portal-frontend and IngressClass qcloud only",
-          "server-side dry-run/apply Ingress/portal-frontend only with ingress.cloud.tencent.com/tke-service-config annotation removed",
-          "DNS validation for portal.medopl.cn only, no DNS mutation inside this runner",
-          "HTTPS smoke only for https://portal.medopl.cn/ using curl compatibility fallback when --fail-with-body is unsupported"
+        "id": "production-launch-gap-08n-medopl-shared-edge-clb-strategy",
+        "title": "Production launch Gap 08n: MedOPL shared edge CLB strategy and controlled migration plan",
+        "reason": "Portal still returns stgw 504 through failed qcloud CLB lb-b33auprw after backend, NodePort, TkeServiceConfig and health-check annotation attempts; the working OPL-Webui CLB is not a suitable long-term Portal fallback because it mixes edge ownership. Formal production stability needs a MedOPL-owned shared edge boundary.",
+        "boundary": "local strategy/local gate only; no Kubernetes API, kubectl, Tencent API, DNS, CLB, Ingress, Service or Deployment mutation; no compatibility layer, fallback route or long-term dual CLB",
+        "recommendedEntrypoint": "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode shared-edge-strategy-contract-local-gate --run-id <runid> --authorized 1",
+        "localGate": "node tests/contract/contract-test-v22-package-d-shared-edge-strategy-local-gate.mjs",
+        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/shared-edge-strategy-redacted.json",
+        "recommendedOption": "create_or_designate_medopl_shared_edge_clb",
+        "nextCloudGap": "gap-08n-1-shared-edge-dry-run-creation-strategy",
+        "orderedNextGaps": [
+          "gap-08n-1-shared-edge-dry-run-creation-strategy",
+          "gap-08n-2-portal-route-attach",
+          "gap-08n-3-portal-dns-cutover",
+          "gap-08n-4-portal-https-smoke",
+          "gap-08n-5-opl-route-migration-decision",
+          "gap-08n-6-external-access-closeout",
+          "gap-08n-7-cleanup-failed-portal-clb"
         ]
       },
       "externalAccessPolicy": {
@@ -6764,6 +6857,75 @@
           "DNS target unexpected",
           "HTTPS smoke fails or stays 504",
           "secret leakage detected"
+        ],
+        "publicAccessComplete": false
+      },
+      "gap08nSharedEdgeClbStrategy": {
+        "status": "repo_native_strategy_contract_local_gate_ready_waiting_authorized_shared_edge_dry_run",
+        "runnerCommand": "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode shared-edge-strategy-contract-local-gate --run-id <runid> --authorized 1",
+        "localGate": "node tests/contract/contract-test-v22-package-d-shared-edge-strategy-local-gate.mjs",
+        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/shared-edge-strategy-redacted.json",
+        "optionsCompared": [
+          {
+            "id": "continue_fixing_failed_portal_clb",
+            "label": "A. continue fixing lb-b33auprw",
+            "recommended": false,
+            "reason": "low expected yield after multiple backend and health-check attempts still return stgw 504"
+          },
+          {
+            "id": "reuse_opl_webui_working_clb",
+            "label": "B. reuse OPL-Webui working CLB lb-lhj3bgii",
+            "recommended": false,
+            "reason": "may be short-term reachable but mixes historical OPL-Webui and MedOPL Portal edge ownership"
+          },
+          {
+            "id": "create_or_designate_medopl_shared_edge_clb",
+            "label": "C. create/designate MedOPL shared edge CLB",
+            "recommended": true,
+            "reason": "creates one MedOPL-owned production edge boundary for TLS, WAF/security, monitoring/logs, DNS cutover, rollback and host routing"
+          }
+        ],
+        "hostRoutingModel": {
+          "portal": "portal.medopl.cn -> portal-frontend-edge:8080",
+          "opl": "opl.medopl.cn -> OPL-Webui backend",
+          "trace": "trace.medopl.cn -> future trace backend",
+          "futureHosts": [
+            "api.medopl.cn",
+            "admin.medopl.cn"
+          ]
+        },
+        "noCompatPolicy": {
+          "noCompatibilityLayer": true,
+          "noFallbackHost": true,
+          "noLegacyRoute": true,
+          "noDualWriteRoute": true,
+          "noDualClbParallelLongTerm": true,
+          "failedPortalClbLongTermEntryAllowed": false,
+          "cleanupGapRequiredAfterSharedEdgeSmoke": true,
+          "oplMigrationMustBeSeparateGap": true
+        },
+        "orderedNextGaps": [
+          "gap-08n-1-shared-edge-dry-run-creation-strategy",
+          "gap-08n-2-portal-route-attach",
+          "gap-08n-3-portal-dns-cutover",
+          "gap-08n-4-portal-https-smoke",
+          "gap-08n-5-opl-route-migration-decision",
+          "gap-08n-6-external-access-closeout",
+          "gap-08n-7-cleanup-failed-portal-clb"
+        ],
+        "allowedOperationsNow": [
+          "local strategy contract generation",
+          "redacted authorization pack generation",
+          "future dry-run planning only"
+        ],
+        "forbiddenOperationsNow": [
+          "secret/kubeconfig/DB password/Tencent credential read",
+          "Kubernetes API connection or kubectl",
+          "Tencent API, DNS, CLB, Ingress, Service or Deployment mutation",
+          "build/push",
+          "Package C live",
+          "public access completion claim",
+          "compatibility layer, fallback host or long-term dual CLB"
         ],
         "publicAccessComplete": false
       }
@@ -8272,8 +8434,8 @@
     },
     "nextAuthorizationPrompt": {
       "target": "cloud-codex",
-      "runIdHint": "gap08l-remove-healthcheck-annotation-apply-001",
-      "prompt": "按 active truth 做 gap-driven execution，不新增 loop。\n\n当前唯一 gap：Production launch Gap 08l: remove Portal custom TkeServiceConfig annotation and use qcloud default Ingress behavior。\n\n当前事实：Gap 08k OPL-Webui vs Portal qcloud Ingress compare 已完成。OPL-Webui working: host opl.medopl.cn，LB lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com，IngressClass qcloud，backend opl-webui-control-plane:4173，Service NodePort 4173 -> 4173，nodePort 32258，无 TkeServiceConfig，HTTPS smoke 200。MedOPL Portal: host portal.medopl.cn，LB lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com，IngressClass qcloud，backend portal-frontend-edge:8080，Service NodePort 8080 -> 8080，nodePort 30336，有 ingress.cloud.tencent.com/tke-service-config=portal-frontend-edge-healthcheck，HTTPS smoke 504。Kubernetes-visible strongest diff 是 Portal TkeServiceConfig binding。Evidence: .runtime/package-d-external-access-strategy/gap08k-opl-webui-vs-portal-compare-001/readonly-compare-redacted.json。\n\n本地 Gap 08l-prep 已收口：repo-native package-d-external-access-runner 支持 qcloud-remove-healthcheck-annotation-dry-run 和 qcloud-remove-healthcheck-annotation-apply；生成的 Ingress manifest 保留 host portal.medopl.cn、ingressClass qcloud、tls secret medopl-portal-tls、backend portal-frontend-edge:8080，并移除 ingress.cloud.tencent.com/tke-service-config annotation；不删除 TkeServiceConfig/portal-frontend-edge-healthcheck。\n\n固定 env 文件 /home/dev/.secrets/medopl/v22/package-d-external-access.env 仍只允许五个业务 key：PORTAL_HOST_DOMAIN、INGRESS_CLASS、TLS_SECRET_NAME、TENCENT_SSL_CERT_ID、EXTERNAL_SMOKE_URL；禁止把 RUN_TENCENT_DEPLOY_EXECUTION 写入 env 文件。\n\n建议先执行 dry-run：\nRUN_TENCENT_DEPLOY_EXECUTION=0 \\\nnode tests/support/cloud-prework/package-d-external-access-runner.js \\\n  --mode qcloud-remove-healthcheck-annotation-dry-run \\\n  --env /home/dev/.secrets/medopl/v22/package-d-external-access.env \\\n  --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy \\\n  --run-id gap08l-remove-healthcheck-annotation-dry-run-001 \\\n  --authorized 1\n\n若 server-side dry-run 通过，再执行 apply：\nRUN_TENCENT_DEPLOY_EXECUTION=external-access \\\nnode tests/support/cloud-prework/package-d-external-access-runner.js \\\n  --mode qcloud-remove-healthcheck-annotation-apply \\\n  --env /home/dev/.secrets/medopl/v22/package-d-external-access.env \\\n  --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy \\\n  --run-id gap08l-remove-healthcheck-annotation-apply-001 \\\n  --authorized 1\n\n允许操作严格限定为：get/describe Service portal-frontend、Service portal-frontend-edge、Ingress portal-frontend、IngressClass qcloud；server-side dry-run/apply Ingress/portal-frontend only to remove ingress.cloud.tencent.com/tke-service-config annotation；DNS validation only for portal.medopl.cn；HTTPS smoke only for https://portal.medopl.cn/。\n\n禁止：不读取 DB password/Portal admin password/Tencent SecretId/SecretKey/TLS private key；不删除 Ingress/Secret/Service/TkeServiceConfig；不修改 Deployment、Service/portal-frontend、Service/portal-frontend-edge、ConfigMap、RBAC、Namespace；不创建 LoadBalancer Service；不修改 DNS；不修改 Package C 或 tenant resources；不 deploy/rollout/rollback；不 build/push；不 Tencent API mutation；不 Package C live；不声明 public access complete before HTTPS evidence passes。\n\nStop conditions：RUN_TENCENT_DEPLOY_EXECUTION gate mismatch；package-d-external-access.env 出现 RUN_TENCENT_DEPLOY_EXECUTION 或非五业务 key；context/namespace/service/IngressClass mismatch；Ingress backend 不是 portal-frontend-edge:8080；generated Ingress still contains ingress.cloud.tencent.com/tke-service-config；kubectl command outside allowlist；DNS target unexpected；HTTPS smoke still 504/fails；任何 secret leakage。\n\nEvidence 写入 .runtime/package-d-external-access-strategy/gap08l-remove-healthcheck-annotation-apply-001/real-mutation-redacted.json 和 .runtime/package-d-external-access-strategy/gap08l-remove-healthcheck-annotation-apply-001/portal-ingress-redacted.json；完成后同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
+      "runIdHint": "gap08n-shared-edge-dry-run-001",
+      "prompt": "按 active truth 做 gap-driven execution，不新增 loop。\n\n当前唯一 gap：Production launch Gap 08n-1: MedOPL shared edge CLB dry-run / creation strategy。\n\n当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability passed。portal-frontend-edge NodePort direct HTTP 200；DNS portal.medopl.cn 已指向 qcloud CLB；TLS 校验通过；Ingress Ready=True；qcloud CLB lb-b33auprw 仍返回 stgw 504；CLB backend 10.66.0.42:30336 控制台 healthy。K8s-visible Ingress/Service 与 working OPL-Webui 基本一致；OPL-Webui working CLB lb-lhj3bgii HTTPS 200。Portal 失败 LB lb-b33auprw 已经历 ClusterIP backend、NodePort backend、TkeServiceConfig add/remove、health-check annotation 等多轮变更后仍 504，继续修该 LB 收益低。直接复用 OPL-Webui CLB 可能短期可用，但不适合作为正式稳定上线架构。\n\n本地 Gap 08n-prep 已收口：repo-native shared edge strategy local gate 已实现。单一入口：\nnode tests/support/cloud-prework/package-d-external-access-strategy-runner.js \\\n  --mode shared-edge-strategy-contract-local-gate \\\n  --run-id <runid> \\\n  --authorized 1\n\n推荐长期策略：建立或指定 MedOPL shared edge CLB 作为正式生产 edge，承载 portal.medopl.cn -> portal-frontend-edge:8080、opl.medopl.cn -> OPL-Webui backend、trace.medopl.cn -> future trace backend，并统一 TLS、WAF/security boundary、monitoring/logs、DNS cutover、rollback 和 host routing。\n\n下一步只允许做 shared edge dry-run / creation strategy，不执行真实 mutation。允许操作：只读发现/验证 shared edge 候选、生成 shared edge creation/designation dry-run plan、生成 portal route attach plan、生成 DNS cutover/rollback/smoke/evidence plan、记录 redacted evidence。\n\n禁止：不读取 secret/kubeconfig/DB password/Tencent credentials；不连接 Kubernetes API；不执行 kubectl；不调用 Tencent API；不修改 DNS；不修改 CLB；不修改 Ingress/Service/Deployment；不 build/push；不 Package C live；不声明 public access complete；不新增第二 truth source；不新增 loop；不新增兼容层；不新增 fallback route；不把 lb-b33auprw 作为长期入口；不长期双 CLB 并行；不做双写 route；不破坏 current OPL-Webui working entry。\n\nStop conditions：方案继续把 lb-b33auprw 作为长期 Portal entry；方案复用 OPL-Webui CLB 作为隐藏 Portal fallback；方案创建长期双 CLB 或双写 route；方案会中断 opl.medopl.cn HTTPS 200；任何 secret 泄漏；任何 DNS/CLB/Ingress/Service mutation 请求；任何 public access completion claim。\n\nEvidence 写入 .runtime/package-d-external-access-strategy/<runid>/shared-edge-strategy-redacted.json。完成后同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
     },
     "realExecutionReady": false,
     "combinedInClusterPreflight": {
@@ -9587,20 +9749,23 @@
     },
     "productionLaunchBoundary": {
       "nextUniqueGap": {
-        "id": "production-launch-gap-08l-remove-qcloud-healthcheck-annotation",
-        "title": "Production launch Gap 08l: remove Portal qcloud TkeServiceConfig Ingress annotation",
-        "reason": "Gap 08k compared working OPL-Webui qcloud Ingress with Portal and found the strongest Kubernetes-visible diff is Portal custom ingress.cloud.tencent.com/tke-service-config binding; OPL-Webui has no TkeServiceConfig and returns HTTPS 200, while Portal has the binding and returns 504.",
-        "boundary": "cloud runner may server-side dry-run/apply only Ingress/portal-frontend with ingress.cloud.tencent.com/tke-service-config removed while preserving medopl-portal-tls, Service/portal-frontend-edge, existing TkeServiceConfig/portal-frontend-edge-healthcheck, host portal.medopl.cn, tls secret medopl-portal-tls and backend portal-frontend-edge:8080; DNS validation and HTTPS smoke are allowed, DNS mutation and public access completion claim remain forbidden",
-        "recommendedEntrypoint": "RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-remove-healthcheck-annotation-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08l-remove-healthcheck-annotation-apply-001 --authorized 1",
-        "dryRunEntrypoint": "node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-remove-healthcheck-annotation-dry-run --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id <runid> --authorized 1",
-        "evidencePath": ".runtime/package-d-external-access-strategy/gap08l-remove-healthcheck-annotation-apply-001/real-mutation-redacted.json",
-        "ingressManifestEvidence": ".runtime/package-d-external-access-strategy/gap08l-remove-healthcheck-annotation-apply-001/portal-ingress-redacted.json",
-        "allowedOperations": [
-          "get/describe Service portal-frontend and Service portal-frontend-edge in medopl-platform only",
-          "get/describe Ingress portal-frontend and IngressClass qcloud only",
-          "server-side dry-run/apply Ingress/portal-frontend only with ingress.cloud.tencent.com/tke-service-config annotation removed",
-          "DNS validation for portal.medopl.cn only, no DNS mutation inside this runner",
-          "HTTPS smoke only for https://portal.medopl.cn/ using curl compatibility fallback when --fail-with-body is unsupported"
+        "id": "production-launch-gap-08n-medopl-shared-edge-clb-strategy",
+        "title": "Production launch Gap 08n: MedOPL shared edge CLB strategy and controlled migration plan",
+        "reason": "Portal still returns stgw 504 through failed qcloud CLB lb-b33auprw after backend, NodePort, TkeServiceConfig and health-check annotation attempts; the working OPL-Webui CLB is not a suitable long-term Portal fallback because it mixes edge ownership. Formal production stability needs a MedOPL-owned shared edge boundary.",
+        "boundary": "local strategy/local gate only; no Kubernetes API, kubectl, Tencent API, DNS, CLB, Ingress, Service or Deployment mutation; no compatibility layer, fallback route or long-term dual CLB",
+        "recommendedEntrypoint": "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode shared-edge-strategy-contract-local-gate --run-id <runid> --authorized 1",
+        "localGate": "node tests/contract/contract-test-v22-package-d-shared-edge-strategy-local-gate.mjs",
+        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/shared-edge-strategy-redacted.json",
+        "recommendedOption": "create_or_designate_medopl_shared_edge_clb",
+        "nextCloudGap": "gap-08n-1-shared-edge-dry-run-creation-strategy",
+        "orderedNextGaps": [
+          "gap-08n-1-shared-edge-dry-run-creation-strategy",
+          "gap-08n-2-portal-route-attach",
+          "gap-08n-3-portal-dns-cutover",
+          "gap-08n-4-portal-https-smoke",
+          "gap-08n-5-opl-route-migration-decision",
+          "gap-08n-6-external-access-closeout",
+          "gap-08n-7-cleanup-failed-portal-clb"
         ]
       },
       "externalAccessBlockedUntil": "multi_tenant_minimum_launch_closure",
@@ -9908,7 +10073,7 @@
         ],
         "previousFailClosedRunId": "gap08d-qcloud-ingress-real-003"
       },
-      "status": "gap_08l_remove_qcloud_healthcheck_annotation_contract_ready_waiting_authorized_cloud_dry_run_apply",
+      "status": "gap_08n_shared_edge_clb_strategy_contract_ready_waiting_authorized_shared_edge_dry_run",
       "currentFacts": {
         "packageDDeployedInsideTke": true,
         "inClusterHttpReachabilityPassed": true,
@@ -9933,7 +10098,16 @@
         "gap08kEvidencePath": ".runtime/package-d-external-access-strategy/gap08k-opl-webui-vs-portal-compare-001/readonly-compare-redacted.json",
         "gap08kStrongestVisibleDiff": "Portal has ingress.cloud.tencent.com/tke-service-config binding while working OPL-Webui has no TkeServiceConfig",
         "gap08lRemoveHealthcheckAnnotationContract": "implemented_local_gate",
-        "gap08lRunId": "gap08l-remove-healthcheck-annotation-apply-001"
+        "gap08lRunId": "gap08l-remove-healthcheck-annotation-apply-001",
+        "gap08nSharedEdgeStrategyContract": "implemented_local_gate",
+        "gap08nRunnerCommand": "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode shared-edge-strategy-contract-local-gate --run-id <runid> --authorized 1",
+        "gap08nEvidencePath": ".runtime/package-d-external-access-strategy/<runid>/shared-edge-strategy-redacted.json",
+        "portalNodePortDirectHttp": 200,
+        "portalFailedClbHttpsStatus": 504,
+        "portalFailedClbBackendHealthyInConsole": true,
+        "oplWebuiWorkingClbHttpsStatus": 200,
+        "failedPortalClbFixYield": "low",
+        "noCompatPolicy": "no fallback host, no long-term dual CLB, no dual-write route, explicit failed Portal CLB cleanup gap after shared edge smoke"
       },
       "gap08dQcloudTlsSecretIngressRealApply": {
         "status": "applied_but_blocked_by_qcloud_backend_service_type",
@@ -10317,6 +10491,75 @@
           "secret leakage detected"
         ],
         "publicAccessComplete": false
+      },
+      "gap08nSharedEdgeClbStrategy": {
+        "status": "repo_native_strategy_contract_local_gate_ready_waiting_authorized_shared_edge_dry_run",
+        "runnerCommand": "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode shared-edge-strategy-contract-local-gate --run-id <runid> --authorized 1",
+        "localGate": "node tests/contract/contract-test-v22-package-d-shared-edge-strategy-local-gate.mjs",
+        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/shared-edge-strategy-redacted.json",
+        "optionsCompared": [
+          {
+            "id": "continue_fixing_failed_portal_clb",
+            "label": "A. continue fixing lb-b33auprw",
+            "recommended": false,
+            "reason": "low expected yield after multiple backend and health-check attempts still return stgw 504"
+          },
+          {
+            "id": "reuse_opl_webui_working_clb",
+            "label": "B. reuse OPL-Webui working CLB lb-lhj3bgii",
+            "recommended": false,
+            "reason": "may be short-term reachable but mixes historical OPL-Webui and MedOPL Portal edge ownership"
+          },
+          {
+            "id": "create_or_designate_medopl_shared_edge_clb",
+            "label": "C. create/designate MedOPL shared edge CLB",
+            "recommended": true,
+            "reason": "creates one MedOPL-owned production edge boundary for TLS, WAF/security, monitoring/logs, DNS cutover, rollback and host routing"
+          }
+        ],
+        "hostRoutingModel": {
+          "portal": "portal.medopl.cn -> portal-frontend-edge:8080",
+          "opl": "opl.medopl.cn -> OPL-Webui backend",
+          "trace": "trace.medopl.cn -> future trace backend",
+          "futureHosts": [
+            "api.medopl.cn",
+            "admin.medopl.cn"
+          ]
+        },
+        "noCompatPolicy": {
+          "noCompatibilityLayer": true,
+          "noFallbackHost": true,
+          "noLegacyRoute": true,
+          "noDualWriteRoute": true,
+          "noDualClbParallelLongTerm": true,
+          "failedPortalClbLongTermEntryAllowed": false,
+          "cleanupGapRequiredAfterSharedEdgeSmoke": true,
+          "oplMigrationMustBeSeparateGap": true
+        },
+        "orderedNextGaps": [
+          "gap-08n-1-shared-edge-dry-run-creation-strategy",
+          "gap-08n-2-portal-route-attach",
+          "gap-08n-3-portal-dns-cutover",
+          "gap-08n-4-portal-https-smoke",
+          "gap-08n-5-opl-route-migration-decision",
+          "gap-08n-6-external-access-closeout",
+          "gap-08n-7-cleanup-failed-portal-clb"
+        ],
+        "allowedOperationsNow": [
+          "local strategy contract generation",
+          "redacted authorization pack generation",
+          "future dry-run planning only"
+        ],
+        "forbiddenOperationsNow": [
+          "secret/kubeconfig/DB password/Tencent credential read",
+          "Kubernetes API connection or kubectl",
+          "Tencent API, DNS, CLB, Ingress, Service or Deployment mutation",
+          "build/push",
+          "Package C live",
+          "public access completion claim",
+          "compatibility layer, fallback host or long-term dual CLB"
+        ],
+        "publicAccessComplete": false
       }
     }
   },
@@ -10325,15 +10568,15 @@
   ],
   "nextAuthorizationPrompt": {
     "target": "cloud-codex",
-    "runIdHint": "gap08l-remove-healthcheck-annotation-apply-001",
-    "prompt": "按 active truth 做 gap-driven execution，不新增 loop。\n\n当前唯一 gap：Production launch Gap 08l: remove Portal custom TkeServiceConfig annotation and use qcloud default Ingress behavior。\n\n当前事实：Gap 08k OPL-Webui vs Portal qcloud Ingress compare 已完成。OPL-Webui working: host opl.medopl.cn，LB lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com，IngressClass qcloud，backend opl-webui-control-plane:4173，Service NodePort 4173 -> 4173，nodePort 32258，无 TkeServiceConfig，HTTPS smoke 200。MedOPL Portal: host portal.medopl.cn，LB lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com，IngressClass qcloud，backend portal-frontend-edge:8080，Service NodePort 8080 -> 8080，nodePort 30336，有 ingress.cloud.tencent.com/tke-service-config=portal-frontend-edge-healthcheck，HTTPS smoke 504。Kubernetes-visible strongest diff 是 Portal TkeServiceConfig binding。Evidence: .runtime/package-d-external-access-strategy/gap08k-opl-webui-vs-portal-compare-001/readonly-compare-redacted.json。\n\n本地 Gap 08l-prep 已收口：repo-native package-d-external-access-runner 支持 qcloud-remove-healthcheck-annotation-dry-run 和 qcloud-remove-healthcheck-annotation-apply；生成的 Ingress manifest 保留 host portal.medopl.cn、ingressClass qcloud、tls secret medopl-portal-tls、backend portal-frontend-edge:8080，并移除 ingress.cloud.tencent.com/tke-service-config annotation；不删除 TkeServiceConfig/portal-frontend-edge-healthcheck。\n\n固定 env 文件 /home/dev/.secrets/medopl/v22/package-d-external-access.env 仍只允许五个业务 key：PORTAL_HOST_DOMAIN、INGRESS_CLASS、TLS_SECRET_NAME、TENCENT_SSL_CERT_ID、EXTERNAL_SMOKE_URL；禁止把 RUN_TENCENT_DEPLOY_EXECUTION 写入 env 文件。\n\n建议先执行 dry-run：\nRUN_TENCENT_DEPLOY_EXECUTION=0 \\\nnode tests/support/cloud-prework/package-d-external-access-runner.js \\\n  --mode qcloud-remove-healthcheck-annotation-dry-run \\\n  --env /home/dev/.secrets/medopl/v22/package-d-external-access.env \\\n  --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy \\\n  --run-id gap08l-remove-healthcheck-annotation-dry-run-001 \\\n  --authorized 1\n\n若 server-side dry-run 通过，再执行 apply：\nRUN_TENCENT_DEPLOY_EXECUTION=external-access \\\nnode tests/support/cloud-prework/package-d-external-access-runner.js \\\n  --mode qcloud-remove-healthcheck-annotation-apply \\\n  --env /home/dev/.secrets/medopl/v22/package-d-external-access.env \\\n  --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy \\\n  --run-id gap08l-remove-healthcheck-annotation-apply-001 \\\n  --authorized 1\n\n允许操作严格限定为：get/describe Service portal-frontend、Service portal-frontend-edge、Ingress portal-frontend、IngressClass qcloud；server-side dry-run/apply Ingress/portal-frontend only to remove ingress.cloud.tencent.com/tke-service-config annotation；DNS validation only for portal.medopl.cn；HTTPS smoke only for https://portal.medopl.cn/。\n\n禁止：不读取 DB password/Portal admin password/Tencent SecretId/SecretKey/TLS private key；不删除 Ingress/Secret/Service/TkeServiceConfig；不修改 Deployment、Service/portal-frontend、Service/portal-frontend-edge、ConfigMap、RBAC、Namespace；不创建 LoadBalancer Service；不修改 DNS；不修改 Package C 或 tenant resources；不 deploy/rollout/rollback；不 build/push；不 Tencent API mutation；不 Package C live；不声明 public access complete before HTTPS evidence passes。\n\nStop conditions：RUN_TENCENT_DEPLOY_EXECUTION gate mismatch；package-d-external-access.env 出现 RUN_TENCENT_DEPLOY_EXECUTION 或非五业务 key；context/namespace/service/IngressClass mismatch；Ingress backend 不是 portal-frontend-edge:8080；generated Ingress still contains ingress.cloud.tencent.com/tke-service-config；kubectl command outside allowlist；DNS target unexpected；HTTPS smoke still 504/fails；任何 secret leakage。\n\nEvidence 写入 .runtime/package-d-external-access-strategy/gap08l-remove-healthcheck-annotation-apply-001/real-mutation-redacted.json 和 .runtime/package-d-external-access-strategy/gap08l-remove-healthcheck-annotation-apply-001/portal-ingress-redacted.json；完成后同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
+    "runIdHint": "gap08n-shared-edge-dry-run-001",
+    "prompt": "按 active truth 做 gap-driven execution，不新增 loop。\n\n当前唯一 gap：Production launch Gap 08n-1: MedOPL shared edge CLB dry-run / creation strategy。\n\n当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability passed。portal-frontend-edge NodePort direct HTTP 200；DNS portal.medopl.cn 已指向 qcloud CLB；TLS 校验通过；Ingress Ready=True；qcloud CLB lb-b33auprw 仍返回 stgw 504；CLB backend 10.66.0.42:30336 控制台 healthy。K8s-visible Ingress/Service 与 working OPL-Webui 基本一致；OPL-Webui working CLB lb-lhj3bgii HTTPS 200。Portal 失败 LB lb-b33auprw 已经历 ClusterIP backend、NodePort backend、TkeServiceConfig add/remove、health-check annotation 等多轮变更后仍 504，继续修该 LB 收益低。直接复用 OPL-Webui CLB 可能短期可用，但不适合作为正式稳定上线架构。\n\n本地 Gap 08n-prep 已收口：repo-native shared edge strategy local gate 已实现。单一入口：\nnode tests/support/cloud-prework/package-d-external-access-strategy-runner.js \\\n  --mode shared-edge-strategy-contract-local-gate \\\n  --run-id <runid> \\\n  --authorized 1\n\n推荐长期策略：建立或指定 MedOPL shared edge CLB 作为正式生产 edge，承载 portal.medopl.cn -> portal-frontend-edge:8080、opl.medopl.cn -> OPL-Webui backend、trace.medopl.cn -> future trace backend，并统一 TLS、WAF/security boundary、monitoring/logs、DNS cutover、rollback 和 host routing。\n\n下一步只允许做 shared edge dry-run / creation strategy，不执行真实 mutation。允许操作：只读发现/验证 shared edge 候选、生成 shared edge creation/designation dry-run plan、生成 portal route attach plan、生成 DNS cutover/rollback/smoke/evidence plan、记录 redacted evidence。\n\n禁止：不读取 secret/kubeconfig/DB password/Tencent credentials；不连接 Kubernetes API；不执行 kubectl；不调用 Tencent API；不修改 DNS；不修改 CLB；不修改 Ingress/Service/Deployment；不 build/push；不 Package C live；不声明 public access complete；不新增第二 truth source；不新增 loop；不新增兼容层；不新增 fallback route；不把 lb-b33auprw 作为长期入口；不长期双 CLB 并行；不做双写 route；不破坏 current OPL-Webui working entry。\n\nStop conditions：方案继续把 lb-b33auprw 作为长期 Portal entry；方案复用 OPL-Webui CLB 作为隐藏 Portal fallback；方案创建长期双 CLB 或双写 route；方案会中断 opl.medopl.cn HTTPS 200；任何 secret 泄漏；任何 DNS/CLB/Ingress/Service mutation 请求；任何 public access completion claim。\n\nEvidence 写入 .runtime/package-d-external-access-strategy/<runid>/shared-edge-strategy-redacted.json。完成后同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
   },
   "nextLocalCodexPrompt": {
     "target": "local-codex",
-    "prompt": "当前唯一 gap 已进入 Gap 08l remove qcloud health-check annotation 授权；本地 repo-native annotation-removal contract/local gate 已收口。除非云端 evidence 暴露新的 fail-closed gap，本地不要新增 loop。"
+    "prompt": "当前唯一 gap 已进入 Gap 08n-1 shared edge dry-run / creation strategy 授权；本地 repo-native shared-edge strategy contract/local gate 已收口。除非云端 evidence 暴露新的 fail-closed gap，本地不要新增 loop。"
   },
   "production_launch_goal_gap_map": {
-    "status": "gap_08l_remove_qcloud_healthcheck_annotation_contract_ready_waiting_authorized_cloud_dry_run_apply",
+    "status": "gap_08n_shared_edge_clb_strategy_contract_ready_waiting_authorized_shared_edge_dry_run",
     "currentFacts": {
       "packageDPlatformControlPlaneInsideTke": "deployed",
       "inClusterHttpReachability": "preflight-passed",
@@ -10385,7 +10628,16 @@
       "gap08kEvidencePath": ".runtime/package-d-external-access-strategy/gap08k-opl-webui-vs-portal-compare-001/readonly-compare-redacted.json",
       "gap08kStrongestVisibleDiff": "Portal has ingress.cloud.tencent.com/tke-service-config binding while working OPL-Webui has no TkeServiceConfig",
       "gap08lRemoveHealthcheckAnnotationContract": "implemented_local_gate",
-      "gap08lRunId": "gap08l-remove-healthcheck-annotation-apply-001"
+      "gap08lRunId": "gap08l-remove-healthcheck-annotation-apply-001",
+      "gap08nSharedEdgeStrategyContract": "implemented_local_gate",
+      "gap08nRunnerCommand": "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode shared-edge-strategy-contract-local-gate --run-id <runid> --authorized 1",
+      "gap08nEvidencePath": ".runtime/package-d-external-access-strategy/<runid>/shared-edge-strategy-redacted.json",
+      "portalNodePortDirectHttp": 200,
+      "portalFailedClbHttpsStatus": 504,
+      "portalFailedClbBackendHealthyInConsole": true,
+      "oplWebuiWorkingClbHttpsStatus": 200,
+      "failedPortalClbFixYield": "low",
+      "noCompatPolicy": "no fallback host, no long-term dual CLB, no dual-write route, explicit failed Portal CLB cleanup gap after shared edge smoke"
     },
     "vision": {
       "product": "MedOPL production launch is a stable multi-tenant SaaS managed OPL workbench, not a temporary page trial.",
@@ -10710,20 +10962,23 @@
       }
     ],
     "nextUniqueGap": {
-      "id": "production-launch-gap-08l-remove-qcloud-healthcheck-annotation",
-      "title": "Production launch Gap 08l: remove Portal qcloud TkeServiceConfig Ingress annotation",
-      "reason": "Gap 08k compared working OPL-Webui qcloud Ingress with Portal and found the strongest Kubernetes-visible diff is Portal custom ingress.cloud.tencent.com/tke-service-config binding; OPL-Webui has no TkeServiceConfig and returns HTTPS 200, while Portal has the binding and returns 504.",
-      "boundary": "cloud runner may server-side dry-run/apply only Ingress/portal-frontend with ingress.cloud.tencent.com/tke-service-config removed while preserving medopl-portal-tls, Service/portal-frontend-edge, existing TkeServiceConfig/portal-frontend-edge-healthcheck, host portal.medopl.cn, tls secret medopl-portal-tls and backend portal-frontend-edge:8080; DNS validation and HTTPS smoke are allowed, DNS mutation and public access completion claim remain forbidden",
-      "recommendedEntrypoint": "RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-remove-healthcheck-annotation-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08l-remove-healthcheck-annotation-apply-001 --authorized 1",
-      "dryRunEntrypoint": "node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-remove-healthcheck-annotation-dry-run --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id <runid> --authorized 1",
-      "evidencePath": ".runtime/package-d-external-access-strategy/gap08l-remove-healthcheck-annotation-apply-001/real-mutation-redacted.json",
-      "ingressManifestEvidence": ".runtime/package-d-external-access-strategy/gap08l-remove-healthcheck-annotation-apply-001/portal-ingress-redacted.json",
-      "allowedOperations": [
-        "get/describe Service portal-frontend and Service portal-frontend-edge in medopl-platform only",
-        "get/describe Ingress portal-frontend and IngressClass qcloud only",
-        "server-side dry-run/apply Ingress/portal-frontend only with ingress.cloud.tencent.com/tke-service-config annotation removed",
-        "DNS validation for portal.medopl.cn only, no DNS mutation inside this runner",
-        "HTTPS smoke only for https://portal.medopl.cn/ using curl compatibility fallback when --fail-with-body is unsupported"
+      "id": "production-launch-gap-08n-medopl-shared-edge-clb-strategy",
+      "title": "Production launch Gap 08n: MedOPL shared edge CLB strategy and controlled migration plan",
+      "reason": "Portal still returns stgw 504 through failed qcloud CLB lb-b33auprw after backend, NodePort, TkeServiceConfig and health-check annotation attempts; the working OPL-Webui CLB is not a suitable long-term Portal fallback because it mixes edge ownership. Formal production stability needs a MedOPL-owned shared edge boundary.",
+      "boundary": "local strategy/local gate only; no Kubernetes API, kubectl, Tencent API, DNS, CLB, Ingress, Service or Deployment mutation; no compatibility layer, fallback route or long-term dual CLB",
+      "recommendedEntrypoint": "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode shared-edge-strategy-contract-local-gate --run-id <runid> --authorized 1",
+      "localGate": "node tests/contract/contract-test-v22-package-d-shared-edge-strategy-local-gate.mjs",
+      "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/shared-edge-strategy-redacted.json",
+      "recommendedOption": "create_or_designate_medopl_shared_edge_clb",
+      "nextCloudGap": "gap-08n-1-shared-edge-dry-run-creation-strategy",
+      "orderedNextGaps": [
+        "gap-08n-1-shared-edge-dry-run-creation-strategy",
+        "gap-08n-2-portal-route-attach",
+        "gap-08n-3-portal-dns-cutover",
+        "gap-08n-4-portal-https-smoke",
+        "gap-08n-5-opl-route-migration-decision",
+        "gap-08n-6-external-access-closeout",
+        "gap-08n-7-cleanup-failed-portal-clb"
       ]
     },
     "externalAccessPolicy": {
@@ -11723,6 +11978,75 @@
         "DNS target unexpected",
         "HTTPS smoke fails or stays 504",
         "secret leakage detected"
+      ],
+      "publicAccessComplete": false
+    },
+    "gap08nSharedEdgeClbStrategy": {
+      "status": "repo_native_strategy_contract_local_gate_ready_waiting_authorized_shared_edge_dry_run",
+      "runnerCommand": "node tests/support/cloud-prework/package-d-external-access-strategy-runner.js --mode shared-edge-strategy-contract-local-gate --run-id <runid> --authorized 1",
+      "localGate": "node tests/contract/contract-test-v22-package-d-shared-edge-strategy-local-gate.mjs",
+      "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/shared-edge-strategy-redacted.json",
+      "optionsCompared": [
+        {
+          "id": "continue_fixing_failed_portal_clb",
+          "label": "A. continue fixing lb-b33auprw",
+          "recommended": false,
+          "reason": "low expected yield after multiple backend and health-check attempts still return stgw 504"
+        },
+        {
+          "id": "reuse_opl_webui_working_clb",
+          "label": "B. reuse OPL-Webui working CLB lb-lhj3bgii",
+          "recommended": false,
+          "reason": "may be short-term reachable but mixes historical OPL-Webui and MedOPL Portal edge ownership"
+        },
+        {
+          "id": "create_or_designate_medopl_shared_edge_clb",
+          "label": "C. create/designate MedOPL shared edge CLB",
+          "recommended": true,
+          "reason": "creates one MedOPL-owned production edge boundary for TLS, WAF/security, monitoring/logs, DNS cutover, rollback and host routing"
+        }
+      ],
+      "hostRoutingModel": {
+        "portal": "portal.medopl.cn -> portal-frontend-edge:8080",
+        "opl": "opl.medopl.cn -> OPL-Webui backend",
+        "trace": "trace.medopl.cn -> future trace backend",
+        "futureHosts": [
+          "api.medopl.cn",
+          "admin.medopl.cn"
+        ]
+      },
+      "noCompatPolicy": {
+        "noCompatibilityLayer": true,
+        "noFallbackHost": true,
+        "noLegacyRoute": true,
+        "noDualWriteRoute": true,
+        "noDualClbParallelLongTerm": true,
+        "failedPortalClbLongTermEntryAllowed": false,
+        "cleanupGapRequiredAfterSharedEdgeSmoke": true,
+        "oplMigrationMustBeSeparateGap": true
+      },
+      "orderedNextGaps": [
+        "gap-08n-1-shared-edge-dry-run-creation-strategy",
+        "gap-08n-2-portal-route-attach",
+        "gap-08n-3-portal-dns-cutover",
+        "gap-08n-4-portal-https-smoke",
+        "gap-08n-5-opl-route-migration-decision",
+        "gap-08n-6-external-access-closeout",
+        "gap-08n-7-cleanup-failed-portal-clb"
+      ],
+      "allowedOperationsNow": [
+        "local strategy contract generation",
+        "redacted authorization pack generation",
+        "future dry-run planning only"
+      ],
+      "forbiddenOperationsNow": [
+        "secret/kubeconfig/DB password/Tencent credential read",
+        "Kubernetes API connection or kubectl",
+        "Tencent API, DNS, CLB, Ingress, Service or Deployment mutation",
+        "build/push",
+        "Package C live",
+        "public access completion claim",
+        "compatibility layer, fallback host or long-term dual CLB"
       ],
       "publicAccessComplete": false
     }
