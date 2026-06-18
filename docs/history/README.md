@@ -7973,3 +7973,47 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-18 production-launch-gap-08f-dns-https-smoke-prep
+
+Status: `authoring / local-gated pending landing`
+
+Branch: `recovery/platform-v22-trunk`
+
+Base trunk HEAD: `344e1219d8211e9949f2c9488bdb7f9317715c24`
+
+Model: `gpt-5.4`
+
+Subagents: none
+
+Scope:
+
+- Recorded Gap 08e cloud apply facts from `.runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/`: `Service/portal-frontend-edge` apply succeeded as type `NodePort` on port `8080`, the original `Service/portal-frontend` remained `ClusterIP`, and `Ingress/portal-frontend` backend now targets `portal-frontend-edge:8080`.
+- Recorded the new boundary: Ingress is `Ready=True` with LB hostname `lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com`, DNS `portal.medopl.cn` still points to old `lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com`, HTTPS smoke did not produce valid evidence because cloud curl lacked `--fail-with-body`, no out-of-bound mutation occurred and public access is not complete.
+- Fixed `tests/support/cloud-prework/package-d-external-access-runner.js` and the edge NodePort contract so HTTPS smoke no longer hard-requires `curl --fail-with-body`.
+- The runner now probes `curl --help all`; when supported it uses `--fail-with-body`, otherwise it falls back to `--fail --connect-timeout 10 --max-time 30 -sS -o /dev/null -w` structured output.
+- HTTPS smoke remains allowlisted to `https://portal.medopl.cn/` only and records redacted `service`, `url`, `http_code`, `ssl_verify_result`, `time_total` and `compatibilityMode` evidence.
+- Updated the qcloud external access local gates to prove old-curl fallback, new-curl `--fail-with-body`, command allowlist, fixed URL, structured smoke evidence and no sensitive value leakage for both qcloud Ingress apply and qcloud edge NodePort apply modes.
+- Updated active, delivery and `goal-current.json` so the next unique gap is `production-launch-gap-08f-dns-validation-https-smoke` with run-id `gap08f-dns-https-smoke-001`.
+- This closeout did not read secrets/kubeconfig/DB password/TLS private key, connect to Kubernetes API or PostgreSQL, run kubectl, deploy, rollout, rollback, build/push, execute Tencent API mutation, run Package C live, modify DNS, create a LoadBalancer Service, modify any Service/Deployment or claim public user access is complete.
+
+Verification:
+
+- `node tests/contract/contract-test-v22-package-d-external-access-edge-nodeport-local-gate.mjs`: passed.
+- `node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs`: passed.
+- `npm run verify`: pending.
+- `npm run closeout:check -- --json`: pending.
+
+Can-claim:
+
+- Gap 08e qcloud edge NodePort apply succeeded in cloud with redacted evidence.
+- The external access runner HTTPS smoke has a curl compatibility contract/local gate.
+- The next cloud run-id is `gap08f-dns-https-smoke-001` after separate DNS alignment.
+
+Cannot-claim:
+
+- DNS has been changed.
+- HTTPS external smoke has passed.
+- Portal external/public user access or production launch is complete.
+
+next_cursor: `real-cloud-authorization-boundary`

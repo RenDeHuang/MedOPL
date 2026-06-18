@@ -15,20 +15,40 @@ import {
   parseEnv,
 } from "./package-d-kubernetes-api-preflight-runner.js";
 import {
+  CURL_FAIL_WITH_BODY_CAPABILITY_PROBE_ARGS,
   FIXED_PORTAL_EDGE_SERVICE_NAME,
   PACKAGE_D_EXTERNAL_ACCESS_EDGE_NODEPORT_APPLY_COMMAND,
   PACKAGE_D_EXTERNAL_ACCESS_EDGE_NODEPORT_DRY_RUN_COMMAND,
   QCLOUD_EDGE_NODEPORT_APPLY_MODE,
   QCLOUD_EDGE_NODEPORT_DRY_RUN_MODE,
   assertPortalEdgeNodePortManifestBoundary,
+  externalHttpsSmokeCurlArgs,
   portalEdgeNodePortServiceManifest,
   qcloudEdgeNodePortCommandPlan,
 } from "./package-d-external-access-edge-nodeport-contract.js";
+import {
+  FIXED_EXTERNAL_SMOKE_URL,
+  FIXED_INGRESS_CLASS,
+  FIXED_PORTAL_HOST,
+  FIXED_PORTAL_SERVICE_NAME,
+  FIXED_PORTAL_SERVICE_PORT,
+  FIXED_TLS_SECRET_NAME,
+  PEM_CERT_BEGIN,
+  PEM_CERT_END,
+  PEM_PRIVATE_KEY_BEGIN,
+  PEM_PRIVATE_KEY_END,
+  PEM_RSA_PRIVATE_KEY_BEGIN,
+  PEM_RSA_PRIVATE_KEY_END,
+  assertPackageDExternalAccessManifestBoundary,
+  portalIngressManifest,
+  qcloudCertSecret,
+} from "./package-d-external-access-ingress-contract.js";
 
 export {
   PACKAGE_D_EXTERNAL_ACCESS_EDGE_NODEPORT_APPLY_COMMAND,
   PACKAGE_D_EXTERNAL_ACCESS_EDGE_NODEPORT_DRY_RUN_COMMAND,
 } from "./package-d-external-access-edge-nodeport-contract.js";
+export { assertPackageDExternalAccessManifestBoundary } from "./package-d-external-access-ingress-contract.js";
 
 export const PACKAGE_D_EXTERNAL_ACCESS_DRY_RUN_COMMAND = "node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-ingress-dry-run --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id <runid> --authorized 1";
 export const PACKAGE_D_EXTERNAL_ACCESS_APPLY_COMMAND = "node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-ingress-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id <runid> --authorized 1";
@@ -51,22 +71,9 @@ const EXTERNAL_ACCESS_ENV_KEYS = Object.freeze([
 ]);
 const REQUIRED_EXTERNAL_ACCESS_ENV_KEYS = EXTERNAL_ACCESS_ENV_KEYS;
 const RUN_GATE_ENV_KEYS = Object.freeze(["RUN_TENCENT_DEPLOY_EXECUTION"]);
-const FIXED_PORTAL_HOST = "portal.medopl.cn";
-const FIXED_INGRESS_CLASS = "qcloud";
-const FIXED_TLS_SECRET_NAME = "medopl-portal-tls";
-const FIXED_EXTERNAL_SMOKE_URL = "https://portal.medopl.cn/";
-const FIXED_PORTAL_SERVICE_NAME = "portal-frontend";
-const FIXED_PORTAL_SERVICE_PORT = 8080;
 const APPLY_GATE_VALUE = "external-access";
 const DRY_RUN_GATE_VALUE = "0";
 const EVIDENCE_FILE = "real-mutation-redacted.json";
-const PEM_CERT_BEGIN = ["-----BEGIN", "CERTIFICATE-----"].join(" ");
-const PEM_CERT_END = ["-----END", "CERTIFICATE-----"].join(" ");
-const PEM_PRIVATE_KEY_LABEL = ["PRIVATE", "KEY"].join(" ");
-const PEM_PRIVATE_KEY_BEGIN = ["-----BEGIN", `${PEM_PRIVATE_KEY_LABEL}-----`].join(" ");
-const PEM_PRIVATE_KEY_END = ["-----END", `${PEM_PRIVATE_KEY_LABEL}-----`].join(" ");
-const PEM_RSA_PRIVATE_KEY_BEGIN = ["-----BEGIN RSA", `${PEM_PRIVATE_KEY_LABEL}-----`].join(" ");
-const PEM_RSA_PRIVATE_KEY_END = ["-----END RSA", `${PEM_PRIVATE_KEY_LABEL}-----`].join(" ");
 const FORBIDDEN_ARGS = Object.freeze(new Set([
   "--deploy",
   "--rollout",
@@ -192,128 +199,6 @@ function assertExternalAccessEnv(env = {}) {
   }
 }
 
-function qcloudCertSecret({ certId, redacted = true } = {}) {
-  return {
-    apiVersion: "v1",
-    kind: "Secret",
-    metadata: {
-      name: FIXED_TLS_SECRET_NAME,
-      namespace: FIXED_NAMESPACE,
-      labels: {
-        "app.kubernetes.io/name": FIXED_TLS_SECRET_NAME,
-        "app.kubernetes.io/part-of": "medopl-package-d",
-      },
-    },
-    type: "Opaque",
-    stringData: {
-      qcloud_cert_id: redacted ? "<redacted-env:TENCENT_SSL_CERT_ID>" : certId,
-    },
-  };
-}
-
-function portalIngressManifest({ backendServiceName = FIXED_PORTAL_SERVICE_NAME } = {}) {
-  return {
-    apiVersion: "networking.k8s.io/v1",
-    kind: "Ingress",
-    metadata: {
-      name: FIXED_PORTAL_SERVICE_NAME,
-      namespace: FIXED_NAMESPACE,
-      labels: {
-        "app.kubernetes.io/name": FIXED_PORTAL_SERVICE_NAME,
-        "app.kubernetes.io/part-of": "medopl-package-d",
-      },
-      annotations: {
-        "kubernetes.io/ingress.class": FIXED_INGRESS_CLASS,
-      },
-    },
-    spec: {
-      ingressClassName: FIXED_INGRESS_CLASS,
-      tls: [{
-        hosts: [FIXED_PORTAL_HOST],
-        secretName: FIXED_TLS_SECRET_NAME,
-      }],
-      rules: [{
-        host: FIXED_PORTAL_HOST,
-        http: {
-          paths: [{
-            path: "/",
-            pathType: "Prefix",
-            backend: {
-              service: {
-                name: backendServiceName,
-                port: { number: FIXED_PORTAL_SERVICE_PORT },
-              },
-            },
-          }],
-        },
-      }],
-    },
-  };
-}
-
-export function assertPackageDExternalAccessManifestBoundary({ secret, ingress, edgeService } = {}) {
-  if (!edgeService || secret) {
-    if (secret?.apiVersion !== "v1" || secret?.kind !== "Secret") throw new Error("package_d_external_access_secret_kind_mismatch");
-    if (secret?.metadata?.name !== FIXED_TLS_SECRET_NAME) throw new Error("package_d_external_access_tls_secret_name_mismatch");
-    if (secret?.metadata?.namespace !== FIXED_NAMESPACE) throw new Error("package_d_external_access_tls_secret_namespace_mismatch");
-    if (secret?.type !== "Opaque") throw new Error("package_d_external_access_tls_secret_type_mismatch");
-    if (Object.hasOwn(secret, "data")) throw new Error("package_d_external_access_tls_secret_data_forbidden");
-    const secretKeys = Object.keys(secret?.stringData || {});
-    if (secretKeys.length !== 1 || secretKeys[0] !== "qcloud_cert_id") {
-      throw new Error("package_d_external_access_tls_secret_key_mismatch");
-    }
-    if (!text(secret.stringData.qcloud_cert_id)) throw new Error("package_d_external_access_tls_secret_cert_id_required");
-  }
-
-  const serialized = JSON.stringify({ secret, ingress, edgeService });
-  for (const forbidden of [
-    "kubernetes.io/tls",
-    "tls.crt",
-    "tls.key",
-    PEM_CERT_BEGIN,
-    PEM_PRIVATE_KEY_BEGIN,
-    PEM_RSA_PRIVATE_KEY_BEGIN,
-    "client-key-data",
-    "client-certificate-data",
-    "DATABASE_URL",
-    "PORTAL_POSTGRES_PASSWORD",
-    "PORTAL_ADMIN_PASSWORD",
-    "TCR_SECRET",
-    "SecretId",
-    "SecretKey",
-    "medopl-tenant-",
-    "LoadBalancer",
-  ]) {
-    if (serialized.includes(forbidden)) throw new Error(`package_d_external_access_forbidden_manifest_content:${forbidden}`);
-  }
-
-  if (ingress?.apiVersion !== "networking.k8s.io/v1" || ingress?.kind !== "Ingress") {
-    throw new Error("package_d_external_access_ingress_kind_mismatch");
-  }
-  if (ingress?.metadata?.name !== FIXED_PORTAL_SERVICE_NAME) throw new Error("package_d_external_access_ingress_name_mismatch");
-  if (ingress?.metadata?.namespace !== FIXED_NAMESPACE) throw new Error("package_d_external_access_ingress_namespace_mismatch");
-  if (ingress?.spec?.ingressClassName !== FIXED_INGRESS_CLASS) throw new Error("package_d_external_access_ingress_class_mismatch");
-  if (ingress?.metadata?.annotations?.["kubernetes.io/ingress.class"] !== FIXED_INGRESS_CLASS) {
-    throw new Error("package_d_external_access_ingress_annotation_mismatch");
-  }
-  if (ingress?.spec?.tls?.length !== 1 || ingress.spec.tls[0].secretName !== FIXED_TLS_SECRET_NAME) {
-    throw new Error("package_d_external_access_ingress_tls_secret_mismatch");
-  }
-  if (ingress.spec.tls[0].hosts?.[0] !== FIXED_PORTAL_HOST) throw new Error("package_d_external_access_ingress_tls_host_mismatch");
-  const pathRule = ingress?.spec?.rules?.[0]?.http?.paths?.[0] || {};
-  if (ingress?.spec?.rules?.length !== 1 || ingress.spec.rules[0].host !== FIXED_PORTAL_HOST) {
-    throw new Error("package_d_external_access_ingress_host_mismatch");
-  }
-  if (pathRule.path !== "/" || pathRule.pathType !== "Prefix") throw new Error("package_d_external_access_ingress_path_mismatch");
-  const expectedBackendServiceName = edgeService ? FIXED_PORTAL_EDGE_SERVICE_NAME : FIXED_PORTAL_SERVICE_NAME;
-  if (pathRule.backend?.service?.name !== expectedBackendServiceName) throw new Error("package_d_external_access_ingress_backend_mismatch");
-  if (pathRule.backend?.service?.port?.number !== FIXED_PORTAL_SERVICE_PORT) {
-    throw new Error("package_d_external_access_ingress_backend_port_mismatch");
-  }
-  if (!edgeService) return;
-  assertPortalEdgeNodePortManifestBoundary({ edgeService, fixedPortalServicePort: FIXED_PORTAL_SERVICE_PORT });
-}
-
 function commandRecord({ name, kind, args, stdinManifest = "" }) {
   return {
     name,
@@ -400,9 +285,14 @@ function commandPlan({ mode }) {
       args: ["getent", "hosts", FIXED_PORTAL_HOST],
     }),
     commandRecord({
+      name: "curl_fail_with_body_capability_probe",
+      kind: "curl_capability",
+      args: [...CURL_FAIL_WITH_BODY_CAPABILITY_PROBE_ARGS],
+    }),
+    commandRecord({
       name: "https_external_smoke",
       kind: "https_smoke",
-      args: ["curl", "--fail-with-body", "--connect-timeout", "10", "--max-time", "30", "--silent", "--show-error", "--output", "-", FIXED_EXTERNAL_SMOKE_URL],
+      args: externalHttpsSmokeCurlArgs({ fixedExternalSmokeUrl: FIXED_EXTERNAL_SMOKE_URL }),
     }),
   ];
 }
@@ -456,7 +346,13 @@ function assertCommandAllowed(command = {}) {
     throw new Error("package_d_external_access_kubectl_command_kind_not_allowlisted");
   }
   if (command.kind === "dns_readonly" && args.join(" ") === `getent hosts ${FIXED_PORTAL_HOST}`) return;
-  if (command.kind === "https_smoke" && args.join(" ") === `curl --fail-with-body --connect-timeout 10 --max-time 30 --silent --show-error --output - ${FIXED_EXTERNAL_SMOKE_URL}`) return;
+  if (command.kind === "curl_capability" && args.join(" ") === CURL_FAIL_WITH_BODY_CAPABILITY_PROBE_ARGS.join(" ")) return;
+  const fallbackHttpsSmokeArgs = externalHttpsSmokeCurlArgs({ fixedExternalSmokeUrl: FIXED_EXTERNAL_SMOKE_URL });
+  const failWithBodyHttpsSmokeArgs = externalHttpsSmokeCurlArgs({ failWithBody: true, fixedExternalSmokeUrl: FIXED_EXTERNAL_SMOKE_URL });
+  if (command.kind === "https_smoke" && (
+    args.join(" ") === fallbackHttpsSmokeArgs.join(" ")
+    || args.join(" ") === failWithBodyHttpsSmokeArgs.join(" ")
+  )) return;
   throw new Error("package_d_external_access_command_not_allowlisted");
 }
 
@@ -829,22 +725,71 @@ function executionContractForMode(mode = "") {
     : "production_launch_gap_08d_qcloud_external_access_execution";
 }
 
-async function runCommand({ command, executor, kubeconfigPath, liveManifests, certId }) {
+function parseHttpsSmokeSummary(stdout = "", { compatibilityMode = "" } = {}) {
+  const lines = String(stdout || "").trim().split(/\r?\n/u).filter(Boolean);
+  const raw = lines.at(-1) || "";
+  let parsed = {};
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    parsed = {};
+  }
+  return {
+    service: parsed.service || FIXED_PORTAL_SERVICE_NAME,
+    url: parsed.url || FIXED_EXTERNAL_SMOKE_URL,
+    http_code: String(parsed.http_code || "000"),
+    ssl_verify_result: String(parsed.ssl_verify_result || "unknown"),
+    time_total: String(parsed.time_total || "unknown"),
+    compatibilityMode,
+  };
+}
+
+function curlSupportsFailWithBody(record = {}) {
+  return record.exitCode === 0 && /(^|\s)--fail-with-body(\s|$)/u.test(`${record.stdout || ""} ${record.stderr || ""}`);
+}
+
+async function runCommand({ command, executor, kubeconfigPath, liveManifests, certId, executionState }) {
   assertCommandAllowed(command);
+  const executionCommand = { ...command };
+  if (command.name === "https_external_smoke") {
+    executionCommand.args = externalHttpsSmokeCurlArgs({
+      failWithBody: executionState?.curlFailWithBodySupported === true,
+      fixedExternalSmokeUrl: FIXED_EXTERNAL_SMOKE_URL,
+    });
+    assertCommandAllowed(executionCommand);
+  }
   const result = await executor({
-    args: command.args,
-    stdin: manifestTextForCommand(command, liveManifests),
-    env: command.args?.[0] === "kubectl" ? { [KUBE_ENV_NAME]: kubeconfigPath } : {},
+    args: executionCommand.args,
+    stdin: manifestTextForCommand(executionCommand, liveManifests),
+    env: executionCommand.args?.[0] === "kubectl" ? { [KUBE_ENV_NAME]: kubeconfigPath } : {},
   });
   const status = Number.isInteger(result?.status) ? result.status : 1;
   const record = {
     name: command.name,
     kind: command.kind,
-    command: command.command,
+    command: redactCommand(executionCommand.args),
     exitCode: status,
     stdout: redactOutput(result?.stdout || "", { certId }),
     stderr: redactOutput(result?.stderr || "", { certId }),
   };
+  if (command.name === "curl_fail_with_body_capability_probe") {
+    record.curlCapability = {
+      failWithBodySupported: curlSupportsFailWithBody(record),
+    };
+    if (executionState) executionState.curlFailWithBodySupported = record.curlCapability.failWithBodySupported;
+  }
+  if (command.name === "https_external_smoke") {
+    record.httpsSmoke = parseHttpsSmokeSummary(record.stdout, {
+      compatibilityMode: executionState?.curlFailWithBodySupported
+        ? "fail_with_body"
+        : "fallback_without_fail_with_body",
+    });
+    if (record.httpsSmoke.url !== FIXED_EXTERNAL_SMOKE_URL) {
+      const error = new Error("package_d_external_access_https_smoke_url_mismatch");
+      error.record = record;
+      throw error;
+    }
+  }
   if (status !== 0) {
     const error = new Error(`package_d_external_access_command_failed:${command.name}`);
     error.record = record;
@@ -885,6 +830,9 @@ export async function runPackageDExternalAccessExecution({
   const kubeconfig = await readFile(kubeconfigPath, "utf8");
   const clusterAuth = kubeconfigSummary(kubeconfig);
   const records = [];
+  const executionState = {
+    curlFailWithBodySupported: false,
+  };
   try {
     for (const command of plan.liveCommands) {
       records.push(await runCommand({
@@ -893,6 +841,7 @@ export async function runPackageDExternalAccessExecution({
         kubeconfigPath,
         liveManifests: plan.liveManifests,
         certId: env.TENCENT_SSL_CERT_ID,
+        executionState,
       }));
     }
   } catch (error) {

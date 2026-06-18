@@ -5,7 +5,7 @@
   "human_truth": "docs/active/README.md",
   "spec_truth": "docs/specs/README.md",
   "verify_manifest": "tests/fixtures/v22/agent-verify-manifest.json",
-  "last_updated_at": "2026-06-17",
+  "last_updated_at": "2026-06-18",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
   "base_trunk_head": "344e1219d8211e9949f2c9488bdb7f9317715c24",
@@ -24,7 +24,7 @@
     "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
     "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
   ],
-  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 through Gap 08d real qcloud Secret/Ingress apply has reached the cloud boundary: Secret/medopl-portal-tls was applied successfully as type Opaque with qcloud_cert_id present without reading data, and Ingress/portal-frontend was applied for portal.medopl.cn via ingressClass qcloud, tls secret medopl-portal-tls and backend portal-frontend:8080. The Ingress received LB hostname lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com but Ready=False with BackendError, classified as qcloud Ingress requiring a backend Service type NodePort or LoadBalancer while the current backend is ClusterIP. portal.medopl.cn DNS still points to the old lb-lhj3bgii target instead of the new qcloud Ingress LB, HTTPS smoke failed with tls_hostname_mismatch, no out-of-bound mutation occurred, and evidence is .runtime/package-d-external-access-strategy/gap08d-qcloud-ingress-real-004/real-mutation-redacted.json plus qcloud-cert-secret-redacted.json and portal-ingress-redacted.json. External/public user access remains not complete. The current unique gap is production-launch-gap-08e-qcloud-ingress-backend-nodeport-edge-service: keep the existing portal-frontend ClusterIP Service unchanged, add a dedicated Service/portal-frontend-edge type NodePort with the portal-frontend selector, and update the qcloud Ingress backend to portal-frontend-edge:8080 through the repo-native external access runner.",
+  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 through Gap 08e qcloud edge NodePort apply has reached the cloud boundary: Secret/medopl-portal-tls remains the qcloud Opaque cert-id Secret, Service/portal-frontend-edge was applied successfully as type NodePort on port 8080 while the original Service/portal-frontend remained ClusterIP, and Ingress/portal-frontend now targets portal.medopl.cn via ingressClass qcloud, tls secret medopl-portal-tls and backend portal-frontend-edge:8080. The Ingress is Ready=True with LB hostname lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com. DNS portal.medopl.cn still points to old LB lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com instead of the current qcloud Ingress LB, and HTTPS smoke did not produce valid evidence because the cloud runner curl lacked --fail-with-body compatibility. No out-of-bound mutation occurred, and evidence is .runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/real-mutation-redacted.json plus .runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-frontend-edge-service-redacted.json plus .runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-ingress-redacted.json. External/public user access remains not complete. The current unique gap is production-launch-gap-08f-dns-validation-https-smoke: align DNS through separate authorization, then run repo-native DNS validation and external HTTPS smoke against only https://portal.medopl.cn/ with curl compatibility fallback and redacted structured evidence.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -171,7 +171,7 @@
     "gap_id": "real-cloud-authorization-boundary",
     "stage": "S7 real-cloud authorization boundary before readiness",
     "cursor_eligible": false,
-    "problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 through Gap 08d real qcloud Secret/Ingress apply has reached the cloud boundary: Secret/medopl-portal-tls was applied successfully as type Opaque with qcloud_cert_id present without reading data, and Ingress/portal-frontend was applied for portal.medopl.cn via ingressClass qcloud, tls secret medopl-portal-tls and backend portal-frontend:8080. The Ingress received LB hostname lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com but Ready=False with BackendError, classified as qcloud Ingress requiring a backend Service type NodePort or LoadBalancer while the current backend is ClusterIP. portal.medopl.cn DNS still points to the old lb-lhj3bgii target instead of the new qcloud Ingress LB, HTTPS smoke failed with tls_hostname_mismatch, no out-of-bound mutation occurred, and evidence is .runtime/package-d-external-access-strategy/gap08d-qcloud-ingress-real-004/real-mutation-redacted.json plus qcloud-cert-secret-redacted.json and portal-ingress-redacted.json. External/public user access remains not complete. The current unique gap is production-launch-gap-08e-qcloud-ingress-backend-nodeport-edge-service: keep the existing portal-frontend ClusterIP Service unchanged, add a dedicated Service/portal-frontend-edge type NodePort with the portal-frontend selector, and update the qcloud Ingress backend to portal-frontend-edge:8080 through the repo-native external access runner.",
+    "problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. Production launch Gap 01 through Gap 08e qcloud edge NodePort apply has reached the cloud boundary: Secret/medopl-portal-tls remains the qcloud Opaque cert-id Secret, Service/portal-frontend-edge was applied successfully as type NodePort on port 8080 while the original Service/portal-frontend remained ClusterIP, and Ingress/portal-frontend now targets portal.medopl.cn via ingressClass qcloud, tls secret medopl-portal-tls and backend portal-frontend-edge:8080. The Ingress is Ready=True with LB hostname lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com. DNS portal.medopl.cn still points to old LB lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com instead of the current qcloud Ingress LB, and HTTPS smoke did not produce valid evidence because the cloud runner curl lacked --fail-with-body compatibility. No out-of-bound mutation occurred, and evidence is .runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/real-mutation-redacted.json plus .runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-frontend-edge-service-redacted.json plus .runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-ingress-redacted.json. External/public user access remains not complete. The current unique gap is production-launch-gap-08f-dns-validation-https-smoke: align DNS through separate authorization, then run repo-native DNS validation and external HTTPS smoke against only https://portal.medopl.cn/ with curl compatibility fallback and redacted structured evidence.",
     "verification_commands": [
       "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
       "node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs",
@@ -2443,7 +2443,10 @@
           ".runtime/package-d-production-deploy/pdrun-20260616-004/smoke-redacted.json",
           ".runtime/package-d-production-deploy/pdrun-20260616-004/rollback-redacted.json",
           ".runtime/package-d-service-reachability/psr-20260617-004/readonly-service-reachability-redacted.json",
-          ".runtime/package-d-service-reachability/psr-20260617-004/smoke-job-manifest-redacted.json"
+          ".runtime/package-d-service-reachability/psr-20260617-004/smoke-job-manifest-redacted.json",
+          ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/real-mutation-redacted.json",
+          ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-frontend-edge-service-redacted.json",
+          ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-ingress-redacted.json"
         ],
         "productionLaunchGap01BootstrapContract": "implemented",
         "productionLaunchGap01EvidencePath": ".runtime/production-launch-bootstrap/<runid>/bootstrap-contract-redacted.json",
@@ -2457,7 +2460,14 @@
         "productionLaunchGap06EvidencePath": ".runtime/production-launch-canary/<runid>/canary-contract-redacted.json",
         "packageDDeployedInsideTke": true,
         "inClusterHttpReachabilityPassed": true,
-        "externalPublicUserAccessComplete": false
+        "externalPublicUserAccessComplete": false,
+        "gap08eQcloudEdgeNodeportApply": "passed_cloud_run",
+        "gap08eRunId": "gap08e-qcloud-edge-nodeport-apply-001",
+        "gap08eIngressReady": true,
+        "gap08eIngressLoadBalancerHostname": "lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com",
+        "portalDnsCurrentTarget": "lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com",
+        "portalDnsExpectedTarget": "lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com",
+        "httpsSmokeStatus": "not_validated_curl_fail_with_body_unsupported_before_runner_compat_fix"
       },
       "vision": {
         "product": "MedOPL production launch is a stable multi-tenant SaaS managed OPL workbench, not a temporary page trial.",
@@ -2782,15 +2792,17 @@
         }
       ],
       "nextUniqueGap": {
-        "id": "production-launch-gap-08e-qcloud-ingress-backend-nodeport-edge-service",
-        "title": "Production launch Gap 08e: qcloud Ingress backend NodePort edge Service apply",
-        "reason": "Gap 08d real apply created the qcloud cert-id Secret and Portal Ingress, but the qcloud controller reported BackendError because the Ingress backend service portal-frontend is ClusterIP. The repo-native Gap 08e-prep runner now supports a dedicated portal-frontend-edge NodePort Service plus an Ingress backend switch to portal-frontend-edge:8080 without modifying the existing portal-frontend ClusterIP Service or creating a LoadBalancer Service.",
-        "boundary": "separate cloud authorization required before kubeconfig read or kubectl apply; package-d-external-access.env remains five business keys only; RUN_TENCENT_DEPLOY_EXECUTION must come from process/deploy run gate source; mutation is limited to Service/portal-frontend-edge type NodePort and Ingress/portal-frontend backend switch to portal-frontend-edge:8080; no original ClusterIP Service/DNS/LoadBalancer/Deployment/Package C/tenant mutation and no public access completion claim before Ready/DNS/HTTPS evidence",
-        "recommendedEntrypoint": "RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-edge-nodeport-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08e-qcloud-edge-nodeport-apply-001 --authorized 1",
-        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/real-mutation-redacted.json",
-        "allowedMutations": [
-          "apply Service portal-frontend-edge type NodePort in medopl-platform",
-          "apply/update qcloud Ingress portal-frontend backend for portal.medopl.cn -> portal-frontend-edge:8080"
+        "id": "production-launch-gap-08f-dns-validation-https-smoke",
+        "title": "Production launch Gap 08f: DNS validation and external HTTPS smoke closeout",
+        "reason": "Gap 08e cloud apply succeeded: Service/portal-frontend-edge is NodePort, the original portal-frontend ClusterIP Service was not modified, Ingress/portal-frontend targets portal-frontend-edge:8080 and is Ready=True with LB hostname lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com. DNS still points portal.medopl.cn to old LB lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com, and HTTPS smoke needs curl compatibility because the cloud curl may not support --fail-with-body.",
+        "boundary": "separate DNS authorization is required before changing portal.medopl.cn; after DNS alignment, cloud runner may perform only readonly get/describe verification, DNS validation and HTTPS smoke against https://portal.medopl.cn/ with redacted structured evidence; no Kubernetes mutation, DNS mutation by this repo runner, LoadBalancer creation, Package C/tenant mutation, deploy/rollout/rollback, build/push or public access completion claim before DNS/HTTPS evidence passes",
+        "recommendedEntrypoint": "RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-edge-nodeport-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08f-dns-https-smoke-001 --authorized 1",
+        "evidencePath": ".runtime/package-d-external-access-strategy/gap08f-dns-https-smoke-001/real-mutation-redacted.json",
+        "allowedOperations": [
+          "get/describe Service portal-frontend and Service portal-frontend-edge in medopl-platform only",
+          "get/describe Ingress portal-frontend and IngressClass qcloud only",
+          "DNS validation for portal.medopl.cn only, no DNS mutation inside this runner",
+          "HTTPS smoke only for https://portal.medopl.cn/ using curl compatibility fallback when --fail-with-body is unsupported"
         ]
       },
       "externalAccessPolicy": {
@@ -3284,7 +3296,7 @@
         "publicAccessComplete": false
       },
       "gap08eQcloudEdgeNodeportBackend": {
-        "status": "repo_native_runner_contract_local_gate_ready_waiting_authorized_cloud_apply",
+        "status": "passed_cloud_run_waiting_dns_https_closeout",
         "runnerCommand": "RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-edge-nodeport-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08e-qcloud-edge-nodeport-apply-001 --authorized 1",
         "dryRunCommand": "node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-edge-nodeport-dry-run --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id <runid> --authorized 1",
         "localGate": "node tests/contract/contract-test-v22-package-d-external-access-edge-nodeport-local-gate.mjs",
@@ -3340,7 +3352,9 @@
           "server-side dry-run/apply Ingress portal-frontend backend switch to portal-frontend-edge:8080",
           "get/describe Service portal-frontend, Service portal-frontend-edge, Ingress portal-frontend and IngressClass qcloud only",
           "DNS validation only without mutation",
-          "HTTPS smoke only after Ingress readiness/DNS target check"
+          "HTTPS smoke only after Ingress readiness/DNS target check",
+          "curl compatibility probe only via curl --help all",
+          "HTTPS smoke command must not hard require --fail-with-body"
         ],
         "forbiddenOperations": [
           "modify existing Service/portal-frontend ClusterIP",
@@ -3366,13 +3380,16 @@
           "cnameTargetSource": "qcloud Ingress status LB hostname after Ready",
           "lastObservedIngressHostname": "lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com",
           "dnsMutationAllowed": false,
-          "nextDnsActionAfterReady": "separate DNS authorization required to point portal.medopl.cn CNAME to the current qcloud Ingress status LB hostname"
+          "nextDnsActionAfterReady": "separate DNS authorization required to point portal.medopl.cn CNAME to lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com or the current Ingress status LB hostname before HTTPS closeout",
+          "currentDnsTarget": "lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com",
+          "dnsAligned": false
         },
         "httpsSmokePlan": [
-          "verify Ingress Ready first",
+          "align portal.medopl.cn DNS to the current qcloud Ingress LB through separate DNS authorization before closeout",
           "validate portal.medopl.cn DNS target without mutation",
-          "GET https://portal.medopl.cn/",
-          "redaction audit and no public access complete claim until smoke passes"
+          "GET https://portal.medopl.cn/ with curl --fail-with-body when supported, otherwise fallback to --fail plus structured -w output",
+          "record service/url/http_code/ssl_verify_result/time_total/compatibilityMode and redaction audit",
+          "do not claim public access complete until DNS and HTTPS evidence pass"
         ],
         "stopConditions": [
           "RUN_TENCENT_DEPLOY_EXECUTION is not external-access from process/deploy run gate source for apply mode",
@@ -3388,15 +3405,73 @@
           "kubectl command outside allowlist",
           "DNS target stale or unauthorized",
           "HTTPS smoke fails",
-          "secret leakage detected"
+          "secret leakage detected",
+          "curl command targets anything other than https://portal.medopl.cn/",
+          "HTTPS smoke summary missing http_code, ssl_verify_result or time_total"
         ],
         "redactionEvidence": {
           "tencentSslCertIdRawAllowed": false,
           "secretDataAllowed": false,
-          "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/real-mutation-redacted.json",
-          "edgeServiceManifestEvidence": ".runtime/package-d-external-access-strategy/<runid>/portal-frontend-edge-service-redacted.json",
-          "ingressManifestEvidence": ".runtime/package-d-external-access-strategy/<runid>/portal-ingress-redacted.json"
+          "evidencePath": ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/real-mutation-redacted.json",
+          "edgeServiceManifestEvidence": ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-frontend-edge-service-redacted.json",
+          "ingressManifestEvidence": ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-ingress-redacted.json"
+        },
+        "cloudRun": {
+          "runId": "gap08e-qcloud-edge-nodeport-apply-001",
+          "servicePortalFrontendEdgeApplied": true,
+          "edgeServiceType": "NodePort",
+          "edgeServicePort": 8080,
+          "originalPortalFrontendServiceUnmodified": true,
+          "ingressBackend": "portal-frontend-edge:8080",
+          "ingressReady": true,
+          "ingressLoadBalancerHostname": "lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com",
+          "dnsPortalMedoplCnCurrentTarget": "lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com",
+          "dnsAlignedToIngressLoadBalancer": false,
+          "httpsSmokeValidResult": false,
+          "httpsSmokeFailureClass": "curl_fail_with_body_unsupported_before_runner_compat_fix",
+          "noOutOfBoundMutation": true,
+          "evidencePaths": [
+            ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/real-mutation-redacted.json",
+            ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-frontend-edge-service-redacted.json",
+            ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-ingress-redacted.json"
+          ]
         }
+      },
+      "gap08fDnsHttpsSmokeCloseout": {
+        "status": "repo_native_runner_contract_local_gate_ready_waiting_dns_alignment_and_cloud_smoke",
+        "runnerCommand": "RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-edge-nodeport-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08f-dns-https-smoke-001 --authorized 1",
+        "localGate": "node tests/contract/contract-test-v22-package-d-external-access-edge-nodeport-local-gate.mjs; node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs",
+        "evidencePath": ".runtime/package-d-external-access-strategy/gap08f-dns-https-smoke-001/real-mutation-redacted.json",
+        "dns": {
+          "host": "portal.medopl.cn",
+          "currentTarget": "lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com",
+          "expectedTarget": "lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com",
+          "mutationAllowedInRepoRunner": false
+        },
+        "httpsSmoke": {
+          "url": "https://portal.medopl.cn/",
+          "curlCapabilityProbe": "curl --help all",
+          "usesFailWithBodyWhenSupported": true,
+          "fallbackWhenUnsupported": "--fail --connect-timeout 10 --max-time 30 -sS -o /dev/null -w structured-json https://portal.medopl.cn/",
+          "structuredFields": [
+            "service",
+            "url",
+            "http_code",
+            "ssl_verify_result",
+            "time_total",
+            "compatibilityMode"
+          ],
+          "arbitraryUrlAllowed": false
+        },
+        "forbiddenOperations": [
+          "DNS mutation by repo runner",
+          "Kubernetes mutation beyond already applied Gap 08e resources",
+          "Deployment/Service/ConfigMap/RBAC/Namespace mutation",
+          "LoadBalancer Service creation",
+          "Package C or tenant resources mutation",
+          "deploy, rollout, rollback, build/push or Tencent API mutation",
+          "public access completion claim before DNS/HTTPS evidence closeout"
+        ]
       }
     }
   },
@@ -5180,7 +5255,10 @@
           ".runtime/package-d-production-deploy/pdrun-20260616-004/smoke-redacted.json",
           ".runtime/package-d-production-deploy/pdrun-20260616-004/rollback-redacted.json",
           ".runtime/package-d-service-reachability/psr-20260617-004/readonly-service-reachability-redacted.json",
-          ".runtime/package-d-service-reachability/psr-20260617-004/smoke-job-manifest-redacted.json"
+          ".runtime/package-d-service-reachability/psr-20260617-004/smoke-job-manifest-redacted.json",
+          ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/real-mutation-redacted.json",
+          ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-frontend-edge-service-redacted.json",
+          ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-ingress-redacted.json"
         ],
         "productionLaunchGap01BootstrapContract": "implemented",
         "productionLaunchGap01EvidencePath": ".runtime/production-launch-bootstrap/<runid>/bootstrap-contract-redacted.json",
@@ -5194,7 +5272,14 @@
         "productionLaunchGap06EvidencePath": ".runtime/production-launch-canary/<runid>/canary-contract-redacted.json",
         "packageDDeployedInsideTke": true,
         "inClusterHttpReachabilityPassed": true,
-        "externalPublicUserAccessComplete": false
+        "externalPublicUserAccessComplete": false,
+        "gap08eQcloudEdgeNodeportApply": "passed_cloud_run",
+        "gap08eRunId": "gap08e-qcloud-edge-nodeport-apply-001",
+        "gap08eIngressReady": true,
+        "gap08eIngressLoadBalancerHostname": "lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com",
+        "portalDnsCurrentTarget": "lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com",
+        "portalDnsExpectedTarget": "lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com",
+        "httpsSmokeStatus": "not_validated_curl_fail_with_body_unsupported_before_runner_compat_fix"
       },
       "vision": {
         "product": "MedOPL production launch is a stable multi-tenant SaaS managed OPL workbench, not a temporary page trial.",
@@ -5519,15 +5604,17 @@
         }
       ],
       "nextUniqueGap": {
-        "id": "production-launch-gap-08e-qcloud-ingress-backend-nodeport-edge-service",
-        "title": "Production launch Gap 08e: qcloud Ingress backend NodePort edge Service apply",
-        "reason": "Gap 08d real apply created the qcloud cert-id Secret and Portal Ingress, but the qcloud controller reported BackendError because the Ingress backend service portal-frontend is ClusterIP. The repo-native Gap 08e-prep runner now supports a dedicated portal-frontend-edge NodePort Service plus an Ingress backend switch to portal-frontend-edge:8080 without modifying the existing portal-frontend ClusterIP Service or creating a LoadBalancer Service.",
-        "boundary": "separate cloud authorization required before kubeconfig read or kubectl apply; package-d-external-access.env remains five business keys only; RUN_TENCENT_DEPLOY_EXECUTION must come from process/deploy run gate source; mutation is limited to Service/portal-frontend-edge type NodePort and Ingress/portal-frontend backend switch to portal-frontend-edge:8080; no original ClusterIP Service/DNS/LoadBalancer/Deployment/Package C/tenant mutation and no public access completion claim before Ready/DNS/HTTPS evidence",
-        "recommendedEntrypoint": "RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-edge-nodeport-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08e-qcloud-edge-nodeport-apply-001 --authorized 1",
-        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/real-mutation-redacted.json",
-        "allowedMutations": [
-          "apply Service portal-frontend-edge type NodePort in medopl-platform",
-          "apply/update qcloud Ingress portal-frontend backend for portal.medopl.cn -> portal-frontend-edge:8080"
+        "id": "production-launch-gap-08f-dns-validation-https-smoke",
+        "title": "Production launch Gap 08f: DNS validation and external HTTPS smoke closeout",
+        "reason": "Gap 08e cloud apply succeeded: Service/portal-frontend-edge is NodePort, the original portal-frontend ClusterIP Service was not modified, Ingress/portal-frontend targets portal-frontend-edge:8080 and is Ready=True with LB hostname lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com. DNS still points portal.medopl.cn to old LB lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com, and HTTPS smoke needs curl compatibility because the cloud curl may not support --fail-with-body.",
+        "boundary": "separate DNS authorization is required before changing portal.medopl.cn; after DNS alignment, cloud runner may perform only readonly get/describe verification, DNS validation and HTTPS smoke against https://portal.medopl.cn/ with redacted structured evidence; no Kubernetes mutation, DNS mutation by this repo runner, LoadBalancer creation, Package C/tenant mutation, deploy/rollout/rollback, build/push or public access completion claim before DNS/HTTPS evidence passes",
+        "recommendedEntrypoint": "RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-edge-nodeport-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08f-dns-https-smoke-001 --authorized 1",
+        "evidencePath": ".runtime/package-d-external-access-strategy/gap08f-dns-https-smoke-001/real-mutation-redacted.json",
+        "allowedOperations": [
+          "get/describe Service portal-frontend and Service portal-frontend-edge in medopl-platform only",
+          "get/describe Ingress portal-frontend and IngressClass qcloud only",
+          "DNS validation for portal.medopl.cn only, no DNS mutation inside this runner",
+          "HTTPS smoke only for https://portal.medopl.cn/ using curl compatibility fallback when --fail-with-body is unsupported"
         ]
       },
       "externalAccessPolicy": {
@@ -6021,7 +6108,7 @@
         "publicAccessComplete": false
       },
       "gap08eQcloudEdgeNodeportBackend": {
-        "status": "repo_native_runner_contract_local_gate_ready_waiting_authorized_cloud_apply",
+        "status": "passed_cloud_run_waiting_dns_https_closeout",
         "runnerCommand": "RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-edge-nodeport-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08e-qcloud-edge-nodeport-apply-001 --authorized 1",
         "dryRunCommand": "node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-edge-nodeport-dry-run --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id <runid> --authorized 1",
         "localGate": "node tests/contract/contract-test-v22-package-d-external-access-edge-nodeport-local-gate.mjs",
@@ -6077,7 +6164,9 @@
           "server-side dry-run/apply Ingress portal-frontend backend switch to portal-frontend-edge:8080",
           "get/describe Service portal-frontend, Service portal-frontend-edge, Ingress portal-frontend and IngressClass qcloud only",
           "DNS validation only without mutation",
-          "HTTPS smoke only after Ingress readiness/DNS target check"
+          "HTTPS smoke only after Ingress readiness/DNS target check",
+          "curl compatibility probe only via curl --help all",
+          "HTTPS smoke command must not hard require --fail-with-body"
         ],
         "forbiddenOperations": [
           "modify existing Service/portal-frontend ClusterIP",
@@ -6103,13 +6192,16 @@
           "cnameTargetSource": "qcloud Ingress status LB hostname after Ready",
           "lastObservedIngressHostname": "lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com",
           "dnsMutationAllowed": false,
-          "nextDnsActionAfterReady": "separate DNS authorization required to point portal.medopl.cn CNAME to the current qcloud Ingress status LB hostname"
+          "nextDnsActionAfterReady": "separate DNS authorization required to point portal.medopl.cn CNAME to lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com or the current Ingress status LB hostname before HTTPS closeout",
+          "currentDnsTarget": "lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com",
+          "dnsAligned": false
         },
         "httpsSmokePlan": [
-          "verify Ingress Ready first",
+          "align portal.medopl.cn DNS to the current qcloud Ingress LB through separate DNS authorization before closeout",
           "validate portal.medopl.cn DNS target without mutation",
-          "GET https://portal.medopl.cn/",
-          "redaction audit and no public access complete claim until smoke passes"
+          "GET https://portal.medopl.cn/ with curl --fail-with-body when supported, otherwise fallback to --fail plus structured -w output",
+          "record service/url/http_code/ssl_verify_result/time_total/compatibilityMode and redaction audit",
+          "do not claim public access complete until DNS and HTTPS evidence pass"
         ],
         "stopConditions": [
           "RUN_TENCENT_DEPLOY_EXECUTION is not external-access from process/deploy run gate source for apply mode",
@@ -6125,15 +6217,73 @@
           "kubectl command outside allowlist",
           "DNS target stale or unauthorized",
           "HTTPS smoke fails",
-          "secret leakage detected"
+          "secret leakage detected",
+          "curl command targets anything other than https://portal.medopl.cn/",
+          "HTTPS smoke summary missing http_code, ssl_verify_result or time_total"
         ],
         "redactionEvidence": {
           "tencentSslCertIdRawAllowed": false,
           "secretDataAllowed": false,
-          "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/real-mutation-redacted.json",
-          "edgeServiceManifestEvidence": ".runtime/package-d-external-access-strategy/<runid>/portal-frontend-edge-service-redacted.json",
-          "ingressManifestEvidence": ".runtime/package-d-external-access-strategy/<runid>/portal-ingress-redacted.json"
+          "evidencePath": ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/real-mutation-redacted.json",
+          "edgeServiceManifestEvidence": ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-frontend-edge-service-redacted.json",
+          "ingressManifestEvidence": ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-ingress-redacted.json"
+        },
+        "cloudRun": {
+          "runId": "gap08e-qcloud-edge-nodeport-apply-001",
+          "servicePortalFrontendEdgeApplied": true,
+          "edgeServiceType": "NodePort",
+          "edgeServicePort": 8080,
+          "originalPortalFrontendServiceUnmodified": true,
+          "ingressBackend": "portal-frontend-edge:8080",
+          "ingressReady": true,
+          "ingressLoadBalancerHostname": "lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com",
+          "dnsPortalMedoplCnCurrentTarget": "lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com",
+          "dnsAlignedToIngressLoadBalancer": false,
+          "httpsSmokeValidResult": false,
+          "httpsSmokeFailureClass": "curl_fail_with_body_unsupported_before_runner_compat_fix",
+          "noOutOfBoundMutation": true,
+          "evidencePaths": [
+            ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/real-mutation-redacted.json",
+            ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-frontend-edge-service-redacted.json",
+            ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-ingress-redacted.json"
+          ]
         }
+      },
+      "gap08fDnsHttpsSmokeCloseout": {
+        "status": "repo_native_runner_contract_local_gate_ready_waiting_dns_alignment_and_cloud_smoke",
+        "runnerCommand": "RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-edge-nodeport-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08f-dns-https-smoke-001 --authorized 1",
+        "localGate": "node tests/contract/contract-test-v22-package-d-external-access-edge-nodeport-local-gate.mjs; node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs",
+        "evidencePath": ".runtime/package-d-external-access-strategy/gap08f-dns-https-smoke-001/real-mutation-redacted.json",
+        "dns": {
+          "host": "portal.medopl.cn",
+          "currentTarget": "lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com",
+          "expectedTarget": "lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com",
+          "mutationAllowedInRepoRunner": false
+        },
+        "httpsSmoke": {
+          "url": "https://portal.medopl.cn/",
+          "curlCapabilityProbe": "curl --help all",
+          "usesFailWithBodyWhenSupported": true,
+          "fallbackWhenUnsupported": "--fail --connect-timeout 10 --max-time 30 -sS -o /dev/null -w structured-json https://portal.medopl.cn/",
+          "structuredFields": [
+            "service",
+            "url",
+            "http_code",
+            "ssl_verify_result",
+            "time_total",
+            "compatibilityMode"
+          ],
+          "arbitraryUrlAllowed": false
+        },
+        "forbiddenOperations": [
+          "DNS mutation by repo runner",
+          "Kubernetes mutation beyond already applied Gap 08e resources",
+          "Deployment/Service/ConfigMap/RBAC/Namespace mutation",
+          "LoadBalancer Service creation",
+          "Package C or tenant resources mutation",
+          "deploy, rollout, rollback, build/push or Tencent API mutation",
+          "public access completion claim before DNS/HTTPS evidence closeout"
+        ]
       }
     }
   },
@@ -7622,21 +7772,23 @@
       ]
     },
     "nextGap": {
-      "id": "production-launch-gap-08e-qcloud-ingress-backend-nodeport-edge-service",
-      "title": "Production launch Gap 08e: qcloud Ingress backend NodePort edge Service apply",
-      "reason": "Gap 08d real apply created the qcloud cert-id Secret and Portal Ingress, but the qcloud controller reported BackendError because the Ingress backend service portal-frontend is ClusterIP. The repo-native Gap 08e-prep runner now supports a dedicated portal-frontend-edge NodePort Service plus an Ingress backend switch to portal-frontend-edge:8080 without modifying the existing portal-frontend ClusterIP Service or creating a LoadBalancer Service.",
-      "boundary": "separate cloud authorization required before kubeconfig read or kubectl apply; package-d-external-access.env remains five business keys only; RUN_TENCENT_DEPLOY_EXECUTION must come from process/deploy run gate source; mutation is limited to Service/portal-frontend-edge type NodePort and Ingress/portal-frontend backend switch to portal-frontend-edge:8080; no original ClusterIP Service/DNS/LoadBalancer/Deployment/Package C/tenant mutation and no public access completion claim before Ready/DNS/HTTPS evidence",
-      "recommendedEntrypoint": "RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-edge-nodeport-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08e-qcloud-edge-nodeport-apply-001 --authorized 1",
-      "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/real-mutation-redacted.json",
-      "allowedMutations": [
-        "apply Service portal-frontend-edge type NodePort in medopl-platform",
-        "apply/update qcloud Ingress portal-frontend backend for portal.medopl.cn -> portal-frontend-edge:8080"
+      "id": "production-launch-gap-08f-dns-validation-https-smoke",
+      "title": "Production launch Gap 08f: DNS validation and external HTTPS smoke closeout",
+      "reason": "Gap 08e cloud apply succeeded: Service/portal-frontend-edge is NodePort, the original portal-frontend ClusterIP Service was not modified, Ingress/portal-frontend targets portal-frontend-edge:8080 and is Ready=True with LB hostname lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com. DNS still points portal.medopl.cn to old LB lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com, and HTTPS smoke needs curl compatibility because the cloud curl may not support --fail-with-body.",
+      "boundary": "separate DNS authorization is required before changing portal.medopl.cn; after DNS alignment, cloud runner may perform only readonly get/describe verification, DNS validation and HTTPS smoke against https://portal.medopl.cn/ with redacted structured evidence; no Kubernetes mutation, DNS mutation by this repo runner, LoadBalancer creation, Package C/tenant mutation, deploy/rollout/rollback, build/push or public access completion claim before DNS/HTTPS evidence passes",
+      "recommendedEntrypoint": "RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-edge-nodeport-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08f-dns-https-smoke-001 --authorized 1",
+      "evidencePath": ".runtime/package-d-external-access-strategy/gap08f-dns-https-smoke-001/real-mutation-redacted.json",
+      "allowedOperations": [
+        "get/describe Service portal-frontend and Service portal-frontend-edge in medopl-platform only",
+        "get/describe Ingress portal-frontend and IngressClass qcloud only",
+        "DNS validation for portal.medopl.cn only, no DNS mutation inside this runner",
+        "HTTPS smoke only for https://portal.medopl.cn/ using curl compatibility fallback when --fail-with-body is unsupported"
       ]
     },
     "nextAuthorizationPrompt": {
       "target": "cloud-codex",
-      "runIdHint": "gap08e-qcloud-edge-nodeport-apply-001",
-      "prompt": "按 active truth 做 gap-driven execution，不新增 loop。\n\n当前唯一 gap：Production launch Gap 08e: qcloud Ingress backend NodePort edge Service apply。\n\n当前事实：Gap 08d qcloud external access real apply 已执行。Secret/medopl-portal-tls apply 成功，type Opaque，qcloud_cert_id key 存在且未读取 data；Ingress/portal-frontend apply 成功，host=portal.medopl.cn，ingressClass=qcloud，tls secret=medopl-portal-tls，backend=portal-frontend:8080。Ingress status LB hostname=lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com，但 Ingress Ready=False，reason=BackendError；classified reason 是 qcloud Ingress requires backend Service type NodePort or LoadBalancer, current backend is ClusterIP。portal.medopl.cn DNS 仍指向旧 lb-lhj3bgii...，未指向新 lb-b33auprw...；HTTPS smoke failed: tls_hostname_mismatch。未发生越界 mutation。Evidence: .runtime/package-d-external-access-strategy/gap08d-qcloud-ingress-real-004/real-mutation-redacted.json, .runtime/package-d-external-access-strategy/gap08d-qcloud-ingress-real-004/qcloud-cert-secret-redacted.json, .runtime/package-d-external-access-strategy/gap08d-qcloud-ingress-real-004/portal-ingress-redacted.json。\n\n本地 Gap 08e-prep 已收口：repo-native external access runner 支持 qcloud-edge-nodeport-dry-run 和 qcloud-edge-nodeport-apply；edge Service manifest 为 Service/portal-frontend-edge, namespace medopl-platform, type NodePort, selector matches portal-frontend, port/targetPort 8080；Ingress backend 切到 portal-frontend-edge:8080；原 portal-frontend ClusterIP Service 不修改；不创建 LoadBalancer Service；TLS Secret/host/ingressClass 保持不变。\n\n云端执行前必须准备：\n- package-d-external-access.env 仍只包含五个业务 key：PORTAL_HOST_DOMAIN、INGRESS_CLASS、TLS_SECRET_NAME、TENCENT_SSL_CERT_ID、EXTERNAL_SMOKE_URL\n- 固定值为 portal.medopl.cn / qcloud / medopl-portal-tls / 授权证书 ID env 值 / https://portal.medopl.cn/\n- 禁止把 RUN_TENCENT_DEPLOY_EXECUTION 写入 package-d-external-access.env\n- 在 runner process/deploy run gate source 中设置 RUN_TENCENT_DEPLOY_EXECUTION=external-access\n- 禁止输出 TENCENT_SSL_CERT_ID 原文、qcloud_cert_id value、kubeconfig/token/cert/DB password/TCR secret/Portal admin password\n\n允许执行唯一 repo-native 命令：\nRUN_TENCENT_DEPLOY_EXECUTION=external-access \\\nnode tests/support/cloud-prework/package-d-external-access-runner.js \\\n  --mode qcloud-edge-nodeport-apply \\\n  --env /home/dev/.secrets/medopl/v22/package-d-external-access.env \\\n  --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy \\\n  --run-id gap08e-qcloud-edge-nodeport-apply-001 \\\n  --authorized 1\n\n允许真实 mutation 严格限定为：\n- apply Service/portal-frontend-edge in namespace medopl-platform，type NodePort，selector 与 portal-frontend Deployment/Service 一致，port 8080，targetPort 8080，manifest 通过 stdin 提交并写 redacted evidence\n- apply/update Ingress/portal-frontend in namespace medopl-platform，仅把 backend 切到 portal-frontend-edge:8080，host portal.medopl.cn、ingressClass qcloud、tls secret medopl-portal-tls 保持不变，manifest 通过 stdin 提交并写 redacted evidence\n- get/describe Service portal-frontend, Service portal-frontend-edge, Ingress portal-frontend, IngressClass qcloud only for verification\n- DNS validation only, no DNS mutation\n- HTTPS smoke https://portal.medopl.cn/ only after Ingress readiness/DNS target check\n\n禁止：不读取 DB password/Portal admin password/Tencent SecretId/SecretKey/TLS private key；不使用 kubernetes.io/tls/tls.crt/tls.key；不修改 Deployment/ConfigMap/RBAC/Namespace；不修改 existing Service/portal-frontend ClusterIP；不创建 LoadBalancer Service；不修改 DNS；不修改 Package C 或 tenant resources；不 deploy/rollout/rollback；不 build/push；不 Tencent API mutation；不 Package C live；不删除 namespace；不声明 public access complete before Ready/DNS/HTTPS evidence closeout。\n\nStop conditions：RUN_TENCENT_DEPLOY_EXECUTION 不是 external-access；package-d-external-access.env 出现 RUN_TENCENT_DEPLOY_EXECUTION 或非五业务 key；context/namespace/service/IngressClass mismatch；edge Service manifest 不是 NodePort 或 selector/port 不匹配；Ingress 不指向 portal.medopl.cn -> portal-frontend-edge:8080；server-side dry-run 失败；redacted edge Service/Ingress manifest evidence 未写入；任何命令 outside allowlist；DNS target invalid/stale/unauthorized；HTTPS smoke fails；any secret leakage。\n\nEvidence 写入 .runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/real-mutation-redacted.json, portal-frontend-edge-service-redacted.json, portal-ingress-redacted.json；完成后同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
+      "runIdHint": "gap08f-dns-https-smoke-001",
+      "prompt": "按 active truth 做 gap-driven execution，不新增 loop。\n\n当前唯一 gap：Production launch Gap 08f: DNS validation + HTTPS external smoke closeout。\n\n当前事实：Gap 08e qcloud edge NodePort apply 已在云端成功。Service/portal-frontend-edge apply 成功，type NodePort，port 8080；Service/portal-frontend 保持 ClusterIP 未修改；Ingress/portal-frontend backend 已切到 portal-frontend-edge:8080；Ingress Ready=True；Ingress LB hostname=lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com；DNS portal.medopl.cn 仍指向旧 LB lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com；HTTPS smoke 未得到有效结果，因为云端 curl 不支持 --fail-with-body；未发生越界 mutation。Evidence: .runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/real-mutation-redacted.json, .runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-frontend-edge-service-redacted.json, .runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-ingress-redacted.json。\n\n本地 Gap 08f-prep 已收口：package-d-external-access-runner 的 HTTPS smoke 不再硬依赖 curl --fail-with-body。runner 先执行 curl --help all 探测；支持时使用 --fail-with-body；不支持时 fallback 到 --fail --connect-timeout 10 --max-time 30 -sS -o /dev/null -w 结构化输出。smoke 只允许访问 EXTERNAL_SMOKE_URL=https://portal.medopl.cn/，evidence 记录 service/url/http_code/ssl_verify_result/time_total/compatibilityMode 并脱敏。\n\n云端执行前置：DNS 需通过单独 DNS 授权把 portal.medopl.cn CNAME 对齐到 lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com 或当次 Ingress status LB hostname；repo runner 本身不修改 DNS。package-d-external-access.env 仍只包含五个业务 key：PORTAL_HOST_DOMAIN、INGRESS_CLASS、TLS_SECRET_NAME、TENCENT_SSL_CERT_ID、EXTERNAL_SMOKE_URL；禁止把 RUN_TENCENT_DEPLOY_EXECUTION 写入 env 文件；process/deploy run gate source 设置 RUN_TENCENT_DEPLOY_EXECUTION=external-access。\n\n允许执行唯一 repo-native 命令：\nRUN_TENCENT_DEPLOY_EXECUTION=external-access \\\nnode tests/support/cloud-prework/package-d-external-access-runner.js \\\n  --mode qcloud-edge-nodeport-apply \\\n  --env /home/dev/.secrets/medopl/v22/package-d-external-access.env \\\n  --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy \\\n  --run-id gap08f-dns-https-smoke-001 \\\n  --authorized 1\n\n允许操作严格限定为：get/describe Service portal-frontend、Service portal-frontend-edge、Ingress portal-frontend、IngressClass qcloud；DNS validation only for portal.medopl.cn；HTTPS smoke only for https://portal.medopl.cn/ with curl compatibility fallback；写入 redacted evidence。\n\n禁止：不读取 DB password/Portal admin password/Tencent SecretId/SecretKey/TLS private key；不修改 Deployment/Service/ConfigMap/RBAC/Namespace；不创建 LoadBalancer Service；不修改 Package C 或 tenant resources；不 deploy/rollout/rollback；不 build/push；不 Tencent API mutation；不 Package C live；repo runner 不修改 DNS；不声明 public access complete before DNS/HTTPS evidence closeout。\n\nStop conditions：RUN_TENCENT_DEPLOY_EXECUTION 不是 external-access；package-d-external-access.env 出现 RUN_TENCENT_DEPLOY_EXECUTION 或非五业务 key；context/namespace/service/IngressClass mismatch；portal.medopl.cn DNS 未对齐到当前 qcloud Ingress LB；curl 访问非 allowlisted URL；HTTPS smoke fails；smoke summary 缺 http_code/ssl_verify_result/time_total；任何 secret leakage；任何命令 outside allowlist。\n\nEvidence 写入 .runtime/package-d-external-access-strategy/gap08f-dns-https-smoke-001/real-mutation-redacted.json；完成后同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
     },
     "realExecutionReady": false,
     "combinedInClusterPreflight": {
@@ -9435,16 +9587,16 @@
     }
   },
   "readinessGaps": [
-    "Production launch Gap 08e qcloud Ingress backend NodePort edge Service apply; external/public user access is not complete until Ready/DNS/HTTPS evidence passes"
+    "Production launch Gap 08f DNS validation + HTTPS external smoke closeout; external/public user access is not complete until DNS target and HTTPS smoke evidence pass"
   ],
   "nextAuthorizationPrompt": {
     "target": "cloud-codex",
-    "runIdHint": "gap08e-qcloud-edge-nodeport-apply-001",
-    "prompt": "按 active truth 做 gap-driven execution，不新增 loop。\n\n当前唯一 gap：Production launch Gap 08e: qcloud Ingress backend NodePort edge Service apply。\n\n当前事实：Gap 08d qcloud external access real apply 已执行。Secret/medopl-portal-tls apply 成功，type Opaque，qcloud_cert_id key 存在且未读取 data；Ingress/portal-frontend apply 成功，host=portal.medopl.cn，ingressClass=qcloud，tls secret=medopl-portal-tls，backend=portal-frontend:8080。Ingress status LB hostname=lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com，但 Ingress Ready=False，reason=BackendError；classified reason 是 qcloud Ingress requires backend Service type NodePort or LoadBalancer, current backend is ClusterIP。portal.medopl.cn DNS 仍指向旧 lb-lhj3bgii...，未指向新 lb-b33auprw...；HTTPS smoke failed: tls_hostname_mismatch。未发生越界 mutation。Evidence: .runtime/package-d-external-access-strategy/gap08d-qcloud-ingress-real-004/real-mutation-redacted.json, .runtime/package-d-external-access-strategy/gap08d-qcloud-ingress-real-004/qcloud-cert-secret-redacted.json, .runtime/package-d-external-access-strategy/gap08d-qcloud-ingress-real-004/portal-ingress-redacted.json。\n\n本地 Gap 08e-prep 已收口：repo-native external access runner 支持 qcloud-edge-nodeport-dry-run 和 qcloud-edge-nodeport-apply；edge Service manifest 为 Service/portal-frontend-edge, namespace medopl-platform, type NodePort, selector matches portal-frontend, port/targetPort 8080；Ingress backend 切到 portal-frontend-edge:8080；原 portal-frontend ClusterIP Service 不修改；不创建 LoadBalancer Service；TLS Secret/host/ingressClass 保持不变。\n\n云端执行前必须准备：\n- package-d-external-access.env 仍只包含五个业务 key：PORTAL_HOST_DOMAIN、INGRESS_CLASS、TLS_SECRET_NAME、TENCENT_SSL_CERT_ID、EXTERNAL_SMOKE_URL\n- 固定值为 portal.medopl.cn / qcloud / medopl-portal-tls / 授权证书 ID env 值 / https://portal.medopl.cn/\n- 禁止把 RUN_TENCENT_DEPLOY_EXECUTION 写入 package-d-external-access.env\n- 在 runner process/deploy run gate source 中设置 RUN_TENCENT_DEPLOY_EXECUTION=external-access\n- 禁止输出 TENCENT_SSL_CERT_ID 原文、qcloud_cert_id value、kubeconfig/token/cert/DB password/TCR secret/Portal admin password\n\n允许执行唯一 repo-native 命令：\nRUN_TENCENT_DEPLOY_EXECUTION=external-access \\\nnode tests/support/cloud-prework/package-d-external-access-runner.js \\\n  --mode qcloud-edge-nodeport-apply \\\n  --env /home/dev/.secrets/medopl/v22/package-d-external-access.env \\\n  --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy \\\n  --run-id gap08e-qcloud-edge-nodeport-apply-001 \\\n  --authorized 1\n\n允许真实 mutation 严格限定为：\n- apply Service/portal-frontend-edge in namespace medopl-platform，type NodePort，selector 与 portal-frontend Deployment/Service 一致，port 8080，targetPort 8080，manifest 通过 stdin 提交并写 redacted evidence\n- apply/update Ingress/portal-frontend in namespace medopl-platform，仅把 backend 切到 portal-frontend-edge:8080，host portal.medopl.cn、ingressClass qcloud、tls secret medopl-portal-tls 保持不变，manifest 通过 stdin 提交并写 redacted evidence\n- get/describe Service portal-frontend, Service portal-frontend-edge, Ingress portal-frontend, IngressClass qcloud only for verification\n- DNS validation only, no DNS mutation\n- HTTPS smoke https://portal.medopl.cn/ only after Ingress readiness/DNS target check\n\n禁止：不读取 DB password/Portal admin password/Tencent SecretId/SecretKey/TLS private key；不使用 kubernetes.io/tls/tls.crt/tls.key；不修改 Deployment/ConfigMap/RBAC/Namespace；不修改 existing Service/portal-frontend ClusterIP；不创建 LoadBalancer Service；不修改 DNS；不修改 Package C 或 tenant resources；不 deploy/rollout/rollback；不 build/push；不 Tencent API mutation；不 Package C live；不删除 namespace；不声明 public access complete before Ready/DNS/HTTPS evidence closeout。\n\nStop conditions：RUN_TENCENT_DEPLOY_EXECUTION 不是 external-access；package-d-external-access.env 出现 RUN_TENCENT_DEPLOY_EXECUTION 或非五业务 key；context/namespace/service/IngressClass mismatch；edge Service manifest 不是 NodePort 或 selector/port 不匹配；Ingress 不指向 portal.medopl.cn -> portal-frontend-edge:8080；server-side dry-run 失败；redacted edge Service/Ingress manifest evidence 未写入；任何命令 outside allowlist；DNS target invalid/stale/unauthorized；HTTPS smoke fails；any secret leakage。\n\nEvidence 写入 .runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/real-mutation-redacted.json, portal-frontend-edge-service-redacted.json, portal-ingress-redacted.json；完成后同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
+    "runIdHint": "gap08f-dns-https-smoke-001",
+    "prompt": "按 active truth 做 gap-driven execution，不新增 loop。\n\n当前唯一 gap：Production launch Gap 08f: DNS validation + HTTPS external smoke closeout。\n\n当前事实：Gap 08e qcloud edge NodePort apply 已在云端成功。Service/portal-frontend-edge apply 成功，type NodePort，port 8080；Service/portal-frontend 保持 ClusterIP 未修改；Ingress/portal-frontend backend 已切到 portal-frontend-edge:8080；Ingress Ready=True；Ingress LB hostname=lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com；DNS portal.medopl.cn 仍指向旧 LB lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com；HTTPS smoke 未得到有效结果，因为云端 curl 不支持 --fail-with-body；未发生越界 mutation。Evidence: .runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/real-mutation-redacted.json, .runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-frontend-edge-service-redacted.json, .runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-ingress-redacted.json。\n\n本地 Gap 08f-prep 已收口：package-d-external-access-runner 的 HTTPS smoke 不再硬依赖 curl --fail-with-body。runner 先执行 curl --help all 探测；支持时使用 --fail-with-body；不支持时 fallback 到 --fail --connect-timeout 10 --max-time 30 -sS -o /dev/null -w 结构化输出。smoke 只允许访问 EXTERNAL_SMOKE_URL=https://portal.medopl.cn/，evidence 记录 service/url/http_code/ssl_verify_result/time_total/compatibilityMode 并脱敏。\n\n云端执行前置：DNS 需通过单独 DNS 授权把 portal.medopl.cn CNAME 对齐到 lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com 或当次 Ingress status LB hostname；repo runner 本身不修改 DNS。package-d-external-access.env 仍只包含五个业务 key：PORTAL_HOST_DOMAIN、INGRESS_CLASS、TLS_SECRET_NAME、TENCENT_SSL_CERT_ID、EXTERNAL_SMOKE_URL；禁止把 RUN_TENCENT_DEPLOY_EXECUTION 写入 env 文件；process/deploy run gate source 设置 RUN_TENCENT_DEPLOY_EXECUTION=external-access。\n\n允许执行唯一 repo-native 命令：\nRUN_TENCENT_DEPLOY_EXECUTION=external-access \\\nnode tests/support/cloud-prework/package-d-external-access-runner.js \\\n  --mode qcloud-edge-nodeport-apply \\\n  --env /home/dev/.secrets/medopl/v22/package-d-external-access.env \\\n  --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy \\\n  --run-id gap08f-dns-https-smoke-001 \\\n  --authorized 1\n\n允许操作严格限定为：get/describe Service portal-frontend、Service portal-frontend-edge、Ingress portal-frontend、IngressClass qcloud；DNS validation only for portal.medopl.cn；HTTPS smoke only for https://portal.medopl.cn/ with curl compatibility fallback；写入 redacted evidence。\n\n禁止：不读取 DB password/Portal admin password/Tencent SecretId/SecretKey/TLS private key；不修改 Deployment/Service/ConfigMap/RBAC/Namespace；不创建 LoadBalancer Service；不修改 Package C 或 tenant resources；不 deploy/rollout/rollback；不 build/push；不 Tencent API mutation；不 Package C live；repo runner 不修改 DNS；不声明 public access complete before DNS/HTTPS evidence closeout。\n\nStop conditions：RUN_TENCENT_DEPLOY_EXECUTION 不是 external-access；package-d-external-access.env 出现 RUN_TENCENT_DEPLOY_EXECUTION 或非五业务 key；context/namespace/service/IngressClass mismatch；portal.medopl.cn DNS 未对齐到当前 qcloud Ingress LB；curl 访问非 allowlisted URL；HTTPS smoke fails；smoke summary 缺 http_code/ssl_verify_result/time_total；任何 secret leakage；任何命令 outside allowlist。\n\nEvidence 写入 .runtime/package-d-external-access-strategy/gap08f-dns-https-smoke-001/real-mutation-redacted.json；完成后同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
   },
   "nextLocalCodexPrompt": {
     "target": "local-codex",
-    "prompt": "当前唯一 gap 已进入 Gap 08e 云端 apply 授权；本地 repo-native qcloud edge NodePort runner/local gate 已收口。除非云端 evidence 暴露新的 fail-closed gap，本地不要新增 loop。"
+    "prompt": "当前唯一 gap 已进入 Gap 08f DNS validation + HTTPS external smoke 授权；本地 repo-native curl compatibility gate 已收口。除非云端 evidence 暴露新的 fail-closed gap，本地不要新增 loop。"
   },
   "production_launch_goal_gap_map": {
     "status": "gap_08e_qcloud_edge_nodeport_backend_strategy_ready_waiting_authorized_cloud_apply",
@@ -9458,7 +9610,10 @@
         ".runtime/package-d-production-deploy/pdrun-20260616-004/smoke-redacted.json",
         ".runtime/package-d-production-deploy/pdrun-20260616-004/rollback-redacted.json",
         ".runtime/package-d-service-reachability/psr-20260617-004/readonly-service-reachability-redacted.json",
-        ".runtime/package-d-service-reachability/psr-20260617-004/smoke-job-manifest-redacted.json"
+        ".runtime/package-d-service-reachability/psr-20260617-004/smoke-job-manifest-redacted.json",
+        ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/real-mutation-redacted.json",
+        ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-frontend-edge-service-redacted.json",
+        ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-ingress-redacted.json"
       ],
       "productionLaunchGap01BootstrapContract": "implemented",
       "productionLaunchGap01EvidencePath": ".runtime/production-launch-bootstrap/<runid>/bootstrap-contract-redacted.json",
@@ -9474,7 +9629,14 @@
       "productionLaunchGap06EvidencePath": ".runtime/production-launch-canary/<runid>/canary-contract-redacted.json",
       "packageDDeployedInsideTke": true,
       "inClusterHttpReachabilityPassed": true,
-      "externalPublicUserAccessComplete": false
+      "externalPublicUserAccessComplete": false,
+      "gap08eQcloudEdgeNodeportApply": "passed_cloud_run",
+      "gap08eRunId": "gap08e-qcloud-edge-nodeport-apply-001",
+      "gap08eIngressReady": true,
+      "gap08eIngressLoadBalancerHostname": "lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com",
+      "portalDnsCurrentTarget": "lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com",
+      "portalDnsExpectedTarget": "lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com",
+      "httpsSmokeStatus": "not_validated_curl_fail_with_body_unsupported_before_runner_compat_fix"
     },
     "vision": {
       "product": "MedOPL production launch is a stable multi-tenant SaaS managed OPL workbench, not a temporary page trial.",
@@ -9799,15 +9961,17 @@
       }
     ],
     "nextUniqueGap": {
-      "id": "production-launch-gap-08e-qcloud-ingress-backend-nodeport-edge-service",
-      "title": "Production launch Gap 08e: qcloud Ingress backend NodePort edge Service apply",
-      "reason": "Gap 08d real apply created the qcloud cert-id Secret and Portal Ingress, but the qcloud controller reported BackendError because the Ingress backend service portal-frontend is ClusterIP. The repo-native Gap 08e-prep runner now supports a dedicated portal-frontend-edge NodePort Service plus an Ingress backend switch to portal-frontend-edge:8080 without modifying the existing portal-frontend ClusterIP Service or creating a LoadBalancer Service.",
-      "boundary": "separate cloud authorization required before kubeconfig read or kubectl apply; package-d-external-access.env remains five business keys only; RUN_TENCENT_DEPLOY_EXECUTION must come from process/deploy run gate source; mutation is limited to Service/portal-frontend-edge type NodePort and Ingress/portal-frontend backend switch to portal-frontend-edge:8080; no original ClusterIP Service/DNS/LoadBalancer/Deployment/Package C/tenant mutation and no public access completion claim before Ready/DNS/HTTPS evidence",
-      "recommendedEntrypoint": "RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-edge-nodeport-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08e-qcloud-edge-nodeport-apply-001 --authorized 1",
-      "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/real-mutation-redacted.json",
-      "allowedMutations": [
-        "apply Service portal-frontend-edge type NodePort in medopl-platform",
-        "apply/update qcloud Ingress portal-frontend backend for portal.medopl.cn -> portal-frontend-edge:8080"
+      "id": "production-launch-gap-08f-dns-validation-https-smoke",
+      "title": "Production launch Gap 08f: DNS validation and external HTTPS smoke closeout",
+      "reason": "Gap 08e cloud apply succeeded: Service/portal-frontend-edge is NodePort, the original portal-frontend ClusterIP Service was not modified, Ingress/portal-frontend targets portal-frontend-edge:8080 and is Ready=True with LB hostname lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com. DNS still points portal.medopl.cn to old LB lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com, and HTTPS smoke needs curl compatibility because the cloud curl may not support --fail-with-body.",
+      "boundary": "separate DNS authorization is required before changing portal.medopl.cn; after DNS alignment, cloud runner may perform only readonly get/describe verification, DNS validation and HTTPS smoke against https://portal.medopl.cn/ with redacted structured evidence; no Kubernetes mutation, DNS mutation by this repo runner, LoadBalancer creation, Package C/tenant mutation, deploy/rollout/rollback, build/push or public access completion claim before DNS/HTTPS evidence passes",
+      "recommendedEntrypoint": "RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-edge-nodeport-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08f-dns-https-smoke-001 --authorized 1",
+      "evidencePath": ".runtime/package-d-external-access-strategy/gap08f-dns-https-smoke-001/real-mutation-redacted.json",
+      "allowedOperations": [
+        "get/describe Service portal-frontend and Service portal-frontend-edge in medopl-platform only",
+        "get/describe Ingress portal-frontend and IngressClass qcloud only",
+        "DNS validation for portal.medopl.cn only, no DNS mutation inside this runner",
+        "HTTPS smoke only for https://portal.medopl.cn/ using curl compatibility fallback when --fail-with-body is unsupported"
       ]
     },
     "externalAccessPolicy": {
@@ -10410,7 +10574,7 @@
       "publicAccessComplete": false
     },
     "gap08eQcloudEdgeNodeportBackend": {
-      "status": "repo_native_runner_contract_local_gate_ready_waiting_authorized_cloud_apply",
+      "status": "passed_cloud_run_waiting_dns_https_closeout",
       "runnerCommand": "RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-edge-nodeport-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08e-qcloud-edge-nodeport-apply-001 --authorized 1",
       "dryRunCommand": "node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-edge-nodeport-dry-run --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id <runid> --authorized 1",
       "localGate": "node tests/contract/contract-test-v22-package-d-external-access-edge-nodeport-local-gate.mjs",
@@ -10466,7 +10630,9 @@
         "server-side dry-run/apply Ingress portal-frontend backend switch to portal-frontend-edge:8080",
         "get/describe Service portal-frontend, Service portal-frontend-edge, Ingress portal-frontend and IngressClass qcloud only",
         "DNS validation only without mutation",
-        "HTTPS smoke only after Ingress readiness/DNS target check"
+        "HTTPS smoke only after Ingress readiness/DNS target check",
+        "curl compatibility probe only via curl --help all",
+        "HTTPS smoke command must not hard require --fail-with-body"
       ],
       "forbiddenOperations": [
         "modify existing Service/portal-frontend ClusterIP",
@@ -10492,13 +10658,16 @@
         "cnameTargetSource": "qcloud Ingress status LB hostname after Ready",
         "lastObservedIngressHostname": "lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com",
         "dnsMutationAllowed": false,
-        "nextDnsActionAfterReady": "separate DNS authorization required to point portal.medopl.cn CNAME to the current qcloud Ingress status LB hostname"
+        "nextDnsActionAfterReady": "separate DNS authorization required to point portal.medopl.cn CNAME to lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com or the current Ingress status LB hostname before HTTPS closeout",
+        "currentDnsTarget": "lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com",
+        "dnsAligned": false
       },
       "httpsSmokePlan": [
-        "verify Ingress Ready first",
+        "align portal.medopl.cn DNS to the current qcloud Ingress LB through separate DNS authorization before closeout",
         "validate portal.medopl.cn DNS target without mutation",
-        "GET https://portal.medopl.cn/",
-        "redaction audit and no public access complete claim until smoke passes"
+        "GET https://portal.medopl.cn/ with curl --fail-with-body when supported, otherwise fallback to --fail plus structured -w output",
+        "record service/url/http_code/ssl_verify_result/time_total/compatibilityMode and redaction audit",
+        "do not claim public access complete until DNS and HTTPS evidence pass"
       ],
       "stopConditions": [
         "RUN_TENCENT_DEPLOY_EXECUTION is not external-access from process/deploy run gate source for apply mode",
@@ -10514,15 +10683,73 @@
         "kubectl command outside allowlist",
         "DNS target stale or unauthorized",
         "HTTPS smoke fails",
-        "secret leakage detected"
+        "secret leakage detected",
+        "curl command targets anything other than https://portal.medopl.cn/",
+        "HTTPS smoke summary missing http_code, ssl_verify_result or time_total"
       ],
       "redactionEvidence": {
         "tencentSslCertIdRawAllowed": false,
         "secretDataAllowed": false,
-        "evidencePath": ".runtime/package-d-external-access-strategy/<runid>/real-mutation-redacted.json",
-        "edgeServiceManifestEvidence": ".runtime/package-d-external-access-strategy/<runid>/portal-frontend-edge-service-redacted.json",
-        "ingressManifestEvidence": ".runtime/package-d-external-access-strategy/<runid>/portal-ingress-redacted.json"
+        "evidencePath": ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/real-mutation-redacted.json",
+        "edgeServiceManifestEvidence": ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-frontend-edge-service-redacted.json",
+        "ingressManifestEvidence": ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-ingress-redacted.json"
+      },
+      "cloudRun": {
+        "runId": "gap08e-qcloud-edge-nodeport-apply-001",
+        "servicePortalFrontendEdgeApplied": true,
+        "edgeServiceType": "NodePort",
+        "edgeServicePort": 8080,
+        "originalPortalFrontendServiceUnmodified": true,
+        "ingressBackend": "portal-frontend-edge:8080",
+        "ingressReady": true,
+        "ingressLoadBalancerHostname": "lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com",
+        "dnsPortalMedoplCnCurrentTarget": "lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com",
+        "dnsAlignedToIngressLoadBalancer": false,
+        "httpsSmokeValidResult": false,
+        "httpsSmokeFailureClass": "curl_fail_with_body_unsupported_before_runner_compat_fix",
+        "noOutOfBoundMutation": true,
+        "evidencePaths": [
+          ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/real-mutation-redacted.json",
+          ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-frontend-edge-service-redacted.json",
+          ".runtime/package-d-external-access-strategy/gap08e-qcloud-edge-nodeport-apply-001/portal-ingress-redacted.json"
+        ]
       }
+    },
+    "gap08fDnsHttpsSmokeCloseout": {
+      "status": "repo_native_runner_contract_local_gate_ready_waiting_dns_alignment_and_cloud_smoke",
+      "runnerCommand": "RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-edge-nodeport-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08f-dns-https-smoke-001 --authorized 1",
+      "localGate": "node tests/contract/contract-test-v22-package-d-external-access-edge-nodeport-local-gate.mjs; node tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs",
+      "evidencePath": ".runtime/package-d-external-access-strategy/gap08f-dns-https-smoke-001/real-mutation-redacted.json",
+      "dns": {
+        "host": "portal.medopl.cn",
+        "currentTarget": "lb-lhj3bgii-ms5ocrjz6hdaki2l.clb.usw-tencentclb.com",
+        "expectedTarget": "lb-b33auprw-h1bv86yx9nswdtfj.clb.usw-tencentclb.com",
+        "mutationAllowedInRepoRunner": false
+      },
+      "httpsSmoke": {
+        "url": "https://portal.medopl.cn/",
+        "curlCapabilityProbe": "curl --help all",
+        "usesFailWithBodyWhenSupported": true,
+        "fallbackWhenUnsupported": "--fail --connect-timeout 10 --max-time 30 -sS -o /dev/null -w structured-json https://portal.medopl.cn/",
+        "structuredFields": [
+          "service",
+          "url",
+          "http_code",
+          "ssl_verify_result",
+          "time_total",
+          "compatibilityMode"
+        ],
+        "arbitraryUrlAllowed": false
+      },
+      "forbiddenOperations": [
+        "DNS mutation by repo runner",
+        "Kubernetes mutation beyond already applied Gap 08e resources",
+        "Deployment/Service/ConfigMap/RBAC/Namespace mutation",
+        "LoadBalancer Service creation",
+        "Package C or tenant resources mutation",
+        "deploy, rollout, rollback, build/push or Tencent API mutation",
+        "public access completion claim before DNS/HTTPS evidence closeout"
+      ]
     }
   }
 }

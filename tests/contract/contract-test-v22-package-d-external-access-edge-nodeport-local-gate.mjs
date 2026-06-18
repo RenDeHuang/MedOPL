@@ -139,6 +139,15 @@ try {
     "apply Ingress/portal-frontend in medopl-platform for portal.medopl.cn -> portal-frontend-edge:8080",
   ], "external_access_edge_apply_mutation_allowlist");
   assert(edgeApplyPlan.commands.some((command) => command.name === "apply_portal_edge_service"), "external_access_edge_apply_service_command");
+  const httpsCapabilityCommand = edgeApplyPlan.commands.find((command) => command.name === "curl_fail_with_body_capability_probe");
+  const httpsSmokeCommand = edgeApplyPlan.commands.find((command) => command.name === "https_external_smoke");
+  assert(httpsCapabilityCommand, "external_access_edge_apply_must_probe_curl_fail_with_body_support");
+  assert(httpsSmokeCommand, "external_access_edge_apply_must_include_https_smoke");
+  assert.equal(httpsSmokeCommand.command.includes("--fail-with-body"), false, "external_access_edge_https_smoke_must_not_hard_require_fail_with_body");
+  assert.equal(httpsSmokeCommand.command.includes("https://portal.medopl.cn/"), true, "external_access_edge_https_smoke_fixed_url");
+  assert.equal(httpsSmokeCommand.command.includes("--connect-timeout 10"), true, "external_access_edge_https_smoke_connect_timeout");
+  assert.equal(httpsSmokeCommand.command.includes("--max-time 30"), true, "external_access_edge_https_smoke_max_time");
+  assert.equal(httpsSmokeCommand.command.includes("-w"), true, "external_access_edge_https_smoke_structured_writeout");
   assert.equal(edgeApplyPlan.rollbackCleanupPlan.deleteEdgeService, "delete only Service/portal-frontend-edge if created by this run and rollback is separately authorized", "external_access_edge_delete_service_plan");
   assert.equal(edgeApplyPlan.dnsPlan.dnsMutationAllowed, false, "external_access_edge_dns_no_mutation");
   assertNoQcloudApplySensitiveText(JSON.stringify(edgeApplyPlan), "external_access_edge_apply_plan");
@@ -193,7 +202,17 @@ try {
         if (args.join(" ").includes("get ingress portal-frontend")) return { status: 0, stdout: "{\"metadata\":{\"name\":\"portal-frontend\"}}\n", stderr: "" };
         if (args.join(" ").includes("describe ingress portal-frontend")) return { status: 0, stdout: "Name: portal-frontend\n", stderr: "" };
         if (args[0] === "getent") return { status: 0, stdout: "203.0.113.10 portal.medopl.cn\n", stderr: "" };
-        if (args[0] === "curl") return { status: 0, stdout: "portal ok\n", stderr: "" };
+        if (args[0] === "curl" && args.join(" ") === "curl --help all") return { status: 0, stdout: "Usage: curl [options...] <url>\n", stderr: "" };
+        if (args[0] === "curl") {
+          assert.equal(args.includes("--fail-with-body"), false, "external_access_edge_execution_old_curl_must_use_fallback");
+          assert.equal(args.includes("--connect-timeout"), true, "external_access_edge_execution_fallback_connect_timeout");
+          assert.equal(args.includes("--max-time"), true, "external_access_edge_execution_fallback_max_time");
+          assert.equal(args.includes("-sS"), true, "external_access_edge_execution_fallback_silent_show_error");
+          assert.equal(args.includes("-o"), true, "external_access_edge_execution_fallback_output_sink");
+          assert.equal(args.includes("-w"), true, "external_access_edge_execution_fallback_writeout");
+          assert.equal(args.at(-1), "https://portal.medopl.cn/", "external_access_edge_execution_fallback_fixed_url");
+          return { status: 0, stdout: "{\"service\":\"portal-frontend\",\"url\":\"https://portal.medopl.cn/\",\"http_code\":\"200\",\"ssl_verify_result\":\"0\",\"time_total\":\"0.123\"}\n", stderr: "" };
+        }
         return { status: 0, stdout: "ok\n", stderr: "" };
       },
     });
@@ -209,7 +228,39 @@ try {
     assert.equal(edgeServiceEvidence.spec.type, "NodePort", "external_access_edge_execution_service_evidence_nodeport");
     assert.equal(edgeIngressEvidence.spec.rules[0].http.paths[0].backend.service.name, "portal-frontend-edge", "external_access_edge_execution_ingress_evidence_backend");
     assert.equal(edgeExecutionEvidence.contract, "production_launch_gap_08e_qcloud_edge_nodeport_execution", "external_access_edge_execution_evidence_contract");
+    const smokeEvidence = edgeExecutionEvidence.commands.find((command) => command.name === "https_external_smoke");
+    assert.equal(smokeEvidence.httpsSmoke.url, "https://portal.medopl.cn/", "external_access_edge_execution_smoke_evidence_url");
+    assert.equal(smokeEvidence.httpsSmoke.http_code, "200", "external_access_edge_execution_smoke_evidence_http_code");
+    assert.equal(smokeEvidence.httpsSmoke.compatibilityMode, "fallback_without_fail_with_body", "external_access_edge_execution_smoke_evidence_fallback_mode");
     assertNoQcloudApplySensitiveText(await readFile(edgeExecution.evidencePath, "utf8"), "external_access_edge_execution_evidence");
+  } finally {
+    if (previousRunGate === undefined) delete process.env.RUN_TENCENT_DEPLOY_EXECUTION;
+    else process.env.RUN_TENCENT_DEPLOY_EXECUTION = previousRunGate;
+  }
+  process.env.RUN_TENCENT_DEPLOY_EXECUTION = "external-access";
+  try {
+    const edgeCommandLog = [];
+    await runPackageDExternalAccessExecution({
+      envPath,
+      kubeconfigPath,
+      evidenceDir,
+      authorized: true,
+      mode: "qcloud-edge-nodeport-apply",
+      runId: "gap08e-local-edge-apply-new-curl",
+      commandExecutor: async ({ args }) => {
+        edgeCommandLog.push(args);
+        if (args.join(" ").includes("config current-context")) return { status: 0, stdout: "cls-fi097sy4-context\n", stderr: "" };
+        if (args[0] === "curl" && args.join(" ") === "curl --help all") {
+          return { status: 0, stdout: "Usage: curl [options...] <url>\n     --fail-with-body  Fail on HTTP errors but save the body\n", stderr: "" };
+        }
+        if (args[0] === "curl") {
+          assert.equal(args.includes("--fail-with-body"), true, "external_access_edge_execution_new_curl_must_use_fail_with_body");
+          return { status: 0, stdout: "{\"service\":\"portal-frontend\",\"url\":\"https://portal.medopl.cn/\",\"http_code\":\"200\",\"ssl_verify_result\":\"0\",\"time_total\":\"0.111\"}\n", stderr: "" };
+        }
+        return { status: 0, stdout: "ok\n", stderr: "" };
+      },
+    });
+    assert.equal(edgeCommandLog.some((args) => args.includes("--fail-with-body")), true, "external_access_edge_new_curl_command_log");
   } finally {
     if (previousRunGate === undefined) delete process.env.RUN_TENCENT_DEPLOY_EXECUTION;
     else process.env.RUN_TENCENT_DEPLOY_EXECUTION = previousRunGate;

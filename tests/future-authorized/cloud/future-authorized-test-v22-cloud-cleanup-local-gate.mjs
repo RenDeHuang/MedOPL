@@ -766,6 +766,14 @@ try {
   assert(applyPlan.commands.every((command) => !command.command.includes("kubectl delete")), "external_access_commands_must_not_delete");
   assert(applyPlan.commands.some((command) => command.name === "apply_qcloud_cert_secret"), "external_access_apply_secret_command");
   assert(applyPlan.commands.some((command) => command.name === "apply_portal_ingress"), "external_access_apply_ingress_command");
+  const externalAccessCapabilityCommand = applyPlan.commands.find((command) => command.name === "curl_fail_with_body_capability_probe");
+  const externalAccessHttpsSmokeCommand = applyPlan.commands.find((command) => command.name === "https_external_smoke");
+  assert(externalAccessCapabilityCommand, "external_access_apply_must_probe_curl_fail_with_body_support");
+  assert(externalAccessHttpsSmokeCommand, "external_access_apply_must_include_https_smoke");
+  assert.equal(externalAccessHttpsSmokeCommand.command.includes("--fail-with-body"), false, "external_access_https_smoke_must_not_hard_require_fail_with_body");
+  assert.equal(externalAccessHttpsSmokeCommand.command.includes("--connect-timeout 10"), true, "external_access_https_smoke_connect_timeout");
+  assert.equal(externalAccessHttpsSmokeCommand.command.includes("--max-time 30"), true, "external_access_https_smoke_max_time");
+  assert.equal(externalAccessHttpsSmokeCommand.command.includes("-w"), true, "external_access_https_smoke_structured_writeout");
   assert.equal(applyPlan.rollbackCleanupPlan.rollbackRequiresSeparateAuthorization, true, "external_access_rollback_separate_auth");
   assertNoQcloudApplySensitiveText(JSON.stringify(applyPlan), "external_access_apply_plan");
   assert.throws(
@@ -847,7 +855,17 @@ try {
         if (args.join(" ").includes("get ingress portal-frontend")) return { status: 0, stdout: "{\"metadata\":{\"name\":\"portal-frontend\"}}\n", stderr: "" };
         if (args.join(" ").includes("describe ingress portal-frontend")) return { status: 0, stdout: "Name: portal-frontend\n", stderr: "" };
         if (args[0] === "getent") return { status: 0, stdout: "203.0.113.10 portal.medopl.cn\n", stderr: "" };
-        if (args[0] === "curl") return { status: 0, stdout: "portal ok\n", stderr: "" };
+        if (args[0] === "curl" && args.join(" ") === "curl --help all") return { status: 0, stdout: "Usage: curl [options...] <url>\n", stderr: "" };
+        if (args[0] === "curl") {
+          assert.equal(args.includes("--fail-with-body"), false, "external_access_old_curl_must_use_fallback");
+          assert.equal(args.includes("--connect-timeout"), true, "external_access_fallback_connect_timeout");
+          assert.equal(args.includes("--max-time"), true, "external_access_fallback_max_time");
+          assert.equal(args.includes("-sS"), true, "external_access_fallback_silent_show_error");
+          assert.equal(args.includes("-o"), true, "external_access_fallback_output_sink");
+          assert.equal(args.includes("-w"), true, "external_access_fallback_writeout");
+          assert.equal(args.at(-1), "https://portal.medopl.cn/", "external_access_fallback_fixed_url");
+          return { status: 0, stdout: "{\"service\":\"portal-frontend\",\"url\":\"https://portal.medopl.cn/\",\"http_code\":\"200\",\"ssl_verify_result\":\"0\",\"time_total\":\"0.123\"}\n", stderr: "" };
+        }
         return { status: 0, stdout: "ok\n", stderr: "" };
       },
     });
@@ -860,6 +878,11 @@ try {
     assert.equal(redactedSecretEvidence.stringData.qcloud_cert_id, "<redacted-env:TENCENT_SSL_CERT_ID>", "external_access_execution_secret_manifest_evidence_redacted");
     assert.equal(redactedIngressEvidence.kind, "Ingress", "external_access_execution_ingress_manifest_evidence_written");
     const executionEvidenceText = await readFile(execution.evidencePath, "utf8");
+    const executionEvidence = JSON.parse(executionEvidenceText);
+    const smokeEvidence = executionEvidence.commands.find((command) => command.name === "https_external_smoke");
+    assert.equal(smokeEvidence.httpsSmoke.url, "https://portal.medopl.cn/", "external_access_execution_smoke_evidence_url");
+    assert.equal(smokeEvidence.httpsSmoke.http_code, "200", "external_access_execution_smoke_evidence_http_code");
+    assert.equal(smokeEvidence.httpsSmoke.compatibilityMode, "fallback_without_fail_with_body", "external_access_execution_smoke_evidence_fallback_mode");
     assertNoQcloudApplySensitiveText(executionEvidenceText, "external_access_execution_evidence");
 
     await assert.rejects(

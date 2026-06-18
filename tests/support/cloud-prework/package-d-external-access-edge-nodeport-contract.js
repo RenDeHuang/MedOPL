@@ -4,6 +4,7 @@ export const QCLOUD_EDGE_NODEPORT_DRY_RUN_MODE = "qcloud-edge-nodeport-dry-run";
 export const QCLOUD_EDGE_NODEPORT_APPLY_MODE = "qcloud-edge-nodeport-apply";
 export const PACKAGE_D_EXTERNAL_ACCESS_EDGE_NODEPORT_DRY_RUN_COMMAND = "node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-edge-nodeport-dry-run --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id <runid> --authorized 1";
 export const PACKAGE_D_EXTERNAL_ACCESS_EDGE_NODEPORT_APPLY_COMMAND = "RUN_TENCENT_DEPLOY_EXECUTION=external-access node tests/support/cloud-prework/package-d-external-access-runner.js --mode qcloud-edge-nodeport-apply --env /home/dev/.secrets/medopl/v22/package-d-external-access.env --kubeconfig /home/dev/.secrets/medopl/v22/kubeconfig-package-d-deploy --run-id gap08e-qcloud-edge-nodeport-apply-001 --authorized 1";
+export const CURL_FAIL_WITH_BODY_CAPABILITY_PROBE_ARGS = Object.freeze(["curl", "--help", "all"]);
 
 export const FIXED_PORTAL_EDGE_SERVICE_NAME = "portal-frontend-edge";
 export const FIXED_PORTAL_SERVICE_SELECTOR = Object.freeze({
@@ -61,6 +62,39 @@ export function assertPortalEdgeNodePortManifestBoundary({
     throw new Error("package_d_external_access_edge_service_port_mismatch");
   }
   if (Object.hasOwn(ports[0], "nodePort")) throw new Error("package_d_external_access_edge_service_nodeport_literal_forbidden");
+}
+
+export function httpsSmokeWriteOut({
+  service = "portal-frontend",
+  fixedExternalSmokeUrl = "https://portal.medopl.cn/",
+} = {}) {
+  return `${JSON.stringify({
+    service,
+    url: fixedExternalSmokeUrl,
+    http_code: "%{http_code}",
+    ssl_verify_result: "%{ssl_verify_result}",
+    time_total: "%{time_total}",
+  })}\n`;
+}
+
+export function externalHttpsSmokeCurlArgs({
+  failWithBody = false,
+  fixedExternalSmokeUrl = "https://portal.medopl.cn/",
+} = {}) {
+  return [
+    "curl",
+    ...(failWithBody ? ["--fail-with-body"] : ["--fail"]),
+    "--connect-timeout",
+    "10",
+    "--max-time",
+    "30",
+    "-sS",
+    "-o",
+    "/dev/null",
+    "-w",
+    httpsSmokeWriteOut({ fixedExternalSmokeUrl }),
+    fixedExternalSmokeUrl,
+  ];
 }
 
 export function qcloudEdgeNodePortCommandPlan({
@@ -128,9 +162,14 @@ export function qcloudEdgeNodePortCommandPlan({
       args: ["getent", "hosts", fixedPortalHost],
     }),
     commandRecord({
+      name: "curl_fail_with_body_capability_probe",
+      kind: "curl_capability",
+      args: [...CURL_FAIL_WITH_BODY_CAPABILITY_PROBE_ARGS],
+    }),
+    commandRecord({
       name: "https_external_smoke",
       kind: "https_smoke",
-      args: ["curl", "--fail-with-body", "--connect-timeout", "10", "--max-time", "30", "--silent", "--show-error", "--output", "-", fixedExternalSmokeUrl],
+      args: externalHttpsSmokeCurlArgs({ fixedExternalSmokeUrl }),
     }),
   ];
 }
