@@ -930,14 +930,10 @@ assert.deepEqual(DEPLOY_RUNNER_PLACEMENT_PLAN.vpcCvmRunnerFallback.forbiddenNow,
   "kubectl",
 ], "vpc_cvm_runner_fallback_must_remain_non_executing");
 assert.equal(DEPLOY_RUNNER_PLACEMENT_PLAN.realExecutionReady, false, "deploy_runner_placement_plan_must_not_mark_real_execution_ready");
-for (const [label, plan] of [
-  ["top_level", currentGoal.package_d_deploy_readiness_plan],
-  ["current_leaf", currentGoal.current_leaf?.package_d_deploy_readiness_plan],
-]) {
-  assert.equal(plan?.executionEnvironment, "tke_in_cluster_platform_runner_preferred", `deploy_runner_execution_environment_mismatch:${label}`);
-  assert.deepEqual(plan?.deployRunnerPlacementPlan, DEPLOY_RUNNER_PLACEMENT_PLAN, `deploy_runner_goal_placement_plan_mismatch:${label}`);
-  assert.equal(plan?.deployRunnerPlacementPlan?.realExecutionReady, false, `deploy_runner_goal_real_execution_must_stay_false:${label}`);
-}
+const currentPackageDPlan = currentGoal.package_d_deploy_readiness_plan;
+assert.equal(currentPackageDPlan?.executionEnvironment, "tke_in_cluster_platform_runner_preferred", "deploy_runner_execution_environment_mismatch:top_level");
+assert.deepEqual(currentPackageDPlan?.deployRunnerPlacementPlan, DEPLOY_RUNNER_PLACEMENT_PLAN, "deploy_runner_goal_placement_plan_mismatch:top_level");
+assert.equal(currentPackageDPlan?.deployRunnerPlacementPlan?.realExecutionReady, false, "deploy_runner_goal_real_execution_must_stay_false:top_level");
 
 const runnerShapeEvidenceRoot = new URL("../../../.runtime/package-d-in-cluster-platform-runner-shape-gate/", import.meta.url);
 const runnerShapeReport = writePackageDRunnerShapeReport({

@@ -189,6 +189,20 @@ assert(
   serializedLineCount(current.release_readiness_state) <= 120,
   `release_readiness_state_must_remain_compact:${serializedLineCount(current.release_readiness_state)}`,
 );
+for (const duplicatedPayload of [
+  "package_d_deploy_readiness_plan",
+  "production_launch_goal_gap_map",
+]) {
+  assert.equal(
+    Object.hasOwn(current.current_leaf, duplicatedPayload),
+    false,
+    `current_leaf_must_not_duplicate_owner_payload:${duplicatedPayload}`,
+  );
+}
+assert(
+  serializedLineCount(current.current_leaf) <= 140,
+  `current_leaf_must_remain_metadata_sized:${serializedLineCount(current.current_leaf)}`,
+);
 assert.equal(closeoutCheck.lastLandedCommit, latestLandedCommit, "closeout_check_commit_mismatch");
 assert.equal(closeoutCheck.lastLandedBranch, latestLandedBranch, "closeout_check_branch_mismatch");
 assert.deepEqual(closeoutCheck.staleReadySections, [], "closeout_check_must_have_no_stale_ready_sections");
