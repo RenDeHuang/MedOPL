@@ -199,9 +199,9 @@ function packageSelection(input) {
 
   assert.equal(Array.isArray(computeAddons), true, "compute_addons_must_be_array");
   assert.equal(Array.isArray(storageAddons), true, "storage_addons_must_be_array");
-  assert.equal(computeAddons.length, 0, "compute_addons_active_path_must_be_forbidden_in_mvp");
-  assert.equal(storageAddons.length, 0, "storage_addons_active_path_must_be_forbidden_in_mvp");
-  assert.equal(custom, null, "custom_active_package_must_be_forbidden_in_mvp");
+  assert.equal(computeAddons.length, 0, "compute_addons_active_path_must_be_forbidden_in_managed_user_loop");
+  assert.equal(storageAddons.length, 0, "storage_addons_active_path_must_be_forbidden_in_managed_user_loop");
+  assert.equal(custom, null, "custom_active_package_must_be_forbidden_in_managed_user_loop");
 
   const selectedCompute = {
     cpuCores: basePackage.compute.cpuCores,
@@ -632,12 +632,12 @@ function transitionCleanupAfterProtection(state, input) {
 
 const state = createContractState();
 const { tenant, user, billingAccount, workspace } = createTenantUser(state, {
-  tenantId: "tenant-v22-mvp",
-  userId: "user-v22-mvp",
-  email: "mvp@example.test",
-  slug: "mvp-lab",
-  workspaceId: "workspace-v22-mvp",
-  workspaceSlug: "mvp-workspace",
+  tenantId: "tenant-v22-managed",
+  userId: "user-v22-managed",
+  email: "managed@example.test",
+  slug: "managed-lab",
+  workspaceId: "workspace-v22-managed",
+  workspaceSlug: "managed-workspace",
 });
 
 assert.equal(tenant.runtimeOwnership, "platform_provisioned", "tenant_must_be_platform_provisioned");
@@ -671,18 +671,18 @@ const starterSelection = packageSelection({
 assert.equal(starterSelection.base.compute.cpuCores, 2, "starter_package_must_define_2_cores");
 assert.equal(starterSelection.base.compute.memoryGb, 4, "starter_package_must_define_4gb_memory");
 assert.equal(starterSelection.base.storage.capacityGb, 10, "starter_package_must_define_10gb_storage");
-assert.equal(starterSelection.selected.compute.cpuCores, 2, "starter_selected_compute_must_match_base_in_mvp");
-assert.equal(starterSelection.selected.storage.capacityGb, 10, "starter_selected_storage_must_match_base_in_mvp");
+assert.equal(starterSelection.selected.compute.cpuCores, 2, "starter_selected_compute_must_match_base_in_managed_user_loop");
+assert.equal(starterSelection.selected.storage.capacityGb, 10, "starter_selected_storage_must_match_base_in_managed_user_loop");
 
 assert.throws(() => packageSelection({
   packageId: "starter_2c4g_10gb",
   computeAddons: [{ kind: "additional_compute", cpuCores: 2, memoryGb: 4 }],
-}), /compute_addons_active_path_must_be_forbidden_in_mvp/u, "compute_addons_active_path_must_be_rejected_in_mvp");
+}), /compute_addons_active_path_must_be_forbidden_in_managed_user_loop/u, "compute_addons_active_path_must_be_rejected_in_managed_user_loop");
 
 assert.throws(() => packageSelection({
   packageId: "starter_2c4g_10gb",
   storageAddons: [{ kind: "additional_storage", capacityGb: 20 }],
-}), /storage_addons_active_path_must_be_forbidden_in_mvp/u, "storage_addons_active_path_must_be_rejected_in_mvp");
+}), /storage_addons_active_path_must_be_forbidden_in_managed_user_loop/u, "storage_addons_active_path_must_be_rejected_in_managed_user_loop");
 
 const proSelection = packageSelection({
   packageId: "pro_8c16g_100gb",
@@ -698,7 +698,7 @@ assert.throws(() => packageSelection({
     storage: { capacityGb: 250 },
     weeklyPreauthCents: 18000,
   },
-}), /custom_active_package_must_be_forbidden_in_mvp/u, "custom_active_package_must_be_rejected_in_mvp");
+}), /custom_active_package_must_be_forbidden_in_managed_user_loop/u, "custom_active_package_must_be_rejected_in_managed_user_loop");
 
 const starterBinding = provisionRuntimeBinding(state, {
   tenantId: tenant.id,
@@ -719,7 +719,7 @@ const proWorkspace = {
   id: "workspace-v22-pro",
   tenantId: tenant.id,
   userId: user.id,
-  slug: "mvp-pro-workspace",
+  slug: "managed-pro-workspace",
   status: "active",
   createdAt: STARTED_AT,
 };
@@ -745,7 +745,7 @@ for (const binding of [starterBinding, proBinding]) {
   assert.equal(binding.userId, user.id, "binding_user_relation_mismatch");
   assert.equal(Boolean(binding.workspaceId), true, "binding_workspace_relation_required");
   assert.equal(binding.billingAccountId, billingAccount.id, "binding_billing_account_relation_mismatch");
-  assert.match(binding.auditTag, /tenant:tenant-v22-mvp\/user:user-v22-mvp\/workspace:/, "binding_audit_tag_must_include_core_relationships");
+  assert.match(binding.auditTag, /tenant:tenant-v22-managed\/user:user-v22-managed\/workspace:/, "binding_audit_tag_must_include_core_relationships");
 }
 
 const trace = launchOplWorkspace(state, {
@@ -838,7 +838,7 @@ assert.match(relationAudit.auditTag, /binding:rb-1/, "audit_tag_must_include_bin
 
 const contractEvidence = {
   ok: true,
-  contract: "v22_mvp_user_loop",
+  contract: "v22_managed_user_loop",
   mode: "scripts_only_no_real_cloud",
   branchSafeBoundaries: {
     touchesServices: false,

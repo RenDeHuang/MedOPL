@@ -154,7 +154,7 @@ Go backend 是 MedOPL control-plane business truth 的本地 MVP takeover 承载
 
 | Product question | Spec anchors |
 | --- | --- |
-| MVP 用户闭环、开户、充值、进入 Portal/OPL、释放和审计 | [spec:v22-mvp-managed-opl-loop](../specs/README.md#spec-v22-mvp-managed-opl-loop), [spec:v22-user-credit-provider-key-boundary](../specs/README.md#spec-v22-user-credit-provider-key-boundary) |
+| 托管用户闭环、开户、充值、进入 Portal/OPL、释放和审计 | [spec:v22-mvp-managed-opl-loop](../specs/README.md#spec-v22-mvp-managed-opl-loop), [spec:v22-user-credit-provider-key-boundary](../specs/README.md#spec-v22-user-credit-provider-key-boundary) |
 | Portal 是 SaaS 控制面，不是科研 chatbot 或云控制台 | [spec:v22-saas-control-plane-user-experience-boundary](../specs/README.md#spec-v22-saas-control-plane-user-experience-boundary), [spec:v22-saas-portal-opl-ops-surface-boundary](../specs/README.md#spec-v22-saas-portal-opl-ops-surface-boundary) |
 | 套餐、计算资源、文件空间、任务并发和用户可见语言 | [spec:v22-resource-plan-boundary](../specs/README.md#spec-v22-resource-plan-boundary), [spec:v22-managed-environment-open-boundary](../specs/README.md#spec-v22-managed-environment-open-boundary), [spec:v22-tenant-resource-binding-boundary](../specs/README.md#spec-v22-tenant-resource-binding-boundary) |
 | 商业化套餐分层、OPL 入口和 MedOPL 托管算力 gate | [spec:v22-commercial-package-model](../specs/README.md#spec-v22-commercial-package-model), [spec:v22-saas-control-plane-user-experience-boundary](../specs/README.md#spec-v22-saas-control-plane-user-experience-boundary) |
