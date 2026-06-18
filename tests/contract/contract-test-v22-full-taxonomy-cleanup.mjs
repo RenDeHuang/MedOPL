@@ -166,14 +166,15 @@ assert.deepEqual(staleReferences, [], `retired_literal_references_must_not_remai
 
 const history = await readRepoFile("docs/history/README.md");
 for (const phrase of [
-  "agent-run evidence 摘要",
-  "subagent Kant",
-  "subagent Nietzsche",
-  "subagent Turing",
-  "cleanup/v22-full-taxonomy-hard-retirement",
+  "Purpose: `history_archive_index`",
+  "Machine boundary:",
+  "Tombstone Map",
+  "docs/recovery/**",
+  "scripts/smoke-test-*",
 ]) {
-  assert(history.includes(phrase), `history_must_record_run_context:${phrase}`);
+  assert(history.includes(phrase), `history_must_record_archive_boundary:${phrase}`);
 }
+assert.equal(/^###\s+\d{4}-\d{2}-\d{2}\s+/mu.test(history), false, "history_must_not_store_full_taxonomy_run_database");
 
 console.log(JSON.stringify({
   ok: true,

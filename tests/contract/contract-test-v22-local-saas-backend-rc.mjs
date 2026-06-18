@@ -181,15 +181,17 @@ for (const marker of [
   assertIncludes(active, marker, "active_truth_must_summarize_local_saas_backend_rc");
 }
 
-for (const marker of [
-  "2026-05-27 feat/v22-local-saas-backend-closure",
-  "governance-closeout-sync",
-  "local-service-orchestration",
-  "gateway-live-probe",
-  "runtime-bridge-live-probe",
-  "local-saas-backend-rc",
+assertIncludes(history, "Purpose: `history_archive_index`", "history_must_be_archive_index");
+assertIncludes(history, "changes/archive/", "history_must_point_to_archive_root");
+assertIncludes(history, "tests/fixtures/v22/goal-current.json", "history_must_point_to_machine_cursor");
+assert.equal(/^###\s+\d{4}-\d{2}-\d{2}\s+/mu.test(history), false, "history_must_not_store_local_rc_markdown_database");
+assertIncludes(active, "local-saas-backend-rc", "active_truth_must_record_local_saas_backend_rc");
+for (const file of [
+  "tests/contract/contract-test-v22-local-service-orchestration.mjs",
+  "tests/regression/opl/regression-test-v22-gateway-live-probe.mjs",
+  "tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-local-fake-probe.mjs",
 ]) {
-  assertIncludes(history, marker, "history_must_record_local_saas_backend_rc_closeout");
+  assertRegistered(file);
 }
 
 console.log(JSON.stringify({

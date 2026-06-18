@@ -72,8 +72,10 @@ assertExcludes(runtime, "缺 PostgreSQL/Redis production-mode 连接", "runtime_
 assertIncludes(runtime, "fail closed", "runtime_must_keep_fail_closed_language");
 assertIncludes(delivery, current.current_cursor, "delivery_must_reference_current_cursor");
 assertIncludes(delivery, "Go Control Plane MVP Takeover Lane", "delivery_must_own_go_control_plane_takeover_lane");
-assertIncludes(history, current.last_landed_commit, "history_must_reference_latest_landed_commit");
-assertIncludes(history, "post_merge_closeout", "history_must_own_closeout_schema");
+assertIncludes(history, "Purpose: `history_archive_index`", "history_must_be_archive_index");
+assertIncludes(history, "tests/fixtures/v22/goal-current.json", "history_must_point_to_machine_cursor");
+assert.equal(current.latest_landed_closeout?.landed_commit, current.last_landed_commit, "current_latest_closeout_must_reference_latest_landed_commit");
+assert.equal(current.latest_landed_closeout?.post_merge_closeout, "completed", "current_latest_closeout_must_own_closeout_schema");
 
 for (const cannotClaim of [
   "不能宣称真实云生产闭环已完成",

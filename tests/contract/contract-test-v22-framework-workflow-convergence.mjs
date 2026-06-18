@@ -121,9 +121,11 @@ for (const command of [
 
 assert.equal(closeoutSource.includes("required_post_absorb_fields"), false, "closeout_script_must_remove_post_absorb_schema");
 assertIncludesAll(closeoutSource, [
-  "ready_for_landing_review",
+  "latest_landed_closeout",
   "landing_gate_result",
   "post_merge_closeout",
+  "plan_completion_audit",
+  "cleanup_result",
 ], "closeout_script_framework_terms");
 
 assert.equal(gateSource.includes("只由 B 窗口执行 push"), false, "workflow_checkpoint_must_remove_b_window_push");

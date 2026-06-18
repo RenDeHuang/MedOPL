@@ -8,9 +8,6 @@ const repoRoot = path.resolve(__dirname, "../..");
 
 const lifecycleGate = "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs";
 const landingCloseoutGate = "node tests/contract/contract-test-v22-landing-closeout-automation.mjs";
-const hardCleanupCommit = "2a4254915f43186e312f406e5de31629c1c6700b";
-const lifecycleClosureCommit = "3ca2ee48f55bb154776c60605a497d9a2e7e1752";
-const currentStateIndexLoopCommit = "2e644fc774e567db9418e3d13942e1598434433e";
 
 function repoPath(...parts) {
   return parts.join("/");
@@ -92,43 +89,6 @@ function assertIncludesAll(source, phrases, label) {
   }
 }
 
-function assertNotIncludes(source, phrase, label) {
-  assert.equal(source.includes(phrase), false, `${label}_must_not_include:${phrase}`);
-}
-
-function sectionAfter(source, heading) {
-  const start = source.indexOf(heading);
-  assert(start >= 0, `section_missing:${heading}`);
-  const next = source.indexOf("\n### ", start + heading.length);
-  return next >= 0 ? source.slice(start, next) : source.slice(start);
-}
-
-function parseHistorySections(history) {
-  const matches = [...history.matchAll(/^###\s+\d{4}-\d{2}-\d{2}\s+(.+)$/gmu)];
-  return matches.map((match, index) => {
-    const start = match.index;
-    const end = index + 1 < matches.length ? matches[index + 1].index : history.length;
-    const source = history.slice(start, end);
-    const branch = source.match(/^Branch:\s*`([^`]+)`/mu)?.[1] || match[1].trim();
-    const status = source.match(/^Status:\s*`([^`]+)`/mu)?.[1] || "";
-    const landedCommit = source.match(/^landed_commit:\s*`([a-f0-9]{40})`/mu)?.[1] || "";
-    const nextCursor = source.match(/^next_cursor:\s*`([^`]+)`/mu)?.[1] || "";
-    return { branch, status, landedCommit, nextCursor, source };
-  });
-}
-
-function latestLandedHistorySection(history) {
-  const section = parseHistorySections(history).findLast((item) => item.status === "landed / pushed / post-push verified" && item.landedCommit);
-  assert(section, "latest_landed_history_section_missing");
-  return section;
-}
-
-function latestHistorySectionForCursor(history, cursor) {
-  const section = parseHistorySections(history).findLast((item) => item.nextCursor === cursor);
-  assert(section, `history_current_cursor_handoff_missing:${cursor}`);
-  return section;
-}
-
 for (const repoPath of forbiddenPaths) {
   assert.equal(await exists(repoPath), false, `cleanup_path_must_not_exist:${repoPath}`);
 }
@@ -177,10 +137,10 @@ const [
   readJson("tests/fixtures/v22/agent-verify-manifest.json"),
   readJson("tests/fixtures/v22/goal-current.json"),
 ]);
-const latestLanded = latestLandedHistorySection(history);
-const latestLandedCommit = latestLanded.landedCommit;
 const currentCursor = current.current_cursor;
-const currentCursorSection = latestHistorySectionForCursor(history, currentCursor);
+const latestCloseout = current.latest_landed_closeout;
+assert(latestCloseout, "current_latest_landed_closeout_required");
+const latestLandedCommit = latestCloseout.landed_commit;
 
 assertIncludesAll(active, [
   lifecycleGate,
@@ -220,76 +180,29 @@ assertIncludesAll(testsReadme, [
 ], "tests_lifecycle_policy");
 
 assertIncludesAll(history, [
-  "landed_commit",
-  "landing_gate_result",
-  "post_push_verification",
-  "post_merge_closeout",
-  "next_cursor",
-  "cleanup/v22-retirement-lifecycle-system-closure",
-], "history_schema");
+  "Owner: `MedOPL`",
+  "Purpose: `history_archive_index`",
+  "Machine boundary:",
+  "tests/fixtures/v22/goal-current.json",
+  "changes/archive/",
+  "Tombstone Map",
+], "history_summary_only_boundary");
+assert.equal(/^###\s+\d{4}-\d{2}-\d{2}\s+/mu.test(history), false, "history_must_not_store_landed_run_sections");
+assert.equal(history.includes("Status: `ready_for_landing_review`"), false, "history_must_not_store_ready_for_landing_review_sections");
+assert.equal(history.includes("Status: `landed / pushed / post-push verified`"), false, "history_must_not_store_landed_status_sections");
 
-assertIncludesAll(history, [
-  "cleanup/v22-full-taxonomy-hard-retirement",
-  "Status: `landed / pushed / post-push verified`",
-  `landed_commit: \`${hardCleanupCommit}\``,
-  "landing_gate_result: `passed / ff-only landed / pushed`",
-  "post_merge_closeout: `completed`",
-  "next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`",
-], "history_hard_cleanup_closeout");
-
-const hardCleanupSection = sectionAfter(history, "### 2026-05-20 cleanup/v22-full-taxonomy-hard-retirement");
-assertNotIncludes(hardCleanupSection, "Status: `ready_for_landing_review`", "history_landed_hard_cleanup");
-
-const lifecycleClosureSection = sectionAfter(history, "### 2026-05-20 cleanup/v22-retirement-lifecycle-system-closure");
-assertIncludesAll(lifecycleClosureSection, [
-  "Status: `landed / pushed / post-push verified`",
-  `landed_commit: \`${lifecycleClosureCommit}\``,
-  "landing_gate_result: `passed / ff-only landed / pushed`",
-  "post_merge_closeout: `completed`",
-  "next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`",
-], "history_lifecycle_closure_closeout");
-assertNotIncludes(lifecycleClosureSection, "Status: `ready_for_landing_review`", "history_landed_lifecycle_closure");
-
-const indexLoopSection = sectionAfter(history, "### 2026-05-21 cleanup/v22-current-state-index-loop-normalization");
-assertIncludesAll(indexLoopSection, [
-  "Status: `landed / pushed / post-push verified`",
-  `landed_commit: \`${currentStateIndexLoopCommit}\``,
-  "landing_gate_result: `passed / ff-only landed / pushed`",
-  "post_merge_closeout: `completed`",
-  "next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`",
-], "history_index_loop_closeout");
-assertNotIncludes(indexLoopSection, "Status: `ready_for_landing_review`", "history_landed_index_loop");
-
-const latestRunSection = sectionAfter(history, "### 2026-05-21 cleanup/v22-post-merge-closeout-and-gate-integrity");
-assertIncludesAll(latestRunSection, [
-  "Status: `landed / pushed / post-push verified`",
-  "landed_commit: `c66d8d86b05d0673d320d6798d9b4192deb8d4cd`",
-  "landing_gate_result: `passed / ff-only landed / pushed`",
-  "post_merge_closeout: `completed`",
-  "next_cursor: `leaf-portal-postgres-redis-local-production-data-closure`",
-], "history_latest_closeout");
-assertNotIncludes(latestRunSection, "Status: `ready_for_landing_review`", "history_landed_latest_run");
-
-assertIncludesAll(latestLanded.source, [
-  "Status: `landed / pushed / post-push verified`",
-  `landed_commit: \`${latestLandedCommit}\``,
-  "landing_gate_result: `passed / ff-only landed / pushed`",
-  "post_merge_closeout: `completed`",
-  `next_cursor: \`${latestLanded.nextCursor}\``,
-], "history_dynamic_latest_closeout");
-assertNotIncludes(latestLanded.source, "Status: `ready_for_landing_review`", "history_landed_dynamic_latest_run");
-assertIncludesAll(currentCursorSection.source, [
-  `next_cursor: \`${currentCursor}\``,
-], "history_dynamic_current_cursor_handoff");
-assert(
-  currentCursorSection.status === "landed / pushed / post-push verified" ||
-    currentCursorSection.status.startsWith("authoring"),
-  `history_current_cursor_handoff_status_invalid:${currentCursorSection.status}`,
-);
+assert.equal(latestCloseout.status, "landed / pushed / post-push verified", "latest_closeout_status_mismatch");
+assert.equal(latestCloseout.branch, current.last_landed_branch, "latest_closeout_branch_mismatch");
+assert.equal(latestCloseout.landed_commit, latestLandedCommit, "latest_closeout_commit_mismatch");
+assert.equal(latestCloseout.landing_gate_result, "passed / ff-only landed / pushed", "latest_closeout_landing_gate_mismatch");
+assert.equal(latestCloseout.post_merge_closeout, "completed", "latest_closeout_post_merge_mismatch");
+assert.equal(latestCloseout.next_cursor, currentCursor, "latest_closeout_next_cursor_mismatch");
+assert(Array.isArray(latestCloseout.post_push_verification), "latest_closeout_post_push_verification_must_be_array");
+assert(latestCloseout.post_push_verification.length > 0, "latest_closeout_post_push_verification_required");
 
 assert.equal(current.next_leaf, currentCursor, "next_leaf_must_match_current_cursor");
 assert.equal(current.last_landed_commit, latestLandedCommit, "current_last_landed_commit_must_match_latest_closeout");
-assert.equal(current.last_landed_branch, latestLanded.branch, "current_last_landed_branch_must_match_latest_closeout");
+assert.equal(current.last_landed_branch, latestCloseout.branch, "current_last_landed_branch_must_match_latest_closeout");
 assert.equal(current.release_readiness_state.cursor_eligible, false, "release_readiness_must_not_be_cursor_eligible");
 
 const currentLeaf = manifest.leaves.find((leaf) => leaf.leaf_id === current.current_cursor);

@@ -240,7 +240,9 @@ assertIncludesAll(frameworkSpec, [
 assertIncludes(product, "Product Contract Groups", "product_must_remain_product_view");
 assertIncludes(runtime, "Runtime Contract Groups", "runtime_must_remain_runtime_view");
 assertIncludes(delivery, "Current Cursor", "delivery_must_remain_delivery_view");
-assertIncludes(history, "cleanup/framework-truth-layering baseline audit", "history_must_record_baseline_audit");
+assertIncludes(history, "Purpose: `history_archive_index`", "history_must_be_archive_index");
+assertIncludes(history, "changes/archive/", "history_must_point_to_archive_root");
+assert.equal(/^###\s+\d{4}-\d{2}-\d{2}\s+/mu.test(history), false, "history_must_not_store_framework_truth_markdown_database");
 assertIncludes(testsReadme, "tests/**/*.mjs` 是 v22 repo-local eval 文件族", "tests_readme_must_define_eval_taxonomy");
 
 assertExcludesAll(framework, [

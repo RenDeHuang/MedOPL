@@ -159,9 +159,10 @@ assertIncludes(specsReadme, "docs/specs/README.md remains the human contract ind
 assertIncludes(specsReadme, "changes/active/<change-id>/spec-delta.md", "root_specs_readme");
 
 const history = await readRepoFile("docs/history/README.md");
-for (const changeId of archivedChanges) {
-  assertIncludes(history, changeId, `history_must_reference_archived_change:${changeId}`);
-}
+assertIncludes(history, "Purpose: `history_archive_index`", "history_must_be_archive_index");
+assertIncludes(history, "changes/archive/", "history_must_point_to_archive_root");
+assertIncludes(history, "tests/fixtures/v22/goal-current.json", "history_must_point_to_machine_cursor");
+assert.equal(/^###\s+\d{4}-\d{2}-\d{2}\s+/mu.test(history), false, "history_must_not_store_per_change_markdown_database");
 
 console.log(JSON.stringify({
   ok: true,

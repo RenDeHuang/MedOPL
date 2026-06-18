@@ -209,17 +209,16 @@ assert(currentLeaf.verification_commands.includes("node tests/contract/contract-
 
 assertIncludes(active, current.current_cursor, "active_must_reference_product_loop_next_cursor");
 assertIncludes(active, loop.landed_commit, "active_must_reference_product_loop_landed_commit");
-assertIncludes(history, "precloud-product-slides-closure", "history_must_name_precloud_slide_goal");
-assertIncludes(history, "Product Engineering Loop", "history_must_name_product_engineering_loop");
-assertIncludes(history, "collapse policy", "history_must_define_product_loop_collapse");
-assertIncludes(history, "active baton", "history_must_record_product_loop_as_baton");
+assertIncludes(history, "Purpose: `history_archive_index`", "history_must_be_archive_index");
+assertIncludes(history, "tests/fixtures/v22/goal-current.json", "history_must_point_to_product_loop_machine_owner");
+assertIncludes(history, "changes/archive/", "history_must_point_to_archive_root");
+assert.equal(/^###\s+\d{4}-\d{2}-\d{2}\s+/mu.test(history), false, "history_must_not_store_product_loop_markdown_database");
 if (loop.status === "closed") {
-  assertIncludes(history, "slide-09-precloud-readiness", "history_must_record_slide_09_closeout");
-  assertIncludes(history, "figma-portal-ui-absorption", "history_must_record_precloud_next_cursor");
-  assertIncludes(history, "real-cloud-authorization-boundary", "history_must_record_deferred_real_cloud_boundary");
+  assert.equal(loop.id, "precloud-product-slides-closure", "product_loop_closed_summary_must_hold_goal_id");
+  assert.equal(loop.next_cursor, "figma-portal-ui-absorption", "product_loop_closed_summary_must_hold_package_next_cursor");
+  assertIncludes(loop.history_summary, "slide-01", "product_loop_closed_summary_must_hold_human_summary");
+  assertIncludes(current.current_cursor, "real-cloud-authorization-boundary", "current_cursor_must_hold_global_next_cursor");
 }
-assertIncludes(history, "Product Engineering Loop", "history_must_record_product_loop_index");
-assertIncludes(history, "collapse policy", "history_must_record_product_loop_collapse_policy");
 
 console.log(JSON.stringify({
   ok: true,

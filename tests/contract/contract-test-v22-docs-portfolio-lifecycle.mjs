@@ -21,16 +21,12 @@ const docsDirs = [
   "history",
 ];
 
-const retiredEntrypoints = [
-  "distributed contract leaf docs",
-  "recovery process docs",
-  "legacy root product doc",
-  "legacy root architecture doc",
-  "legacy root status doc",
-  "legacy root invariants doc",
-  "legacy root decisions doc",
-  "legacy root vibe-coding doc",
+const retiredSurfaces = [
+  `${["docs", "contracts"].join("/")}/**`,
+  `${["docs", "recovery"].join("/")}/**`,
+  "legacy root product / architecture / status / invariants / decisions docs",
   "scripts/smoke-test-*",
+  "long landed run sections in this file",
 ];
 
 async function readRepoFile(repoPath) {
@@ -114,9 +110,10 @@ assertSectionHas(policies, "## Human / Machine Boundary", "README files are huma
 assertSectionHas(testsReadme, "## Docs Gate Boundary", "must not assert prose wording as machine truth", "tests_docs_gate_boundary");
 
 assertIncludes(history, "## Tombstone Map", "history_tombstone_map");
-for (const entrypoint of retiredEntrypoints) {
-  assertIncludes(history, entrypoint, `history_tombstone_entry:${entrypoint}`);
+for (const surface of retiredSurfaces) {
+  assertIncludes(history, surface, `history_tombstone_entry:${surface}`);
 }
+assert.equal(/^###\s+\d{4}-\d{2}-\d{2}\s+/mu.test(history), false, "history_must_not_store_run_section_database");
 
 for (const repoPath of [["docs", "contracts"].join("/"), ["docs", "recovery"].join("/")]) {
   assert.equal(await exists(repoPath), false, `retired_docs_path_must_not_exist:${repoPath}`);
@@ -126,5 +123,5 @@ console.log(JSON.stringify({
   ok: true,
   contract: "v22_docs_portfolio_lifecycle",
   docsDirs,
-  retiredEntrypoints,
+  retiredSurfaces,
 }, null, 2));

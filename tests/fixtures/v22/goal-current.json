@@ -14,6 +14,20 @@
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
   "last_landed_commit": "b68768be93680d723685d7c3d681e2937522d96f",
+  "latest_landed_closeout": {
+    "schema_version": 1,
+    "status": "landed / pushed / post-push verified",
+    "branch": "cleanup/v22-current-leaf-owner-compaction",
+    "landed_commit": "b68768be93680d723685d7c3d681e2937522d96f",
+    "landing_gate_result": "passed / ff-only landed / pushed",
+    "post_push_verification": [
+      "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk: passed after ff-only landing",
+      "npm run verify: passed after ff-only landing",
+      "git push origin recovery/platform-v22-trunk: pushed 18f7f1a..b68768b"
+    ],
+    "post_merge_closeout": "completed",
+    "next_cursor": "real-cloud-authorization-boundary"
+  },
   "current_cursor": "real-cloud-authorization-boundary",
   "next_leaf": "real-cloud-authorization-boundary",
   "current_stage": "S7 real-cloud authorization boundary before readiness",

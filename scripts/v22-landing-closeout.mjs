@@ -131,10 +131,6 @@ function isAncestor(commit, ref) {
   }
 }
 
-function normalizeBackticks(value) {
-  return String(value || "").replace(/`/gu, "").trim();
-}
-
 function parseSemicolonFields(value, label) {
   const entries = String(value || "")
     .split(";")
@@ -173,120 +169,69 @@ function parseCleanupResult(value) {
   return cleanup;
 }
 
-function extractInlineField(section, field) {
-  const match = section.match(new RegExp(`^${field}:\\s*\`?([^\`\\n]+)\`?\\s*$`, "mu"));
-  return match ? normalizeBackticks(match[1]) : "";
-}
-
-function extractStatus(section) {
-  return extractInlineField(section, "Status");
-}
-
-function extractBranch(section) {
-  return extractInlineField(section, "Branch");
-}
-
-function extractHeadingBranch(heading) {
-  return heading.replace(/^###\s+\d{4}-\d{2}-\d{2}\s+/u, "").trim();
-}
-
-function parseHistorySections(history) {
-  const matches = [...history.matchAll(/^###\s+\d{4}-\d{2}-\d{2}\s+(.+)$/gmu)];
-  return matches.map((match, index) => {
-    const start = match.index;
-    const end = index + 1 < matches.length ? matches[index + 1].index : history.length;
-    const source = history.slice(start, end);
-    const heading = match[0].trim();
-    const branch = extractBranch(source) || match[1].trim();
-    return {
-      heading,
-      branch,
-      headingBranch: extractHeadingBranch(heading),
-      source,
-      status: extractStatus(source),
-      landedCommit: extractInlineField(source, "landed_commit"),
-      handoffCommit: extractInlineField(source, "handoff_commit"),
-      postMergeCloseout: extractInlineField(source, "post_merge_closeout"),
-      nextCursor: extractInlineField(source, "next_cursor"),
-    };
+function missingCloseoutFields(closeout, requiredPostMergeFields) {
+  return requiredPostMergeFields.filter((field) => {
+    if (field === "landed_commit") return !closeout?.landed_commit;
+    if (field === "landing_gate_result") return !closeout?.landing_gate_result;
+    if (field === "post_push_verification") {
+      return !Array.isArray(closeout?.post_push_verification) || closeout.post_push_verification.length === 0;
+    }
+    if (field === "post_merge_closeout") return !closeout?.post_merge_closeout;
+    if (field === "next_cursor") return !closeout?.next_cursor;
+    return !Object.hasOwn(closeout || {}, field);
   });
 }
 
-function sectionHasRequiredField(section, field) {
-  if (field === "post_push_verification") return section.source.includes("post_push_verification:");
-  return Boolean(extractInlineField(section.source, field));
-}
-
-function latestLandedSection(sections) {
-  return sections.findLast((section) => section.status === "landed / pushed / post-push verified" && section.landedCommit);
-}
-
-function readySectionHasReachedTrunk(section, trunkRef) {
-  const commit = section.handoffCommit || revParse(section.branch);
-  return Boolean(commit && isAncestor(commit, trunkRef));
-}
-
-function staleReadySections(sections, trunkRef) {
-  return sections
-    .filter((section) => section.status === "ready_for_landing_review")
-    .filter((section) => readySectionHasReachedTrunk(section, trunkRef))
-    .map((section) => ({
-      heading: section.heading,
-      branch: section.branch,
-      handoffCommit: section.handoffCommit || revParse(section.branch),
-    }));
+function shouldEnforceTrunkHeadSync(manifest, trunkRef) {
+  if (manifest.requires_trunk_head_sync !== true) return false;
+  return trunkRef === manifest.latest_landed_commit_source;
 }
 
 function checkCloseout({ trunkRef = "origin/recovery/platform-v22-trunk" } = {}) {
-  const history = readRepoFile(files.history);
   const active = readRepoFile(files.active);
   const current = readJson(files.current);
   const manifest = readJson(files.manifest);
-  const sections = parseHistorySections(history);
-  const latest = latestLandedSection(sections);
+  const latest = current.latest_landed_closeout || null;
   const requiredPostMergeFields = manifest.required_post_merge_fields || defaultRequiredPostMergeFields;
-  const requiresTrunkHeadSync = manifest.requires_trunk_head_sync === true;
-  const missingPostMergeFields = latest
-    ? requiredPostMergeFields.filter((field) => !sectionHasRequiredField(latest, field))
-    : [...requiredPostMergeFields];
+  const requiresTrunkHeadSync = shouldEnforceTrunkHeadSync(manifest, trunkRef);
+  const missingPostMergeFields = missingCloseoutFields(latest, requiredPostMergeFields);
   const trunkHead = revParse(trunkRef);
-  const staleReady = staleReadySections(sections, trunkRef);
   const findings = [];
 
   if (!trunkHead) findings.push({ code: "trunk_ref_missing", trunkRef });
-  if (!latest) findings.push({ code: "history_latest_landed_run_missing" });
-  if (latest && !isAncestor(latest.landedCommit, trunkRef)) {
+  if (!latest) findings.push({ code: "goal_current_latest_landed_closeout_missing" });
+  if (latest && !isAncestor(latest.landed_commit, trunkRef)) {
     findings.push({
       code: "latest_landed_commit_not_on_trunk",
       branch: latest.branch,
-      landedCommit: latest.landedCommit,
+      landedCommit: latest.landed_commit,
       trunkRef,
     });
   }
   if (requiresTrunkHeadSync && latest && trunkHead) {
-    const afterLatest = commitsAfter(latest.landedCommit, trunkRef);
+    const afterLatest = commitsAfter(latest.landed_commit, trunkRef);
     const nonCloseoutCommits = afterLatest.filter((commit) => !closeoutCommitLooksLikeCloseout(commit));
     if (nonCloseoutCommits.length > 0) {
       findings.push({
         code: "non_closeout_commits_after_latest_landed",
         branch: latest.branch,
-        landedCommit: latest.landedCommit,
+        landedCommit: latest.landed_commit,
         commits: nonCloseoutCommits,
         trunkRef,
       });
     }
   }
-  if (latest && current.last_landed_commit !== latest.landedCommit) {
+  if (latest && current.last_landed_commit !== latest.landed_commit) {
     findings.push({
       code: "goal_current_last_landed_commit_mismatch",
-      expected: latest.landedCommit,
+      expected: latest.landed_commit,
       actual: current.last_landed_commit,
     });
   }
-  if (latest && current.base_trunk_head !== latest.landedCommit) {
+  if (latest && current.base_trunk_head !== latest.landed_commit) {
     findings.push({
       code: "goal_current_base_trunk_head_mismatch",
-      expected: latest.landedCommit,
+      expected: latest.landed_commit,
       actual: current.base_trunk_head,
     });
   }
@@ -295,6 +240,23 @@ function checkCloseout({ trunkRef = "origin/recovery/platform-v22-trunk" } = {})
       code: "goal_current_last_landed_branch_mismatch",
       expected: latest.branch,
       actual: current.last_landed_branch,
+    });
+  }
+  if (latest && current.history_latest_branch !== latest.branch) {
+    findings.push({
+      code: "goal_current_history_latest_branch_mismatch",
+      expected: latest.branch,
+      actual: current.history_latest_branch,
+    });
+  }
+  if (latest && latest.status !== "landed / pushed / post-push verified") {
+    findings.push({ code: "goal_current_latest_landed_closeout_status_invalid", status: latest.status || "" });
+  }
+  if (latest && latest.next_cursor !== current.current_cursor) {
+    findings.push({
+      code: "goal_current_latest_landed_closeout_next_cursor_mismatch",
+      expected: current.current_cursor,
+      actual: latest.next_cursor || "",
     });
   }
   if (current.post_merge_closeout_completed !== true) {
@@ -306,17 +268,10 @@ function checkCloseout({ trunkRef = "origin/recovery/platform-v22-trunk" } = {})
       fields: missingPostMergeFields,
     });
   }
-  for (const section of staleReady) {
-    findings.push({
-      code: "ready_for_landing_review_reachable_from_trunk",
-      branch: section.branch,
-      handoffCommit: section.handoffCommit,
-    });
-  }
-  if (latest && !active.includes(latest.landedCommit)) {
+  if (latest && !active.includes(latest.landed_commit)) {
     findings.push({
       code: "active_truth_missing_latest_landed_commit",
-      landedCommit: latest.landedCommit,
+      landedCommit: latest.landed_commit,
     });
   }
   if (latest && !active.includes(latest.branch)) {
@@ -332,29 +287,16 @@ function checkCloseout({ trunkRef = "origin/recovery/platform-v22-trunk" } = {})
     trunkHead,
     lastLandedCommit: current.last_landed_commit,
     lastLandedBranch: current.last_landed_branch || "",
-    latestHistoryBranch: latest?.branch || "",
-    latestHistoryLandedCommit: latest?.landedCommit || "",
+    latestHistoryBranch: "",
+    latestHistoryLandedCommit: "",
     postMergeCloseoutCompleted: current.post_merge_closeout_completed === true,
     missingPostMergeFields,
-    staleReadySections: staleReady,
+    staleReadySections: [],
     findings,
   };
 }
 
-function replaceSection(history, branch, replacer) {
-  const sections = parseHistorySections(history);
-  const selected = sections.find((section) => section.branch === branch || section.headingBranch === branch);
-  if (!selected) throw new Error(`history_section_missing:${branch}`);
-  const nextStart = history.indexOf(selected.source) + selected.source.length;
-  return `${history.slice(0, history.indexOf(selected.source))}${replacer(selected.source)}${history.slice(nextStart)}`;
-}
-
-function sectionForBranch(history, branch) {
-  const sections = parseHistorySections(history);
-  return sections.find((section) => section.branch === branch || section.headingBranch === branch) || null;
-}
-
-function validateGenerateInput({ history, branch, landedCommit, trunkRef }) {
+function validateGenerateInput({ branch, landedCommit, trunkRef }) {
   if (!fullCommitPattern.test(landedCommit)) {
     throw new Error(`invalid_landed_commit:${landedCommit}`);
   }
@@ -364,19 +306,10 @@ function validateGenerateInput({ history, branch, landedCommit, trunkRef }) {
     throw new Error(`landed_commit_not_found:${landedCommit}`);
   }
 
-  const section = sectionForBranch(history, branch);
-  if (!section) throw new Error(`history_section_missing:${branch}`);
-
   const branchHead = revParseCommit(branch);
   if (!branchHead) throw new Error(`branch_ref_missing:${branch}`);
 
-  const expectedCommit = section.handoffCommit || branchHead;
-  if (!fullCommitPattern.test(expectedCommit) || revParseCommit(expectedCommit) !== expectedCommit) {
-    throw new Error(`history_handoff_commit_invalid:${expectedCommit || branch}`);
-  }
-  if (branchHead !== expectedCommit) {
-    throw new Error(`branch_head_handoff_mismatch:${branch}:${branchHead}:${expectedCommit}`);
-  }
+  const expectedCommit = branchHead;
   if (landedCommit !== expectedCommit) {
     throw new Error(`landed_commit_mismatch:${landedCommit}:${expectedCommit}`);
   }
@@ -389,38 +322,15 @@ function validateGenerateInput({ history, branch, landedCommit, trunkRef }) {
     }
   }
 
-  return { section, branchHead, expectedCommit };
+  return { branchHead, expectedCommit };
 }
 
-function renderCloseoutBlock({ landedCommit, nextCursor, verificationSummary, completionAudit, cleanupResult }) {
-  const verificationLines = verificationSummary
+function parseVerificationSummary(verificationSummary) {
+  const verificationLines = String(verificationSummary || "")
     .split(";")
     .map((item) => item.trim())
-    .filter(Boolean)
-    .map((item) => `- ${item}`);
-  return [
-    "",
-    `landed_commit: \`${landedCommit}\``,
-    "",
-    "landing_gate_result: `passed / ff-only landed / pushed`",
-    "",
-    "post_push_verification:",
-    "",
-    ...(verificationLines.length > 0 ? verificationLines : ["- post-push workflow gate and required verify commands passed."]),
-    "",
-    "plan_completion_audit:",
-    "",
-    ...completionAuditFields.map((field) => `- ${field}: ${completionAudit[field]}`),
-    "",
-    "cleanup_result:",
-    "",
-    ...cleanupResultFields.map((field) => `- ${field}: ${cleanupResult[field]}`),
-    "",
-    "post_merge_closeout: `completed`",
-    "",
-    `next_cursor: \`${nextCursor}\``,
-    "",
-  ].join("\n");
+    .filter(Boolean);
+  return verificationLines.length > 0 ? verificationLines : ["post-push workflow gate and required verify commands passed."];
 }
 
 function renderCurrentProblem({ branch, landedCommit }) {
@@ -428,6 +338,22 @@ function renderCurrentProblem({ branch, landedCommit }) {
     "The next indexed local implementation leaf remains PostgreSQL-only local production data closure.",
     `The latest governance closeout branch ${branch} landed at ${landedCommit} and does not implement PostgreSQL-only.`,
   ].join(" ");
+}
+
+function renderHistoryIndex({ history, branch, landedCommit, nextCursor }) {
+  const replacement = [
+    "## Latest Machine Cursor",
+    "",
+    `- latest landed branch: \`${branch}\``,
+    `- latest landed commit: \`${landedCommit}\``,
+    `- next cursor: \`${nextCursor}\``,
+  ].join("\n");
+  const next = history.replace(
+    /## Latest Machine Cursor\n\n- latest landed branch: `[^`]+`\n- latest landed commit: `[a-f0-9]{40}`\n- next cursor: `[^`]+`/u,
+    replacement,
+  );
+  if (next === history) throw new Error("history_latest_machine_cursor_section_missing");
+  return next;
 }
 
 function generateCloseout({
@@ -444,19 +370,14 @@ function generateCloseout({
   if (!landedCommit) throw new Error("missing_landed_commit");
   if (!nextCursor) throw new Error("missing_next_cursor");
 
-  const history = readRepoFile(files.history);
-  const validation = validateGenerateInput({ history, branch, landedCommit, trunkRef });
+  const validation = validateGenerateInput({ branch, landedCommit, trunkRef });
   const completionAudit = parseCompletionAudit(completionAuditInput);
   const cleanupResult = parseCleanupResult(cleanupResultInput);
   const current = readJson(files.current);
   const active = readRepoFile(files.active);
-  const updatedHistory = replaceSection(history, branch, (section) => {
-    let next = section.replace("Status: `ready_for_landing_review`", "Status: `landed / pushed / post-push verified`");
-    if (!next.includes("landed_commit:")) {
-      next = `${next.trimEnd()}\n${renderCloseoutBlock({ landedCommit, nextCursor, verificationSummary, completionAudit, cleanupResult })}`;
-    }
-    return next;
-  });
+  const history = readRepoFile(files.history);
+  const postPushVerification = parseVerificationSummary(verificationSummary);
+  const updatedHistory = renderHistoryIndex({ history, branch, landedCommit, nextCursor });
   const updatedCurrent = {
     ...current,
     base_trunk_head: landedCommit,
@@ -465,6 +386,18 @@ function generateCloseout({
     last_landed_at: new Date().toISOString().slice(0, 10),
     history_latest_branch: branch,
     post_merge_closeout_completed: true,
+    latest_landed_closeout: {
+      schema_version: 1,
+      status: "landed / pushed / post-push verified",
+      branch,
+      landed_commit: landedCommit,
+      landing_gate_result: "passed / ff-only landed / pushed",
+      post_push_verification: postPushVerification,
+      plan_completion_audit: completionAudit,
+      cleanup_result: cleanupResult,
+      post_merge_closeout: "completed",
+      next_cursor: nextCursor,
+    },
     current_problem: renderCurrentProblem({ branch, landedCommit }),
   };
   const updatedActive = active
