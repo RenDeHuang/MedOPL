@@ -127,6 +127,12 @@ async function listFiles(repoPath) {
   return entries.filter((entry) => entry.isFile()).map((entry) => entry.name).sort();
 }
 
+async function readJoinedGoFiles(repoPath) {
+  const files = (await listFiles(repoPath)).filter((file) => file.endsWith(".go"));
+  const sources = await Promise.all(files.map((file) => readRepoFile(`${repoPath}/${file}`)));
+  return sources.join("\n");
+}
+
 function assertIncludes(source, marker, label) {
   assert(String(source).includes(marker), `${label}_missing:${marker}`);
 }
@@ -337,7 +343,7 @@ function runGoPackageTest(packagePath, testName, label) {
 
 async function assertLocalRCControlPlaneParity() {
   const serviceSource = await readRepoFile(`${serviceRoot}/internal/service/controlplane/service.go`);
-  const handlerSource = await readRepoFile(`${serviceRoot}/internal/server/handlers/controlplane.go`);
+  const handlerSource = await readJoinedGoFiles(`${serviceRoot}/internal/server/handlers`);
   const billingApiSource = await readRepoFile("services/portal/frontend/src/api/portal/billing.ts");
   const resourcesApiSource = await readRepoFile("services/portal/frontend/src/api/portal/resources.ts");
   const oplApiSource = await readRepoFile("services/portal/frontend/src/api/portal/opl.ts");

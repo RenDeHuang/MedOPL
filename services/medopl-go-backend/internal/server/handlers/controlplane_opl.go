@@ -1,0 +1,219 @@
+package handlers
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	cps "github.com/rendehuang/medopl/services/medopl-go-backend/internal/service/controlplane"
+)
+
+func prepareUser() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, gin.H{"ok": true, "source": "go-control-plane", "status": "prepared"})
+	}
+}
+
+func creditUser() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, gin.H{"ok": true, "source": "go-control-plane", "balance": 100, "currency": "CNY"})
+	}
+}
+
+func openManagedEnvironment(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var request openManagedEnvironmentRequest
+		if err := ctx.ShouldBindJSON(&request); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "invalid_json"})
+			return
+		}
+		launch, err := service.OpenManagedEnvironment(ctx.Request.Context(), cps.OpenManagedEnvironmentInput{
+			TenantID:       defaultString(request.TenantID, "tenant-local-rc"),
+			PortalUserID:   defaultString(request.PortalUserID, request.UserID, "user-local-rc"),
+			WorkspaceID:    defaultString(request.WorkspaceID, "workspace-local-rc"),
+			IdempotencyKey: defaultString(request.IdempotencyKey, "open-managed-environment-local-rc"),
+		})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, launch)
+	}
+}
+
+func launchStatus(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		launch, err := service.LaunchStatus(ctx.Request.Context(), cps.LaunchLookupInput{LaunchID: ctx.Param("launchId")})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, launch)
+	}
+}
+
+func bootstrap(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		payload, err := service.Bootstrap(ctx.Request.Context(), cps.LaunchLookupInput{LaunchID: launchIDFromQuery(ctx)})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, payload)
+	}
+}
+
+func bindSession(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		payload, err := service.BindSession(ctx.Request.Context(), cps.LaunchLookupInput{LaunchID: launchIDFromQuery(ctx)})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, payload)
+	}
+}
+
+func recordMessage(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var request messageRequest
+		_ = ctx.ShouldBindJSON(&request)
+		payload, err := service.RecordMessage(ctx.Request.Context(), cps.LaunchLookupInput{LaunchID: launchIDFromQuery(ctx)}, request.Message)
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, payload)
+	}
+}
+
+func messageStatus() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, gin.H{"ok": true, "messageId": ctx.Param("messageId"), "status": "succeeded"})
+	}
+}
+
+func recordFile(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var request recordFileRequest
+		if err := ctx.ShouldBindJSON(&request); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "invalid_json"})
+			return
+		}
+		payload, err := service.RecordFile(ctx.Request.Context(), cps.RecordFileInput{
+			LaunchID:     launchIDFromQuery(ctx),
+			FileName:     request.FileName,
+			RelativePath: request.RelativePath,
+			ContentType:  request.ContentType,
+			SizeBytes:    request.SizeBytes,
+		})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, payload)
+	}
+}
+
+func startRun(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var request startRunRequest
+		if err := ctx.ShouldBindJSON(&request); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "invalid_json"})
+			return
+		}
+		payload, err := service.StartRun(ctx.Request.Context(), cps.StartRunInput{
+			LaunchID:  launchIDFromQuery(ctx),
+			Message:   request.Message,
+			FileRefs:  request.FileRefs,
+			ToolName:  request.ToolName,
+			RequestID: request.RequestID,
+		})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, payload)
+	}
+}
+
+func artifact(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		payload, err := service.Artifact(ctx.Request.Context(), launchIDFromQuery(ctx), ctx.Param("artifactRef"))
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, payload)
+	}
+}
+
+func billingSummary(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		payload, err := service.BillingSummary(ctx.Request.Context(), cps.WorkspaceInput{WorkspaceID: workspaceIDFromQuery(ctx)})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, payload)
+	}
+}
+
+func billingDetails(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		payload, err := service.BillingDetails(ctx.Request.Context(), cps.WorkspaceInput{WorkspaceID: workspaceIDFromQuery(ctx)})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, payload)
+	}
+}
+
+func costsSummary(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		payload, err := service.BillingSummary(ctx.Request.Context(), cps.WorkspaceInput{WorkspaceID: workspaceIDFromQuery(ctx)})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, gin.H{"source": "go-control-plane", "type": "local-rc", "totals": payload.Totals, "items": []any{}})
+	}
+}
+
+func runCost() gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ctx.JSON(http.StatusOK, gin.H{"source": "go-control-plane", "type": "local-rc", "taskRef": ctx.Query("taskRef"), "cost": gin.H{"cpuCost": 1.25, "gpuCost": 0, "storageCost": 0.1, "totalCost": 1.35, "pricingSource": "local-rc-deterministic"}})
+	}
+}
+
+func resources(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		payload, err := service.Resources(ctx.Request.Context(), cps.WorkspaceInput{WorkspaceID: workspaceIDFromQuery(ctx)})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, payload)
+	}
+}
+
+func releaseManagedEnvironment(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var request releaseRequest
+		if err := ctx.ShouldBindJSON(&request); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "invalid_json"})
+			return
+		}
+		payload, err := service.Release(ctx.Request.Context(), cps.ReleaseInput{
+			WorkspaceID:       defaultString(request.WorkspaceID, "workspace-local-rc"),
+			ResourceBindingID: request.ResourceBindingID,
+			StopBilling:       request.StopBilling,
+			IdempotencyKey:    defaultString(request.IdempotencyKey, "release-local-rc"),
+		})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, payload)
+	}
+}
