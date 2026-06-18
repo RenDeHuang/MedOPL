@@ -14,6 +14,7 @@ const activeCodeRoots = [
 ];
 
 const activeTruthFiles = [
+  "AGENTS.md",
   "docs/active/README.md",
   "docs/source/README.md",
   "docs/runtime/README.md",
@@ -122,6 +123,7 @@ const [portalPackage, viteConfig, frontendClient, router, manifest] = await Prom
   readRepoFile("services/medopl-go-backend/internal/server/router.go"),
   readRepoFile("tests/fixtures/v22/agent-verify-manifest.json").then(JSON.parse),
 ]);
+
 assert.equal(JSON.parse(portalPackage).scripts.start.includes("frontend run dev"), true, "portal_start_must_be_frontend_only");
 assert.equal(viteConfig.includes('"/api": goControlPlaneTarget'), true, "frontend_must_proxy_only_go_api");
 assert.equal(frontendClient.includes("goControlPlaneClient"), true, "frontend_client_must_export_go_client");

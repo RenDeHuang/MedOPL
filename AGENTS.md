@@ -19,8 +19,14 @@
 - MedOPL v22 的稳定产品边界是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管科研工作台。普通用户购买托管工作台、计算能力、文件空间、任务并发和运行环境；平台负责开通、隔离、计费、审计和释放。
 - MedOPL 不是云资源控制台，不把用户自配云资源、旧资源订单或旧 runner/provisioner 路线恢复为主线。
 - clean upstream OPL 保持干净。不得修改 upstream 源码，不得在 upstream 目录写 Portal/Gateway/Adapter/Runtime 代码，不得 import upstream 内部模块；只能通过 Gateway、Runtime Bridge / Runtime Agent、公开 API/CLI 和明确 anti-corruption mapping 适配。
+- 理想态优先，不把现状当长期架构。开发文档先设理想态，再写当前差距；差距不是妥协清单，也不是保留旧污染面的理由。
+- 目标 topology、owner surface 或 machine truth 已明确后，新增投入默认服务目标态；不得继续深磨旧路线、旧 facade、旧 wrapper、旧兼容入口或旧测试。
+- 可以革命式重构并完全抛弃旧模块、旧接口、旧测试、旧目录和旧文案。被当前 owner surface 替代的模块、接口、alias、facade、聚合测试和文档入口，迁移 active caller 后默认直接退役。
+- 不以兼容为理由保留历史污染面。确需短期兼容时，必须写明 active caller、owner、退役门、验证入口和最晚清退条件；兼容层不得成为长期架构。
+- 旧路线只进 history / tombstone / provenance。active docs、source、tests、fixtures、manifest 和 runner 不得继续把旧路线当当前事实、默认入口或验证 owner。
 - 不做降级处理、兜底方案、临时补丁、启发式修补或“先糊住再说”式实现。
 - 保持 diff 小、可审查、可回退；能删就别加，能复用现有模式就别新起抽象。
+- 长文件是明确拆分信号。repo-tracked source、test、runner 或 fixture 接近 `1000` 行时，必须判断 owner boundary 是否过宽；超过 `1000` 行的新增或继续扩写需要拆分方案或 reviewed baseline，不能继续无解释堆叠。
 - 新增能力或修改行为前，先确认 owner surface、machine truth、测试 lane 和验收命令。
 
 ## 文档分层与生命周期治理
@@ -31,11 +37,15 @@
 - current truth、active baton、spec、policy、delivery、source、history 各有唯一 owner。新增文档先判断 lifecycle role；能吸收到现有 README 的内容，不新增文件。
 - 临时执行 baton 只能作为当前推进载体存在；完成后折叠为 history summary、closed machine state 和 next cursor，不在 `AGENTS.md` 或新目录里变成长期 truth。
 - 机器可读合同必须 consumer-first：只有 source、tests、runner、CLI/API 或 runtime evidence 真实消费时才新增 machine-readable contract surface；不要为了目录外形新增空 contract。
+- 每次修改都必须把代码清退、文档折叠和验证闭环作为同一交付面处理。新增或替代能力时，必须同时判断旧代码、旧测试、旧 fixture、旧 manifest entry、旧 docs baton 和旧 runner 是否应删除、折叠或 tombstone。
+- active baton 只能短期存在。完成后必须折叠为 compact history summary、closed machine cursor 和下一步 owner；不得把完整过程包、gap 流水、run id 细节或历史阶段板长期保留在 active truth、manifest 或 fixture 中。
+- 机器 cursor、verify manifest 和 test lane registry 必须保持小而当前。它们只能表达当前入口、当前授权边界、当前验证 bundle 和必要禁区；历史 gap map、完整执行日志和过期 leaf 必须迁出到 history/provenance 或 git history。
 
 ## 文档规则
 
 - 文档先设理想态，再写当前差距和验收边界；不能把缺实现和缺证据混成同一类差距。
 - `README*`、`docs/**` 与参考文档是人读面。代码、测试、runner 或 workflow 不得把 Markdown 章节、文案或 prose path 当成稳定机器接口。
+- 叙述性文档不作为测试断言对象；测试不得锁定 Markdown 文案、章节结构、长段 prose 或 fenced JSON。需要稳定机器判断时，必须下沉到 schema、fixture、manifest、OpenAPI、source contract、runner 行为或 CLI/API 输出。
 - 退役定位只出现在 history、tombstone、provenance 或 docs cleanup 语境；active 文档提到旧路线时，必须同时指向当前 truth owner。
 - 如果某条规则需要长期冻结，应写入相应 specs、policies、source、tests 或 contract owner，而不是继续堆在 `AGENTS.md`。
 
@@ -49,6 +59,8 @@
 - repo hygiene、repo bloat、line budget、secret hygiene 和 test lane registry 是软件工程闭环的一部分，不得用手工记忆替代 gate。
 - 修改 machine-readable contracts、默认 docs 入口、文档骨架、产品边界、runtime 边界、test lane registry 或 source owner 时，必须同步更新相关 docs、tests、fixtures、manifest 和 runner。
 - 叙述性文档不作为测试断言对象；可以测试 schema、fixture、manifest、registry、CLI/API 行为、runner 行为、生成产物结构、路径存在性和 owner boundary。
+- 声称“完成、落地、闭环、彻底清退、商业化 ready”前必须执行 Plan Completion Audit：逐项列出功能行为、代码清退、文档折叠、测试/验证、旧入口退役、cannot-claim，状态只能是 `done`、`partial`、`not_started` 或 `blocked`。docs、contract、测试绿或 closeout 不能单独替代真实 runtime 行为、可执行证据、owner receipt 或用户要求的验收。
+- 每个工程变更的 review/closeout 必须说明清退结果：删除了什么、折叠了什么、保留了什么、为什么保留、下一次清退门是什么。没有清退说明的 closeout 不完整。
 - 默认不得执行 build/push、kubectl、deploy、live-test 或真实云资源操作。
 
 ## 并行开发与工作树
