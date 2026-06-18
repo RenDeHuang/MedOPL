@@ -35,6 +35,10 @@ function assertIncludes(source, expected, label) {
   assert(source.includes(expected), `${label}_missing:${expected}`);
 }
 
+function serializedLineCount(value) {
+  return JSON.stringify(value ?? null, null, 2).split("\n").length;
+}
+
 function sectionAfter(source, heading) {
   const start = source.indexOf(heading);
   assert(start >= 0, `section_missing:${heading}`);
@@ -171,6 +175,20 @@ assert.equal(current.last_landed_branch, latestLandedBranch, "current_last_lande
 assert.equal(current.history_latest_branch, latestLandedBranch, "current_history_latest_branch_mismatch");
 assert.equal(current.post_merge_closeout_completed, true, "current_post_merge_closeout_must_be_completed");
 assert.equal(current.release_readiness_state.cursor_eligible, false, "release_readiness_must_not_be_cursor_eligible");
+for (const duplicatedPayload of [
+  "package_d_deploy_readiness_plan",
+  "production_launch_goal_gap_map",
+]) {
+  assert.equal(
+    Object.hasOwn(current.release_readiness_state, duplicatedPayload),
+    false,
+    `release_readiness_state_must_not_duplicate_large_payload:${duplicatedPayload}`,
+  );
+}
+assert(
+  serializedLineCount(current.release_readiness_state) <= 120,
+  `release_readiness_state_must_remain_compact:${serializedLineCount(current.release_readiness_state)}`,
+);
 assert.equal(closeoutCheck.lastLandedCommit, latestLandedCommit, "closeout_check_commit_mismatch");
 assert.equal(closeoutCheck.lastLandedBranch, latestLandedBranch, "closeout_check_branch_mismatch");
 assert.deepEqual(closeoutCheck.staleReadySections, [], "closeout_check_must_have_no_stale_ready_sections");
