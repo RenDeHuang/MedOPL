@@ -47,7 +47,7 @@ Registry coverage gate 是 `node tests/contract/contract-test-v22-test-lane-regi
 - every `tests/**/*.mjs` file outside fixtures appears exactly once in `TEST_LANE_REGISTRY`;
 - every registered test has at least one verify suite;
 - every registry entry uses allowed lane/tier/surface/entryKind/authorization values;
-- every registry entry references the single specs truth `docs/specs/README.md`.
+- every registry entry references root `specs/**` machine owners rather than parsing `docs/specs/README.md` prose.
 
 ## Active Test Lifecycle
 

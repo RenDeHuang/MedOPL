@@ -163,6 +163,7 @@ const [
   history,
   testsReadme,
   verifySource,
+  rootSpecs,
   manifest,
   current,
 ] = await Promise.all([
@@ -172,6 +173,7 @@ const [
   readRepoFile("docs/history/README.md"),
   readRepoFile("tests/README.md"),
   readRepoFile("scripts/v22-verify.mjs"),
+  readRepoFile("specs/README.md"),
   readJson("tests/fixtures/v22/agent-verify-manifest.json"),
   readJson("tests/fixtures/v22/goal-current.json"),
 ]);
@@ -191,9 +193,17 @@ assert(currentCursor, "current_cursor_required");
 assert(active.includes(currentCursor), `active_lifecycle_truth_missing_current_cursor:${currentCursor}`);
 
 assertIncludesAll(specs, [
-  "Purpose: `v22_contract_spec_single_truth`",
+  "Purpose: `v22_contract_spec_index`",
   "spec:v22-smoke-eval-boundary",
-], "specs_single_truth");
+  "specs/source/spec.md",
+], "specs_index_truth");
+assert.equal(specs.split("\n").length <= 400, true, `specs_index_line_budget_exceeded:${specs.split("\n").length}`);
+assert.equal(/```json/u.test(specs), false, "specs_index_must_not_embed_machine_json");
+assertIncludesAll(rootSpecs, [
+  "Purpose: `durable_behavior_specs`",
+  "root `specs/**` contains durable behavior specs",
+  "docs/specs/README.md remains the human contract index",
+], "root_specs_durable_truth");
 
 assertIncludesAll(policies, [
   "Cleanup Lifecycle Policy",

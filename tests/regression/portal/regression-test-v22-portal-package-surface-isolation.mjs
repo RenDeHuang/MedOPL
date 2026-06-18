@@ -49,7 +49,8 @@ const portalModelSources = await Promise.all([
   "services/portal/frontend/src/app/data/portalBillingAuditModel.ts",
   "services/portal/frontend/src/app/data/portalOplEntryModel.ts",
 ].map((filePath) => readFile(filePath, "utf8"))).then((sources) => sources.join("\n"));
-const figmaContract = await readFile("docs/specs/README.md", "utf8");
+const specsIndex = await readFile("docs/specs/README.md", "utf8");
+const sourceSpec = await readFile("specs/source/spec.md", "utf8");
 
 for (const retiredRoute of ["/packages", "/advanced/servers", "/runtime", "/tasks"]) {
   assert.equal(routesSource.includes(retiredRoute), false, `retired_package_route_must_not_be_active:${retiredRoute}`);
@@ -147,9 +148,15 @@ for (const apiCall of [
   assert(portalModelSources.includes(apiCall), `portal_zip_model_api_call_missing:${apiCall}`);
 }
 
-assert(figmaContract.includes('"retiredFrontendRoutes"'), "figma_contract_must_record_retired_frontend_routes");
-assert(figmaContract.includes('"/packages"'), "figma_contract_must_retire_packages_route");
-assert(figmaContract.includes('"/advanced/servers"'), "figma_contract_must_retire_advanced_servers_route");
+assert(specsIndex.includes("spec:v22-portal-workbench-management-ui-composition-boundary"), "specs_index_must_reference_ui_composition_boundary");
+assert(specsIndex.includes("specs/source/spec.md"), "specs_index_must_point_to_source_spec");
+assert.equal(/```json/u.test(specsIndex), false, "specs_index_must_not_embed_ui_composition_json");
+assert(sourceSpec.includes("`source:portal-workbench-management-ui-composition`"), "source_spec_must_own_ui_composition");
+assert(sourceSpec.includes("/packages"), "source_spec_must_retire_packages_route");
+assert(sourceSpec.includes("/advanced/servers"), "source_spec_must_retire_advanced_servers_route");
+assert(sourceSpec.includes("/runtime"), "source_spec_must_retire_runtime_route");
+assert(sourceSpec.includes("/tasks"), "source_spec_must_retire_tasks_route");
+assert(sourceSpec.includes("/opl"), "source_spec_must_retire_opl_short_route");
 
 console.log(JSON.stringify({
   ok: true,

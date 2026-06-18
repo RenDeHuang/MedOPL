@@ -1,9 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const contractPath = "docs/specs/README.md";
 const manifestPath = "tests/fixtures/v22/agent-verify-manifest.json";
-const readmePath = "docs/specs/README.md";
 const selfFile = "tests/future-authorized/cloud/future-authorized-test-v22-authorized-tencent-create-release-implementation-contract.mjs";
 
 function commandFiles(commands = []) {
@@ -25,152 +23,156 @@ function assertNotIncludesAny(source, phrases, label) {
   }
 }
 
-const contract = await readFile(contractPath, "utf8");
-const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
-const readme = await readFile(readmePath, "utf8");
-const futureAuthorizedFiles = commandFiles(manifest.suites.find((suite) => suite.id === "cloud-future-authorized")?.commands || []);
+const [
+  specsIndex,
+  operationsSpec,
+  product,
+  dryRunRunner,
+  planCatalogSource,
+  cloudParamsSource,
+  readinessRunner,
+  planCatalogArchive,
+  manifest,
+] = await Promise.all([
+  readFile("docs/specs/README.md", "utf8"),
+  readFile("specs/operations/spec.md", "utf8"),
+  readFile("docs/product/README.md", "utf8"),
+  readFile("tests/support/cloud-prework/v22-tencent-create-release-dry-run-plan.js", "utf8"),
+  readFile("tests/support/cloud-prework/package-c-live-canary-plan-catalog-allowlist.json", "utf8"),
+  readFile("tests/support/cloud-prework/package-c-live-canary-cloud-params.js", "utf8"),
+  readFile("tests/support/cloud-prework/v22-package-c-live-canary-readiness.js", "utf8"),
+  Promise.all([
+    readFile("changes/archive/2026-06-13-package-c-plan-catalog-contract/spec-delta.md", "utf8"),
+    readFile("changes/archive/2026-06-13-package-c-plan-catalog-contract/design.md", "utf8"),
+    readFile("changes/archive/2026-06-13-package-c-plan-catalog-contract/closeout.md", "utf8"),
+  ]).then((parts) => parts.join("\n")),
+  readFile(manifestPath, "utf8").then(JSON.parse),
+]);
+const cloudFutureAuthorizedFiles = commandFiles(manifest.suites.find((suite) => suite.id === "cloud-future-authorized")?.commands || []);
+const planCatalog = JSON.parse(planCatalogSource);
 
-assertIncludesAll(contract, [
-  "v22 Authorized Tencent Create/Release Implementation Boundary",
-  "当前分支只写合同和 smoke，不实现真实云调用",
-  "工作空间是业务容器",
-  "计算资源可独立开通、扩容、缩容、释放",
-  "存储资源 / 文件空间可独立开通、扩容、删除",
-  "释放计算资源不删除文件空间",
-  "释放计算资源不让文件空间进入 7 天保护期",
-  "删除存储资源 / 文件空间，或独立欠费保留策略，才进入 7 天保护期",
-  "计算资源已释放但存储资源仍保留，是合法状态",
-  "计算资源已释放但文件空间仍保留，是合法状态",
-  "存储资源进入保护期或不可用时，新任务不能依赖该文件空间",
-], "implementation_contract_resource_lifecycle");
-
-assertIncludesAll(contract, [
-  "默认风控上限，不是默认开通规格",
-  "maxCpuCoresPerWorkspace: 16",
-  "maxMemoryGbPerWorkspace: 32",
-  "maxFileSpaceGbPerWorkspace: 500",
-  "maxConcurrentTasksPerWorkspace: 5",
-  "maxQueuedTasksPerWorkspace: 20",
-  "balanceWarningThresholdCny: 20",
-  "dailySpendAlertCny: 300",
-  "dailyHardCapCny: null",
-  "failedOperationRetryLimit: 2",
-  "maxCreateReleaseOperationsPerDay: 10",
-  "Portal 管理员可按账号修改",
-  "账号组默认值 + 单账号 override + effective limits 展示",
-], "implementation_contract_risk_limits");
-
-assertIncludesAll(contract, [
-  "基础套餐：2c / 4GB / 10GB 文件空间",
-  "Pro 套餐：8c / 16GB / 100GB 文件空间",
-  "升级规格：先进入 MedOPL plan catalog allowlist，再展示 CPU、内存、文件空间、任务并发数",
-  "5 个必须写成任务并发，不是 session 并发",
-], "implementation_contract_package_language");
-
-assertIncludesAll(contract, [
-  "开通时需要扣费 / 预扣 + 冻结金额",
-  "已冻结金额",
-  "预计可用时长",
-  "120 分钟扣费核对",
-  "隔日账单审计",
-  "日预算默认只提醒，不默认硬停",
-  "管理员可以给某个账号打开硬停",
-  "余额低于 20 元提醒",
-  "冻结金额不足时：停止新任务和计算资源续用",
-  "不得把“释放计算资源”自动写成“删除文件空间”",
-  "独立存储删除 / 欠费保留策略触发",
-], "implementation_contract_billing_freeze");
-
-assertIncludesAll(contract, [
-  "账单核对中",
-  "账单异常待处理",
-  "已校准",
-  "待补扣",
-  "待退还",
-  "进入管理员审计队列",
-  "不得直接暴露底层云账单字段、bucket、object key、SecretId、SecretKey、kubeconfig",
-], "implementation_contract_t_plus_1");
-
-assertIncludesAll(contract, [
-  "询价失败：不冻结、不创建资源",
-  "冻结失败：不创建资源",
-  "计算创建失败：释放已创建的计算子资源，记录失败证据",
-  "存储创建失败：计算资源是否保留必须按用户计划和审计策略处理，不得隐式删除用户已有文件空间",
-  "绑定失败：资源进入待审计 / 可重试状态，不能假装可用",
-  "释放失败：进入释放失败待审计，保留重试队列和证据",
-  "删除存储失败：进入清理失败待审计，不承诺秒级物理删除",
-], "implementation_contract_failure_rollback");
-
-assertIncludesAll(contract, [
-  "不读取 secret",
-  "不调用真实腾讯云 / COS / Langfuse / one-person-lab",
-  "不创建、释放真实资源",
-  "不真实扣费",
-  "不运行 build/push/kubectl/live-test",
-  "不修改 deploy / .sentrux / adapters / upstream / Gateway / Runtime Bridge",
-  "后续真实实现必须另开 feat/*",
-  "secret 边界、真实云 API、测试账号、区域、资源类型、费用上限和清理策略",
-], "implementation_contract_authorization_boundary");
-
-assertIncludesAll(contract, [
-  "借鉴 Sub2API 的 role-based Web app 思路",
-  "同一 Portal，同一登录，同一 UI shell",
-  "普通用户和管理员 surface 按角色分离",
-  "不复制 Sub2API 代码、路由、鉴权或存储结构",
-  "借鉴 one-person-lab 的 worktree / repo-tracked truth / 防污染纪律",
-  "truth 进入 docs/specs/scripts/tests",
-  "tmux/session/agent 对话/本地 runtime state 不进仓库",
-], "implementation_contract_borrowed_boundaries");
-
-assertIncludesAll(contract, [
-  "\"maxCpuCoresPerWorkspace\": 16",
-  "\"maxMemoryGbPerWorkspace\": 32",
-  "\"maxFileSpaceGbPerWorkspace\": 500",
-  "\"maxConcurrentTasksPerWorkspace\": 5",
-  "\"maxQueuedTasksPerWorkspace\": 20",
-  "\"balanceWarningThresholdCny\": 20",
-  "\"dailySpendAlertCny\": 300",
-  "\"dailyHardCapCny\": null",
-  "\"failedOperationRetryLimit\": 2",
-  "\"maxCreateReleaseOperationsPerDay\": 10",
-  "\"adminAccountOverrideAllowed\": true",
-  "\"accountGroupDefaults\": true",
-  "\"effectiveLimitsVisible\": true",
-  "\"workspaceLifecycleSeparatedFromCompute\": true",
-  "\"computeReleaseDeletesFileSpace\": false",
-  "\"storageDeleteTriggersRetentionDays\": 7",
-], "implementation_contract_json_policy");
-
-assertNotIncludesAny(contract, [
-  "允许用户自配云资源",
-  "用户自配云资源作为主线",
-  "用户自配云资源是主线",
-  "普通用户配置云资源",
-  "普通用户管理 CVM",
-  "普通用户管理 COS",
-  "普通用户管理 K8s",
-  "用户编辑 kubeconfig",
-  "默认硬停开启",
-  "默认硬停: true",
-  "释放计算资源会删除文件空间",
-  "5 个 session 并发",
-], "implementation_contract_forbidden_copy");
-
-assertIncludesAll(readme, [
+assert.equal(specsIndex.split("\n").length <= 400, true, `specs_index_line_budget_exceeded:${specsIndex.split("\n").length}`);
+assert.equal(/```json/u.test(specsIndex), false, "specs_index_must_not_embed_machine_json");
+assertIncludesAll(specsIndex, [
   "spec:v22-authorized-tencent-create-release-implementation-boundary",
-  "authorized/tencent create/release implementation",
-  "默认风控上限",
-  "计算资源和存储资源生命周期分离",
-], "contracts_readme_implementation_boundary");
+  "specs/operations/spec.md",
+], "authorized_tencent_implementation_specs_index");
 
-assert(futureAuthorizedFiles.includes(selfFile), "future_authorized_suite_must_include_implementation_contract");
+assertIncludesAll(operationsSpec, [
+  "`operations:authorized-tencent-create-release-implementation-boundary`",
+  "docs/product/README.md",
+  "tests/support/cloud-prework/v22-tencent-create-release-dry-run-plan.js",
+  "tests/support/cloud-prework/package-c-live-canary-plan-catalog-allowlist.json",
+  "tests/support/cloud-prework/package-c-live-canary-cloud-params.js",
+  "node tests/future-authorized/cloud/future-authorized-test-v22-authorized-tencent-create-release-implementation-contract.mjs",
+  "node tests/future-authorized/cloud/future-authorized-test-v22-package-c-live-canary-readiness-local-gate.mjs",
+  "prepare-only proof",
+  "user-selected arbitrary Tencent instance types",
+], "authorized_tencent_implementation_operations_spec");
+
+assertIncludesAll(product, [
+  "用户可以升级配置，但只能选择 MedOPL plan catalog allowlist 里的规格",
+  "释放托管运行环境不等于删除文件空间",
+  "删除存储资源 / 文件空间，或独立欠费保留策略，才进入 7 天保护期",
+  "余额或冻结金额不足时，停止新托管任务和计算资源续用",
+  "120min",
+  "T+1",
+  "api_only",
+  "full_runtime",
+  "customer_dedicated",
+], "authorized_tencent_implementation_product_owner");
+
+assert.deepEqual(planCatalog.plans.map((plan) => ({
+  id: plan.id,
+  cpuCores: plan.compute.cpuCores,
+  memoryGb: plan.compute.memoryGb,
+  workspaceStorageGb: plan.workspaceStorageGb,
+  maxConcurrentTasks: plan.compute.maxConcurrentTasks,
+  nodeInstanceType: plan.tke.nodeInstanceType,
+  nodeSystemDiskGb: plan.tke.systemDisk.sizeGb,
+  publicIpEnabled: plan.tke.publicIp.enabled,
+})), [
+  {
+    id: "starter_2c4g_10gb",
+    cpuCores: 2,
+    memoryGb: 4,
+    workspaceStorageGb: 10,
+    maxConcurrentTasks: 1,
+    nodeInstanceType: "SA5.MEDIUM4",
+    nodeSystemDiskGb: 50,
+    publicIpEnabled: false,
+  },
+  {
+    id: "pro_8c16g_100gb",
+    cpuCores: 8,
+    memoryGb: 16,
+    workspaceStorageGb: 100,
+    maxConcurrentTasks: 2,
+    nodeInstanceType: "SA5.2XLARGE16",
+    nodeSystemDiskGb: 50,
+    publicIpEnabled: false,
+  },
+], "authorized_tencent_implementation_plan_catalog_shapes");
+assert.equal(planCatalog.upgradePolicy.requiresPlanCatalogAllowlist, true, "upgrade_requires_plan_catalog");
+assert.equal(planCatalog.upgradePolicy.arbitraryInstanceTypeAllowed, false, "upgrade_rejects_arbitrary_instance_type");
+assert.equal(planCatalog.workspaceStorageIsNodeSystemDisk, false, "workspace_storage_is_not_node_system_disk");
+
+assertIncludesAll(`${cloudParamsSource}\n${readinessRunner}`, [
+  "planFor",
+  "validateCatalogShape",
+  "package_c_live_canary_readiness_plan_not_allowlisted",
+  "package_c_live_canary_readiness_plan_mismatch",
+  "package_c_live_canary_readiness_cloud_param_not_allowed",
+  "package_c_live_canary_readiness_public_ip_must_be_disabled",
+  "package_c_live_canary_readiness_secret_key_not_allowed",
+  "RUN_TENCENT_CREATE_RELEASE_EXECUTION",
+  "confirm-no-real-cloud",
+  "realCloudCalls: false",
+  "mutationExecuted: false",
+], "authorized_tencent_implementation_readiness_sources");
+
+assertIncludesAll(dryRunRunner, [
+  "fileSpaceGb: options.serverPlanId === \"pro\" ? 100 : 10",
+  "computeReleaseDeletesFileSpace: false",
+  "deleteProtectionDays: 7",
+  "chargeApplied: false",
+  "freezeOnly: true",
+  "reconciliation: \"t_plus_1\"",
+  "stopBillingConfirmWithinMinutes: 120",
+  "ordinary_user_language_only",
+], "authorized_tencent_implementation_dry_run_policy");
+
+assertIncludesAll(planCatalogArchive, [
+  "Starter as 2C4G compute, 10GB workspace storage and one task concurrency",
+  "Pro current plan is 8C16G + 100GB workspace storage and two task concurrency",
+  "User upgrades must enter MedOPL plan catalog allowlist",
+  "Arbitrary `instanceType` and `nodeInstanceType` input is not accepted",
+  "Workspace storage must not be interpreted as TKE node system disk",
+], "authorized_tencent_implementation_archive_owner");
+
+assertNotIncludesAny(`${dryRunRunner}\n${cloudParamsSource}\n${planCatalogSource}`, [
+  "用户自配云资源作为主线",
+  "TENCENT_MUTATION_TKE_NODE_POOL_ID",
+  "defaultHardStopEnabled",
+  "computeReleaseDeletesFileSpace: true",
+  "maxConcurrentSessions",
+  "standardPlanUsesSharedPool",
+  "premiumDedicatedPoolSupported",
+  "workspaceStorageIsNodeSystemDisk\": true",
+], "authorized_tencent_implementation_forbidden_surface");
+
+assert(cloudFutureAuthorizedFiles.includes(selfFile), "cloud_future_authorized_suite_missing_authorized_tencent_implementation_contract");
 
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_authorized_tencent_create_release_implementation_boundary",
-  checked: {
-    contractPath,
-    readmePath,
-    registrySuite: "cloud-future-authorized",
-  },
+  checked: [
+    "specs_index_pointer",
+    "operations_spec_owner",
+    "product_owner",
+    "plan_catalog_shapes",
+    "readiness_sources",
+    "dry_run_policy",
+    "archive_provenance",
+  ],
 }, null, 2));

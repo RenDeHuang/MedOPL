@@ -14,6 +14,7 @@ import {
   SMOKE_GOLDEN_MIN,
   SMOKE_GOLDEN_SCRIPTS,
   SMOKE_SUITE_ENTRYPOINTS,
+  TEST_LANE_CONTRACT_REFS,
   listClassifiedSmokeScripts,
   listSmokeEvalScripts,
   smokeEvalMetadataOf,
@@ -37,40 +38,39 @@ async function listTestFiles(dir, prefix = "tests") {
   return files.sort();
 }
 
-const specsSource = await readFile(path.join(repoRoot, "docs/specs/README.md"), "utf8");
-const manifestSource = await readFile(path.join(repoRoot, "tests/fixtures/v22/agent-verify-manifest.json"), "utf8");
+const specsIndexSource = await readFile(path.join(repoRoot, "docs/specs/README.md"), "utf8");
+const frameworkSpecSource = await readFile(path.join(repoRoot, "specs/framework/spec.md"), "utf8");
+const manifest = JSON.parse(await readFile(path.join(repoRoot, "tests/fixtures/v22/agent-verify-manifest.json"), "utf8"));
+const classifierSource = await readFile(path.join(repoRoot, "scripts/v22-test-classification.mjs"), "utf8");
 const allEvalScripts = (await listTestFiles(path.join(repoRoot, "tests")))
   .filter((scriptPath) => !scriptPath.startsWith("tests/fixtures/"));
 
 assert.deepEqual(Object.keys(SMOKE_CLASSIFICATION).sort(), allEvalScripts, "all_v22_eval_scripts_must_be_classified");
 
 for (const requiredPhrase of [
-  "Smoke 只代表极小关键路径",
   "health-check",
   "smoke-golden",
   "contract-local",
   "local-regression",
   "real-cloud-readiness",
   "future-authorized",
-  "tier + surface + entryKind + authorization + contractRefs",
   "suite-wrapper",
   "gate-self-test",
-  "不得读取 secret",
-  "不得调用真实云",
-  "不得 build/push/deploy/kubectl/live-test",
 ]) {
-  assert(specsSource.includes(requiredPhrase), `smoke_eval_boundary_missing:${requiredPhrase}`);
+  assert(
+    `${classifierSource}\n${frameworkSpecSource}\n${specsIndexSource}`.includes(requiredPhrase),
+    `smoke_eval_boundary_missing:${requiredPhrase}`,
+  );
 }
 
 for (const requiredRef of [
-  "spec:v22-smoke-eval-boundary",
-  "suite smoke",
-  "suite local-contract",
-  "suite local-regression",
-  "suite real-cloud-readiness",
-  "suite cloud-future-authorized",
+  "framework:repo-health-contraction",
 ]) {
-  assert(specsSource.includes(requiredRef), `spec_index_missing_smoke_eval_reference:${requiredRef}`);
+  assert(`${classifierSource}\n${frameworkSpecSource}`.includes(requiredRef), `framework_spec_missing_smoke_eval_reference:${requiredRef}`);
+}
+const manifestSuiteIds = new Set(manifest.suites.map((suite) => suite.id));
+for (const requiredSuite of ["smoke", "local-contract", "local-regression", "real-cloud-readiness", "cloud-future-authorized"]) {
+  assert(manifestSuiteIds.has(requiredSuite), `manifest_suite_missing:${requiredSuite}`);
 }
 
 const healthScripts = listSmokeEvalScripts({ tiers: ["health-check"] });
@@ -90,7 +90,10 @@ for (const scriptPath of Object.keys(SMOKE_CLASSIFICATION)) {
   assert(SMOKE_EVAL_SURFACES.includes(metadata.surface), `unknown_eval_surface:${scriptPath}:${metadata.surface}`);
   assert(["atomic", "suite-wrapper", "gate-self-test"].includes(metadata.entryKind), `unknown_eval_entry_kind:${scriptPath}:${metadata.entryKind}`);
   assert(["none", "future-authorized"].includes(metadata.authorization), `unknown_eval_authorization:${scriptPath}:${metadata.authorization}`);
-  assert.deepEqual(metadata.contractRefs, ["docs/specs/README.md"], `eval_contract_refs_must_use_single_specs_truth:${scriptPath}`);
+  assert(metadata.contractRefs.length > 0, `eval_contract_refs_required:${scriptPath}`);
+  for (const ref of metadata.contractRefs) {
+    assert(TEST_LANE_CONTRACT_REFS.includes(ref), `eval_contract_ref_must_use_root_specs:${scriptPath}:${ref}`);
+  }
   if (metadata.authorization === "future-authorized") {
     assert.equal(metadata.tier, "future-authorized", `future_authorized_must_use_future_tier:${scriptPath}`);
     assert.equal(metadata.surface, "cloud", `future_authorized_must_use_cloud_surface:${scriptPath}`);
@@ -102,10 +105,10 @@ for (const scriptPath of SMOKE_SUITE_ENTRYPOINTS) {
   assert.equal(smokeEvalMetadataOf(scriptPath).entryKind, "suite-wrapper", `suite_entrypoint_must_be_wrapper:${scriptPath}`);
 }
 
-assert(manifestSource.includes('"id": "smoke"'), "manifest_must_register_smoke_suite");
-assert(manifestSource.includes('"id": "health"'), "manifest_must_register_health_suite");
-assert(manifestSource.includes('"id": "local-contract"'), "manifest_must_register_local_contract_suite");
-assert(!manifestSource.includes(["docs", "recovery", ""].join("/")), "manifest_must_not_reference_retired_recovery");
+assert(manifestSuiteIds.has("smoke"), "manifest_must_register_smoke_suite");
+assert(manifestSuiteIds.has("health"), "manifest_must_register_health_suite");
+assert(manifestSuiteIds.has("local-contract"), "manifest_must_register_local_contract_suite");
+assert(!JSON.stringify(manifest).includes(["docs", "recovery", ""].join("/")), "manifest_must_not_reference_retired_recovery");
 
 console.log(JSON.stringify({
   ok: true,

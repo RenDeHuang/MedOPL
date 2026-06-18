@@ -51,9 +51,10 @@ function assertCommandListExcludes(commands, forbiddenCommands, label) {
   for (const command of forbiddenCommands) assert(!commands.includes(command), `${label}_forbidden:${command}`);
 }
 
-const [active, specs, delivery, runtime, source, product, current, manifest, classifierSource] = await Promise.all([
+const [active, specsIndex, sourceSpec, delivery, runtime, source, product, current, manifest, classifierSource] = await Promise.all([
   readRepoFile("docs/active/README.md"),
   readRepoFile("docs/specs/README.md"),
+  readRepoFile("specs/source/spec.md"),
   readRepoFile("docs/delivery/README.md"),
   readRepoFile("docs/runtime/README.md"),
   readRepoFile("docs/source/README.md"),
@@ -94,16 +95,18 @@ for (const phrase of [
 }
 assertIncludes(delivery, "Go Control Plane MVP Takeover Lane", "delivery_must_name_program");
 assertIncludes(delivery, "先 Go control-plane MVP，再 real-cloud-readiness", "delivery_must_gate_real_cloud_after_go_mvp");
-assertIncludes(specs, "spec:v22-go-control-plane-mvp-takeover-boundary", "specs_must_define_program_anchor");
-assertIncludes(specs, "Node Portal backend physical removal", "specs_must_record_physical_removal");
-assertIncludes(specs, "`services/medopl-go-backend` 是本地 MVP takeover target", "specs_must_define_go_canonical_target");
+assertIncludes(specsIndex, "spec:v22-go-control-plane-mvp-takeover-boundary", "specs_index_must_define_program_anchor");
+assertIncludes(specsIndex, "specs/source/spec.md", "specs_index_must_point_to_source_spec");
+assertIncludes(sourceSpec, "`source:go-control-plane-mvp-takeover`", "source_spec_must_define_go_mvp_takeover");
+assertIncludes(sourceSpec, "`source:node-portal-backend-physical-removal`", "source_spec_must_record_physical_removal");
+assertIncludes(sourceSpec, "`services/medopl-go-backend`", "source_spec_must_define_go_canonical_target");
 assertIncludes(runtime, "Backend Convergence Target View", "runtime_must_record_backend_target_view");
 assertIncludes(runtime, "Portal frontend -> Go backend `/api`", "runtime_must_record_frontend_go_boundary");
 assertIncludes(source, "services/portal/src` 已物理清退", "source_must_record_node_backend_physical_removal");
 assertIncludes(source, "`services/medopl-go-backend` is the local pre-cloud SaaS backend deployment surface", "source_must_promote_go_backend_surface");
 assertIncludes(product, "`services/medopl-go-backend`", "product_must_record_go_backend_boundary");
 
-for (const [label, text] of Object.entries({ active, specs, delivery, runtime, source, product })) {
+for (const [label, text] of Object.entries({ active, specsIndex, sourceSpec, delivery, runtime, source, product })) {
   assertNotIncludes(text, "backend-inventory.json", `${label}_must_not_keep_backend_inventory_current_truth`);
   assertNotIncludes(text, "migration-map.json", `${label}_must_not_keep_migration_map_current_truth`);
   assertNotIncludes(text, "contract-test-v22-node-portal-workflow-facade-boundary.mjs", `${label}_must_not_reference_old_workflow_facade_gate`);

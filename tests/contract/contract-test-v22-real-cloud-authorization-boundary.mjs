@@ -119,17 +119,12 @@ for (const marker of [
 ]) {
   assertIncludes(design, marker, "real_cloud_authorization_design_sequence");
   assertIncludes(evalPlan, marker, "real_cloud_authorization_eval_sequence");
-  assertIncludes(specs, marker, "real_cloud_authorization_specs_full_sequence");
+  assertIncludes(JSON.stringify(current.release_readiness_state.required_sequence), marker, "real_cloud_authorization_current_sequence");
 }
+assertIncludes(specs, "spec:v22-cloud-onboarding-workflow-boundary", "real_cloud_authorization_specs_index_cloud_workflow_anchor");
+assertIncludes(specs, "specs/operations/spec.md", "real_cloud_authorization_specs_index_operations_pointer");
 for (const retiredRoute of retiredShortCloudRoutes) {
   assertExcludes(specs, retiredRoute, "real_cloud_authorization_specs_retired_short_cloud_route");
-}
-const inlineCloudRoutes = specs.match(/`[^`\n]*mock\/snapshot[^`\n]*authorized[^`\n]*`/gu) || [];
-assert(inlineCloudRoutes.length > 0, "real_cloud_authorization_specs_inline_cloud_routes_missing");
-for (const route of inlineCloudRoutes) {
-  for (const marker of ["readonly", "inventory", "authorized", "deploy", "canary / QA / status update"]) {
-    assertIncludes(route, marker, "real_cloud_authorization_specs_inline_cloud_route_must_be_full");
-  }
 }
 
 for (const marker of [
@@ -180,11 +175,16 @@ for (const marker of [
 
 for (const marker of [
   "spec:v22-cloud-onboarding-workflow-boundary",
+]) {
+  assertIncludes(specs, marker, "specs_cloud_onboarding_boundary");
+}
+
+for (const marker of [
   "Gate-A",
   "Gate-B",
   "realCloudCalls=false",
 ]) {
-  assertIncludes(specs, marker, "specs_cloud_onboarding_boundary");
+  assertIncludes(specDelta, marker, "real_cloud_authorization_spec_delta_gate_boundary");
 }
 
 assertIncludes(operationsSpec, "operations:real-cloud-authorization-boundary", "operations_spec_real_cloud_boundary");

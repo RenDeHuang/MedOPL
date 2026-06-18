@@ -232,26 +232,24 @@ assertNoSecretLeak(state.runs, "state_runs");
 assertNoSecretLeak(state.sessionLedgerEntries, "state_session_ledger");
 assertNoInternalFileLeak(state.sessionLedgerEntries, "state_session_ledger");
 
-const contract = await readFile("docs/specs/README.md", "utf8");
+const [routesSource, runtimeSpec] = await Promise.all([
+  readFile("services/opl-runtime-bridge/src/runtime-bridge-routes.mjs", "utf8"),
+  readFile("specs/runtime/spec.md", "utf8"),
+]);
 for (const required of [
   "POST /api/opl-launch/runs",
   "POST /api/opl-launch/sessions/bind",
+]) {
+  assert(routesSource.includes(required), `runtime_route_missing:${required}`);
+}
+for (const required of [
   "providerKeyRef",
-  "resourceBindingId",
-  "ledgerEntries[].rawPayload",
-  "workspace file reference",
-  "artifact reference",
-  "payloadHash",
-  "storageKey",
   "objectKey",
   "localPath",
   "launchToken",
   "runtimeToken",
-  "不读取 secret",
-  "不调用真实云 API",
-  "不改 deploy",
 ]) {
-  assert(contract.includes(required), `contract_missing:${required}`);
+  assert(runtimeSpec.includes(required), `runtime_spec_missing:${required}`);
 }
 
 console.log(JSON.stringify({

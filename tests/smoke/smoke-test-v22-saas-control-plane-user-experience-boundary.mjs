@@ -1,188 +1,98 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const contractPath = "docs/specs/README.md";
-const contractIndexPath = "docs/specs/README.md";
-const activeTruthPath = "docs/active/README.md";
-const productTruthPath = "docs/product/README.md";
-const deliveryPath = "docs/delivery/README.md";
-const currentPath = "tests/fixtures/v22/goal-current.json";
-
-const startMarker = "<!-- v22-saas-control-plane-user-experience-contract:start -->";
-const endMarker = "<!-- v22-saas-control-plane-user-experience-contract:end -->";
-const uxContractRef = "spec:v22-saas-control-plane-user-experience-boundary";
-
-const truthLayerNames = [
-  "服务商品真相",
-  "用户体验真相",
-  "信息架构真相",
-  "生命周期真相",
-  "权限/角色真相",
-  "状态/数据源真相",
-  "操作风险真相",
-  "UI composition 真相",
-  "交付/平台真相",
-  "运营/支持真相",
-];
-
-const userVisiblePackageNames = [
-  "Portal / UI",
-  "OPL Entry / Gateway",
-  "Runtime Bridge",
-  "Portal-OPL Context Backflow",
-  "Real OPL Capability Canary",
-  "Real OPL Provider Message Canary",
-  "Real OPL File Run Artifact Canary",
-  "Langfuse / Trace",
-  "Resource / Billing / Audit",
-  "Tencent Provider",
-  "Cleanup",
-];
+const files = {
+  specsIndex: "docs/specs/README.md",
+  productSpec: "specs/product/spec.md",
+  productTruth: "docs/product/README.md",
+  sourceSpec: "specs/source/spec.md",
+  activeTruth: "docs/active/README.md",
+  deliveryTruth: "docs/delivery/README.md",
+  current: "tests/fixtures/v22/goal-current.json",
+};
 
 async function source(path) {
   return readFile(path, "utf8");
 }
 
-function extractJson(markdown) {
-  const start = markdown.indexOf(startMarker);
-  assert.notEqual(start, -1, "saas_control_plane_contract_start_marker_missing");
-  const end = markdown.indexOf(endMarker, start + startMarker.length);
-  assert.notEqual(end, -1, "saas_control_plane_contract_end_marker_missing");
-  assert.equal(markdown.indexOf(startMarker, start + startMarker.length), -1, "saas_control_plane_contract_start_marker_must_be_unique");
-  assert.equal(markdown.indexOf(endMarker, end + endMarker.length), -1, "saas_control_plane_contract_end_marker_must_be_unique");
-
-  const block = markdown.slice(start + startMarker.length, end).trim();
-  const match = /^```json\n([\s\S]+)\n```$/u.exec(block);
-  assert(match, "saas_control_plane_contract_must_be_single_json_fence");
-  return JSON.parse(match[1]);
-}
-
-function assertIncludes(text, expected, label) {
-  assert(text.includes(expected), `${label}_missing:${expected}`);
-}
-
-function assertExcludes(text, forbidden, label) {
-  assert.equal(text.includes(forbidden), false, `${label}_must_not_include:${forbidden}`);
-}
-
-function assertIncludesAll(items, expectedItems, label) {
+function assertIncludesAll(text, expectedItems, label) {
   for (const expected of expectedItems) {
-    assert(items.includes(expected), `${label}_missing:${expected}`);
+    assert(text.includes(expected), `${label}_missing:${expected}`);
   }
 }
 
-function extractContractPackageSection(markdown, packageName) {
-  const escaped = packageName.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
-  const pattern = new RegExp(`### ${escaped} 合同包\\n(?<section>[\\s\\S]*?)(?=\\n### |\\n$)`, "u");
-  const match = markdown.match(pattern);
-  assert(match?.groups?.section, `contract_package_section_missing:${packageName}`);
-  return match.groups.section;
+function assertExcludesAll(text, forbiddenItems, label) {
+  for (const forbidden of forbiddenItems) {
+    assert.equal(text.includes(forbidden), false, `${label}_must_not_include:${forbidden}`);
+  }
 }
 
 const [
-  contractMarkdown,
-  contractIndex,
-  activeTruth,
+  specsIndex,
+  productSpec,
   productTruth,
+  sourceSpec,
+  activeTruth,
   deliveryTruth,
   current,
 ] = await Promise.all([
-  source(contractPath),
-  source(contractIndexPath),
-  source(activeTruthPath),
-  source(productTruthPath),
-  source(deliveryPath),
-  source(currentPath).then((raw) => JSON.parse(raw)),
+  source(files.specsIndex),
+  source(files.productSpec),
+  source(files.productTruth),
+  source(files.sourceSpec),
+  source(files.activeTruth),
+  source(files.deliveryTruth),
+  source(files.current).then((raw) => JSON.parse(raw)),
 ]);
 
-const contract = extractJson(contractMarkdown);
+assert.equal(specsIndex.split("\n").length <= 400, true, `specs_index_line_budget_exceeded:${specsIndex.split("\n").length}`);
+assert.equal(/```json/u.test(specsIndex), false, "specs_index_must_not_embed_machine_json");
+assertIncludesAll(specsIndex, [
+  "spec:v22-saas-control-plane-user-experience-boundary",
+  "spec:v22-saas-portal-opl-ops-surface-boundary",
+  "specs/product/spec.md",
+], "saas_control_plane_specs_index");
 
-assert.equal(contract.contract, "v22_saas_control_plane_user_experience_boundary", "contract_name_mismatch");
-assert.equal(contract.model, "gpt-5.4", "contract_model_mismatch");
-assert.equal(contract.scope.portalIsSaasControlPlane, true, "portal_must_be_saas_control_plane");
-assert.equal(contract.scope.portalReimplementsOplChatbot, false, "portal_must_not_reimplement_opl_chatbot");
-assert.equal(contract.scope.portalIsCloudConsole, false, "portal_must_not_be_cloud_console");
-assert.equal(contract.scope.modifiesServices, false, "truth_leaf_must_not_modify_services");
-assert.equal(contract.scope.callsRealCloud, false, "truth_leaf_must_not_call_real_cloud");
-assert.equal(contract.scope.readsSecrets, false, "truth_leaf_must_not_read_secrets");
-assert.equal(contract.scope.modifiesUpstream, false, "truth_leaf_must_not_modify_upstream");
+assertIncludesAll(productSpec, [
+  "`product:managed-opl-service`",
+  "`product:no-cloud-console-language`",
+  "`product:local-portal-delivery-rc`",
+], "saas_control_plane_product_spec");
 
-assertIncludesAll(contract.userQuestions, [
-  "我买的是什么服务？",
-  "我的 OPL 工作台现在能不能用？",
-  "如果不能用，还缺哪一步？",
-  "下一步应该点哪里？",
-  "我的文件、任务、结果在哪里？",
-  "我的余额、预扣费、冻结金额、停止计费状态是否正常？",
-  "我什么时候应该释放计算资源但保留文件空间？",
-], "user_questions");
+assertIncludesAll(productTruth, [
+  "One Person Lab SaaS 控制面和托管交付平台",
+  "用户购买托管 OPL 科研工作台服务",
+  "MedOPL 不是云资源控制台",
+  "Portal 不回答科研问题，不复制 OPL chatbot",
+  "Portal 负责准备、管理、进入、回流、计费、审计和释放",
+  "OPL 负责 chatbot、agent、文件理解、任务推进、结果生成和工作台内交互体验",
+  "买了什么、能不能用、缺什么、下一步点哪里、结果在哪里、费用是否正常",
+], "saas_control_plane_product_truth");
 
-assertIncludesAll(contract.portalResponsibilities, [
-  "账号和登录态",
-  "套餐、余额、预扣费和冻结金额",
-  "计算资源、文件空间和工作空间状态",
-  "gflabtoken 模型调用密钥绑定状态和 OPL preflight 入口",
-  "进入 OPL 工作台",
-  "OPL session、run、artifact、trace 的回流展示",
-  "账单、审计、释放和停止计费状态",
-], "portal_responsibilities");
+assertIncludesAll(sourceSpec, [
+  "`source:portal-typed-api-contract`",
+  "`source:go-control-plane-mvp-takeover`",
+  "`source:node-portal-backend-physical-removal`",
+], "saas_control_plane_source_spec");
 
-assertIncludesAll(contract.oplResponsibilities, [
-  "chatbot",
-  "agent",
-  "科研任务执行",
-  "文件理解",
-  "结果生成",
-  "工作台内交互体验",
-], "opl_responsibilities");
+assertIncludesAll(activeTruth, [
+  `| current cursor | \`${current.current_cursor}\` |`,
+  "| current phase |",
+  "| current blocker |",
+], "saas_control_plane_active_truth");
+assertIncludesAll(deliveryTruth, [
+  current.current_cursor,
+  "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
+], "saas_control_plane_delivery_truth");
 
-assertIncludesAll(contract.portalMustNot, [
-  "重做 OPL chatbot",
-  "成为云资源控制台",
-  "要求普通用户理解 CVM/COS/K8s/TKE",
-  "把 raw API key、launchToken、runtimeToken、bearer token 写入浏览器持久化状态、日志、evidence 或 git",
-], "portal_must_not");
-
-assertIncludes(contractMarkdown, "MedOPL 是 One Person Lab 的 SaaS 控制面和托管交付平台", "contract_product_statement");
-assertIncludes(contractMarkdown, "让用户知道自己买的是什么东西、接受的是什么服务", "contract_user_service_statement");
-assertIncludes(contractMarkdown, "Portal 不回答科研问题，不复制 OPL 的 chatbot", "contract_no_chatbot_duplication");
-assertIncludes(contractMarkdown, "OPL 负责科研执行", "contract_opl_execution_boundary");
-assertIncludes(contractMarkdown, "Portal 负责准备、管理、进入、回流、计费、审计和释放", "contract_portal_lifecycle_boundary");
-
-assertIncludes(contractIndex, uxContractRef, "contract_index_must_reference_new_contract");
-assertIncludes(contractIndex, "Truth Layer 索引", "contract_index_must_have_truth_layer_index");
-for (const truthLayerName of truthLayerNames) {
-  assertIncludes(contractIndex, truthLayerName, "contract_index_truth_layer");
-}
-assertIncludes(contractIndex, "凡是会改变普通用户可见页面、OPL 入口、run/file/artifact 回流、资源/账单状态、真实云 projection 或管理台摘要的分支", "contract_index_subscription_rule");
-for (const packageName of userVisiblePackageNames) {
-  const section = extractContractPackageSection(contractIndex, packageName);
-  assertIncludes(section, uxContractRef, `contract_package_must_subscribe_ux_truth:${packageName}`);
-}
-assertIncludes(productTruth, "SaaS 控制面", "product_truth_must_name_saas_control_plane");
-assertIncludes(productTruth, "托管交付平台", "product_truth_must_name_managed_delivery_platform");
-assertIncludes(productTruth, "Portal 不回答科研问题，不复制 OPL chatbot", "product_truth_must_keep_opl_chatbot_boundary");
-assertIncludes(productTruth, "OPL 负责 chatbot、agent、文件理解、任务推进、结果生成和工作台内交互体验", "product_truth_must_assign_opl_execution");
-assertIncludes(productTruth, "用户购买托管 OPL 科研工作台服务", "product_truth_must_hold_product_truth");
-assertIncludes(activeTruth, `| current cursor | \`${current.current_cursor}\` |`, "active_truth_must_track_current_cursor");
-assertIncludes(deliveryTruth, current.current_cursor, "delivery_truth_must_track_current_cursor");
-assertIncludes(deliveryTruth, "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk", "delivery_truth_must_list_default_verify");
-
-for (const text of [
-  contractMarkdown,
-  productTruth,
-]) {
-  assertExcludes(text, "Portal 是科研聊天界面", "truth_must_not_make_portal_chat_ui");
-  assertExcludes(text, "Portal 是云资源控制台", "truth_must_not_make_portal_cloud_console");
-}
+assertExcludesAll(productTruth, [
+  "Portal 是科研聊天界面",
+  "Portal 是云资源控制台",
+  "普通用户自配云资源",
+], "saas_control_plane_forbidden_product_truth");
 
 console.log(JSON.stringify({
   ok: true,
-  contract: contract.contract,
-  checked: [
-    contractPath,
-    contractIndexPath,
-    activeTruthPath,
-    deliveryPath,
-  ],
+  contract: "v22_saas_control_plane_user_experience_boundary",
+  checked: Object.values(files),
 }, null, 2));

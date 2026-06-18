@@ -12,7 +12,8 @@ const files = {
   manifest: "tests/fixtures/v22/agent-verify-manifest.json",
   current: "tests/fixtures/v22/goal-current.json",
   active: "docs/active/README.md",
-  specs: "docs/specs/README.md",
+  specsIndex: "docs/specs/README.md",
+  rootSpecs: "specs/README.md",
   workflowGate: "scripts/v22-workflow-gate.mjs",
 };
 
@@ -48,10 +49,11 @@ function runVerify(args) {
 
 for (const filePath of Object.values(files)) await assertFileExists(filePath);
 
-const [runnerSource, activeSource, specsSource, workflowGateSource, manifest, current] = await Promise.all([
+const [runnerSource, activeSource, specsSource, rootSpecsSource, workflowGateSource, manifest, current] = await Promise.all([
   readRepoFile(files.runner),
   readRepoFile(files.active),
-  readRepoFile(files.specs),
+  readRepoFile(files.specsIndex),
+  readRepoFile(files.rootSpecs),
   readRepoFile(files.workflowGate),
   readJson(files.manifest),
   readJson(files.current),
@@ -71,7 +73,7 @@ assert.equal(manifest.change_lifecycle_policy?.trunk_allows_empty_active_changes
 assert(manifest.control_plane_files.includes("changes/README.md"), "manifest_control_plane_must_include_changes_readme");
 assert(manifest.control_plane_files.includes("specs/README.md"), "manifest_control_plane_must_include_specs_readme");
 assert.equal(current.human_truth, "docs/active/README.md", "current_human_truth_mismatch");
-assert.equal(current.spec_truth, "docs/specs/README.md", "current_spec_truth_mismatch");
+assert.equal(current.spec_truth, "docs/specs/README.md", "current_spec_index_mismatch");
 assert.equal(current.verify_manifest, files.manifest, "current_manifest_path_mismatch");
 const allowedCurrentBranchRoles = new Set([
   "productization_cursor",
@@ -98,7 +100,8 @@ assertNotIncludes(runnerSource, "docker build", "runner_must_not_embed_docker_bu
 assertNotIncludes(runnerSource, "git push", "runner_must_not_embed_git_push");
 
 assertIncludes(activeSource, "唯一人读 current truth", "active_truth_role");
-assertIncludes(specsSource, "Purpose: `v22_contract_spec_single_truth`", "specs_truth_role");
+assertIncludes(specsSource, "Purpose: `v22_contract_spec_index`", "specs_truth_role");
+assertIncludes(rootSpecsSource, "Machine boundary: root `specs/**` contains durable behavior specs", "root_specs_machine_boundary");
 assertIncludes(workflowGateSource, "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk", "workflow_gate_recommends_verify_current");
 
 const currentLeaf = manifest.leaves.find((leaf) => leaf.leaf_id === current.current_cursor);

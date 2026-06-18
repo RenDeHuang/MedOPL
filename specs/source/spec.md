@@ -21,3 +21,40 @@ Source specs define active source surfaces and retired source boundaries.
 | `source:go-control-plane-mvp-takeover` | Product + Operations | `services/medopl-go-backend`, `services/portal/frontend`, `docs/source/README.md` | `node tests/contract/contract-test-v22-backend-go-convergence-program.mjs`; `node tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs`; `go test ./...` from `services/medopl-go-backend`; `npm --prefix services/portal/frontend run typecheck` | local backend proof | Real-cloud readiness can start before Go local RC, or Node Portal backend can remain a long-term compatibility control plane. |
 | `source:node-portal-backend-deployment-retirement` | Product + Operations | `services/portal/package.json`, `services/portal/frontend/vite.config.ts`, `services/portal/frontend/src/api/**`, `services/medopl-go-backend` | `node tests/contract/contract-test-v22-precloud-deployable-rc.mjs`; `npm --prefix services/portal/frontend run typecheck` | local pre-cloud source proof | Node Portal backend remains a deployable backend, frontend proxy target, typed API owner or current verification owner. |
 | `source:sentrux-v22-rules-alignment` | Framework | `.sentrux/rules.toml`, `docs/source/README.md`, `services/portal/frontend`, `services/medopl-go-backend`, `services/opl-web-gateway`, `services/opl-runtime-bridge`, `tests/**`, `scripts/**`, `docs/**`, `specs/**` | `node tests/contract/contract-test-v22-sentrux-rules-alignment-boundary.mjs`; `sentrux check .`; `sentrux gate .` | local structural gate proof | Local Sentrux structural readiness proves production, real-cloud, deploy, kubectl, build/push or live-test readiness. |
+| `source:portal-workbench-management-ui-composition` | Product + Source | `services/portal/frontend/src/app/**`, `services/portal/frontend/src/api/portal/**`, `services/medopl-go-backend`, `tests/regression/portal/**` | `node tests/regression/portal/regression-test-v22-portal-package-surface-isolation.mjs`; `node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs` | local frontend regression proof | UI composition proof authorizes restoring retired routes, old Vue/Pinia surfaces, page-local static mock truth, aggregate admin model imports, direct non-core UI imports, cloud-console user language or Figma prototype truth before repo absorption. |
+
+## Portal Workbench Management UI Composition
+
+The active Portal workbench UI truth is the repo-native React/Vite/TypeScript frontend under `services/portal/frontend/src/app/**` and the typed API adapters under `services/portal/frontend/src/api/portal/**`. Retired route, stack and UI-package checks are source-owned regression checks, not `docs/specs/README.md` prose.
+
+Retired frontend routes:
+
+- `/packages`
+- `/advanced/servers`
+- `/runtime`
+- `/tasks`
+- `/opl`
+
+Retired frontend stack:
+
+- Vue
+- Pinia
+
+Required user routes:
+
+- `/overview`
+- `/resources`
+- `/workspace`
+- `/trace`
+- `/billing`
+- `/opl-launch`
+
+Required admin routes:
+
+- `/admin/dashboard`
+- `/admin/users`
+- `/admin/alerts`
+- `/admin/billing-ops`
+- `/admin/audit`
+- `/admin/system`
+- `/admin/ops`

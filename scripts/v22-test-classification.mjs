@@ -25,6 +25,15 @@ export const TEST_LIFECYCLE_CLEANUP_POLICY = Object.freeze({
   duplicateAggregateAction: "merge-or-delete",
   lifecycleRoleAuthority: "TEST_LANE_REGISTRY",
 });
+export const TEST_LANE_CONTRACT_REFS = Object.freeze([
+  "specs/product/spec.md",
+  "specs/runtime/spec.md",
+  "specs/operations/spec.md",
+  "specs/source/spec.md",
+  "specs/framework/spec.md",
+  "specs/evidence/spec.md",
+  "specs/policies/spec.md",
+]);
 
 const HEALTH_FILES = Object.freeze(["tests/health/health-check-v22-contract-conflict-boundary.mjs","tests/health/health-check-v22-line-budget-gate.mjs","tests/health/health-check-v22-repo-bloat-audit-gate.mjs","tests/health/health-check-v22-repo-hygiene-gate.mjs","tests/health/health-check-v22-smoke-classification-gate.mjs","tests/health/health-check-v22-smoke-eval-boundary.mjs","tests/health/health-check-v22-workflow-command-reference-gate.mjs","tests/health/health-check-v22-workflow-gate.mjs","tests/health/health-check-v22-zero-compat-active-surface-gate.mjs"]);
 const SMOKE_FILES = Object.freeze(["tests/smoke/smoke-test-v22-managed-environment-open-flow.mjs","tests/smoke/smoke-test-v22-mvp-managed-opl-loop-contract.mjs","tests/smoke/smoke-test-v22-mvp-user-loop-contract.mjs","tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs","tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs","tests/smoke/smoke-test-v22-pricing-plan-contract.mjs","tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs","tests/smoke/smoke-test-v22-resource-plan-contract.mjs","tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs","tests/smoke/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs","tests/smoke/smoke-test-v22-user-credit-provider-key-flow.mjs"]);
@@ -187,12 +196,36 @@ function idForFile(file) {
   return file.replace(/^tests\//u, "").replace(/\.mjs$/u, "").replace(/[^a-zA-Z0-9]+/gu, "-").replace(/^-|-$/gu, "");
 }
 
+function contractRefsForEntry({ surface, lifecycleRole }) {
+  const refs = new Set(["specs/framework/spec.md"]);
+  if (surface === "portal") {
+    refs.add("specs/product/spec.md");
+    refs.add("specs/source/spec.md");
+  } else if (surface === "opl" || surface === "runtime-bridge") {
+    refs.add("specs/runtime/spec.md");
+    refs.add("specs/source/spec.md");
+  } else if (surface === "cloud") {
+    refs.add("specs/operations/spec.md");
+    refs.add("specs/policies/spec.md");
+  } else {
+    refs.add("specs/product/spec.md");
+    refs.add("specs/runtime/spec.md");
+    refs.add("specs/source/spec.md");
+  }
+  if (lifecycleRole === "future-authorized-boundary" || lifecycleRole === "real-cloud-readiness-boundary") {
+    refs.add("specs/operations/spec.md");
+    refs.add("specs/policies/spec.md");
+  }
+  return Object.freeze([...refs].sort());
+}
+
 function entryForFile(file, laneDef) {
   const override = REGISTRY_OVERRIDES.get(file) || {};
   const entryKind = override.entryKind || "atomic";
   const surface = override.surface || "control-plane";
   const ownerSurface = override.ownerSurface || `surface:${surface}`;
   const lifecycleRole = override.lifecycleRole || lifecycleRoleForEntry({ authorization: laneDef.authorization, entryKind });
+  const contracts = override.contracts || contractRefsForEntry({ surface, lifecycleRole });
   return Object.freeze({
     id: idForFile(file),
     file,
@@ -204,7 +237,7 @@ function entryForFile(file, laneDef) {
     authorization: laneDef.authorization,
     ownerSurface,
     lifecycleRole,
-    contracts: Object.freeze(["docs/specs/README.md"]),
+    contracts: Object.freeze([...contracts]),
     verifySuites: Object.freeze(override.verifySuites || []),
   });
 }
@@ -308,7 +341,8 @@ export async function assertTestLaneCoverage() {
     || !SMOKE_EVAL_AUTHORIZATIONS.includes(entry.authorization)
     || !entry.ownerSurface
     || !SMOKE_EVAL_LIFECYCLE_ROLES.includes(entry.lifecycleRole)
-    || !entry.contracts.includes("docs/specs/README.md")
+    || entry.contracts.length === 0
+    || entry.contracts.some((contract) => !TEST_LANE_CONTRACT_REFS.includes(contract))
   )).map((entry) => entry.file);
   return Object.freeze({
     ok: missing.length === 0 && extra.length === 0 && duplicates.length === 0 && orphaned.length === 0 && invalid.length === 0,

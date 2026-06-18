@@ -37,6 +37,7 @@ const files = {
   specsIndex: "docs/specs/README.md",
   runtimeTruth: "docs/runtime/README.md",
   frameworkTruth: "docs/framework/README.md",
+  policiesTruth: "docs/policies/README.md",
   changeProposal: "changes/active/ai-runtime-contract/proposal.md",
   changeSpecDelta: "changes/active/ai-runtime-contract/spec-delta.md",
   changeDesign: "changes/active/ai-runtime-contract/design.md",
@@ -79,11 +80,18 @@ assertIncludesAll(contents.runtimeSpec, [
 
 assertIncludesAll(contents.specsIndex, [
   "spec:v22-ai-runtime-contract-boundary",
-  "AI Runtime Contract",
-  "MCP-compatible boundary",
-  "tools / resources / prompts / artifacts / approval",
-  "不授权真实云、secret、deploy、kubectl、build/push 或 live-test",
+  "specs/runtime/spec.md",
 ], "docs_specs_ai_runtime_index");
+assert.equal(contents.specsIndex.split("\n").length <= 400, true, `docs_specs_index_line_budget_exceeded:${contents.specsIndex.split("\n").length}`);
+assert.equal(/```json/u.test(contents.specsIndex), false, "docs_specs_index_must_not_embed_machine_json");
+assertIncludesAll(`${contents.runtimeSpec}\n${contents.policiesTruth}`, [
+  "secret",
+  "真实云",
+  "build",
+  "deploy",
+  "kubectl",
+  "live-test",
+], "runtime_policy_ai_runtime_boundary");
 
 assertIncludesAll(contents.runtimeTruth, [
   "AI Runtime Contract",

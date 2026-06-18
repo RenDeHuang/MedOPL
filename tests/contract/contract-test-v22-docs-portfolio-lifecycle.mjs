@@ -82,13 +82,16 @@ const [docsIndex, active, policies, history, testsReadme] = await Promise.all([
   readRepoFile("docs/history/README.md"),
   readRepoFile("tests/README.md"),
 ]);
+const specsIndex = await readRepoFile("docs/specs/README.md");
 
 assertIncludes(docsIndex, "## Document Portfolio Ledger", "docs_index_portfolio_ledger");
 assertIncludes(docsIndex, "allowed content", "docs_index_portfolio_allowed_content");
 assertIncludes(docsIndex, "forbidden content", "docs_index_portfolio_forbidden_content");
 assertIncludes(docsIndex, "history handoff", "docs_index_portfolio_history_handoff");
 assertIncludes(docsIndex, "docs/**` 是人读生命周期面", "docs_index_must_define_human_lifecycle_surface");
-assertIncludes(docsIndex, "机器真相归 source、tests、fixtures、manifest、runner 和 API/CLI 行为", "docs_index_must_define_machine_truth_surface");
+for (const machineOwner of ["source", "tests", "fixtures", "manifest", "runner", "root specs", "API/CLI 行为"]) {
+  assertIncludes(docsIndex, machineOwner, `docs_index_must_define_machine_truth_surface:${machineOwner}`);
+}
 assertIncludes(docsIndex, "changes/README.md", "docs_index_must_register_change_lifecycle_surface");
 assertIncludes(docsIndex, "active truth -> change package -> spec delta -> eval plan -> implementation -> verify -> review -> archive -> durable specs sync -> history closeout -> next cursor", "docs_index_must_define_change_lifecycle_loop");
 assertIncludes(docsIndex, "open baton", "docs_index_must_define_open_baton_lifecycle");
@@ -99,6 +102,11 @@ for (const dir of docsDirs) {
 
 assertIncludes(docsIndex, "`docs/active/README.md` | current truth / gap / cursor", "docs_index_active_surface_rule");
 assertIncludes(docsIndex, "current facts, gap, current development lines, cannot-claim, next action", "docs_index_active_allowed_content");
+assert(specsIndex.split("\n").length <= 400, `docs_specs_readme_must_be_index_only:${specsIndex.split("\n").length}`);
+assert.equal(specsIndex.includes("```json"), false, "docs_specs_readme_must_not_embed_machine_json");
+assertIncludes(specsIndex, "specs/product/spec.md", "docs_specs_index_must_point_to_product_spec");
+assertIncludes(specsIndex, "specs/runtime/spec.md", "docs_specs_index_must_point_to_runtime_spec");
+assertIncludes(specsIndex, "specs/framework/spec.md", "docs_specs_index_must_point_to_framework_spec");
 assertIncludes(active, "唯一人读 current truth", "active_current_truth_boundary");
 assertIncludes(active, "| current cursor |", "active_surface_current_cursor_field");
 assertIncludes(active, "## Verification Entry", "active_surface_verification_entry");

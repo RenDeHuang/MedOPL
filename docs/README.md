@@ -5,7 +5,7 @@ Purpose: `docs_taxonomy_index`
 State: `active`
 Machine boundary: 本文是人读入口。机器验证入口是 `scripts/v22-verify.mjs`；机器 cursor 和 verify manifest 在 `tests/fixtures/v22/goal-current.json` 与 `tests/fixtures/v22/agent-verify-manifest.json`。
 
-本目录采用 OPL-style lifecycle taxonomy，并在 v22 严格版里执行“一目录一 README 真相”。`docs/active/README.md` 是唯一人读 current truth；`docs/specs/README.md` 是唯一合同/spec truth。和 one-person-lab 一样，`docs/**` 是人读生命周期面；机器真相归 source、tests、fixtures、manifest、runner 和 API/CLI 行为，不把 Markdown 长计划当稳定机器接口。
+本目录采用 OPL-style lifecycle taxonomy，并在 v22 严格版里执行“一目录一 README 真相”。`docs/active/README.md` 是唯一人读 current truth；`docs/specs/README.md` 是合同/spec 的人读索引，durable requirement 和 eval anchor 归 root `specs/**`。和 one-person-lab 一样，`docs/**` 是人读生命周期面；机器真相归 source、tests、fixtures、manifest、runner、root specs 和 API/CLI 行为，不把 Markdown 长计划当稳定机器接口。
 
 ## Reading Order
 
@@ -52,7 +52,7 @@ docs/README -> active truth -> product/runtime/framework -> specs/evidence/polic
 active truth -> change package -> spec delta -> eval plan -> implementation -> verify -> review -> archive -> durable specs sync -> history closeout -> next cursor
 ```
 
-如果任一环节漂移，以 `docs/active/README.md`、`docs/specs/README.md`、`tests/fixtures/v22/goal-current.json`、`tests/fixtures/v22/agent-verify-manifest.json` 和 `docs/history/README.md` 的一致性为裁定对象；不能用聊天记录或旧路径补事实。
+如果任一环节漂移，以 `docs/active/README.md`、`docs/specs/README.md`、root `specs/**`、`tests/fixtures/v22/goal-current.json`、`tests/fixtures/v22/agent-verify-manifest.json` 和 `docs/history/README.md` 的一致性为裁定对象；不能用聊天记录或旧路径补事实。
 
 `changes/README.md` 是 open change 和 archive change 的 repo-native 生命周期入口。它不是 docs taxonomy 的第二套 truth，也不改变 `docs/{active,product,runtime,framework,specs,evidence,policies,delivery,source,public,references,history}/` 一目录一 README 规则。`docs/active/README.md` 可以指向 open change，但不得承载 change package 正文。
 
@@ -72,7 +72,7 @@ Active 文档只保当前 owner、当前状态、下一步 gate 和完成口径�
 | `docs/product/README.md` | product view | hard compacted view | product language, user experience framing, product spec anchor index | current status, implementation proof, cloud execution claims | product line changes summarize in history only after landing gate and post-merge closeout |
 | `docs/runtime/README.md` | runtime view | hard compacted view | Gateway / Runtime Bridge / clean upstream boundary and spec anchors | upstream implementation details, canary evidence, deploy proof | runtime discovery evidence stays in `.runtime` or history summary |
 | `docs/framework/README.md` | platform framework model | active framework view | owner boundary, surface budget, evidence/admission/readiness model, four-plane map | second current truth, production evidence claims, OPL AI runtime business semantics | framework model changes summarize in history after landing |
-| `docs/specs/README.md` | contract/spec truth | active spec truth | durable contracts, stable boundaries, spec anchors | agent-run logs, temporary plans, current cursor status | superseded spec rationale summarizes in history |
+| `docs/specs/README.md` | contract/spec index | active spec index | domain spec owners, navigation, package templates, anchor pointers | durable requirements as machine source, agent-run logs, temporary plans, current cursor status | durable contracts live in root `specs/**`; superseded rationale summarizes in history |
 | `docs/evidence/README.md` | evidence model | active evidence view | evidence levels, can-claim/cannot-claim, evidence storage and review routing | current truth, product truth, secret material, production claims without production evidence | evidence closeout summarizes in history |
 | `docs/policies/README.md` | policy truth | active policy truth | stable workflow, authorization, docs lifecycle, smoke/eval, secret and cleanup policy | current product truth, run proof, implementation detail | policy changes record the landed branch in history |
 | `docs/delivery/README.md` | delivery truth | active delivery view | current execution entrypoints, delivery order, cloud/deploy authorization sequence | release claims without authorization, B evidence detail | delivery closeout summarizes in history |

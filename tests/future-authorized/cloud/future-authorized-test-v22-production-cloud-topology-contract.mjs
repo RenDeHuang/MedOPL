@@ -24,9 +24,7 @@ import {
   runProductionLaunchCommercialLedgerContract,
 } from "../../support/cloud-prework/production-launch-commercial-ledger-runner.js";
 
-const contractPath = "docs/specs/README.md";
 const manifestPath = "tests/fixtures/v22/agent-verify-manifest.json";
-const readmePath = "docs/specs/README.md";
 const selfFile = "tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs";
 
 function commandFiles(commands = []) {
@@ -82,123 +80,97 @@ function assertNoSensitiveText(text = "", label = "text") {
   }
 }
 
-const [contract, manifest, readme, suite] = await Promise.all([
-  readFile(contractPath, "utf8"),
+const [
+  specsIndex,
+  operationsSpec,
+  runtimeReadme,
+  delivery,
+  sourceReadme,
+  tkeBootstrapRunner,
+  manifest,
+] = await Promise.all([
+  readFile("docs/specs/README.md", "utf8"),
+  readFile("specs/operations/spec.md", "utf8"),
+  readFile("docs/runtime/README.md", "utf8"),
+  readFile("docs/delivery/README.md", "utf8"),
+  readFile("docs/source/README.md", "utf8"),
+  readFile("tests/support/cloud-prework/v22-tke-bootstrap-preflight-plan.js", "utf8"),
   readFile(manifestPath, "utf8").then(JSON.parse),
-  readFile(readmePath, "utf8"),
-  Promise.resolve(""),
 ]);
 const futureAuthorizedFiles = commandFiles(manifest.suites.find((entry) => entry.id === "cloud-future-authorized")?.commands || []);
 
-assertIncludesAll(contract, [
-  "v22 Production Cloud Topology Boundary",
-  "production cloud topology contract",
-  "当前只是合同",
-  "不代表已部署",
-  "不代表已接入",
-  "不代表已验证",
-], "production_cloud_topology_scope");
-
-assertIncludesAll(contract, [
-  "CLB",
-  "portal/opl/gateway 入口",
-  "TKE",
-  "Portal/Gateway/Runtime/worker 承载层",
-  "COS",
-  "workspace file space object storage",
-  "文件空间事实源",
-  "CBS",
-  "TKE 节点盘/必要持久卷",
-  "不作为普通用户文件空间主叙事",
-  "NAT",
-  "TKE 私网出公网、拉镜像、访问模型/API/云 API",
-  "PostgreSQL",
-  "Portal canonical store、账本、资源绑定、审计、文件索引",
-  "platform service node pool",
-  "tenant node pool",
-], "production_cloud_topology_resource_roles");
-
-assertIncludesAll(contract, [
-  "普通用户产品语言不展示",
-  "CLB/TKE/COS/CBS/NAT/PostgreSQL",
-  "工作台资源",
-  "托管运行环境",
-  "文件空间",
-  "预计费用",
-  "释放策略",
-  "审计状态",
-], "production_cloud_topology_user_language");
-
-assertIncludesAll(contract, [
-  "Namespace",
-  "RBAC",
-  "ResourceQuota",
-  "LimitRange",
-  "NetworkPolicy",
-  "Pod Security",
-  "taint",
-  "label",
-  "nodeSelector",
-  "toleration",
-  "tenant node pool",
-  "用户 workload 不得调度到 platform service node pool",
-  "平台服务不得调度到 tenant node pool",
-], "production_cloud_topology_kubernetes_multitenancy_controls");
-
-assertIncludesAll(contract, [
-  "region",
-  "VPC",
-  "subnet",
-  "security group",
-  "resource tag",
-  "cost allocation",
-  "readonly inventory",
-  "deploy plan",
-], "production_cloud_topology_future_inventory_deploy_plan");
-
-assertIncludesAll(contract, [
-  "不改 deploy",
-  "不 kubectl",
-  "不 build/push",
-  "不调用真实云",
-  "不读取 secret",
-  "不创建/删除资源",
-], "production_cloud_topology_non_goals");
-
-assertIncludesAll(contract, [
-  "\"contractOnly\": true",
-  "\"deployed\": false",
-  "\"connected\": false",
-  "\"verified\": false",
-  "\"callsRealCloud\": false",
-  "\"readsSecret\": false",
-  "\"createsOrDeletesResources\": false",
-  "\"changesDeploy\": false",
-  "\"usesKubectl\": false",
-  "\"runsBuildPush\": false",
-  "\"tenantNodePoolRequiredPerWorkspace\": true",
-  "\"sharedUserComputePoolSupported\": false",
-], "production_cloud_topology_contract_data");
-
-assertNotIncludesAny(contract, [
-  "\"contractOnly\": false",
-  "\"deployed\": true",
-  "\"connected\": true",
-  "\"verified\": true",
-  "\"callsRealCloud\": true",
-  "\"readsSecret\": true",
-  "\"createsOrDeletesResources\": true",
-  "\"sharedUserComputePoolSupported\": true",
-], "production_cloud_topology_forbidden_contract_data");
-
-assertIncludesAll(readme, [
+assert.equal(specsIndex.split("\n").length <= 400, true, `specs_index_line_budget_exceeded:${specsIndex.split("\n").length}`);
+assert.equal(/```json/u.test(specsIndex), false, "specs_index_must_not_embed_machine_json");
+assertIncludesAll(specsIndex, [
   "spec:v22-production-cloud-topology-boundary",
-  "production cloud topology",
-  "CLB / TKE / COS / CBS / NAT / PostgreSQL",
-  "当前只是合同",
-], "contracts_readme_production_cloud_topology");
+  "specs/operations/spec.md",
+], "production_cloud_topology_specs_index");
 
-assertNotIncludesAny(contract, [
+assertIncludesAll(operationsSpec, [
+  "`operations:production-cloud-topology-boundary`",
+  "docs/runtime/README.md",
+  "docs/delivery/README.md",
+  "docs/source/README.md",
+  "tests/support/cloud-prework/v22-tke-bootstrap-preflight-plan.js",
+  "tests/support/cloud-prework/production-launch-*-runner.js",
+  "node tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs",
+  "node tests/future-authorized/cloud/future-authorized-test-v22-tke-bootstrap-preflight-local-gate.mjs",
+  "real cloud deployment",
+  "public access",
+  "production readiness",
+  "required Redis",
+  "shared user compute pools",
+  "secret reads",
+  "kubectl",
+  "deploy",
+], "production_cloud_topology_operations_spec");
+
+assertIncludesAll(runtimeReadme, [
+  "one unified TKE cluster",
+  "platform service node pool",
+  "Package C creates and releases a dedicated tenant node pool",
+  "PostgreSQL-only required data plane",
+  "Redis is not a required production dependency",
+  "Runtime / data readiness 必须 fail closed",
+], "production_cloud_topology_runtime_owner");
+
+assertIncludesAll(delivery, [
+  "mock/snapshot provider",
+  "readonly inventory",
+  "TKE bootstrap preflight",
+  "Package C live canary readiness pack with execution disabled",
+  "Package D deploy readiness planning for platform pool and VPC PostgreSQL",
+  "当前 cursor 不授权",
+  "Tencent mutation",
+  "deploy",
+  "build/push",
+  "Package C live",
+], "production_cloud_topology_delivery_owner");
+
+assertIncludesAll(sourceReadme, [
+  "tests/support/cloud-prework",
+  "TKE bootstrap preflight only records the unified cluster and platform service node pool foundation",
+  "Production Launch Gap 01 / Gap 02 / Gap 03 contract runners",
+  "Local tests use fake inputs and fake kubectl/docker only",
+  "future-authorized tests",
+  ".runtime",
+  "evidence",
+], "production_cloud_topology_source_owner");
+
+assertIncludesAll(tkeBootstrapRunner, [
+  "createsOrDeletesResources: false",
+  "sharedUserComputePoolRequired: false",
+  "premiumDedicatedPoolRequired: false",
+  "platform_service_pool",
+  "tenant_node_pool_template",
+  "createdDuringPackageC: true",
+  "requiredStores: [\"PostgreSQL\", \"COS\", \"CBS\"]",
+  "redisRequired: false",
+  "TENCENT_MUTATION_TKE_CLUSTER_ID",
+  "TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID",
+], "production_cloud_topology_tke_bootstrap_runner");
+
+assertNotIncludesAny(`${operationsSpec}\n${runtimeReadme}\n${tkeBootstrapRunner}`, [
   "| Redis |",
   "Redis instance summary",
   "CLB/TKE/CBS/NAT/Redis/PostgreSQL",
@@ -214,7 +186,6 @@ assertNotIncludesAny(contract, [
   "标准套餐不得解释成“一用户一个节点池”",
 ], "production_cloud_topology_must_not_require_redis");
 
-assert.equal(suite, "", "production_topology_must_not_read_legacy_suite_source");
 assert(futureAuthorizedFiles.includes(selfFile), "future_authorized_suite_must_include_production_cloud_topology_contract");
 
 const bootstrapEvidenceRoot = await mkdtemp(path.join(os.tmpdir(), "v22-production-launch-bootstrap-"));

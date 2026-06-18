@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  TEST_LANE_CONTRACT_REFS,
   TEST_LANE_REGISTRY,
   TEST_LANE_SUITES,
   assertTestLaneCoverage,
@@ -50,7 +51,10 @@ for (const entry of TEST_LANE_REGISTRY) {
   assert(entry.surface, `registry_entry_missing_surface:${entry.id}`);
   assert(entry.entryKind, `registry_entry_missing_entry_kind:${entry.id}`);
   assert(entry.authorization, `registry_entry_missing_authorization:${entry.id}`);
-  assert(Array.isArray(entry.contracts) && entry.contracts.includes("docs/specs/README.md"), `registry_entry_missing_specs_contract:${entry.id}`);
+  assert(Array.isArray(entry.contracts) && entry.contracts.length > 0, `registry_entry_missing_specs_contract:${entry.id}`);
+  for (const ref of entry.contracts) {
+    assert(TEST_LANE_CONTRACT_REFS.includes(ref), `registry_entry_contract_must_use_root_specs:${entry.id}:${ref}`);
+  }
   assert(Array.isArray(entry.verifySuites) && entry.verifySuites.length > 0, `registry_entry_missing_verify_suite:${entry.id}`);
 }
 

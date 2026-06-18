@@ -13,10 +13,12 @@ const files = {
   runtime: "docs/runtime/README.md",
   framework: "docs/framework/README.md",
   specs: "docs/specs/README.md",
+  rootSpecs: "specs/README.md",
   evidence: "docs/evidence/README.md",
   policies: "docs/policies/README.md",
   delivery: "docs/delivery/README.md",
   history: "docs/history/README.md",
+  frameworkSpec: "specs/framework/spec.md",
   testsReadme: "tests/README.md",
   manifest: "tests/fixtures/v22/agent-verify-manifest.json",
   current: "tests/fixtures/v22/goal-current.json",
@@ -114,10 +116,12 @@ const [
   runtime,
   framework,
   specs,
+  rootSpecs,
   evidence,
   policies,
   delivery,
   history,
+  frameworkSpec,
   testsReadme,
   manifest,
   current,
@@ -128,10 +132,12 @@ const [
   readRepoFile(files.runtime),
   readRepoFile(files.framework),
   readRepoFile(files.specs),
+  readRepoFile(files.rootSpecs),
   readRepoFile(files.evidence),
   readRepoFile(files.policies),
   readRepoFile(files.delivery),
   readRepoFile(files.history),
+  readRepoFile(files.frameworkSpec),
   readRepoFile(files.testsReadme),
   readJson(files.manifest),
   readJson(files.current),
@@ -139,7 +145,8 @@ const [
 
 assertIncludesAll(docsIndex, [
   "docs/active/README.md` 是唯一人读 current truth",
-  "docs/specs/README.md` 是唯一合同/spec truth",
+  "docs/specs/README.md` 是合同/spec 的人读索引",
+  "root `specs/**`",
   "framework",
   "evidence-after-contract",
   "docs/README -> active truth -> product/runtime/framework -> specs/evidence/policies -> delivery -> tests/fixtures/manifest -> verify -> history closeout -> next cursor",
@@ -147,6 +154,10 @@ assertIncludesAll(docsIndex, [
   "`docs/framework/README.md`",
   "`docs/evidence/README.md`",
 ], "docs_index_framework_truth_layering");
+assertIncludesAll(rootSpecs, [
+  "Machine boundary: root `specs/**` contains durable behavior specs",
+  "docs/specs/README.md remains the human contract index",
+], "root_specs_framework_truth_layering");
 
 assertIncludesAll(active, [
   "docs/framework/README.md",
@@ -215,7 +226,17 @@ assertIncludesAll(policies, [
   "不得恢复 `scripts/smoke-test-*`",
 ], "policies_framework_truth_layer_policy");
 
-assertIncludes(specs, "Specs 只保合同下限，不承载 evidence log、current cursor 或 production completion claim", "specs_contract_light_rule");
+assert.equal(specs.split("\n").length <= 400, true, `specs_index_line_budget_exceeded:${specs.split("\n").length}`);
+assert.equal(/```json/u.test(specs), false, "specs_index_must_not_embed_machine_json");
+assertIncludesAll(specs, [
+  "specs/product/spec.md",
+  "specs/runtime/spec.md",
+  "specs/framework/spec.md",
+], "specs_index_must_point_to_domain_specs");
+assertIncludesAll(frameworkSpec, [
+  "`framework:repo-native-change-lifecycle`",
+  "`framework:opl-style-development-discipline-convergence`",
+], "framework_spec_must_hold_contract_light_rules");
 assertIncludes(product, "Product Contract Groups", "product_must_remain_product_view");
 assertIncludes(runtime, "Runtime Contract Groups", "runtime_must_remain_runtime_view");
 assertIncludes(delivery, "Current Cursor", "delivery_must_remain_delivery_view");
@@ -243,7 +264,7 @@ const retiredPathLiterals = [
 assertExcludesAll(`${framework}\n${evidence}`, retiredPathLiterals, "new_framework_docs_must_not_reintroduce_retired_paths");
 
 assert.equal(current.human_truth, "docs/active/README.md", "current_human_truth_must_remain_active");
-assert.equal(current.spec_truth, "docs/specs/README.md", "current_spec_truth_must_remain_specs");
+assert.equal(current.spec_truth, "docs/specs/README.md", "current_spec_index_must_remain_specs_readme");
 assert.equal(manifest.default_agent_entrypoint, "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk", "manifest_default_entrypoint_must_remain_verify_current");
 
 const reviewSuite = manifest.suites.find((suite) => suite.id === "review");

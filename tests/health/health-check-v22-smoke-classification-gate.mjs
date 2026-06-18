@@ -16,6 +16,7 @@ import {
   SMOKE_GOLDEN_MAX,
   SMOKE_GOLDEN_MIN,
   SMOKE_GOLDEN_SCRIPTS,
+  TEST_LANE_CONTRACT_REFS,
   listClassifiedSmokeScripts,
   listSmokeEvalScripts,
   smokeEvalMetadataOf,
@@ -64,7 +65,10 @@ for (const [scriptPath, category] of Object.entries(SMOKE_CLASSIFICATION)) {
   assert(allowedSurfaces.has(metadata.surface), `unknown_eval_surface:${scriptPath}:${metadata.surface}`);
   assert(allowedEntryKinds.has(metadata.entryKind), `unknown_eval_entry_kind:${scriptPath}:${metadata.entryKind}`);
   assert(allowedAuthorizations.has(metadata.authorization), `unknown_eval_authorization:${scriptPath}:${metadata.authorization}`);
-  assert.deepEqual(metadata.contractRefs, ["docs/specs/README.md"], `metadata_must_reference_single_specs_truth:${scriptPath}`);
+  assert(metadata.contractRefs.length > 0, `metadata_contract_refs_required:${scriptPath}`);
+  for (const ref of metadata.contractRefs) {
+    assert(TEST_LANE_CONTRACT_REFS.includes(ref), `metadata_must_reference_root_specs:${scriptPath}:${ref}`);
+  }
 }
 
 const defaultScripts = listClassifiedSmokeScripts({ categories: DEFAULT_SMOKE_CATEGORIES });

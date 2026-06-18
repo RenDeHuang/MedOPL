@@ -158,14 +158,13 @@ try {
   const futureAuthorizedFiles = commandFiles(manifest.suites.find((entry) => entry.id === "cloud-future-authorized")?.commands || []);
   assert(futureAuthorizedFiles.includes(selfFile), "future_authorized_suite_must_include_tke_bootstrap_preflight");
   assert(contract.includes("spec:v22-tke-bootstrap-preflight-boundary"), "contract_must_index_tke_bootstrap_preflight");
-  assert(contract.includes("TKE bootstrap preflight"), "contract_must_describe_tke_bootstrap_preflight");
-  assert(contract.includes("TENCENT_MUTATION_TKE_CLUSTER_ID"), "contract_must_name_cluster_env_field");
-  assert(contract.includes("TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID"), "contract_must_name_platform_node_pool_env_field");
-  assert.equal(contract.includes("TENCENT_MUTATION_TKE_NODE_POOL_ID"), false, "old_single_node_pool_env_must_be_removed");
-  assert(contract.includes("PostgreSQL / COS / CBS"), "contract_must_keep_postgresql_cos_cbs_data_plane");
-  assert.equal(contract.includes("Redis is required"), false, "contract_must_not_require_redis");
   assert(operationsSpec.includes("operations:tke-bootstrap-preflight"), "operations_spec_must_include_preflight_requirement");
   assert(runtimeSpec.includes("runtime:cloud-foundation-preflight"), "runtime_spec_must_include_preflight_requirement");
+  assert(JSON.stringify(report).includes("TENCENT_MUTATION_TKE_CLUSTER_ID"), "report_must_name_cluster_env_field");
+  assert(JSON.stringify(report).includes("TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID"), "report_must_name_platform_node_pool_env_field");
+  assert.equal(contract.includes("TENCENT_MUTATION_TKE_NODE_POOL_ID"), false, "old_single_node_pool_env_must_be_removed");
+  assert.deepEqual(report.topology.dataPlane.requiredStores, ["PostgreSQL", "COS", "CBS"], "report_must_keep_postgresql_cos_cbs_data_plane");
+  assert.equal(JSON.stringify(report).includes("Redis is required"), false, "report_must_not_require_redis");
 } finally {
   await rm(tmp, { recursive: true, force: true });
 }

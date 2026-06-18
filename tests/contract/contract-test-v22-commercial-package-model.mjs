@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
-const specsPath = "docs/specs/README.md";
+const specsPath = "specs/product/spec.md";
 const productPath = "docs/product/README.md";
 const packageStartMarker = "<!-- v22-commercial-package-model:start -->";
 const packageEndMarker = "<!-- v22-commercial-package-model:end -->";
@@ -70,7 +70,7 @@ function assertCommercialPackageModel({ specs, product }) {
     assertNotIncludes(JSON.stringify(packageModel), "K8s", `package_${packageModel.id}`);
     assertNotIncludes(JSON.stringify(packageModel), "云资源控制台", `package_${packageModel.id}`);
   }
-  assertIncludes(specs, "### spec:v22-commercial-package-model", "specs_anchor");
+  assertIncludes(specs, "`product:commercial-package-model`", "specs_anchor");
   assertIncludes(productCommercialSection, "谁都可以进入 OPL", "product_anyone_can_enter_opl");
   assertIncludes(productCommercialSection, "需要平台托管计算、文件空间、隔离环境、计费和审计时，必须进入 MedOPL", "product_medopl_cloud_gate");
   assertIncludes(productCommercialSection, "api_only", "product_api_only");

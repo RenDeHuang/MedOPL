@@ -204,9 +204,9 @@ const result = await withTempRepo(async (tempRoot) => {
   };
 });
 
-const contractSource = await readFile(path.join(repoRoot, "docs/specs/README.md"), "utf8");
-assert(contractSource.includes("raw API Key 只能进入后端密钥边界"), "token_provider_raw_key_boundary_missing");
-assert(contractSource.includes("不能写入 sessionStorage、localStorage、global JS state、log、evidence 或 git"), "token_provider_forbidden_storage_missing");
+const runtimeSpec = await readFile(path.join(repoRoot, "specs/runtime/spec.md"), "utf8");
+assert(runtimeSpec.includes("Raw provider key, bearer token, launchToken, runtimeToken"), "token_provider_raw_key_boundary_missing");
+assert(runtimeSpec.includes("must not enter public state, tool/resource response, artifact projection, evidence, logs or git"), "token_provider_forbidden_storage_missing");
 
 console.log(JSON.stringify({
   ok: true,

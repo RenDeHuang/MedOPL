@@ -87,7 +87,7 @@ async function assertCurrentTruthSaysPhysicalRemoval() {
     readRepoFile("docs/active/README.md"),
     readRepoFile("docs/source/README.md"),
     readRepoFile("docs/runtime/README.md"),
-    readRepoFile("docs/specs/README.md"),
+    readRepoFile("specs/source/spec.md"),
     readRepoFile("docs/delivery/README.md"),
   ]);
   for (const [label, sourceText] of Object.entries({ active, source, runtime, specs, delivery })) {
@@ -97,7 +97,7 @@ async function assertCurrentTruthSaysPhysicalRemoval() {
     assertNotIncludes(sourceText, "portal-workflow-facade", `${label}_must_not_keep_node_facade_truth`);
   }
   assertIncludes(source, "services/portal/src` 已物理清退", "source_truth_must_record_physical_removal");
-  assertIncludes(specs, "Node Portal backend physical removal", "specs_must_record_physical_removal");
+  assertIncludes(specs, "`source:node-portal-backend-physical-removal`", "source_spec_must_record_physical_removal");
   assertIncludes(runtime, "Portal frontend -> Go backend `/api`", "runtime_must_record_frontend_go_boundary");
 }
 

@@ -139,7 +139,8 @@ for (const forbiddenClaim of [
 }
 
 const activeTruth = await readRepoFile("docs/active/README.md");
-const specsTruth = await readRepoFile("docs/specs/README.md");
+const specsIndex = await readRepoFile("docs/specs/README.md");
+const runtimeSpec = await readRepoFile("specs/runtime/spec.md");
 const runtimeTruth = await readRepoFile("docs/runtime/README.md");
 const frameworkTruth = await readRepoFile("docs/framework/README.md");
 const sourceTruth = await readRepoFile("docs/source/README.md");
@@ -170,6 +171,17 @@ for (const marker of [
 }
 
 for (const marker of [
+  "spec:v22-ai-runtime-contract-boundary",
+  "specs/runtime/spec.md",
+]) {
+  assertIncludes(specsIndex, marker, "specs_index_ai_mvp_readiness_pointer");
+}
+assert.equal(specsIndex.split("\n").length <= 400, true, `specs_index_line_budget_exceeded:${specsIndex.split("\n").length}`);
+assert.equal(/```json/u.test(specsIndex), false, "specs_index_must_not_embed_machine_json");
+
+for (const marker of [
+  "`runtime:ai-runtime-contract`",
+  "`runtime:mcp-compatible-boundary`",
   "AI Runtime Contract",
   "MCP-compatible boundary",
   "runtimeTool",
@@ -178,11 +190,8 @@ for (const marker of [
   "runtimeArtifact",
   "runtimeApproval",
   "node tests/contract/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs",
-  "node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs",
-  "local_ai_mvp_readiness_only",
-  "six-step AI MVP readiness",
 ]) {
-  assertIncludes(specsTruth, marker, "specs_truth_ai_mvp_readiness");
+  assertIncludes(runtimeSpec, marker, "runtime_spec_ai_mvp_readiness");
 }
 
 for (const marker of [

@@ -12,7 +12,11 @@ const repoRoot = path.resolve(__dirname, "../..");
 const activeSource = await readFile(path.join(repoRoot, "docs/active/README.md"), "utf8");
 const productSource = await readFile(path.join(repoRoot, "docs/product/README.md"), "utf8");
 const runtimeSource = await readFile(path.join(repoRoot, "docs/runtime/README.md"), "utf8");
-const specsSource = await readFile(path.join(repoRoot, "docs/specs/README.md"), "utf8");
+const [productSpecSource, runtimeSpecSource, sourceSpecSource] = await Promise.all([
+  readFile(path.join(repoRoot, "specs/product/spec.md"), "utf8"),
+  readFile(path.join(repoRoot, "specs/runtime/spec.md"), "utf8"),
+  readFile(path.join(repoRoot, "specs/source/spec.md"), "utf8"),
+]);
 const current = JSON.parse(await readFile(path.join(repoRoot, "tests/fixtures/v22/goal-current.json"), "utf8"));
 
 for (const phrase of [
@@ -35,14 +39,15 @@ for (const phrase of [
   assert(runtimeSource.includes(phrase), `runtime_truth_missing:${phrase}`);
 }
 
-for (const phrase of [
-  "spec:v22-mvp-managed-opl-loop",
-  "spec:v22-saas-control-plane-user-experience-boundary",
-  "spec:v22-smoke-eval-boundary",
-  "spec:v22-runtime-bridge-session-run-file-provider-keyref-boundary",
-  "spec:v22-portal-files-billing-trace-boundary",
+for (const [source, phrase] of [
+  [runtimeSpecSource, "runtime:precloud-deployable-rc"],
+  [runtimeSpecSource, "runtime:bridge-projection"],
+  [runtimeSpecSource, "runtime:saas-portal-opl-ops-surface-boundary"],
+  [productSpecSource, "product:managed-opl-service"],
+  [productSpecSource, "product:starter-2c4g-10gb-plan-catalog"],
+  [sourceSpecSource, "source:portal-workbench-management-ui-composition"],
 ]) {
-  assert(specsSource.includes(phrase), `spec_truth_missing:${phrase}`);
+  assert(source.includes(phrase), `root_spec_missing:${phrase}`);
 }
 
 assert(current.current_cursor, "current_cursor_required");
