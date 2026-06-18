@@ -8333,3 +8333,73 @@ post_push_verification:
 post_merge_closeout: `completed`
 
 next_cursor: `real-cloud-authorization-boundary`
+
+### 2026-06-18 feat/opl-style-development-discipline-convergence
+
+Status: `landed / pushed / post-push verified`
+
+Branch: `feat/opl-style-development-discipline-convergence`
+
+Base trunk HEAD: `8b24fbfe85e9d9660969198bc06198d5867243e7`
+
+Model: `gpt-5.3-codex`
+
+Subagents: `none`
+
+Scope:
+
+- Hardened root `AGENTS.md` so OPL-style development discipline, docs lifecycle management, code retirement and software engineering closeout are explicit agent obligations.
+- Added structured Plan Completion Audit and Cleanup Result enforcement for formal closeout surfaces.
+- Added the repo-native change package `changes/active/opl-style-development-discipline-convergence`.
+- Updated `scripts/v22-workflow-gate.mjs`, `scripts/v22-landing-closeout.mjs`, framework specs and contract/health gates so formal diffs require change-package evidence and cleanup closeout structure.
+- This was a governance/discipline convergence package only. It did not clean up the large fixtures/docs/handlers/scripts surfaces and did not execute deploy, live cloud, kubectl, build/push or runtime behavior.
+
+Verification:
+
+- `node tests/contract/contract-test-v22-change-package-lifecycle.mjs`: passed.
+- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`: passed.
+- `npm run verify`: passed before push and after ff-only landing to trunk.
+
+Can-claim:
+
+- OPL-style development discipline is now represented in root `AGENTS.md` and backed by local workflow gates.
+- Formal closeout surfaces now require Plan Completion Audit and Cleanup Result evidence.
+
+Cannot-claim:
+
+- Historical large files have been cleaned up.
+- Every historical closeout has been rewritten.
+- Runtime behavior, deploy, live cloud behavior, billing or production readiness is proven by this governance package.
+
+next_cursor: `real-cloud-authorization-boundary`
+
+landed_commit: `138d18e8d3df72bb615fac9da561e77189f2effe`
+
+landing_gate_result: `passed / ff-only landed / pushed`
+
+post_push_verification:
+
+- node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk: passed after ff-only landing
+- npm run verify: passed after ff-only landing
+- git push origin recovery/platform-v22-trunk: pushed 8b24fbf..138d18e
+
+plan_completion_audit:
+
+- functional: done
+- code_cleanup: partial
+- docs_foldback: done
+- verification: done
+- retired_entrypoints: partial
+- cannot_claim: done
+
+cleanup_result:
+
+- deleted: none
+- folded: AGENTS discipline and closeout rule truth into framework specs/history/current cursor
+- retained: large fixtures docs Go handlers and workflow gate remain for scoped cleanup packages
+- reason: rules-first package intentionally established enforcement before cleanup
+- next: cleanup/v22-machine-cursor-manifest-compaction
+
+post_merge_closeout: `completed`
+
+next_cursor: `real-cloud-authorization-boundary`
