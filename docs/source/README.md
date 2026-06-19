@@ -7,6 +7,58 @@ Machine boundary: 本文是 source surface 视角入口，不是第二份 curren
 
 当前被 tests/runner 直接消费的大型机器 owner payload 已拆到 root `contracts/**`；`tests/fixtures/v22/goal-current.json` 只保 machine cursor 与这些合同的引用字段，不再充当巨型 owner payload 仓库。
 
+## Large File Asset Triage
+
+长文件只作为扫描信号，不自动等于拆分或删除。清退顺序必须先判断 owner surface、machine consumer、test lane、lifecycle role 和 current-truth 归属；active caller 迁移完成前不得物理删除，被当前 owner surface 替代后不得保留旧过渡入口。
+
+当前 `>=500` 行文件分类：
+
+| File | Lines | owner type | consumer / lane | action |
+| --- | ---: | --- | --- | --- |
+| `services/portal/frontend/package-lock.json` | 6310 | generated dependency lock | npm install / frontend build | keep_durable_asset |
+| `contracts/medopl-package-d-deploy-readiness.json` | 3308 | machine contract payload | future-authorized deploy config gate / current-state loop | split_owner |
+| `contracts/medopl-production-launch-gap-map.json` | 1652 | machine contract payload | production launch gap gates / current-state loop | split_owner |
+| `package-lock.json` | 1352 | generated dependency lock | root package scripts | keep_durable_asset |
+| `tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs` | 995 | future-authorized gate | `future-authorized` lane | split_owner |
+| `tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs` | 943 | future-authorized gate | `future-authorized` lane | split_owner |
+| `tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs` | 940 | cloud topology contract test | `future-authorized` lane | keep_durable_asset |
+| `tests/support/cloud-prework/package-d-production-deploy-runner.js` | 939 | active pre-cloud runner | Package D manifest/materialization gates | split_owner |
+| `tests/support/cloud-prework/v22-package-c-live-canary-live-runner.js` | 921 | active authorized runner | Package C live-canary gates | split_owner |
+| `tests/smoke/smoke-test-v22-managed-user-loop-contract.mjs` | 883 | smoke current-owner test | `smoke` lane | split_owner |
+| `tests/support/cloud-prework/package-d-external-access-runner.js` | 879 | active pre-cloud runner | external-access local gates | keep_durable_asset |
+| `services/medopl-go-backend/internal/server/handlers/controlplane_test.go` | 872 | backend contract test | Go control-plane test suite | split_owner |
+| `tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs` | 849 | future-authorized gate | `future-authorized` lane | keep_durable_asset |
+| `tests/support/cloud-prework/tencent-clb-readonly-diagnostics-runner.js` | 840 | readonly diagnostics runner | CLB diagnostics local gate | keep_durable_asset |
+| `tests/support/cloud-prework/package-d-service-reachability-runner.js` | 774 | active pre-cloud runner | service reachability local gate | keep_durable_asset |
+| `tests/future-authorized/cloud/future-authorized-test-v22-package-c-live-canary-live-runner-local-gate.mjs` | 774 | future-authorized gate | `future-authorized` lane | keep_durable_asset |
+| `DESIGN.md` | 742 | human design source | design review / product UI alignment | keep_durable_asset |
+| `tests/support/cloud-prework/package-d-external-access-strategy-runner.js` | 726 | active pre-cloud runner | shared-edge / TLS strategy gates | keep_durable_asset |
+| `tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs` | 712 | future-authorized gate | `future-authorized` lane | keep_durable_asset |
+| `tests/support/cloud-prework/package-c-postgres-ledger-sink.js` | 704 | active PostgreSQL ledger sink | Package C ledger sink gate | split_owner_fix_cycle |
+| `tests/fixtures/v22/goal-current.json` | 701 | machine cursor fixture | verify / landing closeout / current-state gates | keep_durable_asset |
+| `tests/fixtures/v22/agent-verify-manifest.json` | 682 | verify manifest fixture | verify / health / contract gates | keep_durable_asset |
+| `services/medopl-go-backend/internal/service/controlplane/service.go` | 676 | backend service owner | Go control-plane handlers / tests | split_owner |
+| `services/portal/frontend/src/app/pages/Workspace.tsx` | 652 | active Portal page | frontend route / regression gates | split_owner |
+| `services/portal/frontend/src/app/pages/admin/AdminUsers.tsx` | 650 | active Portal admin page | frontend route / admin regression gates | split_owner |
+| `scripts/v22-local-services.mjs` | 562 | stable local-services CLI | package scripts / local service orchestration gates | split_owner |
+| `services/portal/frontend/src/app/pages/OPLEntry.tsx` | 556 | active Portal OPL entry page | frontend route / OPL entry gates | split_owner |
+| `services/medopl-go-backend/internal/server/handlers/controlplane_production_contracts.go` | 550 | backend production contract handler | Go control-plane route tests | split_owner |
+| `tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs` | 549 | future-authorized gate | `future-authorized` lane | keep_durable_asset |
+| `services/opl-runtime-bridge/src/runtime-bridge-launch.mjs` | 545 | active runtime launch boundary | runtime-bridge regression gates | split_owner |
+| `services/portal/frontend/src/app/pages/Overview.tsx` | 532 | active Portal page | frontend route / regression gates | split_owner |
+| `services/portal/frontend/src/app/pages/TasksResults.tsx` | 520 | active Portal page | frontend route / task-result gates | split_owner |
+| `services/portal/frontend/src/app/pages/BillingAudit.tsx` | 508 | active Portal page | frontend route / billing-audit gates | split_owner |
+| `tests/regression/opl/regression-test-v22-opl-web-gateway-launch.mjs` | 502 | negative-retirement guard | `regression-opl` lane | keep_durable_asset |
+| `services/opl-runtime-bridge/src/opl-client.mjs` | 501 | active runtime client | runtime-bridge source / regression gates | split_owner |
+
+Immediate cleanup order:
+
+1. Fix the `tests/support/cloud-prework/package-c-postgres-ledger-live-canary.js` and `tests/support/cloud-prework/package-c-postgres-ledger-sink.js` dependency cycle before further runner split work.
+2. Split over-broad machine contracts by actual source/test consumers; do not delete `contracts/**` payloads while they remain directly consumed.
+3. Collapse future-authorized local gates only after proving duplicate assertions and migrating active callers; current scanned gates remain active assets until that proof exists.
+4. Split active backend/frontend/runtime files by owner boundary; do not treat active product/source pages as historical cleanup candidates.
+5. Keep lockfiles and stable human design source unless their owner changes; they are not cleanup targets merely because they are long.
+
 ## Active Source Surface
 
 当前 v22 active service surface：
