@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `cleanup/v22-current-leaf-owner-compaction`
-- latest landed commit: `b68768be93680d723685d7c3d681e2937522d96f`
+- latest landed branch: `cleanup/v22-owner-consumer-lifecycle-gates`
+- latest landed commit: `767f2de8a35df9615e6f3533dd0518e58ca275e4`
 - next cursor: `real-cloud-authorization-boundary`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`

@@ -21,7 +21,7 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 | default verification | `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk` |
 | default first proof | golden path health from `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk` |
 | latest product closeout | `feat/v22-slide-09-precloud-readiness` / `97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73` |
-| latest repo closeout | `cleanup/v22-current-leaf-owner-compaction` / `b68768be93680d723685d7c3d681e2937522d96f` |
+| latest repo closeout | `cleanup/v22-owner-consumer-lifecycle-gates` / `767f2de8a35df9615e6f3533dd0518e58ca275e4` |
 Current summary: Go control-plane MVP takeover、precloud deployable RC、local SaaS backend RC 和 local Portal/OPL delivery RC 都是 local deterministic evidence；they are not production readiness and cannot upgrade into production backend、真实云、生产 runtime、生产 billing 或 public access 证据。历史 Package D deploy execution evidence 只保留为 provenance，不是当前 active runner 或新授权。当前 active cloud surface 只保留三个可验证边界：`tests/cloud/cloud-test-v22-tencent-readonly-inventory-boundary.mjs`、`tests/cloud/cloud-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs` 和 `tests/cloud/cloud-test-v22-tke-bootstrap-preflight-local-gate.mjs`。旧 production launch、Package D deploy/external access、CLB diagnostics 和 Package C live canary 只作为 history / archive / runtime provenance 存在，不再是 active runner、active test 或 current gap。
 
 当前 truth 不再从 recovery/status matrix 推断；Framework 模型、surface budget、admission、readiness、evidence 等级和 can-claim / cannot-claim 均归各自 owner README。本文件只引用它们的结论，不复制成第二套 framework 或 evidence truth。

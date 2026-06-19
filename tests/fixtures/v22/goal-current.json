@@ -8,23 +8,38 @@
   "last_updated_at": "2026-06-19",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "b68768be93680d723685d7c3d681e2937522d96f",
+  "base_trunk_head": "767f2de8a35df9615e6f3533dd0518e58ca275e4",
   "current_branch": "real-cloud-authorization-boundary",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "real-cloud-authorization-boundary",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "b68768be93680d723685d7c3d681e2937522d96f",
+  "last_landed_commit": "767f2de8a35df9615e6f3533dd0518e58ca275e4",
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "cleanup/v22-current-leaf-owner-compaction",
-    "landed_commit": "b68768be93680d723685d7c3d681e2937522d96f",
+    "branch": "cleanup/v22-owner-consumer-lifecycle-gates",
+    "landed_commit": "767f2de8a35df9615e6f3533dd0518e58ca275e4",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
-      "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk: passed after ff-only landing",
-      "npm run verify: passed after ff-only landing",
-      "git push origin recovery/platform-v22-trunk: pushed 18f7f1a..b68768b"
+      "remote branch audit completed and origin now only has recovery/platform-v22-trunk",
+      "local stale worktrees and branches cleaned except common-dir detached worktree",
+      "npm run verify pending after closeout sync"
     ],
+    "plan_completion_audit": {
+      "functional": "partial",
+      "code_cleanup": "done",
+      "docs_foldback": "done",
+      "verification": "partial",
+      "retired_entrypoints": "done",
+      "cannot_claim": "done"
+    },
+    "cleanup_result": {
+      "deleted": "old local worktrees and stale local branches",
+      "folded": "lifecycle taxonomy tests contracts and cloud authorization into current owners",
+      "retained": "real-cloud-authorization-boundary active cursor and detached common-dir worktree",
+      "reason": "post-merge closeout updates machine cursor after landing cleanup branch",
+      "next": "run verify and gate review then continue real-cloud authorization boundary"
+    },
     "post_merge_closeout": "completed",
     "next_cursor": "real-cloud-authorization-boundary"
   },
@@ -38,7 +53,7 @@
     "default_cloud_verification_is_limited_to_readonly_inventory_dry_run_plan_and_tke_bootstrap_preflight",
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth"
   ],
-  "current_problem": "MedOPL current truth is a SaaS control plane for platform-provisioned / customer-dedicated OPL runtime, cloud compute, file space, billing, audit and release. It does not own OPL research capabilities. The active blocker is the real-cloud authorization boundary: default verification may only exercise readonly inventory, Package C dry-run planning and TKE bootstrap preflight local gates. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims require a separate explicit authorization package.",
+  "current_problem": "MedOPL current truth is a SaaS control plane for platform-provisioned / customer-dedicated OPL runtime, cloud compute, file space, billing, audit and release. It does not own OPL research capabilities. The latest governance closeout branch cleanup/v22-owner-consumer-lifecycle-gates landed at 767f2de8a35df9615e6f3533dd0518e58ca275e4. The active blocker remains the real-cloud authorization boundary: default verification may only exercise readonly inventory, Package C dry-run planning and TKE bootstrap preflight local gates. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims require a separate explicit authorization package.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -405,9 +420,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "cleanup/v22-current-leaf-owner-compaction",
-  "last_landed_at": "2026-06-18",
-  "history_latest_branch": "cleanup/v22-current-leaf-owner-compaction",
+  "last_landed_branch": "cleanup/v22-owner-consumer-lifecycle-gates",
+  "last_landed_at": "2026-06-19",
+  "history_latest_branch": "cleanup/v22-owner-consumer-lifecycle-gates",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,

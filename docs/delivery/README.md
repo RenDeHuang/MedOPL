@@ -7,7 +7,7 @@ Machine boundary: 本文是人读交付入口。当前执行 cursor、branch ove
 
 ## Current Cursor
 
-当前 product cursor 是 `real-cloud-authorization-boundary`，状态是 authorization-required / before real-cloud readiness。MedOPL 的当前 delivery truth 是：平台给 clean OPL 提供托管 runtime、云计算资源、文件空间、计费、审计和释放；MedOPL 不承担 OPL 自身科研能力。最新 landed repo closeout 是 `cleanup/v22-current-leaf-owner-compaction` / `b68768be93680d723685d7c3d681e2937522d96f`。
+当前 product cursor 是 `real-cloud-authorization-boundary`，状态是 authorization-required / before real-cloud readiness。MedOPL 的当前 delivery truth 是：平台给 clean OPL 提供托管 runtime、云计算资源、文件空间、计费、审计和释放；MedOPL 不承担 OPL 自身科研能力。最新 landed repo closeout 是 `cleanup/v22-owner-consumer-lifecycle-gates` / `767f2de8a35df9615e6f3533dd0518e58ca275e4`。
 
 Go control-plane MVP takeover、precloud-deployable-rc、local SaaS backend RC 和 local Portal/OPL delivery RC 只提供本地 RC evidence。历史 Package C live canary、Package D deploy/service reachability、production-launch Gap 01-08o、CLB diagnostics 和 public access 调试只保留为 archive / runtime provenance；它们不再是 active runner、active cloud test、current blocker 或默认 verify 入口。
 

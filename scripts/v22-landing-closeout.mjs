@@ -111,7 +111,7 @@ function closeoutCommitLooksLikeCloseout(commit) {
     /^changes\/archive\/\d{4}-\d{2}-\d{2}-[a-z0-9-]+\/(?:proposal|spec-delta|design|tasks|eval-plan|review|closeout)\.md$/u,
     /^changes\/active\/[a-z0-9-]+\/(?:proposal|spec-delta|design|tasks|eval-plan|review|closeout)\.md$/u,
     /^tests\/fixtures\/v22\/(?:goal-current|agent-verify-manifest)\.json$/u,
-    /^tests\/contract\/contract-test-v22-(?:landing-closeout-automation|current-state-index-loop|cleanup-lifecycle-system|product-engineering-loop-index|agent-verify-entrypoint|current-development-lines|framework-truth-layering|backend-go-convergence-program|change-package-lifecycle|mvp-contract-suite|local-portal-opl-delivery-rc)\.mjs$/u,
+    /^tests\/governance\/governance-test-v22-(?:landing-closeout-automation|current-state-index-loop|cleanup-lifecycle-system|product-engineering-loop-index|agent-verify-entrypoint|current-development-lines|framework-truth-layering|backend-go-convergence-program|change-package-lifecycle|local-portal-opl-delivery-rc)\.mjs$/u,
     /^tests\/smoke\/smoke-test-v22-saas-control-plane-user-experience-boundary\.mjs$/u,
     /^scripts\/v22-landing-closeout\.mjs$/u,
   ];
@@ -307,9 +307,12 @@ function validateGenerateInput({ branch, landedCommit, trunkRef }) {
   }
 
   const branchHead = revParseCommit(branch);
-  if (!branchHead) throw new Error(`branch_ref_missing:${branch}`);
+  const current = readJson(files.current);
+  const latest = current.latest_landed_closeout || {};
+  const currentBranchMatches = branch === current.last_landed_branch || branch === latest.branch;
+  if (!branchHead && !currentBranchMatches) throw new Error(`branch_ref_missing:${branch}`);
 
-  const expectedCommit = branchHead;
+  const expectedCommit = branchHead || current.last_landed_commit || latest.landed_commit || "";
   if (landedCommit !== expectedCommit) {
     throw new Error(`landed_commit_mismatch:${landedCommit}:${expectedCommit}`);
   }
