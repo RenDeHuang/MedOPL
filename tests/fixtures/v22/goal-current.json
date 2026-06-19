@@ -20,26 +20,28 @@
       "contracts/medopl-cloud-authorization-pack.json"
     ]
   },
-  "last_updated_at": "2026-06-19",
+  "last_updated_at": "2026-06-20",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "428c46d9299522a8f22e46beb5f8164362a849fb",
+  "base_trunk_head": "cbb163b12ff0b9d9b7da52b2bdba93f6ea01596e",
   "current_branch": "opl-webui-runtime-production-slice",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "opl-webui-runtime-production-slice",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "428c46d9299522a8f22e46beb5f8164362a849fb",
+  "last_landed_commit": "cbb163b12ff0b9d9b7da52b2bdba93f6ea01596e",
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "feat/v22-retire-governance-tests",
-    "landed_commit": "428c46d9299522a8f22e46beb5f8164362a849fb",
+    "branch": "feat/v22-gate-self-consistency-rc",
+    "landed_commit": "cbb163b12ff0b9d9b7da52b2bdba93f6ea01596e",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
-      "npm run test:health passed on latest trunk after governance test retirement",
-      "npm run test:contract passed on latest trunk after governance test retirement",
-      "npm run test:lanes passed on latest trunk and no tests/governance directory remained",
-      "npm run gate:review passed on latest trunk"
+      "npm run verify passed before push on feature branch",
+      "npm run test:health passed before push on feature branch",
+      "npm run test:contract passed before push on feature branch",
+      "npm run test:lanes passed before push on feature branch",
+      "npm run gate:review passed before push on feature branch",
+      "npm run test:run-plan -- --dry-run --json passed and reported contract/docs/hygiene recommended commands"
     ],
     "plan_completion_audit": {
       "functional": "done",
@@ -50,11 +52,11 @@
       "cannot_claim": "done"
     },
     "cleanup_result": {
-      "deleted": "retired tests/governance directory and removed obsolete governance lifecycle lane surface",
-      "folded": "dynamic test system, cloud authorization pack and governance test retirement into current health/contract/lane gates without new change package",
-      "retained": "opl-webui-runtime-production-slice active cursor",
-      "reason": "post-merge closeout records repo/gate self-consistency after the local product RC and does not create a new product completion claim",
-      "next": "harden cloud authorization runner consumption and machineize worktree slice landing before any real cloud execution"
+      "deleted": "no changes/active, changes/archive or tests/governance surface was restored",
+      "folded": "closeout/cursor self-consistency, strict cloud authorization pack consumption and slice landing orchestration into contracts, runner, manifest, docs and health tests",
+      "retained": "opl-webui-runtime-production-slice active product cursor and real local product RC / cloud-deployable RC / production receipt proof ladder",
+      "reason": "post-merge closeout records dynamic test workflow hardening without creating a production completion claim",
+      "next": "use slice:start -> slice:plan -> slice:verify -> slice:land -> slice:post-push-verify -> slice:cleanup for the next bounded implementation slice; real cloud execution still requires runner evidence and owner receipts"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "opl-webui-runtime-production-slice"
@@ -69,7 +71,7 @@
     "default_cloud_verification_is_limited_to_readonly_inventory_dry_run_plan_and_tke_bootstrap_preflight_before_production_receipts",
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth"
   ],
-  "current_problem": "MedOPL current truth is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is feat/v22-retire-governance-tests at 428c46d9299522a8f22e46beb5f8164362a849fb, which retires tests/governance and aligns the dynamic test system without creating a new product completion claim. The active blocker remains the opl-webui-runtime-production-slice proof ladder: first proof may only claim real local product RC, cloud proof may only claim cloud-deployable RC, and production proof requires explicit authorization plus runtime/storage/billing/audit/release owner receipts. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims require the active machine authorization pack plus runner evidence.",
+  "current_problem": "MedOPL current truth is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is feat/v22-gate-self-consistency-rc at cbb163b12ff0b9d9b7da52b2bdba93f6ea01596e, which makes closeout/cursor self-consistent, hardens the cloud authorization pack as runner-consumed machine truth, and adds plan-only worktree slice orchestration without creating a production completion claim. The active blocker remains the opl-webui-runtime-production-slice proof ladder: first proof may only claim real local product RC, cloud proof may only claim cloud-deployable RC, and production proof requires explicit authorization plus runtime/storage/billing/audit/release owner receipts. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims require the active machine authorization pack plus runner/report evidence.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -384,9 +386,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/v22-retire-governance-tests",
-  "last_landed_at": "2026-06-19",
-  "history_latest_branch": "feat/v22-retire-governance-tests",
+  "last_landed_branch": "feat/v22-gate-self-consistency-rc",
+  "last_landed_at": "2026-06-20",
+  "history_latest_branch": "feat/v22-gate-self-consistency-rc",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,

@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/v22-retire-governance-tests`
-- latest landed commit: `428c46d9299522a8f22e46beb5f8164362a849fb`
+- latest landed branch: `feat/v22-gate-self-consistency-rc`
+- latest landed commit: `cbb163b12ff0b9d9b7da52b2bdba93f6ea01596e`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
