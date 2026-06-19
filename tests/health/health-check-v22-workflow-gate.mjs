@@ -135,20 +135,18 @@ assertIncludesAll(reviewWithBlockers.recommendedCommands.join("\n"), [
   "npm --prefix services/portal run check",
 ], "review_recommended_commands");
 
-const reviewWithAuthorizedSentruxRulesAlignment = evaluateReview({
+const reviewWithArchivedSentruxRulesChange = evaluateReview({
   base: "recovery/platform-v22-trunk",
-  activeChangePackageNames: ["sentrux-v22-rules-alignment"],
   changedFiles: [
     ".sentrux/rules.toml",
-    "changes/active/sentrux-v22-rules-alignment/proposal.md",
-    "changes/active/sentrux-v22-rules-alignment/spec-delta.md",
-    "changes/active/sentrux-v22-rules-alignment/eval-plan.md",
-    "changes/active/sentrux-v22-rules-alignment/closeout.md",
-    "tests/contract/contract-test-v22-sentrux-rules-alignment-boundary.mjs",
+    "changes/archive/2026-06-19-sentrux-v22-rules-alignment/proposal.md",
+    "changes/archive/2026-06-19-sentrux-v22-rules-alignment/spec-delta.md",
+    "changes/archive/2026-06-19-sentrux-v22-rules-alignment/eval-plan.md",
+    "changes/archive/2026-06-19-sentrux-v22-rules-alignment/closeout.md",
   ],
 });
-assert.equal(reviewWithAuthorizedSentruxRulesAlignment.ok, true, "authorized_sentrux_rules_alignment_must_be_ok");
-assert.deepEqual(reviewWithAuthorizedSentruxRulesAlignment.forbiddenPaths, [], "authorized_sentrux_rules_alignment_forbidden_paths_must_be_empty");
+assert.equal(reviewWithArchivedSentruxRulesChange.ok, false, "archived_sentrux_rules_change_must_not_authorize_sentrux_write");
+assert.deepEqual(reviewWithArchivedSentruxRulesChange.forbiddenPaths, [".sentrux/rules.toml"], "archived_sentrux_rules_change_must_still_block_sentrux_path");
 
 const reviewWithTokenNamedSmoke = evaluateReview({
   base: "recovery/platform-v22-trunk",

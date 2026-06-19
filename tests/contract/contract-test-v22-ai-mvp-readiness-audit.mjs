@@ -144,7 +144,6 @@ const runtimeSpec = await readRepoFile("specs/runtime/spec.md");
 const runtimeTruth = await readRepoFile("docs/runtime/README.md");
 const frameworkTruth = await readRepoFile("docs/framework/README.md");
 const sourceTruth = await readRepoFile("docs/source/README.md");
-const sentruxRules = await readRepoFile(".sentrux/rules.toml");
 const aiRuntimeEvalPlan = await readRepoFile("changes/active/ai-runtime-contract/eval-plan.md");
 const aiRuntimeCloseout = await readRepoFile("changes/active/ai-runtime-contract/closeout.md");
 
@@ -212,32 +211,19 @@ for (const marker of [
 
 assertIncludes(sourceTruth, "`services/portal/src` 已物理清退", "source_truth_retired_portal_src");
 for (const marker of [
-  "MedOPL v22 architecture rules for Sentrux",
-  "services/portal/frontend",
-  "services/medopl-go-backend",
-  "services/opl-web-gateway",
-  "services/opl-runtime-bridge",
-  "min_modularity = 0.759",
+  "Prior Sentrux diagnostics were retained as repo health context only",
+  "Sentrux is no longer a current active truth gate",
 ]) {
-  assertIncludes(sentruxRules, marker, "sentrux_rules_v22_active_surface");
-}
-for (const marker of [
-  "`sentrux gate .`: passed",
-  "`sentrux check .`: passed",
-  "measured modularity",
-  "0.7594",
-  "0.759",
-  "Repository structure satisfies `.sentrux/rules.toml`",
-]) {
-  assertIncludes(aiRuntimeCloseout, marker, "ai_runtime_closeout_structure_boundary");
+  assertIncludes(aiRuntimeCloseout, marker, "ai_runtime_closeout_repo_health_boundary");
 }
 
 for (const marker of [
   "node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs",
-  "sentrux gate .",
-  "sentrux check .",
 ]) {
   assertIncludes(aiRuntimeEvalPlan, marker, "ai_runtime_eval_plan_ai_mvp_readiness");
+}
+for (const marker of ["sentrux gate .", "sentrux check ."]) {
+  assertExcludesAll(aiRuntimeEvalPlan, [marker], "ai_runtime_eval_plan_must_not_require_sentrux");
 }
 
 const mcpShapesUrl = pathToFileURL(path.join(repoRoot, "services/opl-runtime-bridge/src/runtime-bridge-mcp-compatible-shapes.mjs"));
@@ -299,6 +285,6 @@ console.log(JSON.stringify({
   ],
   cannotClaim: [
     "real cloud, secret, deploy, kubectl, build/push, live-test or production runtime readiness",
-    "real-cloud or production readiness from local Sentrux structural readiness",
+    "real-cloud or production readiness from local repo health signals",
   ],
 }, null, 2));

@@ -8,7 +8,7 @@ Status: authoring
 
 ## Verification
 
-- `node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs`: passed after registering a no-authorization AI MVP readiness audit across MVP suite, pre-cloud RC, local Portal/OPL delivery RC, AI Runtime Contract, Runtime Bridge local E2E proofs, real-cloud authorization blocker and Sentrux structure gate status
+- `node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs`: passed after registering a no-authorization AI MVP readiness audit across MVP suite, pre-cloud RC, local Portal/OPL delivery RC, AI Runtime Contract, Runtime Bridge local E2E proofs, real-cloud authorization blocker and repo health context
 - `node tests/contract/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs`: passed after cannot-claim boundary review and source-owned MCP-compatible shape projection coverage
 - `node tests/contract/contract-test-v22-change-package-lifecycle.mjs`: passed
 - `node tests/contract/contract-test-v22-spec-eval-traceability.mjs`: passed
@@ -38,15 +38,14 @@ Status: authoring
 - `node scripts/v22-line-budget.mjs`: passed with `runtime-bridge-routes.mjs` under 1000 lines
 - `npm run test:contract -- --json`: passed
 - `npm run verify -- --json`: passed
-- `sentrux gate .`: passed, quality 6486 -> 7171 with no degradation detected; god files remain 0 -> 0 after Runtime Bridge route/message/file/projection owners and Portal model owners removed avoidable fan-out / projection coupling
-- `sentrux check .`: passed after authorized v22 rules alignment; quality is 7171 and measured modularity 0.7594 satisfies configured v22 baseline 0.759
+- Prior Sentrux diagnostics were retained as repo health context only; Sentrux is no longer a current active truth gate for this package.
 
 ## Current Structure Recovery Notes
 
 - Portal frontend pages and `Layout` now depend on their page/layout model owners for query hooks instead of importing `portalQuery` directly; the regression covers overview, resources, workspace, trace, billing, OPL entry, admin pages and layout surfaces.
 - Runtime Bridge `runtime-bridge-routes.mjs` no longer owns message payload/status projection helpers; `runtime-bridge-message-payloads.mjs` owns completed-message payload, status payload, timing payload and message extra projection.
 - Runtime Bridge now has `runtime-bridge-mcp-compatible-shapes.mjs` as a source-owned local shape-only MCP-compatible projection for runtimeTool, runtimeResource, runtimeRun, runtimeArtifact and runtimeApproval contract tests; it does not start a production MCP server or authorize external clients.
-- `contract-test-v22-ai-mvp-readiness-audit.mjs` now records the current AI MVP readiness boundary as machine evidence: local MVP/RC/Runtime proofs are registered, real-cloud authorization remains blocked, and Sentrux check passes against the authorized v22 active source model.
+- `contract-test-v22-ai-mvp-readiness-audit.mjs` now records the current AI MVP readiness boundary as machine evidence: local MVP/RC/Runtime proofs are registered, real-cloud authorization remains blocked.
 - `tests/fixtures/v22/goal-current.json` now records six-step AI MVP readiness as `local_ai_mvp_readiness_only`; it explicitly keeps `cloud_online_ready` false until the real-cloud authorization, mock/snapshot, readonly quote, dry-run, readonly inventory, authorized create/release, authorized deploy and canary/QA gates run under separate authorization.
 - Runtime Bridge now has `runtime-bridge-public-artifacts.mjs` as the shared public artifact projection owner; `runtime-bridge-mcp-compatible-shapes.mjs`, `runtime-bridge-message-payloads.mjs`, `runtime-bridge-files.mjs` and `runtime-bridge-runs.mjs` import that owner instead of making shape-only projection depend on the full run API.
 - Runtime Bridge now has `runtime-bridge-launch-lookup.mjs` as the shared launch lookup owner for `runtimeSessionByLaunch` and `runBelongsToLaunch`; `runtime-bridge-routes.mjs` and `runtime-bridge-files.mjs` no longer duplicate those launch/session ownership checks. This improved Sentrux quality from 7175 to 7177 without adding cycles or god files.
@@ -62,7 +61,24 @@ Status: authoring
 - A fifth Portal composition-root API owner experiment was measured and stopped: moving the `RoleProvider` current-user loader from `App.tsx` into `portalLayoutModel.ts` kept the regression and typecheck green but lowered Sentrux quality from 7175 to 7050 and added a `min_depth` violation, so the composition-root binding was restored.
 - A sixth isolated Sentrux experiment was measured outside the worktree without sharing `.git`: coarse Runtime Bridge directory regrouping raised modularity only from 0.7605 to 0.7637, still below the old 0.8000 threshold; deleting tests/scripts or changing layer paths did not solve the threshold. Lowering the rule threshold in the isolated copy made `sentrux check .` pass, which confirmed the blocker was rule/baseline alignment rather than a functional regression. After explicit authorization, `.sentrux/rules.toml` now uses a v22 active source model and an evidence-backed baseline.
 - Sentrux diagnostics confirm the current graph is directionally clean: cycles remain `0`, god files remain `0`, and `quality_signal=7171`; root-cause scoring identifies equality/modularity as the remaining structural pressure rather than layering inversion.
-- Sentrux evidence currently says the repository has no structural regression against the saved gate baseline, and `.sentrux/rules.toml` is satisfied for the current local graph.
+- Sentrux evidence is retained as optional repo health context, not current runtime truth.
+
+## Plan Completion Audit
+
+functional: partial
+code_cleanup: done
+docs_foldback: done
+verification: partial
+retired_entrypoints: done
+cannot_claim: done
+
+## Cleanup Result
+
+deleted: none in this package closeout sync
+folded: Sentrux wording is folded into repo health context instead of runtime readiness
+retained: AI runtime contract remains active authoring work
+reason: active runtime work is still not a production or real-cloud readiness claim
+next: continue AI runtime contract through its own runtime bridge verification lane
 
 ## Can Claim
 
@@ -76,22 +92,20 @@ Status: authoring
 - Runtime Bridge routes and launch surfaces have thinner owner boundaries; `runtime-bridge-routes.mjs` is no longer a line-budget baseline exception and no longer owns file/artifact handlers or runtime-agent relay implementation selection.
 - Runtime Bridge public artifact projection is now isolated from the run API, reducing avoidable coupling for MCP-compatible shape projection and file/message payload surfaces.
 - Runtime Bridge launch lookup duplication is removed from routes/files and covered by the launch mutation owner isolation regression.
-- This package did not introduce a Sentrux structural regression, and depth/quality are back above configured thresholds.
-- Repository structure satisfies `.sentrux/rules.toml` for the current local graph.
+- This package keeps repo health context separate from runtime readiness claims.
 
 ## Cannot Claim
 
 - Production MCP server, external MCP clients, real cloud, deploy, kubectl, build/push, live-test or production runtime readiness is authorized or verified.
 - Six-step AI MVP readiness does not authorize real_cloud_ready, production_online, deploy_ready, secret_authorized or live_test_authorized claims.
 - Any secret, provider credential, raw provider key, cloud resource, billing reconciliation or runtime deployment has been validated.
-- Production, real-cloud or deploy readiness is implied by local Sentrux structural readiness.
+- Production, real-cloud or deploy readiness is implied by local repo health signals.
 
 ## Next Structure Cursor
 
 - Continue Portal/Runtime modularity recovery as a dedicated structural lane. The next candidate should target coherent owner extraction from large active surfaces rather than additional state-store micro-facades.
-- `.sentrux/rules.toml` is now reconciled with current v22 source truth: retired Node Portal backend / old adapter assumptions are removed, active layers map to Portal frontend, Go control plane, OPL Gateway, Runtime Bridge, scripts/tests/docs/specs, and hard gates for cycles, upward violations and god files remain strict.
+- Prior Sentrux diagnostics remain archive provenance and optional repo health context, not source truth ownership for this active runtime package.
 - Highest-risk size hotspots still include `services/portal/frontend/src/app/pages/admin/AdminUsers.tsx`, `services/opl-runtime-bridge/src/runtime-bridge-routes.mjs`, `services/opl-runtime-bridge/src/runtime-bridge-launch.mjs`, `services/portal/frontend/src/app/pages/Workspace.tsx`, `services/portal/frontend/src/app/pages/OPLEntry.tsx`, `services/portal/frontend/src/app/pages/Overview.tsx`, `services/portal/frontend/src/app/pages/TasksResults.tsx`, `services/portal/frontend/src/app/pages/BillingAudit.tsx`, `services/opl-runtime-bridge/src/opl-client.mjs` and `services/opl-runtime-bridge/src/opl-webui-bridge-client.mjs`.
-- The next Sentrux target should improve measured modularity above the current 0.7594 baseline through coherent owner extraction, not threshold chasing.
 
 ## Archive Target
 

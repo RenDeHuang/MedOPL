@@ -36,14 +36,6 @@ export function isForbiddenPath(filePath) {
   return forbiddenPathPatterns.some((pattern) => pattern.test(normalized));
 }
 
-export function isAuthorizedSentruxRulesAlignment(filePath, changedFiles) {
-  const normalized = normalizePath(filePath);
-  if (normalized !== ".sentrux/rules.toml") return false;
-  return changedFiles.map(normalizePath).some((file) =>
-    file.startsWith("changes/active/sentrux-v22-rules-alignment/")
-    || /^changes\/archive\/\d{4}-\d{2}-\d{2}-sentrux-v22-rules-alignment\//u.test(file));
-}
-
 export function isSecretLikePath(filePath) {
   const normalized = normalizePath(filePath);
   return secretLikePathPatterns.some((pattern) => pattern.test(normalized));

@@ -27,7 +27,6 @@ import {
   reviewRequiredCommands,
 } from "./workflow-gate/command-reference.mjs";
 import {
-  isAuthorizedSentruxRulesAlignment,
   isChangePackagePath,
   isForbiddenPath,
   isFormalEngineeringChange,
@@ -81,8 +80,7 @@ export function evaluateReview({
     isStrictMonolithCleanupAuthorizedDelete(file, changedStatuses.get(file), branchName));
   const forbiddenPaths = normalizedFiles.filter((file) =>
     isForbiddenPath(file)
-    && !isStrictMonolithCleanupAuthorizedDelete(file, changedStatuses.get(file), branchName)
-    && !isAuthorizedSentruxRulesAlignment(file, normalizedFiles));
+    && !isStrictMonolithCleanupAuthorizedDelete(file, changedStatuses.get(file), branchName));
   const secretLikePaths = normalizedFiles.filter((file) =>
     isSecretLikePath(file)
     && !isV22EvalPath(file)

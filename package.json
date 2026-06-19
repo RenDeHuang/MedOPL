@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "validate:active-platform": "node scripts/v22-verify.mjs active-platform",
     "verify": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
     "verify:current": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
     "verify:golden-path": "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk",

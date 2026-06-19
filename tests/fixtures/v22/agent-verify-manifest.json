@@ -159,7 +159,7 @@
         "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
         "node tests/contract/contract-test-v22-real-cloud-authorization-boundary.mjs",
         "node tests/contract/contract-test-v22-real-cloud-readiness-lane.mjs",
-        "node tests/contract/contract-test-v22-sentrux-rules-alignment-boundary.mjs",
+        "node tests/contract/contract-test-v22-validate-active-platform.mjs",
         "node tests/contract/contract-test-v22-local-service-orchestration.mjs",
         "node tests/contract/contract-test-v22-local-saas-backend-rc.mjs",
         "node scripts/v22-local-services.mjs verify --dry-run --json",
@@ -222,7 +222,7 @@
         "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
         "node tests/contract/contract-test-v22-real-cloud-authorization-boundary.mjs",
         "node tests/contract/contract-test-v22-real-cloud-readiness-lane.mjs",
-        "node tests/contract/contract-test-v22-sentrux-rules-alignment-boundary.mjs",
+        "node tests/contract/contract-test-v22-validate-active-platform.mjs",
         "node tests/contract/contract-test-v22-local-service-orchestration.mjs",
         "node tests/contract/contract-test-v22-local-saas-backend-rc.mjs",
         "node scripts/v22-local-services.mjs verify --dry-run --json",
@@ -248,6 +248,7 @@
     {
       "id": "health",
       "commands": [
+        "node tests/contract/contract-test-v22-validate-active-platform.mjs",
         "node tests/health/health-check-v22-contract-conflict-boundary.mjs",
         "node tests/health/health-check-v22-repo-hygiene-gate.mjs",
         "node tests/health/health-check-v22-line-budget-gate.mjs",
@@ -302,7 +303,7 @@
         "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
         "node tests/contract/contract-test-v22-real-cloud-authorization-boundary.mjs",
         "node tests/contract/contract-test-v22-real-cloud-readiness-lane.mjs",
-        "node tests/contract/contract-test-v22-sentrux-rules-alignment-boundary.mjs",
+        "node tests/contract/contract-test-v22-validate-active-platform.mjs",
         "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
         "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
         "node tests/contract/contract-test-v22-current-development-lines.mjs",
@@ -430,7 +431,7 @@
         "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
         "node tests/contract/contract-test-v22-real-cloud-authorization-boundary.mjs",
         "node tests/contract/contract-test-v22-real-cloud-readiness-lane.mjs",
-        "node tests/contract/contract-test-v22-sentrux-rules-alignment-boundary.mjs",
+        "node tests/contract/contract-test-v22-validate-active-platform.mjs",
         "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
         "node tests/contract/contract-test-v22-test-lane-registry.mjs",
         "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
@@ -471,6 +472,7 @@
         "npm run closeout:check",
         "npm run test:fast",
         "npm run test:lanes",
+        "npm run validate:active-platform -- --quick --json",
         "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs"
       ]
     },

@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
+import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -35,9 +37,24 @@ async function readJson(filePath) {
   return JSON.parse(await readFile(path.join(repoRoot, filePath), "utf8"));
 }
 
+function repoPathExists(repoPath) {
+  return existsSync(path.join(repoRoot, repoPath));
+}
+
 function commandToSpawn(command) {
   const parts = command.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
   return parts.map((part) => part.replace(/^"|"$/g, ""));
+}
+
+function commandFiles(commands) {
+  return commands
+    .map((command) => String(command || ""))
+    .filter(Boolean)
+    .sort();
+}
+
+function assertPath(repoPath) {
+  assert.equal(repoPathExists(repoPath), true, `required_path_missing:${repoPath}`);
 }
 
 function replaceBase(command, base) {
@@ -156,10 +173,100 @@ function runCommand(command) {
   };
 }
 
+async function validateActivePlatform({ manifest, current }) {
+  const packageJson = await readJson("package.json");
+
+  assert.equal(current.canonical, true, "goal_current_must_be_canonical");
+  assert.equal(manifest.canonical, true, "manifest_must_be_canonical");
+  assert.equal(current.current_truth_role, "machine_cursor_fixture", "goal_current_role_mismatch");
+  assert.equal(current.verify_manifest, "tests/fixtures/v22/agent-verify-manifest.json", "goal_current_manifest_pointer_mismatch");
+  assert.equal(manifest.runner, "scripts/v22-verify.mjs", "manifest_runner_mismatch");
+
+  assert.equal(packageJson.scripts["validate:active-platform"], "node scripts/v22-verify.mjs active-platform", "active_platform_script_mismatch");
+  assert.equal(packageJson.scripts.verify, "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk", "verify_script_mismatch");
+  assert.equal(packageJson.scripts["gate:review"], "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk", "review_gate_script_mismatch");
+
+  const currentLeaf = manifest.leaves.find((leaf) => leaf.leaf_id === current.current_cursor);
+  assert(currentLeaf, `manifest_current_leaf_missing:${current.current_cursor}`);
+  assert.equal(current.current_leaf.step_id, current.current_cursor, "current_leaf_step_mismatch");
+  assert.equal(currentLeaf.gap_id, current.current_leaf.gap_id, "manifest_current_leaf_gap_mismatch");
+
+  const manifestSuites = new Map(manifest.suites.map((suite) => [suite.id, suite]));
+  for (const suiteId of ["current", "health", "smoke", "local-contract", "local-regression", "real-cloud-readiness", "cloud-future-authorized", "review"]) {
+    assert(manifestSuites.has(suiteId), `manifest_suite_missing:${suiteId}`);
+  }
+
+  const currentCommands = commandFiles(manifestSuites.get("current").commands);
+  const leafCommands = commandFiles(currentLeaf.verification_commands);
+  assert.deepEqual(currentCommands, leafCommands, "current_suite_must_match_current_leaf_commands");
+  assert.deepEqual(commandFiles(current.verification_commands), leafCommands, "goal_current_top_level_commands_must_match_current_leaf");
+  assert.deepEqual([...new Set(currentLeaf.forbidden_ops)].sort(), [...new Set(current.current_leaf.forbidden_ops)].sort(), "current_leaf_forbidden_ops_must_match_current_fixture");
+  assert.deepEqual([...new Set(currentLeaf.forbidden_files)].sort(), [...new Set(current.current_leaf.forbidden_files)].sort(), "current_leaf_forbidden_files_must_match_current_fixture");
+  for (const op of currentLeaf.forbidden_ops) {
+    assert(manifest.global_forbidden_ops.includes(op), `current_leaf_forbidden_op_missing_from_global:${op}`);
+  }
+  for (const filePattern of currentLeaf.forbidden_files.filter((item) => item !== "real cloud/provider files")) {
+    assert(manifest.global_forbidden_files.includes(filePattern), `current_leaf_forbidden_file_missing_from_global:${filePattern}`);
+  }
+  assert.equal(commandFiles([
+    packageJson.scripts["validate:active-platform"],
+    packageJson.scripts.verify,
+    packageJson.scripts["gate:review"],
+  ]).every((command) => command.startsWith("node scripts/") || command.startsWith("npm run ")), true, "active_platform_root_scripts_must_use_repo_entrypoints");
+
+  for (const repoPath of [
+    "docs/README.md",
+    "docs/active/README.md",
+    "docs/product/README.md",
+    "docs/runtime/README.md",
+    "docs/framework/README.md",
+    "docs/specs/README.md",
+    "docs/evidence/README.md",
+    "docs/policies/README.md",
+    "docs/delivery/README.md",
+    "docs/source/README.md",
+    "docs/history/README.md",
+    "specs/README.md",
+    "specs/product/spec.md",
+    "specs/runtime/spec.md",
+    "specs/framework/spec.md",
+    "specs/operations/spec.md",
+    "specs/evidence/spec.md",
+    "specs/policies/spec.md",
+    "specs/source/spec.md",
+    "contracts/README.md",
+    "contracts/medopl-package-d-deploy-readiness.json",
+    "contracts/medopl-production-launch-gap-map.json",
+    "scripts/v22-verify.mjs",
+    "scripts/v22-workflow-gate.mjs",
+  ]) {
+    assertPath(repoPath);
+  }
+
+  const contractRefs = [
+    current.current_leaf.package_d_deploy_readiness_ref,
+    current.current_leaf.production_launch_gap_map_ref,
+    current.package_d_deploy_readiness_ref,
+    current.production_launch_gap_map_ref,
+  ].filter(Boolean);
+  for (const ref of contractRefs) assertPath(ref);
+
+  return {
+    ok: true,
+    contract: "validate_active_platform",
+    quick: true,
+    currentCursor: current.current_cursor,
+    manifestRunner: manifest.runner,
+    currentCommandCount: leafCommands.length,
+    forbiddenOps: manifest.global_forbidden_ops.length,
+  };
+}
+
 function printUsage() {
   process.stderr.write([
     "Usage:",
     "  node scripts/v22-verify.mjs list [--json]",
+    "  node scripts/v22-verify.mjs active-platform [--quick] [--json]",
     "  node scripts/v22-verify.mjs current [--base origin/recovery/platform-v22-trunk] [--dry-run] [--json]",
     "  node scripts/v22-verify.mjs suite <id> [--base origin/recovery/platform-v22-trunk] [--dry-run] [--json]",
     "  node scripts/v22-verify.mjs package <id> [--base origin/recovery/platform-v22-trunk] [--dry-run] [--json]",
@@ -200,6 +307,19 @@ async function main() {
       packages: manifest.package_suites.map((suite) => suite.id),
     };
     process.stdout.write(options.json ? `${JSON.stringify(payload, null, 2)}\n` : renderHuman(payload));
+    return;
+  }
+
+  if (mode === "active-platform") {
+    const payload = await validateActivePlatform({
+      manifest,
+      current,
+    });
+    if (options.json) {
+      process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+    } else {
+      process.stdout.write(`Active platform validation passed for ${payload.currentCursor}.\n`);
+    }
     return;
   }
 

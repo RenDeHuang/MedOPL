@@ -18,6 +18,7 @@ const [packageJson, workflowSource, manifest, delivery] = await Promise.all([
 ]);
 
 const expectedScripts = {
+  "validate:active-platform": "node scripts/v22-verify.mjs active-platform",
   verify: "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
   "verify:current": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
   "verify:golden-path": "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk",
@@ -145,6 +146,7 @@ for (const command of [
   "npm run test:regression",
   "npm run test:fast",
   "npm run test:lanes",
+  "npm run validate:active-platform -- --quick --json",
   "npm run gate:review",
   "npm run gate:change",
   "npm run closeout:check",
@@ -153,6 +155,7 @@ for (const command of [
   "npm run verify:product-loop",
   "npm run test:fast",
   "npm run test:lanes",
+  "npm run validate:active-platform -- --quick --json",
   "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
 ]) {
   assert(packageSuite.commands.includes(command), `root_verify_package_suite_command_missing:${command}`);
