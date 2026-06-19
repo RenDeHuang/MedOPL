@@ -10,15 +10,18 @@ import (
 )
 
 const (
-	ProviderBoundStatusActive = "bound"
-	LaunchStatusReady         = "ready"
-	LaunchStatusBlocked       = "blocked_by_provider_key"
-	ResourceStatusActive      = "active"
-	ResourceStatusReleased    = "released"
-	BillingStatusActive       = "active"
-	BillingStatusStopped      = "stopped"
-	AuditKindResourceRelease  = "resource.release"
-	AuditKindStorageDestroy   = "storage.destroy"
+	ProviderBoundStatusActive  = "bound"
+	LaunchStatusReady          = "ready"
+	LaunchStatusBlocked        = "blocked_by_provider_key"
+	ResourceStatusActive       = "active"
+	ResourceStatusReleased     = "released"
+	AuditKindFileUpload        = "file.upload"
+	AuditKindRunSucceeded      = "run.succeeded"
+	AuditKindArtifactAvailable = "artifact.available"
+	BillingStatusActive        = "active"
+	BillingStatusStopped       = "stopped"
+	AuditKindResourceRelease   = "resource.release"
+	AuditKindStorageDestroy    = "storage.destroy"
 )
 
 var (
@@ -33,6 +36,7 @@ var (
 	ErrResourceBindingRequired = errors.New("resource_binding_required")
 	ErrFileNameRequired        = errors.New("file_name_required")
 	ErrFileRefRequired         = errors.New("file_ref_required")
+	ErrArtifactRefRequired     = errors.New("artifact_ref_required")
 )
 
 type BindProviderKeyInput struct {
@@ -175,6 +179,46 @@ type AuditEvent struct {
 	Status            string `json:"status"`
 	IdempotencyKey    string `json:"idempotencyKey"`
 	CreatedAt         string `json:"createdAt,omitempty"`
+}
+
+type FileRecord struct {
+	FileRef        string
+	LaunchID       string
+	WorkspaceID    string
+	ProviderKeyRef string
+	Name           string
+	RelativePath   string
+	SizeBytes      int64
+	ContentType    string
+	Status         string
+	CreatedAt      string
+}
+
+type RunRecord struct {
+	RunID          string
+	LaunchID       string
+	WorkspaceID    string
+	ProviderKeyRef string
+	TraceID        string
+	Status         string
+	ToolName       string
+	Message        string
+	FileRefs       []string
+	CreatedAt      string
+}
+
+type ArtifactRecord struct {
+	ArtifactRef    string
+	RunID          string
+	LaunchID       string
+	WorkspaceID    string
+	ProviderKeyRef string
+	Kind           string
+	Name           string
+	RelativePath   string
+	SizeBytes      int64
+	ContentType    string
+	CreatedAt      string
 }
 
 func NewProviderBinding(input BindProviderKeyInput) (ProviderBinding, error) {

@@ -197,6 +197,118 @@ func TestServiceRecordsFileRunArtifactBillingAuditAndRelease(t *testing.T) {
 	}
 }
 
+func TestServiceUploadRunArtifactBillingAuditUsesStoredMedOPLStorageRefs(t *testing.T) {
+	ctx := context.Background()
+	service := NewService(memory.NewControlPlaneStore())
+	launch := bindAndOpen(t, ctx, service)
+
+	fileRef, err := service.RecordFile(ctx, RecordFileInput{
+		LaunchID:     launch.LaunchID,
+		FileName:     "cohort.csv",
+		RelativePath: "inputs/cohort.csv",
+		ContentType:  "text/csv",
+		SizeBytes:    256,
+	})
+	if err != nil {
+		t.Fatalf("RecordFile() error = %v", err)
+	}
+
+	if _, err := service.StartRun(ctx, StartRunInput{
+		LaunchID:  launch.LaunchID,
+		Message:   "analyze unknown upload",
+		FileRefs:  []string{"file-missing"},
+		ToolName:  "opl-workbench",
+		RequestID: "run-with-missing-file",
+	}); !errors.Is(err, cpd.ErrFileRefRequired) {
+		t.Fatalf("StartRun(unknown fileRef) error = %v", err)
+	}
+
+	runResult, err := service.StartRun(ctx, StartRunInput{
+		LaunchID:  launch.LaunchID,
+		Message:   "analyze stored upload",
+		FileRefs:  []string{fileRef.FileRef},
+		ToolName:  "opl-workbench",
+		RequestID: "run-with-stored-file",
+	})
+	if err != nil {
+		t.Fatalf("StartRun(stored fileRef) error = %v", err)
+	}
+	if runResult.Run.Status != "succeeded" || len(runResult.Artifacts) != 1 {
+		t.Fatalf("run result = %+v", runResult)
+	}
+	artifactRef := runResult.Artifacts[0].ArtifactRef
+
+	artifact, err := service.Artifact(ctx, launch.LaunchID, artifactRef)
+	if err != nil {
+		t.Fatalf("Artifact(stored run artifact) error = %v", err)
+	}
+	if artifact["ok"] != true {
+		t.Fatalf("artifact = %+v", artifact)
+	}
+	artifactPayload, ok := artifact["artifact"].(PublicArtifact)
+	if !ok {
+		t.Fatalf("artifact payload type = %T %+v", artifact["artifact"], artifact["artifact"])
+	}
+	if artifactPayload.ArtifactRef != artifactRef || artifactPayload.WorkspaceID != launch.WorkspaceID || artifactPayload.ProviderKeyRef != launch.ProviderKeyRef {
+		t.Fatalf("artifact payload = %+v", artifactPayload)
+	}
+
+	if _, err := service.Artifact(ctx, launch.LaunchID, "artifact-missing"); !errors.Is(err, cpd.ErrArtifactRefRequired) {
+		t.Fatalf("Artifact(missing) error = %v", err)
+	}
+
+	otherLaunch, err := service.OpenManagedEnvironment(ctx, OpenManagedEnvironmentInput{
+		TenantID:       "tenant-v22",
+		PortalUserID:   "user-v22",
+		WorkspaceID:    "workspace-v22",
+		IdempotencyKey: "open-second-launch",
+	})
+	if err != nil {
+		t.Fatalf("OpenManagedEnvironment(second launch) error = %v", err)
+	}
+	if _, err := service.Artifact(ctx, otherLaunch.LaunchID, artifactRef); !errors.Is(err, cpd.ErrArtifactRefRequired) {
+		t.Fatalf("Artifact(wrong launch) error = %v", err)
+	}
+
+	billing, err := service.BillingSummary(ctx, WorkspaceInput{WorkspaceID: launch.WorkspaceID})
+	if err != nil {
+		t.Fatalf("BillingSummary() error = %v", err)
+	}
+	if billing.Summary.RunCount != 1 {
+		t.Fatalf("billing run count = %+v", billing.Summary)
+	}
+	assertLedgerHasSourceEvent(t, billing.Ledger, "file.upload")
+	assertLedgerHasSourceEvent(t, billing.Ledger, "run.succeeded")
+	assertLedgerHasSourceEvent(t, billing.Ledger, "artifact.available")
+	assertLedgerAmount(t, billing.Ledger, "run.succeeded", 1.25)
+	assertLedgerAmount(t, billing.Ledger, "artifact.available", 0)
+}
+
+func TestServiceBillingDoesNotCountUploadedFileAsCompletedRun(t *testing.T) {
+	ctx := context.Background()
+	service := NewService(memory.NewControlPlaneStore())
+	launch := bindAndOpen(t, ctx, service)
+
+	if _, err := service.RecordFile(ctx, RecordFileInput{
+		LaunchID:     launch.LaunchID,
+		FileName:     "upload-only.csv",
+		RelativePath: "inputs/upload-only.csv",
+		ContentType:  "text/csv",
+		SizeBytes:    128,
+	}); err != nil {
+		t.Fatalf("RecordFile() error = %v", err)
+	}
+
+	billing, err := service.BillingSummary(ctx, WorkspaceInput{WorkspaceID: launch.WorkspaceID})
+	if err != nil {
+		t.Fatalf("BillingSummary() error = %v", err)
+	}
+	if billing.Summary.RunCount != 0 {
+		t.Fatalf("file upload without run must not count completed runs: %+v", billing.Summary)
+	}
+	assertLedgerAmount(t, billing.Ledger, "file.upload", 0.1)
+}
+
 func TestServiceReleaseRetainsStorageUntilExplicitDestroyReceipt(t *testing.T) {
 	ctx := context.Background()
 	service := NewService(memory.NewControlPlaneStore())
@@ -314,6 +426,34 @@ func TestServiceResourcesAreWorkspaceScopedAndReleaseFailsClosedWhenMissing(t *t
 	}); !errors.Is(err, cpd.ErrResourceNotFound) {
 		t.Fatalf("DestroyStorage(wrong workspace) error = %v", err)
 	}
+}
+
+func assertLedgerHasSourceEvent(t *testing.T, ledger []LedgerItem, eventType string) {
+	t.Helper()
+	for _, item := range ledger {
+		if item.SourceEventType == eventType {
+			switch item.Type {
+			case "credit", "debit", "hold", "release", "refund", "adjustment":
+			default:
+				t.Fatalf("ledger entry type must follow billing contract: %+v", item)
+			}
+			return
+		}
+	}
+	t.Fatalf("ledger missing source event %q: %+v", eventType, ledger)
+}
+
+func assertLedgerAmount(t *testing.T, ledger []LedgerItem, eventType string, amount float64) {
+	t.Helper()
+	for _, item := range ledger {
+		if item.SourceEventType == eventType {
+			if item.Amount != amount {
+				t.Fatalf("ledger amount mismatch for %q: got %v want %v item=%+v", eventType, item.Amount, amount, item)
+			}
+			return
+		}
+	}
+	t.Fatalf("ledger missing source event %q: %+v", eventType, ledger)
 }
 
 func bindAndOpen(t *testing.T, ctx context.Context, service *Service) cpd.LaunchProjection {

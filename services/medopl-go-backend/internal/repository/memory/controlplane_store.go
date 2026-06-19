@@ -14,6 +14,9 @@ type ControlPlaneStore struct {
 	mu                  sync.Mutex
 	bindingsByWorkspace map[string]cpd.ProviderBinding
 	launchesByID        map[string]cpd.LaunchProjection
+	filesByRef          map[string]cpd.FileRecord
+	runsByID            map[string]cpd.RunRecord
+	artifactsByRef      map[string]cpd.ArtifactRecord
 	resourcesByBinding  map[string]cpd.ManagedResource
 	ledgersByBinding    map[string]cpd.ResourceBindingLedger
 	operationsByID      map[string]cpd.CloudOperation
@@ -24,6 +27,9 @@ func NewControlPlaneStore() *ControlPlaneStore {
 	return &ControlPlaneStore{
 		bindingsByWorkspace: make(map[string]cpd.ProviderBinding),
 		launchesByID:        make(map[string]cpd.LaunchProjection),
+		filesByRef:          make(map[string]cpd.FileRecord),
+		runsByID:            make(map[string]cpd.RunRecord),
+		artifactsByRef:      make(map[string]cpd.ArtifactRecord),
 		resourcesByBinding:  make(map[string]cpd.ManagedResource),
 		ledgersByBinding:    make(map[string]cpd.ResourceBindingLedger),
 		operationsByID:      make(map[string]cpd.CloudOperation),
@@ -75,6 +81,77 @@ func (store *ControlPlaneStore) LaunchByID(ctx context.Context, launchID string)
 		return cpd.LaunchProjection{}, cprepo.ErrNotFound
 	}
 	return launch, nil
+}
+
+func (store *ControlPlaneStore) SaveFile(ctx context.Context, file cpd.FileRecord) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	store.filesByRef[file.FileRef] = file
+	return nil
+}
+
+func (store *ControlPlaneStore) FileByRef(ctx context.Context, fileRef string) (cpd.FileRecord, error) {
+	if err := ctx.Err(); err != nil {
+		return cpd.FileRecord{}, err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	file, ok := store.filesByRef[fileRef]
+	if !ok {
+		return cpd.FileRecord{}, cprepo.ErrNotFound
+	}
+	return file, nil
+}
+
+func (store *ControlPlaneStore) SaveRun(ctx context.Context, run cpd.RunRecord) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	run.FileRefs = append([]string(nil), run.FileRefs...)
+	store.runsByID[run.RunID] = run
+	return nil
+}
+
+func (store *ControlPlaneStore) RunByID(ctx context.Context, runID string) (cpd.RunRecord, error) {
+	if err := ctx.Err(); err != nil {
+		return cpd.RunRecord{}, err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	run, ok := store.runsByID[runID]
+	if !ok {
+		return cpd.RunRecord{}, cprepo.ErrNotFound
+	}
+	run.FileRefs = append([]string(nil), run.FileRefs...)
+	return run, nil
+}
+
+func (store *ControlPlaneStore) SaveArtifact(ctx context.Context, artifact cpd.ArtifactRecord) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	store.artifactsByRef[artifact.ArtifactRef] = artifact
+	return nil
+}
+
+func (store *ControlPlaneStore) ArtifactByRef(ctx context.Context, artifactRef string) (cpd.ArtifactRecord, error) {
+	if err := ctx.Err(); err != nil {
+		return cpd.ArtifactRecord{}, err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	artifact, ok := store.artifactsByRef[artifactRef]
+	if !ok {
+		return cpd.ArtifactRecord{}, cprepo.ErrNotFound
+	}
+	return artifact, nil
 }
 
 func (store *ControlPlaneStore) SaveResource(ctx context.Context, resource cpd.ManagedResource) error {

@@ -15,6 +15,12 @@ type Store interface {
 	ProviderBindingByWorkspace(ctx context.Context, workspaceID string) (cpd.ProviderBinding, error)
 	SaveLaunch(ctx context.Context, launch cpd.LaunchProjection) error
 	LaunchByID(ctx context.Context, launchID string) (cpd.LaunchProjection, error)
+	SaveFile(ctx context.Context, file cpd.FileRecord) error
+	FileByRef(ctx context.Context, fileRef string) (cpd.FileRecord, error)
+	SaveRun(ctx context.Context, run cpd.RunRecord) error
+	RunByID(ctx context.Context, runID string) (cpd.RunRecord, error)
+	SaveArtifact(ctx context.Context, artifact cpd.ArtifactRecord) error
+	ArtifactByRef(ctx context.Context, artifactRef string) (cpd.ArtifactRecord, error)
 	SaveResource(ctx context.Context, resource cpd.ManagedResource) error
 	ResourceByBinding(ctx context.Context, resourceBindingID string) (cpd.ManagedResource, error)
 	ListResources(ctx context.Context, workspaceID string) ([]cpd.ManagedResource, error)

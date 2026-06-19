@@ -108,6 +108,45 @@ func TestControlPlaneHandlersExposeProviderLaunchBillingResourceLocalRC(t *testi
 	}
 }
 
+func TestControlPlaneHandlersFailClosedForUnknownFileAndArtifactRefs(t *testing.T) {
+	router := controlPlaneHandlerTestRouter()
+	rawProviderKey := "local-rc-provider-key-material-that-must-stay-private"
+
+	_ = postMap(t, router, "/api/v22/provider-key", map[string]any{
+		"tenantId":       "tenant-v22",
+		"portalUserId":   "user-v22",
+		"workspaceId":    "workspace-v22",
+		"apiKey":         rawProviderKey,
+		"idempotencyKey": "bind-provider-once",
+	})
+	launchResponse := postMap(t, router, "/api/v22/managed-environment/open", map[string]any{
+		"tenantId":       "tenant-v22",
+		"portalUserId":   "user-v22",
+		"workspaceId":    "workspace-v22",
+		"idempotencyKey": "open-once",
+	})
+	launchID := launchResponse["launchId"].(string)
+
+	missingFileRun := postRaw(router, "/api/opl/runs?launchId="+launchID, map[string]any{
+		"message":   "analyze missing file",
+		"fileRefs":  []any{"file-missing"},
+		"toolName":  "opl-workbench",
+		"requestId": "run-missing-file",
+	})
+	if missingFileRun.Code != http.StatusBadRequest || !strings.Contains(missingFileRun.Body.String(), "file_ref_required") {
+		t.Fatalf("missing file run status = %d body = %s", missingFileRun.Code, missingFileRun.Body.String())
+	}
+	assertPublicPayload(t, mapFromRecorder(t, missingFileRun), rawProviderKey)
+
+	missingArtifact := httptest.NewRecorder()
+	request, _ := http.NewRequest(http.MethodGet, "/api/opl/artifacts/artifact-missing?launchId="+launchID, nil)
+	router.ServeHTTP(missingArtifact, request)
+	if missingArtifact.Code != http.StatusBadRequest || !strings.Contains(missingArtifact.Body.String(), "artifact_ref_required") {
+		t.Fatalf("missing artifact status = %d body = %s", missingArtifact.Code, missingArtifact.Body.String())
+	}
+	assertPublicPayload(t, mapFromRecorder(t, missingArtifact), rawProviderKey)
+}
+
 func TestControlPlaneHandlersExposeV22GoTakeoverProviderOpenShape(t *testing.T) {
 	router := controlPlaneHandlerTestRouter()
 	rawProviderKey := "local-rc-provider-key-material-that-must-stay-private"
@@ -900,6 +939,15 @@ func decodeOK(t *testing.T, rec *httptest.ResponseRecorder) map[string]any {
 		t.Fatalf("unmarshal response: %v", err)
 	}
 	return payload
+}
+
+func mapFromRecorder(t *testing.T, rec *httptest.ResponseRecorder) map[string]any {
+	t.Helper()
+	var decoded map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &decoded); err != nil {
+		t.Fatalf("decode response: %v body=%s", err, rec.Body.String())
+	}
+	return decoded
 }
 
 func assertPublicPayload(t *testing.T, payload map[string]any, rawProviderKey string) {

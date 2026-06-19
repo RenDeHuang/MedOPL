@@ -227,6 +227,16 @@ try {
   assert.equal(file.json.providerKeyRef, bound.json.providerKeyRef, "file_provider_ref_mismatch");
   assertNoPublicSecretLeak(file.json, "file_record");
 
+  const missingFileRun = await postJson(`${baseUrl}/api/opl/runs?launchId=${encodeURIComponent(launchId)}`, {
+    message: "analyze missing MedOPL storage file",
+    fileRefs: ["file-missing"],
+    toolName: "opl-workbench",
+    requestId: "go-opl-work-run-missing-file",
+  });
+  assert.equal(missingFileRun.response.status, 400, "run_with_unknown_file_ref_must_fail_closed");
+  assert.equal(missingFileRun.json.error, "file_ref_required", "run_with_unknown_file_ref_error_mismatch");
+  assertNoPublicSecretLeak(missingFileRun.json, "run_with_unknown_file_ref");
+
   const run = await postJson(`${baseUrl}/api/opl/runs?launchId=${encodeURIComponent(launchId)}`, {
     message: "analyze uploaded measurement data",
     fileRefs: [file.json.fileRef],
@@ -245,10 +255,23 @@ try {
   assert.equal(artifact.json.artifact.providerKeyRef, bound.json.providerKeyRef, "artifact_detail_provider_ref_mismatch");
   assertNoPublicSecretLeak(artifact.json, "artifact");
 
+  const missingArtifact = await getJson(`${baseUrl}/api/opl/artifacts/artifact-missing?launchId=${encodeURIComponent(launchId)}`);
+  assert.equal(missingArtifact.response.status, 400, "unknown_artifact_ref_must_fail_closed");
+  assert.equal(missingArtifact.json.error, "artifact_ref_required", "unknown_artifact_error_mismatch");
+  assertNoPublicSecretLeak(missingArtifact.json, "unknown_artifact");
+
   const billing = await getJson(`${baseUrl}/api/billing/summary?workspaceId=${encodeURIComponent(WORKSPACE_ID)}`);
   assert.equal(billing.response.status, 200, "billing_must_return_200");
   assert.equal(billing.json.source, "go-control-plane", "billing_source_mismatch");
   assert.equal(Number(billing.json.totals.totalCost) > 0, true, "billing_total_cost_required");
+  const ledgerSourceEvents = new Set((billing.json.ledger || []).map((item) => item.sourceEventType));
+  const allowedLedgerTypes = new Set(["credit", "debit", "hold", "release", "refund", "adjustment"]);
+  for (const entry of billing.json.ledger || []) {
+    assert.equal(allowedLedgerTypes.has(entry.type), true, `billing_ledger_type_must_follow_contract:${entry.type}`);
+  }
+  for (const requiredEvent of ["file.upload", "run.succeeded", "artifact.available"]) {
+    assert.equal(ledgerSourceEvents.has(requiredEvent), true, `billing_ledger_missing_source_event_${requiredEvent}`);
+  }
   assertNoPublicSecretLeak(billing.json, "billing");
 
   const release = await postJson(`${baseUrl}/api/v22/managed-environment/release`, {

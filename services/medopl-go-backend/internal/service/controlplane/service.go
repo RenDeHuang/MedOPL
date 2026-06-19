@@ -258,12 +258,14 @@ type RunCost struct {
 }
 
 type LedgerItem struct {
-	ID         string  `json:"id,omitempty"`
-	Type       string  `json:"type"`
-	Amount     float64 `json:"amount"`
-	Reason     string  `json:"reason,omitempty"`
-	OwnerScope string  `json:"ownerScope,omitempty"`
-	CreatedAt  string  `json:"createdAt"`
+	ID              string  `json:"id,omitempty"`
+	Type            string  `json:"type"`
+	Amount          float64 `json:"amount"`
+	Reason          string  `json:"reason,omitempty"`
+	OwnerScope      string  `json:"ownerScope,omitempty"`
+	SourceEventID   string  `json:"sourceEventId,omitempty"`
+	SourceEventType string  `json:"sourceEventType,omitempty"`
+	CreatedAt       string  `json:"createdAt"`
 }
 
 type Pagination struct {
@@ -591,6 +593,32 @@ func (service *Service) RecordFile(ctx context.Context, input RecordFileInput) (
 		result.File.ContentType = "application/octet-stream"
 	}
 	result.File.Status = "available"
+	recordedAt := service.now().UTC().Format(time.RFC3339)
+	if err := service.store.SaveFile(ctx, cpd.FileRecord{
+		FileRef:        refID,
+		LaunchID:       launch.LaunchID,
+		WorkspaceID:    launch.WorkspaceID,
+		ProviderKeyRef: launch.ProviderKeyRef,
+		Name:           result.File.Name,
+		RelativePath:   result.File.RelativePath,
+		SizeBytes:      result.File.SizeBytes,
+		ContentType:    result.File.ContentType,
+		Status:         result.File.Status,
+		CreatedAt:      recordedAt,
+	}); err != nil {
+		return PublicFileRef{}, err
+	}
+	if err := service.store.SaveAuditEvent(ctx, cpd.AuditEvent{
+		ID:                "audit-" + shortID(refID+":file-upload"),
+		Kind:              cpd.AuditKindFileUpload,
+		WorkspaceID:       launch.WorkspaceID,
+		ResourceBindingID: launch.ResourceBindingID,
+		Status:            "recorded",
+		IdempotencyKey:    refID,
+		CreatedAt:         recordedAt,
+	}); err != nil {
+		return PublicFileRef{}, err
+	}
 	return result, nil
 }
 
@@ -601,6 +629,18 @@ func (service *Service) StartRun(ctx context.Context, input StartRunInput) (Publ
 	}
 	if len(input.FileRefs) == 0 {
 		return PublicRunResult{}, cpd.ErrFileRefRequired
+	}
+	for _, fileRef := range input.FileRefs {
+		file, err := service.store.FileByRef(ctx, strings.TrimSpace(fileRef))
+		if errors.Is(err, cprepo.ErrNotFound) {
+			return PublicRunResult{}, cpd.ErrFileRefRequired
+		}
+		if err != nil {
+			return PublicRunResult{}, err
+		}
+		if file.LaunchID != launch.LaunchID || file.WorkspaceID != launch.WorkspaceID {
+			return PublicRunResult{}, cpd.ErrFileRefRequired
+		}
 	}
 	runID := strings.TrimSpace(input.RequestID)
 	if runID == "" {
@@ -624,13 +664,60 @@ func (service *Service) StartRun(ctx context.Context, input StartRunInput) (Publ
 			ContentType:    "text/markdown",
 		}},
 	}
-	_ = service.store.SaveAuditEvent(ctx, cpd.AuditEvent{
-		ID:          "audit-" + shortID(runID+":billing"),
-		Kind:        "billing.run",
-		WorkspaceID: launch.WorkspaceID,
-		Status:      "recorded",
-		CreatedAt:   started.Format(time.RFC3339),
-	})
+	if err := service.store.SaveRun(ctx, cpd.RunRecord{
+		RunID:          runID,
+		LaunchID:       launch.LaunchID,
+		WorkspaceID:    launch.WorkspaceID,
+		ProviderKeyRef: launch.ProviderKeyRef,
+		TraceID:        result.Run.TraceID,
+		Status:         result.Run.Status,
+		ToolName:       strings.TrimSpace(input.ToolName),
+		Message:        strings.TrimSpace(input.Message),
+		FileRefs:       input.FileRefs,
+		CreatedAt:      started.Format(time.RFC3339),
+	}); err != nil {
+		return PublicRunResult{}, err
+	}
+	artifact := result.Artifacts[0]
+	if err := service.store.SaveArtifact(ctx, cpd.ArtifactRecord{
+		ArtifactRef:    artifact.ArtifactRef,
+		RunID:          runID,
+		LaunchID:       launch.LaunchID,
+		WorkspaceID:    artifact.WorkspaceID,
+		ProviderKeyRef: artifact.ProviderKeyRef,
+		Kind:           artifact.Kind,
+		Name:           artifact.Name,
+		RelativePath:   artifact.RelativePath,
+		SizeBytes:      artifact.SizeBytes,
+		ContentType:    artifact.ContentType,
+		CreatedAt:      started.Format(time.RFC3339),
+	}); err != nil {
+		return PublicRunResult{}, err
+	}
+	for _, event := range []cpd.AuditEvent{
+		{
+			ID:                "audit-" + shortID(runID+":run"),
+			Kind:              cpd.AuditKindRunSucceeded,
+			WorkspaceID:       launch.WorkspaceID,
+			ResourceBindingID: launch.ResourceBindingID,
+			Status:            "recorded",
+			IdempotencyKey:    runID,
+			CreatedAt:         started.Format(time.RFC3339),
+		},
+		{
+			ID:                "audit-" + shortID(artifactRef+":artifact"),
+			Kind:              cpd.AuditKindArtifactAvailable,
+			WorkspaceID:       launch.WorkspaceID,
+			ResourceBindingID: launch.ResourceBindingID,
+			Status:            "recorded",
+			IdempotencyKey:    artifactRef,
+			CreatedAt:         started.Format(time.RFC3339),
+		},
+	} {
+		if err := service.store.SaveAuditEvent(ctx, event); err != nil {
+			return PublicRunResult{}, err
+		}
+	}
 	return result, nil
 }
 
@@ -640,17 +727,32 @@ func (service *Service) Artifact(ctx context.Context, launchID string, artifactR
 		return nil, err
 	}
 	if strings.TrimSpace(artifactRef) == "" {
-		return nil, cpd.ErrFileRefRequired
+		return nil, cpd.ErrArtifactRefRequired
+	}
+	record, err := service.store.ArtifactByRef(ctx, strings.TrimSpace(artifactRef))
+	if errors.Is(err, cprepo.ErrNotFound) {
+		return nil, cpd.ErrArtifactRefRequired
+	}
+	if err != nil {
+		return nil, err
+	}
+	if record.LaunchID != launch.LaunchID || record.WorkspaceID != launch.WorkspaceID {
+		return nil, cpd.ErrArtifactRefRequired
+	}
+	if _, err := service.store.RunByID(ctx, record.RunID); errors.Is(err, cprepo.ErrNotFound) {
+		return nil, cpd.ErrArtifactRefRequired
+	} else if err != nil {
+		return nil, err
 	}
 	artifact := PublicArtifact{
-		ArtifactRef:    strings.TrimSpace(artifactRef),
-		WorkspaceID:    launch.WorkspaceID,
-		ProviderKeyRef: launch.ProviderKeyRef,
-		Kind:           "outputs",
-		Name:           "result.md",
-		RelativePath:   "outputs/result.md",
-		SizeBytes:      256,
-		ContentType:    "text/markdown",
+		ArtifactRef:    record.ArtifactRef,
+		WorkspaceID:    record.WorkspaceID,
+		ProviderKeyRef: record.ProviderKeyRef,
+		Kind:           record.Kind,
+		Name:           record.Name,
+		RelativePath:   record.RelativePath,
+		SizeBytes:      record.SizeBytes,
+		ContentType:    record.ContentType,
 	}
 	return map[string]any{"ok": true, "artifactRef": artifact.ArtifactRef, "artifact": artifact}, nil
 }
@@ -663,12 +765,9 @@ func (service *Service) BillingSummary(ctx context.Context, input WorkspaceInput
 	}
 	runCount := 0
 	for _, event := range events {
-		if event.Kind == "billing.run" {
+		if event.Kind == cpd.AuditKindRunSucceeded {
 			runCount++
 		}
-	}
-	if runCount == 0 {
-		runCount = 1
 	}
 	totalCost := float64(runCount) * 1.25
 	summary := BillingSummary{
@@ -797,11 +896,29 @@ func ledgerFromEvents(events []cpd.AuditEvent) []LedgerItem {
 	}
 	items := make([]LedgerItem, 0, len(events))
 	for _, event := range events {
+		entryType := "debit"
 		amount := 1.25
-		if event.Kind == cpd.AuditKindResourceRelease {
+		switch event.Kind {
+		case cpd.AuditKindFileUpload:
+			entryType = "hold"
+			amount = 0.1
+		case cpd.AuditKindArtifactAvailable:
+			entryType = "debit"
+			amount = 0
+		case cpd.AuditKindResourceRelease, cpd.AuditKindStorageDestroy:
+			entryType = "release"
 			amount = 0
 		}
-		items = append(items, LedgerItem{ID: event.ID, Type: event.Kind, Amount: amount, Reason: event.Status, OwnerScope: "go-control-plane", CreatedAt: event.CreatedAt})
+		items = append(items, LedgerItem{
+			ID:              event.ID,
+			Type:            entryType,
+			Amount:          amount,
+			Reason:          event.Status,
+			OwnerScope:      "go-control-plane",
+			SourceEventID:   event.ID,
+			SourceEventType: event.Kind,
+			CreatedAt:       event.CreatedAt,
+		})
 	}
 	return items
 }
