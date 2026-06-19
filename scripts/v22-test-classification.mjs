@@ -113,6 +113,7 @@ const HEALTH_FILES = Object.freeze([
   "tests/health/health-check-v22-test-lifecycle-cleanup.mjs",
   "tests/health/health-check-v22-workflow-command-reference-gate.mjs",
   "tests/health/health-check-v22-workflow-gate.mjs",
+  "tests/health/health-check-v22-worktree-slice-orchestrator.mjs",
   "tests/health/health-check-v22-zero-compat-active-surface-gate.mjs",
 ]);
 const SMOKE_FILES = Object.freeze([

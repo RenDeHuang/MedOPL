@@ -20,6 +20,9 @@
     "id": "v22-cloud-execution-open-authority",
     "status": "authorized",
     "authorized_by": "user_request_2026-06-19",
+    "issued_at": "2026-06-19",
+    "approval_id": "approval-v22-001",
+    "run_id": "run-v22-001",
     "target_environments": [
       "staging",
       "production-canary"
@@ -54,9 +57,158 @@
       "container_registry:build_push",
       "medopl:billing_audit_receipt_writeback"
     ],
+    "operation_class_command_map": [
+      {
+        "operation_class": "readonly_inventory",
+        "package_script": "test:cloud",
+        "commands": [
+          "npm run test:cloud",
+          "npm run test:real-cloud-readiness"
+        ]
+      },
+      {
+        "operation_class": "dry_run_plan",
+        "package_script": "test:cloud-future-authorized",
+        "commands": [
+          "npm run test:cloud-future-authorized"
+        ]
+      },
+      {
+        "operation_class": "tenant_runtime_provisioning",
+        "package_script": "test:cloud-future-authorized",
+        "commands": [
+          "npm run test:cloud-future-authorized"
+        ]
+      },
+      {
+        "operation_class": "storage_lifecycle",
+        "package_script": "test:cloud-future-authorized",
+        "commands": [
+          "npm run test:cloud-future-authorized"
+        ]
+      },
+      {
+        "operation_class": "billing_audit_writeback",
+        "package_script": "test:cloud-future-authorized",
+        "commands": [
+          "npm run test:cloud-future-authorized"
+        ]
+      },
+      {
+        "operation_class": "build_push",
+        "package_script": "test:cloud-future-authorized",
+        "commands": [
+          "npm run test:cloud-future-authorized"
+        ]
+      },
+      {
+        "operation_class": "kubectl",
+        "package_script": "test:cloud-future-authorized",
+        "commands": [
+          "npm run test:cloud-future-authorized"
+        ]
+      },
+      {
+        "operation_class": "deploy",
+        "package_script": "test:cloud-future-authorized",
+        "commands": [
+          "npm run test:cloud-future-authorized"
+        ]
+      },
+      {
+        "operation_class": "live_test",
+        "package_script": "test:cloud-future-authorized",
+        "commands": [
+          "npm run test:cloud-future-authorized"
+        ]
+      }
+    ],
+    "secret_allowlist_required": [
+      "TENCENT_READONLY_SECRET_ID",
+      "TENCENT_READONLY_SECRET_KEY",
+      "TENCENT_MUTATION_SECRET_ID",
+      "TENCENT_MUTATION_SECRET_KEY",
+      "TENCENT_DEPLOY_KUBECONFIG_REF",
+      "TCR_ID",
+      "TCR_SECRET",
+      "DATABASE_URL"
+    ],
+    "secret_allowlist_mapping": {
+      "readonly_inventory": [
+        "TENCENT_READONLY_SECRET_ID",
+        "TENCENT_READONLY_SECRET_KEY"
+      ],
+      "dry_run_plan": [],
+      "tenant_runtime_provisioning": [
+        "TENCENT_MUTATION_SECRET_ID",
+        "TENCENT_MUTATION_SECRET_KEY"
+      ],
+      "storage_lifecycle": [
+        "TENCENT_MUTATION_SECRET_ID",
+        "TENCENT_MUTATION_SECRET_KEY"
+      ],
+      "billing_audit_writeback": [
+        "DATABASE_URL"
+      ],
+      "build_push": [
+        "TCR_ID",
+        "TCR_SECRET"
+      ],
+      "kubectl": [
+        "TENCENT_DEPLOY_KUBECONFIG_REF"
+      ],
+      "deploy": [
+        "TENCENT_DEPLOY_KUBECONFIG_REF"
+      ],
+      "live_test": []
+    },
+    "api_allowlist_required": [
+      "tencentcloud:readonly_inventory",
+      "tencentcloud:tke_node_pool_lifecycle",
+      "tencentcloud:cos_workspace_storage_lifecycle",
+      "kubernetes:server_side_dry_run",
+      "kubernetes:apply",
+      "container_registry:build_push",
+      "medopl:billing_audit_receipt_writeback"
+    ],
+    "api_allowlist_mapping": {
+      "readonly_inventory": [
+        "tencentcloud:readonly_inventory"
+      ],
+      "dry_run_plan": [
+        "kubernetes:server_side_dry_run"
+      ],
+      "tenant_runtime_provisioning": [
+        "tencentcloud:tke_node_pool_lifecycle"
+      ],
+      "storage_lifecycle": [
+        "tencentcloud:cos_workspace_storage_lifecycle"
+      ],
+      "billing_audit_writeback": [
+        "medopl:billing_audit_receipt_writeback"
+      ],
+      "build_push": [
+        "container_registry:build_push"
+      ],
+      "kubectl": [
+        "kubernetes:apply"
+      ],
+      "deploy": [
+        "kubernetes:apply"
+      ],
+      "live_test": []
+    },
     "evidence_sink": ".runtime/v22-cloud-authorization",
     "redaction_required": true,
     "rollback_owner": "MedOPL Operations",
+    "rollback_commands": [
+      "npm run test:cloud",
+      "npm run test:real-cloud-readiness"
+    ],
+    "budget": {
+      "currency": "USD",
+      "cost_ceiling": 1000
+    },
     "expires_at": "2026-07-19"
   },
   "required_receipts_before_production_complete": [

@@ -7,7 +7,7 @@ Machine boundary: 本文是人读交付入口。当前执行 cursor、branch ove
 
 ## Current Cursor
 
-当前 product cursor 是 `opl-webui-runtime-production-slice`，状态是 local/cloud RC only / before production authorization。MedOPL 的当前 delivery truth 是：平台给 OPL-Webui 登录用户在当前 workspace 提供托管 runtime、文件空间、计费、审计和释放；MedOPL 不承担 OPL 自身科研能力。最新 landed repo closeout 是 `feat/v22-local-product-rc-single-flow` / `4f195820dcb351030cb1064172bfec2062abc279`。
+当前 product cursor 是 `opl-webui-runtime-production-slice`，状态是 local/cloud RC only / before production authorization。MedOPL 的当前 delivery truth 是：平台给 OPL-Webui 登录用户在当前 workspace 提供托管 runtime、文件空间、计费、审计和释放；MedOPL 不承担 OPL 自身科研能力。最新 product RC closeout 是 `feat/v22-local-product-rc-single-flow` / `4f195820dcb351030cb1064172bfec2062abc279`；最新 repo/gate closeout 是 `feat/v22-retire-governance-tests` / `428c46d9299522a8f22e46beb5f8164362a849fb`，只表示 dynamic test system、cloud authorization pack 和 `tests/governance` 清退后的 gate/cursor 自洽，不升级为 production claim。
 
 Go control-plane MVP takeover、precloud-deployable-rc、local SaaS backend RC、local Portal/OPL delivery RC 和 single-flow local product RC 只提供 local RC / cloud-deployable RC evidence。first proof 是 real local product RC；cloud proof 是 cloud-deployable RC；production proof 仍需 explicit authorization + runtime / storage / billing / audit / release owner receipts。历史 Package C live canary、Package D deploy/service reachability、production-launch Gap 01-08o、CLB diagnostics 和 public access 调试只保留为 archive / runtime provenance；它们不再是 active runner、active cloud test、current blocker 或默认 verify 入口。
 
@@ -43,9 +43,19 @@ node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-tr
 
 正式 review 前，开发者至少应先跑 `npm run test:run-plan -- --dry-run --json`，查看 `changedFiles`、`matchedSurfaces`、`environments`、`authorizedEnvironments`、`reasons`、`recommendedCommands`、`authorizedCommands`、`preflight` 和 `cannotClaim`，再跑 `npm run test:run-plan` 执行本地推荐命令；发布或大改动时，再提升到 full/local RC lane。local / full / RC 证明的是本地或受控环境下的可交付性，不是 production claim。authorized cloud lane 只授予被写明的授权范围，不授予真实云、deploy、kubectl 或 live-test 的默认权限，也不会被该本地动态测试系统自动执行。
 
+## Worktree Slice Flow
+
+标准开发 slice 入口是 `slice:start -> slice:plan -> slice:verify -> slice:land -> slice:post-push-verify -> slice:cleanup`。这些入口由 `scripts/v22-worktree-slice-orchestrator.mjs` 统一输出 plan-only JSON，复用 `v22-workflow-gate`、`v22-verify` 和 `v22-landing-closeout` 的现有机器 truth；默认不执行真实 merge、push、kubectl、deploy、build/push、live-test 或真实云 mutation。实际 landing operator 仍必须在明确授权后执行 git merge/push，并用 post-push verification 和 closeout/cursor 更新证明结果。
+
 ## Framework Entry Commands
 
 ```bash
+npm run slice:start
+npm run slice:plan
+npm run slice:verify
+npm run slice:land
+npm run slice:post-push-verify
+npm run slice:cleanup
 npm run validate:active-platform
 npm run test:product
 npm run test:frontend

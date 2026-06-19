@@ -470,9 +470,46 @@ function renderHuman(payload) {
     if (payload.authorization) {
       lines.push(`authorization pack: ${payload.authorization.status || "unknown"}`);
       if (payload.authorization.path) lines.push(`authorization pack path: ${payload.authorization.path}`);
+      lines.push(`authorized commands executable: ${payload.authorization.authorizedCommandsExecutable}`);
       if ((payload.authorization.blockers || []).length > 0) {
         lines.push("authorization blockers:");
         for (const blocker of payload.authorization.blockers) lines.push(`- ${blocker}`);
+      }
+      if (payload.authorization.diagnostics) {
+        lines.push("authorization diagnostics:");
+        if ((payload.authorization.diagnostics.operationClassMappings || []).length > 0) {
+          lines.push("operation class mappings:");
+          for (const entry of payload.authorization.diagnostics.operationClassMappings) {
+            lines.push(`- ${entry.operation_class} -> ${entry.package_script}`);
+          }
+        }
+        if ((payload.authorization.diagnostics.secretAllowlistRequired || []).length > 0) {
+          lines.push("secret allowlist required:");
+          for (const secret of payload.authorization.diagnostics.secretAllowlistRequired) lines.push(`- ${secret}`);
+        }
+        if ((payload.authorization.diagnostics.secretAllowlistMappings || []).length > 0) {
+          lines.push("secret allowlist mappings:");
+          for (const entry of payload.authorization.diagnostics.secretAllowlistMappings) {
+            lines.push(`- ${entry.operation_class}: ${entry.secrets.join(", ")}`);
+          }
+        }
+        if ((payload.authorization.diagnostics.apiAllowlistRequired || []).length > 0) {
+          lines.push("api allowlist required:");
+          for (const api of payload.authorization.diagnostics.apiAllowlistRequired) lines.push(`- ${api}`);
+        }
+        if ((payload.authorization.diagnostics.apiAllowlistMappings || []).length > 0) {
+          lines.push("api allowlist mappings:");
+          for (const entry of payload.authorization.diagnostics.apiAllowlistMappings) {
+            lines.push(`- ${entry.operation_class}: ${entry.apis.join(", ")}`);
+          }
+        }
+        if ((payload.authorization.diagnostics.rollbackCommands || []).length > 0) {
+          lines.push("rollback commands:");
+          for (const command of payload.authorization.diagnostics.rollbackCommands) lines.push(`- ${command}`);
+        }
+        if (payload.authorization.diagnostics.evidenceSink) {
+          lines.push(`evidence sink: ${payload.authorization.diagnostics.evidenceSink}`);
+        }
       }
     }
     if (payload.mode === "run-plan" && payload.report?.commands) {

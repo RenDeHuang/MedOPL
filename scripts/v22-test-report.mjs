@@ -122,6 +122,7 @@ export async function runPlanWithReport({
     payload.ok = false;
     payload.executesCommands = false;
     payload.includeAuthorized = false;
+    payload.report.authorization = plan.authorization;
     for (const record of payload.commands) {
       if (record.source !== "authorized") continue;
       record.status = "skipped";

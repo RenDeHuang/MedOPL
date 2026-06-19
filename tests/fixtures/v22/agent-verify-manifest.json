@@ -214,6 +214,7 @@
         "node tests/health/health-check-v22-verify-plan-mode.mjs",
         "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
         "node tests/health/health-check-v22-workflow-gate.mjs",
+        "node tests/health/health-check-v22-worktree-slice-orchestrator.mjs",
         "node tests/health/health-check-v22-zero-compat-active-surface-gate.mjs",
         "node tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs"
       ]
@@ -257,6 +258,7 @@
         "node tests/health/health-check-v22-verify-plan-mode.mjs",
         "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
         "node tests/health/health-check-v22-workflow-gate.mjs",
+        "node tests/health/health-check-v22-worktree-slice-orchestrator.mjs",
         "node tests/health/health-check-v22-zero-compat-active-surface-gate.mjs",
         "node tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs",
         "node tests/product/product-test-v22-medopl-contract-authority.mjs",
@@ -391,6 +393,7 @@
         "node tests/health/health-check-v22-verify-plan-mode.mjs",
         "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
         "node tests/health/health-check-v22-workflow-gate.mjs",
+        "node tests/health/health-check-v22-worktree-slice-orchestrator.mjs",
         "node tests/health/health-check-v22-zero-compat-active-surface-gate.mjs",
         "node tests/hygiene/hygiene-test-v22-diff-scoped-sensitive-review-gate.mjs",
         "node tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs"
@@ -432,6 +435,7 @@
         "node tests/health/health-check-v22-test-lane-registry.mjs",
         "node tests/health/health-check-v22-test-lifecycle-cleanup.mjs",
         "node tests/health/health-check-v22-verify-plan-mode.mjs",
+        "node tests/health/health-check-v22-worktree-slice-orchestrator.mjs",
         "node tests/health/health-check-v22-smoke-classification-gate.mjs",
         "node tests/health/health-check-v22-smoke-eval-boundary.mjs"
       ]

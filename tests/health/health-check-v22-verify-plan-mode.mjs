@@ -96,6 +96,8 @@ assert(cloudPayload.recommendedCommands.includes("npm run test:real-cloud-readin
 assert.equal(cloudPayload.authorizedCommands.includes("npm run test:cloud-future-authorized"), true, "cloud_plan_must_keep_future_authorized_separate");
 assert.equal(cloudPayload.recommendedCommands.includes("npm run test:cloud-future-authorized"), false, "cloud_plan_must_not_default_future_authorized");
 assert.equal(cloudPayload.authorization.authorizedCommandsExecutable, true, "cloud_plan_must_have_active_authorization_pack");
+assert(Array.isArray(cloudPayload.authorization.diagnostics?.operationClassMappings), "cloud_plan_must_include_operation_class_diagnostics");
+assert(cloudPayload.authorization.diagnostics.operationClassMappings.length > 0, "cloud_plan_must_report_operation_class_diagnostics");
 assert.equal(cloudPayload.cannotClaim.includes("real cloud execution"), false, "cloud_plan_must_allow_real_cloud_execution_under_pack");
 assert(cloudPayload.cannotClaim.includes("owner receipts complete"), "cloud_plan_must_still_require_owner_receipts");
 
@@ -138,6 +140,8 @@ assert(cloudBoundaryPayload.recommendedCommands.includes("npm run test:real-clou
 assert.equal(cloudBoundaryPayload.recommendedCommands.includes("npm run test:cloud-future-authorized"), false, "cloud_boundary_plan_must_not_default_future_authorized");
 assert.equal(cloudBoundaryPayload.authorizedCommands.includes("npm run test:cloud-future-authorized"), true, "cloud_boundary_plan_must_keep_future_authorized_separate");
 assert.equal(cloudBoundaryPayload.authorization.authorizedCommandsExecutable, true, "cloud_boundary_plan_must_use_active_pack");
+assert(Array.isArray(cloudBoundaryPayload.authorization.diagnostics?.secretAllowlistMappings), "cloud_boundary_plan_must_expose_secret_allowlist_diagnostics");
+assert(cloudBoundaryPayload.authorization.diagnostics.secretAllowlistMappings.length > 0, "cloud_boundary_plan_must_report_secret_allowlist_diagnostics");
 
 const missingFrontendPreflight = planCommandsForFiles(
   ["contracts/medopl-api-contract.json"],

@@ -17,6 +17,127 @@ function unique(items) {
   return [...new Set(items.filter(Boolean))];
 }
 
+function isValidFutureDate(value, { now = Date.now() } = {}) {
+  const timestamp = Date.parse(String(value || ""));
+  return Number.isFinite(timestamp) && timestamp > now;
+}
+
+function isValidDate(value) {
+  return Number.isFinite(Date.parse(String(value || "")));
+}
+
+function isSafeRuntimeEvidenceSink(value) {
+  const normalized = String(value || "").trim();
+  return /^\.runtime(?:\/[A-Za-z0-9._-]+)*$/u.test(normalized) && !normalized.includes("..");
+}
+
+function normalizeMappingEntries(entries) {
+  return (Array.isArray(entries) ? entries : []).map((entry) => ({
+    operation_class: String(entry?.operation_class || "").trim(),
+    package_script: String(entry?.package_script || "").trim(),
+    commands: Array.isArray(entry?.commands) ? entry.commands.map((command) => String(command || "").trim()).filter(Boolean) : [],
+  }));
+}
+
+function collectMappingProblems(active) {
+  const blockers = [];
+  const diagnostics = {};
+
+  const operationClasses = Array.isArray(active.operation_classes) ? active.operation_classes.map((item) => String(item || "").trim()).filter(Boolean) : [];
+  const operationClassSet = new Set(operationClasses);
+  const mappingEntries = normalizeMappingEntries(active.operation_class_command_map);
+  const mappingByClass = new Map(mappingEntries.map((entry) => [entry.operation_class, entry]));
+  const mappingClasses = [...mappingByClass.keys()];
+  diagnostics.operationClassMappings = mappingEntries;
+
+  if (mappingEntries.length === 0) {
+    blockers.push("cloud_authorization_pack_missing:active_pack.operation_class_command_map");
+  }
+  for (const operationClass of operationClasses) {
+    const mapping = mappingByClass.get(operationClass);
+    if (!mapping) {
+      blockers.push(`cloud_authorization_pack_mapping_missing:operation_class:${operationClass}`);
+      continue;
+    }
+    if (!mapping.package_script) {
+      blockers.push(`cloud_authorization_pack_mapping_missing:package_script:${operationClass}`);
+    }
+    if (!mapping.commands.length) {
+      blockers.push(`cloud_authorization_pack_mapping_missing:commands:${operationClass}`);
+    }
+    for (const command of mapping.commands) {
+      if (!command.startsWith("npm run ")) {
+        blockers.push(`cloud_authorization_pack_mapping_invalid_command:${operationClass}:${command}`);
+      }
+    }
+  }
+  for (const operationClass of mappingClasses) {
+    if (!operationClassSet.has(operationClass)) {
+      blockers.push(`cloud_authorization_pack_mapping_extra:operation_class:${operationClass}`);
+    }
+  }
+
+  const secretRequired = Array.isArray(active.secret_allowlist_required) ? active.secret_allowlist_required.map((item) => String(item || "").trim()).filter(Boolean) : [];
+  const secretAllowlist = Array.isArray(active.secret_allowlist) ? active.secret_allowlist.map((item) => String(item || "").trim()).filter(Boolean) : [];
+  diagnostics.secretAllowlistRequired = secretRequired;
+  diagnostics.secretAllowlistMapping = active.secret_allowlist_mapping || {};
+  if (secretRequired.length === 0) {
+    blockers.push("cloud_authorization_pack_missing:active_pack.secret_allowlist_required");
+  }
+  if (secretRequired.join("\u0000") !== secretAllowlist.join("\u0000")) {
+    blockers.push("cloud_authorization_pack_mismatch:secret_allowlist_required");
+  }
+  const secretCoverage = new Set(Object.values(active.secret_allowlist_mapping || {}).flat().map((item) => String(item || "").trim()).filter(Boolean));
+  diagnostics.secretAllowlistMappings = Object.entries(active.secret_allowlist_mapping || {}).map(([operation_class, secrets]) => ({
+    operation_class,
+    secrets: Array.isArray(secrets) ? secrets.map((item) => String(item || "").trim()).filter(Boolean) : [],
+  }));
+  for (const secret of secretRequired) {
+    if (!secretCoverage.has(secret)) blockers.push(`cloud_authorization_pack_mapping_missing:secret_allowlist:${secret}`);
+  }
+
+  const apiRequired = Array.isArray(active.api_allowlist_required) ? active.api_allowlist_required.map((item) => String(item || "").trim()).filter(Boolean) : [];
+  const apiAllowlist = Array.isArray(active.api_allowlist) ? active.api_allowlist.map((item) => String(item || "").trim()).filter(Boolean) : [];
+  diagnostics.apiAllowlistRequired = apiRequired;
+  diagnostics.apiAllowlistMapping = active.api_allowlist_mapping || {};
+  if (apiRequired.length === 0) {
+    blockers.push("cloud_authorization_pack_missing:active_pack.api_allowlist_required");
+  }
+  if (apiRequired.join("\u0000") !== apiAllowlist.join("\u0000")) {
+    blockers.push("cloud_authorization_pack_mismatch:api_allowlist_required");
+  }
+  const apiCoverage = new Set(Object.values(active.api_allowlist_mapping || {}).flat().map((item) => String(item || "").trim()).filter(Boolean));
+  diagnostics.apiAllowlistMappings = Object.entries(active.api_allowlist_mapping || {}).map(([operation_class, apis]) => ({
+    operation_class,
+    apis: Array.isArray(apis) ? apis.map((item) => String(item || "").trim()).filter(Boolean) : [],
+  }));
+  for (const api of apiRequired) {
+    if (!apiCoverage.has(api)) blockers.push(`cloud_authorization_pack_mapping_missing:api_allowlist:${api}`);
+  }
+
+  diagnostics.targetEnvironments = Array.isArray(active.target_environments) ? [...active.target_environments] : [];
+  diagnostics.rollbackCommands = Array.isArray(active.rollback_commands) ? [...active.rollback_commands] : [];
+  diagnostics.budget = active.budget || null;
+  diagnostics.evidenceSink = active.evidence_sink || "";
+
+  if (!diagnostics.rollbackCommands.length) blockers.push("cloud_authorization_pack_missing:active_pack.rollback_commands");
+  if (!operationClassSet.size) blockers.push("cloud_authorization_pack_missing:active_pack.operation_classes");
+  for (const environment of diagnostics.targetEnvironments) {
+    if (!TEST_ENVIRONMENTS.includes(environment)) {
+      blockers.push(`cloud_authorization_pack_invalid_target_environment:${environment}`);
+    }
+  }
+
+  return { blockers, diagnostics };
+}
+
+function authorizationBlocker(key) {
+  const normalized = String(key || "").trim();
+  if (!normalized) return "cloud_authorization_pack_missing:unknown";
+  if (normalized.startsWith("cloud_authorization_pack_")) return normalized;
+  return `cloud_authorization_pack_missing:${normalized}`;
+}
+
 function defaultExists(repoPath) {
   return existsSync(path.join(repoRoot, String(repoPath || "")));
 }
@@ -209,11 +330,23 @@ export function readCloudAuthorizationPack({ exists = defaultExists, readFile = 
       ["state", pack.state],
       ["active_pack.status", active.status],
       ["active_pack.authorized_by", active.authorized_by],
+      ["active_pack.issued_at", active.issued_at],
+      ["active_pack.approval_id", active.approval_id],
+      ["active_pack.run_id", active.run_id],
       ["active_pack.evidence_sink", active.evidence_sink],
       ["active_pack.rollback_owner", active.rollback_owner],
+      ["active_pack.rollback_commands", active.rollback_commands],
       ["active_pack.expires_at", active.expires_at],
+      ["active_pack.budget", active.budget],
+      ["active_pack.operation_class_command_map", active.operation_class_command_map],
+      ["active_pack.secret_allowlist_required", active.secret_allowlist_required],
+      ["active_pack.secret_allowlist_mapping", active.secret_allowlist_mapping],
+      ["active_pack.api_allowlist_required", active.api_allowlist_required],
+      ["active_pack.api_allowlist_mapping", active.api_allowlist_mapping],
     ];
-    const missing = requiredFields.filter(([, value]) => !String(value || "").trim()).map(([key]) => key);
+    const missing = requiredFields
+      .filter(([, value]) => value == null || (typeof value === "string" && !value.trim()))
+      .map(([key]) => key);
     const lists = [
       ["active_pack.target_environments", active.target_environments],
       ["active_pack.operation_classes", active.operation_classes],
@@ -224,6 +357,18 @@ export function readCloudAuthorizationPack({ exists = defaultExists, readFile = 
     for (const [key, value] of lists) {
       if (!Array.isArray(value) || value.length === 0) missing.push(key);
     }
+    if (active.issued_at && !isValidDate(active.issued_at)) missing.push("active_pack.issued_at_invalid");
+    if (active.expires_at && !isValidFutureDate(active.expires_at)) missing.push("active_pack.expires_at_not_future");
+    if (active.evidence_sink && !isSafeRuntimeEvidenceSink(active.evidence_sink)) missing.push("active_pack.evidence_sink_not_safe_runtime_path");
+    const budget = active.budget || {};
+    if (!budget || typeof budget !== "object") {
+      missing.push("active_pack.budget_missing");
+    } else {
+      if (!String(budget.currency || "").trim()) missing.push("active_pack.budget.currency_missing");
+      if (!Number.isFinite(Number(budget.cost_ceiling)) || Number(budget.cost_ceiling) < 0) missing.push("active_pack.budget.cost_ceiling_invalid");
+    }
+    const { blockers: mappingBlockers, diagnostics } = collectMappingProblems(active);
+    missing.push(...mappingBlockers);
     const ok = pack.state === "active" && active.status === "authorized" && missing.length === 0;
     return Object.freeze({
       ok,
@@ -231,16 +376,34 @@ export function readCloudAuthorizationPack({ exists = defaultExists, readFile = 
       id: active.id || "",
       status: active.status || "invalid",
       authorizedBy: active.authorized_by || "",
+      issuedAt: active.issued_at || "",
+      approvalId: active.approval_id || "",
+      runId: active.run_id || "",
       targetEnvironments: Object.freeze([...(active.target_environments || [])]),
       operationClasses: Object.freeze([...(active.operation_classes || [])]),
       secretAllowlist: Object.freeze([...(active.secret_allowlist || [])]),
       apiAllowlist: Object.freeze([...(active.api_allowlist || [])]),
       evidenceSink: active.evidence_sink || "",
       rollbackOwner: active.rollback_owner || "",
+      rollbackCommands: Object.freeze([...(active.rollback_commands || [])]),
+      budget: active.budget || null,
       expiresAt: active.expires_at || "",
       requiredReceiptsBeforeProductionComplete: Object.freeze([...(pack.required_receipts_before_production_complete || [])]),
       authorizedCommandsExecutable: ok,
-      blockers: Object.freeze(missing.map((key) => `cloud_authorization_pack_missing:${key}`)),
+      diagnostics: Object.freeze({
+        operationClassMappings: Object.freeze([...((diagnostics.operationClassMappings || []))]),
+        secretAllowlistRequired: Object.freeze([...(diagnostics.secretAllowlistRequired || [])]),
+        secretAllowlistMappings: Object.freeze([...(diagnostics.secretAllowlistMappings || [])]),
+        secretAllowlistMapping: Object.freeze(diagnostics.secretAllowlistMapping || {}),
+        apiAllowlistRequired: Object.freeze([...(diagnostics.apiAllowlistRequired || [])]),
+        apiAllowlistMappings: Object.freeze([...(diagnostics.apiAllowlistMappings || [])]),
+        apiAllowlistMapping: Object.freeze(diagnostics.apiAllowlistMapping || {}),
+        targetEnvironments: Object.freeze([...(diagnostics.targetEnvironments || [])]),
+        rollbackCommands: Object.freeze([...(diagnostics.rollbackCommands || [])]),
+        budget: diagnostics.budget,
+        evidenceSink: diagnostics.evidenceSink || "",
+      }),
+      blockers: Object.freeze(missing.map(authorizationBlocker)),
     });
   } catch (error) {
     return Object.freeze({

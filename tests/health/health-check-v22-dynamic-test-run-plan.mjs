@@ -31,6 +31,14 @@ function parseJsonResult(result, label) {
   return JSON.parse(result.stdout);
 }
 
+function readPackFromJson(pack) {
+  return readCloudAuthorizationPack({
+    readFile() {
+      return `${JSON.stringify(pack, null, 2)}\n`;
+    },
+  });
+}
+
 const apiContractPlan = planCommandsForFiles(["contracts/medopl-api-contract.json"]);
 for (const surface of ["contract", "backend", "frontend"]) {
   assert(apiContractPlan.matchedSurfaces.includes(surface), `api_contract_plan_must_include_surface:${surface}`);
@@ -53,6 +61,11 @@ assert.equal(
   "cloud_plan_with_active_pack_must_not_forbid_real_cloud_execution_claim",
 );
 assert(cloudPlan.cannotClaim.includes("owner receipts complete"), "cloud_plan_must_still_block_receipt_completion_claim");
+assert.equal(cloudPlan.authorization.authorizedCommandsExecutable, true, "cloud_plan_must_keep_authorized_commands_executable");
+assert(Array.isArray(cloudPlan.authorization.diagnostics?.operationClassMappings), "cloud_plan_must_expose_authorization_diagnostics");
+assert(cloudPlan.authorization.diagnostics.operationClassMappings.length > 0, "cloud_plan_must_report_operation_class_mappings");
+assert(Array.isArray(cloudPlan.authorization.diagnostics?.secretAllowlistMappings), "cloud_plan_must_expose_secret_allowlist_diagnostics");
+assert(cloudPlan.authorization.diagnostics.secretAllowlistMappings.length > 0, "cloud_plan_must_report_secret_allowlist_diagnostics");
 
 const missingAuth = readCloudAuthorizationPack({
   exists(repoPath) {
@@ -60,6 +73,166 @@ const missingAuth = readCloudAuthorizationPack({
   },
 });
 assert.equal(missingAuth.authorizedCommandsExecutable, false, "missing_authorization_pack_must_not_execute_authorized_commands");
+
+const expiredPack = readPackFromJson({
+  schema_version: 1,
+  owner: "MedOPL Operations",
+  purpose: "machine_authorization_pack_for_cloud_execution",
+  state: "active",
+  authority_boundary: {
+    surface: "cloud_execution_authorization",
+    default_cloud_execution: "allowed_when_authorization_pack_is_active",
+    default_cloud_mutation: "allowed_when_authorization_pack_is_active",
+    default_secret_read: "allowed_when_secret_allowlist_matches_pack",
+    production_claim_requires: "runtime_storage_billing_audit_release_owner_receipts",
+  },
+  authorization_boundary: {
+    default_cloud_execution: "allowed_when_authorization_pack_is_active",
+    default_cloud_mutation: "allowed_when_authorization_pack_is_active",
+    default_secret_read: "allowed_when_secret_allowlist_matches_pack",
+    production_claim_requires: "runtime_storage_billing_audit_release_owner_receipts",
+  },
+  active_pack: {
+    id: "v22-cloud-execution-open-authority",
+    status: "authorized",
+    authorized_by: "user_request_2026-06-19",
+    issued_at: "2026-06-19",
+    approval_id: "approval-v22-001",
+    run_id: "run-v22-001",
+    target_environments: ["staging", "production-canary"],
+    operation_classes: ["readonly_inventory"],
+    secret_allowlist: ["TENCENT_READONLY_SECRET_ID", "TENCENT_READONLY_SECRET_KEY"],
+    api_allowlist: ["tencentcloud:readonly_inventory"],
+    evidence_sink: ".runtime/v22-cloud-authorization",
+    redaction_required: true,
+    rollback_owner: "MedOPL Operations",
+    rollback_commands: ["npm run test:cloud"],
+    budget: {
+      currency: "USD",
+      cost_ceiling: 1000,
+    },
+    expires_at: "2026-06-01",
+  },
+  required_receipts_before_production_complete: ["runtime_owner_receipt"],
+});
+assert.equal(expiredPack.authorizedCommandsExecutable, false, "expired_pack_must_not_authorize_commands");
+assert(
+  expiredPack.blockers.some((blocker) => blocker.includes("expires_at")),
+  "expired_pack_must_report_expired_date_blocker",
+);
+
+const incompletePack = readPackFromJson({
+  schema_version: 1,
+  owner: "MedOPL Operations",
+  purpose: "machine_authorization_pack_for_cloud_execution",
+  state: "active",
+  authority_boundary: {
+    surface: "cloud_execution_authorization",
+    default_cloud_execution: "allowed_when_authorization_pack_is_active",
+    default_cloud_mutation: "allowed_when_authorization_pack_is_active",
+    default_secret_read: "allowed_when_secret_allowlist_matches_pack",
+    production_claim_requires: "runtime_storage_billing_audit_release_owner_receipts",
+  },
+  authorization_boundary: {
+    default_cloud_execution: "allowed_when_authorization_pack_is_active",
+    default_cloud_mutation: "allowed_when_authorization_pack_is_active",
+    default_secret_read: "allowed_when_secret_allowlist_matches_pack",
+    production_claim_requires: "runtime_storage_billing_audit_release_owner_receipts",
+  },
+  active_pack: {
+    id: "v22-cloud-execution-open-authority",
+    status: "authorized",
+    authorized_by: "user_request_2026-06-19",
+    issued_at: "2026-06-19",
+    approval_id: "approval-v22-001",
+    run_id: "run-v22-001",
+    target_environments: ["staging"],
+    operation_classes: ["readonly_inventory", "dry_run_plan"],
+    secret_allowlist: ["TENCENT_READONLY_SECRET_ID"],
+    api_allowlist: ["tencentcloud:readonly_inventory"],
+    evidence_sink: ".runtime/v22-cloud-authorization",
+    redaction_required: true,
+    rollback_owner: "MedOPL Operations",
+    rollback_commands: ["npm run test:cloud"],
+    budget: {
+      currency: "USD",
+      cost_ceiling: 1000,
+    },
+    expires_at: "2026-07-19",
+  },
+  required_receipts_before_production_complete: ["runtime_owner_receipt"],
+});
+assert.equal(incompletePack.authorizedCommandsExecutable, false, "incomplete_pack_must_not_authorize_commands");
+assert(
+  incompletePack.blockers.some((blocker) => blocker.includes("operation_class")),
+  "incomplete_pack_must_report_operation_class_mapping_blocker",
+);
+assert(
+  incompletePack.blockers.some((blocker) => blocker.includes("secret_allowlist")),
+  "incomplete_pack_must_report_secret_allowlist_blocker",
+);
+
+const unknownEnvironmentPack = readPackFromJson({
+  schema_version: 1,
+  owner: "MedOPL Operations",
+  purpose: "machine_authorization_pack_for_cloud_execution",
+  state: "active",
+  authority_boundary: {
+    surface: "cloud_execution_authorization",
+    default_cloud_execution: "allowed_when_authorization_pack_is_active",
+    default_cloud_mutation: "allowed_when_authorization_pack_is_active",
+    default_secret_read: "allowed_when_secret_allowlist_matches_pack",
+    production_claim_requires: "runtime_storage_billing_audit_release_owner_receipts",
+  },
+  authorization_boundary: {
+    default_cloud_execution: "allowed_when_authorization_pack_is_active",
+    default_cloud_mutation: "allowed_when_authorization_pack_is_active",
+    default_secret_read: "allowed_when_secret_allowlist_matches_pack",
+    production_claim_requires: "runtime_storage_billing_audit_release_owner_receipts",
+  },
+  active_pack: {
+    id: "v22-cloud-execution-open-authority",
+    status: "authorized",
+    authorized_by: "user_request_2026-06-19",
+    issued_at: "2026-06-19",
+    approval_id: "approval-v22-001",
+    run_id: "run-v22-001",
+    target_environments: ["moon"],
+    operation_classes: ["readonly_inventory"],
+    secret_allowlist: ["TENCENT_READONLY_SECRET_ID", "TENCENT_READONLY_SECRET_KEY"],
+    secret_allowlist_required: ["TENCENT_READONLY_SECRET_ID", "TENCENT_READONLY_SECRET_KEY"],
+    secret_allowlist_mapping: {
+      readonly_inventory: ["TENCENT_READONLY_SECRET_ID", "TENCENT_READONLY_SECRET_KEY"],
+    },
+    api_allowlist: ["tencentcloud:readonly_inventory"],
+    api_allowlist_required: ["tencentcloud:readonly_inventory"],
+    api_allowlist_mapping: {
+      readonly_inventory: ["tencentcloud:readonly_inventory"],
+    },
+    operation_class_command_map: [
+      {
+        operation_class: "readonly_inventory",
+        package_script: "test:cloud",
+        commands: ["npm run test:cloud"],
+      },
+    ],
+    evidence_sink: ".runtime/v22-cloud-authorization",
+    redaction_required: true,
+    rollback_owner: "MedOPL Operations",
+    rollback_commands: ["npm run test:cloud"],
+    budget: {
+      currency: "USD",
+      cost_ceiling: 1000,
+    },
+    expires_at: "2026-07-19",
+  },
+  required_receipts_before_production_complete: ["runtime_owner_receipt"],
+});
+assert.equal(unknownEnvironmentPack.authorizedCommandsExecutable, false, "unknown_environment_pack_must_not_authorize_commands");
+assert(
+  unknownEnvironmentPack.blockers.some((blocker) => blocker.includes("invalid_target_environment")),
+  "unknown_environment_pack_must_report_environment_blocker",
+);
 
 const frontendPreflight = preflightTestPlan(
   {
