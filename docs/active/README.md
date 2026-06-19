@@ -13,16 +13,19 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 
 | Field | Value |
 | --- | --- |
-| current phase | `Real-cloud authorization boundary before readiness` |
-| current cursor | `real-cloud-authorization-boundary` |
-| current blocker | MedOPL 当前 truth 是给 OPL 提供平台代管 runtime / 云计算资源 / 文件空间 / 计费审计的 SaaS 控制面，不承担 OPL 自身科研能力。当前阻塞不是继续修旧 Package D / CLB / production-launch runner，而是把真实云执行保持在 `real-cloud-authorization-boundary`：默认验证只能跑 readonly inventory、Package C dry-run plan 和 TKE bootstrap preflight 的本地/显式授权边界；任何 secret、provider call、Tencent mutation、kubectl、deploy、build/push、live-test、production ledger write 或 public access claim 都必须另开显式授权包。 |
-| next owner | `MedOPL Operations` for real-cloud authorization package; `MedOPL Platform` keeps pre-cloud local RC / Node retirement evidence as local guardrail |
+| current phase | `OPL-Webui runtime production slice before production authorization` |
+| current cursor | `opl-webui-runtime-production-slice` |
+| current blocker | MedOPL 当前 truth 是给 OPL-Webui 登录用户在当前 workspace 开通平台代管 runtime / 文件空间，并在 OPL-Webui 内完成上传文件、运行 OPL task、拿 artifact、释放 runtime、停止计费和可选销毁 storage 的 SaaS 控制面，不承担 OPL 自身科研能力。当前阻塞不是继续修旧 Package D / CLB / production-launch runner，而是把这条产品主线收口到 `opl-webui-runtime-production-slice`：first proof 只允许 real local product RC，cloud proof 只允许 cloud-deployable RC，production proof 必须 explicit authorization + runtime / storage / billing / audit / release owner receipts；任何 secret、provider call、Tencent mutation、kubectl、deploy、build/push、live-test、production ledger write 或 public access claim 仍需独立显式授权包。 |
+| next owner | `MedOPL Platform` owns the OPL-Webui runtime production slice truth and local/cloud RC proof; `MedOPL Operations` remains owner for any separately authorized production execution package |
 | product authority gate | `validate:active-platform` |
 | default verification | `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk` |
 | default first proof | golden path health from `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk` |
+| local first proof meaning | `real local product RC` for the OPL-Webui runtime/storage slice only |
+| cloud proof meaning | `cloud-deployable RC` without production completion claim |
+| production proof gate | explicit authorization + runtime / storage / billing / audit / release owner receipts |
 | latest product closeout | `feat/v22-slide-09-precloud-readiness` / `97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73` |
 | latest repo closeout | `cleanup/v22-owner-consumer-lifecycle-gates` / `767f2de8a35df9615e6f3533dd0518e58ca275e4` |
-Current summary: Go control-plane MVP takeover、precloud deployable RC、local SaaS backend RC 和 local Portal/OPL delivery RC 都是 local deterministic evidence；they are not production readiness and cannot upgrade into production backend、真实云、生产 runtime、生产 billing 或 public access 证据。历史 Package D deploy execution evidence 只保留为 provenance，不是当前 active runner 或新授权。当前 active cloud surface 只保留三个可验证边界：`tests/cloud/cloud-test-v22-tencent-readonly-inventory-boundary.mjs`、`tests/cloud/cloud-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs` 和 `tests/cloud/cloud-test-v22-tke-bootstrap-preflight-local-gate.mjs`。旧 production launch、Package D deploy/external access、CLB diagnostics 和 Package C live canary 只作为 history / archive / runtime provenance 存在，不再是 active runner、active test 或 current gap。
+Current summary: 当前主线是 OPL-Webui 登录用户在当前 workspace 开通 MedOPL runtime / storage，在 OPL-Webui 内上传文件、跑 OPL task、拿 artifact，随后释放 runtime、停止计费，并按产品决定保留或销毁 storage。Go control-plane MVP takeover、precloud deployable RC、local SaaS backend RC 和 local Portal/OPL delivery RC 只构成 local deterministic evidence；real local product RC != cloud 上线，cloud-deployable RC != production complete。生产 proof 不能由 local/cloud RC 自动升级，必须显式补齐 runtime / storage / billing / audit / release owner receipts。历史 Package D deploy execution evidence 只保留为 provenance，不是当前 active runner 或新授权。当前 active cloud surface 只保留三个可验证边界：`tests/cloud/cloud-test-v22-tencent-readonly-inventory-boundary.mjs`、`tests/cloud/cloud-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs` 和 `tests/cloud/cloud-test-v22-tke-bootstrap-preflight-local-gate.mjs`。旧 production launch、Package D deploy/external access、CLB diagnostics 和 Package C live canary 只作为 history / archive / runtime provenance 存在，不再是 active runner、active test 或 current gap。
 
 当前 truth 不再从 recovery/status matrix 推断；Framework 模型、surface budget、admission、readiness、evidence 等级和 can-claim / cannot-claim 均归各自 owner README。本文件只引用它们的结论，不复制成第二套 framework 或 evidence truth。
 
@@ -30,10 +33,10 @@ Current summary: Go control-plane MVP takeover、precloud deployable RC、local 
 
 ## Open Blockers
 
-- `real-cloud-authorization-boundary`: active blocker. It holds the authorization record shape, evidence sink rules, redaction rules and default fail-closed stance before any real cloud execution.
+- `opl-webui-runtime-production-slice`: active blocker. It holds the current product slice, proof ladder and fail-closed authorization boundary before any production claim.
 - `real-cloud-readiness`: readonly inventory is a separate explicit lane. It may validate support module shape and redaction policy, but it cannot read secrets or call Tencent Cloud in default verify.
 - `cloud-future-authorized`: keeps only Package C dry-run plan and TKE bootstrap preflight local gates. These support future user-authorized provisioning work but do not execute provisioning.
-- `precloud-deployable-rc`: landed as local proof only; it cannot be upgraded into production backend replacement, real-cloud readiness or live provider evidence.
+- `precloud-deployable-rc`: landed as local/cloud RC proof only; it cannot be upgraded into production backend replacement, production complete or live provider evidence.
 - `node-portal-business-truth-retirement`: Node Portal backend must not be deployment surface, frontend proxy target, typed API owner or current verification owner.
 
 ## Verification Entry
@@ -68,6 +71,9 @@ Current summary: Go control-plane MVP takeover、precloud deployable RC、local 
 - 不能把 Go local RC deterministic parity 写成 live provider、真实 OPL upstream、real-cloud、production billing 或 production runtime evidence。
 - 不能把 local SaaS backend RC 写成真实云、live provider、production runtime、production billing 或 production deploy 已完成。
 - 不能把 real-cloud readiness lane 写成已读取 secret、已调用真实云、已完成 readonly live inventory 或已授权 mutation/deploy/live-test。
+- 不能把 real local product RC 写成 cloud 上线。
+- 不能把 cloud-deployable RC 写成 production complete。
+- 没有 runtime / storage / billing / audit / release owner receipt，不得 claim production ready / production complete。
 - Forbidden live operation markers: secret read, provider operation, true cloud mutation, kubeconfig read, deploy, kubectl, build/push, Package D execution, live-test.
 - 不能把 Node Portal backend 写成长期 active backend、过渡控制面、shell、facade、relay 或第二控制面；`services/portal/src` 已物理清退。
 - 不能跳过 post-merge closeout 直接把下一个 leaf 写成已完成或已 landed。

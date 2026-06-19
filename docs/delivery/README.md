@@ -7,9 +7,9 @@ Machine boundary: 本文是人读交付入口。当前执行 cursor、branch ove
 
 ## Current Cursor
 
-当前 product cursor 是 `real-cloud-authorization-boundary`，状态是 authorization-required / before real-cloud readiness。MedOPL 的当前 delivery truth 是：平台给 clean OPL 提供托管 runtime、云计算资源、文件空间、计费、审计和释放；MedOPL 不承担 OPL 自身科研能力。最新 landed repo closeout 是 `cleanup/v22-owner-consumer-lifecycle-gates` / `767f2de8a35df9615e6f3533dd0518e58ca275e4`。
+当前 product cursor 是 `opl-webui-runtime-production-slice`，状态是 local/cloud RC only / before production authorization。MedOPL 的当前 delivery truth 是：平台给 OPL-Webui 登录用户在当前 workspace 提供托管 runtime、文件空间、计费、审计和释放；MedOPL 不承担 OPL 自身科研能力。最新 landed repo closeout 是 `cleanup/v22-owner-consumer-lifecycle-gates` / `767f2de8a35df9615e6f3533dd0518e58ca275e4`。
 
-Go control-plane MVP takeover、precloud-deployable-rc、local SaaS backend RC 和 local Portal/OPL delivery RC 只提供本地 RC evidence。历史 Package C live canary、Package D deploy/service reachability、production-launch Gap 01-08o、CLB diagnostics 和 public access 调试只保留为 archive / runtime provenance；它们不再是 active runner、active cloud test、current blocker 或默认 verify 入口。
+Go control-plane MVP takeover、precloud-deployable-rc、local SaaS backend RC 和 local Portal/OPL delivery RC 只提供 local RC / cloud-deployable RC evidence。first proof 是 real local product RC；cloud proof 是 cloud-deployable RC；production proof 仍需 explicit authorization + runtime / storage / billing / audit / release owner receipts。历史 Package C live canary、Package D deploy/service reachability、production-launch Gap 01-08o、CLB diagnostics 和 public access 调试只保留为 archive / runtime provenance；它们不再是 active runner、active cloud test、current blocker 或默认 verify 入口。
 
 当前 active cloud surface 只保留三类小边界：readonly inventory、Package C dry-run create/release plan、TKE bootstrap preflight。任何 secret read、provider call、Tencent mutation、kubectl、deploy、build/push、production ledger write、live-test 或 public access completion claim 都必须另开显式授权包，并写清 operation class、target environment、secret allowlist、API allowlist、budget、evidence sink 和 rollback owner。
 
@@ -90,7 +90,7 @@ Local RC 之后，默认 delivery 不直接跳到真实云。先按下列 packag
 | 4 | `opl-entry-real-preflight-launch` | OPL entry UI 读取真实 preflight、launch、providerKeyRef、Gateway readiness 和 fail-closed reason。 | closed locally; history kept in docs/history summary and git history |
 | 5 | `go-control-plane-mvp-takeover` | Go 接管 MedOPL control-plane business truth；Portal frontend 通过 typed API 调 Go；Node Portal backend 业务 truth 物理清退，不保 Node/Go 双控制面。 | closed locally; history kept in docs/history summary and git history |
 | 6 | `precloud-deployable-rc` | 把 OPL Workbench、Portal frontend、Go SaaS backend 和 cloud connector fail-closed API 变成本地可部署形态。 | local deterministic proof only / ready for landing review |
-| 7 | `real-cloud-authorization-boundary` | 先把 secret/provider/cloud/deploy/kubectl/build-push/live-test 授权边界作为 repo-native blocked cursor 固定下来。 | local dry-run / contract proof only |
+| 7 | `opl-webui-runtime-production-slice` | 把 OPL-Webui 当前 workspace runtime/storage 开通、任务执行、artifact 回流、释放和停止计费收口成 current 产品 slice，并固定 proof ladder。 | real local product RC first / cloud-deployable RC second |
 | 8 | `real-cloud-readiness` | 只在显式授权后开启 mock/snapshot、readonly quote、dry-run plan、readonly inventory。 | cloud future-authorized dry-run first |
 | 9 | `real-cloud-authorization` | 只在显式授权后执行 secret/cloud/provider/deploy work。 | authorized live package |
 
@@ -119,7 +119,7 @@ Delivery closeout must sync accepted deltas into durable specs, add a compact su
 
 ## Go Control Plane MVP Takeover Lane
 
-`feat/v22-go-control-plane-mvp-takeover` 已归档为本地 Go control-plane MVP takeover lane。它不再是当前 open cursor；`precloud-deployable-rc` 已把 Portal frontend + Go SaaS backend 的本地可部署 RC 收口到 landing review。当前 open cursor 是 blocked `real-cloud-authorization-boundary`；真实云、deploy、kubectl、build/push 或 live-test 仍不授权。
+`feat/v22-go-control-plane-mvp-takeover` 已归档为本地 Go control-plane MVP takeover lane。它不再是当前 open cursor；`precloud-deployable-rc` 已把 Portal frontend + Go SaaS backend 的本地可部署 RC 收口到 landing review。当前 open cursor 是 `opl-webui-runtime-production-slice`；真实云、deploy、kubectl、build/push 或 live-test 仍不授权，production claim 也仍需要 owner receipts。
 
 先 Go control-plane MVP，再 real-cloud-readiness。该 lane 的交付方式是每个 step 一个 commit，并且每个 step 都按 `truth -> gap -> eval -> implementation/cleanup -> verify -> landing gate -> post-merge closeout -> next cursor` 执行。7 阶段只作为 compact machine block、spec anchor、registered tests 和 landed history summary 存在，不恢复旧合同目录、旧 recovery 目录、root stage docs 或 `scripts/smoke-test-*`。
 

@@ -23,9 +23,9 @@
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
   "base_trunk_head": "767f2de8a35df9615e6f3533dd0518e58ca275e4",
-  "current_branch": "real-cloud-authorization-boundary",
+  "current_branch": "opl-webui-runtime-production-slice",
   "current_branch_role": "authorization_boundary_cursor",
-  "authoring_branch": "real-cloud-authorization-boundary",
+  "authoring_branch": "opl-webui-runtime-production-slice",
   "target_branch": "recovery/platform-v22-trunk",
   "last_landed_commit": "767f2de8a35df9615e6f3533dd0518e58ca275e4",
   "latest_landed_closeout": {
@@ -50,24 +50,24 @@
     "cleanup_result": {
       "deleted": "old local worktrees and stale local branches",
       "folded": "lifecycle taxonomy tests contracts and cloud authorization into current owners",
-      "retained": "real-cloud-authorization-boundary active cursor and detached common-dir worktree",
+      "retained": "opl-webui-runtime-production-slice active cursor and detached common-dir worktree",
       "reason": "post-merge closeout updates machine cursor after landing cleanup branch",
-      "next": "run verify and gate review then continue real-cloud authorization boundary"
+      "next": "run verify and gate review then continue opl-webui-runtime-production-slice"
     },
     "post_merge_closeout": "completed",
-    "next_cursor": "real-cloud-authorization-boundary"
+    "next_cursor": "opl-webui-runtime-production-slice"
   },
-  "current_cursor": "real-cloud-authorization-boundary",
-  "next_leaf": "real-cloud-authorization-boundary",
-  "current_stage": "S7 real-cloud authorization boundary before readiness",
+  "current_cursor": "opl-webui-runtime-production-slice",
+  "next_leaf": "opl-webui-runtime-production-slice",
+  "current_stage": "S7 OPL-Webui runtime production slice before production authorization",
   "current_risk_class": "sensitive_boundary",
   "current_blockers": [
-    "real_cloud_authorization_boundary_requires_explicit_user_authorization_before_secret_provider_cloud_deploy_kubectl_build_push_or_live_test",
-    "precloud_deployable_rc_and_node_backend_physical_removal_are_local_precloud_evidence_not_production_or_real_cloud_evidence",
-    "default_cloud_verification_is_limited_to_readonly_inventory_dry_run_plan_and_tke_bootstrap_preflight",
+    "opl_webui_runtime_production_slice_requires_explicit_authorization_and_owner_receipts_before_any_production_claim",
+    "precloud_deployable_rc_and_node_backend_physical_removal_are_local_or_cloud_rc_evidence_not_production_or_real_cloud_evidence",
+    "default_cloud_verification_is_limited_to_readonly_inventory_dry_run_plan_and_tke_bootstrap_preflight_before_production_receipts",
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth"
   ],
-  "current_problem": "MedOPL current truth is a SaaS control plane for platform-provisioned / customer-dedicated OPL runtime, cloud compute, file space, billing, audit and release. It does not own OPL research capabilities. The latest governance closeout branch cleanup/v22-owner-consumer-lifecycle-gates landed at 767f2de8a35df9615e6f3533dd0518e58ca275e4. The active blocker remains the real-cloud authorization boundary: default verification may only exercise readonly inventory, Package C dry-run planning and TKE bootstrap preflight local gates. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims require a separate explicit authorization package.",
+  "current_problem": "MedOPL current truth is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest governance closeout branch cleanup/v22-owner-consumer-lifecycle-gates landed at 767f2de8a35df9615e6f3533dd0518e58ca275e4. The active blocker remains the opl-webui-runtime-production-slice proof ladder: first proof may only claim real local product RC, cloud proof may only claim cloud-deployable RC, and production proof requires explicit authorization plus runtime/storage/billing/audit/release owner receipts. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims still require a separate explicit authorization package.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -134,8 +134,8 @@
       "history_summary": "OPL entry now consumes backend preflight / launch / providerKeyRef / Gateway readiness projections through typed API and explicit public launch-status payload."
     },
     {
-      "id": "real-cloud-authorization-boundary",
-      "stage": "S7 real-cloud authorization boundary before readiness",
+      "id": "opl-webui-runtime-production-slice",
+      "stage": "S7 OPL-Webui runtime production slice before production authorization",
       "priority": 60,
       "cursor_eligible": false,
       "status": "authorization_required",
@@ -143,7 +143,7 @@
       "depends_on": [
         "precloud-deployable-rc"
       ],
-      "history_summary": "Active cursor remains blocked at real-cloud authorization. Historical Package C/Package D/cloud evidence stays provenance only; active verification keeps readonly inventory, Package C dry-run plan and TKE bootstrap preflight as small registered cloud lanes. No secret, provider call, Tencent mutation, kubectl, deploy, build/push, production ledger write, live-test or public access is authorized by default.",
+      "history_summary": "Active cursor remains blocked at the OPL-Webui runtime production slice. Historical Package C/Package D/cloud evidence stays provenance only; active verification keeps readonly inventory, Package C dry-run plan and TKE bootstrap preflight as small registered cloud lanes. First proof is real local product RC, cloud proof is cloud-deployable RC, and production proof requires explicit authorization plus runtime/storage/billing/audit/release owner receipts. No secret, provider call, Tencent mutation, kubectl, deploy, build/push, production ledger write, live-test or public access is authorized by default.",
       "landed_commit": "a272e07c2b462c4e61315536c701f03069b5f474"
     },
     {
@@ -169,11 +169,11 @@
       "priority": 92,
       "cursor_eligible": false,
       "status": "landed",
-      "next_leaf_step": "real-cloud-authorization-boundary",
+      "next_leaf_step": "opl-webui-runtime-production-slice",
       "depends_on": [
         "go-control-plane-mvp-takeover"
       ],
-      "history_summary": "Portal frontend defaults to Go /api, Go backend owns local pre-cloud SaaS projections and file transfer, services/portal/src is physically absent, Node Portal backend is not deploy/proxy/API owner, and cloud connector fails closed before real-cloud authorization.",
+      "history_summary": "Portal frontend defaults to Go /api, Go backend owns local pre-cloud SaaS projections and file transfer, services/portal/src is physically absent, Node Portal backend is not deploy/proxy/API owner, and cloud connector fails closed before production authorization. The resulting cloud proof remains cloud-deployable RC only.",
       "closed_at": "2026-05-26",
       "history_owner": "docs/history/README.md",
       "landed_commit": "b2b9cef82c744a5a18b1465f2350667ec9dbcfa3"
@@ -184,7 +184,7 @@
       "priority": 91,
       "cursor_eligible": false,
       "status": "landed",
-      "next_leaf_step": "real-cloud-authorization-boundary",
+      "next_leaf_step": "opl-webui-runtime-production-slice",
       "depends_on": [
         "precloud-deployable-rc"
       ],
@@ -199,10 +199,10 @@
       "priority": 89,
       "cursor_eligible": false,
       "status": "landed",
-      "next_leaf_step": "real-cloud-authorization-boundary",
+      "next_leaf_step": "opl-webui-runtime-production-slice",
       "depends_on": [
         "local-portal-opl-delivery-rc",
-        "real-cloud-authorization-boundary"
+        "opl-webui-runtime-production-slice"
       ],
       "history_summary": "Local AI MVP baseline, real-cloud vision docs, real-cloud readiness lane, legacy runtime cloud cleanup, Package B readonly inventory, TC3 diagnostic cleanup, Package C dry-run create/release plan, TKE bootstrap preflight, repo governance closeout, Package C live canary readiness gate, Package C non-secret cloud parameters input contract, Package C live canary runner, unsupported tke:nodepool tag skip strategy, authorized Package C create/scale/delete canary, PostgreSQL resource_bindings / cloud_operations lower bound, Package C local state-machine evidence, Package C repository write wiring contract, gated PostgreSQL sink support path, explicit live canary runner contract, Package D local shape gate, reviewable release plan shape, execution preflight gate, in-cluster runner shape gate, non-executing runner manifest materialization / authorization pack, bootstrap authorization pack, repo-native Kubernetes API server-side dry-run preflight runner and repo-native bootstrap apply runner have landed as pre-cloud / scoped local evidence. Stabilization now uses Package D deploy readiness planning before deploy execution; productionization is now blocked on Package D PostgreSQL/runtime env/combined in-cluster preflight from the platform runner, DB connectivity smoke, rollback evidence, service-in-VPC PostgreSQL live canary, billing/audit ledger, Portal opening entry and workspace storage quota.",
       "closed_at": "2026-06-13",
@@ -210,11 +210,11 @@
     }
   ],
   "current_leaf": {
-    "step_id": "real-cloud-authorization-boundary",
-    "gap_id": "real-cloud-authorization-boundary",
-    "stage": "S7 real-cloud authorization boundary before readiness",
+    "step_id": "opl-webui-runtime-production-slice",
+    "gap_id": "opl-webui-runtime-production-slice",
+    "stage": "S7 OPL-Webui runtime production slice before production authorization",
     "cursor_eligible": false,
-    "problem": "MedOPL current truth is a SaaS control plane for platform-provisioned / customer-dedicated OPL runtime, cloud compute, file space, billing, audit and release. It does not own OPL research capabilities. The active blocker is the real-cloud authorization boundary: default verification may only exercise readonly inventory, Package C dry-run planning and TKE bootstrap preflight local gates. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims require a separate explicit authorization package.",
+    "problem": "MedOPL current truth is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The active blocker is the opl-webui-runtime-production-slice proof ladder: default verification may only exercise local product RC and bounded cloud dry-run/readiness lanes. Production proof requires explicit authorization plus runtime/storage/billing/audit/release owner receipts, and secret/provider/cloud/deploy/kubectl/build-push/live-test claims remain separately authorized work.",
     "verification_commands": [
       "node scripts/v22-verify.mjs active-platform --json",
       "node tests/product/product-test-v22-medopl-contract-authority.mjs",
@@ -285,7 +285,7 @@
       "deploy",
       "live-test"
     ],
-    "next_cursor": "real-cloud-authorization-boundary",
+    "next_cursor": "opl-webui-runtime-production-slice",
     "authorization_required_before": [
       "secret read",
       "true cloud call",
@@ -295,7 +295,7 @@
     ],
     "go_local_rc_closed_at": "0112813998456d879e9ea10782f224c29f3a166f",
     "required_sequence": [
-      "real-cloud authorization boundary",
+      "opl-webui runtime production slice",
       "readonly inventory",
       "TKE bootstrap preflight",
       "dry-run plan",
@@ -306,18 +306,18 @@
     ],
     "latest_local_evidence": "cloud-taxonomy-and-consumer-first-contract-cleanup",
     "productionization_plan": [
-      "Keep real-cloud authorization boundary fail-closed",
+      "Keep opl-webui-runtime-production-slice fail-closed until production owner receipts exist",
       "Run readonly inventory boundary only through real-cloud-readiness lane",
       "Run Package C tenant runtime dry-run plan with no real cloud calls",
       "Run TKE bootstrap preflight with no secret, kubectl, deploy or mutation",
-      "Create a separate explicit authorization packet before any real provider execution",
-      "After authorized execution, write MedOPL ledger / billing / audit evidence through the backend owner surface",
+      "Create a separate explicit authorization packet before any real provider execution or production claim",
+      "After authorized execution, write MedOPL runtime / storage / billing / audit / release evidence through the backend owner surface",
       "Then run canary / QA / status update with redacted evidence outside git"
     ],
     "readinessGaps": [
-      "Explicit authorization packet for any real cloud execution",
-      "Production ledger / billing / audit writeback implementation and evidence",
-      "Authorized tenant runtime provisioning evidence",
+      "Explicit authorization packet for any real cloud execution or production claim",
+      "Production runtime / storage / billing / audit / release writeback implementation and evidence",
+      "Authorized tenant runtime provisioning and storage lifecycle evidence",
       "Production canary / QA / status update with redacted non-git evidence"
     ]
   },
@@ -334,7 +334,7 @@
       "mcp_compatible_boundary_design"
     ],
     "post_six_step_cloud_gate": [
-      "real-cloud authorization boundary",
+      "opl-webui runtime production slice",
       "readonly inventory",
       "TKE bootstrap preflight",
       "dry-run plan",
@@ -486,7 +486,7 @@
     "verify_manifest_file": "tests/fixtures/v22/agent-verify-manifest.json",
     "history_file": "docs/history/README.md",
     "authoring_branch": "feat/v22-go-control-plane-mvp-takeover",
-    "current_product_cursor": "real-cloud-authorization-boundary",
+    "current_product_cursor": "opl-webui-runtime-production-slice",
     "method": "truth-gap-eval-implementation-verify-landing-closeout",
     "one_step_one_commit": true,
     "review_gate": "landing gate",
@@ -599,8 +599,8 @@
         "node tests/contracts/contract-test-v22-go-backend-service-surface.mjs",
         "node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs"
       ],
-      "can_claim": "Go-owned local RC projections cover provider/preflight/launch, billing/audit, resources and release/stop-billing through deterministic local evals; Node Portal backend is physically absent.",
-      "cannot_claim": "live provider, production secret storage, real OPL upstream, real cloud, deploy, kubectl, build/push, production billing or production runtime evidence",
+      "can_claim": "Go-owned local RC projections cover provider/preflight/launch, billing/audit, resources and release/stop-billing through deterministic local evals for the OPL-Webui runtime production slice; Node Portal backend is physically absent.",
+      "cannot_claim": "cloud online, production complete, production owner receipt, live provider, production secret storage, real OPL upstream, real cloud, deploy, kubectl, build/push, production billing or production runtime evidence",
       "closed_at": "2026-05-25"
     },
     "closed_at": "2026-05-25",
@@ -614,19 +614,19 @@
     "entrypoint": "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk",
     "smoke_entrypoint": "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk",
     "first_command": "node tests/suites/suite-test-v22-golden-smoke.mjs",
-    "can_claim": "repo-local golden path contract shape and fail-closed projection are covered before governance guardrails",
-    "cannot_claim": "production runtime, real cloud, real billing, deploy, kubectl, build/push or live provider readiness"
+    "can_claim": "repo-local golden path contract shape and fail-closed projection are covered as real local product RC before governance guardrails",
+    "cannot_claim": "cloud online, production complete, production owner receipt, production runtime, real cloud, real billing, deploy, kubectl, build/push or live provider readiness"
   },
   "readinessGaps": [
-    "Explicit authorization packet before any secret, provider, Tencent mutation, kubectl, deploy, build/push, live-test or production ledger write",
-    "Production ledger / billing / audit writeback remains unproven",
-    "Authorized tenant runtime provisioning remains unproven",
-    "Public access and production readiness remain unclaimed"
+    "Explicit authorization packet before any secret, provider, Tencent mutation, kubectl, deploy, build/push, live-test or production runtime/storage/billing/audit/release claim",
+    "Production runtime / storage / billing / audit / release writeback remains unproven",
+    "Authorized tenant runtime provisioning and storage lifecycle remain unproven",
+    "Public access and production readiness remain unclaimed without owner receipts"
   ],
   "nextAuthorizationPrompt": {
     "target": "cloud-codex",
-    "runIdHint": "real-cloud-authorization-boundary-next",
-    "prompt": "当前唯一 active truth 是 MedOPL real-cloud authorization boundary。先不要恢复 Package D / production-launch / CLB / live canary runner。若要做真实云执行，必须先提交独立授权包，写明 operation class、target environment、secret allowlist、API allowlist、budget、evidence sink、rollback owner；默认只允许 readonly inventory、Package C dry-run plan、TKE bootstrap preflight 的本地/显式边界验证。"
+    "runIdHint": "opl-webui-runtime-production-slice-next",
+    "prompt": "当前唯一 active truth 是 MedOPL opl-webui-runtime-production-slice。先不要恢复 Package D / production-launch / CLB / live canary runner。若要做真实云执行或 production claim，必须先提交独立授权包，写明 operation class、target environment、secret allowlist、API allowlist、budget、evidence sink、rollback owner，并补齐 runtime / storage / billing / audit / release owner receipts；默认只允许 readonly inventory、Package C dry-run plan、TKE bootstrap preflight 的本地/显式边界验证。"
   },
   "nextLocalCodexPrompt": {
     "target": "local-codex",

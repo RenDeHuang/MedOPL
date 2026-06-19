@@ -9,6 +9,8 @@ Machine boundary: 本文是产品视角入口，不是第二份 current truth。
 
 MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 One Person Lab SaaS 控制面和托管交付平台：用户购买托管 OPL 科研工作台服务、计算能力、文件空间、任务并发和运行环境。Portal 解释服务、状态、余额、文件、账单和轨迹；OPL 继续负责科研执行和工作台内交互。
 
+当前愿景收口到一条明确 slice：OPL-Webui 登录用户在当前 workspace 开通 MedOPL runtime / storage，在 OPL-Webui 内上传文件、跑 OPL task、拿 artifact，随后释放 runtime、停止计费，并按用户选择保留或销毁 storage。这个 slice 是 current 产品目标，不等于已经取得 production owner receipt。
+
 MedOPL 不是云资源控制台。普通用户产品语言不展示 CVM、COS、K8s、节点池或云控制台配置。管理员 / ops 是后台视角，不进入普通用户产品主叙事。
 
 用户主路径是：登录 `portal.medopl.cn` -> 工作空间 -> 上传文件 / 提任务 -> 进入 OPL / 工作台 -> 看结果 -> 看费用。`opl.medopl.cn` 入口、Portal “进入 OPL 工作台”按钮和 Gateway preflight 最终进入同一套 Gateway / launch / provider binding 逻辑。
