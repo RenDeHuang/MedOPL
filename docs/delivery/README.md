@@ -26,6 +26,23 @@ node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-tr
 
 `golden-path` 是 default verify 的第一产品健康面；`health`、`local-contract`、`review` 和治理护栏仍存在，但 `changes/` 作为 change package 生命周期入口已退役，当前 truth 归 `contracts/`、`docs/active/README.md`、root `specs/**`、tests/fixtures/manifest 和 `validate:active-platform`。
 
+## Test Lane Selection
+
+交付时先走 `Test Policy -> Discovery -> Preflight -> Run -> Report/Completion Gate`，再决定是否扩到更重的验证：
+
+- **Test Policy**：machine policy 定义 changed-file surface、environment、authorization、cannot-claim 和默认命令升级规则。
+- **Discovery**：runner 根据 changed files 和 policy path / match rules 归类变更面；surface metadata、contract refs 和 entry kind 仍由 registry / manifest gate 校验，后续可继续并入 policy。
+- **Preflight**：本轮边界是本地全动态测试系统。先执行 `npm run test:run-plan -- --dry-run --json`，检查 `changedFiles`、`matchedSurfaces`、`environments`、`authorizedEnvironments`、`reasons`、`recommendedCommands`、`authorizedCommands`、`preflight` 和 `cannotClaim`，确认本轮只消费本地计划输出。
+- **Run**：确认计划后执行 `npm run test:run-plan`，runner 只执行 `recommendedCommands`。不自动执行 `authorizedCommands`，不执行 cloud/live/deploy/kubectl，也不把 future authorized profile 写成当前已经落地。
+- **Report/Completion Gate**：report、`cannotClaim` 和 preflight 结果都是完成判断的一部分；没有这些输出，只能说明计划存在，不能说明闭环或 production 级完成。
+
+- **main lane**：面向默认产品主线的基础 gate，默认 base 覆盖 `test:health`、`test:smoke` 和 `test:contract`；`test:regression` 由相关 surface 或 full/local RC 触发。
+- **targeted lane**：按 discovery 命中的改动 surface 选最小相关面；例如前端改动看 `test:frontend`，后端改动看 `test:backend`，runtime / gateway 改动看 `test:runtime`，release / claim 边界改动看 `test:release`，治理或 policy/discovery 改动看 `test:hygiene`。
+- **full/local RC lane**：发布前或大改动时跑更完整的本地 RC / release-candidate 验证，至少覆盖 main lane，并补 `verify:local-release-candidate`、`verify:golden-path` 和与变更面相关的 targeted lane。
+- **authorized lane**：只有在显式授权包存在时才进入；它只代表受控 cloud / provider / mutation 边界，不自动等于真实云可用，也不自动等于 production。
+
+正式 review 前，开发者至少应先跑 `npm run test:run-plan -- --dry-run --json`，查看 `changedFiles`、`matchedSurfaces`、`environments`、`authorizedEnvironments`、`reasons`、`recommendedCommands`、`authorizedCommands`、`preflight` 和 `cannotClaim`，再跑 `npm run test:run-plan` 执行本地推荐命令；发布或大改动时，再提升到 full/local RC lane。local / full / RC 证明的是本地或受控环境下的可交付性，不是 production claim。authorized cloud lane 只授予被写明的授权范围，不授予真实云、deploy、kubectl 或 live-test 的默认权限，也不会被该本地动态测试系统自动执行。
+
 ## Framework Entry Commands
 
 ```bash
@@ -53,7 +70,7 @@ npm run test:regression
 npm run gate:review
 ```
 
-`validate:active-platform` 是当前产品仓库入口：它验证 `changes/` 已退役、产品合同存在并被测试消费、Portal/Go/Runtime/Release 边界有本地证据。`test:product`、`test:frontend`、`test:backend`、`test:runtime`、`test:release`、`test:cloud` 和 `test:hygiene` 是产品化分层 lane；repo hygiene、repo bloat pressure、line budget 和 registry 继续作为软件工程护栏。Repo bloat 的文件数与字节数只报告 pressure；真正 block 的是 owner、consumer、lifecycle 或 registry 失效。
+`validate:active-platform` 是当前产品仓库入口：它验证 `changes/` 已退役、产品合同存在并被测试消费、Portal/Go/Runtime/Release 边界有本地证据。`test:product`、`test:frontend`、`test:backend`、`test:runtime`、`test:release`、`test:cloud` 和 `test:hygiene` 是产品化分层 lane；repo hygiene、repo bloat pressure、line budget 和 policy/discovery guard 继续作为软件工程护栏。Repo bloat 的文件数与字节数只报告 pressure；真正 block 的是 owner、consumer、lifecycle 或 policy/override 失效。
 
 `local:services:plan` 是本地 SaaS 后台服务编排入口，列出 Portal frontend、Go backend、OPL Web Gateway、Runtime Bridge 和外部 clean OPL WebUI 的本地命令与 health URL。`local:services:start`、`local:services:stop`、`local:services:status` 和 `local:services:logs` 只管理 MedOPL 本地进程，PID 和日志只写入 `.runtime/local-services`；clean OPL WebUI 仍是外部 upstream endpoint，不由 MedOPL 启动、停止或读取进程日志。`local:services:check:dry-run` 与 `local:services:verify` 只验证编排计划注册，不启动服务、不读取 secret、不调用云；`local:services:check` 只探测本机 URL，可证明本地服务可达，不能升级为 production deploy、real-cloud、live provider 或 upstream ownership evidence。
 

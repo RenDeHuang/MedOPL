@@ -1,6 +1,7 @@
 import { readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { TEST_POLICY_SURFACE_COVERAGE } from "./v22-test-policy.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -254,6 +255,8 @@ function fallbackEntry(file) {
   if (file.startsWith("tests/regression/runtime-bridge/")) return baseEntry(file, "regression-runtime-bridge", "local-regression", ["local-regression"]);
   if (file === "tests/contracts/contract-test-v22-go-backend-service-surface.mjs") return baseEntry(file, "contract", "contract-local", ["health", "local-contract"]);
   if (file === "tests/contracts/contract-test-v22-precloud-deployable-rc.mjs") return baseEntry(file, "contract", "contract-local", ["health", "local-contract"]);
+  if (file === "tests/governance/governance-test-v22-dynamic-test-run-plan.mjs") return baseEntry(file, "contract", "contract-local", ["health", "local-contract", "review"]);
+  if (file === "tests/governance/governance-test-v22-verify-plan-mode.mjs") return baseEntry(file, "contract", "contract-local", ["health", "local-contract", "review"]);
   if (file.startsWith("tests/contracts/")) return baseEntry(file, "contract", "contract-local", ["local-contract"]);
   if (file.startsWith("tests/governance/")) return baseEntry(file, "retired-governance", "retired-governance", ["retired-governance"]);
   if (file.startsWith("tests/local-rc/")) return baseEntry(file, "retired-governance", "retired-governance", ["retired-governance"]);
@@ -292,6 +295,69 @@ export const TEST_LANE_SUITES = Object.freeze({
   "golden-path": suiteFiles("golden-path"),
   "retired-governance": suiteFiles("retired-governance"),
 });
+
+const ACTIVE_MANIFEST_SUITE_IDS = Object.freeze([
+  "current",
+  "health",
+  "smoke",
+  "local-contract",
+  "local-regression",
+  "review",
+  "product",
+  "frontend",
+  "backend",
+  "runtime",
+  "release",
+  "cloud",
+  "hygiene",
+  "real-cloud-readiness",
+  "cloud-future-authorized",
+]);
+
+const SUITE_WRAPPER_MANIFEST_ALIASES = Object.freeze({
+  current: Object.freeze({
+    "tests/suites/suite-test-v22-golden-smoke.mjs": Object.freeze(["smoke", "golden-path"]),
+  }),
+});
+
+const SUITE_COMMAND_COVERAGE_ALIASES = Object.freeze({
+  current: Object.freeze({
+    "node scripts/v22-verify.mjs active-platform --json": Object.freeze([
+      "tests/governance/governance-test-v22-validate-active-platform.mjs",
+    ]),
+  }),
+});
+
+function wrapperCoverageFiles(wrapperFile) {
+  if (wrapperFile === "tests/suites/suite-test-v22-golden-smoke.mjs") {
+    return Object.freeze(TEST_LANE_REGISTRY
+      .filter((entry) => entry.tier === "smoke-golden" && entry.entryKind !== "suite-wrapper")
+      .map((entry) => entry.file)
+      .sort());
+  }
+  if (wrapperFile === "tests/suites/suite-test-v22-mvp.mjs") {
+    return Object.freeze(TEST_LANE_REGISTRY
+      .filter((entry) => ["health-check", "smoke-golden", "contract-local"].includes(entry.tier) && entry.entryKind !== "suite-wrapper")
+      .map((entry) => entry.file)
+      .sort());
+  }
+  return Object.freeze([]);
+}
+
+function normalizeManifestCommandTestFile(command) {
+  const match = String(command || "").match(/^node\s+(tests\/.+\.mjs)(?:\s|$)/u);
+  return match?.[1] || "";
+}
+
+function allowsManifestSuiteWrapperAlias(suiteId, entry) {
+  const aliases = SUITE_WRAPPER_MANIFEST_ALIASES[suiteId];
+  const expectedSuites = aliases?.[entry.file] || [];
+  return entry.entryKind === "suite-wrapper" && expectedSuites.length > 0 && expectedSuites.every((aliasSuite) => entry.verifySuites.includes(aliasSuite));
+}
+
+function suiteCommandCoverageFiles(suiteId, command) {
+  return SUITE_COMMAND_COVERAGE_ALIASES[suiteId]?.[String(command)] || [];
+}
 
 export const HEALTH_CHECK_SCRIPTS = Object.freeze(TEST_LANE_REGISTRY.filter((entry) => entry.tier === "health-check").map((entry) => entry.file).sort());
 export const SMOKE_GOLDEN_SCRIPTS = Object.freeze(TEST_LANE_REGISTRY.filter((entry) => entry.tier === "smoke-golden").map((entry) => entry.file).sort());
@@ -352,6 +418,109 @@ export function isSmokeClassifiedIn(scriptPath, { categories = DEFAULT_SMOKE_CAT
 
 export function listRegisteredTestFiles() {
   return TEST_LANE_REGISTRY.map((entry) => entry.file).sort();
+}
+
+export function assertPolicySurfaceCoverage() {
+  const laneCoverageErrors = [];
+  const categoryCoverageErrors = [];
+  const surfaceCoverageErrors = [];
+
+  for (const entry of TEST_LANE_REGISTRY) {
+    const laneSurfaces = TEST_POLICY_SURFACE_COVERAGE.laneToSurfaces[entry.lane] || [];
+    if (laneSurfaces.length === 0) {
+      laneCoverageErrors.push(`lane:${entry.lane}:${entry.file}`);
+    }
+
+    const categorySurfaces = TEST_POLICY_SURFACE_COVERAGE.categoryToSurfaces[entry.category] || [];
+    if (categorySurfaces.length === 0) {
+      categoryCoverageErrors.push(`category:${entry.category}:${entry.file}`);
+    }
+
+    const registrySurfaceCoverage = TEST_POLICY_SURFACE_COVERAGE.registrySurfaceToPolicySurfaces[entry.surface] || [];
+    if (registrySurfaceCoverage.length === 0) {
+      surfaceCoverageErrors.push(`surface:${entry.surface}:${entry.file}`);
+    }
+  }
+
+  return Object.freeze({
+    ok: laneCoverageErrors.length === 0 && categoryCoverageErrors.length === 0 && surfaceCoverageErrors.length === 0,
+    laneCoverageErrors: Object.freeze(laneCoverageErrors),
+    categoryCoverageErrors: Object.freeze(categoryCoverageErrors),
+    surfaceCoverageErrors: Object.freeze(surfaceCoverageErrors),
+  });
+}
+
+export function assertManifestSuiteAlignment(manifest, options = {}) {
+  const activeSuiteIds = options.activeSuiteIds || ACTIVE_MANIFEST_SUITE_IDS;
+  const manifestSuites = Array.isArray(manifest?.suites) ? manifest.suites : [];
+  const manifestSuitesById = new Map(manifestSuites.map((suite) => [suite.id, suite]));
+  const invalidCommands = [];
+  const missingCoverage = [];
+  const retiredGovernanceLeaks = [];
+
+  for (const suiteId of activeSuiteIds) {
+    const suite = manifestSuitesById.get(suiteId);
+    if (!suite) {
+      missingCoverage.push({ suiteId, file: "", reason: "manifest_suite_missing" });
+      continue;
+    }
+
+    const manifestFiles = (suite.commands || []).map(normalizeManifestCommandTestFile).filter(Boolean);
+    const directFiles = new Set();
+    const wrapperFiles = [];
+    const commandCoverage = new Set((suite.commands || []).flatMap((command) => suiteCommandCoverageFiles(suiteId, command)));
+
+    for (const file of manifestFiles) {
+      const entry = registryByFile.get(file);
+      if (!entry) {
+        invalidCommands.push({ suiteId, file, reason: "manifest_test_command_not_registered" });
+        continue;
+      }
+      if (entry.lane === "retired-governance") retiredGovernanceLeaks.push({ suiteId, file, reason: "retired_governance_must_not_enter_active_manifest_suite" });
+      if (entry.verifySuites.includes(suiteId)) {
+        directFiles.add(file);
+        if (entry.entryKind === "suite-wrapper") wrapperFiles.push(file);
+        continue;
+      }
+      if (allowsManifestSuiteWrapperAlias(suiteId, entry)) {
+        wrapperFiles.push(file);
+        continue;
+      }
+      invalidCommands.push({ suiteId, file, reason: "manifest_test_command_must_reference_suite_registered_entry" });
+    }
+
+    const wrapperCoverage = new Set(wrapperFiles.flatMap((file) => wrapperCoverageFiles(file)));
+    for (const file of TEST_LANE_SUITES[suiteId] || []) {
+      const entry = registryByFile.get(file);
+      if (entry?.lane === "retired-governance") {
+        retiredGovernanceLeaks.push({ suiteId, file, reason: "retired_governance_must_not_be_active_suite_member" });
+        continue;
+      }
+      if (directFiles.has(file) || wrapperCoverage.has(file) || commandCoverage.has(file)) continue;
+      missingCoverage.push({
+        suiteId,
+        file,
+        reason: wrapperFiles.length > 0 ? "suite_member_missing_from_manifest_or_wrapper_coverage" : "suite_member_missing_from_manifest",
+      });
+    }
+  }
+
+  const retiredGovernanceSuite = manifestSuitesById.get("retired-governance");
+  if (retiredGovernanceSuite) {
+    retiredGovernanceLeaks.push({
+      suiteId: "retired-governance",
+      file: "",
+      reason: "retired_governance_must_not_be_manifest_active_suite",
+    });
+  }
+
+  return Object.freeze({
+    ok: invalidCommands.length === 0 && missingCoverage.length === 0 && retiredGovernanceLeaks.length === 0,
+    activeSuiteIds: Object.freeze([...activeSuiteIds]),
+    invalidCommands: Object.freeze(invalidCommands),
+    missingCoverage: Object.freeze(missingCoverage),
+    retiredGovernanceLeaks: Object.freeze(retiredGovernanceLeaks),
+  });
 }
 
 export async function assertTestLaneCoverage() {

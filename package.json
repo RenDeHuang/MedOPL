@@ -25,6 +25,8 @@
     "test:regression": "node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk",
     "test:real-cloud-readiness": "node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk",
     "test:cloud-future-authorized": "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk",
+    "test:plan": "node scripts/v22-verify.mjs plan --base origin/recovery/platform-v22-trunk",
+    "test:run-plan": "node scripts/v22-verify.mjs run-plan --base origin/recovery/platform-v22-trunk",
     "gate:review": "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
     "repo:hygiene": "node scripts/v22-repo-hygiene.mjs",
     "repo:bloat": "node scripts/v22-repo-bloat-audit.mjs --json",

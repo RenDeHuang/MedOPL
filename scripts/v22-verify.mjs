@@ -6,6 +6,8 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { planCommandsForFiles } from "./v22-test-policy.mjs";
+import { runPlanWithReport } from "./v22-test-report.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -98,6 +100,60 @@ function currentBranchName() {
     stdio: "pipe",
   });
   return result.status === 0 ? result.stdout.trim() : "";
+}
+
+function csvOption(value) {
+  return String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function gitLines(args) {
+  const result = spawnSync("git", args, {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  if (result.status !== 0) return [];
+  return result.stdout.split("\n").map((item) => item.trim()).filter(Boolean);
+}
+
+function unique(items) {
+  return [...new Set(items.filter(Boolean))];
+}
+
+function changedFilesSince(base) {
+  return unique([
+    ...gitLines(["diff", "--name-only", `${base}...HEAD`]),
+    ...gitLines(["diff", "--name-only", "--cached"]),
+    ...gitLines(["diff", "--name-only"]),
+    ...gitLines(["ls-files", "--others", "--exclude-standard"]),
+  ]);
+}
+
+function planForOptions({ options, base }) {
+  const explicitFiles = csvOption(options.files);
+  const changedFiles = explicitFiles.length > 0 ? explicitFiles : changedFilesSince(base);
+  const profile = String(options.profile || "changed-surface");
+  const allowedProfiles = new Set(["changed-surface", "full-local"]);
+  if (!allowedProfiles.has(profile)) throw new Error(`unknown_plan_profile:${profile}`);
+  const planned = planCommandsForFiles(changedFiles, { profile });
+  return {
+    ok: true,
+    mode: "plan",
+    profile,
+    changedFiles,
+    executesCommands: false,
+    matchedSurfaces: planned.matchedSurfaces,
+    environments: planned.environments,
+    authorizedEnvironments: planned.authorizedEnvironments,
+    recommendedCommands: planned.recommendedCommands,
+    authorizedCommands: planned.authorizedCommands,
+    reasons: planned.reasons,
+    cannotClaim: planned.cannotClaim,
+    preflight: planned.preflight,
+  };
 }
 
 function branchOverrideForBranch({ branchName, manifest, base }) {
@@ -200,6 +256,17 @@ function runCommand(command) {
     stderr: result.stderr,
     ok: result.status === 0,
   };
+}
+
+async function runPlanForOptions({ options, base }) {
+  if (options.commands) throw new Error("run_plan_command_override_forbidden");
+  const plan = planForOptions({ options, base });
+  return runPlanWithReport({
+    repoRoot,
+    plan,
+    dryRun: Boolean(options["dry-run"]),
+    env: process.env,
+  });
 }
 
 async function validateActivePlatform({ manifest, current }) {
@@ -350,6 +417,8 @@ function printUsage() {
     "Usage:",
     "  node scripts/v22-verify.mjs list [--json]",
     "  node scripts/v22-verify.mjs active-platform [--quick] [--json]",
+    "  node scripts/v22-verify.mjs plan [--base origin/recovery/platform-v22-trunk] [--files a,b] [--profile changed-surface|full-local] [--json]",
+    "  node scripts/v22-verify.mjs run-plan [--base origin/recovery/platform-v22-trunk] [--files a,b] [--profile changed-surface|full-local] [--dry-run] [--json]",
     "  node scripts/v22-verify.mjs current [--base origin/recovery/platform-v22-trunk] [--dry-run] [--json]",
     "  node scripts/v22-verify.mjs suite <id> [--base origin/recovery/platform-v22-trunk] [--dry-run] [--json]",
     "  node scripts/v22-verify.mjs package <id> [--base origin/recovery/platform-v22-trunk] [--dry-run] [--json]",
@@ -363,6 +432,66 @@ function renderHuman(payload) {
     `v22 verify ${payload.mode}`,
     `ok: ${payload.ok}`,
   ];
+  if (payload.mode === "plan" || payload.mode === "run-plan") {
+    if (payload.profile) lines.push(`profile: ${payload.profile}`);
+    lines.push(`executes_commands: ${payload.executesCommands}`);
+    if ((payload.changedFiles || []).length > 0) {
+      lines.push("changed files:");
+      for (const file of payload.changedFiles) lines.push(`- ${file}`);
+    }
+    if ((payload.matchedSurfaces || []).length > 0) {
+      lines.push("matched surfaces:");
+      for (const surface of payload.matchedSurfaces) lines.push(`- ${surface}`);
+    }
+    if ((payload.environments || []).length > 0) {
+      lines.push("environments:");
+      for (const environment of payload.environments) lines.push(`- ${environment}`);
+    }
+    if ((payload.authorizedEnvironments || []).length > 0) {
+      lines.push("authorized environments:");
+      for (const environment of payload.authorizedEnvironments) lines.push(`- ${environment}`);
+    }
+    if ((payload.reasons || []).length > 0) {
+      lines.push("reasons:");
+      for (const reason of payload.reasons) {
+        lines.push(`- [${reason.ruleId}] ${reason.surface} ${reason.file} (${reason.environment}): ${reason.message}`);
+      }
+    }
+    lines.push("recommended commands:");
+    for (const command of payload.recommendedCommands || []) lines.push(`- ${command}`);
+    if ((payload.authorizedCommands || []).length > 0) {
+      lines.push("authorized commands:");
+      for (const command of payload.authorizedCommands) lines.push(`- ${command}`);
+    }
+    if (payload.mode === "run-plan" && payload.report?.commands) {
+      lines.push("run-plan commands:");
+      lines.push(`- planned: ${payload.report.commands.planned.length}`);
+      lines.push(`- executed: ${payload.report.commands.executed.length}`);
+      lines.push(`- skipped authorized: ${payload.report.commands.skippedAuthorized.length}`);
+    }
+    if (payload.preflight) {
+      lines.push(`preflight ok: ${payload.preflight.ok}`);
+      if ((payload.preflight.checks || []).length > 0) {
+        lines.push("preflight checks:");
+        for (const check of payload.preflight.checks) {
+          lines.push(`- [${check.ok ? "ok" : "missing"}] ${check.id}${check.path ? ` (${check.path})` : ""}`);
+        }
+      }
+      if ((payload.preflight.missing || []).length > 0) {
+        lines.push("preflight missing:");
+        for (const item of payload.preflight.missing) {
+          lines.push(`- ${item.id}${item.path ? ` (${item.path})` : ""}`);
+        }
+      }
+      if ((payload.preflight.recommendedSetupCommands || []).length > 0) {
+        lines.push("preflight recommended setup:");
+        for (const command of payload.preflight.recommendedSetupCommands) lines.push(`- ${command}`);
+      }
+    }
+    lines.push("cannot claim:");
+    for (const claim of payload.cannotClaim || []) lines.push(`- ${claim}`);
+    return `${lines.join("\n")}\n`;
+  }
   if (payload.leafId) lines.push(`leaf: ${payload.leafId}`);
   if (payload.suiteId) lines.push(`suite: ${payload.suiteId}`);
   if (payload.packageId) lines.push(`package: ${payload.packageId}`);
@@ -403,6 +532,25 @@ async function main() {
     } else {
       process.stdout.write(`Active platform validation passed for ${payload.currentCursor}.\n`);
     }
+    return;
+  }
+
+  if (mode === "plan") {
+    const payload = planForOptions({
+      options,
+      base: options.base || "origin/recovery/platform-v22-trunk",
+    });
+    process.stdout.write(options.json ? `${JSON.stringify(payload, null, 2)}\n` : renderHuman(payload));
+    return;
+  }
+
+  if (mode === "run-plan") {
+    const payload = await runPlanForOptions({
+      options,
+      base: options.base || "origin/recovery/platform-v22-trunk",
+    });
+    process.stdout.write(options.json ? `${JSON.stringify(payload, null, 2)}\n` : renderHuman(payload));
+    if (!payload.ok) process.exitCode = 1;
     return;
   }
 
