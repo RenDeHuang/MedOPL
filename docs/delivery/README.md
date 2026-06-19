@@ -7,9 +7,9 @@ Machine boundary: 本文是人读交付入口。当前执行 cursor、branch ove
 
 ## Current Cursor
 
-当前 product cursor 是 `opl-webui-runtime-production-slice`，状态是 local/cloud RC only / before production authorization。MedOPL 的当前 delivery truth 是：平台给 OPL-Webui 登录用户在当前 workspace 提供托管 runtime、文件空间、计费、审计和释放；MedOPL 不承担 OPL 自身科研能力。最新 landed repo closeout 是 `cleanup/v22-owner-consumer-lifecycle-gates` / `767f2de8a35df9615e6f3533dd0518e58ca275e4`。
+当前 product cursor 是 `opl-webui-runtime-production-slice`，状态是 local/cloud RC only / before production authorization。MedOPL 的当前 delivery truth 是：平台给 OPL-Webui 登录用户在当前 workspace 提供托管 runtime、文件空间、计费、审计和释放；MedOPL 不承担 OPL 自身科研能力。最新 landed repo closeout 是 `feat/v22-local-product-rc-single-flow` / `4f195820dcb351030cb1064172bfec2062abc279`。
 
-Go control-plane MVP takeover、precloud-deployable-rc、local SaaS backend RC 和 local Portal/OPL delivery RC 只提供 local RC / cloud-deployable RC evidence。first proof 是 real local product RC；cloud proof 是 cloud-deployable RC；production proof 仍需 explicit authorization + runtime / storage / billing / audit / release owner receipts。历史 Package C live canary、Package D deploy/service reachability、production-launch Gap 01-08o、CLB diagnostics 和 public access 调试只保留为 archive / runtime provenance；它们不再是 active runner、active cloud test、current blocker 或默认 verify 入口。
+Go control-plane MVP takeover、precloud-deployable-rc、local SaaS backend RC、local Portal/OPL delivery RC 和 single-flow local product RC 只提供 local RC / cloud-deployable RC evidence。first proof 是 real local product RC；cloud proof 是 cloud-deployable RC；production proof 仍需 explicit authorization + runtime / storage / billing / audit / release owner receipts。历史 Package C live canary、Package D deploy/service reachability、production-launch Gap 01-08o、CLB diagnostics 和 public access 调试只保留为 archive / runtime provenance；它们不再是 active runner、active cloud test、current blocker 或默认 verify 入口。
 
 当前 active cloud surface 只保留三类小边界：readonly inventory、Package C dry-run create/release plan、TKE bootstrap preflight。任何 secret read、provider call、Tencent mutation、kubectl、deploy、build/push、production ledger write、live-test 或 public access completion claim 都必须另开显式授权包，并写清 operation class、target environment、secret allowlist、API allowlist、budget、evidence sink 和 rollback owner。
 

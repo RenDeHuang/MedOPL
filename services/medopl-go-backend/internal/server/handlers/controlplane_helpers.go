@@ -13,6 +13,8 @@ func writeControlPlaneError(ctx *gin.Context, err error) {
 	switch {
 	case errors.Is(err, cpd.ErrProviderKeyRequired):
 		ctx.JSON(http.StatusPreconditionRequired, gin.H{"ok": false, "error": "provider_key_required"})
+	case errors.Is(err, cpd.ErrRuntimeReleaseRequired):
+		ctx.JSON(http.StatusPreconditionRequired, gin.H{"ok": false, "error": "runtime_release_required_before_storage_destroy"})
 	case errors.Is(err, cpd.ErrLaunchNotFound):
 		ctx.JSON(http.StatusNotFound, gin.H{"ok": false, "error": "launch_not_found"})
 	case errors.Is(err, cpd.ErrResourceNotFound):

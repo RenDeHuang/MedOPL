@@ -332,6 +332,16 @@ type ReleaseResult struct {
 	BillingStopped bool                `json:"billingStopped"`
 	Resource       cpd.ManagedResource `json:"resource"`
 	AuditEvent     cpd.AuditEvent      `json:"auditEvent"`
+	Receipts       ReleaseReceipts     `json:"receipts"`
+}
+
+type ReleaseReceipts struct {
+	RuntimeStopped        string `json:"runtimeStopped"`
+	FileExportStatus      string `json:"fileExportStatus"`
+	BillingSettlement     string `json:"billingSettlement"`
+	AuditExportRef        string `json:"auditExportRef"`
+	ResourceCleanupRef    string `json:"resourceCleanupRef"`
+	StorageDestroyReceipt string `json:"storageDestroyReceipt"`
 }
 
 func WithProviderSecretStore(sink ProviderSecretSink) Option {
@@ -530,10 +540,7 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 		CustomerVisible: false,
 	}
 	projection.RuntimeState = runtimeGateResourceState(resource.Status)
-	projection.StorageState = "ready"
-	if storageDestroyReceiptRecorded(ctx, service.store, workspaceID, resource.ResourceBindingID) {
-		projection.StorageState = "destroyed"
-	}
+	projection.StorageState = runtimeGateStorageState(resource.StorageState)
 	projection.Billing.FreezeStatus = resource.StopBilling.Status
 	if resource.StopBilling.Status == cpd.BillingStatusActive {
 		projection.Billing.FrozenAmount = 10
@@ -942,7 +949,29 @@ func (service *Service) Release(ctx context.Context, input ReleaseInput) (Releas
 	if err := service.store.SaveAuditEvent(ctx, audit); err != nil {
 		return ReleaseResult{}, err
 	}
-	return ReleaseResult{Ok: true, Status: released.Status, BillingStopped: released.StopBilling.Status == cpd.BillingStatusStopped, Resource: released, AuditEvent: audit}, nil
+	return ReleaseResult{
+		Ok:             true,
+		Status:         released.Status,
+		BillingStopped: released.StopBilling.Status == cpd.BillingStatusStopped,
+		Resource:       released,
+		AuditEvent:     audit,
+		Receipts:       releaseReceipts(released, audit, false),
+	}, nil
+}
+
+func releaseReceipts(resource cpd.ManagedResource, audit cpd.AuditEvent, storageDestroyed bool) ReleaseReceipts {
+	storageDestroyReceipt := "pending_explicit_user_intent"
+	if storageDestroyed {
+		storageDestroyReceipt = "recorded"
+	}
+	return ReleaseReceipts{
+		RuntimeStopped:        "recorded",
+		FileExportStatus:      "retained",
+		BillingSettlement:     resource.StopBilling.Status,
+		AuditExportRef:        audit.ID,
+		ResourceCleanupRef:    resource.ResourceBindingID,
+		StorageDestroyReceipt: storageDestroyReceipt,
+	}
 }
 
 func ledgerFromEvents(events []cpd.AuditEvent) []LedgerItem {
@@ -999,6 +1028,13 @@ func runtimeGateResourceState(status string) string {
 		return "ready"
 	}
 	return firstNonEmpty(status, "unknown")
+}
+
+func runtimeGateStorageState(status string) string {
+	if status == "" {
+		return cpd.StorageStatusReady
+	}
+	return status
 }
 
 func runtimeGateCannotClaim() []string {

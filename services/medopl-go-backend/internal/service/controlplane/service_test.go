@@ -368,6 +368,13 @@ func TestServiceReleaseRetainsStorageUntilExplicitDestroyReceipt(t *testing.T) {
 	if receipt.AuditEvent.Kind != cpd.AuditKindStorageDestroy || receipt.AuditEvent.Status != "recorded" {
 		t.Fatalf("storage destroy audit = %+v", receipt.AuditEvent)
 	}
+	storedResource, err := service.store.ResourceByBinding(ctx, launch.ResourceBindingID)
+	if err != nil {
+		t.Fatalf("ResourceByBinding(after destroy) error = %v", err)
+	}
+	if storedResource.StorageState != cpd.StorageStatusDestroyed {
+		t.Fatalf("storage destroy must persist canonical resource storage state: %+v", storedResource)
+	}
 
 	gateAfterDestroy, err := service.RuntimeGate(ctx, RuntimeGateInput{WorkspaceID: "workspace-v22", InvocationMode: "runtime_required"})
 	if err != nil {
@@ -375,6 +382,32 @@ func TestServiceReleaseRetainsStorageUntilExplicitDestroyReceipt(t *testing.T) {
 	}
 	if gateAfterDestroy.StorageState != "destroyed" || gateAfterDestroy.Release.DestroyStorage != "completed" {
 		t.Fatalf("destroyed storage projection = %+v", gateAfterDestroy)
+	}
+}
+
+func TestServiceDestroyStorageFailsClosedUntilRuntimeReleased(t *testing.T) {
+	ctx := context.Background()
+	service := NewService(memory.NewControlPlaneStore())
+	launch := bindAndOpen(t, ctx, service)
+
+	if _, err := service.DestroyStorage(ctx, DestroyStorageInput{
+		WorkspaceID:       launch.WorkspaceID,
+		ResourceBindingID: launch.ResourceBindingID,
+		StorageBindingID:  "storage-" + shortID(launch.WorkspaceID+":"+launch.ResourceBindingID),
+		IdempotencyKey:    "destroy-storage-before-release-once",
+	}); !errors.Is(err, cpd.ErrRuntimeReleaseRequired) {
+		t.Fatalf("DestroyStorage(active runtime) error = %v", err)
+	}
+
+	gateAfterRejectedDestroy, err := service.RuntimeGate(ctx, RuntimeGateInput{WorkspaceID: launch.WorkspaceID, InvocationMode: "runtime_required"})
+	if err != nil {
+		t.Fatalf("RuntimeGate(after rejected destroy) error = %v", err)
+	}
+	if gateAfterRejectedDestroy.Billing.FreezeStatus != cpd.BillingStatusActive || gateAfterRejectedDestroy.Release.StopBilling != cpd.BillingStatusActive {
+		t.Fatalf("rejected storage destroy must keep active billing machine truth: billing=%+v release=%+v", gateAfterRejectedDestroy.Billing, gateAfterRejectedDestroy.Release)
+	}
+	if gateAfterRejectedDestroy.StorageState != "ready" || gateAfterRejectedDestroy.Release.DestroyStorage != "requires_explicit_user_intent" {
+		t.Fatalf("rejected storage destroy must not change storage projection: %+v", gateAfterRejectedDestroy)
 	}
 }
 
@@ -457,6 +490,7 @@ func TestServiceLocalProductRCUploadFileRunArtifactBillingAuditReleaseAndStorage
 	if !release.BillingStopped || release.AuditEvent.Kind != cpd.AuditKindResourceRelease {
 		t.Fatalf("release must stop billing and write audit event: %+v", release)
 	}
+	assertReleaseReceipts(t, release.Receipts, false)
 
 	gateAfterRelease, err := service.RuntimeGate(ctx, RuntimeGateInput{WorkspaceID: launch.WorkspaceID, InvocationMode: "runtime_required"})
 	if err != nil {
@@ -481,6 +515,7 @@ func TestServiceLocalProductRCUploadFileRunArtifactBillingAuditReleaseAndStorage
 	if !storageReceipt.Ok || !storageReceipt.StorageDestroyed || !storageReceipt.BillingStopped || storageReceipt.AuditEvent.Kind != cpd.AuditKindStorageDestroy {
 		t.Fatalf("storage destroy receipt must close storage billing/audit: %+v", storageReceipt)
 	}
+	assertReleaseReceipts(t, storageReceipt.ReleaseReceipts, true)
 
 	gateAfterDestroy, err := service.RuntimeGate(ctx, RuntimeGateInput{WorkspaceID: launch.WorkspaceID, InvocationMode: "runtime_required"})
 	if err != nil {
@@ -496,6 +531,28 @@ func TestServiceLocalProductRCUploadFileRunArtifactBillingAuditReleaseAndStorage
 	}
 	assertLedgerHasSourceEvent(t, billingAfterDestroy.Ledger, cpd.AuditKindResourceRelease)
 	assertLedgerHasSourceEvent(t, billingAfterDestroy.Ledger, cpd.AuditKindStorageDestroy)
+}
+
+func assertReleaseReceipts(t *testing.T, receipts ReleaseReceipts, storageDestroyed bool) {
+	t.Helper()
+	if receipts.RuntimeStopped != "recorded" {
+		t.Fatalf("runtime stopped receipt missing: %+v", receipts)
+	}
+	if receipts.FileExportStatus != "retained" {
+		t.Fatalf("file export receipt must retain files by default: %+v", receipts)
+	}
+	if receipts.BillingSettlement != "stopped" {
+		t.Fatalf("billing settlement receipt missing: %+v", receipts)
+	}
+	if receipts.AuditExportRef == "" || receipts.ResourceCleanupRef == "" {
+		t.Fatalf("audit/resource cleanup receipt refs required: %+v", receipts)
+	}
+	if storageDestroyed && receipts.StorageDestroyReceipt != "recorded" {
+		t.Fatalf("storage destroy receipt must be recorded after destroy: %+v", receipts)
+	}
+	if !storageDestroyed && receipts.StorageDestroyReceipt != "pending_explicit_user_intent" {
+		t.Fatalf("storage destroy receipt must stay pending after runtime release: %+v", receipts)
+	}
 }
 
 func TestServiceResourcesAreWorkspaceScopedAndReleaseFailsClosedWhenMissing(t *testing.T) {

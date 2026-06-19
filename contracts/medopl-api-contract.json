@@ -114,7 +114,8 @@
         "billingStopped",
         "storageBindingId",
         "storageState",
-        "auditEvent"
+        "auditEvent",
+        "releaseReceipts"
       ],
       "must_not_return": [
         "rawObjectStoreSecret",

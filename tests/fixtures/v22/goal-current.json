@@ -22,37 +22,37 @@
   "last_updated_at": "2026-06-19",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "767f2de8a35df9615e6f3533dd0518e58ca275e4",
+  "base_trunk_head": "4f195820dcb351030cb1064172bfec2062abc279",
   "current_branch": "opl-webui-runtime-production-slice",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "opl-webui-runtime-production-slice",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "767f2de8a35df9615e6f3533dd0518e58ca275e4",
+  "last_landed_commit": "4f195820dcb351030cb1064172bfec2062abc279",
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "cleanup/v22-owner-consumer-lifecycle-gates",
-    "landed_commit": "767f2de8a35df9615e6f3533dd0518e58ca275e4",
+    "branch": "feat/v22-local-product-rc-single-flow",
+    "landed_commit": "4f195820dcb351030cb1064172bfec2062abc279",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
-      "remote branch audit completed and origin now only has recovery/platform-v22-trunk",
-      "local stale worktrees and branches cleaned except common-dir detached worktree",
-      "npm run verify pending after closeout sync"
+      "npm run verify passed after ff-only landing",
+      "npm run verify:golden-path passed after ff-only landing",
+      "npm run repo:bloat passed and no active docs / changes / artifact bloat was introduced"
     ],
     "plan_completion_audit": {
-      "functional": "partial",
+      "functional": "done",
       "code_cleanup": "done",
       "docs_foldback": "done",
-      "verification": "partial",
+      "verification": "done",
       "retired_entrypoints": "done",
       "cannot_claim": "done"
     },
     "cleanup_result": {
-      "deleted": "old local worktrees and stale local branches",
-      "folded": "lifecycle taxonomy tests contracts and cloud authorization into current owners",
-      "retained": "opl-webui-runtime-production-slice active cursor and detached common-dir worktree",
-      "reason": "post-merge closeout updates machine cursor after landing cleanup branch",
-      "next": "run verify and gate review then continue opl-webui-runtime-production-slice"
+      "deleted": "short feature worktree and local feature branch after push",
+      "folded": "local product RC proof into existing golden smoke gate without new active plan or change package",
+      "retained": "opl-webui-runtime-production-slice active cursor",
+      "reason": "post-merge closeout records the single-flow local product RC gate",
+      "next": "continue production data-plane and release receipt hardening before any real cloud authorization"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "opl-webui-runtime-production-slice"
@@ -67,7 +67,7 @@
     "default_cloud_verification_is_limited_to_readonly_inventory_dry_run_plan_and_tke_bootstrap_preflight_before_production_receipts",
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth"
   ],
-  "current_problem": "MedOPL current truth is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest governance closeout branch cleanup/v22-owner-consumer-lifecycle-gates landed at 767f2de8a35df9615e6f3533dd0518e58ca275e4. The active blocker remains the opl-webui-runtime-production-slice proof ladder: first proof may only claim real local product RC, cloud proof may only claim cloud-deployable RC, and production proof requires explicit authorization plus runtime/storage/billing/audit/release owner receipts. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims still require a separate explicit authorization package.",
+  "current_problem": "MedOPL current truth is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC closeout branch feat/v22-local-product-rc-single-flow landed at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The active blocker remains the opl-webui-runtime-production-slice proof ladder: first proof may only claim real local product RC, cloud proof may only claim cloud-deployable RC, and production proof requires explicit authorization plus runtime/storage/billing/audit/release owner receipts. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims still require a separate explicit authorization package.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -382,9 +382,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "cleanup/v22-owner-consumer-lifecycle-gates",
+  "last_landed_branch": "feat/v22-local-product-rc-single-flow",
   "last_landed_at": "2026-06-19",
-  "history_latest_branch": "cleanup/v22-owner-consumer-lifecycle-gates",
+  "history_latest_branch": "feat/v22-local-product-rc-single-flow",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,

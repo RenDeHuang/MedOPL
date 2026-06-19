@@ -56,7 +56,7 @@ assert.equal(runtimeGate.runtime_required_owner, "medopl", "runtime_gate_runtime
 assert.equal(apiContract.medopl_api_contract.storage_destroy?.route, "POST /api/v22/storage/destroy", "storage_destroy_route_contract_missing");
 assert.deepEqual(
   apiContract.medopl_api_contract.storage_destroy?.must_return,
-  ["ok", "storageDestroyed", "billingStopped", "storageBindingId", "storageState", "auditEvent"],
+  ["ok", "storageDestroyed", "billingStopped", "storageBindingId", "storageState", "auditEvent", "releaseReceipts"],
   "storage_destroy_must_return_contract_mismatch",
 );
 assert.deepEqual(

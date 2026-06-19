@@ -18,14 +18,15 @@ type DestroyStorageInput struct {
 }
 
 type StorageDestroyReceipt struct {
-	Ok                bool           `json:"ok"`
-	StorageDestroyed  bool           `json:"storageDestroyed"`
-	BillingStopped    bool           `json:"billingStopped"`
-	WorkspaceID       string         `json:"workspaceId"`
-	ResourceBindingID string         `json:"resourceBindingId"`
-	StorageBindingID  string         `json:"storageBindingId"`
-	StorageState      string         `json:"storageState"`
-	AuditEvent        cpd.AuditEvent `json:"auditEvent"`
+	Ok                bool            `json:"ok"`
+	StorageDestroyed  bool            `json:"storageDestroyed"`
+	BillingStopped    bool            `json:"billingStopped"`
+	WorkspaceID       string          `json:"workspaceId"`
+	ResourceBindingID string          `json:"resourceBindingId"`
+	StorageBindingID  string          `json:"storageBindingId"`
+	StorageState      string          `json:"storageState"`
+	AuditEvent        cpd.AuditEvent  `json:"auditEvent"`
+	ReleaseReceipts   ReleaseReceipts `json:"releaseReceipts"`
 }
 
 func (service *Service) DestroyStorage(ctx context.Context, input DestroyStorageInput) (StorageDestroyReceipt, error) {
@@ -53,6 +54,9 @@ func (service *Service) DestroyStorage(ctx context.Context, input DestroyStorage
 	if resource.WorkspaceID != workspaceID {
 		return StorageDestroyReceipt{}, cpd.ErrResourceNotFound
 	}
+	if resource.Status != cpd.ResourceStatusReleased || resource.StopBilling.Status != cpd.BillingStatusStopped {
+		return StorageDestroyReceipt{}, cpd.ErrRuntimeReleaseRequired
+	}
 	audit := cpd.AuditEvent{
 		ID:                "audit-" + shortID(resourceBindingID+":"+storageBindingID+":"+input.IdempotencyKey),
 		Kind:              cpd.AuditKindStorageDestroy,
@@ -61,6 +65,11 @@ func (service *Service) DestroyStorage(ctx context.Context, input DestroyStorage
 		Status:            "recorded",
 		IdempotencyKey:    strings.TrimSpace(input.IdempotencyKey),
 		CreatedAt:         service.now().UTC().Format(time.RFC3339),
+	}
+	resource.StopBilling.Status = cpd.BillingStatusStopped
+	resource.StorageState = cpd.StorageStatusDestroyed
+	if err := service.store.SaveResource(ctx, resource); err != nil {
+		return StorageDestroyReceipt{}, err
 	}
 	if err := service.store.SaveAuditEvent(ctx, audit); err != nil {
 		return StorageDestroyReceipt{}, err
@@ -74,18 +83,6 @@ func (service *Service) DestroyStorage(ctx context.Context, input DestroyStorage
 		StorageBindingID:  storageBindingID,
 		StorageState:      "destroyed",
 		AuditEvent:        audit,
+		ReleaseReceipts:   releaseReceipts(resource, audit, true),
 	}, nil
-}
-
-func storageDestroyReceiptRecorded(ctx context.Context, store cprepo.Store, workspaceID string, resourceBindingID string) bool {
-	events, err := store.ListAuditEvents(ctx, workspaceID)
-	if err != nil {
-		return false
-	}
-	for _, event := range events {
-		if event.Kind == cpd.AuditKindStorageDestroy && event.ResourceBindingID == resourceBindingID {
-			return true
-		}
-	}
-	return false
 }

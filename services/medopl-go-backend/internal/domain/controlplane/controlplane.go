@@ -15,6 +15,8 @@ const (
 	LaunchStatusBlocked        = "blocked_by_provider_key"
 	ResourceStatusActive       = "active"
 	ResourceStatusReleased     = "released"
+	StorageStatusReady         = "ready"
+	StorageStatusDestroyed     = "destroyed"
 	AuditKindFileUpload        = "file.upload"
 	AuditKindRunSucceeded      = "run.succeeded"
 	AuditKindArtifactAvailable = "artifact.available"
@@ -34,6 +36,7 @@ var (
 	ErrLaunchNotFound          = errors.New("launch_not_found")
 	ErrResourceNotFound        = errors.New("resource_not_found")
 	ErrResourceBindingRequired = errors.New("resource_binding_required")
+	ErrRuntimeReleaseRequired  = errors.New("runtime_release_required_before_storage_destroy")
 	ErrFileNameRequired        = errors.New("file_name_required")
 	ErrFileRefRequired         = errors.New("file_ref_required")
 	ErrArtifactRefRequired     = errors.New("artifact_ref_required")
@@ -159,6 +162,7 @@ type ManagedResource struct {
 	WorkspaceID       string       `json:"workspaceId"`
 	ResourceBindingID string       `json:"resourceBindingId"`
 	Status            string       `json:"status"`
+	StorageState      string       `json:"storageState"`
 	StopBilling       BillingState `json:"stopBilling"`
 	ReleasePolicy     BillingState `json:"releasePolicy"`
 }
@@ -333,6 +337,7 @@ func NewManagedResource(input ResourceInput) ManagedResource {
 		WorkspaceID:       clean(input.WorkspaceID),
 		ResourceBindingID: resourceBindingID,
 		Status:            ResourceStatusActive,
+		StorageState:      StorageStatusReady,
 		StopBilling:       BillingState{Status: BillingStatusActive, ConfirmWithinMinutes: 120},
 		ReleasePolicy:     BillingState{Status: ResourceStatusActive, ConfirmWithinMinutes: 120, StopBillingConfirmWithinMinutes: 120},
 	}

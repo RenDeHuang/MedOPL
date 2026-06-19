@@ -29,6 +29,14 @@ function runNode(args) {
   });
 }
 
+function runGit(args) {
+  return spawnSync("git", args, {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+}
+
 function assertIncludes(source, marker, label) {
   assert(String(source).includes(marker), `${label}_missing:${marker}`);
 }
@@ -93,6 +101,18 @@ for (const suite of ["health", "local-contract", "current", "review"]) {
 assert.equal(current.verify_manifest, "tests/fixtures/v22/agent-verify-manifest.json", "current_manifest_pointer_mismatch");
 assert.equal(manifest.runner, "scripts/v22-verify.mjs", "manifest_runner_mismatch");
 assert(manifest.leaves.some((leaf) => leaf.leaf_id === current.current_cursor), "manifest_current_leaf_missing");
+
+const lastLandedCommit = current.last_landed_commit;
+assert.match(lastLandedCommit, /^[0-9a-f]{40}$/u, "current_last_landed_commit_must_be_full_sha");
+const trunkRef = current.branch_baseline || "origin/recovery/platform-v22-trunk";
+const trunkHead = runGit(["rev-parse", "--verify", `${trunkRef}^{commit}`]);
+assert.equal(trunkHead.status, 0, `current_branch_baseline_lookup_failed:${trunkHead.stderr || trunkHead.stdout}`);
+const landedOnTrunk = runGit(["merge-base", "--is-ancestor", lastLandedCommit, trunkHead.stdout.trim()]);
+assert.equal(landedOnTrunk.status, 0, `current_last_landed_commit_must_be_trunk_ancestor:${landedOnTrunk.stderr || landedOnTrunk.stdout}`);
+assert.equal(current.latest_landed_closeout?.landed_commit, lastLandedCommit, "latest_closeout_landed_commit_must_match_current");
+assert.equal(current.latest_landed_closeout?.branch, current.last_landed_branch, "latest_closeout_branch_must_match_current");
+assert.equal(current.latest_landed_closeout?.next_cursor, current.current_cursor, "latest_closeout_next_cursor_must_match_current_cursor");
+assert.equal(current.latest_landed_closeout?.post_merge_closeout, "completed", "latest_closeout_post_merge_must_be_completed");
 
 const quick = runNode(["scripts/v22-verify.mjs", "active-platform", "--quick", "--json"]);
 assert.equal(quick.status, 0, `active_platform_quick_must_pass:${quick.stderr || quick.stdout}`);

@@ -16,9 +16,9 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `cleanup/v22-owner-consumer-lifecycle-gates`
-- latest landed commit: `767f2de8a35df9615e6f3533dd0518e58ca275e4`
-- next cursor: `real-cloud-authorization-boundary`
+- latest landed branch: `feat/v22-local-product-rc-single-flow`
+- latest landed commit: `4f195820dcb351030cb1064172bfec2062abc279`
+- next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
 
