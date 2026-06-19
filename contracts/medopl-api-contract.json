@@ -65,6 +65,7 @@
       "runtime_required_owner": "medopl",
       "invocation_modes": [
         "api_only",
+        "ordinary_chat",
         "runtime_required"
       ],
       "must_return": [
@@ -83,6 +84,7 @@
         "nodePoolProjection",
         "billing",
         "release",
+        "consumerProjection",
         "nextAction"
       ],
       "forbidden_response_fields": [

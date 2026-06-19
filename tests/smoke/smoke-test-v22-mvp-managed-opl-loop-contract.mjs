@@ -79,7 +79,7 @@ assert.equal(productProfile.medopl_product_profile.primary_consumer_surface.name
 assert.equal(productProfile.medopl_product_profile.primary_consumer_surface.ordinary_chat_owner, "opl-webui", "mvp_loop_ordinary_chat_owner_must_be_opl_webui");
 assert.equal(productProfile.medopl_product_profile.primary_consumer_surface.runtime_required_owner, "medopl", "mvp_loop_runtime_required_owner_must_be_medopl");
 assert.equal(apiContract.medopl_api_contract.runtime_gate.route, "POST /api/opl/runtime-gate", "mvp_loop_runtime_gate_route_mismatch");
-assert.deepEqual(apiContract.medopl_api_contract.runtime_gate.invocation_modes, ["api_only", "runtime_required"], "mvp_loop_runtime_gate_modes_mismatch");
+assert.deepEqual(apiContract.medopl_api_contract.runtime_gate.invocation_modes, ["api_only", "ordinary_chat", "runtime_required"], "mvp_loop_runtime_gate_modes_mismatch");
 
 assertExcludesAll(productTruth, [
   "用户自配云资源",

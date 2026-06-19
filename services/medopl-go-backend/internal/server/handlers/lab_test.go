@@ -43,6 +43,26 @@ func TestLabHandlersServeTypedPortalAPI(t *testing.T) {
 	}
 }
 
+func TestLabSubscriptionProjectsNotActivatedWorkspace(t *testing.T) {
+	router := labTestRouter()
+	req := httptest.NewRequest(http.MethodGet, "/api/lab-subscription?workspaceId=workspace-empty", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status=%d body=%s", rec.Code, rec.Body.String())
+	}
+	var response map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &response); err != nil {
+		t.Fatalf("json response: %v", err)
+	}
+	if response["ok"] != true || response["status"] != "not_activated" || response["subscription"] != nil {
+		t.Fatalf("inactive subscription projection=%+v", response)
+	}
+	if response["workspaceId"] != "workspace-empty" || response["currentPackageId"] != nil || response["currentPackageName"] != nil {
+		t.Fatalf("inactive subscription identity/package projection=%+v", response)
+	}
+}
+
 func TestLabHandlersFailClosedWithoutWorkspaceOrPackage(t *testing.T) {
 	router := labTestRouter()
 	for _, item := range []struct {

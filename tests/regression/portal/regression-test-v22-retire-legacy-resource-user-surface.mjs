@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { isSmokeClassifiedIn } from "../../../scripts/v22-test-classification.mjs";
+import { TEST_LANE_SUITES } from "../../../scripts/v22-test-classification.mjs";
 
 const resourcesViewPath = "services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx";
 const resourcesSurfacePath = "services/portal/frontend/src/app/data/portalRuntimeEnvironmentModel.ts";
@@ -73,9 +73,9 @@ assertExcludes(resourcesSurfaceSources, "deleteStorageBucket(", "ordinary_resour
 assertExcludes(resourcesSurfaceSources, "unbindWorkspaceResource(", "ordinary_resource_surface_must_not_call_unbind_mutation");
 
 assert.equal(
-  isSmokeClassifiedIn("tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs"),
+  TEST_LANE_SUITES["local-regression"].includes("tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs"),
   true,
-  "mvp_suite_must_run_resource_surface_cleanup_smoke",
+  "local_regression_suite_must_run_resource_surface_cleanup",
 );
 
 for (const retiredServerDependency of [

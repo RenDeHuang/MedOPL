@@ -31,6 +31,60 @@ export interface OplEntryPreflightPayload {
   reason?: string;
 }
 
+export interface OplRuntimeGateInput {
+  workspaceId?: string;
+  invocationMode?: "ordinary_chat" | "runtime_required" | "api_only";
+  runtimePlanId?: string;
+  storagePlanId?: string;
+}
+
+export interface OplRuntimeGatePayload {
+  ok: boolean;
+  productOwner: "medopl";
+  primaryConsumer: "opl-webui";
+  consumerRole: "entry_and_chat_surface";
+  ordinaryChatOwner: "opl-webui";
+  runtimeRequiredOwner: "medopl";
+  workspaceId: string;
+  workspaceBindingId: string;
+  invocationMode: string;
+  medoplRuntimeRequired: boolean;
+  providerKeyStatus: string;
+  providerKeyRef?: string;
+  runtimePlanId: string;
+  runtimeBindingId?: string;
+  runtimeState: string;
+  storagePlanId: string;
+  storageBindingId?: string;
+  storageState: string;
+  nodePoolProjection: {
+    nodePoolRef?: string;
+    state: string;
+    customerVisible: boolean;
+  };
+  billing: {
+    freezeStatus: string;
+    frozenAmount: number;
+    currency: string;
+  };
+  release: {
+    canReleaseRuntime: boolean;
+    destroyStorage: string;
+    stopBilling: string;
+  };
+  consumerProjection: {
+    chatSurface: "opl-webui";
+    runSurface: string;
+    uploadEnabled: boolean;
+    runEnabled: boolean;
+    artifactEnabled: boolean;
+    releaseAction: string;
+    storageAction: string;
+  };
+  nextAction: string;
+  cannotClaim: string[];
+}
+
 export interface OplLaunchPayload {
   ok: boolean;
   launchId: string;
@@ -151,6 +205,16 @@ export async function createOplLaunch(input: OplLaunchInput) {
 
 export async function fetchOplEntryPreflight(input: OplLaunchInput = {}) {
   const { data } = await goControlPlaneClient.post<OplEntryPreflightPayload>("/opl/entry/preflight", input);
+  return data;
+}
+
+export async function fetchOplRuntimeGate(input: OplRuntimeGateInput = {}) {
+  const { data } = await goControlPlaneClient.post<OplRuntimeGatePayload>("/opl/runtime-gate", {
+    workspaceId: input.workspaceId,
+    invocationMode: input.invocationMode || "runtime_required",
+    runtimePlanId: input.runtimePlanId || "starter_2c4g_10gb",
+    storagePlanId: input.storagePlanId || "workspace_10gb",
+  });
   return data;
 }
 

@@ -1,16 +1,16 @@
 import assert from "node:assert/strict";
-import { pathToFileURL } from "node:url";
 import { spawn } from "node:child_process";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { mkdtemp, rm, stat } from "node:fs/promises";
 import { setTimeout as sleep } from "node:timers/promises";
 
 const repoRoot = process.cwd();
-const portalEntrypoint = path.join(repoRoot, "services", "portal", "src", "server.mjs");
-const adminEmail = "zitadel-admin@zitadel.localhost";
-const adminPassword = "Password1!";
+const goBackendRoot = path.join(repoRoot, "services", "medopl-go-backend");
+const frontendRoot = path.join(repoRoot, "services", "portal", "frontend");
+const viteEntrypoint = path.join(frontendRoot, "node_modules", "vite", "bin", "vite.js");
 
 async function exists(targetPath) {
   try {
@@ -52,29 +52,39 @@ async function loadPlaywright() {
   throw new Error(`playwright_not_found:${candidates.join(",")}`);
 }
 
-async function waitForPortal(baseUrl, child) {
-  for (let attempt = 0; attempt < 120; attempt += 1) {
-    assert.equal(child.exitCode, null, `portal_process_exited:${child.exitCode}`);
+async function waitFor(url, child, label) {
+  for (let attempt = 0; attempt < 180; attempt += 1) {
+    assert.equal(child.exitCode, null, `${label}_process_exited:${child.exitCode}`);
     try {
-      const response = await fetch(`${baseUrl}/healthz`, { redirect: "manual" });
-      if (response.status === 200) return;
+      const response = await fetch(url, { redirect: "manual" });
+      if (response.status >= 200 && response.status < 400) return response;
     } catch {}
     await sleep(250);
   }
-  throw new Error("portal_start_timeout");
+  throw new Error(`${label}_start_timeout:${url}`);
 }
 
 async function stopChild(child) {
   if (!child || child.exitCode !== null || child.signalCode !== null) return;
-  child.kill("SIGTERM");
+  try {
+    process.kill(-child.pid, "SIGTERM");
+  } catch {
+    child.kill("SIGTERM");
+  }
   const exited = await Promise.race([
     new Promise((resolve) => child.once("exit", () => resolve(true))),
     sleep(2500).then(() => false),
   ]);
-  if (!exited) child.kill("SIGKILL");
+  if (!exited) {
+    try {
+      process.kill(-child.pid, "SIGKILL");
+    } catch {
+      child.kill("SIGKILL");
+    }
+  }
 }
 
-async function withIsolatedPortalRuntime(fn) {
+async function withRuntime(fn) {
   const runtimeRoot = await mkdtemp(path.join(os.tmpdir(), "v22-portal-workbench-ui-browser-"));
   try {
     return await fn(runtimeRoot);
@@ -83,128 +93,198 @@ async function withIsolatedPortalRuntime(fn) {
   }
 }
 
-async function login(page, baseUrl) {
-  await page.goto(`${baseUrl}/login`, { waitUntil: "domcontentloaded" });
-  await page.locator('input[name="email"]').fill(adminEmail);
-  await page.locator('input[name="password"]').fill(adminPassword);
-  await Promise.all([
-    page.waitForURL(/\/overview$/, { timeout: 30000 }),
-    page.locator('button[type="submit"]').click(),
-  ]);
+async function waitReady(page, loadingText) {
+  await page.waitForLoadState("domcontentloaded");
+  await page.waitForFunction(
+    () => document.body.innerText.trim().length > 0,
+    { timeout: 30000 },
+  );
+  if (loadingText) {
+    await page.waitForFunction(
+      (text) => !document.body.innerText.includes(text),
+      loadingText,
+      { timeout: 30000 },
+    );
+  }
+}
+
+async function assertNoGlobalHorizontalOverflow(page, label) {
+  const overflow = await page.evaluate(() => ({
+    htmlScrollWidth: document.documentElement.scrollWidth,
+    htmlClientWidth: document.documentElement.clientWidth,
+    bodyScrollWidth: document.body.scrollWidth,
+    bodyClientWidth: document.body.clientWidth,
+  }));
+  assert(
+    overflow.htmlScrollWidth <= overflow.htmlClientWidth + 2,
+    `${label}_html_horizontal_overflow:${JSON.stringify(overflow)}`,
+  );
+  assert(
+    overflow.bodyScrollWidth <= overflow.bodyClientWidth + 2,
+    `${label}_body_horizontal_overflow:${JSON.stringify(overflow)}`,
+  );
+}
+
+async function assertNoBadConsole(consoleMessages, failedRequests) {
+  const filteredConsole = consoleMessages.filter((message) => {
+    if (message.includes("[vite] connected")) return false;
+    if (message.includes("[vite] connecting")) return false;
+    if (message.includes("Download the React DevTools")) return false;
+    return /^error:|^warning:/.test(message);
+  });
+  const filteredRequests = failedRequests.filter((message) => !message.includes("net::ERR_ABORTED"));
+  assert.deepEqual(filteredConsole, [], `browser_console_warning_or_error:${JSON.stringify(filteredConsole)}`);
+  assert.deepEqual(filteredRequests, [], `browser_failed_requests:${JSON.stringify(filteredRequests)}`);
+}
+
+function assertWorkbenchCopy(bodyText, label, markers = ["托管科研工作台", "运行环境"]) {
+  for (const marker of markers) {
+    assert(bodyText.includes(marker), `${label}_managed_workbench_marker_missing:${marker}`);
+  }
+  assert.equal(bodyText.includes("客户工作台"), false, `${label}_forbidden_customer_workbench_copy`);
+  assert.equal(bodyText.includes("SecretId"), false, `${label}_forbidden_secret_id_copy`);
+  assert.equal(bodyText.includes("kubeconfig"), false, `${label}_forbidden_kubeconfig_copy`);
 }
 
 const { chromium } = await loadPlaywright();
-const port = await freePort();
-const baseUrl = `http://127.0.0.1:${port}`;
-let portal = null;
+const backendPort = await freePort();
+const vitePort = await freePort();
+const backendBaseUrl = `http://127.0.0.1:${backendPort}`;
+const frontendBaseUrl = `http://127.0.0.1:${vitePort}`;
+let backend = null;
+let vite = null;
 let browser = null;
 let stdout = "";
 let stderr = "";
+let viteStdout = "";
+let viteStderr = "";
 let lastBodyText = "";
 let consoleMessages = [];
 let failedRequests = [];
 
 try {
-  await withIsolatedPortalRuntime(async (runtimeRoot) => {
-    portal = spawn(process.execPath, [portalEntrypoint], {
-      cwd: repoRoot,
+  await withRuntime(async (runtimeRoot) => {
+    backend = spawn("go", ["run", "./cmd/server"], {
+      cwd: goBackendRoot,
       env: {
         ...process.env,
-        NODE_ENV: "test",
-        PORT: String(port),
-        PORTAL_RUNTIME_ROOT: runtimeRoot,
-        PORTAL_STORAGE_MODE: "json",
-        PORTAL_OIDC_ENABLED: "0",
-        PORTAL_IDENTITY_SYNC_MODE: "local",
-        PORTAL_ALLOW_REGISTRATION: "1",
-        PORTAL_ADMIN_EMAIL: adminEmail,
-        PORTAL_ADMIN_PASSWORD: adminPassword,
-        PORTAL_ADMIN_NAME: "Portal Admin",
+        MEDOPL_BACKEND_MODE: "local",
+        MEDOPL_BACKEND_PORT: String(backendPort),
+        PORTAL_OPL_PROVIDER_SECRET_ROOT: path.join(runtimeRoot, "provider-secrets"),
+        MEDOPL_PORTAL_STATE_ROOT: path.join(runtimeRoot, "portal-state"),
+        GOPROXY: process.env.GOPROXY || "https://goproxy.cn,direct",
+        GOSUMDB: process.env.GOSUMDB || "sum.golang.google.cn",
       },
+      detached: true,
       stdio: ["ignore", "pipe", "pipe"],
     });
-    portal.stdout.setEncoding("utf8");
-    portal.stderr.setEncoding("utf8");
-    portal.stdout.on("data", (chunk) => {
+    backend.stdout.setEncoding("utf8");
+    backend.stderr.setEncoding("utf8");
+    backend.stdout.on("data", (chunk) => {
       stdout = `${stdout}${chunk}`.slice(-8000);
     });
-    portal.stderr.on("data", (chunk) => {
+    backend.stderr.on("data", (chunk) => {
       stderr = `${stderr}${chunk}`.slice(-8000);
     });
+    await waitFor(`${backendBaseUrl}/healthz`, backend, "go_backend");
 
-    await waitForPortal(baseUrl, portal);
+    vite = spawn(process.execPath, [viteEntrypoint, "--host", "127.0.0.1", "--port", String(vitePort), "--strictPort"], {
+      cwd: frontendRoot,
+      env: {
+        ...process.env,
+        VITE_MEDOPL_GO_BACKEND_URL: backendBaseUrl,
+      },
+      detached: true,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    vite.stdout.setEncoding("utf8");
+    vite.stderr.setEncoding("utf8");
+    vite.stdout.on("data", (chunk) => {
+      viteStdout = `${viteStdout}${chunk}`.slice(-8000);
+    });
+    vite.stderr.on("data", (chunk) => {
+      viteStderr = `${viteStderr}${chunk}`.slice(-8000);
+    });
+    await waitFor(`${frontendBaseUrl}/overview`, vite, "vite");
 
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage({ viewport: { width: 1440, height: 920 } });
     page.on("console", (message) => {
       consoleMessages.push(`${message.type()}:${message.text()}`.slice(0, 500));
-      consoleMessages = consoleMessages.slice(-20);
+      consoleMessages = consoleMessages.slice(-40);
     });
     page.on("requestfailed", (request) => {
       failedRequests.push(`${request.method()} ${request.url()} ${request.failure()?.errorText || ""}`.slice(0, 500));
-      failedRequests = failedRequests.slice(-20);
+      failedRequests = failedRequests.slice(-40);
     });
 
-    await page.goto(`${baseUrl}/`, { waitUntil: "domcontentloaded" });
-    const homeText = await page.locator("body").innerText();
-    assert(homeText.includes("One Person Lab"), "browser_home_default_intro_missing");
-    assert(homeText.includes("登录"), "browser_home_login_missing");
-    assert.equal(homeText.includes("使用统一账号登录"), false, "browser_home_must_not_show_oidc_copy");
-
-    await page.goto(`${baseUrl}/login`, { waitUntil: "domcontentloaded" });
-    await page.locator('input[name="email"]').waitFor({ timeout: 10000 });
-    const loginText = await page.locator("body").innerText();
-    assert(loginText.includes("注册新账号"), "browser_login_register_link_missing");
-    assert.equal(loginText.includes("使用统一账号登录"), false, "browser_login_must_not_show_oidc_copy");
-
-    await login(page, baseUrl);
-    assert.equal(page.url(), `${baseUrl}/overview`, "browser_login_redirect_must_land_on_overview");
+    await page.goto(`${frontendBaseUrl}/overview`, { waitUntil: "domcontentloaded" });
+    await waitReady(page, "正在读取 Portal 总览数据");
     await page.waitForSelector("text=总览", { timeout: 30000 });
-    await page.waitForFunction(() =>
-      !document.body.innerText.includes("正在加载总览") &&
-      !document.body.innerText.includes("正在读取 Portal 总览数据"),
-    null, { timeout: 30000 });
-    const overviewText = await page.locator("body").innerText();
-    lastBodyText = overviewText;
-    assert(overviewText.includes("工作台"), "browser_workbench_shell_missing");
-    assert(overviewText.includes("托管科研工作台"), "browser_workbench_managed_service_copy_missing");
-    assert(overviewText.includes("运行环境"), "browser_workbench_runtime_environment_missing");
-    assert(overviewText.includes("待开通"), "browser_workbench_pending_activation_missing");
-    assert(overviewText.includes("选择套餐"), "browser_workbench_package_selection_missing");
-    assert.equal(overviewText.includes("客户工作台"), false, "browser_workbench_forbidden_customer_workbench_copy");
-    assert.equal(overviewText.includes("商业"), false, "browser_workbench_forbidden_commercial_copy");
+    lastBodyText = await page.locator("body").innerText();
+    assertWorkbenchCopy(lastBodyText, "browser_overview");
+    assert(lastBodyText.includes("选择套餐开通服务"), "browser_overview_open_runtime_cta_missing");
+    assert(lastBodyText.includes("前往运行环境"), "browser_overview_runtime_entry_missing");
+    assert.equal(lastBodyText.includes("商业"), false, "browser_overview_forbidden_commercial_copy");
+    await assertNoGlobalHorizontalOverflow(page, "browser_overview");
 
-    await page.goto(`${baseUrl}/admin/system`, { waitUntil: "networkidle" });
+    await page.goto(`${frontendBaseUrl}/resources`, { waitUntil: "domcontentloaded" });
+    await waitReady(page, "正在读取运行环境数据");
+    await page.waitForSelector("text=运行环境", { timeout: 30000 });
+    lastBodyText = await page.locator("body").innerText();
+    assertWorkbenchCopy(lastBodyText, "browser_runtime_environment", ["运行环境", "文件空间"]);
+    assert(lastBodyText.includes("开通服务"), "browser_runtime_open_service_cta_missing");
+    assert(lastBodyText.includes("当前订阅状态"), "browser_runtime_subscription_status_missing");
+    assert(lastBodyText.includes("套餐价格尚待审批"), "browser_runtime_pricing_boundary_missing");
+    assert.equal(lastBodyText.includes("CVM"), false, "browser_runtime_must_not_expose_cloud_console_copy");
+    assert.equal(lastBodyText.includes("K8s"), false, "browser_runtime_must_not_expose_cloud_console_copy");
+    await assertNoGlobalHorizontalOverflow(page, "browser_runtime_environment");
+
+    await page.goto(`${frontendBaseUrl}/admin/system`, { waitUntil: "domcontentloaded" });
+    await waitReady(page, "正在读取站点设置");
     await page.waitForSelector("text=站点设置", { timeout: 30000 });
-    const adminText = await page.locator("body").innerText();
-    lastBodyText = adminText;
-    assert(adminText.includes("站点 logo") || adminText.includes("站点 Logo"), "browser_admin_logo_field_missing");
-    assert(adminText.includes("首页文案 / 副标题"), "browser_admin_home_content_missing");
-    assert(adminText.includes("服务状态"), "browser_admin_service_status_missing");
-    assert.equal(adminText.includes("告警中心"), false, "browser_admin_forbidden_alert_copy");
-    assert.equal(adminText.includes("商业"), false, "browser_admin_forbidden_commercial_copy");
+    lastBodyText = await page.locator("body").innerText();
+    assert(lastBodyText.includes("站点 Logo"), "browser_admin_logo_field_missing");
+    assert(lastBodyText.includes("首页文案 / 副标题"), "browser_admin_home_content_missing");
+    assert(lastBodyText.includes("服务状态摘要"), "browser_admin_service_status_summary_missing");
+    assert(lastBodyText.includes("真实云资源、真实扣费或高风险设置仍需单独授权接口"), "browser_admin_authorization_boundary_missing");
+    assert.equal(lastBodyText.includes("商业"), false, "browser_admin_forbidden_commercial_copy");
+    await assertNoGlobalHorizontalOverflow(page, "browser_admin_system");
 
-    console.log(JSON.stringify({
-      ok: true,
-      contract: "v22_portal_workbench_management_ui_browser",
-      baseUrl,
-      checked: ["home", "login", "workbench", "management_site_settings"],
-    }, null, 2));
+    await assertNoBadConsole(consoleMessages, failedRequests);
+    await page.close();
   });
+
+  console.log(JSON.stringify({
+    ok: true,
+    contract: "v22_portal_workbench_management_ui_browser",
+    backendBaseUrl,
+    frontendBaseUrl,
+    checked: [
+      "go_backend_vite_frontend_runtime",
+      "overview_workbench_copy",
+      "runtime_open_service_entry",
+      "admin_system_authorization_boundary",
+    ],
+  }, null, 2));
 } catch (error) {
   console.error(JSON.stringify({
     ok: false,
     contract: "v22_portal_workbench_management_ui_browser",
-    baseUrl,
+    backendBaseUrl,
+    frontendBaseUrl,
     error: String(error.message || error),
     bodyText: lastBodyText.slice(0, 3000),
     consoleMessages,
     failedRequests,
     stdout,
     stderr,
+    viteStdout,
+    viteStderr,
   }, null, 2));
   process.exitCode = 1;
 } finally {
   if (browser) await browser.close().catch(() => {});
-  await stopChild(portal);
+  await stopChild(vite);
+  await stopChild(backend);
 }

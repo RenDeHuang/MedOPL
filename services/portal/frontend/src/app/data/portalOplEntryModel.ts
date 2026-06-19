@@ -4,6 +4,7 @@ import {
   createOplLaunch,
   fetchOplBootstrap,
   fetchOplEntryPreflight,
+  fetchOplRuntimeGate,
 } from "../../api/portal/opl";
 import { fetchOplLaunchStatus } from "../../api/portal/resources";
 import { OPL_GATEWAY_UNAVAILABLE_MESSAGE, PortalDisplayError } from "./portalDisplayErrors";
@@ -40,6 +41,16 @@ export type OplEntryViewState = {
   providerStepStatus: OplEntryLaunchStep["status"];
   gatewayStepDetail: string;
   gatewayStepStatus: OplEntryLaunchStep["status"];
+};
+
+export type OplEntryRuntimeConsumerProjection = {
+  chatSurface: string;
+  runSurface: string;
+  uploadEnabled: boolean;
+  runEnabled: boolean;
+  artifactEnabled: boolean;
+  releaseAction: string;
+  storageAction: string;
 };
 
 function blockedByProviderKey(input: {
@@ -283,6 +294,10 @@ export async function loadOplEntryModel() {
       fetchOplLaunchStatus(launch.launchId),
       fetchOplBootstrap(launch.launchId),
     ]);
+    const runtimeGate = await fetchOplRuntimeGate({
+      workspaceId: status.workspaceId || launch.workspaceId || "workspace-local-rc",
+      invocationMode: "runtime_required",
+    });
     await bindOplSession({
       launchId: launch.launchId,
       oplSessionId: bootstrap.identity.oplSessionId,
@@ -301,6 +316,14 @@ export async function loadOplEntryModel() {
       gatewayState: status.gatewayState,
       runtimeSessionId: bootstrap.identity.runtimeSessionId,
       oplSessionId: bootstrap.identity.oplSessionId,
+      runtimeGate: {
+        runtimeState: runtimeGate.runtimeState,
+        storageState: runtimeGate.storageState,
+        nodePoolProjection: runtimeGate.nodePoolProjection,
+        billing: runtimeGate.billing,
+        release: runtimeGate.release,
+        consumerProjection: runtimeGate.consumerProjection,
+      },
       stages: status.stages,
       workspaceId: status.workspaceId || launch.workspaceId || "workspace-local-rc",
     } as const;

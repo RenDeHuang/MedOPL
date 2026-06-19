@@ -50,7 +50,7 @@ assert(runtimeGate, "api_contract_runtime_gate_missing");
 assert.equal(runtimeGate.product_owner, "medopl", "runtime_gate_product_owner_must_be_medopl");
 assert.equal(runtimeGate.primary_consumer, "opl-webui", "runtime_gate_primary_consumer_must_be_opl_webui");
 assert.equal(runtimeGate.consumer_role, "entry_and_chat_surface", "runtime_gate_consumer_role_mismatch");
-assert.deepEqual(runtimeGate.invocation_modes, ["api_only", "runtime_required"], "runtime_gate_invocation_modes_mismatch");
+assert.deepEqual(runtimeGate.invocation_modes, ["api_only", "ordinary_chat", "runtime_required"], "runtime_gate_invocation_modes_mismatch");
 assert.equal(runtimeGate.ordinary_chat_owner, "opl-webui", "runtime_gate_ordinary_chat_owner_must_be_opl_webui");
 assert.equal(runtimeGate.runtime_required_owner, "medopl", "runtime_gate_runtime_required_owner_must_be_medopl");
 assert.equal(apiContract.medopl_api_contract.storage_destroy?.route, "POST /api/v22/storage/destroy", "storage_destroy_route_contract_missing");

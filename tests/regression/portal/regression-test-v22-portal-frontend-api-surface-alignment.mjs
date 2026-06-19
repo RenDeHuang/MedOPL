@@ -31,6 +31,7 @@ const requiredUsedExports = [
   "workspace.ts:fetchStorageEntitlement",
   "workspace.ts:createWorkspaceFileUploadUrl",
   "workspace.ts:createWorkspaceFileDownloadUrl",
+  "opl.ts:fetchOplRuntimeGate",
   "opl.ts:createOplFileRef",
   "opl.ts:startOplRun",
   "opl.ts:fetchOplArtifact",

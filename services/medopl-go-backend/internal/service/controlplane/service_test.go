@@ -79,6 +79,12 @@ func TestServiceRuntimeGateKeepsOrdinaryChatInOPLWebui(t *testing.T) {
 	if gate.NextAction != "continue_in_opl_webui" || gate.ProviderKeyStatus != "not_required_for_ordinary_chat" {
 		t.Fatalf("ordinary chat next action = %+v", gate)
 	}
+	if gate.ConsumerProjection.ChatSurface != "opl-webui" || gate.ConsumerProjection.RunSurface != "none" {
+		t.Fatalf("ordinary chat consumer projection = %+v", gate.ConsumerProjection)
+	}
+	if gate.ConsumerProjection.UploadEnabled || gate.ConsumerProjection.RunEnabled || gate.ConsumerProjection.ArtifactEnabled {
+		t.Fatalf("ordinary chat must not project MedOPL runtime actions: %+v", gate.ConsumerProjection)
+	}
 }
 
 func TestServiceRuntimeGateProjectsMedOPLRuntimeBindingForOPLWebui(t *testing.T) {
@@ -109,6 +115,15 @@ func TestServiceRuntimeGateProjectsMedOPLRuntimeBindingForOPLWebui(t *testing.T)
 	}
 	if gate.Billing.FreezeStatus != "active" || !gate.Release.CanReleaseRuntime || gate.Release.DestroyStorage != "requires_explicit_user_intent" {
 		t.Fatalf("billing/release projection = %+v release=%+v", gate.Billing, gate.Release)
+	}
+	if gate.ConsumerProjection.ChatSurface != "opl-webui" || gate.ConsumerProjection.RunSurface != "opl-webui_with_medopl_runtime" {
+		t.Fatalf("runtime consumer surface projection = %+v", gate.ConsumerProjection)
+	}
+	if !gate.ConsumerProjection.UploadEnabled || !gate.ConsumerProjection.RunEnabled || !gate.ConsumerProjection.ArtifactEnabled {
+		t.Fatalf("runtime consumer actions must be enabled for ready runtime/storage: %+v", gate.ConsumerProjection)
+	}
+	if gate.ConsumerProjection.ReleaseAction != "release_runtime_stop_billing" || gate.ConsumerProjection.StorageAction != "retain_storage_until_explicit_destroy" {
+		t.Fatalf("runtime consumer release/storage action = %+v", gate.ConsumerProjection)
 	}
 }
 

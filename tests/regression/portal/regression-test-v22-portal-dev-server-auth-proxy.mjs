@@ -3,7 +3,20 @@ import { readFile } from "node:fs/promises";
 
 const source = await readFile("services/portal/frontend/vite.config.ts", "utf8");
 
-for (const route of [
+for (const marker of [
+  "goControlPlaneTarget",
+  '"/api": goControlPlaneTarget',
+  "http://127.0.0.1:8789",
+  "VITE_MEDOPL_GO_BACKEND_URL",
+]) {
+  assert(
+    source.includes(marker),
+    `portal_vite_dev_proxy_missing:${marker}`,
+  );
+}
+
+for (const retiredNodePortalProxy of [
+  "VITE_PORTAL_BACKEND_URL",
   '"/portal/billing"',
   '"/login"',
   '"/register"',
@@ -11,18 +24,16 @@ for (const route of [
   '"/auth"',
   '"/opl/entry/preflight"',
 ]) {
-  assert(
-    source.includes(route),
-    `portal_vite_dev_proxy_missing:${route}`,
+  assert.equal(
+    source.includes(retiredNodePortalProxy),
+    false,
+    `portal_vite_dev_proxy_must_not_restore_node_portal:${retiredNodePortalProxy}`,
   );
 }
 
-assert(source.includes("http://127.0.0.1:17080"), "portal_vite_dev_proxy_target_must_be_local_backend");
-assert(source.includes("VITE_PORTAL_BACKEND_URL"), "portal_vite_dev_proxy_must_allow_isolated_backend_target");
-
 console.log(JSON.stringify({
   ok: true,
-  contract: "v22_portal_dev_server_auth_proxy",
-  target: "http://127.0.0.1:17080",
-  isolatedOverride: "VITE_PORTAL_BACKEND_URL",
+  contract: "v22_portal_dev_server_go_control_plane_proxy",
+  target: "http://127.0.0.1:8789",
+  isolatedOverride: "VITE_MEDOPL_GO_BACKEND_URL",
 }, null, 2));

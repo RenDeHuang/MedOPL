@@ -40,6 +40,27 @@ func LabSubscription(service LabService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		workspaceID := ctx.Query("workspaceId")
 		subscription, err := service.GetLabSubscription(ctx.Request.Context(), workspaceID)
+		if errors.Is(err, labrepo.ErrNotFound) {
+			ctx.JSON(http.StatusOK, gin.H{
+				"ok":                 true,
+				"workspaceId":        workspaceID,
+				"subscription":       nil,
+				"status":             "not_activated",
+				"currentPackageId":   nil,
+				"currentPackageName": nil,
+				"balance":            0,
+				"frozenAmount":       0,
+				"currency":           "CNY",
+				"wallet": gin.H{
+					"balance":          0,
+					"activeFreeze":     0,
+					"availableBalance": 0,
+					"currency":         "CNY",
+				},
+				"entitlement": labdomain.BuildEntitlement(workspaceID, labdomain.Subscription{}),
+			})
+			return
+		}
 		if err != nil {
 			writeLabError(ctx, err)
 			return

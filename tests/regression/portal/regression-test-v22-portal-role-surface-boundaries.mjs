@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { isSmokeClassifiedIn } from "../../../scripts/v22-test-classification.mjs";
+import { TEST_LANE_SUITES } from "../../../scripts/v22-test-classification.mjs";
 
 function assertIncludes(text, expected, label) {
   assert(text.includes(expected), `${label}_missing:${expected}`);
@@ -97,7 +97,10 @@ for (const forbidden of [
   assertNotIncludes(userNavigation, forbidden, "user_navigation_sensitive_boundary");
 }
 
-assert(isSmokeClassifiedIn("tests/regression/portal/regression-test-v22-portal-role-surface-boundaries.mjs"), "mvp_suite_must_run_role_surface_smoke");
+assert(
+  TEST_LANE_SUITES["local-regression"].includes("tests/regression/portal/regression-test-v22-portal-role-surface-boundaries.mjs"),
+  "local_regression_suite_must_run_role_surface_boundary",
+);
 
 console.log(JSON.stringify({
   ok: true,

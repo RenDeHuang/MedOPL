@@ -223,6 +223,13 @@ func TestControlPlaneHandlersExposeOPLWebuiRuntimeGate(t *testing.T) {
 	if ordinaryChat["medoplRuntimeRequired"] != false || ordinaryChat["nextAction"] != "continue_in_opl_webui" {
 		t.Fatalf("ordinary runtime gate = %+v", ordinaryChat)
 	}
+	ordinaryConsumer := ordinaryChat["consumerProjection"].(map[string]any)
+	if ordinaryConsumer["chatSurface"] != "opl-webui" || ordinaryConsumer["runSurface"] != "none" {
+		t.Fatalf("ordinary runtime consumer projection = %+v", ordinaryConsumer)
+	}
+	if ordinaryConsumer["uploadEnabled"] != false || ordinaryConsumer["runEnabled"] != false || ordinaryConsumer["artifactEnabled"] != false {
+		t.Fatalf("ordinary runtime consumer actions = %+v", ordinaryConsumer)
+	}
 
 	bindResponse := postMap(t, router, "/api/v22/provider-key", map[string]any{
 		"tenantId":       "tenant-v22",
@@ -258,6 +265,16 @@ func TestControlPlaneHandlersExposeOPLWebuiRuntimeGate(t *testing.T) {
 	release := runtimeRequired["release"].(map[string]any)
 	if release["canReleaseRuntime"] != true || release["destroyStorage"] != "requires_explicit_user_intent" {
 		t.Fatalf("runtime required release projection = %+v", release)
+	}
+	consumerProjection := runtimeRequired["consumerProjection"].(map[string]any)
+	if consumerProjection["chatSurface"] != "opl-webui" || consumerProjection["runSurface"] != "opl-webui_with_medopl_runtime" {
+		t.Fatalf("runtime required consumer surface = %+v", consumerProjection)
+	}
+	if consumerProjection["uploadEnabled"] != true || consumerProjection["runEnabled"] != true || consumerProjection["artifactEnabled"] != true {
+		t.Fatalf("runtime required consumer actions = %+v", consumerProjection)
+	}
+	if consumerProjection["releaseAction"] != "release_runtime_stop_billing" || consumerProjection["storageAction"] != "retain_storage_until_explicit_destroy" {
+		t.Fatalf("runtime required consumer release/storage = %+v", consumerProjection)
 	}
 }
 

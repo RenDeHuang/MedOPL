@@ -78,6 +78,12 @@ for (const marker of [
   "primaryConsumer",
   "nodePoolProjection",
   "destroyStorage",
+  "consumerProjection",
+  "uploadEnabled",
+  "runEnabled",
+  "artifactEnabled",
+  "releaseAction",
+  "storageAction",
 ]) {
   assertIncludes(controlplaneTest, marker, `go_controlplane_test_must_cover:${marker}`);
 }

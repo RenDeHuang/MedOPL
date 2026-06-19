@@ -70,30 +70,41 @@ type RuntimeGateRelease struct {
 	StopBilling       string `json:"stopBilling"`
 }
 
+type RuntimeGateConsumerProjection struct {
+	ChatSurface     string `json:"chatSurface"`
+	RunSurface      string `json:"runSurface"`
+	UploadEnabled   bool   `json:"uploadEnabled"`
+	RunEnabled      bool   `json:"runEnabled"`
+	ArtifactEnabled bool   `json:"artifactEnabled"`
+	ReleaseAction   string `json:"releaseAction"`
+	StorageAction   string `json:"storageAction"`
+}
+
 type RuntimeGateProjection struct {
-	Ok                    bool               `json:"ok"`
-	ProductOwner          string             `json:"productOwner"`
-	PrimaryConsumer       string             `json:"primaryConsumer"`
-	ConsumerRole          string             `json:"consumerRole"`
-	OrdinaryChatOwner     string             `json:"ordinaryChatOwner"`
-	RuntimeRequiredOwner  string             `json:"runtimeRequiredOwner"`
-	WorkspaceID           string             `json:"workspaceId"`
-	WorkspaceBindingID    string             `json:"workspaceBindingId"`
-	InvocationMode        string             `json:"invocationMode"`
-	MedOPLRuntimeRequired bool               `json:"medoplRuntimeRequired"`
-	ProviderKeyStatus     string             `json:"providerKeyStatus"`
-	ProviderKeyRef        string             `json:"providerKeyRef,omitempty"`
-	RuntimePlanID         string             `json:"runtimePlanId"`
-	RuntimeBindingID      string             `json:"runtimeBindingId,omitempty"`
-	RuntimeState          string             `json:"runtimeState"`
-	StoragePlanID         string             `json:"storagePlanId"`
-	StorageBindingID      string             `json:"storageBindingId,omitempty"`
-	StorageState          string             `json:"storageState"`
-	NodePoolProjection    NodePoolProjection `json:"nodePoolProjection"`
-	Billing               RuntimeGateBilling `json:"billing"`
-	Release               RuntimeGateRelease `json:"release"`
-	NextAction            string             `json:"nextAction"`
-	CannotClaim           []string           `json:"cannotClaim"`
+	Ok                    bool                          `json:"ok"`
+	ProductOwner          string                        `json:"productOwner"`
+	PrimaryConsumer       string                        `json:"primaryConsumer"`
+	ConsumerRole          string                        `json:"consumerRole"`
+	OrdinaryChatOwner     string                        `json:"ordinaryChatOwner"`
+	RuntimeRequiredOwner  string                        `json:"runtimeRequiredOwner"`
+	WorkspaceID           string                        `json:"workspaceId"`
+	WorkspaceBindingID    string                        `json:"workspaceBindingId"`
+	InvocationMode        string                        `json:"invocationMode"`
+	MedOPLRuntimeRequired bool                          `json:"medoplRuntimeRequired"`
+	ProviderKeyStatus     string                        `json:"providerKeyStatus"`
+	ProviderKeyRef        string                        `json:"providerKeyRef,omitempty"`
+	RuntimePlanID         string                        `json:"runtimePlanId"`
+	RuntimeBindingID      string                        `json:"runtimeBindingId,omitempty"`
+	RuntimeState          string                        `json:"runtimeState"`
+	StoragePlanID         string                        `json:"storagePlanId"`
+	StorageBindingID      string                        `json:"storageBindingId,omitempty"`
+	StorageState          string                        `json:"storageState"`
+	NodePoolProjection    NodePoolProjection            `json:"nodePoolProjection"`
+	Billing               RuntimeGateBilling            `json:"billing"`
+	Release               RuntimeGateRelease            `json:"release"`
+	ConsumerProjection    RuntimeGateConsumerProjection `json:"consumerProjection"`
+	NextAction            string                        `json:"nextAction"`
+	CannotClaim           []string                      `json:"cannotClaim"`
 }
 
 type LaunchLookupInput struct {
@@ -445,22 +456,28 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 		mode = "runtime_required"
 	}
 	projection := RuntimeGateProjection{
-		Ok:                    true,
-		ProductOwner:          "medopl",
-		PrimaryConsumer:       "opl-webui",
-		ConsumerRole:          "entry_and_chat_surface",
-		OrdinaryChatOwner:     "opl-webui",
-		RuntimeRequiredOwner:  "medopl",
-		WorkspaceID:           workspaceID,
-		WorkspaceBindingID:    "workspace-binding-" + shortID(workspaceID),
-		InvocationMode:        mode,
-		RuntimePlanID:         firstNonEmpty(input.RuntimePlanID, "starter_2c4g_10gb"),
-		StoragePlanID:         firstNonEmpty(input.StoragePlanID, "workspace_10gb"),
-		RuntimeState:          "not_required",
-		StorageState:          "not_required",
-		NodePoolProjection:    NodePoolProjection{State: "not_required", CustomerVisible: false},
-		Billing:               RuntimeGateBilling{FreezeStatus: "not_required", Currency: "CNY"},
-		Release:               RuntimeGateRelease{CanReleaseRuntime: false, DestroyStorage: "not_requested", StopBilling: "not_required"},
+		Ok:                   true,
+		ProductOwner:         "medopl",
+		PrimaryConsumer:      "opl-webui",
+		ConsumerRole:         "entry_and_chat_surface",
+		OrdinaryChatOwner:    "opl-webui",
+		RuntimeRequiredOwner: "medopl",
+		WorkspaceID:          workspaceID,
+		WorkspaceBindingID:   "workspace-binding-" + shortID(workspaceID),
+		InvocationMode:       mode,
+		RuntimePlanID:        firstNonEmpty(input.RuntimePlanID, "starter_2c4g_10gb"),
+		StoragePlanID:        firstNonEmpty(input.StoragePlanID, "workspace_10gb"),
+		RuntimeState:         "not_required",
+		StorageState:         "not_required",
+		NodePoolProjection:   NodePoolProjection{State: "not_required", CustomerVisible: false},
+		Billing:              RuntimeGateBilling{FreezeStatus: "not_required", Currency: "CNY"},
+		Release:              RuntimeGateRelease{CanReleaseRuntime: false, DestroyStorage: "not_requested", StopBilling: "not_required"},
+		ConsumerProjection: RuntimeGateConsumerProjection{
+			ChatSurface:   "opl-webui",
+			RunSurface:    "none",
+			ReleaseAction: "not_required",
+			StorageAction: "not_required",
+		},
 		ProviderKeyStatus:     "not_required_for_ordinary_chat",
 		NextAction:            "continue_in_opl_webui",
 		CannotClaim:           runtimeGateCannotClaim(),
@@ -475,6 +492,12 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 	projection.NodePoolProjection = NodePoolProjection{State: "blocked", CustomerVisible: false}
 	projection.Billing = RuntimeGateBilling{FreezeStatus: "pending", Currency: "CNY"}
 	projection.Release = RuntimeGateRelease{CanReleaseRuntime: false, DestroyStorage: "requires_runtime_binding", StopBilling: "not_started"}
+	projection.ConsumerProjection = RuntimeGateConsumerProjection{
+		ChatSurface:   "opl-webui",
+		RunSurface:    "blocked_until_medopl_runtime_ready",
+		ReleaseAction: "not_started",
+		StorageAction: "requires_runtime_binding",
+	}
 	projection.ProviderKeyStatus = "missing"
 	projection.NextAction = "bind_provider_key"
 
@@ -524,12 +547,41 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 		DestroyStorage:    destroyStorage,
 		StopBilling:       resource.StopBilling.Status,
 	}
+	projection.ConsumerProjection = runtimeGateConsumerProjection(projection.RuntimeState, projection.StorageState, projection.Release)
 	if resource.Status == cpd.ResourceStatusActive {
 		projection.NextAction = "run_in_opl_webui_with_medopl_runtime"
 	} else {
 		projection.NextAction = "open_medopl_runtime"
 	}
 	return projection, nil
+}
+
+func runtimeGateConsumerProjection(runtimeState string, storageState string, release RuntimeGateRelease) RuntimeGateConsumerProjection {
+	ready := runtimeState == "ready" && storageState == "ready"
+	runSurface := "blocked_until_medopl_runtime_ready"
+	if ready {
+		runSurface = "opl-webui_with_medopl_runtime"
+	}
+	releaseAction := "not_available"
+	if release.CanReleaseRuntime {
+		releaseAction = "release_runtime_stop_billing"
+	}
+	storageAction := "not_available"
+	if storageState == "ready" {
+		storageAction = "retain_storage_until_explicit_destroy"
+	}
+	if storageState == "destroyed" {
+		storageAction = "storage_destroy_completed"
+	}
+	return RuntimeGateConsumerProjection{
+		ChatSurface:     "opl-webui",
+		RunSurface:      runSurface,
+		UploadEnabled:   ready,
+		RunEnabled:      ready,
+		ArtifactEnabled: ready,
+		ReleaseAction:   releaseAction,
+		StorageAction:   storageAction,
+	}
 }
 
 func (service *Service) LaunchStatus(ctx context.Context, input LaunchLookupInput) (cpd.LaunchProjection, error) {
