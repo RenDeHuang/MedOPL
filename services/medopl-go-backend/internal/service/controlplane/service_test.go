@@ -378,6 +378,126 @@ func TestServiceReleaseRetainsStorageUntilExplicitDestroyReceipt(t *testing.T) {
 	}
 }
 
+func TestServiceLocalProductRCUploadFileRunArtifactBillingAuditReleaseAndStorageDestroy(t *testing.T) {
+	ctx := context.Background()
+	service := NewService(memory.NewControlPlaneStore())
+	launch := bindAndOpen(t, ctx, service)
+
+	gateBeforeUpload, err := service.RuntimeGate(ctx, RuntimeGateInput{WorkspaceID: launch.WorkspaceID, InvocationMode: "runtime_required"})
+	if err != nil {
+		t.Fatalf("RuntimeGate(before upload) error = %v", err)
+	}
+	if gateBeforeUpload.PrimaryConsumer != "opl-webui" || gateBeforeUpload.NextAction != "run_in_opl_webui_with_medopl_runtime" {
+		t.Fatalf("runtime gate must project OPL-Webui consumer path: %+v", gateBeforeUpload)
+	}
+	if !gateBeforeUpload.ConsumerProjection.UploadEnabled || !gateBeforeUpload.ConsumerProjection.RunEnabled || !gateBeforeUpload.ConsumerProjection.ArtifactEnabled {
+		t.Fatalf("runtime gate must enable upload/run/artifact for ready runtime: %+v", gateBeforeUpload.ConsumerProjection)
+	}
+
+	fileRef, err := service.RecordFile(ctx, RecordFileInput{
+		LaunchID:     launch.LaunchID,
+		FileName:     "cohort.csv",
+		RelativePath: "inputs/cohort.csv",
+		ContentType:  "text/csv",
+		SizeBytes:    256,
+	})
+	if err != nil {
+		t.Fatalf("RecordFile() error = %v", err)
+	}
+	if fileRef.FileRef == "" || fileRef.WorkspaceID != launch.WorkspaceID || fileRef.ProviderKeyRef != launch.ProviderKeyRef {
+		t.Fatalf("fileRef must stay scoped to workspace/providerKeyRef: %+v", fileRef)
+	}
+
+	runResult, err := service.StartRun(ctx, StartRunInput{
+		LaunchID:  launch.LaunchID,
+		Message:   "analyze uploaded cohort",
+		FileRefs:  []string{fileRef.FileRef},
+		ToolName:  "opl-webui-runtime",
+		RequestID: "run-local-product-rc",
+	})
+	if err != nil {
+		t.Fatalf("StartRun() error = %v", err)
+	}
+	if runResult.Run.Status != "succeeded" || len(runResult.Artifacts) != 1 {
+		t.Fatalf("run result must produce a single artifact: %+v", runResult)
+	}
+	artifactRef := runResult.Artifacts[0].ArtifactRef
+
+	artifact, err := service.Artifact(ctx, launch.LaunchID, artifactRef)
+	if err != nil {
+		t.Fatalf("Artifact() error = %v", err)
+	}
+	artifactPayload, ok := artifact["artifact"].(PublicArtifact)
+	if !ok {
+		t.Fatalf("artifact payload type = %T %+v", artifact["artifact"], artifact["artifact"])
+	}
+	if artifactPayload.ArtifactRef != artifactRef || artifactPayload.WorkspaceID != launch.WorkspaceID || artifactPayload.ProviderKeyRef != launch.ProviderKeyRef {
+		t.Fatalf("artifact must stay scoped to launch/workspace/providerKeyRef: %+v", artifactPayload)
+	}
+
+	billingAfterRun, err := service.BillingSummary(ctx, WorkspaceInput{WorkspaceID: launch.WorkspaceID})
+	if err != nil {
+		t.Fatalf("BillingSummary(after run) error = %v", err)
+	}
+	assertLedgerHasSourceEvent(t, billingAfterRun.Ledger, cpd.AuditKindFileUpload)
+	assertLedgerHasSourceEvent(t, billingAfterRun.Ledger, cpd.AuditKindRunSucceeded)
+	assertLedgerHasSourceEvent(t, billingAfterRun.Ledger, cpd.AuditKindArtifactAvailable)
+	assertLedgerAmount(t, billingAfterRun.Ledger, cpd.AuditKindRunSucceeded, 1.25)
+	assertLedgerAmount(t, billingAfterRun.Ledger, cpd.AuditKindArtifactAvailable, 0)
+
+	release, err := service.Release(ctx, ReleaseInput{
+		WorkspaceID:       launch.WorkspaceID,
+		ResourceBindingID: launch.ResourceBindingID,
+		StopBilling:       true,
+		IdempotencyKey:    "release-local-product-rc",
+	})
+	if err != nil {
+		t.Fatalf("Release() error = %v", err)
+	}
+	if !release.BillingStopped || release.AuditEvent.Kind != cpd.AuditKindResourceRelease {
+		t.Fatalf("release must stop billing and write audit event: %+v", release)
+	}
+
+	gateAfterRelease, err := service.RuntimeGate(ctx, RuntimeGateInput{WorkspaceID: launch.WorkspaceID, InvocationMode: "runtime_required"})
+	if err != nil {
+		t.Fatalf("RuntimeGate(after release) error = %v", err)
+	}
+	if gateAfterRelease.RuntimeState != "released" || gateAfterRelease.StorageState != "ready" {
+		t.Fatalf("release must stop runtime and retain storage: %+v", gateAfterRelease)
+	}
+	if gateAfterRelease.ConsumerProjection.ReleaseAction != "not_available" || gateAfterRelease.ConsumerProjection.StorageAction != "destroy_storage_explicit_intent" {
+		t.Fatalf("released runtime must only expose explicit storage destroy action: %+v", gateAfterRelease.ConsumerProjection)
+	}
+
+	storageReceipt, err := service.DestroyStorage(ctx, DestroyStorageInput{
+		WorkspaceID:       launch.WorkspaceID,
+		ResourceBindingID: launch.ResourceBindingID,
+		StorageBindingID:  gateAfterRelease.StorageBindingID,
+		IdempotencyKey:    "destroy-storage-local-product-rc",
+	})
+	if err != nil {
+		t.Fatalf("DestroyStorage() error = %v", err)
+	}
+	if !storageReceipt.Ok || !storageReceipt.StorageDestroyed || !storageReceipt.BillingStopped || storageReceipt.AuditEvent.Kind != cpd.AuditKindStorageDestroy {
+		t.Fatalf("storage destroy receipt must close storage billing/audit: %+v", storageReceipt)
+	}
+
+	gateAfterDestroy, err := service.RuntimeGate(ctx, RuntimeGateInput{WorkspaceID: launch.WorkspaceID, InvocationMode: "runtime_required"})
+	if err != nil {
+		t.Fatalf("RuntimeGate(after destroy) error = %v", err)
+	}
+	if gateAfterDestroy.StorageState != "destroyed" || gateAfterDestroy.Release.DestroyStorage != "completed" {
+		t.Fatalf("destroyed storage must be projected back to OPL-Webui consumer: %+v", gateAfterDestroy)
+	}
+
+	billingAfterDestroy, err := service.BillingSummary(ctx, WorkspaceInput{WorkspaceID: launch.WorkspaceID})
+	if err != nil {
+		t.Fatalf("BillingSummary(after destroy) error = %v", err)
+	}
+	assertLedgerHasSourceEvent(t, billingAfterDestroy.Ledger, cpd.AuditKindResourceRelease)
+	assertLedgerHasSourceEvent(t, billingAfterDestroy.Ledger, cpd.AuditKindStorageDestroy)
+}
+
 func TestServiceResourcesAreWorkspaceScopedAndReleaseFailsClosedWhenMissing(t *testing.T) {
 	ctx := context.Background()
 	service := NewService(memory.NewControlPlaneStore())

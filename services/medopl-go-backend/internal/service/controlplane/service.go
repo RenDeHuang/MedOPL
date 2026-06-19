@@ -570,6 +570,9 @@ func runtimeGateConsumerProjection(runtimeState string, storageState string, rel
 	if storageState == "ready" {
 		storageAction = "retain_storage_until_explicit_destroy"
 	}
+	if storageState == "ready" && !release.CanReleaseRuntime && release.StopBilling == cpd.BillingStatusStopped {
+		storageAction = "destroy_storage_explicit_intent"
+	}
 	if storageState == "destroyed" {
 		storageAction = "storage_destroy_completed"
 	}

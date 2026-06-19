@@ -38,6 +38,10 @@ func TestControlPlaneHandlersExposeExplicitStorageDestroyReceipt(t *testing.T) {
 	if gateAfterRelease["runtimeState"] != "released" || gateAfterRelease["storageState"] != "ready" {
 		t.Fatalf("release must retain storage: %+v", gateAfterRelease)
 	}
+	releaseConsumerProjection := gateAfterRelease["consumerProjection"].(map[string]any)
+	if releaseConsumerProjection["releaseAction"] != "not_available" || releaseConsumerProjection["storageAction"] != "destroy_storage_explicit_intent" {
+		t.Fatalf("release must project explicit storage destroy action: %+v", releaseConsumerProjection)
+	}
 	storageBindingID := gateAfterRelease["storageBindingId"].(string)
 
 	destroyResponse := postMap(t, router, "/api/v22/storage/destroy", map[string]any{
@@ -65,5 +69,9 @@ func TestControlPlaneHandlersExposeExplicitStorageDestroyReceipt(t *testing.T) {
 	release := gateAfterDestroy["release"].(map[string]any)
 	if release["destroyStorage"] != "completed" {
 		t.Fatalf("destroyed storage release projection = %+v", release)
+	}
+	destroyConsumerProjection := gateAfterDestroy["consumerProjection"].(map[string]any)
+	if destroyConsumerProjection["storageAction"] != "storage_destroy_completed" {
+		t.Fatalf("destroyed storage consumer projection = %+v", destroyConsumerProjection)
 	}
 }
