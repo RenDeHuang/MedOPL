@@ -113,7 +113,7 @@ Current docs / eval surface during migration：
 - `scripts/v22-verify.mjs`
 - `scripts/v22-test-classification.mjs`
 - `scripts/v22-workflow-gate.mjs` (stable CLI / public exports)
-- `scripts/workflow-gate/*.mjs` (workflow gate helper modules for git diff, policy, change package validation, command reference checks and report rendering)
+- `scripts/workflow-gate/*.mjs` (workflow gate helper modules for git diff, retired change-path policy, command reference checks and report rendering)
 - `tests/support/cloud-prework/*` only when a subscribed cloud-prework test or explicit authorization package names the support module.
 
 ## Forbidden Without Authorization

@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "owner": "MedOPL Data Plane",
+  "purpose": "workspace_file_and_artifact_contract",
+  "state": "active",
+  "authority_boundary": {
+    "surface": "customer_dedicated_workspace_data",
+    "storage_authority": "platform_managed_file_space",
+    "secret_material": "forbidden_in_contracts_and_browser_storage"
+  },
+  "consumers": [
+    "validate:active-platform",
+    "tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
+    "tests/governance/governance-test-v22-validate-active-platform.mjs"
+  ],
+  "consumer_tests": [
+    "node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
+    "npm run validate:active-platform -- --quick --json"
+  ],
+  "medopl_data_plane_contract": {
+    "owned_entities": [
+      "workspace_file",
+      "runtime_artifact",
+      "file_usage_counter",
+      "retention_policy",
+      "audit_ref"
+    ],
+    "allowed_refs": [
+      "file_id",
+      "object_ref",
+      "artifact_id",
+      "workspace_id"
+    ],
+    "required_controls": [
+      "tenant_scope",
+      "workspace_scope",
+      "quota_metering",
+      "audit_event",
+      "release_cleanup"
+    ],
+    "forbidden_fields": [
+      "raw_object_store_secret",
+      "provider_secret_key",
+      "public_bucket_token",
+      "unscoped_path"
+    ]
+  }
+}

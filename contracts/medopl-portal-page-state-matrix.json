@@ -1,0 +1,113 @@
+{
+  "schema_version": 1,
+  "owner": "MedOPL Portal",
+  "purpose": "portal_product_page_state_matrix",
+  "state": "active",
+  "authority_boundary": {
+    "surface": "customer_control_plane",
+    "allowed_view": "platform_managed_workspace_state",
+    "forbidden_view": "raw_cloud_resource_console"
+  },
+  "consumers": [
+    "validate:active-platform",
+    "tests/governance/governance-test-v22-validate-active-platform.mjs"
+  ],
+  "consumer_tests": [
+    "npm run validate:active-platform -- --quick --json"
+  ],
+  "medopl_portal_page_state_matrix": {
+    "global_states": [
+      "empty",
+      "provisioning",
+      "active",
+      "degraded",
+      "suspended",
+      "releasing",
+      "released"
+    ],
+    "pages": [
+      {
+        "id": "workspaces",
+        "owns": [
+          "workspace_lifecycle",
+          "plan",
+          "runtime_status"
+        ],
+        "states": [
+          "empty",
+          "provisioning",
+          "active",
+          "suspended",
+          "released"
+        ]
+      },
+      {
+        "id": "runtime",
+        "owns": [
+          "sessions",
+          "runs",
+          "task_concurrency"
+        ],
+        "states": [
+          "idle",
+          "running",
+          "failed",
+          "stopping"
+        ]
+      },
+      {
+        "id": "files",
+        "owns": [
+          "workspace_files",
+          "usage",
+          "retention"
+        ],
+        "states": [
+          "empty",
+          "ready",
+          "quota_limited"
+        ]
+      },
+      {
+        "id": "billing",
+        "owns": [
+          "balance",
+          "ledger",
+          "invoices"
+        ],
+        "states": [
+          "trial",
+          "funded",
+          "past_due",
+          "frozen"
+        ]
+      },
+      {
+        "id": "audit",
+        "owns": [
+          "events",
+          "actor_trace",
+          "export_receipt"
+        ],
+        "states": [
+          "available",
+          "exporting"
+        ]
+      },
+      {
+        "id": "release",
+        "owns": [
+          "release_request",
+          "resource_cleanup",
+          "final_receipt"
+        ],
+        "states": [
+          "eligible",
+          "pending",
+          "completed",
+          "blocked"
+        ]
+      }
+    ]
+  }
+}

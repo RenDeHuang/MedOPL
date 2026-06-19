@@ -38,7 +38,11 @@ assert.equal(payload.ok, true, "repo_hygiene_payload_ok");
 assert.equal(payload.contract, "v22_repo_hygiene", "repo_hygiene_contract_mismatch");
 assert(payload.checked.currentTruthLocalServiceClaimFiles.includes("docs/active/README.md"), "repo_hygiene_must_scan_active_truth_for_local_service_claims");
 assert(payload.checked.currentTruthLocalServiceClaimFiles.includes("docs/delivery/README.md"), "repo_hygiene_must_scan_delivery_truth_for_local_service_claims");
-assert(payload.checked.currentTruthLocalServiceClaimFiles.some((item) => item.startsWith("changes/active/")), "repo_hygiene_must_scan_active_changes_for_local_service_claims");
+assert.equal(
+  payload.checked.currentTruthLocalServiceClaimFiles.some((item) => item.startsWith("changes/")),
+  false,
+  "repo_hygiene_must_not_scan_retired_changes_for_current_truth",
+);
 
 const suite = manifest.suites.find((item) => item.id === "repo-hygiene");
 assert(suite, "repo_hygiene_suite_missing");

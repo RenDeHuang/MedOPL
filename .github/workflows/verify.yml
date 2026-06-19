@@ -39,6 +39,25 @@ jobs:
       - run: npm run validate:active-platform -- --quick --json
       - run: npm run test:fast
 
+  product-contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
+      - run: npm run validate:active-platform
+      - run: npm run test:product
+      - run: npm run test:frontend
+      - run: npm run test:backend
+      - run: npm run test:runtime
+      - run: npm run test:release
+      - run: npm run test:cloud
+      - run: npm run test:hygiene
+
   smoke:
     runs-on: ubuntu-latest
     steps:
@@ -79,18 +98,6 @@ jobs:
       - run: npm --prefix services/portal ci
       - run: npm run test:regression
 
-  change-package-gate:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
-      - run: npm run gate:change
-
   review-gate:
     runs-on: ubuntu-latest
     steps:
@@ -103,32 +110,4 @@ jobs:
       - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
       - run: npm run verify:review
       - run: npm run gate:review
-      - run: npm run closeout:check
       - run: npm run check:diff
-
-  docs-engineering-loop:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
-      - run: npm run verify:docs-engineering-loop
-      - run: npm run verify:product-loop
-      - run: npm run closeout:check
-
-  product-engineering-loop:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
-      - run: npm run verify:product-loop
-      - run: npm run test:lanes

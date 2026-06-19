@@ -19,8 +19,8 @@ Machine boundary: 本文是人读政策入口。稳定协作纪律仍由 `AGENTS
 
 ## Framework Landing Protocol
 
-- authoring branch 只做开发/清退：从最新 `origin/recovery/platform-v22-trunk` 开隔离分支，声明 change package、spec subscription、边界和 eval plan / 验收命令，按 step commit，最后交 landing gate。
-- 正式工程变更必须先有 `changes/active/<change-id>`，把 proposal、spec delta、design、tasks、eval plan、review 和 closeout 作为 repo-native artifact 管理。
+- authoring branch 只做开发/清退：从最新 `origin/recovery/platform-v22-trunk` 开隔离分支，声明当前 truth surface、spec subscription、边界和 eval plan / 验收命令，按 step commit，最后交 landing gate。
+- 正式工程变更不再以 `changes/active/<change-id>` 作为当前入口；当前 truth 归 `contracts/`、`docs/active/README.md`、root `specs/**`、tests/fixtures/manifest 和 `validate:active-platform`。
 - landing gate 执行 fresh review、ff-only merge、push、post-push verification 和 post-merge closeout；authoring branch 不自合入。
 - parallel lane 可以并行推进互不冲突的只读审计或清退分支，但合入前必须基于最新 trunk 重放并通过同一个 landing gate。
 - subagent 必须显式记录模型；允许模型为 `gpt-5.4`、`gpt-5.3-codex`、`gpt-5.4-mini`。
@@ -44,13 +44,13 @@ README files are human truth, not machine APIs. Tests and workflow gates may ver
 
 History 中的旧路线只能作为 provenance，不得反向恢复 active owner、default verify、compat alias 或 product mainline。
 
-## Repo-Native Change Package Policy
+## Product Authority Policy
 
-`changes/README.md` 定义 change package 生命周期。`docs/active/README.md` 只保 current truth；proposal、spec delta、design、tasks、eval plan、review 和 closeout 必须进入 `changes/active/<change-id>`，完成后进入 `changes/archive/YYYY-MM-DD-<change-id>`。
+`changes/` 已退役并应物理清退。`docs/active/README.md` 只保 current truth；proposal、spec delta、design、tasks、eval plan、review 和 closeout 的当前事实必须吸收到 `contracts/`、`docs/active/README.md`、root `specs/**`、tests/fixtures/manifest 和 `validate:active-platform`，历史只保 `docs/history/README.md` 摘要和 git history。
 
-Change package 是正式工程变更的准入面，不是第二份 current truth、不是 secret store、不是 production evidence。缺少 owner、授权边界、spec delta、eval plan、cannot-claim 或 archive target 时，必须 fail closed。
+正式工程变更的准入面是产品权威合同、owner boundary、fresh evidence 和 review gate，不是 7 文件过程包。缺少 owner、授权边界、spec delta、eval plan、cannot-claim 或 closeout history summary 时，必须 fail closed。
 
-聊天 prompt 可以启动工作，但不能替代 repo-native change package。后续 agent 必须能够只读 repo 就知道 open change、spec delta、eval plan、closeout 状态和 archive target。
+聊天 prompt 可以启动工作，但不能替代 repo truth。后续 agent 必须能够只读 repo 就知道 current truth、contract delta、eval plan、fresh evidence、closeout 摘要和下一 cursor。
 
 ## Framework Truth-Layer Policy
 
@@ -72,16 +72,16 @@ truth -> gap -> eval -> implementation/cleanup -> verify -> landing gate -> post
 正式工程变更的扩展生命周期为：
 
 ```text
-truth -> changes/active/<change-id> -> spec delta -> eval plan -> implementation/cleanup -> verify -> review -> changes/archive/<date-change-id> -> durable specs sync -> history closeout -> next cursor
+truth -> contracts/docs/active/specs/tests fixtures manifest/validate:active-platform -> implementation/cleanup -> verify -> review -> durable specs sync -> docs/history summary + git history -> next cursor
 ```
 
 稳定规则：
 
 - `docs/active/README.md` 是唯一人读 current truth；不得新建第二份 active truth 或阶段板。
-- `docs/specs/README.md` 是唯一合同/spec truth；不得恢复旧 contracts 目录。
+- `contracts/` 是机器可读产品合同入口，`docs/specs/README.md` 是人读 spec 索引；不得新增未被 source、tests、runner、CLI/API 或 runtime evidence 消费的空合同。
 - `docs/history/README.md` 是唯一 agent-run / landing gate / cleanup closeout 摘要入口；不得恢复旧 recovery 目录或旧 agent-run 文件树。
 - `tests/fixtures/v22/goal-current.json` 是唯一机器 cursor；`tests/fixtures/v22/agent-verify-manifest.json` 是唯一 verify manifest。
-- 新增 repo-local eval 必须进入 `tests/{health,smoke,contract,regression,future-authorized}`；不得新增 `scripts/smoke-test-*`。
+- 新增 repo-local eval 必须进入 `tests/{product,frontend,backend,runtime,release,cloud,hygiene,health,smoke,contracts,regression}` 中的明确 owner lane；不得新增 `scripts/smoke-test-*`。
 - `scripts/` 只保长期 v22 control-plane runner、classifier、workflow gate、repo hygiene、bloat、line budget、closeout 和 local service orchestration；cloud prework executable support must live outside `scripts/` and be exercised through registered tests or explicit authorization packages.
 - 已通过 landing gate 并 push 的 leaf 不能长期保持 `ready_for_landing_review`；必须执行 post-merge closeout。
 - current cursor 不能停在已完成 leaf，也不能把 `future-authorized`、真实云、deploy、live-test 或 release readiness 标成 cursor-eligible，除非用户单独授权。

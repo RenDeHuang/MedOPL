@@ -3,7 +3,7 @@ import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { TEST_LANE_SUITES } from "../../../scripts/v22-test-classification.mjs";
+import { TEST_LANE_SUITES, smokeEvalMetadataOf } from "../../../scripts/v22-test-classification.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../../..");
@@ -41,13 +41,7 @@ const files = {
   runtimeTruth: "docs/runtime/README.md",
   frameworkTruth: "docs/framework/README.md",
   policiesTruth: "docs/policies/README.md",
-  changeProposal: "changes/active/ai-runtime-contract/proposal.md",
-  changeSpecDelta: "changes/active/ai-runtime-contract/spec-delta.md",
-  changeDesign: "changes/active/ai-runtime-contract/design.md",
-  changeTasks: "changes/active/ai-runtime-contract/tasks.md",
-  changeEvalPlan: "changes/active/ai-runtime-contract/eval-plan.md",
-  changeReview: "changes/active/ai-runtime-contract/review.md",
-  changeCloseout: "changes/active/ai-runtime-contract/closeout.md",
+  runtimeContract: "contracts/medopl-runtime-bridge-contract.json",
   runtimeAgentRelay: "services/opl-runtime-bridge/src/runtime-agent-http-relay.mjs",
   acpRuntimeClient: "services/opl-runtime-bridge/src/opl-acp-runtime-client.mjs",
   runtimeRuns: "services/opl-runtime-bridge/src/runtime-bridge-runs.mjs",
@@ -63,6 +57,43 @@ for (const [label, repoPath] of Object.entries(files)) {
 const contents = Object.fromEntries(await Promise.all(
   Object.entries(files).map(async ([label, repoPath]) => [label, await readRepoFile(repoPath)]),
 ));
+
+const runtimeContract = JSON.parse(contents.runtimeContract);
+assert.equal(runtimeContract.state, "active", "runtime_contract_must_be_active");
+assert.equal(runtimeContract.owner, "MedOPL Runtime Bridge", "runtime_contract_owner_mismatch");
+assert.equal(runtimeContract.authority_boundary.surface, "platform_to_clean_opl_runtime", "runtime_contract_surface_mismatch");
+assertIncludesAll(runtimeContract.authority_boundary.allowed_integration.join("\n"), [
+  "gateway",
+  "runtime_bridge",
+  "runtime_agent",
+  "public_api_cli",
+], "runtime_contract_allowed_integration");
+assertIncludesAll(runtimeContract.authority_boundary.forbidden_integration.join("\n"), [
+  "upstream_internal_import",
+  "portal_code_inside_upstream",
+  "runtime_code_inside_upstream",
+], "runtime_contract_forbidden_integration");
+assertIncludesAll(runtimeContract.medopl_runtime_bridge_contract.owned_entities.join("\n"), [
+  "runtime_session",
+  "runtime_run",
+  "workspace_file_ref",
+  "provider_key_ref",
+  "audit_event",
+], "runtime_contract_owned_entities");
+assertIncludesAll(runtimeContract.medopl_runtime_bridge_contract.bridge_commands.join("\n"), [
+  "create_session",
+  "start_run",
+  "stop_run",
+  "sync_files",
+  "collect_result",
+  "release_session",
+], "runtime_contract_bridge_commands");
+assertIncludesAll(runtimeContract.medopl_runtime_bridge_contract.must_not_decide.join("\n"), [
+  "research_quality",
+  "medical_correctness",
+  "grant_quality",
+  "paper_quality",
+], "runtime_contract_must_not_decide");
 
 assertIncludesAll(contents.runtimeSpec, [
   "`runtime:ai-runtime-contract`",
@@ -214,37 +245,12 @@ assertExcludesAll(JSON.stringify(shapePayload), [
   "signedUrl",
 ], "mcp_shape_projection_must_not_leak_secret_or_storage_locator");
 
-assertIncludesAll(contents.testRegistry, [
-  selfFile,
-  "\"surface\":\"runtime-bridge\"",
-  "\"verifySuites\":[\"local-contract\"]",
-], "test_registry_ai_runtime_contract");
+const registryMetadata = smokeEvalMetadataOf(selfFile);
+assert.equal(registryMetadata.surface, "runtime-bridge", "test_registry_ai_runtime_surface_mismatch");
+assert.equal(registryMetadata.tier, "contract-local", "test_registry_ai_runtime_tier_mismatch");
+assert.equal(registryMetadata.category, "contract", "test_registry_ai_runtime_category_mismatch");
+assert(registryMetadata.contractRefs.includes("contracts/medopl-runtime-bridge-contract.json") || registryMetadata.contractRefs.includes("specs/runtime/spec.md"), "test_registry_ai_runtime_contract_ref_missing");
 assert(TEST_LANE_SUITES["local-contract"].includes(selfFile), "ai_runtime_contract_must_be_local_contract_registry_member");
-
-assertIncludesAll([
-  contents.changeProposal,
-  contents.changeSpecDelta,
-  contents.changeDesign,
-  contents.changeTasks,
-  contents.changeEvalPlan,
-  contents.changeReview,
-  contents.changeCloseout,
-].join("\n"), [
-  "ai-runtime-contract",
-  "Runtime",
-  "Golden Path Impact",
-  "preserves",
-  "AI Runtime Contract",
-  "MCP-compatible boundary",
-  "runtimeSession",
-  "runtimeTool",
-  "runtimeResource",
-  "runtimeRun",
-  "runtimeArtifact",
-  "runtimeApproval",
-  "No secret read unless explicitly authorized.",
-  "No real cloud, deploy, kubectl, build/push or live-test unless explicitly authorized.",
-], "change_package_ai_runtime_contract");
 
 console.log(JSON.stringify({
   ok: true,
@@ -254,7 +260,7 @@ console.log(JSON.stringify({
     "human_spec_index",
     "runtime_truth",
     "framework_truth",
-    "change_package",
+    "runtime_bridge_product_contract",
     "test_lane_registry",
     "runtime_source_boundary",
     "mcp_compatible_shape_projection",

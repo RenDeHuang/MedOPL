@@ -3,7 +3,7 @@ Owner: `MedOPL`
 Purpose: `current_state_control_surface`
 State: `active_current_truth`
 Machine boundary: 本文是唯一人读 current truth 文件。机器 cursor、last landed commit、branch override 和 verification bundle 以 `tests/fixtures/v22/goal-current.json` 与 `tests/fixtures/v22/agent-verify-manifest.json` 为准。稳定产品、runtime、framework、spec、evidence、policy、delivery、source 和 history truth 只看各自 README，不在本文展开第二份 truth。
-Open change detail belongs in `changes/active/<change-id>`. 本文只允许指向 open change，不承载 proposal、spec delta、design、tasks、eval plan、review 或 closeout 正文。
+当前 truth 归 `contracts/`、`docs/active/README.md`、root `specs/**`、tests/fixtures/manifest 和 `validate:active-platform`；`changes/` 已退役，不再是 open change 的当前入口。
 
 ## Ideal State
 
@@ -17,7 +17,7 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 | current cursor | `real-cloud-authorization-boundary` |
 | current blocker | MedOPL 当前 truth 是给 OPL 提供平台代管 runtime / 云计算资源 / 文件空间 / 计费审计的 SaaS 控制面，不承担 OPL 自身科研能力。当前阻塞不是继续修旧 Package D / CLB / production-launch runner，而是把真实云执行保持在 `real-cloud-authorization-boundary`：默认验证只能跑 readonly inventory、Package C dry-run plan 和 TKE bootstrap preflight 的本地/显式授权边界；任何 secret、provider call、Tencent mutation、kubectl、deploy、build/push、live-test、production ledger write 或 public access claim 都必须另开显式授权包。 |
 | next owner | `MedOPL Operations` for real-cloud authorization package; `MedOPL Platform` keeps pre-cloud local RC / Node retirement evidence as local guardrail |
-| open change package | `changes/active/real-cloud-authorization-boundary` |
+| product authority gate | `validate:active-platform` |
 | default verification | `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk` |
 | default first proof | golden path health from `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk` |
 | latest product closeout | `feat/v22-slide-09-precloud-readiness` / `97a4af3f7dd53e96f1e5cade8073b0e70fa6cd73` |
@@ -42,10 +42,12 @@ Current summary: Go control-plane MVP takeover、precloud deployable RC、local 
 | --- | --- |
 | golden path health | `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk` |
 | current bundle | `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk` |
-| index loop | `node tests/governance/governance-test-v22-current-state-index-loop.mjs` |
-| cleanup lifecycle | `node tests/governance/governance-test-v22-cleanup-lifecycle-system.mjs` |
-| product loop closeout | `node tests/governance/governance-test-v22-product-engineering-loop-index.mjs` |
-| framework truth layering | `node tests/governance/governance-test-v22-framework-truth-layering.mjs` |
+| product contract authority | `node tests/product/product-test-v22-medopl-contract-authority.mjs` |
+| Portal page-state matrix | `node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs` |
+| Go API contract | `node tests/backend/backend-test-v22-api-contract.mjs` |
+| Runtime Bridge boundary | `node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs` |
+| release boundary | `node tests/release/release-test-v22-boundary-contract.mjs` |
+| hygiene / retired changes boundary | `node tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs` |
 | Go local RC parity | `node tests/contracts/contract-test-v22-go-backend-service-surface.mjs`; `node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs` |
 | pre-cloud deployable RC | `node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs`; `go test ./...` from `services/medopl-go-backend`; `npm --prefix services/portal/frontend run typecheck` |
 | local SaaS backend RC | `node tests/governance/governance-test-v22-local-saas-backend-rc.mjs`; `npm run test:regression` |

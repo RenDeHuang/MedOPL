@@ -33,7 +33,6 @@ const fixedLocalServiceTruthClaimPattern = /(?:http:\/\/(?:127\.0\.0\.1|localhos
 const currentTruthLocalServiceClaimFiles = Object.freeze([
   "docs/active/README.md",
   "docs/delivery/README.md",
-  ...runGit(["ls-files", "--", "changes/active/**/*.md"]),
 ]);
 
 function runGit(args) {

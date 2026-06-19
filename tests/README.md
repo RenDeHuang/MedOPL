@@ -1,17 +1,23 @@
 # MedOPL v22 Tests
 
 Owner: `MedOPL`
-Purpose: `tests_taxonomy_truth`
+Purpose: `product_validation_taxonomy`
 State: `active`
 
-`tests/**/*.mjs` 是 v22 repo-local eval 文件族，不再混放在 `scripts/`。只有 `tests/health/*` 与 `tests/smoke/*` 的 golden path 可以被称为 smoke；其余属于 true contract、governance、suite wrapper、regression 或 future-authorized eval。
+`tests/**/*.mjs` 是 v22 repo-local eval 文件族，不再混放在 `scripts/`。测试围绕 active platform、product contracts、frontend/backend/runtime behavior、release boundary、cloud authorization、hygiene 和 golden path 组织；tests 是证据 consumer/gate，不是产品 truth owner。
 
 ## Taxonomy
 
-- `tests/health/`: 最小健康和仓库纪律 gate。
+- `tests/product/`: MedOPL product profile、commercial package、active platform 和 product contract eval。
+- `tests/frontend/`: Portal UI route/page-state、frontend API client 和 browser-facing behavior eval。
+- `tests/backend/`: Go control-plane API、route coverage、Postgres/data-plane 和 billing ledger eval。
+- `tests/runtime/`: Runtime Bridge、Gateway、clean upstream OPL boundary 和 artifact/session/run eval。
+- `tests/release/`: release boundary、claim boundary、evidence redaction 和 cannot-claim eval。
+- `tests/hygiene/`: repo hygiene、secret hygiene、line budget、registry 和 runner sanity gate。
+- `tests/health/`: 最小健康 gate，长期应收敛到 `tests/hygiene/` 或 thin suite。
 - `tests/smoke/`: 用户主线 golden smoke。
-- `tests/contracts/`: true contract / API / schema / runtime boundary eval；tests 是 gate/consumer，不是 truth owner。
-- `tests/governance/`: repo governance、docs lifecycle、workflow、secret hygiene 和 taxonomy gate。
+- `tests/contracts/`: true API/schema/runtime/data/release contract eval；tests 是 gate/consumer，不是 truth owner。
+- `tests/governance/`: retired governance tests 的临时迁移区，不再新增；保留项必须迁到 product/release/hygiene/backend/runtime/cloud。
 - `tests/suites/`: suite wrapper，只包装 active registered tests。
 - `tests/regression/portal/`: Portal regression eval。
 - `tests/regression/opl/`: OPL / Gateway regression eval。
@@ -20,23 +26,11 @@ State: `active`
 - `tests/cloud/`: future-authorized cloud boundary eval；只保留少数授权边界、dry-run/redaction 和 readonly diagnostics owner，不授权真实云，且不进入默认 `current` verify。
 - `tests/fixtures/v22/`: 机器 cursor 和 verify manifest。
 
-## Cleanup Lifecycle Gate Policy
+## Retired Governance Boundary
 
-`tests/governance/` 承载治理闭环 gate。生命周期 gate 必须验证：
+`changes/` 已退役，不再是测试、开发或 closeout 的默认入口。不得新增 `changes/active/**` 或 `changes/archive/**`，也不得让 default verify 依赖 change package lifecycle。旧治理测试只能作为临时迁移对象存在；长期约束必须下沉到 product contracts、release boundary、hygiene gate、source behavior 或 runner behavior。
 
-- docs taxonomy 不恢复旧 contracts 目录、旧 recovery 目录或 root stage docs。
-- `docs/active/README.md`、`docs/specs/README.md`、`docs/policies/README.md`、`docs/history/README.md` 和 `tests/README.md` 均声明 OPL-style cleanup lifecycle。
-- 已通过 landing gate 的 cleanup 记录不能长期停在 `ready_for_landing_review`。
-- 当前业务 cursor 仍由 `tests/fixtures/v22/goal-current.json` 表达。
-- verify manifest 必须把 cleanup lifecycle gate 纳入 `current` 和 `local-contract`。
-
-## Change Package Lifecycle
-
-`changes/README.md` 是 repo-native change lifecycle 入口。正式工程变更必须把 proposal、spec delta、design、tasks、eval plan、review 和 closeout 写入 `changes/active/<change-id>`；完成后归档到 `changes/archive/YYYY-MM-DD-<change-id>`，再同步 durable specs 和 `docs/history/README.md` 摘要。
-
-Change lifecycle gate 是 `node tests/governance/governance-test-v22-change-package-lifecycle.mjs`。该 gate 必须确认 `changes/` 存在、required files 和 file templates 被定义，并且 active change 不使用 template id。
-
-新增测试必须先选定 taxonomy 目录；不能为了便利新增 `scripts/smoke-test-*` 或把所有 repo-local eval 叫 smoke。
+新增测试必须先选定 product/frontend/backend/runtime/release/cloud/hygiene/support 目录；不能为了便利新增 `scripts/smoke-test-*` 或把所有 repo-local eval 叫 smoke。
 
 `docs/README.md` 必须把本文件作为 lifecycle taxonomy 的验证入口之一；docs 负责解释 truth，tests/fixtures/manifest 负责防止 truth、cursor、history 和 eval 漂移。
 
@@ -72,9 +66,9 @@ Test lifecycle cleanup gate 是 `node tests/governance/governance-test-v22-test-
 - suite-wrapper entries remain active registered tests;
 - the zero-compat active surface gate remains in health and local-contract.
 
-## Docs Gate Boundary
+## Product Gate Boundary
 
-Docs gates must verify structure, owner boundaries, file existence, retired-path protection, manifest consistency and closeout state. They must not assert prose wording as machine truth beyond stable owner/purpose/state/machine-boundary markers that protect taxonomy drift.
+Product gates must verify machine contracts, API/schema behavior, page-state matrix coverage, runtime/data/release boundary, retired-path protection, manifest consistency and evidence state. They must not assert prose wording as machine truth beyond stable owner/purpose/state/machine-boundary markers that protect taxonomy drift.
 
 README-only taxonomy 是结构约束，不代表文档文本本身是机器接口。需要稳定机器判断时，必须新增 fixture schema、test lane registry、source contract 或 runner behavior；不能让 Markdown 章节标题成为默认 API。
 
@@ -84,6 +78,7 @@ README-only taxonomy 是结构约束，不代表文档文本本身是机器接�
 
 ```bash
 node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk
+node scripts/v22-verify.mjs active-platform
 node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk
 node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk
 node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk

@@ -10,7 +10,7 @@
 - `AGENTS.md` 只约束 agent 工作方式、少量稳定身份边界和文档生命周期纪律，不承载项目知识细节、阶段完成判断、产品长叙事、分支 closeout 或临时执行明细。
 - `TASTE.md` 记录 MedOPL 维护开发 taste；做架构、代码、文档、测试、review、cleanup 和 closeout 判断时，先按 `TASTE.md` 校准长期偏好，再读取项目事实与更深层规范。
 - 项目知识默认从 `README*`、`docs/README.md` 和 docs reading order 读取。当前事实、产品视角、runtime、spec、policy、delivery、source、reference、history 分别归对应 `docs/*/README.md`。
-- 机器真相归 source、tests、test lane registry、fixtures、manifest、runner、CLI/API 行为和 runtime evidence；Markdown prose 不作为稳定机器接口。
+- 机器真相归 `contracts/`、source、tests、test lane registry、fixtures、manifest、runner、CLI/API 行为和 runtime evidence；Markdown prose 不作为稳定机器接口。
 - 不能根据聊天记录、旧路径、旧分散文档或本文件判断当前阶段。
 
 ## 开发原则
@@ -40,6 +40,7 @@
 - 每次修改都必须把代码清退、文档折叠和验证闭环作为同一交付面处理。新增或替代能力时，必须同时判断旧代码、旧测试、旧 fixture、旧 manifest entry、旧 docs baton 和旧 runner 是否应删除、折叠或 tombstone。
 - active baton 只能短期存在。完成后必须折叠为 compact history summary、closed machine cursor 和下一步 owner；不得把完整过程包、gap 流水、run id 细节或历史阶段板长期保留在 active truth、manifest 或 fixture 中。
 - 机器 cursor、verify manifest 和 test lane registry 必须保持小而当前。它们只能表达当前入口、当前授权边界、当前验证 bundle 和必要禁区；历史 gap map、完整执行日志和过期 leaf 必须迁出到 history/provenance 或 git history。
+- `changes/` 已退役，不再作为开发入口、阶段 truth、默认 closeout 或 archive 数据库。不得新增 `changes/active/**` 或 `changes/archive/**`；旧施工包的长期价值必须吸收到 `contracts/`、`docs/history/README.md`、release/evidence record、source 或 tests 后物理清退。
 
 ## 文档规则
 
@@ -52,7 +53,7 @@
 ## 变更与验证
 
 - 默认工程入口走 `package.json` scripts；底层 runner 可以是 repo-local scripts，但 agent 不应绕过 package scripts 和 test lane registry 发明私有入口。
-- 标准闭环是 `authoring branch -> landing gate -> post-merge closeout -> next cursor`；功能开发和清退分支都走同一闭环，具体记录字段以 docs lifecycle owner 和 machine fixtures 为准。
+- 标准闭环是 `authoring branch -> validation gate -> history/evidence closeout -> next cursor`；功能开发和清退分支都走同一闭环，具体记录字段以 contracts、docs lifecycle owner、machine fixtures、tests 和 fresh runtime/command evidence 为准。
 - 默认最小验证入口是 `npm run verify`。
 - 默认 test lane 入口是 `npm run test:health`、`npm run test:smoke`、`npm run test:contract` 和 `npm run test:regression`。
 - 默认 review gate 是 `npm run gate:review`。
@@ -60,7 +61,7 @@
 - 修改 machine-readable contracts、默认 docs 入口、文档骨架、产品边界、runtime 边界、test lane registry 或 source owner 时，必须同步更新相关 docs、tests、fixtures、manifest 和 runner。
 - 叙述性文档不作为测试断言对象；可以测试 schema、fixture、manifest、registry、CLI/API 行为、runner 行为、生成产物结构、路径存在性和 owner boundary。
 - 声称“完成、落地、闭环、彻底清退、商业化 ready”前必须执行 Plan Completion Audit：逐项列出功能行为、代码清退、文档折叠、测试/验证、旧入口退役、cannot-claim，状态只能是 `done`、`partial`、`not_started` 或 `blocked`。docs、contract、测试绿或 closeout 不能单独替代真实 runtime 行为、可执行证据、owner receipt 或用户要求的验收。
-- 每个工程变更的 review/closeout 必须说明清退结果：删除了什么、折叠了什么、保留了什么、为什么保留、下一次清退门是什么。没有清退说明的 closeout 不完整。
+- 每个工程变更的 review/closeout 必须说明清退结果：删除了什么、折叠了什么、保留了什么、为什么保留、下一次清退门是什么。closeout 只允许落在 `docs/history/README.md`、release/evidence record、machine cursor 或 commit message；不得再新增 7 文件 change package。
 - 默认不得执行 build/push、kubectl、deploy、live-test 或真实云资源操作。
 
 ## 并行开发与工作树

@@ -15,13 +15,6 @@ import {
   statusPorcelain,
 } from "./workflow-gate/git-diff.mjs";
 import {
-  activeChangePackages,
-  changePackageTypes,
-  renderStartTemplate,
-  reviewChangePackageRecords,
-  validateReviewChangePackage,
-} from "./workflow-gate/change-package.mjs";
-import {
   currentCommandReferenceSources,
   findMissingLocalCommandReferences as findMissingLocalCommandReferencesImpl,
   reviewRequiredCommands,
@@ -30,6 +23,7 @@ import {
   isChangePackagePath,
   isForbiddenPath,
   isFormalEngineeringChange,
+  isRetiredChangePathWrite,
   isSecretLikePath,
   isServicesPath,
   isSpecPath,
@@ -46,18 +40,9 @@ const repoRoot = path.resolve(__dirname, "..");
 // Source-level command reference retained for contract traceability:
 // node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk
 
-function changedArchivePackages(changedFiles) {
-  return unique(changedFiles
-    .map((file) => String(file || "").replaceAll("\\", "/").replace(/^\.\//, ""))
-    .map((file) => file.match(/^changes\/archive\/([^/]+)\//u)?.[1])
-    .filter(Boolean));
-}
-
 export {
-  changePackageTypes,
   currentCommandReferenceSources,
   reviewRequiredCommands,
-  renderStartTemplate,
 };
 
 export function findMissingLocalCommandReferences(options = {}) {
@@ -73,11 +58,11 @@ export function evaluateReview({
   changedStatuses = changedFileStatusesSince(repoRoot, base),
   addedLines = addedLinesSince(repoRoot, base),
   missingLocalCommandReferences = findMissingLocalCommandReferences(repoRoot),
-  activeChangePackageNames = activeChangePackages(repoRoot),
 } = {}) {
   const normalizedFiles = changedFiles.map((file) => String(file || "").replaceAll("\\", "/").replace(/^\.\//, "")).filter(Boolean);
   const authorizedCleanupDeletions = normalizedFiles.filter((file) =>
     isStrictMonolithCleanupAuthorizedDelete(file, changedStatuses.get(file), branchName));
+  const retiredChangePathWrites = normalizedFiles.filter((file) => isRetiredChangePathWrite(file, changedStatuses.get(file)));
   const forbiddenPaths = normalizedFiles.filter((file) =>
     isForbiddenPath(file)
     && !isStrictMonolithCleanupAuthorizedDelete(file, changedStatuses.get(file), branchName));
@@ -89,39 +74,19 @@ export function evaluateReview({
   const secretLikeAddedLines = secretLikeAddedLinesFrom(addedLines);
   const servicesChanged = normalizedFiles.some(isServicesPath);
   const specsChanged = normalizedFiles.some(isSpecPath);
+  const contractsChanged = normalizedFiles.some((file) => file.startsWith("contracts/"));
   const evalChanged = normalizedFiles.some(isV22EvalPath);
   const formalEngineeringChanged = normalizedFiles.some((file) => isFormalEngineeringChange(file) && !isChangePackagePath(file));
-  const reviewPackages = reviewChangePackageRecords(normalizedFiles, changedStatuses).map((record) => validateReviewChangePackage(repoRoot, record));
-  const validReviewPackages = reviewPackages.filter((record) => record.ok);
-  const activeChanges = [...activeChangePackageNames, ...changedArchivePackages(normalizedFiles)].sort();
   const findings = [];
 
+  if (retiredChangePathWrites.length > 0) findings.push({ code: "retired_changes_path_write", severity: "blocker", files: retiredChangePathWrites });
   if (forbiddenPaths.length > 0) findings.push({ code: "forbidden_path_changed", severity: "blocker", files: forbiddenPaths });
   if (secretLikePaths.length > 0) findings.push({ code: "secret_like_path_changed", severity: "blocker", files: secretLikePaths });
   if (secretLikeAddedLines.length > 0) findings.push({ code: "secret_like_added_line", severity: "blocker", matches: secretLikeAddedLines });
   if (missingLocalCommandReferences.length > 0) findings.push({ code: "missing_local_command_reference", severity: "blocker", references: missingLocalCommandReferences });
-  if (servicesChanged && !evalChanged && validReviewPackages.length === 0) findings.push({ code: "services_changed_without_eval_plan_update", severity: "blocker", message: "services/* 改动需要本次 change package 的 eval-plan.md 绑定本地 eval，或同时修改/新增已注册 eval。" });
-  if (specsChanged && !evalChanged && validReviewPackages.length === 0) findings.push({ code: "specs_changed_without_eval_plan_update", severity: "blocker", message: "docs/specs 改动需要本次 change package 的 spec-delta.md 与 eval-plan.md 绑定 target spec 和本地 eval，或同时修改/新增已注册 eval。" });
-  if (formalEngineeringChanged && reviewPackages.length === 0) findings.push({ code: "formal_change_without_active_change_package", severity: "blocker", message: "正式工程变更必须在本次 diff 中包含 repo-native changes/active/<change-id> 或 changes/archive/<date-change-id>，记录 proposal、spec delta、design、tasks、eval plan、review 和 closeout。" });
-  if (formalEngineeringChanged && reviewPackages.some((record) => !record.ok)) {
-    findings.push({
-      code: reviewPackages.some((record) => record.missingFiles.length === 0 && (!record.hasCompletionAudit || !record.hasCleanupResult))
-        ? "formal_change_package_missing_completion_audit"
-        : "formal_change_package_missing_spec_or_eval_plan",
-      severity: "blocker",
-      packages: reviewPackages.filter((record) => !record.ok).map((record) => ({
-        path: record.path,
-        missingFiles: record.missingFiles,
-        hasOwner: record.hasOwner,
-        hasAuthorizationBoundary: record.hasAuthorizationBoundary,
-        hasCompletionAudit: record.hasCompletionAudit,
-        hasCleanupResult: record.hasCleanupResult,
-        targetSpecs: record.targetSpecs,
-        evalCommands: record.evalCommands,
-      })),
-      message: "本次 formal change 的 change package 必须声明 owner、authorization boundary、target specs、本地 eval commands、Plan Completion Audit 和 Cleanup Result。",
-    });
-  }
+  if (servicesChanged && !evalChanged) findings.push({ code: "services_changed_without_registered_eval_update", severity: "blocker", message: "services/* 改动必须同时修改/新增已注册 eval；changes/ package 不再作为豁免。" });
+  if ((specsChanged || contractsChanged) && !evalChanged) findings.push({ code: "contracts_or_specs_changed_without_registered_eval_update", severity: "blocker", message: "specs/contracts 改动必须同时修改/新增已注册 eval 或 active-platform runner；changes/ package 不再作为豁免。" });
+  if (formalEngineeringChanged && !evalChanged && !contractsChanged) findings.push({ code: "formal_change_without_machine_evidence_update", severity: "blocker", message: "正式工程变更必须绑定 source/test/runner/fixture/contract evidence；不得新增 change package。" });
 
   const recommendedCommands = [...reviewRequiredCommands];
   if (normalizedFiles.some((file) => file.startsWith("services/portal/"))) recommendedCommands.push("npm --prefix services/portal run check");
@@ -138,13 +103,12 @@ export function evaluateReview({
     base,
     changedFiles: normalizedFiles,
     authorizedCleanupDeletions,
+    retiredChangePathWrites,
     forbiddenPaths,
     secretLikePaths,
     secretLikeAddedLines,
     missingLocalCommandReferences,
     missingLocalTestCommandReferences: missingLocalCommandReferences,
-    activeChanges,
-    reviewPackages,
     findings,
     recommendedCommands: unique(recommendedCommands),
   };
@@ -178,7 +142,11 @@ export function evaluateCheckpoint({
 
 async function main() {
   const { mode, options } = parseArgs(process.argv.slice(2));
-  if (mode === "start") return void process.stdout.write(renderStartTemplate({ type: options.type || "portal-ui" }));
+  if (mode === "start") {
+    process.stderr.write("workflow_start_template_retired: changes/ package templates are retired; start from contracts/, docs/active, specs, tests and validate:active-platform.\n");
+    process.exitCode = 2;
+    return;
+  }
   if (mode === "review") return void process.stdout.write(renderReviewReport(evaluateReview({ base: options.base || "recovery/platform-v22-trunk" })));
   if (mode === "checkpoint") return void process.stdout.write(renderCheckpointReport(evaluateCheckpoint()));
   printUsage();

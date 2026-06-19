@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { isSmokeClassifiedIn } from "../../scripts/v22-test-classification.mjs";
+import { smokeEvalMetadataOf } from "../../scripts/v22-test-classification.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
@@ -79,12 +79,18 @@ assertIncludesAll(contents.runtimeTruth, [
   "Real OPL canary 是验证链路，不是 production completion claim",
 ], "connection_runtime_truth");
 
-for (const scriptPath of [
-  "tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs",
-  "tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs",
-  "tests/contracts/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
-]) {
-  assert(isSmokeClassifiedIn(scriptPath), `mvp_suite_includes_connection_contract_missing:${scriptPath}`);
+const registryExpectations = [
+  ["tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs", "smoke-golden", "smoke"],
+  ["tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs", "local-regression", "regression"],
+  ["tests/contracts/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs", "contract-local", "contract"],
+];
+
+for (const [scriptPath, expectedTier, expectedCategory] of registryExpectations) {
+  const metadata = smokeEvalMetadataOf(scriptPath);
+  assert.equal(metadata.tier, expectedTier, `connection_eval_tier_mismatch:${scriptPath}`);
+  assert.equal(metadata.category, expectedCategory, `connection_eval_category_mismatch:${scriptPath}`);
+  assert.equal(metadata.authorization, "none", `connection_eval_must_not_require_authorization:${scriptPath}`);
+  assert(metadata.contractRefs.length > 0, `connection_eval_contract_refs_missing:${scriptPath}`);
 }
 
 assertIncludesAll(`${contents.goControlplaneService}\n${contents.goControlplaneDomain}`, [

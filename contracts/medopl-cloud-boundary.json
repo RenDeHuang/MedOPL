@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "owner": "MedOPL Cloud Boundary",
+  "purpose": "platform_cloud_authority_contract",
+  "state": "active",
+  "authority_boundary": {
+    "surface": "platform_provisioned_cloud_runtime",
+    "customer_role": "service_consumer",
+    "platform_role": "cloud_operator",
+    "default_real_cloud_execution": "forbidden_without_explicit_user_authorization"
+  },
+  "consumers": [
+    "validate:active-platform",
+    "tests/contracts/contract-test-v22-real-cloud-readiness-lane.mjs",
+    "tests/governance/governance-test-v22-real-cloud-authorization-boundary.mjs"
+  ],
+  "consumer_tests": [
+    "node tests/contracts/contract-test-v22-real-cloud-readiness-lane.mjs",
+    "node tests/governance/governance-test-v22-real-cloud-authorization-boundary.mjs"
+  ],
+  "medopl_cloud_boundary": {
+    "allowed_customer_concepts": [
+      "workspace_plan",
+      "runtime_capacity",
+      "file_quota",
+      "task_concurrency",
+      "billing_balance"
+    ],
+    "platform_owned_concepts": [
+      "provider_account",
+      "network",
+      "cluster",
+      "node_pool",
+      "object_storage",
+      "secret_binding",
+      "audit_sink"
+    ],
+    "forbidden_customer_surface": [
+      "raw_provider_console",
+      "kubeconfig_content",
+      "provider_secret_key",
+      "cloud_resource_order"
+    ],
+    "legacy_source_references": [
+      "contracts/cloud-authorization-boundary-contract.json",
+      "contracts/cloud-deploy-readiness-contract.json"
+    ]
+  }
+}

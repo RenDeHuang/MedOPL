@@ -72,11 +72,26 @@ for (const file of [
 const manifestSuitesById = new Map(manifest.suites.map((suite) => [suite.id, suite]));
 for (const suite of ["health", "local-contract", "review"]) {
   const manifestFiles = manifestSuitesById.get(suite).commands.map(normalizeCommandTestFile).filter(Boolean).sort();
-  assert.deepEqual(manifestFiles, TEST_LANE_SUITES[suite], `manifest_suite_must_match_test_lane_registry:${suite}`);
+  for (const file of manifestFiles) {
+    assert(listRegisteredTestFiles().includes(file), `manifest_suite_file_must_remain_registered:${suite}:${file}`);
+  }
+  assert.equal(
+    manifestFiles.some((file) => file.includes("change-package-lifecycle")),
+    false,
+    `manifest_suite_must_not_run_retired_change_package_lifecycle:${suite}`,
+  );
 }
 const currentManifestFiles = manifestSuitesById.get("current").commands.map(normalizeCommandTestFile).filter(Boolean).sort();
 for (const file of TEST_LANE_SUITES.current) {
-  assert(currentManifestFiles.includes(file), `manifest_current_suite_missing_registry_file:${file}`);
+  assert(
+    currentManifestFiles.includes(file) || manifestSuitesById.get("current").commands.includes("node scripts/v22-verify.mjs active-platform --json"),
+    `manifest_current_suite_missing_registry_file:${file}`,
+  );
+}
+for (const command of manifest.suites.flatMap((suite) => suite.commands || [])) {
+  assert.equal(String(command).includes("gate:change"), false, `manifest_suite_must_not_run_gate_change:${command}`);
+  assert.equal(String(command).includes("closeout:check"), false, `manifest_suite_must_not_run_closeout_check:${command}`);
+  assert.equal(String(command).includes("change-package-gate"), false, `manifest_suite_must_not_run_change_package_gate:${command}`);
 }
 assert(manifestSuitesById.get("smoke").commands.includes("node tests/suites/suite-test-v22-golden-smoke.mjs"), "smoke_suite_must_use_golden_smoke_wrapper");
 

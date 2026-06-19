@@ -24,7 +24,8 @@ Machine boundary: 本文是人读 spec 导航入口，不是稳定机器接口�
 ## Contract Subscription Discipline
 
 - 正式开发开始前必须声明本分支订阅的 domain specs、active truth、policy/delivery/source/runtime 边界和验收命令。
-- 新增或修改合同必须从 `changes/active/<change-id>/spec-delta.md` 开始，并在 closeout 时同步到对应 `specs/<domain>/spec.md`。
+- 当前 truth 归 `contracts/`、`docs/active/README.md`、root `specs/**`、tests/fixtures/manifest 和 `validate:active-platform`；`changes/` 已退役，不再承载新增或修改合同的当前入口。
+- 既有 spec 变更只允许通过 durable owner surfaces 吸收并同步到对应 `specs/<domain>/spec.md`，当前 active 事实不再回写到 `changes/active/<change-id>/spec-delta.md`。
 - 被 source/tests/runner 直接消费的大型机器 owner payload 可以放在 root `contracts/**`，但必须由 `tests/fixtures/v22/goal-current.json` 或其他 canonical surface 显式引用，且不能把人读 prose 复制成第二份机器接口。
 - 叙述性 docs 不作为测试断言对象；需要稳定判断时下沉到 schema、fixture、manifest、source contract、runner 行为或 CLI/API 输出。
 - `future-authorized` 只表示未来授权边界可见，不授权真实云、secret、deploy、kubectl、live-test 或外部 mutation。

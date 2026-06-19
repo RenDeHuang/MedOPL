@@ -56,6 +56,12 @@ export function isV22EvalPath(filePath) {
   return [
     /^tests\/smoke\/smoke-test-v22-.*\.mjs$/u,
     /^tests\/health\/health-check-v22-.*\.mjs$/u,
+    /^tests\/product\/product-test-v22-.*\.mjs$/u,
+    /^tests\/frontend\/frontend-test-v22-.*\.mjs$/u,
+    /^tests\/backend\/backend-test-v22-.*\.mjs$/u,
+    /^tests\/runtime\/runtime-test-v22-.*\.mjs$/u,
+    /^tests\/release\/release-test-v22-.*\.mjs$/u,
+    /^tests\/hygiene\/hygiene-test-v22-.*\.mjs$/u,
     /^tests\/contracts\/(?:.+\/)?contract-test-v22-.*\.mjs$/u,
     /^tests\/governance\/governance-test-v22-.*\.mjs$/u,
     /^tests\/suites\/suite-test-v22-.*\.mjs$/u,
@@ -74,9 +80,13 @@ export function isSpecPath(filePath) {
 
 export function isChangePackagePath(filePath) {
   const normalized = normalizePath(filePath);
-  return normalized.startsWith("changes/active/")
-    || normalized.startsWith("changes/archive/")
-    || normalized === "changes/README.md";
+  return normalized.startsWith("changes/");
+}
+
+export function isRetiredChangePathWrite(filePath, status) {
+  const normalized = normalizePath(filePath);
+  if (!normalized.startsWith("changes/")) return false;
+  return !String(status || "").startsWith("D");
 }
 
 export function isFormalEngineeringChange(filePath) {
@@ -85,9 +95,11 @@ export function isFormalEngineeringChange(filePath) {
     normalized.startsWith("services/")
     || normalized.startsWith("tests/")
     || normalized.startsWith("specs/")
+    || normalized.startsWith("contracts/")
     || normalized.startsWith("docs/active/")
     || normalized === "docs/specs/README.md"
     || normalized.startsWith("scripts/")
+    || normalized === "package.json"
   );
 }
 

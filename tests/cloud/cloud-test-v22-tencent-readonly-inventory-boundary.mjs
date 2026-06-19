@@ -26,19 +26,17 @@ function assertNotIncludesAny(source, phrases, label) {
 const [
   specsIndex,
   operationsSpec,
+  cloudContract,
   manifest,
   readonlyRunner,
   officialSdkSupport,
-  readonlySpecDelta,
-  readonlyEvalPlan,
 ] = await Promise.all([
   readFile("docs/specs/README.md", "utf8"),
   readFile("specs/operations/spec.md", "utf8"),
+  readFile("contracts/medopl-cloud-boundary.json", "utf8").then(JSON.parse),
   readFile(manifestPath, "utf8").then(JSON.parse),
   readFile("tests/support/cloud-prework/tencent-readonly-inventory-support.js", "utf8"),
   readFile("tests/support/cloud-prework/lib/tencent-readonly-inventory-official-sdk-support.js", "utf8"),
-  readFile("changes/archive/2026-06-10-tencent-readonly-inventory-live-runner/spec-delta.md", "utf8"),
-  readFile("changes/archive/2026-06-10-tencent-readonly-inventory-live-runner/eval-plan.md", "utf8"),
 ]);
 const realCloudReadinessFiles = commandFiles(manifest.suites.find((entry) => entry.id === "real-cloud-readiness")?.commands || []);
 
@@ -92,14 +90,20 @@ assertIncludesAll(officialSdkSupport, [
   "headObject",
 ], "readonly_inventory_official_sdk_boundary");
 
-assertIncludesAll(`${readonlySpecDelta}\n${readonlyEvalPlan}`, [
-  "official SDK",
-  "readonly",
-  "COS metadata",
-  "readsCosObjectBody=false",
-  "callsMutationApi=false",
-  "tests/support/cloud-prework/tencent-readonly-inventory-support.js",
-], "readonly_inventory_archive_boundary");
+assert.equal(
+  cloudContract.authority_boundary.default_real_cloud_execution,
+  "forbidden_without_explicit_user_authorization",
+  "cloud_contract_must_fail_closed_by_default",
+);
+assertIncludesAll(JSON.stringify(cloudContract.medopl_cloud_boundary), [
+  "provider_account",
+  "object_storage",
+  "secret_binding",
+  "audit_sink",
+  "raw_provider_console",
+  "kubeconfig_content",
+  "provider_secret_key",
+], "readonly_inventory_cloud_contract_boundary");
 
 assertNotIncludesAny(`${readonlyRunner}\n${officialSdkSupport}`, [
   "readFileSync(",

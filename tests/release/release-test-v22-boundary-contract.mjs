@@ -1,0 +1,27 @@
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(__dirname, "../..");
+
+async function readJson(repoPath) {
+  return JSON.parse(await readFile(path.join(repoRoot, repoPath), "utf8"));
+}
+
+const release = await readJson("contracts/medopl-release-boundary.json");
+const cloud = await readJson("contracts/medopl-cloud-boundary.json");
+const current = await readJson("tests/fixtures/v22/goal-current.json");
+
+assert.equal(release.authority_boundary.default_real_cloud_mutation, "forbidden_without_explicit_user_authorization", "release_must_fail_closed_for_real_cloud");
+assert.equal(cloud.authority_boundary.default_real_cloud_execution, "forbidden_without_explicit_user_authorization", "cloud_must_fail_closed_for_real_cloud");
+assert.equal(current.release_readiness_state?.blocked_before_risky_execution, true, "current_must_block_risky_execution");
+for (const forbidden of ["secret", "true-cloud-mutation", "build-push-kubectl", "deploy", "live-test"]) {
+  assert(current.current_leaf.forbidden_ops.includes(forbidden), `current_release_forbidden_op_missing:${forbidden}`);
+}
+
+console.log(JSON.stringify({
+  ok: true,
+  contract: "v22_release_boundary",
+}, null, 2));

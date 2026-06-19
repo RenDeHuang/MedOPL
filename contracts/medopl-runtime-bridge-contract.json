@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "owner": "MedOPL Runtime Bridge",
+  "purpose": "opl_runtime_bridge_product_contract",
+  "state": "active",
+  "authority_boundary": {
+    "surface": "platform_to_clean_opl_runtime",
+    "allowed_integration": [
+      "gateway",
+      "runtime_bridge",
+      "runtime_agent",
+      "public_api_cli"
+    ],
+    "forbidden_integration": [
+      "upstream_internal_import",
+      "portal_code_inside_upstream",
+      "runtime_code_inside_upstream"
+    ]
+  },
+  "consumers": [
+    "validate:active-platform",
+    "tests/contracts/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
+    "tests/contracts/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs"
+  ],
+  "consumer_tests": [
+    "node tests/contracts/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
+    "node tests/contracts/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs"
+  ],
+  "medopl_runtime_bridge_contract": {
+    "owned_entities": [
+      "runtime_session",
+      "runtime_run",
+      "workspace_file_ref",
+      "provider_key_ref",
+      "audit_event"
+    ],
+    "bridge_commands": [
+      "create_session",
+      "start_run",
+      "stop_run",
+      "sync_files",
+      "collect_result",
+      "release_session"
+    ],
+    "observable_states": [
+      "queued",
+      "running",
+      "succeeded",
+      "failed",
+      "stopping",
+      "released"
+    ],
+    "must_not_decide": [
+      "research_quality",
+      "medical_correctness",
+      "grant_quality",
+      "paper_quality"
+    ]
+  }
+}

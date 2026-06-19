@@ -24,16 +24,19 @@ MedOPL v22 的上位原则是 `managed OPL SaaS first`：平台把 clean upstrea
    one-person-lab 是 upstream reference，不是 MedOPL active source。平台通过 Gateway、Runtime Bridge / Runtime Agent、公开 API/CLI 和 anti-corruption mapping 接入；不要把 Portal、Gateway 或 Runtime 逻辑写回 upstream。
 
 3. **单一 truth 派生多入口**
-   当前事实、spec、policy、delivery、source、history 和 machine cursor 都有唯一 owner。CLI、package scripts、runner、test lane registry、fixture、manifest 和 docs 必须从同一事实链路派生，不能互相复制成第二真相。
+当前事实、product contract、API/runtime/data/release boundary、policy、delivery、source、history 和 machine cursor 都有唯一 owner。CLI、package scripts、runner、test lane registry、fixture、manifest 和 docs 必须从同一事实链路派生，不能互相复制成第二真相。
 
 4. **consumer-first contract**
-   machine-readable contract 必须被 source、tests、runner、CLI/API 或 runtime evidence 实际消费。没有消费者时先用 docs/specs 做人读 anchor，不为了模仿目录而新增空合同。
+machine-readable contract 必须被 source、tests、runner、CLI/API 或 runtime evidence 实际消费。产品权威默认沉到 `contracts/medopl-*.json`；没有消费者时先用 docs/specs 做人读 anchor，不为了模仿目录而新增空合同。
 
 5. **目标态快速落地**
    目标明确时，按目标架构快速、干净、可回退地推进。结构治理、命名收敛、接口收薄和明确迁移优先完成；长周期证据和真实外部系统验证作为单独授权尾项管理。
 
 6. **历史面及时退役**
-   当前 owner surface 已替代的旧模块、旧入口、alias、facade、wrapper、兼容测试和过时文档，在迁移条件成立后进入删除、归档或 tombstone。历史信息保留为 provenance，当前入口保持单一。
+当前 owner surface 已替代的旧模块、旧入口、alias、facade、wrapper、兼容测试和过时文档，在迁移条件成立后进入删除、归档或 tombstone。历史信息保留为 provenance，当前入口保持单一。
+
+6a. **change package 退役**
+   `changes/` 是治理恢复期脚手架，不是成熟产品仓库主结构。当前开发默认不新增 change package；过程事实折叠到 `contracts/`、`docs/history/README.md`、release/evidence record、tests 或 source 后物理清退。
 
 7. **薄入口与清晰结构**
    入口保持稳定而薄，复杂逻辑进入按职责命名的模块。源码、测试和文档表达真实边界；目录结构让维护者快速识别 source owner、spec anchor、test lane、runtime boundary、diagnostic 和 history。
@@ -45,4 +48,4 @@ MedOPL v22 的上位原则是 `managed OPL SaaS first`：平台把 clean upstrea
    文档服务导航、边界、状态、决策和交接。每份长期文档都有明确 owner、purpose、state 和 machine boundary；README、docs、AGENTS、TASTE、tests、fixtures、manifest、runner 各自持有单一职责。
 
 10. **最小充分验证**
-    验证强度与风险匹配。文档治理、结构收薄和命名清理采用最小充分验证；生产声明、权限边界、secret、真实云、artifact mutation、deploy、release 和 owner authority 使用更重的 receipt、gate 或人工授权证据。
+验证强度与风险匹配。产品合同、active platform、release boundary、secret hygiene、cloud authorization 和 golden path 是默认 gate 中心；生产声明、权限边界、secret、真实云、artifact mutation、deploy、release 和 owner authority 使用更重的 receipt、gate 或人工授权证据。

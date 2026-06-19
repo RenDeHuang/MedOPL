@@ -5,15 +5,67 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 
-export const SMOKE_CATEGORIES = Object.freeze(["default/local-contract", "portal-local", "opl-local", "real-cloud-readiness", "cloud-future-authorized"]);
-export const SMOKE_EVAL_TIERS = Object.freeze(["health-check", "smoke-golden", "contract-local", "local-regression", "real-cloud-readiness", "future-authorized"]);
+export const SMOKE_CATEGORIES = Object.freeze([
+  "product",
+  "frontend",
+  "backend",
+  "runtime",
+  "release",
+  "cloud",
+  "hygiene",
+  "smoke",
+  "contract",
+  "regression",
+  "retired-governance",
+  "suite-wrapper",
+]);
+export const SMOKE_EVAL_TIERS = Object.freeze([
+  "product-contract",
+  "frontend-contract",
+  "backend-contract",
+  "runtime-contract",
+  "release-boundary",
+  "cloud-boundary",
+  "hygiene-check",
+  "health-check",
+  "smoke-golden",
+  "contract-local",
+  "local-regression",
+  "real-cloud-readiness",
+  "future-authorized",
+  "retired-governance",
+]);
 export const SMOKE_EVAL_SURFACES = Object.freeze(["control-plane", "portal", "opl", "runtime-bridge", "cloud"]);
 export const SMOKE_EVAL_ENTRY_KINDS = Object.freeze(["atomic", "suite-wrapper", "gate-self-test"]);
 export const SMOKE_EVAL_AUTHORIZATIONS = Object.freeze(["none", "future-authorized"]);
-export const SMOKE_EVAL_LIFECYCLE_ROLES = Object.freeze(["current-owner", "negative-retirement-guard", "suite-wrapper", "real-cloud-readiness-boundary", "future-authorized-boundary"]);
-export const TEST_LANES = Object.freeze(["health", "smoke", "contract", "regression-portal", "regression-opl", "regression-runtime-bridge", "real-cloud-readiness", "future-authorized"]);
-export const DEFAULT_SMOKE_CATEGORIES = Object.freeze(["default/local-contract", "portal-local", "opl-local"]);
-export const HEALTH_CHECK_MAX = 10;
+export const SMOKE_EVAL_LIFECYCLE_ROLES = Object.freeze([
+  "current-owner",
+  "negative-retirement-guard",
+  "suite-wrapper",
+  "real-cloud-readiness-boundary",
+  "future-authorized-boundary",
+  "retired-governance",
+]);
+export const TEST_LANES = Object.freeze([
+  "product",
+  "frontend",
+  "backend",
+  "runtime",
+  "release",
+  "cloud",
+  "hygiene",
+  "health",
+  "smoke",
+  "contract",
+  "regression-portal",
+  "regression-opl",
+  "regression-runtime-bridge",
+  "real-cloud-readiness",
+  "future-authorized",
+  "retired-governance",
+]);
+export const DEFAULT_SMOKE_CATEGORIES = Object.freeze(["product", "frontend", "backend", "runtime", "release", "hygiene", "smoke", "suite-wrapper"]);
+export const HEALTH_CHECK_MAX = 12;
 export const SMOKE_GOLDEN_MIN = 8;
 export const SMOKE_GOLDEN_MAX = 15;
 export const TEST_LIFECYCLE_CLEANUP_POLICY = Object.freeze({
@@ -26,6 +78,14 @@ export const TEST_LIFECYCLE_CLEANUP_POLICY = Object.freeze({
   lifecycleRoleAuthority: "TEST_LANE_REGISTRY",
 });
 export const TEST_LANE_CONTRACT_REFS = Object.freeze([
+  "contracts/medopl-product-profile.json",
+  "contracts/medopl-portal-page-state-matrix.json",
+  "contracts/medopl-api-contract.json",
+  "contracts/medopl-runtime-bridge-contract.json",
+  "contracts/medopl-data-plane-contract.json",
+  "contracts/medopl-billing-ledger-contract.json",
+  "contracts/medopl-release-boundary.json",
+  "contracts/medopl-cloud-boundary.json",
   "specs/product/spec.md",
   "specs/runtime/spec.md",
   "specs/operations/spec.md",
@@ -35,112 +95,41 @@ export const TEST_LANE_CONTRACT_REFS = Object.freeze([
   "specs/policies/spec.md",
 ]);
 
-const HEALTH_FILES = Object.freeze(["tests/health/health-check-v22-contract-conflict-boundary.mjs","tests/health/health-check-v22-line-budget-gate.mjs","tests/health/health-check-v22-repo-bloat-audit-gate.mjs","tests/health/health-check-v22-repo-hygiene-gate.mjs","tests/health/health-check-v22-smoke-classification-gate.mjs","tests/health/health-check-v22-smoke-eval-boundary.mjs","tests/health/health-check-v22-workflow-command-reference-gate.mjs","tests/health/health-check-v22-workflow-gate.mjs","tests/health/health-check-v22-zero-compat-active-surface-gate.mjs"]);
-const SMOKE_FILES = Object.freeze(["tests/smoke/smoke-test-v22-managed-environment-open-flow.mjs","tests/smoke/smoke-test-v22-mvp-managed-opl-loop-contract.mjs","tests/smoke/smoke-test-v22-managed-user-loop-contract.mjs","tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs","tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs","tests/smoke/smoke-test-v22-pricing-plan-contract.mjs","tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs","tests/smoke/smoke-test-v22-resource-plan-contract.mjs","tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs","tests/smoke/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs","tests/smoke/smoke-test-v22-user-credit-provider-key-flow.mjs"]);
-const CONTRACT_FILES = Object.freeze(["tests/governance/governance-test-v22-landing-closeout-automation.mjs","tests/governance/governance-test-v22-agent-verify-entrypoint.mjs","tests/governance/governance-test-v22-ai-mvp-readiness-audit.mjs","tests/governance/governance-test-v22-backend-go-convergence-program.mjs","tests/governance/governance-test-v22-change-package-lifecycle.mjs","tests/governance/governance-test-v22-commercial-package-model.mjs","tests/contracts/contract-test-v22-node-portal-backend-physical-removal.mjs","tests/contracts/contract-test-v22-go-backend-service-surface.mjs","tests/governance/governance-test-v22-local-portal-opl-delivery-rc.mjs","tests/contracts/contract-test-v22-local-service-orchestration.mjs","tests/governance/governance-test-v22-local-saas-backend-rc.mjs","tests/contracts/contract-test-v22-precloud-deployable-rc.mjs","tests/governance/governance-test-v22-real-cloud-authorization-boundary.mjs","tests/contracts/contract-test-v22-real-cloud-readiness-lane.mjs","tests/governance/governance-test-v22-validate-active-platform.mjs","tests/governance/governance-test-v22-current-development-lines.mjs","tests/governance/governance-test-v22-current-state-index-loop.mjs","tests/governance/governance-test-v22-diff-scoped-sensitive-hygiene.mjs","tests/governance/governance-test-v22-docs-portfolio-lifecycle.mjs","tests/governance/governance-test-v22-framework-truth-layering.mjs","tests/governance/governance-test-v22-framework-workflow-convergence.mjs","tests/governance/governance-test-v22-product-engineering-loop-index.mjs","tests/governance/governance-test-v22-full-taxonomy-cleanup.mjs","tests/suites/suite-test-v22-golden-smoke.mjs","tests/suites/suite-test-v22-mvp.mjs","tests/governance/governance-test-v22-cleanup-lifecycle-system.mjs","tests/governance/governance-test-v22-review-secret-hygiene-gate.mjs","tests/governance/governance-test-v22-root-verify-workflow-entrypoints.mjs","tests/governance/governance-test-v22-spec-eval-traceability.mjs","tests/governance/governance-test-v22-test-lane-registry.mjs","tests/governance/governance-test-v22-test-lifecycle-cleanup.mjs","tests/contracts/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs","tests/contracts/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs"]);
-const REAL_CLOUD_READINESS_FILES = Object.freeze(["tests/cloud/cloud-test-v22-tencent-readonly-inventory-boundary.mjs"]);
-const FUTURE_AUTHORIZED_FILES = Object.freeze(["tests/cloud/cloud-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs","tests/cloud/cloud-test-v22-tke-bootstrap-preflight-local-gate.mjs"]);
-const REGRESSION_PORTAL_FILES = Object.freeze(["tests/regression/portal/regression-test-v22-admin-ops-console-boundary.mjs","tests/regression/portal/regression-test-v22-portal-contract-role-consolidation.mjs","tests/regression/portal/regression-test-v22-portal-dev-server-auth-proxy.mjs","tests/regression/portal/regression-test-v22-portal-figma-make-interaction-readiness.mjs","tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs","tests/regression/portal/regression-test-v22-portal-frontend-surface-composables.mjs","tests/regression/portal/regression-test-v22-portal-local-api-action-browser.mjs","tests/regression/portal/regression-test-v22-portal-mobile-table-usability.mjs","tests/regression/portal/regression-test-v22-portal-mobile-usability.mjs","tests/regression/portal/regression-test-v22-portal-package-surface-isolation.mjs","tests/regression/portal/regression-test-v22-portal-role-surface-boundaries.mjs","tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs","tests/regression/portal/regression-test-v22-portal-workbench-management-ui-browser.mjs","tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs","tests/regression/portal/regression-test-v22-saas-portal-opl-ops-surface-contract.mjs"]);
-const REGRESSION_OPL_FILES = Object.freeze(["tests/regression/opl/regression-test-v22-gateway-live-probe.mjs","tests/regression/opl/regression-test-v22-local-portal-gateway-runtime-rc.mjs","tests/regression/opl/regression-test-v22-opl-gateway-upstream-proxy-local.mjs","tests/regression/opl/regression-test-v22-opl-web-gateway-direct-entry.mjs","tests/regression/opl/regression-test-v22-opl-web-gateway-launch.mjs","tests/regression/opl/regression-test-v22-opl-web-gateway-native-login.mjs","tests/regression/opl/regression-test-v22-opl-web-gateway-websocket-reset-contract.mjs","tests/regression/opl/regression-test-v22-opl-work-message-file-run-flow.mjs","tests/regression/opl/regression-test-v22-real-opl-file-run-artifact-gates.mjs"]);
-const REGRESSION_RUNTIME_BRIDGE_FILES = Object.freeze(["tests/regression/runtime-bridge/regression-test-v22-opl-acp-runtime-bridge.mjs","tests/regression/runtime-bridge/regression-test-v22-opl-runtime-bridge-bootstrap.mjs","tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-launch-mutation-owner-isolation.mjs","tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-local-fake-probe.mjs","tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs"]);
-const REGISTRY_OVERRIDES = Object.freeze(new Map([
-  ["tests/governance/governance-test-v22-landing-closeout-automation.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
-  ["tests/governance/governance-test-v22-agent-verify-entrypoint.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract"]}],
-  ["tests/governance/governance-test-v22-ai-mvp-readiness-audit.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
-  ["tests/governance/governance-test-v22-backend-go-convergence-program.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","review"]}],
-  ["tests/governance/governance-test-v22-commercial-package-model.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","review"]}],
-  ["tests/contracts/contract-test-v22-node-portal-backend-physical-removal.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","review"]}],
-  ["tests/contracts/contract-test-v22-go-backend-service-surface.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["health","local-contract","review"]}],
-  ["tests/governance/governance-test-v22-local-portal-opl-delivery-rc.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
-  ["tests/contracts/contract-test-v22-local-service-orchestration.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
-  ["tests/governance/governance-test-v22-local-saas-backend-rc.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
-  ["tests/contracts/contract-test-v22-precloud-deployable-rc.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["health","local-contract","current","review"]}],
-  ["tests/governance/governance-test-v22-real-cloud-authorization-boundary.mjs", {"surface":"cloud","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
-  ["tests/contracts/contract-test-v22-real-cloud-readiness-lane.mjs", {"surface":"cloud","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["health","local-contract","current","review"]}],
-  ["tests/governance/governance-test-v22-validate-active-platform.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["health","local-contract","current","review"]}],
-  ["tests/governance/governance-test-v22-current-development-lines.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"atomic","verifySuites":["local-contract","current","review"]}],
-  ["tests/governance/governance-test-v22-current-state-index-loop.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
-  ["tests/governance/governance-test-v22-diff-scoped-sensitive-hygiene.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract"]}],
-  ["tests/governance/governance-test-v22-docs-portfolio-lifecycle.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
-  ["tests/governance/governance-test-v22-framework-truth-layering.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
-  ["tests/governance/governance-test-v22-framework-workflow-convergence.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
-  ["tests/governance/governance-test-v22-product-engineering-loop-index.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
-  ["tests/governance/governance-test-v22-full-taxonomy-cleanup.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract"]}],
-  ["tests/suites/suite-test-v22-golden-smoke.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"suite-wrapper","verifySuites":["local-contract"]}],
-  ["tests/suites/suite-test-v22-mvp.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"suite-wrapper","verifySuites":["local-contract"]}],
-  ["tests/governance/governance-test-v22-cleanup-lifecycle-system.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
-  ["tests/governance/governance-test-v22-change-package-lifecycle.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
-  ["tests/governance/governance-test-v22-review-secret-hygiene-gate.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
-  ["tests/governance/governance-test-v22-root-verify-workflow-entrypoints.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
-  ["tests/governance/governance-test-v22-spec-eval-traceability.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
-  ["tests/governance/governance-test-v22-test-lane-registry.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
-  ["tests/governance/governance-test-v22-test-lifecycle-cleanup.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract","current","review"]}],
-  ["tests/contracts/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs", {"surface":"runtime-bridge","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract"]}],
-  ["tests/contracts/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs", {"surface":"runtime-bridge","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["local-contract"]}],
-  ["tests/cloud/cloud-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs", {"surface":"cloud","category":"cloud-future-authorized","entryKind":"gate-self-test","verifySuites":["cloud-future-authorized"]}],
-  ["tests/cloud/cloud-test-v22-tke-bootstrap-preflight-local-gate.mjs", {"surface":"cloud","category":"cloud-future-authorized","entryKind":"gate-self-test","verifySuites":["cloud-future-authorized"]}],
-  ["tests/cloud/cloud-test-v22-tencent-readonly-inventory-boundary.mjs", {"surface":"cloud","category":"real-cloud-readiness","entryKind":"atomic","lifecycleRole":"real-cloud-readiness-boundary","verifySuites":["real-cloud-readiness"]}],
-  ["tests/health/health-check-v22-contract-conflict-boundary.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"atomic","verifySuites":["health","local-contract"]}],
-  ["tests/health/health-check-v22-line-budget-gate.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["health","local-contract"]}],
-  ["tests/health/health-check-v22-repo-bloat-audit-gate.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["health","local-contract"]}],
-  ["tests/health/health-check-v22-repo-hygiene-gate.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["health","local-contract"]}],
-  ["tests/health/health-check-v22-smoke-classification-gate.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["health","local-contract"]}],
-  ["tests/health/health-check-v22-smoke-eval-boundary.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"atomic","verifySuites":["health","local-contract"]}],
-  ["tests/health/health-check-v22-workflow-command-reference-gate.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["health","local-contract"]}],
-  ["tests/health/health-check-v22-workflow-gate.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["health","local-contract"]}],
-  ["tests/health/health-check-v22-zero-compat-active-surface-gate.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"gate-self-test","verifySuites":["health","local-contract"]}],
-  ["tests/regression/opl/regression-test-v22-gateway-live-probe.mjs", {"surface":"opl","category":"opl-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/regression/opl/regression-test-v22-local-portal-gateway-runtime-rc.mjs", {"surface":"opl","category":"opl-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/regression/opl/regression-test-v22-opl-gateway-upstream-proxy-local.mjs", {"surface":"opl","category":"opl-local","entryKind":"gate-self-test","verifySuites":["local-regression"]}],
-  ["tests/regression/opl/regression-test-v22-opl-web-gateway-direct-entry.mjs", {"surface":"opl","category":"opl-local","entryKind":"gate-self-test","verifySuites":["local-regression"]}],
-  ["tests/regression/opl/regression-test-v22-opl-web-gateway-launch.mjs", {"surface":"opl","category":"opl-local","entryKind":"gate-self-test","verifySuites":["local-regression"]}],
-  ["tests/regression/opl/regression-test-v22-opl-web-gateway-native-login.mjs", {"surface":"opl","category":"opl-local","entryKind":"gate-self-test","verifySuites":["local-regression"]}],
-  ["tests/regression/opl/regression-test-v22-opl-web-gateway-websocket-reset-contract.mjs", {"surface":"opl","category":"opl-local","entryKind":"gate-self-test","verifySuites":["local-regression"]}],
-  ["tests/regression/opl/regression-test-v22-opl-work-message-file-run-flow.mjs", {"surface":"opl","category":"opl-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/regression/opl/regression-test-v22-real-opl-file-run-artifact-gates.mjs", {"surface":"opl","category":"opl-local","entryKind":"gate-self-test","verifySuites":["local-regression"]}],
-  ["tests/regression/portal/regression-test-v22-admin-ops-console-boundary.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/regression/portal/regression-test-v22-portal-contract-role-consolidation.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/regression/portal/regression-test-v22-portal-dev-server-auth-proxy.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/regression/portal/regression-test-v22-portal-figma-make-interaction-readiness.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/regression/portal/regression-test-v22-portal-frontend-surface-composables.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/regression/portal/regression-test-v22-portal-local-api-action-browser.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/regression/portal/regression-test-v22-portal-mobile-table-usability.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/regression/portal/regression-test-v22-portal-mobile-usability.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/regression/portal/regression-test-v22-portal-package-surface-isolation.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/regression/portal/regression-test-v22-portal-role-surface-boundaries.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs", {"surface":"portal","category":"portal-local","entryKind":"suite-wrapper","verifySuites":["local-regression"]}],
-  ["tests/regression/portal/regression-test-v22-portal-workbench-management-ui-browser.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/regression/portal/regression-test-v22-saas-portal-opl-ops-surface-contract.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/regression/runtime-bridge/regression-test-v22-opl-acp-runtime-bridge.mjs", {"surface":"runtime-bridge","category":"opl-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/regression/runtime-bridge/regression-test-v22-opl-runtime-bridge-bootstrap.mjs", {"surface":"runtime-bridge","category":"opl-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-launch-mutation-owner-isolation.mjs", {"surface":"runtime-bridge","category":"opl-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-local-fake-probe.mjs", {"surface":"runtime-bridge","category":"opl-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs", {"surface":"runtime-bridge","category":"opl-local","entryKind":"atomic","verifySuites":["local-regression"]}],
-  ["tests/smoke/smoke-test-v22-managed-environment-open-flow.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["smoke"]}],
-  ["tests/smoke/smoke-test-v22-mvp-managed-opl-loop-contract.mjs", {"surface":"opl","category":"opl-local","entryKind":"atomic","verifySuites":["smoke"]}],
-  ["tests/smoke/smoke-test-v22-managed-user-loop-contract.mjs", {"surface":"control-plane","category":"default/local-contract","entryKind":"atomic","verifySuites":["smoke"]}],
-  ["tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["smoke"]}],
-  ["tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs", {"surface":"opl","category":"opl-local","entryKind":"atomic","verifySuites":["smoke"]}],
-  ["tests/smoke/smoke-test-v22-pricing-plan-contract.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["smoke"]}],
-  ["tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["smoke"]}],
-  ["tests/smoke/smoke-test-v22-resource-plan-contract.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["smoke"]}],
-  ["tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs", {"surface":"runtime-bridge","category":"opl-local","entryKind":"atomic","verifySuites":["smoke"]}],
-  ["tests/smoke/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs", {"surface":"portal","category":"portal-local","entryKind":"atomic","verifySuites":["smoke"]}],
-  ["tests/smoke/smoke-test-v22-user-credit-provider-key-flow.mjs", {"surface":"opl","category":"opl-local","entryKind":"atomic","verifySuites":["smoke"]}],
-]));
-
-const LANE_DEFS = Object.freeze([
-  { lane: "health", files: HEALTH_FILES, tier: "health-check", authorization: "none" },
-  { lane: "smoke", files: SMOKE_FILES, tier: "smoke-golden", authorization: "none" },
-  { lane: "contract", files: CONTRACT_FILES, tier: "contract-local", authorization: "none" },
-  { lane: "regression-portal", files: REGRESSION_PORTAL_FILES, tier: "local-regression", authorization: "none" },
-  { lane: "regression-opl", files: REGRESSION_OPL_FILES, tier: "local-regression", authorization: "none" },
-  { lane: "regression-runtime-bridge", files: REGRESSION_RUNTIME_BRIDGE_FILES, tier: "local-regression", authorization: "none" },
-  { lane: "real-cloud-readiness", files: REAL_CLOUD_READINESS_FILES, tier: "real-cloud-readiness", authorization: "none" },
-  { lane: "future-authorized", files: FUTURE_AUTHORIZED_FILES, tier: "future-authorized", authorization: "future-authorized" },
+const PRODUCT_FILES = Object.freeze(["tests/product/product-test-v22-medopl-contract-authority.mjs"]);
+const FRONTEND_FILES = Object.freeze(["tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"]);
+const BACKEND_FILES = Object.freeze(["tests/backend/backend-test-v22-api-contract.mjs"]);
+const RUNTIME_FILES = Object.freeze(["tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs"]);
+const RELEASE_FILES = Object.freeze(["tests/release/release-test-v22-boundary-contract.mjs"]);
+const HYGIENE_FILES = Object.freeze(["tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs"]);
+const HEALTH_FILES = Object.freeze([
+  "tests/health/health-check-v22-contract-conflict-boundary.mjs",
+  "tests/health/health-check-v22-line-budget-gate.mjs",
+  "tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
+  "tests/health/health-check-v22-repo-hygiene-gate.mjs",
+  "tests/health/health-check-v22-smoke-classification-gate.mjs",
+  "tests/health/health-check-v22-smoke-eval-boundary.mjs",
+  "tests/health/health-check-v22-workflow-command-reference-gate.mjs",
+  "tests/health/health-check-v22-zero-compat-active-surface-gate.mjs",
 ]);
+const SMOKE_FILES = Object.freeze([
+  "tests/smoke/smoke-test-v22-managed-environment-open-flow.mjs",
+  "tests/smoke/smoke-test-v22-mvp-managed-opl-loop-contract.mjs",
+  "tests/smoke/smoke-test-v22-managed-user-loop-contract.mjs",
+  "tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs",
+  "tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs",
+  "tests/smoke/smoke-test-v22-pricing-plan-contract.mjs",
+  "tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs",
+  "tests/smoke/smoke-test-v22-resource-plan-contract.mjs",
+  "tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
+  "tests/smoke/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs",
+  "tests/smoke/smoke-test-v22-user-credit-provider-key-flow.mjs",
+]);
+const CLOUD_READINESS_FILES = Object.freeze(["tests/cloud/cloud-test-v22-tencent-readonly-inventory-boundary.mjs"]);
+const CLOUD_FUTURE_FILES = Object.freeze([
+  "tests/cloud/cloud-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs",
+  "tests/cloud/cloud-test-v22-tke-bootstrap-preflight-local-gate.mjs",
+]);
+const CURRENT_GATE_FILES = Object.freeze(["tests/governance/governance-test-v22-validate-active-platform.mjs"]);
 
 function normalizeSmokeScriptPath(scriptPath) {
   return String(scriptPath || "").replaceAll("\\", "/").replace(/^\.\//u, "");
@@ -170,72 +159,138 @@ function idForFile(file) {
   return file.replace(/^tests\//u, "").replace(/\.mjs$/u, "").replace(/[^a-zA-Z0-9]+/gu, "-").replace(/^-|-$/gu, "");
 }
 
-function contractRefsForEntry({ surface, lifecycleRole }) {
-  const refs = new Set(["specs/framework/spec.md"]);
-  if (surface === "portal") {
-    refs.add("specs/product/spec.md");
-    refs.add("specs/source/spec.md");
-  } else if (surface === "opl" || surface === "runtime-bridge") {
-    refs.add("specs/runtime/spec.md");
-    refs.add("specs/source/spec.md");
-  } else if (surface === "cloud") {
-    refs.add("specs/operations/spec.md");
-    refs.add("specs/policies/spec.md");
-  } else {
-    refs.add("specs/product/spec.md");
-    refs.add("specs/runtime/spec.md");
-    refs.add("specs/source/spec.md");
-  }
-  if (lifecycleRole === "future-authorized-boundary" || lifecycleRole === "real-cloud-readiness-boundary") {
-    refs.add("specs/operations/spec.md");
-    refs.add("specs/policies/spec.md");
-  }
-  return Object.freeze([...refs].sort());
-}
-
-function entryForFile(file, laneDef) {
-  const override = REGISTRY_OVERRIDES.get(file) || {};
-  const entryKind = override.entryKind || "atomic";
-  const surface = override.surface || "control-plane";
-  const ownerSurface = override.ownerSurface || `surface:${surface}`;
-  const lifecycleRole = override.lifecycleRole || lifecycleRoleForEntry({ authorization: laneDef.authorization, entryKind });
-  const contracts = override.contracts || contractRefsForEntry({ surface, lifecycleRole });
-  return Object.freeze({
-    id: idForFile(file),
-    file,
-    lane: laneDef.lane,
-    category: override.category || "default/local-contract",
-    tier: laneDef.tier,
-    surface,
-    entryKind,
-    authorization: laneDef.authorization,
-    ownerSurface,
-    lifecycleRole,
-    contracts: Object.freeze([...contracts]),
-    verifySuites: Object.freeze(override.verifySuites || []),
-  });
-}
-
-function lifecycleRoleForEntry({ authorization, entryKind }) {
+function lifecycleRoleForEntry({ authorization, entryKind, lane }) {
+  if (lane === "retired-governance") return "retired-governance";
   if (authorization === "future-authorized") return "future-authorized-boundary";
+  if (lane === "real-cloud-readiness") return "real-cloud-readiness-boundary";
   if (entryKind === "suite-wrapper") return "suite-wrapper";
-  if (entryKind === "gate-self-test") return "negative-retirement-guard";
+  if (entryKind === "gate-self-test" || lane === "health" || lane === "hygiene") return "negative-retirement-guard";
   return "current-owner";
 }
 
-export const TEST_LANE_REGISTRY = Object.freeze(LANE_DEFS.flatMap((laneDef) => laneDef.files.map((file) => entryForFile(file, laneDef))));
+function surfaceForFile(file) {
+  if (file.includes("/portal/") || file.startsWith("tests/frontend/") || file.startsWith("tests/regression/portal/")) return "portal";
+  if (file.includes("/runtime-bridge/") || file.startsWith("tests/runtime/") || file.startsWith("tests/regression/runtime-bridge/")) return "runtime-bridge";
+  if (file.startsWith("tests/cloud/") || file.startsWith("tests/release/")) return "cloud";
+  if (file.startsWith("tests/regression/opl/") || file.includes("-opl-")) return "opl";
+  return "control-plane";
+}
+
+function contractsForFile(file, surface) {
+  const refs = new Set(["specs/framework/spec.md"]);
+  if (file.startsWith("tests/product/")) refs.add("contracts/medopl-product-profile.json");
+  if (file.startsWith("tests/frontend/")) refs.add("contracts/medopl-portal-page-state-matrix.json");
+  if (file.startsWith("tests/backend/")) refs.add("contracts/medopl-api-contract.json");
+  if (file.startsWith("tests/runtime/")) refs.add("contracts/medopl-runtime-bridge-contract.json");
+  if (file.startsWith("tests/release/")) refs.add("contracts/medopl-release-boundary.json");
+  if (file.startsWith("tests/cloud/")) refs.add("contracts/medopl-cloud-boundary.json");
+  if (file.startsWith("tests/hygiene/")) refs.add("contracts/medopl-product-profile.json");
+  if (surface === "portal") refs.add("specs/product/spec.md");
+  if (surface === "runtime-bridge" || surface === "opl") refs.add("specs/runtime/spec.md");
+  if (surface === "cloud") refs.add("specs/operations/spec.md");
+  refs.add("specs/source/spec.md");
+  return Object.freeze([...refs].sort());
+}
+
+function entryKindForFile(file) {
+  if (file.startsWith("tests/suites/")) return "suite-wrapper";
+  if (file.startsWith("tests/health/") || file.startsWith("tests/governance/") || file.startsWith("tests/hygiene/")) return "gate-self-test";
+  return "atomic";
+}
+
+function categoryForEntry({ file, lane }) {
+  if (file.startsWith("tests/suites/")) return "suite-wrapper";
+  if (lane === "real-cloud-readiness" || lane === "future-authorized") return "cloud";
+  if (lane.startsWith("regression-")) return "regression";
+  if (lane === "health") return "hygiene";
+  if (lane === "contract") return "contract";
+  return lane;
+}
+
+function baseEntry(file, lane, tier, verifySuites = []) {
+  const surface = surfaceForFile(file);
+  const entryKind = entryKindForFile(file);
+  const authorization = tier === "future-authorized" ? "future-authorized" : "none";
+  const lifecycleRole = lifecycleRoleForEntry({ authorization, entryKind, lane });
+  return Object.freeze({
+    id: idForFile(file),
+    file,
+    lane,
+    category: categoryForEntry({ file, lane }),
+    tier,
+    surface,
+    entryKind,
+    authorization,
+    ownerSurface: `surface:${surface}`,
+    lifecycleRole,
+    contracts: contractsForFile(file, surface),
+    verifySuites: Object.freeze([...verifySuites]),
+  });
+}
+
+function explicitEntries() {
+  return [
+    ...PRODUCT_FILES.map((file) => baseEntry(file, "product", "product-contract", ["product", "current", "local-contract", "review"])),
+    ...FRONTEND_FILES.map((file) => baseEntry(file, "frontend", "frontend-contract", ["frontend", "current", "local-contract", "review"])),
+    ...BACKEND_FILES.map((file) => baseEntry(file, "backend", "backend-contract", ["backend", "current", "local-contract", "review"])),
+    ...RUNTIME_FILES.map((file) => baseEntry(file, "runtime", "runtime-contract", ["runtime", "current", "local-contract", "review"])),
+    ...RELEASE_FILES.map((file) => baseEntry(file, "release", "release-boundary", ["release", "current", "local-contract", "review"])),
+    ...HYGIENE_FILES.map((file) => baseEntry(file, "hygiene", "hygiene-check", ["hygiene", "current", "health", "local-contract", "review"])),
+    ...HEALTH_FILES.map((file) => baseEntry(file, "health", "health-check", ["health", "hygiene", "local-contract"])),
+    ...SMOKE_FILES.map((file) => baseEntry(file, "smoke", "smoke-golden", ["smoke"])),
+    ...CLOUD_READINESS_FILES.map((file) => baseEntry(file, "real-cloud-readiness", "real-cloud-readiness", ["cloud", "real-cloud-readiness"])),
+    ...CLOUD_FUTURE_FILES.map((file) => baseEntry(file, "future-authorized", "future-authorized", ["cloud-future-authorized"])),
+    ...CURRENT_GATE_FILES.map((file) => baseEntry(file, "contract", "contract-local", ["health", "local-contract", "current", "review"])),
+    ...["tests/suites/suite-test-v22-golden-smoke.mjs", "tests/suites/suite-test-v22-mvp.mjs"]
+      .map((file) => baseEntry(file, "contract", "contract-local", file.includes("golden") ? ["golden-path", "smoke"] : ["local-contract"])),
+  ];
+}
+
+const explicitByFile = new Map(explicitEntries().map((entry) => [entry.file, entry]));
+
+function fallbackEntry(file) {
+  if (file.startsWith("tests/regression/portal/")) return baseEntry(file, "regression-portal", "local-regression", ["local-regression"]);
+  if (file.startsWith("tests/regression/opl/")) return baseEntry(file, "regression-opl", "local-regression", ["local-regression"]);
+  if (file.startsWith("tests/regression/runtime-bridge/")) return baseEntry(file, "regression-runtime-bridge", "local-regression", ["local-regression"]);
+  if (file === "tests/contracts/contract-test-v22-go-backend-service-surface.mjs") return baseEntry(file, "contract", "contract-local", ["health", "local-contract"]);
+  if (file === "tests/contracts/contract-test-v22-precloud-deployable-rc.mjs") return baseEntry(file, "contract", "contract-local", ["health", "local-contract"]);
+  if (file.startsWith("tests/contracts/")) return baseEntry(file, "contract", "contract-local", ["local-contract"]);
+  if (file.startsWith("tests/governance/")) return baseEntry(file, "retired-governance", "retired-governance", ["retired-governance"]);
+  if (file.startsWith("tests/local-rc/")) return baseEntry(file, "retired-governance", "retired-governance", ["retired-governance"]);
+  return baseEntry(file, "retired-governance", "retired-governance", ["retired-governance"]);
+}
+
+export const TEST_LANE_REGISTRY = Object.freeze(
+  listTestFiles()
+    .filter((file) => !file.startsWith("tests/fixtures/"))
+    .map((file) => explicitByFile.get(file) || fallbackEntry(file))
+    .sort((left, right) => left.file.localeCompare(right.file)),
+);
 
 const registryByFile = Object.freeze(new Map(TEST_LANE_REGISTRY.map((entry) => [entry.file, entry])));
 
+function suiteFiles(suiteId) {
+  return Object.freeze(TEST_LANE_REGISTRY.filter((entry) => entry.verifySuites.includes(suiteId)).map((entry) => entry.file).sort());
+}
+
 export const TEST_LANE_SUITES = Object.freeze({
-  current: Object.freeze(TEST_LANE_REGISTRY.filter((entry) => entry.verifySuites.includes("current")).map((entry) => entry.file).sort()),
-  health: Object.freeze(TEST_LANE_REGISTRY.filter((entry) => entry.verifySuites.includes("health")).map((entry) => entry.file).sort()),
-  smoke: Object.freeze(TEST_LANE_REGISTRY.filter((entry) => entry.verifySuites.includes("smoke")).map((entry) => entry.file).sort()),
-  "local-contract": Object.freeze(TEST_LANE_REGISTRY.filter((entry) => entry.verifySuites.includes("local-contract")).map((entry) => entry.file).sort()),
-  "local-regression": Object.freeze(TEST_LANE_REGISTRY.filter((entry) => entry.verifySuites.includes("local-regression")).map((entry) => entry.file).sort()),
-  "real-cloud-readiness": Object.freeze(TEST_LANE_REGISTRY.filter((entry) => entry.verifySuites.includes("real-cloud-readiness")).map((entry) => entry.file).sort()),
-  "cloud-future-authorized": Object.freeze(TEST_LANE_REGISTRY.filter((entry) => entry.verifySuites.includes("cloud-future-authorized")).map((entry) => entry.file).sort()),
-  review: Object.freeze(TEST_LANE_REGISTRY.filter((entry) => entry.verifySuites.includes("review")).map((entry) => entry.file).sort()),
+  current: suiteFiles("current"),
+  product: suiteFiles("product"),
+  frontend: suiteFiles("frontend"),
+  backend: suiteFiles("backend"),
+  runtime: suiteFiles("runtime"),
+  release: suiteFiles("release"),
+  cloud: suiteFiles("cloud"),
+  hygiene: suiteFiles("hygiene"),
+  health: suiteFiles("health"),
+  smoke: suiteFiles("smoke"),
+  "local-contract": suiteFiles("local-contract"),
+  "local-regression": suiteFiles("local-regression"),
+  "real-cloud-readiness": suiteFiles("real-cloud-readiness"),
+  "cloud-future-authorized": suiteFiles("cloud-future-authorized"),
+  review: suiteFiles("review"),
+  "golden-path": suiteFiles("golden-path"),
+  "retired-governance": suiteFiles("retired-governance"),
 });
 
 export const HEALTH_CHECK_SCRIPTS = Object.freeze(TEST_LANE_REGISTRY.filter((entry) => entry.tier === "health-check").map((entry) => entry.file).sort());

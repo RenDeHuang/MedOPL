@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "owner": "MedOPL Platform",
+  "purpose": "medopl_product_authority_profile",
+  "state": "active",
+  "authority_boundary": {
+    "model": "platform_provisioned_customer_dedicated_opl_saas",
+    "authority": "product_contract_authority",
+    "upstream_opl_role": "clean_research_runtime_reference",
+    "change_package_role": "not_product_authority"
+  },
+  "consumers": [
+    "validate:active-platform",
+    "tests/governance/governance-test-v22-validate-active-platform.mjs"
+  ],
+  "consumer_tests": [
+    "npm run validate:active-platform -- --quick --json"
+  ],
+  "medopl_product_profile": {
+    "primary_user_offer": [
+      "managed_opl_workspace",
+      "dedicated_runtime",
+      "file_space",
+      "task_concurrency",
+      "billing_account",
+      "audit_trace"
+    ],
+    "platform_responsibilities": [
+      "provision",
+      "isolate",
+      "operate_runtime",
+      "manage_files",
+      "meter_usage",
+      "bill",
+      "audit",
+      "release"
+    ],
+    "non_responsibilities": [
+      "opl_research_quality",
+      "medical_judgment_quality",
+      "grant_quality",
+      "paper_quality"
+    ],
+    "forbidden_product_framing": [
+      "user_owned_cloud_console",
+      "resource_order_governance_repo",
+      "upstream_opl_as_active_platform_source"
+    ]
+  }
+}

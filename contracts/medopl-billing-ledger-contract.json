@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "owner": "MedOPL Billing",
+  "purpose": "billing_ledger_product_contract",
+  "state": "active",
+  "authority_boundary": {
+    "surface": "platform_metering_and_customer_billing",
+    "ledger_authority": "medopl_control_plane",
+    "research_quality_billing": "forbidden"
+  },
+  "consumers": [
+    "validate:active-platform",
+    "tests/contracts/contract-test-v22-go-backend-service-surface.mjs",
+    "tests/governance/governance-test-v22-validate-active-platform.mjs"
+  ],
+  "consumer_tests": [
+    "node tests/contracts/contract-test-v22-go-backend-service-surface.mjs",
+    "npm run validate:active-platform -- --quick --json"
+  ],
+  "medopl_billing_ledger_contract": {
+    "metered_dimensions": [
+      "workspace_runtime_hours",
+      "task_concurrency",
+      "file_storage_gb_hours",
+      "egress_gb",
+      "managed_environment"
+    ],
+    "ledger_entry_types": [
+      "credit",
+      "debit",
+      "hold",
+      "release",
+      "refund",
+      "adjustment"
+    ],
+    "required_fields": [
+      "tenant_id",
+      "workspace_id",
+      "ledger_entry_id",
+      "entry_type",
+      "amount",
+      "currency",
+      "source_event_id",
+      "created_at"
+    ],
+    "must_fail_closed_on": [
+      "negative_balance_without_policy",
+      "missing_source_event",
+      "unscoped_usage",
+      "duplicate_ledger_entry"
+    ]
+  }
+}

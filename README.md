@@ -13,6 +13,7 @@ One Person Lab 是 clean upstream：不修改 upstream 源码，不 import upstr
 - `services/portal`: Portal SaaS 科研托管平台控制面，包括 API/domain 小闭包和 Portal UI MVP。
 - `services/opl-web-gateway`: OPL Web entry/preflight 与统一身份边界，当前不作为本分支修改范围。
 - `services/opl-runtime-bridge`: Runtime Bridge / Runtime Agent 合同边界，当前不作为本分支修改范围。
+- `contracts/medopl-*.json`: consumer-first 产品、Portal、API、runtime、data-plane、billing、release 和 cloud boundary 机器合同。
 - `docs/{active,product,runtime,specs,policies,delivery,source,public,references,history}/README.md`: OPL-style taxonomy truth。
 - `tests/**/*.mjs`: v22 repo-local eval。只有 health 和 golden 才叫 smoke。
 - `tests/fixtures/v22/{goal-current,agent-verify-manifest}.json`: 当前机器 cursor 和 verify manifest。
@@ -20,7 +21,7 @@ One Person Lab 是 clean upstream：不修改 upstream 源码，不 import upstr
 
 ## Contract Index
 
-v22 合同和长期边界只有一个入口：[docs/specs/README.md](./docs/specs/README.md)。
+v22 人读合同和长期边界入口是 [docs/specs/README.md](./docs/specs/README.md)；机器可消费产品权威入口是 [contracts/README.md](./contracts/README.md)。
 
 核心入口：
 
@@ -56,6 +57,7 @@ GitHub handoff 纪律见 [docs/policies/README.md](./docs/policies/README.md) �
 当前 v22 验证入口以 `scripts/v22-verify.mjs` 为准。`mvp` 只是 legacy local-regression alias，不再作为默认 smoke 或默认 agent 入口：
 
 ```bash
+node scripts/v22-verify.mjs active-platform
 node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk
 node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk
 node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk

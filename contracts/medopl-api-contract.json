@@ -1,0 +1,60 @@
+{
+  "schema_version": 1,
+  "owner": "MedOPL API",
+  "purpose": "customer_control_plane_api_contract",
+  "state": "active",
+  "authority_boundary": {
+    "surface": "portal_to_platform_api",
+    "auth_boundary": "backend_session_and_provider_key_ref_only",
+    "raw_secret_location": "backend_secret_boundary_only"
+  },
+  "consumers": [
+    "validate:active-platform",
+    "tests/contracts/contract-test-v22-go-backend-service-surface.mjs",
+    "tests/governance/governance-test-v22-validate-active-platform.mjs"
+  ],
+  "consumer_tests": [
+    "node tests/contracts/contract-test-v22-go-backend-service-surface.mjs",
+    "npm run validate:active-platform -- --quick --json"
+  ],
+  "medopl_api_contract": {
+    "api_groups": [
+      "account",
+      "workspace",
+      "runtime",
+      "files",
+      "billing",
+      "audit",
+      "release"
+    ],
+    "resource_identity": [
+      "tenant_id",
+      "workspace_id",
+      "runtime_id",
+      "session_id",
+      "run_id",
+      "file_id",
+      "ledger_entry_id"
+    ],
+    "must_return": [
+      "state",
+      "owner",
+      "created_at",
+      "updated_at"
+    ],
+    "must_fail_closed_on": [
+      "missing_tenant",
+      "unknown_workspace",
+      "raw_provider_key",
+      "unscoped_file_ref",
+      "ledger_mismatch"
+    ],
+    "forbidden_response_fields": [
+      "raw_provider_key",
+      "bearer_token",
+      "runtime_token",
+      "launch_token",
+      "kubeconfig_content"
+    ]
+  }
+}

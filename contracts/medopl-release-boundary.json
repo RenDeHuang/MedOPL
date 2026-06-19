@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "owner": "MedOPL Release",
+  "purpose": "workspace_release_boundary_contract",
+  "state": "active",
+  "authority_boundary": {
+    "surface": "customer_workspace_release_and_cleanup",
+    "default_real_cloud_mutation": "forbidden_without_explicit_user_authorization",
+    "release_claim_requires": "local_gate_and_owner_receipt"
+  },
+  "consumers": [
+    "validate:active-platform",
+    "tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
+    "tests/governance/governance-test-v22-real-cloud-authorization-boundary.mjs"
+  ],
+  "consumer_tests": [
+    "node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
+    "node tests/governance/governance-test-v22-real-cloud-authorization-boundary.mjs"
+  ],
+  "medopl_release_boundary": {
+    "release_phases": [
+      "request",
+      "freeze_runtime",
+      "settle_billing",
+      "export_files",
+      "cleanup_resources",
+      "write_receipt"
+    ],
+    "required_receipts": [
+      "runtime_stopped",
+      "file_export_status",
+      "billing_settlement",
+      "audit_export_ref",
+      "resource_cleanup_ref"
+    ],
+    "must_not_claim_without": [
+      "runtime_stop_receipt",
+      "billing_settlement_receipt",
+      "cleanup_receipt",
+      "audit_receipt"
+    ],
+    "legacy_source_references": [
+      "contracts/cloud-deploy-readiness-contract.json"
+    ]
+  }
+}

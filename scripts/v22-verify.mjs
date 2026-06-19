@@ -2,7 +2,7 @@
 
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,6 +12,16 @@ const repoRoot = path.resolve(__dirname, "..");
 
 const manifestPath = "tests/fixtures/v22/agent-verify-manifest.json";
 const currentStatePath = "tests/fixtures/v22/goal-current.json";
+const PRODUCT_AUTHORITY_CONTRACTS = Object.freeze([
+  "contracts/medopl-product-profile.json",
+  "contracts/medopl-portal-page-state-matrix.json",
+  "contracts/medopl-api-contract.json",
+  "contracts/medopl-runtime-bridge-contract.json",
+  "contracts/medopl-data-plane-contract.json",
+  "contracts/medopl-billing-ledger-contract.json",
+  "contracts/medopl-release-boundary.json",
+  "contracts/medopl-cloud-boundary.json",
+]);
 
 function parseArgs(argv) {
   const [mode, maybeTarget, ...tail] = argv;
@@ -55,6 +65,25 @@ function commandFiles(commands) {
 
 function assertPath(repoPath) {
   assert.equal(repoPathExists(repoPath), true, `required_path_missing:${repoPath}`);
+}
+
+function assertPathMissing(repoPath) {
+  assert.equal(repoPathExists(repoPath), false, `retired_path_must_not_exist:${repoPath}`);
+}
+
+function readRepoText(repoPath) {
+  return readFileSync(path.join(repoRoot, repoPath), "utf8");
+}
+
+function readRepoJsonSync(repoPath) {
+  return JSON.parse(readRepoText(repoPath));
+}
+
+function listTopLevelDirs(repoPath) {
+  return readdirSync(path.join(repoRoot, repoPath), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
 }
 
 function replaceBase(command, base) {
@@ -185,6 +214,12 @@ async function validateActivePlatform({ manifest, current }) {
   assert.equal(packageJson.scripts["validate:active-platform"], "node scripts/v22-verify.mjs active-platform", "active_platform_script_mismatch");
   assert.equal(packageJson.scripts.verify, "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk", "verify_script_mismatch");
   assert.equal(packageJson.scripts["gate:review"], "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk", "review_gate_script_mismatch");
+  assert.equal(packageJson.scripts["gate:change"], undefined, "gate_change_script_must_be_retired");
+  assert.equal(packageJson.scripts["closeout:check"], undefined, "closeout_check_script_must_be_retired");
+  assertPathMissing("changes");
+  assert.equal(manifest.change_lifecycle_policy, undefined, "manifest_change_lifecycle_policy_must_be_retired");
+  assert.equal(current.product_authority?.changes_retired, true, "current_fixture_must_mark_changes_retired");
+  assert.deepEqual(current.product_authority?.product_contracts, PRODUCT_AUTHORITY_CONTRACTS, "current_fixture_product_contracts_mismatch");
 
   const currentLeaf = manifest.leaves.find((leaf) => leaf.leaf_id === current.current_cursor);
   assert(currentLeaf, `manifest_current_leaf_missing:${current.current_cursor}`);
@@ -192,7 +227,7 @@ async function validateActivePlatform({ manifest, current }) {
   assert.equal(currentLeaf.gap_id, current.current_leaf.gap_id, "manifest_current_leaf_gap_mismatch");
 
   const manifestSuites = new Map(manifest.suites.map((suite) => [suite.id, suite]));
-  for (const suiteId of ["current", "health", "smoke", "local-contract", "local-regression", "real-cloud-readiness", "cloud-future-authorized", "review"]) {
+  for (const suiteId of ["current", "product", "frontend", "backend", "runtime", "release", "cloud", "hygiene", "health", "smoke", "local-contract", "local-regression", "real-cloud-readiness", "cloud-future-authorized", "review"]) {
     assert(manifestSuites.has(suiteId), `manifest_suite_missing:${suiteId}`);
   }
 
@@ -213,7 +248,15 @@ async function validateActivePlatform({ manifest, current }) {
     packageJson.scripts.verify,
     packageJson.scripts["gate:review"],
   ]).every((command) => command.startsWith("node scripts/") || command.startsWith("npm run ")), true, "active_platform_root_scripts_must_use_repo_entrypoints");
-
+  const allManifestCommands = [
+    ...manifest.suites.flatMap((suite) => suite.commands || []),
+    ...manifest.package_suites.flatMap((suite) => suite.commands || []),
+    ...manifest.leaves.flatMap((leaf) => leaf.verification_commands || []),
+  ].map(String);
+  for (const command of allManifestCommands) {
+    assert.equal(command.includes("change-package"), false, `verify_manifest_must_not_run_change_package:${command}`);
+    assert.equal(command.includes("changes/"), false, `verify_manifest_must_not_depend_on_changes:${command}`);
+  }
   for (const repoPath of [
     "docs/README.md",
     "docs/active/README.md",
@@ -235,21 +278,60 @@ async function validateActivePlatform({ manifest, current }) {
     "specs/policies/spec.md",
     "specs/source/spec.md",
     "contracts/README.md",
-    "contracts/cloud-deploy-readiness-contract.json",
-    "contracts/cloud-authorization-boundary-contract.json",
+    ...PRODUCT_AUTHORITY_CONTRACTS,
     "scripts/v22-verify.mjs",
     "scripts/v22-workflow-gate.mjs",
   ]) {
     assertPath(repoPath);
   }
 
-  const contractRefs = [
-    current.current_leaf.cloud_deploy_readiness_contract_ref,
-    current.current_leaf.cloud_authorization_boundary_contract_ref,
-    current.cloud_deploy_readiness_contract_ref?.contract_path,
-    current.cloud_authorization_boundary_contract_ref?.contract_path,
-  ].filter(Boolean);
-  for (const ref of contractRefs) assertPath(ref);
+  for (const contractPath of PRODUCT_AUTHORITY_CONTRACTS) {
+    const contract = readRepoJsonSync(contractPath);
+    assert.equal(contract.state, "active", `product_contract_must_be_active:${contractPath}`);
+    assert.equal(typeof contract.owner, "string", `product_contract_owner_missing:${contractPath}`);
+    assert.equal(typeof contract.purpose, "string", `product_contract_purpose_missing:${contractPath}`);
+    assert(contract.authority_boundary && typeof contract.authority_boundary === "object", `product_contract_authority_boundary_missing:${contractPath}`);
+    assert(
+      Array.isArray(contract.consumers) || Array.isArray(contract.consumer_tests),
+      `product_contract_must_declare_consumers:${contractPath}`,
+    );
+  }
+
+  const testDirs = new Set(listTopLevelDirs("tests"));
+  for (const dirName of ["product", "frontend", "backend", "runtime", "release", "cloud", "hygiene", "support"]) {
+    assert(testDirs.has(dirName), `tests_taxonomy_dir_missing:${dirName}`);
+  }
+
+  const pageMatrix = readRepoJsonSync("contracts/medopl-portal-page-state-matrix.json").medopl_portal_page_state_matrix;
+  const routesSource = readRepoText("services/portal/frontend/src/app/routes.tsx");
+  const routeMarkers = new Map([
+    ["workspaces", "Workspace"],
+    ["runtime", "RuntimeEnvironment"],
+    ["files", "Workspace"],
+    ["billing", "BillingAudit"],
+    ["audit", "BillingAudit"],
+    ["release", "Workspace"],
+  ]);
+  for (const page of pageMatrix.pages || []) {
+    assert(routesSource.includes(routeMarkers.get(page.id) || page.id), `portal_page_matrix_not_covered:${page.id}`);
+  }
+
+  const goRouteSurface = [
+    "services/medopl-go-backend/internal/server/router.go",
+    "services/medopl-go-backend/internal/server/handlers/controlplane.go",
+  ].map(readRepoText).join("\n");
+  for (const marker of ["/api/me", "/api/workspace", "/opl/runs", "/billing/summary", "/api/admin/audit", "/v22/managed-environment/release"]) {
+    assert(goRouteSurface.includes(marker), `go_api_route_missing_for_product_contract:${marker}`);
+  }
+
+  const runtimeRetiredRoutes = readRepoText("services/opl-runtime-bridge/src/runtime-bridge-retired-routes.mjs");
+  assert(runtimeRetiredRoutes.includes("billing ledger owner 是 Portal/Go control plane"), "runtime_bridge_must_not_own_billing_truth");
+
+  const releaseContract = readRepoJsonSync("contracts/medopl-release-boundary.json");
+  assert.equal(releaseContract.authority_boundary.default_real_cloud_mutation, "forbidden_without_explicit_user_authorization", "release_boundary_must_forbid_default_real_cloud_mutation");
+  assert(packageJson.scripts["verify:golden-path"], "golden_path_gate_script_missing");
+  assert(packageJson.scripts["test:cloud"], "cloud_boundary_gate_script_missing");
+  assert(packageJson.scripts["test:hygiene"], "secret_hygiene_gate_script_missing");
 
   return {
     ok: true,
@@ -259,6 +341,7 @@ async function validateActivePlatform({ manifest, current }) {
     manifestRunner: manifest.runner,
     currentCommandCount: leafCommands.length,
     forbiddenOps: manifest.global_forbidden_ops.length,
+    productContracts: PRODUCT_AUTHORITY_CONTRACTS.length,
   };
 }
 

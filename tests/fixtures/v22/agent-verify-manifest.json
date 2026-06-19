@@ -73,9 +73,7 @@
     "tests/governance/governance-test-v22-product-engineering-loop-index.mjs",
     "tests/governance/governance-test-v22-commercial-package-model.mjs",
     "tests/governance/governance-test-v22-test-lifecycle-cleanup.mjs",
-    "tests/governance/governance-test-v22-change-package-lifecycle.mjs",
     "tests/governance/governance-test-v22-spec-eval-traceability.mjs",
-    "changes/README.md",
     "specs/README.md",
     "specs/product/spec.md",
     "specs/runtime/spec.md",
@@ -83,7 +81,15 @@
     "specs/operations/spec.md",
     "specs/evidence/spec.md",
     "specs/policies/spec.md",
-    "specs/source/spec.md"
+    "specs/source/spec.md",
+    "contracts/medopl-product-profile.json",
+    "contracts/medopl-portal-page-state-matrix.json",
+    "contracts/medopl-api-contract.json",
+    "contracts/medopl-runtime-bridge-contract.json",
+    "contracts/medopl-data-plane-contract.json",
+    "contracts/medopl-billing-ledger-contract.json",
+    "contracts/medopl-release-boundary.json",
+    "contracts/medopl-cloud-boundary.json"
   ],
   "leaves": [
     {
@@ -101,13 +107,18 @@
         "docs/evidence/README.md",
         "docs/specs/README.md",
         "specs/operations/spec.md",
-        "changes/active/real-cloud-authorization-boundary"
+        "contracts/medopl-product-profile.json",
+        "contracts/medopl-portal-page-state-matrix.json",
+        "contracts/medopl-api-contract.json",
+        "contracts/medopl-runtime-bridge-contract.json",
+        "contracts/medopl-data-plane-contract.json",
+        "contracts/medopl-billing-ledger-contract.json",
+        "contracts/medopl-release-boundary.json",
+        "contracts/medopl-cloud-boundary.json"
       ],
       "allowed_files": [
         "docs/**/*.md",
         "specs/**/*.md",
-        "changes/active/real-cloud-authorization-boundary/**",
-        "changes/archive/**",
         "contracts/*.json",
         "contracts/README.md",
         "tests/**/*.mjs",
@@ -141,39 +152,14 @@
         "dependency-upgrade"
       ],
       "verification_commands": [
-        "node tests/suites/suite-test-v22-golden-smoke.mjs",
-        "node tests/governance/governance-test-v22-ai-mvp-readiness-audit.mjs",
-        "node tests/governance/governance-test-v22-change-package-lifecycle.mjs",
-        "node tests/governance/governance-test-v22-cleanup-lifecycle-system.mjs",
-        "node tests/governance/governance-test-v22-current-development-lines.mjs",
-        "node tests/governance/governance-test-v22-current-state-index-loop.mjs",
-        "node tests/governance/governance-test-v22-docs-portfolio-lifecycle.mjs",
-        "node tests/governance/governance-test-v22-framework-truth-layering.mjs",
-        "node tests/governance/governance-test-v22-framework-workflow-convergence.mjs",
-        "node tests/governance/governance-test-v22-landing-closeout-automation.mjs",
-        "node tests/governance/governance-test-v22-product-engineering-loop-index.mjs",
-        "node tests/governance/governance-test-v22-review-secret-hygiene-gate.mjs",
-        "node tests/governance/governance-test-v22-root-verify-workflow-entrypoints.mjs",
-        "node tests/governance/governance-test-v22-spec-eval-traceability.mjs",
-        "node tests/governance/governance-test-v22-test-lane-registry.mjs",
-        "node tests/governance/governance-test-v22-test-lifecycle-cleanup.mjs",
-        "node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
-        "node tests/governance/governance-test-v22-real-cloud-authorization-boundary.mjs",
-        "node tests/contracts/contract-test-v22-real-cloud-readiness-lane.mjs",
-        "node tests/governance/governance-test-v22-validate-active-platform.mjs",
-        "node tests/contracts/contract-test-v22-local-service-orchestration.mjs",
-        "node tests/governance/governance-test-v22-local-saas-backend-rc.mjs",
-        "node scripts/v22-local-services.mjs verify --dry-run --json",
-        "npm run verify:local-release-candidate -- --dry-run --json",
-        "node tests/suites/suite-test-v22-mvp.mjs",
-        "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-        "git diff --check -- docs specs changes tests scripts package.json",
-        "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
-        "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
-        "node tests/governance/governance-test-v22-local-portal-opl-delivery-rc.mjs"
+        "node scripts/v22-verify.mjs active-platform --json",
+        "node tests/product/product-test-v22-medopl-contract-authority.mjs",
+        "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+        "node tests/backend/backend-test-v22-api-contract.mjs",
+        "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs",
+        "node tests/release/release-test-v22-boundary-contract.mjs",
+        "node tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs",
+        "node tests/suites/suite-test-v22-golden-smoke.mjs"
       ],
       "truth_writeback_target": [
         "docs/active/README.md",
@@ -197,65 +183,38 @@
       "id": "current",
       "entrypoint": "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
       "commands": [
-        "node tests/suites/suite-test-v22-golden-smoke.mjs",
-        "node tests/governance/governance-test-v22-ai-mvp-readiness-audit.mjs",
-        "node tests/governance/governance-test-v22-change-package-lifecycle.mjs",
-        "node tests/governance/governance-test-v22-cleanup-lifecycle-system.mjs",
-        "node tests/governance/governance-test-v22-current-development-lines.mjs",
-        "node tests/governance/governance-test-v22-current-state-index-loop.mjs",
-        "node tests/governance/governance-test-v22-docs-portfolio-lifecycle.mjs",
-        "node tests/governance/governance-test-v22-framework-truth-layering.mjs",
-        "node tests/governance/governance-test-v22-framework-workflow-convergence.mjs",
-        "node tests/governance/governance-test-v22-landing-closeout-automation.mjs",
-        "node tests/governance/governance-test-v22-product-engineering-loop-index.mjs",
-        "node tests/governance/governance-test-v22-review-secret-hygiene-gate.mjs",
-        "node tests/governance/governance-test-v22-root-verify-workflow-entrypoints.mjs",
-        "node tests/governance/governance-test-v22-spec-eval-traceability.mjs",
-        "node tests/governance/governance-test-v22-test-lane-registry.mjs",
-        "node tests/governance/governance-test-v22-test-lifecycle-cleanup.mjs",
-        "node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
-        "node tests/governance/governance-test-v22-real-cloud-authorization-boundary.mjs",
-        "node tests/contracts/contract-test-v22-real-cloud-readiness-lane.mjs",
-        "node tests/governance/governance-test-v22-validate-active-platform.mjs",
-        "node tests/contracts/contract-test-v22-local-service-orchestration.mjs",
-        "node tests/governance/governance-test-v22-local-saas-backend-rc.mjs",
-        "node scripts/v22-local-services.mjs verify --dry-run --json",
-        "npm run verify:local-release-candidate -- --dry-run --json",
-        "node tests/suites/suite-test-v22-mvp.mjs",
-        "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-        "git diff --check -- docs specs changes tests scripts package.json",
-        "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
-        "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
-        "node tests/governance/governance-test-v22-local-portal-opl-delivery-rc.mjs"
+        "node scripts/v22-verify.mjs active-platform --json",
+        "node tests/product/product-test-v22-medopl-contract-authority.mjs",
+        "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+        "node tests/backend/backend-test-v22-api-contract.mjs",
+        "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs",
+        "node tests/release/release-test-v22-boundary-contract.mjs",
+        "node tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs",
+        "node tests/suites/suite-test-v22-golden-smoke.mjs"
       ]
     },
     {
       "id": "health",
       "commands": [
+        "node tests/contracts/contract-test-v22-go-backend-service-surface.mjs",
+        "node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
         "node tests/governance/governance-test-v22-validate-active-platform.mjs",
         "node tests/health/health-check-v22-contract-conflict-boundary.mjs",
-        "node tests/health/health-check-v22-repo-hygiene-gate.mjs",
         "node tests/health/health-check-v22-line-budget-gate.mjs",
         "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
+        "node tests/health/health-check-v22-repo-hygiene-gate.mjs",
         "node tests/health/health-check-v22-smoke-classification-gate.mjs",
         "node tests/health/health-check-v22-smoke-eval-boundary.mjs",
         "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
-        "node tests/health/health-check-v22-workflow-gate.mjs",
         "node tests/health/health-check-v22-zero-compat-active-surface-gate.mjs",
-        "node tests/contracts/contract-test-v22-go-backend-service-surface.mjs",
-        "node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
-        "node tests/contracts/contract-test-v22-real-cloud-readiness-lane.mjs"
+        "node tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs"
       ]
     },
     {
       "id": "golden-path",
       "entrypoint": "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk",
       "commands": [
-        "node tests/suites/suite-test-v22-golden-smoke.mjs",
-        "node tests/contracts/contract-test-v22-node-portal-backend-physical-removal.mjs"
+        "node tests/suites/suite-test-v22-golden-smoke.mjs"
       ]
     },
     {
@@ -265,106 +224,76 @@
       ]
     },
     {
-      "id": "mvp",
-      "commands": [
-        "node tests/suites/suite-test-v22-mvp.mjs"
-      ]
-    },
-    {
       "id": "local-contract",
       "commands": [
-        "node tests/health/health-check-v22-smoke-eval-boundary.mjs",
-        "node tests/health/health-check-v22-smoke-classification-gate.mjs",
-        "node tests/health/health-check-v22-contract-conflict-boundary.mjs",
-        "node tests/health/health-check-v22-repo-hygiene-gate.mjs",
-        "node tests/health/health-check-v22-line-budget-gate.mjs",
-        "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
-        "node tests/health/health-check-v22-workflow-gate.mjs",
-        "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
-        "node tests/health/health-check-v22-zero-compat-active-surface-gate.mjs",
-        "node tests/governance/governance-test-v22-landing-closeout-automation.mjs",
-        "node tests/governance/governance-test-v22-agent-verify-entrypoint.mjs",
-        "node tests/governance/governance-test-v22-ai-mvp-readiness-audit.mjs",
-        "node tests/governance/governance-test-v22-current-state-index-loop.mjs",
-        "node tests/governance/governance-test-v22-cleanup-lifecycle-system.mjs",
-        "node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
-        "node tests/governance/governance-test-v22-real-cloud-authorization-boundary.mjs",
-        "node tests/contracts/contract-test-v22-real-cloud-readiness-lane.mjs",
-        "node tests/governance/governance-test-v22-validate-active-platform.mjs",
-        "node tests/governance/governance-test-v22-product-engineering-loop-index.mjs",
-        "node tests/governance/governance-test-v22-docs-portfolio-lifecycle.mjs",
-        "node tests/governance/governance-test-v22-current-development-lines.mjs",
-        "node tests/governance/governance-test-v22-diff-scoped-sensitive-hygiene.mjs",
-        "node tests/governance/governance-test-v22-test-lane-registry.mjs",
-        "node tests/governance/governance-test-v22-test-lifecycle-cleanup.mjs",
-        "node tests/governance/governance-test-v22-review-secret-hygiene-gate.mjs",
-        "node tests/governance/governance-test-v22-root-verify-workflow-entrypoints.mjs",
-        "node tests/suites/suite-test-v22-mvp.mjs",
-        "node tests/suites/suite-test-v22-golden-smoke.mjs",
-        "node tests/governance/governance-test-v22-full-taxonomy-cleanup.mjs",
-        "node tests/contracts/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs",
-        "node tests/contracts/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
-        "node tests/governance/governance-test-v22-framework-truth-layering.mjs",
-        "node tests/governance/governance-test-v22-spec-eval-traceability.mjs",
-        "node tests/governance/governance-test-v22-change-package-lifecycle.mjs",
-        "node tests/governance/governance-test-v22-framework-workflow-convergence.mjs",
-        "node tests/governance/governance-test-v22-backend-go-convergence-program.mjs",
-        "node tests/contracts/contract-test-v22-node-portal-backend-physical-removal.mjs",
+        "node tests/backend/backend-test-v22-api-contract.mjs",
         "node tests/contracts/contract-test-v22-go-backend-service-surface.mjs",
         "node tests/contracts/contract-test-v22-local-service-orchestration.mjs",
-        "node tests/governance/governance-test-v22-local-saas-backend-rc.mjs",
-        "node tests/governance/governance-test-v22-commercial-package-model.mjs",
-        "node tests/governance/governance-test-v22-local-portal-opl-delivery-rc.mjs"
-      ]
-    },
-    {
-      "id": "backend-go-convergence",
-      "commands": [
-        "node tests/governance/governance-test-v22-backend-go-convergence-program.mjs",
         "node tests/contracts/contract-test-v22-node-portal-backend-physical-removal.mjs",
-        "node tests/contracts/contract-test-v22-go-backend-service-surface.mjs",
-        "node tests/governance/governance-test-v22-commercial-package-model.mjs",
-        "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
-        "node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs"
-      ]
-    },
-    {
-      "id": "product-engineering-loop",
-      "commands": [
-        "node tests/governance/governance-test-v22-product-engineering-loop-index.mjs"
-      ]
-    },
-    {
-      "id": "history-closeout",
-      "commands": [
-        "node tests/governance/governance-test-v22-landing-closeout-automation.mjs",
-        "node tests/governance/governance-test-v22-current-state-index-loop.mjs"
+        "node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
+        "node tests/contracts/contract-test-v22-real-cloud-readiness-lane.mjs",
+        "node tests/contracts/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs",
+        "node tests/contracts/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
+        "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+        "node tests/governance/governance-test-v22-validate-active-platform.mjs",
+        "node tests/health/health-check-v22-contract-conflict-boundary.mjs",
+        "node tests/health/health-check-v22-line-budget-gate.mjs",
+        "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
+        "node tests/health/health-check-v22-repo-hygiene-gate.mjs",
+        "node tests/health/health-check-v22-smoke-classification-gate.mjs",
+        "node tests/health/health-check-v22-smoke-eval-boundary.mjs",
+        "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
+        "node tests/health/health-check-v22-zero-compat-active-surface-gate.mjs",
+        "node tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs",
+        "node tests/product/product-test-v22-medopl-contract-authority.mjs",
+        "node tests/release/release-test-v22-boundary-contract.mjs",
+        "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs",
+        "node tests/suites/suite-test-v22-mvp.mjs"
       ]
     },
     {
       "id": "repo-hygiene",
       "commands": [
         "node scripts/v22-repo-hygiene.mjs",
-        "node scripts/v22-line-budget.mjs",
         "node scripts/v22-repo-bloat-audit.mjs --json",
+        "node scripts/v22-line-budget.mjs",
         "node tests/health/health-check-v22-repo-hygiene-gate.mjs",
-        "node tests/health/health-check-v22-line-budget-gate.mjs",
-        "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs"
+        "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
+        "node tests/health/health-check-v22-line-budget-gate.mjs"
       ]
     },
     {
       "id": "local-regression",
       "commands": [
-        "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
-        "node tests/regression/portal/regression-test-v22-portal-figma-make-interaction-readiness.mjs",
-        "node tests/regression/portal/regression-test-v22-portal-local-api-action-browser.mjs",
         "node tests/regression/opl/regression-test-v22-gateway-live-probe.mjs",
         "node tests/regression/opl/regression-test-v22-local-portal-gateway-runtime-rc.mjs",
+        "node tests/regression/opl/regression-test-v22-opl-gateway-upstream-proxy-local.mjs",
+        "node tests/regression/opl/regression-test-v22-opl-web-gateway-direct-entry.mjs",
         "node tests/regression/opl/regression-test-v22-opl-web-gateway-launch.mjs",
-        "node tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-local-fake-probe.mjs",
+        "node tests/regression/opl/regression-test-v22-opl-web-gateway-native-login.mjs",
+        "node tests/regression/opl/regression-test-v22-opl-web-gateway-websocket-reset-contract.mjs",
+        "node tests/regression/opl/regression-test-v22-opl-work-message-file-run-flow.mjs",
+        "node tests/regression/opl/regression-test-v22-real-opl-file-run-artifact-gates.mjs",
+        "node tests/regression/portal/regression-test-v22-admin-ops-console-boundary.mjs",
+        "node tests/regression/portal/regression-test-v22-portal-contract-role-consolidation.mjs",
+        "node tests/regression/portal/regression-test-v22-portal-dev-server-auth-proxy.mjs",
+        "node tests/regression/portal/regression-test-v22-portal-figma-make-interaction-readiness.mjs",
+        "node tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
+        "node tests/regression/portal/regression-test-v22-portal-frontend-surface-composables.mjs",
+        "node tests/regression/portal/regression-test-v22-portal-local-api-action-browser.mjs",
+        "node tests/regression/portal/regression-test-v22-portal-mobile-table-usability.mjs",
+        "node tests/regression/portal/regression-test-v22-portal-mobile-usability.mjs",
+        "node tests/regression/portal/regression-test-v22-portal-package-surface-isolation.mjs",
+        "node tests/regression/portal/regression-test-v22-portal-role-surface-boundaries.mjs",
+        "node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs",
+        "node tests/regression/portal/regression-test-v22-portal-workbench-management-ui-browser.mjs",
+        "node tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs",
+        "node tests/regression/portal/regression-test-v22-saas-portal-opl-ops-surface-contract.mjs",
+        "node tests/regression/runtime-bridge/regression-test-v22-opl-acp-runtime-bridge.mjs",
+        "node tests/regression/runtime-bridge/regression-test-v22-opl-runtime-bridge-bootstrap.mjs",
         "node tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-launch-mutation-owner-isolation.mjs",
-        "node tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs",
-        "node tests/contracts/contract-test-v22-node-portal-backend-physical-removal.mjs"
+        "node tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-local-fake-probe.mjs",
+        "node tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs"
       ]
     },
     {
@@ -384,32 +313,63 @@
       "id": "review",
       "commands": [
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-        "node tests/governance/governance-test-v22-landing-closeout-automation.mjs",
-        "node tests/governance/governance-test-v22-ai-mvp-readiness-audit.mjs",
-        "node tests/governance/governance-test-v22-current-development-lines.mjs",
-        "node tests/governance/governance-test-v22-current-state-index-loop.mjs",
-        "node tests/governance/governance-test-v22-docs-portfolio-lifecycle.mjs",
-        "node tests/governance/governance-test-v22-cleanup-lifecycle-system.mjs",
-        "node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
-        "node tests/governance/governance-test-v22-real-cloud-authorization-boundary.mjs",
-        "node tests/contracts/contract-test-v22-real-cloud-readiness-lane.mjs",
+        "node tests/backend/backend-test-v22-api-contract.mjs",
+        "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
         "node tests/governance/governance-test-v22-validate-active-platform.mjs",
-        "node tests/governance/governance-test-v22-product-engineering-loop-index.mjs",
-        "node tests/governance/governance-test-v22-test-lane-registry.mjs",
-        "node tests/governance/governance-test-v22-test-lifecycle-cleanup.mjs",
-        "node tests/governance/governance-test-v22-review-secret-hygiene-gate.mjs",
-        "node tests/governance/governance-test-v22-root-verify-workflow-entrypoints.mjs",
-        "node tests/governance/governance-test-v22-framework-truth-layering.mjs",
-        "node tests/governance/governance-test-v22-spec-eval-traceability.mjs",
-        "node tests/governance/governance-test-v22-change-package-lifecycle.mjs",
-        "node tests/governance/governance-test-v22-framework-workflow-convergence.mjs",
-        "node tests/governance/governance-test-v22-backend-go-convergence-program.mjs",
-        "node tests/contracts/contract-test-v22-node-portal-backend-physical-removal.mjs",
-        "node tests/contracts/contract-test-v22-go-backend-service-surface.mjs",
-        "node tests/contracts/contract-test-v22-local-service-orchestration.mjs",
-        "node tests/governance/governance-test-v22-local-saas-backend-rc.mjs",
-        "node tests/governance/governance-test-v22-commercial-package-model.mjs",
-        "node tests/governance/governance-test-v22-local-portal-opl-delivery-rc.mjs"
+        "node tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs",
+        "node tests/product/product-test-v22-medopl-contract-authority.mjs",
+        "node tests/release/release-test-v22-boundary-contract.mjs",
+        "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs"
+      ]
+    },
+    {
+      "id": "product",
+      "commands": [
+        "node tests/product/product-test-v22-medopl-contract-authority.mjs"
+      ]
+    },
+    {
+      "id": "frontend",
+      "commands": [
+        "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
+      ]
+    },
+    {
+      "id": "backend",
+      "commands": [
+        "node tests/backend/backend-test-v22-api-contract.mjs"
+      ]
+    },
+    {
+      "id": "runtime",
+      "commands": [
+        "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs"
+      ]
+    },
+    {
+      "id": "release",
+      "commands": [
+        "node tests/release/release-test-v22-boundary-contract.mjs"
+      ]
+    },
+    {
+      "id": "cloud",
+      "commands": [
+        "node tests/cloud/cloud-test-v22-tencent-readonly-inventory-boundary.mjs"
+      ]
+    },
+    {
+      "id": "hygiene",
+      "commands": [
+        "node tests/health/health-check-v22-contract-conflict-boundary.mjs",
+        "node tests/health/health-check-v22-line-budget-gate.mjs",
+        "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
+        "node tests/health/health-check-v22-repo-hygiene-gate.mjs",
+        "node tests/health/health-check-v22-smoke-classification-gate.mjs",
+        "node tests/health/health-check-v22-smoke-eval-boundary.mjs",
+        "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
+        "node tests/health/health-check-v22-zero-compat-active-surface-gate.mjs",
+        "node tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs"
       ]
     }
   ],
@@ -417,6 +377,7 @@
     {
       "id": "root-verify",
       "commands": [
+        "npm run validate:active-platform",
         "npm run verify",
         "npm run verify:golden-path",
         "npm run verify:repo-hygiene",
@@ -424,17 +385,12 @@
         "npm run verify:review",
         "npm run gate:review",
         "npm run check:diff",
-        "npm run verify:docs-engineering-loop",
-        "npm run verify:product-loop",
         "npm run test:health",
         "npm run test:smoke",
         "npm run test:contract",
         "npm run test:regression",
-        "npm run gate:change",
-        "npm run closeout:check",
         "npm run test:fast",
         "npm run test:lanes",
-        "npm run validate:active-platform -- --quick --json",
         "node tests/governance/governance-test-v22-root-verify-workflow-entrypoints.mjs"
       ]
     },
@@ -454,54 +410,12 @@
         "node scripts/v22-repo-bloat-audit.mjs --json",
         "node scripts/v22-line-budget.mjs",
         "node tests/governance/governance-test-v22-test-lane-registry.mjs",
-        "node tests/governance/governance-test-v22-product-engineering-loop-index.mjs",
         "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json"
-      ]
-    },
-    {
-      "id": "docs-engineering-loop",
-      "commands": [
-        "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-repo-bloat-audit.mjs --json",
-        "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-verify.mjs suite product-engineering-loop --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-verify.mjs review --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-landing-closeout.mjs check --trunk-ref origin/recovery/platform-v22-trunk --json",
-        "git diff --check -- docs tests scripts package.json .github"
-      ]
-    },
-    {
-      "id": "change-package-gate",
-      "commands": [
-        "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-verify.mjs suite mvp --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-verify.mjs suite history-closeout --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-        "git diff --check -- docs tests scripts package.json .github"
-      ]
-    },
-    {
-      "id": "backend-go-convergence",
-      "commands": [
-        "node tests/governance/governance-test-v22-backend-go-convergence-program.mjs",
-        "node tests/contracts/contract-test-v22-node-portal-backend-physical-removal.mjs",
-        "node tests/contracts/contract-test-v22-go-backend-service-surface.mjs",
-        "node tests/governance/governance-test-v22-commercial-package-model.mjs",
-        "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
-        "node scripts/v22-verify.mjs current --branch feat/v22-go-control-plane-mvp-takeover --base origin/recovery/platform-v22-trunk --dry-run --json",
-        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-        "git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/medopl-go-backend",
-        "node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs"
       ]
     },
     {
       "id": "local-release-candidate",
       "commands": [
-        "node tests/governance/governance-test-v22-local-portal-opl-delivery-rc.mjs",
         "node tests/contracts/contract-test-v22-local-service-orchestration.mjs",
         "node scripts/v22-local-services.mjs verify --dry-run --json",
         "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
@@ -509,138 +423,9 @@
         "node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk --json",
         "npm --prefix services/portal run check",
         "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
-        "git diff --check -- docs specs changes tests scripts package.json services/portal/frontend/src services/medopl-go-backend services/opl-web-gateway services/opl-runtime-bridge"
+        "git diff --check -- docs specs tests scripts package.json services/portal/frontend/src services/medopl-go-backend services/opl-web-gateway services/opl-runtime-bridge"
       ]
     }
   ],
-  "branch_override_suites": [
-    {
-      "id": "opl-framework-workflow-convergence",
-      "branch": "cleanup/v22-opl-framework-workflow-convergence",
-      "branches": [
-        "cleanup/v22-opl-framework-workflow-convergence"
-      ],
-      "reason": "Current framework-repo workflow convergence branch clears window-era workflow terms, lands package/CI/manifest entrypoints, and records handoff without changing services or product implementation.",
-      "commands": [
-        "node tests/governance/governance-test-v22-framework-workflow-convergence.mjs",
-        "node tests/governance/governance-test-v22-landing-closeout-automation.mjs",
-        "node tests/governance/governance-test-v22-current-state-index-loop.mjs",
-        "node tests/governance/governance-test-v22-cleanup-lifecycle-system.mjs",
-        "node tests/governance/governance-test-v22-root-verify-workflow-entrypoints.mjs",
-        "node tests/governance/governance-test-v22-test-lane-registry.mjs",
-        "node tests/health/health-check-v22-workflow-gate.mjs",
-        "node scripts/v22-verify.mjs package docs-engineering-loop --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-verify.mjs package change-package-gate --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-        "git diff --check -- AGENTS.md docs tests scripts package.json .github"
-      ],
-      "allowed_files": [
-        "AGENTS.md",
-        "docs/**/*.md",
-        "tests/**/*.mjs",
-        "tests/fixtures/v22/*.json",
-        "scripts/v22-test-classification.mjs",
-        "scripts/v22-verify.mjs",
-        "scripts/v22-workflow-gate.mjs",
-        "scripts/v22-landing-closeout.mjs",
-        "package.json",
-        ".github/workflows/*.yml"
-      ],
-      "forbidden_files": [
-        "services/*",
-        "deploy/*",
-        "adapters/*",
-        ".sentrux/*",
-        "infra/*",
-        "one-person-lab/*",
-        "upstream/*",
-        ".runtime/*",
-        "secret-like paths"
-      ],
-      "forbidden_ops": [
-        "secret",
-        "live-cloud",
-        "true-cloud-mutation",
-        "build-push-kubectl",
-        "deploy",
-        "live-test",
-        "services-implementation",
-        "upstream-write",
-        "dependency-upgrade",
-        "git-push"
-      ]
-    },
-    {
-      "id": "test-lifecycle-cleanup-gate",
-      "branch": "cleanup/v22-test-lifecycle-cleanup-gate",
-      "branches": [
-        "cleanup/v22-test-lifecycle-cleanup-gate"
-      ],
-      "reason": "Test lifecycle cleanup gate branch makes active tests require lane owner, current owner surface, explicit lifecycleRole and direct cleanup of compat-only or historical-proof tests without implementing services or advancing the business cursor.",
-      "commands": [
-        "node tests/governance/governance-test-v22-test-lifecycle-cleanup.mjs",
-        "node tests/governance/governance-test-v22-test-lane-registry.mjs",
-        "node tests/governance/governance-test-v22-landing-closeout-automation.mjs",
-        "node tests/governance/governance-test-v22-current-state-index-loop.mjs",
-        "node tests/governance/governance-test-v22-cleanup-lifecycle-system.mjs",
-        "node tests/governance/governance-test-v22-agent-verify-entrypoint.mjs",
-        "node tests/governance/governance-test-v22-root-verify-workflow-entrypoints.mjs",
-        "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
-        "node scripts/v22-verify.mjs package docs-engineering-loop --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-verify.mjs package change-package-gate --base origin/recovery/platform-v22-trunk --json",
-        "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
-        "git diff --check -- docs tests scripts package.json .github"
-      ],
-      "allowed_files": [
-        "docs/**/*.md",
-        "tests/**/*.mjs",
-        "tests/fixtures/v22/*.json",
-        "scripts/v22-test-classification.mjs",
-        "package.json",
-        ".github/workflows/*.yml"
-      ],
-      "forbidden_files": [
-        "services/*",
-        "deploy/*",
-        "adapters/*",
-        ".sentrux/*",
-        "infra/*",
-        "one-person-lab/*",
-        "upstream/*",
-        ".runtime/*",
-        "secret-like paths"
-      ],
-      "forbidden_ops": [
-        "secret",
-        "live-cloud",
-        "true-cloud-mutation",
-        "build-push-kubectl",
-        "deploy",
-        "live-test",
-        "services-implementation",
-        "upstream-write",
-        "dependency-upgrade",
-        "git-push"
-      ],
-      "risk_class": "local_doc_eval"
-    }
-  ],
-  "change_lifecycle_policy": {
-    "root": "changes/README.md",
-    "active_dir": "changes/active",
-    "archive_dir": "changes/archive",
-    "formal_engineering_requires_change_package": true,
-    "trunk_allows_empty_active_changes": true,
-    "required_files": [
-      "proposal.md",
-      "spec-delta.md",
-      "design.md",
-      "tasks.md",
-      "eval-plan.md",
-      "review.md",
-      "closeout.md"
-    ],
-    "gate": "tests/governance/governance-test-v22-change-package-lifecycle.mjs",
-    "spec_eval_gate": "tests/governance/governance-test-v22-spec-eval-traceability.mjs"
-  }
+  "branch_override_suites": []
 }

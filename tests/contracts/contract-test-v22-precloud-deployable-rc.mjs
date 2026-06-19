@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile, stat } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -10,14 +10,8 @@ async function readRepoFile(repoPath) {
   return readFile(path.join(repoRoot, repoPath), "utf8");
 }
 
-async function exists(repoPath) {
-  try {
-    await stat(path.join(repoRoot, repoPath));
-    return true;
-  } catch (error) {
-    if (error?.code === "ENOENT") return false;
-    throw error;
-  }
+async function readRepoJson(repoPath) {
+  return JSON.parse(await readRepoFile(repoPath));
 }
 
 function assertIncludes(source, marker, label) {
@@ -30,16 +24,6 @@ function assertNotIncludes(source, marker, label) {
 
 function assertNotMatches(source, pattern, label) {
   assert.equal(pattern.test(String(source)), false, label);
-}
-
-async function assertChangePackage() {
-  const root = "changes/archive/2026-05-26-precloud-deployable-rc";
-  for (const file of ["proposal.md", "spec-delta.md", "design.md", "tasks.md", "eval-plan.md", "review.md", "closeout.md"]) {
-    assert.equal(await exists(`${root}/${file}`), true, `precloud_change_package_missing:${file}`);
-  }
-  const proposal = await readRepoFile(`${root}/proposal.md`);
-  assertIncludes(proposal, "pre-cloud deployable shape", "precloud_proposal");
-  assertIncludes(proposal, "cloud connector", "precloud_proposal");
 }
 
 async function assertNodeBackendRetiredFromDeployableSurface() {
@@ -104,6 +88,48 @@ async function assertProductComposeIsPostgresOnlyRequiredDataPlane() {
   }
 }
 
+async function assertProductAuthorityContractsOwnPrecloudEvidence() {
+  const [product, api, dataPlane, billing, release, cloud] = await Promise.all([
+    readRepoJson("contracts/medopl-product-profile.json"),
+    readRepoJson("contracts/medopl-api-contract.json"),
+    readRepoJson("contracts/medopl-data-plane-contract.json"),
+    readRepoJson("contracts/medopl-billing-ledger-contract.json"),
+    readRepoJson("contracts/medopl-release-boundary.json"),
+    readRepoJson("contracts/medopl-cloud-boundary.json"),
+  ]);
+
+  assert.equal(product.authority_boundary.change_package_role, "not_product_authority", "product_contract_must_retire_change_package_authority");
+  assertIncludes(product.medopl_product_profile.platform_responsibilities.join("\n"), "provision", "product_contract_precloud_authority");
+  assertIncludes(product.medopl_product_profile.platform_responsibilities.join("\n"), "release", "product_contract_precloud_authority");
+
+  for (const group of ["workspace", "runtime", "files", "billing", "audit", "release"]) {
+    assert(api.medopl_api_contract.api_groups.includes(group), `api_contract_precloud_group_missing:${group}`);
+  }
+  for (const field of ["raw_provider_key", "bearer_token", "runtime_token", "launch_token", "kubeconfig_content"]) {
+    assert(api.medopl_api_contract.forbidden_response_fields.includes(field), `api_contract_secret_boundary_missing:${field}`);
+  }
+
+  for (const control of ["tenant_scope", "workspace_scope", "quota_metering", "audit_event", "release_cleanup"]) {
+    assert(dataPlane.medopl_data_plane_contract.required_controls.includes(control), `data_plane_contract_precloud_control_missing:${control}`);
+  }
+  for (const type of ["credit", "debit", "hold", "release", "refund", "adjustment"]) {
+    assert(billing.medopl_billing_ledger_contract.ledger_entry_types.includes(type), `billing_contract_ledger_type_missing:${type}`);
+  }
+  for (const phase of ["freeze_runtime", "settle_billing", "export_files", "cleanup_resources", "write_receipt"]) {
+    assert(release.medopl_release_boundary.release_phases.includes(phase), `release_contract_precloud_phase_missing:${phase}`);
+  }
+  assert.equal(
+    release.authority_boundary.default_real_cloud_mutation,
+    "forbidden_without_explicit_user_authorization",
+    "release_contract_must_fail_closed_before_authorization",
+  );
+  assert.equal(
+    cloud.authority_boundary.default_real_cloud_execution,
+    "forbidden_without_explicit_user_authorization",
+    "cloud_contract_must_fail_closed_before_authorization",
+  );
+}
+
 async function assertGoPrecloudSurface() {
   const router = await readRepoFile("services/medopl-go-backend/internal/server/router.go");
   for (const marker of [
@@ -150,7 +176,7 @@ async function assertTruthAndEvalRegistration() {
   assertIncludes(registry, "contract-test-v22-precloud-deployable-rc.mjs", "test_registry_precloud_eval");
 }
 
-await assertChangePackage();
+await assertProductAuthorityContractsOwnPrecloudEvidence();
 await assertNodeBackendRetiredFromDeployableSurface();
 await assertProductComposeIsPostgresOnlyRequiredDataPlane();
 await assertGoPrecloudSurface();

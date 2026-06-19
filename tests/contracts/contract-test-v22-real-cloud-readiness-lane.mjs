@@ -61,7 +61,8 @@ for (const [file, source] of cloudTestSources) {
 assert.equal(manifestSuites.has("local-rc-authorized"), false, "manifest_must_not_keep_empty_local_rc_authorized_suite");
 assert.equal(manifestSuites.has("real-cloud-readiness"), true, "manifest_must_register_real_cloud_readiness_suite");
 assert.equal(packageJson.scripts["test:real-cloud-readiness"], "node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk", "package_must_expose_real_cloud_readiness_lane");
-for (const suiteId of ["health", "local-contract", "current", "review"]) {
+assert.equal(packageJson.scripts["test:cloud"], "node scripts/v22-verify.mjs suite cloud --base origin/recovery/platform-v22-trunk", "package_must_expose_cloud_boundary_lane");
+for (const suiteId of ["local-contract"]) {
   assert(commandFiles(manifestSuites.get(suiteId)?.commands || []).includes(selfFile), `real_cloud_readiness_contract_missing_suite:${suiteId}`);
 }
 
@@ -90,8 +91,8 @@ for (const command of [
   }
 }
 assert(
-  current.current_leaf.verification_commands.includes("node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk --json"),
-  "current_leaf_must_run_real_cloud_readiness_suite",
+  packageJson.scripts["test:cloud"] && packageJson.scripts["test:real-cloud-readiness"],
+  "cloud_boundary_scripts_must_exist_outside_current_product_gate",
 );
 
 const readinessPlan = runVerify(["suite", "real-cloud-readiness", "--dry-run", "--json"]);
@@ -104,6 +105,13 @@ assert.deepEqual(readinessPayload.forbiddenFiles, manifest.global_forbidden_file
 for (const forbiddenOp of ["secret", "live-cloud", "true-cloud-mutation", "build-push-kubectl", "deploy", "live-test", "git-push"]) {
   assert(readinessPayload.forbiddenOps.includes(forbiddenOp), `readiness_suite_forbidden_op_missing:${forbiddenOp}`);
 }
+
+const cloudPlan = runVerify(["suite", "cloud", "--dry-run", "--json"]);
+assert.equal(cloudPlan.status, 0, `cloud_boundary_dry_run_must_exit_zero:${cloudPlan.stderr || cloudPlan.stdout}`);
+const cloudPayload = JSON.parse(cloudPlan.stdout);
+assert.equal(cloudPayload.ok, true, "cloud_boundary_dry_run_ok");
+assert.equal(cloudPayload.suiteId, "cloud", "cloud_boundary_suite_id_mismatch");
+assert.deepEqual(commandFiles(cloudPayload.commands), readinessFiles, "cloud_boundary_runner_commands_mismatch");
 
 console.log(JSON.stringify({
   ok: true,

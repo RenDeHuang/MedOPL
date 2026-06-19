@@ -66,7 +66,7 @@ Figma UI repo-native absorption
 -> real-cloud authorization
 ```
 
-这六个 package 是黄金链路的后续交付顺序。每个 package 都必须单独开 `changes/active/<change-id>`，声明 Golden Path Impact、spec delta、eval plan、cannot-claim、review 和 archive closeout。
+这六个 package 是黄金链路的后续交付顺序。当前 truth 归 `contracts/`、`docs/active/README.md`、root `specs/**`、tests/fixtures/manifest 和 `validate:active-platform`；`changes/` 已退役，不再作为每个 package 的当前入口或 archive 目标。
 
 Figma Make 只提供视觉和信息架构输入；Figma absorption、typed API boundary 和 OPL entry real preflight / launch projection 已归档为 repo-native frontend/runtime truth。Portal UI 必须通过 typed API modules 和 backend projections 读取真实 preflight、launch、providerKeyRef 和 Gateway readiness 状态，不能继续展示 page-local launch readiness。当前阻塞是 real-cloud authorization boundary；它不授权 secret、真实云、deploy、kubectl、build/push 或 live-test。
 

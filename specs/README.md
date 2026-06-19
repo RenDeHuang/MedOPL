@@ -3,7 +3,7 @@
 Owner: `MedOPL`
 Purpose: `durable_behavior_specs`
 State: `active`
-Machine boundary: root `specs/**` contains durable behavior specs and requirement-to-eval anchors. `docs/specs/README.md remains the human contract index`; `changes/active/<change-id>/spec-delta.md` is the only place for proposed spec changes before they are accepted.
+Machine boundary: root `specs/**` contains durable behavior specs and requirement-to-eval anchors. `docs/specs/README.md remains the human contract index`; current truth now lives in `contracts/`, `docs/active/README.md`, root `specs/**`, tests/fixtures/manifest and `validate:active-platform`; `changes/` is retired and no longer the proposal entry.
 
 Root specs are not current truth and not evidence logs. Current truth remains `docs/active/README.md`; evidence claims remain `docs/evidence/README.md`; landed provenance remains `docs/history/README.md`.
 
@@ -21,7 +21,7 @@ Root specs are not current truth and not evidence logs. Current truth remains `d
 
 ## Change Routing
 
-Proposed spec changes start in `changes/active/<change-id>/spec-delta.md`. Accepted deltas are synced into the affected `specs/<domain>/spec.md` during closeout, then the package moves to `changes/archive/YYYY-MM-DD-<change-id>`.
+Proposed spec changes now flow through the durable truth surfaces above. Accepted deltas are synced into the affected `specs/<domain>/spec.md`, then summarized in `docs/history/README.md` and preserved in git history. `changes/archive/` is not a long-term database.
 
 Each durable requirement should expose:
 
