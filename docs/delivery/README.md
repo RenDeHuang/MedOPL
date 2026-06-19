@@ -11,7 +11,7 @@ Machine boundary: 本文是人读交付入口。当前执行 cursor、branch ove
 
 Go control-plane MVP takeover、precloud-deployable-rc、local SaaS backend RC、local Portal/OPL delivery RC 和 single-flow local product RC 只提供 local RC / cloud-deployable RC evidence。first proof 是 real local product RC；cloud proof 是 cloud-deployable RC；production proof 仍需 explicit authorization + runtime / storage / billing / audit / release owner receipts。历史 Package C live canary、Package D deploy/service reachability、production-launch Gap 01-08o、CLB diagnostics 和 public access 调试只保留为 archive / runtime provenance；它们不再是 active runner、active cloud test、current blocker 或默认 verify 入口。
 
-当前 active cloud surface 只保留三类小边界：readonly inventory、Package C dry-run create/release plan、TKE bootstrap preflight。真实云、secret read、provider call、Tencent mutation、kubectl、deploy、build/push、production ledger write 和 live-test 只允许通过 `contracts/medopl-cloud-authorization-pack.json` 声明的机器授权包执行；执行 evidence 默认写入 `.runtime`，没有 runtime / storage / billing / audit / release owner receipt 仍不得 claim production complete。
+当前 active cloud surface 只保留三类小边界：readonly inventory、Package C dry-run create/release plan、TKE bootstrap preflight。真实云、secret read、provider call、Tencent mutation、kubectl、deploy、build/push、production ledger write 和 live-test 只允许通过 `contracts/medopl-cloud-authorization-pack.json` 声明的机器授权包执行；执行 evidence 默认写入 `.runtime`。authorized command 执行后还必须写入 `contracts/medopl-production-receipt-boundary.json` 定义的 receipt manifest；没有七类 owner receipt 和小型 receipt manifest，仍不得 claim production complete。
 
 ## Default Verification
 

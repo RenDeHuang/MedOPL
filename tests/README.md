@@ -15,6 +15,7 @@ State: `active`
 - **Preflight**：本轮只接受本地全动态测试系统。先执行 `npm run test:run-plan -- --dry-run --json`，读取 `changedFiles`、`matchedSurfaces`、`environments`、`authorizedEnvironments`、`reasons`、`recommendedCommands`、`authorizedCommands`、`preflight` 和 `cannotClaim`，确认 runner 只生成本地推荐命令，不自动升级到授权命令。
 - **Run**：确认计划后执行 `npm run test:run-plan`，runner 只执行 `recommendedCommands`。不自动执行 `authorizedCommands`，不执行 cloud/live/deploy/kubectl，也不把 future authorized profile 当作当前已完成入口。
 - **Report/Completion Gate**：计划输出里的 report、`cannotClaim` 和 preflight 结果都是完成判断的一部分；没有这些信息，不能声称闭环或 production readiness。
+- **Production Receipt Gate**：authorized command 即使执行成功，也必须写入 receipt manifest；manifest 只放 receipt 指针和摘要，不放 raw cloud payload、日志、截图、上传文件或 artifact。`contracts/medopl-production-receipt-boundary.json` 和 `tests/release/release-test-v22-production-receipt-boundary.mjs` 决定 production complete 是否可声明。
 
 - **main lane**：默认主线 gate，base 承接健康、烟测和契约验证；回归由相关 surface 或 full/local RC 触发。
 - **targeted lane**：按 discovery 命中的变更面选最小相关测试面，前端、后端、runtime、release、hygiene / policy 等都应先从对应目录和 runner 入口下手。

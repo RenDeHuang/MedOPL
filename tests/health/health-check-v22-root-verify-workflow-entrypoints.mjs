@@ -222,6 +222,7 @@ assert(testLanesSuite, "test_lanes_package_suite_missing");
 assert.deepEqual(testLanesSuite.commands, [
   "node tests/health/health-check-v22-test-lane-registry.mjs",
   "node tests/health/health-check-v22-test-lifecycle-cleanup.mjs",
+  "node tests/health/health-check-v22-production-receipt-boundary.mjs",
   "node tests/health/health-check-v22-verify-plan-mode.mjs",
   "node tests/health/health-check-v22-worktree-slice-orchestrator.mjs",
   "node tests/health/health-check-v22-smoke-classification-gate.mjs",

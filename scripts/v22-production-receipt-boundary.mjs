@@ -1,0 +1,208 @@
+export const PRODUCTION_RECEIPT_BOUNDARY_PATH = "contracts/medopl-production-receipt-boundary.json";
+
+export const FORBIDDEN_RAW_MANIFEST_FIELDS = Object.freeze([
+  "raw_cloud_payload",
+  "raw_payload",
+  "provider_response",
+  "provider_payload",
+  "kubeconfig",
+  "secret",
+  "token",
+  "logs",
+  "log",
+  "screenshots",
+  "screenshot",
+  "uploaded_files",
+  "uploaded_file",
+  "upload_file",
+  "artifacts",
+  "artifact",
+]);
+
+const ALLOWED_TOP_LEVEL_FIELDS = Object.freeze([
+  "schema_version",
+  "kind",
+  "state",
+  "claim",
+  "evidence_level",
+  "target_environment",
+  "authorization",
+  "summary",
+  "receipts",
+]);
+
+const ALLOWED_RECEIPT_FIELDS = Object.freeze([
+  "type",
+  "owner",
+  "status",
+  "issued_at",
+  "evidence_ref",
+  "summary",
+  "authorization_ref",
+]);
+
+function isObject(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function isSafeRuntimePointer(value) {
+  const normalized = String(value || "").trim();
+  return /^\.runtime(?:\/[A-Za-z0-9._*-]+)*$/u.test(normalized) && !normalized.includes("..");
+}
+
+function unique(items) {
+  return [...new Set(items.filter(Boolean))];
+}
+
+function asStringSet(values) {
+  return new Set(Array.isArray(values) ? values.map((value) => String(value || "").trim()).filter(Boolean) : []);
+}
+
+function findRawEvidenceFields(value, prefix = "") {
+  if (Array.isArray(value)) {
+    return value.flatMap((item, index) => findRawEvidenceFields(item, `${prefix}[${index}]`));
+  }
+  if (!isObject(value)) return [];
+  const violations = [];
+  for (const [key, child] of Object.entries(value)) {
+    const normalizedKey = key.toLowerCase();
+    const childPath = prefix ? `${prefix}.${key}` : key;
+    if (FORBIDDEN_RAW_MANIFEST_FIELDS.includes(normalizedKey)) violations.push(childPath);
+    violations.push(...findRawEvidenceFields(child, childPath));
+  }
+  return violations;
+}
+
+function collectUnexpectedFields(manifest) {
+  const violations = [];
+  const topAllowed = new Set(ALLOWED_TOP_LEVEL_FIELDS);
+  for (const key of Object.keys(manifest || {})) {
+    if (!topAllowed.has(key)) violations.push(key);
+  }
+  const receiptAllowed = new Set(ALLOWED_RECEIPT_FIELDS);
+  for (const [index, receipt] of (manifest?.receipts || []).entries()) {
+    if (!isObject(receipt)) continue;
+    for (const key of Object.keys(receipt)) {
+      if (!receiptAllowed.has(key)) violations.push(`receipts[${index}].${key}`);
+    }
+  }
+  return violations;
+}
+
+export function validateProductionReceiptBoundary({ boundary, cloudAuthorization }) {
+  const blockers = [];
+  const receiptBoundary = boundary?.production_receipt_boundary || {};
+  const requiredTypes = Array.isArray(receiptBoundary.required_receipt_types)
+    ? receiptBoundary.required_receipt_types
+    : [];
+  const cloudRequiredTypes = Array.isArray(cloudAuthorization?.required_receipts_before_production_complete)
+    ? cloudAuthorization.required_receipts_before_production_complete
+    : [];
+
+  if (boundary?.state !== "active") blockers.push("production_receipt_boundary_must_be_active");
+  if (boundary?.authority_boundary?.surface !== "production_complete_owner_receipt_aggregation") {
+    blockers.push("production_receipt_boundary_surface_mismatch");
+  }
+  if (receiptBoundary.local_rc_claim_upgrade !== "forbidden") {
+    blockers.push("production_receipt_boundary_local_rc_upgrade_must_be_forbidden");
+  }
+  if (receiptBoundary.cloud_deployable_rc_claim_upgrade !== "forbidden") {
+    blockers.push("production_receipt_boundary_cloud_deployable_rc_upgrade_must_be_forbidden");
+  }
+  if (receiptBoundary.authorized_command_receipt_manifest_required !== true) {
+    blockers.push("production_receipt_boundary_authorized_command_manifest_required");
+  }
+  if (requiredTypes.length !== 7) blockers.push("production_receipt_boundary_must_require_7_receipts");
+  if (requiredTypes.join("\u0000") !== cloudRequiredTypes.join("\u0000")) {
+    blockers.push("production_receipt_boundary_must_match_cloud_authorization_required_receipts");
+  }
+  if (!isSafeRuntimePointer(receiptBoundary.receipt_manifest_path_pattern)) {
+    blockers.push("production_receipt_boundary_manifest_path_must_be_runtime_pointer");
+  }
+  const forbiddenLevels = asStringSet(receiptBoundary.forbidden_completion_evidence_levels);
+  for (const level of ["local_rc", "cloud_deployable_rc"]) {
+    if (!forbiddenLevels.has(level)) blockers.push(`production_receipt_boundary_forbidden_evidence_level_missing:${level}`);
+  }
+  const allowedLevels = asStringSet(receiptBoundary.allowed_completion_evidence_levels);
+  if (allowedLevels.size === 0) blockers.push("production_receipt_boundary_allowed_completion_levels_missing");
+
+  const rawFields = asStringSet(receiptBoundary.forbidden_raw_manifest_fields);
+  for (const field of FORBIDDEN_RAW_MANIFEST_FIELDS) {
+    if (!rawFields.has(field)) blockers.push(`production_receipt_boundary_forbidden_raw_field_missing:${field}`);
+  }
+
+  return Object.freeze({
+    ok: blockers.length === 0,
+    blockers: Object.freeze(blockers),
+    requiredReceiptTypes: Object.freeze([...requiredTypes]),
+  });
+}
+
+export function evaluateProductionReceiptManifest({ boundary, manifest }) {
+  const receiptBoundary = boundary?.production_receipt_boundary || {};
+  const requiredTypes = Array.isArray(receiptBoundary.required_receipt_types)
+    ? receiptBoundary.required_receipt_types.map(String)
+    : [];
+  const allowedCompletionLevels = asStringSet(receiptBoundary.allowed_completion_evidence_levels);
+  const forbiddenCompletionLevels = asStringSet(receiptBoundary.forbidden_completion_evidence_levels);
+  const completionState = String(receiptBoundary.production_complete_state || "complete");
+  const blockers = [];
+
+  if (!isObject(manifest)) {
+    return Object.freeze({
+      productionComplete: false,
+      blockers: Object.freeze(["production_receipt_manifest_missing_or_invalid"]),
+      missingReceiptTypes: Object.freeze([...requiredTypes]),
+      rawEvidenceViolations: Object.freeze([]),
+      unexpectedFieldViolations: Object.freeze([]),
+    });
+  }
+
+  if (manifest.kind !== "medopl_production_receipt_manifest") {
+    blockers.push("production_receipt_manifest_kind_mismatch");
+  }
+  if (manifest.claim !== "production_complete") {
+    blockers.push("production_receipt_manifest_claim_mismatch");
+  }
+  if (manifest.state !== completionState) {
+    blockers.push(`production_receipt_manifest_state_mismatch:${manifest.state || "(missing)"}`);
+  }
+  if (forbiddenCompletionLevels.has(manifest.evidence_level)) {
+    blockers.push(`production_receipt_manifest_forbidden_evidence_level:${manifest.evidence_level}`);
+  }
+  if (!allowedCompletionLevels.has(manifest.evidence_level)) {
+    blockers.push(`production_receipt_manifest_evidence_level_not_allowed:${manifest.evidence_level || "(missing)"}`);
+  }
+  if (!Array.isArray(manifest.receipts)) {
+    blockers.push("production_receipt_manifest_receipts_missing");
+  }
+
+  const receipts = Array.isArray(manifest.receipts) ? manifest.receipts : [];
+  const receiptTypes = receipts.map((receipt) => String(receipt?.type || "").trim()).filter(Boolean);
+  const missingReceiptTypes = requiredTypes.filter((type) => !receiptTypes.includes(type));
+  const duplicateReceiptTypes = receiptTypes.filter((type, index) => receiptTypes.indexOf(type) !== index);
+  for (const duplicate of unique(duplicateReceiptTypes)) {
+    blockers.push(`production_receipt_manifest_duplicate_receipt:${duplicate}`);
+  }
+
+  for (const receipt of receipts) {
+    if (!requiredTypes.includes(receipt?.type)) blockers.push(`production_receipt_manifest_unknown_receipt:${receipt?.type || "(missing)"}`);
+    if (!String(receipt?.owner || "").trim()) blockers.push(`production_receipt_manifest_receipt_owner_missing:${receipt?.type || "(missing)"}`);
+    if (receipt?.status !== "accepted") blockers.push(`production_receipt_manifest_receipt_not_accepted:${receipt?.type || "(missing)"}`);
+    if (!isSafeRuntimePointer(receipt?.evidence_ref)) blockers.push(`production_receipt_manifest_receipt_evidence_ref_invalid:${receipt?.type || "(missing)"}`);
+    if (!String(receipt?.summary || "").trim()) blockers.push(`production_receipt_manifest_receipt_summary_missing:${receipt?.type || "(missing)"}`);
+  }
+
+  const rawEvidenceViolations = unique(findRawEvidenceFields(manifest).map((field) => field.split(".").at(-1) || field));
+  const unexpectedFieldViolations = collectUnexpectedFields(manifest);
+  if (rawEvidenceViolations.length > 0) blockers.push("production_receipt_manifest_embeds_raw_evidence");
+  if (unexpectedFieldViolations.length > 0) blockers.push("production_receipt_manifest_unexpected_fields");
+
+  return Object.freeze({
+    productionComplete: blockers.length === 0 && missingReceiptTypes.length === 0,
+    blockers: Object.freeze(unique(blockers)),
+    missingReceiptTypes: Object.freeze(missingReceiptTypes),
+    rawEvidenceViolations: Object.freeze(rawEvidenceViolations),
+    unexpectedFieldViolations: Object.freeze(unexpectedFieldViolations),
+  });
+}

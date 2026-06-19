@@ -2,6 +2,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { PRODUCTION_RECEIPT_BOUNDARY_PATH } from "./v22-production-receipt-boundary.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -343,6 +344,7 @@ export function readCloudAuthorizationPack({ exists = defaultExists, readFile = 
       ["active_pack.secret_allowlist_mapping", active.secret_allowlist_mapping],
       ["active_pack.api_allowlist_required", active.api_allowlist_required],
       ["active_pack.api_allowlist_mapping", active.api_allowlist_mapping],
+      ["active_pack.post_authorized_command_receipt_manifest", active.post_authorized_command_receipt_manifest],
     ];
     const missing = requiredFields
       .filter(([, value]) => value == null || (typeof value === "string" && !value.trim()))
@@ -369,6 +371,16 @@ export function readCloudAuthorizationPack({ exists = defaultExists, readFile = 
     }
     const { blockers: mappingBlockers, diagnostics } = collectMappingProblems(active);
     missing.push(...mappingBlockers);
+    const receiptManifestRequirement = active.post_authorized_command_receipt_manifest || {};
+    if (receiptManifestRequirement.required !== true) {
+      missing.push("active_pack.post_authorized_command_receipt_manifest.required");
+    }
+    if (receiptManifestRequirement.contract !== PRODUCTION_RECEIPT_BOUNDARY_PATH) {
+      missing.push("active_pack.post_authorized_command_receipt_manifest.contract");
+    }
+    if (receiptManifestRequirement.path_pattern && !isSafeRuntimeEvidenceSink(String(receiptManifestRequirement.path_pattern).replace(/\/\*\*\/receipt-manifest\.json$/u, ""))) {
+      missing.push("active_pack.post_authorized_command_receipt_manifest.path_pattern");
+    }
     const ok = pack.state === "active" && active.status === "authorized" && missing.length === 0;
     return Object.freeze({
       ok,
@@ -389,6 +401,12 @@ export function readCloudAuthorizationPack({ exists = defaultExists, readFile = 
       budget: active.budget || null,
       expiresAt: active.expires_at || "",
       requiredReceiptsBeforeProductionComplete: Object.freeze([...(pack.required_receipts_before_production_complete || [])]),
+      postAuthorizedCommandReceiptManifest: Object.freeze({
+        required: Boolean(receiptManifestRequirement.required),
+        contract: receiptManifestRequirement.contract || "",
+        pathPattern: receiptManifestRequirement.path_pattern || "",
+        policy: receiptManifestRequirement.policy || "",
+      }),
       authorizedCommandsExecutable: ok,
       diagnostics: Object.freeze({
         operationClassMappings: Object.freeze([...((diagnostics.operationClassMappings || []))]),
@@ -525,7 +543,8 @@ export const TEST_SURFACE_RULES = Object.freeze([
       "docs/evidence/",
     ]),
     match(file) {
-      return file.startsWith("contracts/medopl-release-boundary");
+      return file.startsWith("contracts/medopl-release-boundary")
+        || file.startsWith("contracts/medopl-production-receipt-boundary");
     },
     commands: Object.freeze(["npm run test:release"]),
     reason: "release boundary changed",

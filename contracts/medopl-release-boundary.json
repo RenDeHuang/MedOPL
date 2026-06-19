@@ -7,16 +7,20 @@
     "surface": "customer_workspace_release_and_cleanup",
     "default_real_cloud_mutation": "allowed_when_authorization_pack_is_active",
     "authorization_pack": "contracts/medopl-cloud-authorization-pack.json",
+    "production_receipt_boundary": "contracts/medopl-production-receipt-boundary.json",
     "release_claim_requires": "local_gate_and_owner_receipt"
   },
   "consumers": [
     "validate:active-platform",
+    "scripts/v22-production-receipt-boundary.mjs",
     "tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
-    "tests/release/release-test-v22-boundary-contract.mjs"
+    "tests/release/release-test-v22-boundary-contract.mjs",
+    "tests/release/release-test-v22-production-receipt-boundary.mjs"
   ],
   "consumer_tests": [
     "node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
-    "node tests/release/release-test-v22-boundary-contract.mjs"
+    "node tests/release/release-test-v22-boundary-contract.mjs",
+    "node tests/release/release-test-v22-production-receipt-boundary.mjs"
   ],
   "medopl_release_boundary": {
     "release_phases": [

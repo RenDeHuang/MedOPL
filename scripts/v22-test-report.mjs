@@ -1,6 +1,11 @@
 import { spawnSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import {
+  evaluateProductionReceiptManifest,
+  PRODUCTION_RECEIPT_BOUNDARY_PATH,
+} from "./v22-production-receipt-boundary.mjs";
 
 function commandToSpawn(command) {
   const parts = String(command || "").match(/(?:[^\s"]+|"[^"]*")+/g) || [];
@@ -56,6 +61,70 @@ function createCommandRecords(plan, { includeAuthorized = false } = {}) {
   ];
 }
 
+function defaultReceiptManifestPath(plan) {
+  const evidenceSink = String(plan.authorization?.evidenceSink || "").replace(/\/+$/u, "");
+  const runId = String(plan.authorization?.runId || "").trim();
+  if (!evidenceSink || !runId) return "";
+  return `${evidenceSink}/${runId}/receipt-manifest.json`;
+}
+
+function productionReceiptManifestRequirement(plan) {
+  const requirement = plan.authorization?.postAuthorizedCommandReceiptManifest || {};
+  const required = Boolean(requirement.required);
+  return {
+    requiredAfterAuthorizedCommands: required,
+    contract: requirement.contract || PRODUCTION_RECEIPT_BOUNDARY_PATH,
+    path: defaultReceiptManifestPath(plan),
+    policy: requirement.policy || "small_pointer_and_summary_only",
+    status: required ? "pending" : "not_required",
+  };
+}
+
+function validateWrittenReceiptManifest(repoRoot, plan) {
+  const manifestPath = defaultReceiptManifestPath(plan);
+  if (!manifestPath) {
+    return {
+      ok: false,
+      status: "missing_path",
+      path: "",
+      blockers: ["production_receipt_manifest_path_missing"],
+    };
+  }
+  const absoluteManifestPath = path.join(repoRoot, manifestPath);
+  if (!existsSync(absoluteManifestPath)) {
+    return {
+      ok: false,
+      status: "missing",
+      path: manifestPath,
+      blockers: ["production_receipt_manifest_missing_after_authorized_commands"],
+    };
+  }
+  try {
+    const boundary = JSON.parse(readFileSync(path.join(repoRoot, PRODUCTION_RECEIPT_BOUNDARY_PATH), "utf8"));
+    const manifest = JSON.parse(readFileSync(absoluteManifestPath, "utf8"));
+    const evaluated = evaluateProductionReceiptManifest({ boundary, manifest });
+    const rawBlockers = [
+      ...(evaluated.rawEvidenceViolations || []).map((field) => `production_receipt_manifest_raw_field:${field}`),
+      ...(evaluated.unexpectedFieldViolations || []).map((field) => `production_receipt_manifest_unexpected_field:${field}`),
+    ];
+    return {
+      ok: rawBlockers.length === 0,
+      status: evaluated.productionComplete ? "complete" : "present",
+      path: manifestPath,
+      productionComplete: evaluated.productionComplete,
+      blockers: rawBlockers,
+      missingReceiptTypes: evaluated.missingReceiptTypes,
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      status: "invalid",
+      path: manifestPath,
+      blockers: [`production_receipt_manifest_invalid:${error.message}`],
+    };
+  }
+}
+
 export async function runPlanWithReport({
   repoRoot,
   plan,
@@ -103,6 +172,7 @@ export async function runPlanWithReport({
         status: "not_started",
         cannotClaim: plan.cannotClaim,
       },
+      productionReceiptManifest: productionReceiptManifestRequirement(plan),
     },
   };
 
@@ -175,6 +245,18 @@ export async function runPlanWithReport({
     payload.report.completion.status = executableAuthorized
       ? "recommended_and_authorized_commands_passed"
       : "local_recommended_commands_passed";
+  }
+
+  if (payload.ok && executableAuthorized && payload.report.commands.authorizedExecuted.length > 0) {
+    const receiptManifest = validateWrittenReceiptManifest(repoRoot, plan);
+    payload.report.productionReceiptManifest = {
+      ...payload.report.productionReceiptManifest,
+      ...receiptManifest,
+    };
+    if (!receiptManifest.ok) {
+      payload.ok = false;
+      payload.report.completion.status = "blocked";
+    }
   }
 
   return payload;

@@ -209,6 +209,12 @@
       "currency": "USD",
       "cost_ceiling": 1000
     },
+    "post_authorized_command_receipt_manifest": {
+      "required": true,
+      "contract": "contracts/medopl-production-receipt-boundary.json",
+      "path_pattern": ".runtime/v22-cloud-authorization/**/receipt-manifest.json",
+      "policy": "small_pointer_and_summary_only"
+    },
     "expires_at": "2026-07-19"
   },
   "required_receipts_before_production_complete": [
@@ -223,11 +229,14 @@
   "consumers": [
     "scripts/v22-test-policy.mjs",
     "scripts/v22-test-report.mjs",
+    "scripts/v22-production-receipt-boundary.mjs",
     "tests/health/health-check-v22-dynamic-test-run-plan.mjs",
-    "tests/health/health-check-v22-verify-plan-mode.mjs"
+    "tests/health/health-check-v22-verify-plan-mode.mjs",
+    "tests/release/release-test-v22-production-receipt-boundary.mjs"
   ],
   "consumer_tests": [
     "node tests/health/health-check-v22-dynamic-test-run-plan.mjs",
-    "node tests/health/health-check-v22-verify-plan-mode.mjs"
+    "node tests/health/health-check-v22-verify-plan-mode.mjs",
+    "node tests/release/release-test-v22-production-receipt-boundary.mjs"
   ]
 }

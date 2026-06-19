@@ -66,6 +66,16 @@ assert(Array.isArray(cloudPlan.authorization.diagnostics?.operationClassMappings
 assert(cloudPlan.authorization.diagnostics.operationClassMappings.length > 0, "cloud_plan_must_report_operation_class_mappings");
 assert(Array.isArray(cloudPlan.authorization.diagnostics?.secretAllowlistMappings), "cloud_plan_must_expose_secret_allowlist_diagnostics");
 assert(cloudPlan.authorization.diagnostics.secretAllowlistMappings.length > 0, "cloud_plan_must_report_secret_allowlist_diagnostics");
+assert.equal(
+  cloudPlan.authorization.postAuthorizedCommandReceiptManifest?.required,
+  true,
+  "cloud_plan_must_require_post_authorized_command_receipt_manifest",
+);
+assert.equal(
+  cloudPlan.authorization.postAuthorizedCommandReceiptManifest?.contract,
+  "contracts/medopl-production-receipt-boundary.json",
+  "cloud_plan_receipt_manifest_contract_mismatch",
+);
 
 const missingAuth = readCloudAuthorizationPack({
   exists(repoPath) {
@@ -110,6 +120,12 @@ const expiredPack = readPackFromJson({
     budget: {
       currency: "USD",
       cost_ceiling: 1000,
+    },
+    post_authorized_command_receipt_manifest: {
+      required: true,
+      contract: "contracts/medopl-production-receipt-boundary.json",
+      path_pattern: ".runtime/v22-cloud-authorization/**/receipt-manifest.json",
+      policy: "small_pointer_and_summary_only",
     },
     expires_at: "2026-06-01",
   },
@@ -157,6 +173,12 @@ const incompletePack = readPackFromJson({
     budget: {
       currency: "USD",
       cost_ceiling: 1000,
+    },
+    post_authorized_command_receipt_manifest: {
+      required: true,
+      contract: "contracts/medopl-production-receipt-boundary.json",
+      path_pattern: ".runtime/v22-cloud-authorization/**/receipt-manifest.json",
+      policy: "small_pointer_and_summary_only",
     },
     expires_at: "2026-07-19",
   },
@@ -224,6 +246,12 @@ const unknownEnvironmentPack = readPackFromJson({
       currency: "USD",
       cost_ceiling: 1000,
     },
+    post_authorized_command_receipt_manifest: {
+      required: true,
+      contract: "contracts/medopl-production-receipt-boundary.json",
+      path_pattern: ".runtime/v22-cloud-authorization/**/receipt-manifest.json",
+      policy: "small_pointer_and_summary_only",
+    },
     expires_at: "2026-07-19",
   },
   required_receipts_before_production_complete: ["runtime_owner_receipt"],
@@ -274,21 +302,33 @@ assert.equal(dryRun.mode, "run-plan", "run_plan_mode_mismatch");
 assert.equal(dryRun.executesCommands, false, "run_plan_dry_run_must_not_execute_commands");
 assert.equal(dryRun.report.kind, "v22_dynamic_test_plan_report", "run_plan_must_emit_dynamic_report");
 assert.equal(dryRun.report.completion.status, "not_started", "run_plan_dry_run_must_not_report_completion");
+assert.equal(
+  dryRun.report.productionReceiptManifest.requiredAfterAuthorizedCommands,
+  true,
+  "run_plan_report_must_include_receipt_manifest_requirement",
+);
+assert.equal(
+  dryRun.report.productionReceiptManifest.contract,
+  "contracts/medopl-production-receipt-boundary.json",
+  "run_plan_report_receipt_manifest_contract_mismatch",
+);
 assert(dryRun.report.commands.planned.includes("npm run test:cloud"), "run_plan_report_must_include_recommended_command");
 assert.equal(dryRun.report.commands.planned.includes("npm run test:cloud-future-authorized"), false, "run_plan_report_must_not_plan_authorized_command");
 assert(dryRun.report.commands.skippedAuthorized.includes("npm run test:cloud-future-authorized"), "run_plan_report_must_skip_authorized_command");
 assert(dryRun.cannotClaim.includes("owner receipts complete"), "run_plan_must_preserve_receipt_cannot_claim");
 
 const tempDir = mkdtempSync(path.join(tmpdir(), "v22-run-plan-"));
-  const successExecutor = path.join(tempDir, "success.mjs");
-  const failureExecutor = path.join(tempDir, "failure.mjs");
-  const authorizedLog = path.join(tempDir, "authorized.log");
-  const authorizedExecutor = path.join(tempDir, "authorized.mjs");
+const successExecutor = path.join(tempDir, "success.mjs");
+const failureExecutor = path.join(tempDir, "failure.mjs");
+const authorizedLog = path.join(tempDir, "authorized.log");
+const authorizedExecutor = path.join(tempDir, "authorized.mjs");
+const authorizedWithReceiptExecutor = path.join(tempDir, "authorized-with-receipt.mjs");
 const successLog = path.join(tempDir, "success.log");
 try {
   writeFileSync(successExecutor, `import { appendFileSync } from "node:fs";\nconst logPath = ${JSON.stringify(successLog)};\nexport default async function runCommand(command) { appendFileSync(logPath, \`\${command}\\n\`); return { command, ok: true, status: 0 }; }\n`);
   writeFileSync(failureExecutor, "export default async function runCommand(command) { return command === \"npm run test:smoke\" ? { command, ok: false, status: 7 } : { command, ok: true, status: 0 }; }\n");
   writeFileSync(authorizedExecutor, `import { appendFileSync } from "node:fs";\nconst logPath = ${JSON.stringify(authorizedLog)};\nexport default async function runCommand(command) { appendFileSync(logPath, \`\${command}\\n\`); return { command, ok: true, status: 0 }; }\n`);
+  writeFileSync(authorizedWithReceiptExecutor, `import { copyFileSync, mkdirSync } from "node:fs";\nimport path from "node:path";\nexport default async function runCommand(command, context) { if (command === "npm run test:cloud-future-authorized") { const target = path.join(context.repoRoot, ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json"); mkdirSync(path.dirname(target), { recursive: true }); copyFileSync(path.join(context.repoRoot, "tests/fixtures/v22/production-receipt-manifest.example.json"), target); } return { command, ok: true, status: 0 }; }\n`);
 
   const commandOverride = runVerify(["run-plan", "--files", "scripts/v22-test-policy.mjs", "--commands", "node -e \"process.exit(0)\"", "--json"]);
   assert.equal(commandOverride.status, 1, "run_plan_must_reject_manual_command_override");
@@ -315,20 +355,43 @@ try {
     "run_plan_stub_success_must_report_local_recommended_completion",
   );
 
-  const authorizedSuccess = parseJsonResult(
+  const authorizedMissingReceipt = runVerify(
+    ["run-plan", "--files", "contracts/medopl-cloud-boundary.json", "--include-authorized", "--json"],
+    { V22_VERIFY_COMMAND_EXECUTOR: authorizedExecutor },
+  );
+  assert.equal(authorizedMissingReceipt.status, 1, "authorized_run_without_receipt_manifest_must_exit_one");
+  const authorizedMissingReceiptPayload = JSON.parse(authorizedMissingReceipt.stdout);
+  assert.equal(authorizedMissingReceiptPayload.includeAuthorized, true, "authorized_run_must_enable_authorized_execution");
+  assert(
+    authorizedMissingReceiptPayload.report.commands.authorizedExecuted.some((entry) => entry.command === "npm run test:cloud-future-authorized"),
+    "run_plan_authorized_must_execute_cloud_future_authorized_before_receipt_gate",
+  );
+  assert.equal(authorizedMissingReceiptPayload.ok, false, "authorized_run_without_receipt_manifest_must_fail_closed");
+  assert.equal(
+    authorizedMissingReceiptPayload.report.productionReceiptManifest.status,
+    "missing",
+    "authorized_run_without_receipt_manifest_must_report_missing_manifest",
+  );
+  assert.equal(authorizedMissingReceiptPayload.report.commands.skippedAuthorized.length, 0, "authorized_run_must_not_skip_authorized_commands");
+
+  const authorizedWithReceipt = parseJsonResult(
     runVerify(
       ["run-plan", "--files", "contracts/medopl-cloud-boundary.json", "--include-authorized", "--json"],
-      { V22_VERIFY_COMMAND_EXECUTOR: authorizedExecutor },
+      { V22_VERIFY_COMMAND_EXECUTOR: authorizedWithReceiptExecutor },
     ),
-    "run_plan_authorized_success",
+    "run_plan_authorized_with_receipt",
   );
-  assert.equal(authorizedSuccess.ok, true, "run_plan_authorized_success_must_be_ok");
-  assert.equal(authorizedSuccess.includeAuthorized, true, "run_plan_authorized_success_must_enable_authorized_execution");
-  assert(
-    authorizedSuccess.report.commands.authorizedExecuted.some((entry) => entry.command === "npm run test:cloud-future-authorized"),
-    "run_plan_authorized_success_must_execute_cloud_future_authorized",
+  assert.equal(authorizedWithReceipt.ok, true, "authorized_run_with_receipt_manifest_must_pass");
+  assert.equal(
+    authorizedWithReceipt.report.productionReceiptManifest.status,
+    "complete",
+    "authorized_run_with_receipt_manifest_must_report_complete_manifest",
   );
-  assert.equal(authorizedSuccess.report.commands.skippedAuthorized.length, 0, "authorized_run_must_not_skip_authorized_commands");
+  assert.equal(
+    authorizedWithReceipt.report.productionReceiptManifest.productionComplete,
+    true,
+    "authorized_run_with_receipt_manifest_must_evaluate_production_completion",
+  );
 
   const stubFailure = runVerify(
     ["run-plan", "--files", "scripts/v22-test-policy.mjs", "--json"],
@@ -344,6 +407,7 @@ try {
   );
   assert.equal(stubFailurePayload.report.completion.status, "blocked", "run_plan_stub_failure_must_report_blocked_completion");
 } finally {
+  rmSync(path.join(repoRoot, ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json"), { force: true });
   rmSync(tempDir, { recursive: true, force: true });
 }
 

@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "kind": "medopl_production_receipt_manifest",
+  "state": "complete",
+  "claim": "production_complete",
+  "evidence_level": "production_canary",
+  "target_environment": "production-canary",
+  "authorization": {
+    "pack": "contracts/medopl-cloud-authorization-pack.json",
+    "approval_id": "approval-v22-001",
+    "run_id": "run-v22-001"
+  },
+  "summary": {
+    "receipt_count": 7,
+    "raw_evidence_policy": "runtime_pointer_summary_only"
+  },
+  "receipts": [
+    {
+      "type": "runtime_owner_receipt",
+      "owner": "MedOPL Runtime",
+      "status": "accepted",
+      "issued_at": "2026-06-20T00:00:00Z",
+      "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/runtime-owner.json",
+      "summary": "Runtime owner accepted the production-canary runtime provisioning receipt."
+    },
+    {
+      "type": "storage_owner_receipt",
+      "owner": "MedOPL Data Plane",
+      "status": "accepted",
+      "issued_at": "2026-06-20T00:00:00Z",
+      "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/storage-owner.json",
+      "summary": "Storage owner accepted workspace storage lifecycle receipt."
+    },
+    {
+      "type": "billing_owner_receipt",
+      "owner": "MedOPL Billing",
+      "status": "accepted",
+      "issued_at": "2026-06-20T00:00:00Z",
+      "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/billing-owner.json",
+      "summary": "Billing owner accepted meter, freeze and settlement receipt."
+    },
+    {
+      "type": "audit_owner_receipt",
+      "owner": "MedOPL Audit",
+      "status": "accepted",
+      "issued_at": "2026-06-20T00:00:00Z",
+      "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/audit-owner.json",
+      "summary": "Audit owner accepted export and trace receipt."
+    },
+    {
+      "type": "release_owner_receipt",
+      "owner": "MedOPL Release",
+      "status": "accepted",
+      "issued_at": "2026-06-20T00:00:00Z",
+      "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/release-owner.json",
+      "summary": "Release owner accepted release and cleanup receipt."
+    },
+    {
+      "type": "opl_webui_consumer_receipt",
+      "owner": "OPL-Webui",
+      "status": "accepted",
+      "issued_at": "2026-06-20T00:00:00Z",
+      "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/opl-webui-consumer.json",
+      "summary": "OPL-Webui accepted runtime gate, upload, run and artifact projection receipt."
+    },
+    {
+      "type": "production_deploy_receipt",
+      "owner": "MedOPL Operations",
+      "status": "accepted",
+      "issued_at": "2026-06-20T00:00:00Z",
+      "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/production-deploy.json",
+      "summary": "Operations accepted production-canary deploy receipt."
+    }
+  ]
+}

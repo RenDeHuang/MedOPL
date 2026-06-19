@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "owner": "MedOPL Release",
+  "purpose": "production_receipt_boundary_owner_receipt_aggregator",
+  "state": "active",
+  "authority_boundary": {
+    "surface": "production_complete_owner_receipt_aggregation",
+    "production_complete_requires": "complete_receipt_manifest",
+    "local_rc_claim_upgrade": "forbidden",
+    "cloud_deployable_rc_claim_upgrade": "forbidden",
+    "authorized_cloud_command_receipt_manifest": "required",
+    "receipt_manifest_storage": "runtime_pointer_summary_only"
+  },
+  "consumers": [
+    "validate:active-platform",
+    "scripts/v22-production-receipt-boundary.mjs",
+    "scripts/v22-test-report.mjs",
+    "tests/release/release-test-v22-production-receipt-boundary.mjs",
+    "tests/health/health-check-v22-production-receipt-boundary.mjs"
+  ],
+  "consumer_tests": [
+    "node tests/release/release-test-v22-production-receipt-boundary.mjs",
+    "node tests/health/health-check-v22-production-receipt-boundary.mjs"
+  ],
+  "production_receipt_boundary": {
+    "required_receipt_types": [
+      "runtime_owner_receipt",
+      "storage_owner_receipt",
+      "billing_owner_receipt",
+      "audit_owner_receipt",
+      "release_owner_receipt",
+      "opl_webui_consumer_receipt",
+      "production_deploy_receipt"
+    ],
+    "production_complete_state": "complete",
+    "allowed_completion_evidence_levels": [
+      "production_canary",
+      "production"
+    ],
+    "forbidden_completion_evidence_levels": [
+      "local_rc",
+      "cloud_deployable_rc"
+    ],
+    "local_rc_claim_upgrade": "forbidden",
+    "cloud_deployable_rc_claim_upgrade": "forbidden",
+    "authorized_command_receipt_manifest_required": true,
+    "receipt_manifest_path_pattern": ".runtime/v22-cloud-authorization/**/receipt-manifest.json",
+    "receipt_manifest_policy": "small_pointer_and_summary_only",
+    "forbidden_raw_manifest_fields": [
+      "raw_cloud_payload",
+      "raw_payload",
+      "provider_response",
+      "provider_payload",
+      "kubeconfig",
+      "secret",
+      "token",
+      "logs",
+      "log",
+      "screenshots",
+      "screenshot",
+      "uploaded_files",
+      "uploaded_file",
+      "upload_file",
+      "artifacts",
+      "artifact"
+    ]
+  }
+}

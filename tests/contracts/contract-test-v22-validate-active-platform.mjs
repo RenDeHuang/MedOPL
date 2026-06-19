@@ -71,6 +71,7 @@ for (const marker of [
   "contracts/medopl-release-boundary.json",
   "contracts/medopl-cloud-boundary.json",
   "contracts/medopl-cloud-authorization-pack.json",
+  "contracts/medopl-production-receipt-boundary.json",
   "global_forbidden_ops",
   "global_forbidden_files",
 ]) {

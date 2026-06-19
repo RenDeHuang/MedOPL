@@ -85,6 +85,7 @@ export const TEST_LANE_CONTRACT_REFS = Object.freeze([
   "contracts/medopl-release-boundary.json",
   "contracts/medopl-cloud-boundary.json",
   "contracts/medopl-cloud-authorization-pack.json",
+  "contracts/medopl-production-receipt-boundary.json",
   "specs/product/spec.md",
   "specs/runtime/spec.md",
   "specs/operations/spec.md",
@@ -98,12 +99,16 @@ const PRODUCT_FILES = Object.freeze(["tests/product/product-test-v22-medopl-cont
 const FRONTEND_FILES = Object.freeze(["tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"]);
 const BACKEND_FILES = Object.freeze(["tests/backend/backend-test-v22-api-contract.mjs"]);
 const RUNTIME_FILES = Object.freeze(["tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs"]);
-const RELEASE_FILES = Object.freeze(["tests/release/release-test-v22-boundary-contract.mjs"]);
+const RELEASE_FILES = Object.freeze([
+  "tests/release/release-test-v22-boundary-contract.mjs",
+  "tests/release/release-test-v22-production-receipt-boundary.mjs",
+]);
 const HYGIENE_FILES = Object.freeze(["tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs"]);
 const REVIEW_HYGIENE_FILES = Object.freeze(["tests/hygiene/hygiene-test-v22-diff-scoped-sensitive-review-gate.mjs"]);
 const HEALTH_FILES = Object.freeze([
   "tests/health/health-check-v22-contract-conflict-boundary.mjs",
   "tests/health/health-check-v22-line-budget-gate.mjs",
+  "tests/health/health-check-v22-production-receipt-boundary.mjs",
   "tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
   "tests/health/health-check-v22-repo-hygiene-gate.mjs",
   "tests/health/health-check-v22-root-verify-workflow-entrypoints.mjs",

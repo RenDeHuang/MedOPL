@@ -8,6 +8,11 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { planCommandsForFiles } from "./v22-test-policy.mjs";
 import { runPlanWithReport } from "./v22-test-report.mjs";
+import {
+  evaluateProductionReceiptManifest,
+  PRODUCTION_RECEIPT_BOUNDARY_PATH,
+  validateProductionReceiptBoundary,
+} from "./v22-production-receipt-boundary.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -24,6 +29,7 @@ const PRODUCT_AUTHORITY_CONTRACTS = Object.freeze([
   "contracts/medopl-release-boundary.json",
   "contracts/medopl-cloud-boundary.json",
   "contracts/medopl-cloud-authorization-pack.json",
+  "contracts/medopl-production-receipt-boundary.json",
 ]);
 
 function parseArgs(argv) {
@@ -398,8 +404,24 @@ async function validateActivePlatform({ manifest, current }) {
   assert(runtimeRetiredRoutes.includes("billing ledger owner 是 Portal/Go control plane"), "runtime_bridge_must_not_own_billing_truth");
 
   const releaseContract = readRepoJsonSync("contracts/medopl-release-boundary.json");
+  const cloudAuthorizationPack = readRepoJsonSync("contracts/medopl-cloud-authorization-pack.json");
+  const productionReceiptBoundary = readRepoJsonSync(PRODUCTION_RECEIPT_BOUNDARY_PATH);
+  const productionReceiptManifestExample = readRepoJsonSync("tests/fixtures/v22/production-receipt-manifest.example.json");
   assert.equal(releaseContract.authority_boundary.default_real_cloud_mutation, "allowed_when_authorization_pack_is_active", "release_boundary_must_use_machine_authorization_pack");
   assert.equal(releaseContract.authority_boundary.authorization_pack, "contracts/medopl-cloud-authorization-pack.json", "release_boundary_must_reference_authorization_pack");
+  assert.equal(releaseContract.authority_boundary.production_receipt_boundary, PRODUCTION_RECEIPT_BOUNDARY_PATH, "release_boundary_must_reference_production_receipt_boundary");
+  const receiptBoundaryValidation = validateProductionReceiptBoundary({
+    boundary: productionReceiptBoundary,
+    cloudAuthorization: cloudAuthorizationPack,
+  });
+  assert.equal(receiptBoundaryValidation.ok, true, `production_receipt_boundary_must_be_valid:${JSON.stringify(receiptBoundaryValidation)}`);
+  const receiptManifestEvaluation = evaluateProductionReceiptManifest({
+    boundary: productionReceiptBoundary,
+    manifest: productionReceiptManifestExample,
+  });
+  assert.equal(receiptManifestEvaluation.productionComplete, true, `production_receipt_manifest_example_must_be_complete:${JSON.stringify(receiptManifestEvaluation)}`);
+  assert.equal(current.production_receipt_boundary?.contract, PRODUCTION_RECEIPT_BOUNDARY_PATH, "current_fixture_receipt_boundary_contract_mismatch");
+  assert.equal(current.production_receipt_boundary?.state, "active_not_complete", "current_fixture_receipt_boundary_state_mismatch");
   assert(packageJson.scripts["verify:golden-path"], "golden_path_gate_script_missing");
   assert(packageJson.scripts["test:cloud"], "cloud_boundary_gate_script_missing");
   assert(packageJson.scripts["test:hygiene"], "secret_hygiene_gate_script_missing");

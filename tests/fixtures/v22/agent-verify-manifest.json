@@ -57,6 +57,7 @@
     "contracts/medopl-api-contract.json",
     "contracts/medopl-billing-ledger-contract.json",
     "contracts/medopl-cloud-authorization-pack.json",
+    "contracts/medopl-production-receipt-boundary.json",
     "contracts/medopl-cloud-boundary.json",
     "contracts/medopl-data-plane-contract.json",
     "contracts/medopl-portal-page-state-matrix.json",
@@ -114,7 +115,8 @@
         "contracts/medopl-billing-ledger-contract.json",
         "contracts/medopl-release-boundary.json",
         "contracts/medopl-cloud-boundary.json",
-        "contracts/medopl-cloud-authorization-pack.json"
+        "contracts/medopl-cloud-authorization-pack.json",
+        "contracts/medopl-production-receipt-boundary.json"
       ],
       "allowed_files": [
         "docs/**/*.md",
@@ -127,6 +129,7 @@
         "tests/fixtures/v22/*.json",
         "scripts/v22-test-classification.mjs",
         "scripts/v22-test-policy.mjs",
+        "scripts/v22-production-receipt-boundary.mjs",
         "scripts/v22-test-report.mjs",
         "scripts/v22-verify.mjs",
         "scripts/v22-workflow-gate.mjs",
@@ -160,6 +163,7 @@
         "node tests/backend/backend-test-v22-api-contract.mjs",
         "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs",
         "node tests/release/release-test-v22-boundary-contract.mjs",
+        "node tests/release/release-test-v22-production-receipt-boundary.mjs",
         "node tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs",
         "node tests/suites/suite-test-v22-golden-smoke.mjs"
       ],
@@ -191,6 +195,7 @@
         "node tests/backend/backend-test-v22-api-contract.mjs",
         "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs",
         "node tests/release/release-test-v22-boundary-contract.mjs",
+        "node tests/release/release-test-v22-production-receipt-boundary.mjs",
         "node tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs",
         "node tests/suites/suite-test-v22-golden-smoke.mjs"
       ]
@@ -203,6 +208,7 @@
         "node tests/contracts/contract-test-v22-validate-active-platform.mjs",
         "node tests/health/health-check-v22-contract-conflict-boundary.mjs",
         "node tests/health/health-check-v22-dynamic-test-run-plan.mjs",
+        "node tests/health/health-check-v22-production-receipt-boundary.mjs",
         "node tests/health/health-check-v22-line-budget-gate.mjs",
         "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
         "node tests/health/health-check-v22-repo-hygiene-gate.mjs",
@@ -247,6 +253,7 @@
         "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
         "node tests/health/health-check-v22-contract-conflict-boundary.mjs",
         "node tests/health/health-check-v22-dynamic-test-run-plan.mjs",
+        "node tests/health/health-check-v22-production-receipt-boundary.mjs",
         "node tests/health/health-check-v22-line-budget-gate.mjs",
         "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
         "node tests/health/health-check-v22-repo-hygiene-gate.mjs",
@@ -263,6 +270,7 @@
         "node tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs",
         "node tests/product/product-test-v22-medopl-contract-authority.mjs",
         "node tests/release/release-test-v22-boundary-contract.mjs",
+        "node tests/release/release-test-v22-production-receipt-boundary.mjs",
         "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs",
         "node tests/suites/suite-test-v22-mvp.mjs"
       ]
@@ -338,6 +346,7 @@
         "node tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs",
         "node tests/product/product-test-v22-medopl-contract-authority.mjs",
         "node tests/release/release-test-v22-boundary-contract.mjs",
+        "node tests/release/release-test-v22-production-receipt-boundary.mjs",
         "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs"
       ]
     },
@@ -368,7 +377,8 @@
     {
       "id": "release",
       "commands": [
-        "node tests/release/release-test-v22-boundary-contract.mjs"
+        "node tests/release/release-test-v22-boundary-contract.mjs",
+        "node tests/release/release-test-v22-production-receipt-boundary.mjs"
       ]
     },
     {
@@ -382,6 +392,7 @@
       "commands": [
         "node tests/health/health-check-v22-contract-conflict-boundary.mjs",
         "node tests/health/health-check-v22-dynamic-test-run-plan.mjs",
+        "node tests/health/health-check-v22-production-receipt-boundary.mjs",
         "node tests/health/health-check-v22-line-budget-gate.mjs",
         "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
         "node tests/health/health-check-v22-repo-hygiene-gate.mjs",
@@ -434,6 +445,7 @@
       "commands": [
         "node tests/health/health-check-v22-test-lane-registry.mjs",
         "node tests/health/health-check-v22-test-lifecycle-cleanup.mjs",
+        "node tests/health/health-check-v22-production-receipt-boundary.mjs",
         "node tests/health/health-check-v22-verify-plan-mode.mjs",
         "node tests/health/health-check-v22-worktree-slice-orchestrator.mjs",
         "node tests/health/health-check-v22-smoke-classification-gate.mjs",
