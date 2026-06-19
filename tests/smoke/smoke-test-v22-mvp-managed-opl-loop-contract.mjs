@@ -10,6 +10,10 @@ async function readRepoFile(repoPath) {
   return readFile(path.join(repoRoot, repoPath), "utf8");
 }
 
+async function readJson(repoPath) {
+  return JSON.parse(await readRepoFile(repoPath));
+}
+
 function assertIncludesAll(source, expectedItems, label) {
   for (const expected of expectedItems) {
     assert(source.includes(expected), `${label}_missing:${expected}`);
@@ -29,6 +33,8 @@ const [
   runtimeSpec,
   runtimeTruth,
   sourceSpec,
+  productProfile,
+  apiContract,
 ] = await Promise.all([
   readRepoFile("docs/specs/README.md"),
   readRepoFile("specs/product/spec.md"),
@@ -36,6 +42,8 @@ const [
   readRepoFile("specs/runtime/spec.md"),
   readRepoFile("docs/runtime/README.md"),
   readRepoFile("specs/source/spec.md"),
+  readJson("contracts/medopl-product-profile.json"),
+  readJson("contracts/medopl-api-contract.json"),
 ]);
 
 assert.equal(specsIndex.split("\n").length <= 400, true, `specs_index_line_budget_exceeded:${specsIndex.split("\n").length}`);
@@ -55,8 +63,9 @@ assertIncludesAll(productSpec, [
 assertIncludesAll(productTruth, [
   "MedOPL v22 是 `platform-provisioned / customer-dedicated`",
   "MedOPL 不是云资源控制台",
-  "登录 `portal.medopl.cn` -> 工作空间 -> 上传文件 / 提任务 -> 进入 OPL / 工作台 -> 看结果 -> 看费用",
-  "用户在 OPL entry/preflight 或工作台 provider 绑定面输入自己的 gflabtoken API Key",
+  "OPL-Webui 是主要 consumer / entry surface",
+  "ordinary chat 留在 OPL-Webui",
+  "runtime_required",
   "已绑定用户不要求重复输入",
   "starter_2c4g_10gb",
   "pro_8c16g_100gb",
@@ -65,6 +74,12 @@ assertIncludesAll(productTruth, [
   "`T+1`",
   "释放计算资源不删除文件空间",
 ], "mvp_loop_product_truth");
+
+assert.equal(productProfile.medopl_product_profile.primary_consumer_surface.name, "opl-webui", "mvp_loop_primary_consumer_must_be_opl_webui");
+assert.equal(productProfile.medopl_product_profile.primary_consumer_surface.ordinary_chat_owner, "opl-webui", "mvp_loop_ordinary_chat_owner_must_be_opl_webui");
+assert.equal(productProfile.medopl_product_profile.primary_consumer_surface.runtime_required_owner, "medopl", "mvp_loop_runtime_required_owner_must_be_medopl");
+assert.equal(apiContract.medopl_api_contract.runtime_gate.route, "POST /api/opl/runtime-gate", "mvp_loop_runtime_gate_route_mismatch");
+assert.deepEqual(apiContract.medopl_api_contract.runtime_gate.invocation_modes, ["api_only", "runtime_required"], "mvp_loop_runtime_gate_modes_mismatch");
 
 assertExcludesAll(productTruth, [
   "用户自配云资源",

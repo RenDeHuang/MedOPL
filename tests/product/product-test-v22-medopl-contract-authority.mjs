@@ -49,6 +49,7 @@ const [packageJson, manifest, current, verifySource] = await Promise.all([
   readJson("tests/fixtures/v22/goal-current.json"),
   readRepoFile("scripts/v22-verify.mjs"),
 ]);
+const productProfile = await readJson("contracts/medopl-product-profile.json");
 
 assert.equal(await exists("changes"), false, "changes_directory_must_be_physically_retired");
 assert.equal(packageJson.scripts["gate:change"], undefined, "gate_change_script_must_be_retired");
@@ -87,6 +88,10 @@ assert.equal(current.current_truth_role, "machine_cursor_fixture", "current_fixt
 assert.equal(current.product_authority?.contracts_dir, "contracts", "current_fixture_must_point_to_contracts_authority");
 assert.deepEqual(current.product_authority?.product_contracts, productContractPaths, "current_fixture_product_contracts_mismatch");
 assert.equal(current.product_authority?.changes_retired, true, "current_fixture_must_mark_changes_retired");
+assert.equal(productProfile.medopl_product_profile.primary_consumer_surface?.name, "opl-webui", "product_profile_primary_consumer_must_be_opl_webui");
+assert.equal(productProfile.medopl_product_profile.primary_consumer_surface?.ordinary_chat_owner, "opl-webui", "product_profile_ordinary_chat_owner_must_be_opl_webui");
+assert.equal(productProfile.medopl_product_profile.primary_consumer_surface?.runtime_required_owner, "medopl", "product_profile_runtime_required_owner_must_be_medopl");
+assert.equal(productProfile.medopl_product_profile.primary_consumer_surface?.integration_contract, "POST /api/opl/runtime-gate", "product_profile_runtime_gate_contract_mismatch");
 
 const testDirs = await readdir(path.join(repoRoot, "tests"), { withFileTypes: true });
 const testDirNames = new Set(testDirs.filter((entry) => entry.isDirectory()).map((entry) => entry.name));

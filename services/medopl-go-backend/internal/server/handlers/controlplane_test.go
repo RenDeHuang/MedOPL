@@ -167,6 +167,61 @@ func TestControlPlaneHandlersExposeV22GoTakeoverProviderOpenShape(t *testing.T) 
 	}
 }
 
+func TestControlPlaneHandlersExposeOPLWebuiRuntimeGate(t *testing.T) {
+	router := controlPlaneHandlerTestRouter()
+	rawProviderKey := "runtime-gate-provider-key-material-that-must-stay-private"
+
+	ordinaryChat := postMap(t, router, "/api/opl/runtime-gate", map[string]any{
+		"workspaceId":    "workspace-v22",
+		"invocationMode": "ordinary_chat",
+		"runtimePlanId":  "starter_2c4g_10gb",
+		"storagePlanId":  "workspace_10gb",
+	})
+	assertPublicPayload(t, ordinaryChat, rawProviderKey)
+	if ordinaryChat["productOwner"] != "medopl" || ordinaryChat["primaryConsumer"] != "opl-webui" {
+		t.Fatalf("ordinary runtime gate owner boundary = %+v", ordinaryChat)
+	}
+	if ordinaryChat["medoplRuntimeRequired"] != false || ordinaryChat["nextAction"] != "continue_in_opl_webui" {
+		t.Fatalf("ordinary runtime gate = %+v", ordinaryChat)
+	}
+
+	bindResponse := postMap(t, router, "/api/v22/provider-key", map[string]any{
+		"tenantId":       "tenant-v22",
+		"portalUserId":   "user-v22",
+		"workspaceId":    "workspace-v22",
+		"apiKey":         rawProviderKey,
+		"idempotencyKey": "runtime-gate-provider-once",
+	})
+	openResponse := postMap(t, router, "/api/v22/managed-environment/open", map[string]any{
+		"tenantId":       "tenant-v22",
+		"portalUserId":   "user-v22",
+		"workspaceId":    "workspace-v22",
+		"idempotencyKey": "runtime-gate-open-once",
+	})
+
+	runtimeRequired := postMap(t, router, "/api/opl/runtime-gate", map[string]any{
+		"workspaceId":    "workspace-v22",
+		"invocationMode": "runtime_required",
+		"runtimePlanId":  "starter_2c4g_10gb",
+		"storagePlanId":  "workspace_10gb",
+	})
+	assertPublicPayload(t, runtimeRequired, rawProviderKey)
+	if runtimeRequired["medoplRuntimeRequired"] != true || runtimeRequired["runtimeBindingId"] != openResponse["resourceBindingId"] {
+		t.Fatalf("runtime required gate = %+v", runtimeRequired)
+	}
+	if runtimeRequired["providerKeyRef"] != bindResponse["providerKeyRef"] || runtimeRequired["storageBindingId"] == "" {
+		t.Fatalf("runtime required provider/storage = %+v", runtimeRequired)
+	}
+	nodePool := runtimeRequired["nodePoolProjection"].(map[string]any)
+	if nodePool["nodePoolRef"] == "" || nodePool["state"] != "ready" || nodePool["customerVisible"] != false {
+		t.Fatalf("runtime required node pool projection = %+v", nodePool)
+	}
+	release := runtimeRequired["release"].(map[string]any)
+	if release["canReleaseRuntime"] != true || release["destroyStorage"] != "requires_explicit_user_intent" {
+		t.Fatalf("runtime required release projection = %+v", release)
+	}
+}
+
 func TestControlPlaneProductionBootstrapContractFailsClosed(t *testing.T) {
 	router := controlPlaneHandlerTestRouter()
 	rawProviderKey := "production-bootstrap-raw-provider-key-must-not-leak"

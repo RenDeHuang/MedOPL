@@ -30,7 +30,10 @@ function assertNotMatches(source, pattern, label) {
 
 assert.equal(await exists("services/portal/src"), false, "runtime_gate_must_not_import_node_portal_backend");
 
-const [router, controlplane, controlplaneTest, bridgeRoutes, bridgeLaunch] = await Promise.all([
+const [apiContract, runtimeContract, cloudContract, router, controlplane, controlplaneTest, bridgeRoutes, bridgeLaunch] = await Promise.all([
+  readRepoFile("contracts/medopl-api-contract.json").then(JSON.parse),
+  readRepoFile("contracts/medopl-runtime-bridge-contract.json").then(JSON.parse),
+  readRepoFile("contracts/medopl-cloud-boundary.json").then(JSON.parse),
   readRepoFile("services/medopl-go-backend/internal/server/router.go"),
   readRepoFile("services/medopl-go-backend/internal/server/handlers/controlplane.go"),
   readRepoFile("services/medopl-go-backend/internal/server/handlers/controlplane_test.go"),
@@ -41,6 +44,7 @@ const [router, controlplane, controlplaneTest, bridgeRoutes, bridgeLaunch] = awa
 const bridgeSurface = `${bridgeRoutes}\n${bridgeLaunch}`;
 
 for (const marker of [
+  'api.POST("/opl/runtime-gate"',
   'router.GET("/api/session-traces"',
   'router.GET("/api/runs"',
   'api.POST("/provider/preflight"',
@@ -56,6 +60,7 @@ for (const marker of [
 }
 
 for (const marker of [
+  "/api/opl/runtime-gate",
   "/api/provider/bind",
   "/api/provider/preflight",
   "/api/v22/managed-environment/open",
@@ -67,6 +72,12 @@ for (const marker of [
   "/api/v22/managed-environment/release",
   "assertPublicPayload",
   "rawProviderKey",
+  "ordinary_chat",
+  "runtime_required",
+  "productOwner",
+  "primaryConsumer",
+  "nodePoolProjection",
+  "destroyStorage",
 ]) {
   assertIncludes(controlplaneTest, marker, `go_controlplane_test_must_cover:${marker}`);
 }
@@ -89,6 +100,29 @@ for (const marker of [
 }
 
 assertNotMatches(`${router}\n${controlplane}\n${bridgeSurface}`, /services\/portal\/src|rawProviderKey[^"\n]*json|launchToken[^"\n]*json|runtimeToken[^"\n]*json/u, "runtime_gate_must_not_restore_node_backend_or_token_projection");
+
+const runtimeGate = apiContract.medopl_api_contract.runtime_gate;
+assert.equal(runtimeGate.product_owner, "medopl", "runtime_gate_product_owner_must_be_medopl");
+assert.equal(runtimeGate.primary_consumer, "opl-webui", "runtime_gate_primary_consumer_must_be_opl_webui");
+assert.equal(runtimeGate.ordinary_chat_owner, "opl-webui", "ordinary_chat_must_stay_with_opl_webui");
+assert.equal(runtimeGate.runtime_required_owner, "medopl", "runtime_required_must_enter_medopl");
+assert.deepEqual(runtimeGate.must_not_claim, [
+  "medopl_owns_ordinary_chat",
+  "medopl_owns_opl_research_quality",
+  "runtime_required_without_medopl_runtime",
+  "storage_destroy_without_user_intent"
+], "runtime_gate_must_not_claim_mismatch");
+
+const bridgeBoundary = runtimeContract.medopl_runtime_bridge_contract;
+assert.equal(bridgeBoundary.consumer_context.product_owner, "medopl", "bridge_product_owner_must_be_medopl");
+assert.equal(bridgeBoundary.consumer_context.primary_consumer, "opl-webui", "bridge_primary_consumer_must_be_opl_webui");
+assert.deepEqual(bridgeBoundary.consumer_context.opl_webui_owned_modes, ["ordinary_chat"], "bridge_opl_webui_modes_mismatch");
+assert.deepEqual(bridgeBoundary.consumer_context.medopl_owned_modes, ["runtime_required", "full_runtime"], "bridge_medopl_modes_mismatch");
+
+const cloudBoundary = cloudContract.medopl_cloud_boundary;
+for (const concept of ["runtime_binding", "storage_binding", "node_pool_projection", "billing_freeze", "release_receipt", "storage_destroy_intent"]) {
+  assertIncludes(cloudBoundary.platform_owned_concepts.join("\n"), concept, `cloud_boundary_platform_owned_concept:${concept}`);
+}
 
 console.log(JSON.stringify({
   ok: true,

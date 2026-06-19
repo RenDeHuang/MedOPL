@@ -31,8 +31,14 @@
       "network",
       "cluster",
       "node_pool",
+      "runtime_binding",
+      "storage_binding",
+      "node_pool_projection",
       "object_storage",
       "secret_binding",
+      "billing_freeze",
+      "release_receipt",
+      "storage_destroy_intent",
       "audit_sink"
     ],
     "forbidden_customer_surface": [

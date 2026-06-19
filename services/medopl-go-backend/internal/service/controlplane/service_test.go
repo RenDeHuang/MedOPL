@@ -57,6 +57,61 @@ func TestServiceBindsProviderKeyThenOpensLaunchAndBootstrap(t *testing.T) {
 	}
 }
 
+func TestServiceRuntimeGateKeepsOrdinaryChatInOPLWebui(t *testing.T) {
+	ctx := context.Background()
+	service := NewService(memory.NewControlPlaneStore())
+
+	gate, err := service.RuntimeGate(ctx, RuntimeGateInput{
+		WorkspaceID:    "workspace-v22",
+		InvocationMode: "ordinary_chat",
+		RuntimePlanID:  "starter_2c4g_10gb",
+		StoragePlanID:  "workspace_10gb",
+	})
+	if err != nil {
+		t.Fatalf("RuntimeGate() error = %v", err)
+	}
+	if gate.ProductOwner != "medopl" || gate.PrimaryConsumer != "opl-webui" || gate.ConsumerRole != "entry_and_chat_surface" {
+		t.Fatalf("runtime gate owner boundary = %+v", gate)
+	}
+	if gate.MedOPLRuntimeRequired || gate.OrdinaryChatOwner != "opl-webui" || gate.RuntimeRequiredOwner != "medopl" {
+		t.Fatalf("ordinary chat boundary = %+v", gate)
+	}
+	if gate.NextAction != "continue_in_opl_webui" || gate.ProviderKeyStatus != "not_required_for_ordinary_chat" {
+		t.Fatalf("ordinary chat next action = %+v", gate)
+	}
+}
+
+func TestServiceRuntimeGateProjectsMedOPLRuntimeBindingForOPLWebui(t *testing.T) {
+	ctx := context.Background()
+	service := NewService(memory.NewControlPlaneStore())
+	launch := bindAndOpen(t, ctx, service)
+
+	gate, err := service.RuntimeGate(ctx, RuntimeGateInput{
+		WorkspaceID:    "workspace-v22",
+		InvocationMode: "runtime_required",
+		RuntimePlanID:  "starter_2c4g_10gb",
+		StoragePlanID:  "workspace_10gb",
+	})
+	if err != nil {
+		t.Fatalf("RuntimeGate() error = %v", err)
+	}
+	if !gate.MedOPLRuntimeRequired || gate.NextAction != "run_in_opl_webui_with_medopl_runtime" {
+		t.Fatalf("runtime required gate = %+v", gate)
+	}
+	if gate.WorkspaceBindingID == "" || gate.RuntimeBindingID != launch.ResourceBindingID || gate.StorageBindingID == "" {
+		t.Fatalf("runtime/storage binding projection = %+v", gate)
+	}
+	if gate.ProviderKeyRef != launch.ProviderKeyRef || gate.ProviderKeyStatus != "bound" {
+		t.Fatalf("provider projection = %+v", gate)
+	}
+	if gate.NodePoolProjection.NodePoolRef == "" || gate.NodePoolProjection.State != "ready" || gate.NodePoolProjection.CustomerVisible {
+		t.Fatalf("node pool projection = %+v", gate.NodePoolProjection)
+	}
+	if gate.Billing.FreezeStatus != "active" || !gate.Release.CanReleaseRuntime || gate.Release.DestroyStorage != "requires_explicit_user_intent" {
+		t.Fatalf("billing/release projection = %+v release=%+v", gate.Billing, gate.Release)
+	}
+}
+
 func TestServiceFailsClosedWithoutProviderKey(t *testing.T) {
 	ctx := context.Background()
 	service := NewService(memory.NewControlPlaneStore())

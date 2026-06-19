@@ -40,6 +40,24 @@ func openManagedEnvironment(service ControlPlaneService) gin.HandlerFunc {
 	}
 }
 
+func runtimeGate(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var request runtimeGateRequest
+		_ = ctx.ShouldBindJSON(&request)
+		payload, err := service.RuntimeGate(ctx.Request.Context(), cps.RuntimeGateInput{
+			WorkspaceID:    defaultString(request.WorkspaceID, workspaceIDFromQuery(ctx), "workspace-local-rc"),
+			InvocationMode: defaultString(request.InvocationMode, "runtime_required"),
+			RuntimePlanID:  request.RuntimePlanID,
+			StoragePlanID:  request.StoragePlanID,
+		})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, payload)
+	}
+}
+
 func launchStatus(service ControlPlaneService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		launch, err := service.LaunchStatus(ctx.Request.Context(), cps.LaunchLookupInput{LaunchID: ctx.Param("launchId")})

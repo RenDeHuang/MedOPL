@@ -18,12 +18,15 @@ const apiContract = await readJson("contracts/medopl-api-contract.json");
 const goRouteSurface = [
   await readRepoFile("services/medopl-go-backend/internal/server/router.go"),
   await readRepoFile("services/medopl-go-backend/internal/server/handlers/controlplane.go"),
+  await readRepoFile("services/medopl-go-backend/internal/service/controlplane/service.go"),
 ].join("\n");
+const serviceSurface = await readRepoFile("services/medopl-go-backend/internal/service/controlplane/service.go");
 const migration = await readRepoFile("services/medopl-go-backend/migrations/0001_baseline.sql");
 
 const requiredRouteMarkers = [
   "/api/me",
   "/api/workspace",
+  "/runtime-gate",
   "/opl/runs",
   "/billing/summary",
   "/api/admin/audit",
@@ -39,6 +42,29 @@ for (const table of ["tenants", "workspaces", "runs", "artifacts", "files", "bil
 
 for (const forbidden of apiContract.medopl_api_contract.forbidden_response_fields) {
   assert(!goRouteSurface.includes(`"${forbidden}"`), `api_contract_forbidden_response_field:${forbidden}`);
+}
+
+const runtimeGate = apiContract.medopl_api_contract.runtime_gate;
+assert(runtimeGate, "api_contract_runtime_gate_missing");
+assert.equal(runtimeGate.product_owner, "medopl", "runtime_gate_product_owner_must_be_medopl");
+assert.equal(runtimeGate.primary_consumer, "opl-webui", "runtime_gate_primary_consumer_must_be_opl_webui");
+assert.equal(runtimeGate.consumer_role, "entry_and_chat_surface", "runtime_gate_consumer_role_mismatch");
+assert.deepEqual(runtimeGate.invocation_modes, ["api_only", "runtime_required"], "runtime_gate_invocation_modes_mismatch");
+assert.equal(runtimeGate.ordinary_chat_owner, "opl-webui", "runtime_gate_ordinary_chat_owner_must_be_opl_webui");
+assert.equal(runtimeGate.runtime_required_owner, "medopl", "runtime_gate_runtime_required_owner_must_be_medopl");
+
+for (const field of runtimeGate.must_return) {
+  assert(
+    goRouteSurface.includes(`"${field}"`) || goRouteSurface.includes(`json:"${field}`),
+    `runtime_gate_go_response_field_missing:${field}`,
+  );
+}
+const runtimeGateProjectionSurface = serviceSurface.slice(
+  serviceSurface.indexOf("type RuntimeGateProjection struct"),
+  serviceSurface.indexOf("type LaunchLookupInput struct"),
+);
+for (const field of runtimeGate.forbidden_response_fields) {
+  assert(!runtimeGateProjectionSurface.includes(`json:"${field}`), `runtime_gate_forbidden_response_field:${field}`);
 }
 
 console.log(JSON.stringify({

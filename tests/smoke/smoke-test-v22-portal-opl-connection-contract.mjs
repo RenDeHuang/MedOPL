@@ -26,6 +26,10 @@ async function read(relativePath) {
   return readFile(path.join(repoRoot, relativePath), "utf8");
 }
 
+async function readJson(relativePath) {
+  return JSON.parse(await read(relativePath));
+}
+
 function assertIncludesAll(text, required, label) {
   for (const phrase of required) {
     assert(text.includes(phrase), `${label}_missing:${phrase}`);
@@ -41,6 +45,10 @@ function assertExcludesAll(text, forbidden, label) {
 const contents = Object.fromEntries(await Promise.all(
   Object.entries(files).map(async ([key, relativePath]) => [key, await read(relativePath)]),
 ));
+const [productProfile, apiContract] = await Promise.all([
+  readJson("contracts/medopl-product-profile.json"),
+  readJson("contracts/medopl-api-contract.json"),
+]);
 
 assert.equal(contents.specsIndex.split("\n").length <= 400, true, `specs_index_line_budget_exceeded:${contents.specsIndex.split("\n").length}`);
 assert.equal(/```json/u.test(contents.specsIndex), false, "specs_index_must_not_embed_machine_json");
@@ -67,11 +75,18 @@ assertIncludesAll(contents.sourceSpec, [
 ], "connection_source_spec");
 
 assertIncludesAll(contents.productTruth, [
-  "Portal “进入 OPL 工作台”按钮和 Gateway preflight 最终进入同一套 Gateway / launch / provider binding 逻辑",
-  "进入 OPL 工作台和运行平台托管任务是两道 gate",
+  "OPL-Webui 是主要 consumer / entry surface",
+  "ordinary chat 留在 OPL-Webui",
+  "runtime_required",
+  "MedOPL 负责 runtime、storage、node pool projection、billing、audit、release 和 storage destroy intent",
   "OPL entry / Gateway preflight / launch 边界",
   "Runtime Bridge session、message、fileRef、run、artifact 和 trace projection",
 ], "connection_product_truth");
+
+assert.equal(productProfile.medopl_product_profile.primary_consumer_surface.name, "opl-webui", "connection_primary_consumer_must_be_opl_webui");
+assert.equal(productProfile.medopl_product_profile.primary_consumer_surface.ordinary_chat_owner, "opl-webui", "connection_ordinary_chat_owner_must_be_opl_webui");
+assert.equal(productProfile.medopl_product_profile.primary_consumer_surface.runtime_required_owner, "medopl", "connection_runtime_required_owner_must_be_medopl");
+assert.equal(apiContract.medopl_api_contract.runtime_gate.route, "POST /api/opl/runtime-gate", "connection_runtime_gate_route_mismatch");
 
 assertIncludesAll(contents.runtimeTruth, [
   "OPL Web 用户可见入口必须是 Portal “进入 OPL 工作台”或 `/opl/entry/preflight`",

@@ -5,6 +5,8 @@ const files = {
   specsIndex: "docs/specs/README.md",
   productSpec: "specs/product/spec.md",
   productTruth: "docs/product/README.md",
+  productProfile: "contracts/medopl-product-profile.json",
+  apiContract: "contracts/medopl-api-contract.json",
   sourceSpec: "specs/source/spec.md",
   activeTruth: "docs/active/README.md",
   deliveryTruth: "docs/delivery/README.md",
@@ -31,6 +33,8 @@ const [
   specsIndex,
   productSpec,
   productTruth,
+  productProfile,
+  apiContract,
   sourceSpec,
   activeTruth,
   deliveryTruth,
@@ -39,6 +43,8 @@ const [
   source(files.specsIndex),
   source(files.productSpec),
   source(files.productTruth),
+  source(files.productProfile).then((raw) => JSON.parse(raw)),
+  source(files.apiContract).then((raw) => JSON.parse(raw)),
   source(files.sourceSpec),
   source(files.activeTruth),
   source(files.deliveryTruth),
@@ -61,13 +67,19 @@ assertIncludesAll(productSpec, [
 
 assertIncludesAll(productTruth, [
   "One Person Lab SaaS 控制面和托管交付平台",
-  "用户购买托管 OPL 科研工作台服务",
+  "用户购买托管 OPL runtime、文件空间、任务并发、计费、审计和释放能力",
   "MedOPL 不是云资源控制台",
-  "Portal 不回答科研问题，不复制 OPL chatbot",
-  "Portal 负责准备、管理、进入、回流、计费、审计和释放",
-  "OPL 负责 chatbot、agent、文件理解、任务推进、结果生成和工作台内交互体验",
+  "OPL-Webui 是主要 consumer / entry surface",
+  "ordinary chat 留在 OPL-Webui",
+  "MedOPL 不回答科研问题，不复制 OPL chatbot",
+  "MedOPL 负责 runtime、storage、node pool projection、billing、audit、release 和 storage destroy intent",
   "买了什么、能不能用、缺什么、下一步点哪里、结果在哪里、费用是否正常",
 ], "saas_control_plane_product_truth");
+
+assert.equal(productProfile.medopl_product_profile.primary_consumer_surface.name, "opl-webui", "saas_control_plane_primary_consumer_must_be_opl_webui");
+assert.equal(productProfile.medopl_product_profile.primary_consumer_surface.ordinary_chat_owner, "opl-webui", "saas_control_plane_ordinary_chat_owner_must_be_opl_webui");
+assert.equal(productProfile.medopl_product_profile.primary_consumer_surface.runtime_required_owner, "medopl", "saas_control_plane_runtime_required_owner_must_be_medopl");
+assert.equal(apiContract.medopl_api_contract.runtime_gate.route, "POST /api/opl/runtime-gate", "saas_control_plane_runtime_gate_route_mismatch");
 
 assertIncludesAll(sourceSpec, [
   "`source:portal-typed-api-contract`",

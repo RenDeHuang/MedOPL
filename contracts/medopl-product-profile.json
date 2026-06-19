@@ -25,6 +25,13 @@
       "billing_account",
       "audit_trace"
     ],
+    "primary_consumer_surface": {
+      "name": "opl-webui",
+      "role": "entry_and_chat_surface",
+      "ordinary_chat_owner": "opl-webui",
+      "runtime_required_owner": "medopl",
+      "integration_contract": "POST /api/opl/runtime-gate"
+    },
     "platform_responsibilities": [
       "provision",
       "isolate",

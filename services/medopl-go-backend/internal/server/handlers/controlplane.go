@@ -13,6 +13,7 @@ type ControlPlaneService interface {
 	ProviderBinding(ctx context.Context, input cps.WorkspaceInput) (cpd.ProviderBinding, error)
 	Preflight(ctx context.Context, input cps.WorkspaceInput) (cpd.PreflightResult, error)
 	OpenManagedEnvironment(ctx context.Context, input cps.OpenManagedEnvironmentInput) (cpd.LaunchProjection, error)
+	RuntimeGate(ctx context.Context, input cps.RuntimeGateInput) (cps.RuntimeGateProjection, error)
 	LaunchStatus(ctx context.Context, input cps.LaunchLookupInput) (cpd.LaunchProjection, error)
 	Bootstrap(ctx context.Context, input cps.LaunchLookupInput) (cpd.BootstrapProjection, error)
 	BindSession(ctx context.Context, input cps.LaunchLookupInput) (map[string]any, error)
@@ -45,6 +46,13 @@ type openManagedEnvironmentRequest struct {
 	UserID         string `json:"userId"`
 	WorkspaceID    string `json:"workspaceId"`
 	IdempotencyKey string `json:"idempotencyKey"`
+}
+
+type runtimeGateRequest struct {
+	WorkspaceID    string `json:"workspaceId"`
+	InvocationMode string `json:"invocationMode"`
+	RuntimePlanID  string `json:"runtimePlanId"`
+	StoragePlanID  string `json:"storagePlanId"`
 }
 
 type recordFileRequest struct {
@@ -97,6 +105,7 @@ func RegisterControlPlaneRoutes(api *gin.RouterGroup, service ControlPlaneServic
 	api.POST("/v22/managed-environment/readiness", managedEnvironmentReadiness(service))
 	api.POST("/v22/managed-environment/open", openManagedEnvironment(service))
 	api.POST("/v22/managed-environment/release", releaseManagedEnvironment(service))
+	api.POST("/opl/runtime-gate", runtimeGate(service))
 	api.POST("/opl/launch", openManagedEnvironment(service))
 	api.GET("/opl/launch-status/:launchId", launchStatus(service))
 	api.GET("/opl/bootstrap", bootstrap(service))

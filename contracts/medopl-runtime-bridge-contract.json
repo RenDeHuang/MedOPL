@@ -50,6 +50,20 @@
       "stopping",
       "released"
     ],
+    "consumer_context": {
+      "product_owner": "medopl",
+      "primary_consumer": "opl-webui",
+      "consumer_role": "entry_and_chat_surface",
+      "opl_webui_owned_modes": [
+        "ordinary_chat"
+      ],
+      "medopl_owned_modes": [
+        "runtime_required",
+        "full_runtime"
+      ],
+      "runtime_gate_route": "POST /api/opl/runtime-gate",
+      "provider_key_policy": "providerKeyRef_only"
+    },
     "must_not_decide": [
       "research_quality",
       "medical_correctness",

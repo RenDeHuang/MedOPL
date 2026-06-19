@@ -55,6 +55,51 @@
       "runtime_token",
       "launch_token",
       "kubeconfig_content"
-    ]
+    ],
+    "runtime_gate": {
+      "route": "POST /api/opl/runtime-gate",
+      "product_owner": "medopl",
+      "primary_consumer": "opl-webui",
+      "consumer_role": "entry_and_chat_surface",
+      "ordinary_chat_owner": "opl-webui",
+      "runtime_required_owner": "medopl",
+      "invocation_modes": [
+        "api_only",
+        "runtime_required"
+      ],
+      "must_return": [
+        "productOwner",
+        "primaryConsumer",
+        "consumerRole",
+        "workspaceBindingId",
+        "invocationMode",
+        "medoplRuntimeRequired",
+        "providerKeyStatus",
+        "providerKeyRef",
+        "runtimeBindingId",
+        "runtimeState",
+        "storageBindingId",
+        "storageState",
+        "nodePoolProjection",
+        "billing",
+        "release",
+        "nextAction"
+      ],
+      "forbidden_response_fields": [
+        "rawProviderKey",
+        "apiKey",
+        "providerApiKey",
+        "bearerToken",
+        "launchToken",
+        "runtimeToken",
+        "kubeconfig"
+      ],
+      "must_not_claim": [
+        "medopl_owns_ordinary_chat",
+        "medopl_owns_opl_research_quality",
+        "runtime_required_without_medopl_runtime",
+        "storage_destroy_without_user_intent"
+      ]
+    }
   }
 }
