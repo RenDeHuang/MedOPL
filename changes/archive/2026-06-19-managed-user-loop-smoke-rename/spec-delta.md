@@ -8,7 +8,7 @@
 
 - `tests/smoke/smoke-test-v22-mvp-user-loop-contract.mjs` is renamed to `tests/smoke/smoke-test-v22-managed-user-loop-contract.mjs`.
 - `scripts/v22-test-classification.mjs` points the smoke lane to the managed user loop file.
-- `specs/product/spec.md` and `docs/product/README.md` refer to the managed user loop test/product group.
+- `framework:managed-user-loop-smoke-rename` records the managed user loop test/product group and its smoke-lane eval.
 
 ## REMOVED
 
