@@ -6,7 +6,7 @@
   "machine_boundary": "Small consumer-first contract for production launch gap identifiers, authorization boundaries, evidence sink rules, and redaction rules. It excludes run history, CLB identifiers, HTTP status observations, and current launch status.",
   "consumers": [
     "scripts/v22-verify.mjs",
-    "tests/governance/governance-test-v22-current-state-index-loop.mjs"
+    "tests/health/health-check-v22-dynamic-test-run-plan.mjs"
   ],
   "cloud_authorization_boundary_contract": {
     "gap_schema": {

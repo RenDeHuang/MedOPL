@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -28,7 +28,6 @@ const allowedLifecycleRoles = [
   "suite-wrapper",
   "real-cloud-readiness-boundary",
   "future-authorized-boundary",
-  "retired-governance",
 ];
 
 async function readRepoFile(repoPath) {
@@ -37,6 +36,16 @@ async function readRepoFile(repoPath) {
 
 async function readJson(repoPath) {
   return JSON.parse(await readRepoFile(repoPath));
+}
+
+async function exists(repoPath) {
+  try {
+    await stat(path.join(repoRoot, repoPath));
+    return true;
+  } catch (error) {
+    if (error?.code === "ENOENT") return false;
+    throw error;
+  }
 }
 
 function assertIncludes(source, expected, label) {
@@ -74,10 +83,12 @@ for (const entry of TEST_LANE_REGISTRY) {
   assertNoForbiddenLifecycleRole(entry.lifecycleRole, `registry_entry_lifecycle_role:${entry.file}`);
 }
 
-for (const entry of TEST_LANE_REGISTRY.filter((item) => item.lifecycleRole === "retired-governance")) {
-  assert.equal(entry.lane, "retired-governance", `retired_governance_role_must_use_retired_lane:${entry.file}`);
-  assert.deepEqual(entry.verifySuites, ["retired-governance"], `retired_governance_must_not_enter_active_suite:${entry.file}`);
-}
+assert.equal(await exists("tests/governance"), false, "tests_governance_directory_must_be_physically_retired");
+assert.equal(
+  TEST_LANE_REGISTRY.some((entry) => entry.lane === "retired-governance" || entry.lifecycleRole === "retired-governance"),
+  false,
+  "retired_governance_lane_and_lifecycle_role_must_not_exist",
+);
 
 const registered = new Set(listRegisteredTestFiles());
 for (const entry of TEST_LANE_REGISTRY.filter((item) => item.lifecycleRole === "suite-wrapper")) {
@@ -100,14 +111,21 @@ const manifestSuitesById = new Map(manifest.suites.map((suite) => [suite.id, sui
 const packageSuitesById = new Map((manifest.package_suites || []).map((suite) => [suite.id, suite]));
 const testLanePackageFiles = packageSuitesById.get("test-lanes")?.commands.map(normalizeCommandTestFile).filter(Boolean) || [];
 assert(
-  testLanePackageFiles.includes("tests/governance/governance-test-v22-test-lifecycle-cleanup.mjs"),
+  testLanePackageFiles.includes("tests/health/health-check-v22-test-lifecycle-cleanup.mjs"),
   "test_lanes_package_must_run_test_lifecycle_cleanup_gate",
 );
-for (const suite of ["local-contract", "current", "review"]) {
+for (const suite of ["current", "review"]) {
   const files = manifestSuitesById.get(suite)?.commands.map(normalizeCommandTestFile).filter(Boolean) || [];
   assert(
-    !files.includes("tests/governance/governance-test-v22-test-lifecycle-cleanup.mjs"),
-    `retired_governance_gate_must_not_enter_active_manifest_suite:${suite}`,
+    !files.includes("tests/health/health-check-v22-test-lifecycle-cleanup.mjs"),
+    `test_lifecycle_cleanup_gate_must_not_enter_active_manifest_suite:${suite}`,
+  );
+}
+for (const suite of ["health", "hygiene", "local-contract"]) {
+  const files = manifestSuitesById.get(suite)?.commands.map(normalizeCommandTestFile).filter(Boolean) || [];
+  assert(
+    files.includes("tests/health/health-check-v22-test-lifecycle-cleanup.mjs"),
+    `test_lifecycle_cleanup_gate_must_enter_health_manifest_suite:${suite}`,
   );
 }
 assert.equal(manifest.test_lifecycle_cleanup_policy?.direct_cleanup, true, "manifest_must_declare_direct_cleanup");
@@ -116,7 +134,7 @@ assert.equal(manifest.test_lifecycle_cleanup_policy?.active_test_requires_curren
 assert.equal(manifest.test_lifecycle_cleanup_policy?.forbid_compat_only_active_tests, true, "manifest_must_forbid_compat_only_active_tests");
 assert.equal(manifest.test_lifecycle_cleanup_policy?.forbid_historical_proof_as_active_test, true, "manifest_must_forbid_historical_proof_as_active_test");
 assert.equal(manifest.test_lifecycle_cleanup_policy?.duplicate_aggregate_action, "merge-or-delete", "manifest_duplicate_aggregate_action_mismatch");
-assert.equal(manifest.test_lifecycle_cleanup_policy?.gate, "tests/governance/governance-test-v22-test-lifecycle-cleanup.mjs", "manifest_test_lifecycle_gate_mismatch");
+assert.equal(manifest.test_lifecycle_cleanup_policy?.gate, "tests/health/health-check-v22-test-lifecycle-cleanup.mjs", "manifest_test_lifecycle_gate_mismatch");
 
 assert.equal(
   (manifest.branch_override_suites || []).some((suite) => suite.id === "test-lifecycle-cleanup-gate"),
@@ -130,14 +148,17 @@ for (const suiteFiles of [healthFiles, localContractFiles]) {
   assert(suiteFiles.includes("tests/health/health-check-v22-zero-compat-active-surface-gate.mjs"), "zero_compat_gate_must_remain_in_health_and_local_contract");
 }
 
-assert(
-  TEST_LANE_SUITES["retired-governance"].includes("tests/governance/governance-test-v22-test-lifecycle-cleanup.mjs"),
-  "registry_retired_governance_suite_missing_test_lifecycle_cleanup_gate",
-);
-for (const suite of ["local-contract", "current", "review"]) {
+assert.equal("retired-governance" in TEST_LANE_SUITES, false, "registry_must_not_expose_retired_governance_suite");
+for (const suite of ["current", "review"]) {
   assert(
-    !TEST_LANE_SUITES[suite].includes("tests/governance/governance-test-v22-test-lifecycle-cleanup.mjs"),
-    `retired_governance_gate_must_not_enter_active_registry_suite:${suite}`,
+    !TEST_LANE_SUITES[suite].includes("tests/health/health-check-v22-test-lifecycle-cleanup.mjs"),
+    `test_lifecycle_cleanup_gate_must_not_enter_active_registry_suite:${suite}`,
+  );
+}
+for (const suite of ["health", "hygiene", "local-contract"]) {
+  assert(
+    TEST_LANE_SUITES[suite].includes("tests/health/health-check-v22-test-lifecycle-cleanup.mjs"),
+    `test_lifecycle_cleanup_gate_must_enter_health_registry_suite:${suite}`,
   );
 }
 

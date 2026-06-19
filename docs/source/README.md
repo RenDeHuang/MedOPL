@@ -94,7 +94,7 @@ Retirement surface：
 Backend physical removal gate：
 
 - `tests/contracts/contract-test-v22-node-portal-backend-physical-removal.mjs` 是当前机器入口，验证 `services/portal/src` 不存在、Portal frontend 只走 Go `/api`、旧 Node facade/gate/fixture 不回到 manifest。
-- `tests/governance/governance-test-v22-backend-go-convergence-program.mjs` 只验证 Go takeover 已关闭、本地控制面 owner 是 `services/medopl-go-backend`、real-cloud 仍停在授权边界；不再依赖 backend inventory 或 migration-map fixture。
+- `tests/contracts/contract-test-v22-go-backend-service-surface.mjs` 和 `tests/contracts/contract-test-v22-precloud-deployable-rc.mjs` 验证 Go takeover 已关闭、本地控制面 owner 是 `services/medopl-go-backend`、real-cloud 仍停在授权边界；不再依赖 backend inventory 或 migration-map fixture。
 
 Current docs / eval surface during migration：
 

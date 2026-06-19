@@ -12,11 +12,11 @@
   "consumers": [
     "validate:active-platform",
     "tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
-    "tests/governance/governance-test-v22-real-cloud-authorization-boundary.mjs"
+    "tests/release/release-test-v22-boundary-contract.mjs"
   ],
   "consumer_tests": [
     "node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
-    "node tests/governance/governance-test-v22-real-cloud-authorization-boundary.mjs"
+    "node tests/release/release-test-v22-boundary-contract.mjs"
   ],
   "medopl_release_boundary": {
     "release_phases": [

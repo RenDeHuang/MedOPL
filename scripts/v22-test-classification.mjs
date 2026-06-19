@@ -17,7 +17,6 @@ export const SMOKE_CATEGORIES = Object.freeze([
   "smoke",
   "contract",
   "regression",
-  "retired-governance",
   "suite-wrapper",
 ]);
 export const SMOKE_EVAL_TIERS = Object.freeze([
@@ -34,7 +33,6 @@ export const SMOKE_EVAL_TIERS = Object.freeze([
   "local-regression",
   "real-cloud-readiness",
   "future-authorized",
-  "retired-governance",
 ]);
 export const SMOKE_EVAL_SURFACES = Object.freeze(["control-plane", "portal", "opl", "runtime-bridge", "cloud"]);
 export const SMOKE_EVAL_ENTRY_KINDS = Object.freeze(["atomic", "suite-wrapper", "gate-self-test"]);
@@ -45,7 +43,6 @@ export const SMOKE_EVAL_LIFECYCLE_ROLES = Object.freeze([
   "suite-wrapper",
   "real-cloud-readiness-boundary",
   "future-authorized-boundary",
-  "retired-governance",
 ]);
 export const TEST_LANES = Object.freeze([
   "product",
@@ -63,12 +60,12 @@ export const TEST_LANES = Object.freeze([
   "regression-runtime-bridge",
   "real-cloud-readiness",
   "future-authorized",
-  "retired-governance",
 ]);
 export const DEFAULT_SMOKE_CATEGORIES = Object.freeze(["product", "frontend", "backend", "runtime", "release", "hygiene", "smoke", "suite-wrapper"]);
-export const HEALTH_CHECK_MAX = 12;
+export const HEALTH_CHECK_MAX = 16;
 export const SMOKE_GOLDEN_MIN = 8;
 export const SMOKE_GOLDEN_MAX = 15;
+const UNCLASSIFIED_TEST_LANE = "unclassified";
 export const TEST_LIFECYCLE_CLEANUP_POLICY = Object.freeze({
   directCleanup: true,
   activeTestRequiresLaneOwner: true,
@@ -103,14 +100,19 @@ const BACKEND_FILES = Object.freeze(["tests/backend/backend-test-v22-api-contrac
 const RUNTIME_FILES = Object.freeze(["tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs"]);
 const RELEASE_FILES = Object.freeze(["tests/release/release-test-v22-boundary-contract.mjs"]);
 const HYGIENE_FILES = Object.freeze(["tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs"]);
+const REVIEW_HYGIENE_FILES = Object.freeze(["tests/hygiene/hygiene-test-v22-diff-scoped-sensitive-review-gate.mjs"]);
 const HEALTH_FILES = Object.freeze([
   "tests/health/health-check-v22-contract-conflict-boundary.mjs",
   "tests/health/health-check-v22-line-budget-gate.mjs",
   "tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
   "tests/health/health-check-v22-repo-hygiene-gate.mjs",
+  "tests/health/health-check-v22-root-verify-workflow-entrypoints.mjs",
   "tests/health/health-check-v22-smoke-classification-gate.mjs",
   "tests/health/health-check-v22-smoke-eval-boundary.mjs",
+  "tests/health/health-check-v22-test-lane-registry.mjs",
+  "tests/health/health-check-v22-test-lifecycle-cleanup.mjs",
   "tests/health/health-check-v22-workflow-command-reference-gate.mjs",
+  "tests/health/health-check-v22-workflow-gate.mjs",
   "tests/health/health-check-v22-zero-compat-active-surface-gate.mjs",
 ]);
 const SMOKE_FILES = Object.freeze([
@@ -131,7 +133,11 @@ const CLOUD_FUTURE_FILES = Object.freeze([
   "tests/cloud/cloud-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs",
   "tests/cloud/cloud-test-v22-tke-bootstrap-preflight-local-gate.mjs",
 ]);
-const CURRENT_GATE_FILES = Object.freeze(["tests/governance/governance-test-v22-validate-active-platform.mjs"]);
+const CURRENT_GATE_FILES = Object.freeze(["tests/contracts/contract-test-v22-validate-active-platform.mjs"]);
+const REVIEW_HEALTH_FILES = Object.freeze([
+  "tests/health/health-check-v22-dynamic-test-run-plan.mjs",
+  "tests/health/health-check-v22-verify-plan-mode.mjs",
+]);
 
 function normalizeSmokeScriptPath(scriptPath) {
   return String(scriptPath || "").replaceAll("\\", "/").replace(/^\.\//u, "");
@@ -162,7 +168,6 @@ function idForFile(file) {
 }
 
 function lifecycleRoleForEntry({ authorization, entryKind, lane }) {
-  if (lane === "retired-governance") return "retired-governance";
   if (authorization === "future-authorized") return "future-authorized-boundary";
   if (lane === "real-cloud-readiness") return "real-cloud-readiness-boundary";
   if (entryKind === "suite-wrapper") return "suite-wrapper";
@@ -196,7 +201,7 @@ function contractsForFile(file, surface) {
 
 function entryKindForFile(file) {
   if (file.startsWith("tests/suites/")) return "suite-wrapper";
-  if (file.startsWith("tests/health/") || file.startsWith("tests/governance/") || file.startsWith("tests/hygiene/")) return "gate-self-test";
+  if (file.startsWith("tests/health/") || file.startsWith("tests/hygiene/")) return "gate-self-test";
   return "atomic";
 }
 
@@ -230,6 +235,16 @@ function baseEntry(file, lane, tier, verifySuites = []) {
   });
 }
 
+function gateSelfTestEntry(file, lane, tier, verifySuites = []) {
+  const surface = surfaceForFile(file);
+  return Object.freeze({
+    ...baseEntry(file, lane, tier, verifySuites),
+    entryKind: "gate-self-test",
+    lifecycleRole: lifecycleRoleForEntry({ authorization: tier === "future-authorized" ? "future-authorized" : "none", entryKind: "gate-self-test", lane }),
+    ownerSurface: `surface:${surface}`,
+  });
+}
+
 function explicitEntries() {
   return [
     ...PRODUCT_FILES.map((file) => baseEntry(file, "product", "product-contract", ["product", "current", "local-contract", "review"])),
@@ -238,11 +253,13 @@ function explicitEntries() {
     ...RUNTIME_FILES.map((file) => baseEntry(file, "runtime", "runtime-contract", ["runtime", "current", "local-contract", "review"])),
     ...RELEASE_FILES.map((file) => baseEntry(file, "release", "release-boundary", ["release", "current", "local-contract", "review"])),
     ...HYGIENE_FILES.map((file) => baseEntry(file, "hygiene", "hygiene-check", ["hygiene", "current", "health", "local-contract", "review"])),
+    ...REVIEW_HYGIENE_FILES.map((file) => baseEntry(file, "hygiene", "hygiene-check", ["hygiene", "review"])),
     ...HEALTH_FILES.map((file) => baseEntry(file, "health", "health-check", ["health", "hygiene", "local-contract"])),
+    ...REVIEW_HEALTH_FILES.map((file) => baseEntry(file, "health", "health-check", ["health", "hygiene", "local-contract", "review"])),
     ...SMOKE_FILES.map((file) => baseEntry(file, "smoke", "smoke-golden", ["smoke"])),
     ...CLOUD_READINESS_FILES.map((file) => baseEntry(file, "real-cloud-readiness", "real-cloud-readiness", ["cloud", "real-cloud-readiness"])),
     ...CLOUD_FUTURE_FILES.map((file) => baseEntry(file, "future-authorized", "future-authorized", ["cloud-future-authorized"])),
-    ...CURRENT_GATE_FILES.map((file) => baseEntry(file, "contract", "contract-local", ["health", "local-contract", "current", "review"])),
+    ...CURRENT_GATE_FILES.map((file) => gateSelfTestEntry(file, "contract", "contract-local", ["health", "local-contract", "current", "review"])),
     ...["tests/suites/suite-test-v22-golden-smoke.mjs", "tests/suites/suite-test-v22-mvp.mjs"]
       .map((file) => baseEntry(file, "contract", "contract-local", file.includes("golden") ? ["golden-path", "smoke"] : ["local-contract"])),
   ];
@@ -256,12 +273,8 @@ function fallbackEntry(file) {
   if (file.startsWith("tests/regression/runtime-bridge/")) return baseEntry(file, "regression-runtime-bridge", "local-regression", ["local-regression"]);
   if (file === "tests/contracts/contract-test-v22-go-backend-service-surface.mjs") return baseEntry(file, "contract", "contract-local", ["health", "local-contract"]);
   if (file === "tests/contracts/contract-test-v22-precloud-deployable-rc.mjs") return baseEntry(file, "contract", "contract-local", ["health", "local-contract"]);
-  if (file === "tests/governance/governance-test-v22-dynamic-test-run-plan.mjs") return baseEntry(file, "contract", "contract-local", ["health", "local-contract", "review"]);
-  if (file === "tests/governance/governance-test-v22-verify-plan-mode.mjs") return baseEntry(file, "contract", "contract-local", ["health", "local-contract", "review"]);
   if (file.startsWith("tests/contracts/")) return baseEntry(file, "contract", "contract-local", ["local-contract"]);
-  if (file.startsWith("tests/governance/")) return baseEntry(file, "retired-governance", "retired-governance", ["retired-governance"]);
-  if (file.startsWith("tests/local-rc/")) return baseEntry(file, "retired-governance", "retired-governance", ["retired-governance"]);
-  return baseEntry(file, "retired-governance", "retired-governance", ["retired-governance"]);
+  return baseEntry(file, UNCLASSIFIED_TEST_LANE, UNCLASSIFIED_TEST_LANE, []);
 }
 
 export const TEST_LANE_REGISTRY = Object.freeze(
@@ -294,7 +307,6 @@ export const TEST_LANE_SUITES = Object.freeze({
   "cloud-future-authorized": suiteFiles("cloud-future-authorized"),
   review: suiteFiles("review"),
   "golden-path": suiteFiles("golden-path"),
-  "retired-governance": suiteFiles("retired-governance"),
 });
 
 const ACTIVE_MANIFEST_SUITE_IDS = Object.freeze([
@@ -324,7 +336,7 @@ const SUITE_WRAPPER_MANIFEST_ALIASES = Object.freeze({
 const SUITE_COMMAND_COVERAGE_ALIASES = Object.freeze({
   current: Object.freeze({
     "node scripts/v22-verify.mjs active-platform --json": Object.freeze([
-      "tests/governance/governance-test-v22-validate-active-platform.mjs",
+      "tests/contracts/contract-test-v22-validate-active-platform.mjs",
     ]),
   }),
 });
@@ -457,7 +469,6 @@ export function assertManifestSuiteAlignment(manifest, options = {}) {
   const manifestSuitesById = new Map(manifestSuites.map((suite) => [suite.id, suite]));
   const invalidCommands = [];
   const missingCoverage = [];
-  const retiredGovernanceLeaks = [];
 
   for (const suiteId of activeSuiteIds) {
     const suite = manifestSuitesById.get(suiteId);
@@ -477,7 +488,6 @@ export function assertManifestSuiteAlignment(manifest, options = {}) {
         invalidCommands.push({ suiteId, file, reason: "manifest_test_command_not_registered" });
         continue;
       }
-      if (entry.lane === "retired-governance") retiredGovernanceLeaks.push({ suiteId, file, reason: "retired_governance_must_not_enter_active_manifest_suite" });
       if (entry.verifySuites.includes(suiteId)) {
         directFiles.add(file);
         if (entry.entryKind === "suite-wrapper") wrapperFiles.push(file);
@@ -492,11 +502,6 @@ export function assertManifestSuiteAlignment(manifest, options = {}) {
 
     const wrapperCoverage = new Set(wrapperFiles.flatMap((file) => wrapperCoverageFiles(file)));
     for (const file of TEST_LANE_SUITES[suiteId] || []) {
-      const entry = registryByFile.get(file);
-      if (entry?.lane === "retired-governance") {
-        retiredGovernanceLeaks.push({ suiteId, file, reason: "retired_governance_must_not_be_active_suite_member" });
-        continue;
-      }
       if (directFiles.has(file) || wrapperCoverage.has(file) || commandCoverage.has(file)) continue;
       missingCoverage.push({
         suiteId,
@@ -506,21 +511,11 @@ export function assertManifestSuiteAlignment(manifest, options = {}) {
     }
   }
 
-  const retiredGovernanceSuite = manifestSuitesById.get("retired-governance");
-  if (retiredGovernanceSuite) {
-    retiredGovernanceLeaks.push({
-      suiteId: "retired-governance",
-      file: "",
-      reason: "retired_governance_must_not_be_manifest_active_suite",
-    });
-  }
-
   return Object.freeze({
-    ok: invalidCommands.length === 0 && missingCoverage.length === 0 && retiredGovernanceLeaks.length === 0,
+    ok: invalidCommands.length === 0 && missingCoverage.length === 0,
     activeSuiteIds: Object.freeze([...activeSuiteIds]),
     invalidCommands: Object.freeze(invalidCommands),
     missingCoverage: Object.freeze(missingCoverage),
-    retiredGovernanceLeaks: Object.freeze(retiredGovernanceLeaks),
   });
 }
 

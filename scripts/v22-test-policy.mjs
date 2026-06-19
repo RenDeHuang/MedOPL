@@ -270,7 +270,6 @@ export const TEST_POLICY_SURFACE_COVERAGE = Object.freeze({
     "regression-runtime-bridge": Object.freeze(["regression", "runtime"]),
     "real-cloud-readiness": Object.freeze(["cloud"]),
     "future-authorized": Object.freeze(["cloud"]),
-    "retired-governance": Object.freeze(["hygiene"]),
   }),
   categoryToSurfaces: Object.freeze({
     product: Object.freeze(["product"]),
@@ -283,7 +282,6 @@ export const TEST_POLICY_SURFACE_COVERAGE = Object.freeze({
     smoke: Object.freeze(["smoke"]),
     contract: Object.freeze(["contract"]),
     regression: Object.freeze(["regression", "frontend", "runtime"]),
-    "retired-governance": Object.freeze(["hygiene"]),
     "suite-wrapper": Object.freeze(["smoke", "contract"]),
   }),
   registrySurfaceToPolicySurfaces: Object.freeze({
@@ -393,12 +391,11 @@ export const TEST_SURFACE_RULES = Object.freeze([
     reason: "cloud boundary changed",
   }),
   Object.freeze({
-    id: "governance-and-hygiene",
+    id: "hygiene-and-runner",
     surface: "hygiene",
     environment: "local",
     pathPrefixes: Object.freeze([
       "scripts/",
-      "tests/governance/",
       "tests/health/",
       "tests/hygiene/",
       "tests/fixtures/v22/",
@@ -411,7 +408,7 @@ export const TEST_SURFACE_RULES = Object.freeze([
       "npm run test:health",
       "npm run test:contract",
     ]),
-    reason: "runner, governance, or hygiene boundary changed",
+    reason: "runner, health, or hygiene boundary changed",
   }),
   Object.freeze({
     id: "contract-surface",

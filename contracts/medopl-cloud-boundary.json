@@ -13,13 +13,11 @@
   "consumers": [
     "validate:active-platform",
     "tests/contracts/contract-test-v22-real-cloud-readiness-lane.mjs",
-    "tests/governance/governance-test-v22-real-cloud-authorization-boundary.mjs",
-    "tests/governance/governance-test-v22-dynamic-test-run-plan.mjs"
+    "tests/health/health-check-v22-dynamic-test-run-plan.mjs"
   ],
   "consumer_tests": [
     "node tests/contracts/contract-test-v22-real-cloud-readiness-lane.mjs",
-    "node tests/governance/governance-test-v22-real-cloud-authorization-boundary.mjs",
-    "node tests/governance/governance-test-v22-dynamic-test-run-plan.mjs"
+    "node tests/health/health-check-v22-dynamic-test-run-plan.mjs"
   ],
   "medopl_cloud_boundary": {
     "allowed_customer_concepts": [

@@ -447,7 +447,7 @@
     "status": "indexed",
     "branch": "cleanup/v22-test-lifecycle-cleanup-gate",
     "model": "gpt-5.4",
-    "gate": "tests/governance/governance-test-v22-test-lifecycle-cleanup.mjs",
+    "gate": "tests/health/health-check-v22-test-lifecycle-cleanup.mjs",
     "registry": "scripts/v22-test-classification.mjs",
     "manifest_policy": "test_lifecycle_cleanup_policy",
     "rules": [
@@ -585,7 +585,6 @@
       "git-push"
     ],
     "verification_commands": [
-      "node tests/governance/governance-test-v22-backend-go-convergence-program.mjs",
       "node tests/contracts/contract-test-v22-node-portal-backend-physical-removal.mjs",
       "node tests/contracts/contract-test-v22-go-backend-service-surface.mjs",
       "node scripts/v22-verify.mjs current --branch feat/v22-go-control-plane-mvp-takeover --base origin/recovery/platform-v22-trunk --dry-run --json",

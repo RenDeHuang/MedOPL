@@ -63,7 +63,6 @@ export function isV22EvalPath(filePath) {
     /^tests\/release\/release-test-v22-.*\.mjs$/u,
     /^tests\/hygiene\/hygiene-test-v22-.*\.mjs$/u,
     /^tests\/contracts\/(?:.+\/)?contract-test-v22-.*\.mjs$/u,
-    /^tests\/governance\/governance-test-v22-.*\.mjs$/u,
     /^tests\/suites\/suite-test-v22-.*\.mjs$/u,
     /^tests\/regression\/.+\/regression-test-v22-.*\.mjs$/u,
     /^tests\/cloud\/cloud-test-v22-.*\.mjs$/u,

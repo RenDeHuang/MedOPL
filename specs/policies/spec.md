@@ -11,6 +11,5 @@ Policy specs define authorization, secret hygiene, workflow, cleanup, human/mach
 
 | Requirement | Owner plane | Source surface | Required evals | Evidence level | Cannot claim |
 | --- | --- | --- | --- | --- | --- |
-| `policies:no-secret-live-default` | Framework | `AGENTS.md`, `docs/policies/README.md` | `node tests/governance/governance-test-v22-review-secret-hygiene-gate.mjs` | local contract proof | Secret read, real cloud, build/push, kubectl, deploy or live-test is allowed by default. |
-| `policies:human-machine-boundary` | Framework | `docs/policies/README.md`, `tests/README.md` | `node tests/governance/governance-test-v22-docs-portfolio-lifecycle.mjs` | local contract proof | Markdown prose is a machine API. |
-
+| `policies:no-secret-live-default` | Framework | `AGENTS.md`, `docs/policies/README.md` | `node tests/hygiene/hygiene-test-v22-diff-scoped-sensitive-review-gate.mjs`; `node tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs` | local contract proof | Secret read, real cloud, build/push, kubectl, deploy or live-test is allowed by default. |
+| `policies:human-machine-boundary` | Framework | `docs/policies/README.md`, `tests/README.md` | `node tests/health/health-check-v22-smoke-eval-boundary.mjs`; `node tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs` | local contract proof | Markdown prose is a machine API. |

@@ -71,11 +71,11 @@
   "consumers": [
     "scripts/v22-test-policy.mjs",
     "scripts/v22-test-report.mjs",
-    "tests/governance/governance-test-v22-dynamic-test-run-plan.mjs",
-    "tests/governance/governance-test-v22-verify-plan-mode.mjs"
+    "tests/health/health-check-v22-dynamic-test-run-plan.mjs",
+    "tests/health/health-check-v22-verify-plan-mode.mjs"
   ],
   "consumer_tests": [
-    "node tests/governance/governance-test-v22-dynamic-test-run-plan.mjs",
-    "node tests/governance/governance-test-v22-verify-plan-mode.mjs"
+    "node tests/health/health-check-v22-dynamic-test-run-plan.mjs",
+    "node tests/health/health-check-v22-verify-plan-mode.mjs"
   ]
 }

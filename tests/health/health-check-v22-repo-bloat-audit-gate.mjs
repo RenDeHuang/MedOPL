@@ -67,8 +67,8 @@ assert(
   "repo_bloat_audit_budget_findings_must_be_pressure_only",
 );
 assert(scriptSource.includes('"tests/contracts/"'), "repo_bloat_audit_must_keep_contracts_area_prefix");
-assert(scriptSource.includes('"tests/governance/"'), "repo_bloat_audit_must_keep_governance_area_prefix");
-assert(payload.largestAreas.some((area) => area.path === "tests/governance"), "repo_bloat_audit_must_surface_governance_area");
+assert(scriptSource.includes('"tests/hygiene/"'), "repo_bloat_audit_must_keep_hygiene_area_prefix");
+assert.equal(scriptSource.includes('"tests/governance/"'), false, "repo_bloat_audit_must_not_keep_retired_governance_area_prefix");
 assert(payload.largestAreas.some((area) => area.path === "tests/regression/portal"), "repo_bloat_audit_must_surface_portal_regression_area");
 assert(payload.largestAreas.some((area) => area.path === "services/portal"), "repo_bloat_audit_must_surface_largest_service_area");
 assert.equal(

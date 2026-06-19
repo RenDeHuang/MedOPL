@@ -25,7 +25,7 @@ const areaPrefixes = Object.freeze([
   "tests/health/",
   "tests/smoke/",
   "tests/contracts/",
-  "tests/governance/",
+  "tests/hygiene/",
   "tests/suites/",
   "tests/regression/portal/",
   "tests/regression/opl/",

@@ -11,7 +11,7 @@ import {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
-const selfFile = "tests/governance/governance-test-v22-validate-active-platform.mjs";
+const selfFile = "tests/contracts/contract-test-v22-validate-active-platform.mjs";
 
 async function readRepoFile(repoPath) {
   return readFile(path.join(repoRoot, repoPath), "utf8");

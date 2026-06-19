@@ -10,7 +10,7 @@
   },
   "consumers": [
     "validate:active-platform",
-    "tests/governance/governance-test-v22-validate-active-platform.mjs"
+    "tests/contracts/contract-test-v22-validate-active-platform.mjs"
   ],
   "consumer_tests": [
     "npm run validate:active-platform -- --quick --json"

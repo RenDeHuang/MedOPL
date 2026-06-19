@@ -186,7 +186,7 @@ for (const command of [
   "npm run test:regression",
   "npm run test:fast",
   "npm run test:lanes",
-  "node tests/governance/governance-test-v22-root-verify-workflow-entrypoints.mjs",
+  "node tests/health/health-check-v22-root-verify-workflow-entrypoints.mjs",
 ]) {
   assert(packageSuite.commands.includes(command), `root_verify_package_suite_command_missing:${command}`);
 }
@@ -195,8 +195,8 @@ const dynamicTestSuite = manifest.package_suites.find((suite) => suite.id === "d
 assert(dynamicTestSuite, "dynamic_test_system_package_suite_missing");
 for (const command of [
   "npm run test:run-plan -- --dry-run --json",
-  "node tests/governance/governance-test-v22-dynamic-test-run-plan.mjs",
-  "node tests/governance/governance-test-v22-verify-plan-mode.mjs",
+  "node tests/health/health-check-v22-dynamic-test-run-plan.mjs",
+  "node tests/health/health-check-v22-verify-plan-mode.mjs",
 ]) {
   assert(dynamicTestSuite.commands.includes(command), `dynamic_test_system_package_suite_command_missing:${command}`);
 }
@@ -207,16 +207,16 @@ assert.deepEqual(preSlideFastSuite.commands, [
   "node scripts/v22-repo-hygiene.mjs",
   "node scripts/v22-repo-bloat-audit.mjs --json",
   "node scripts/v22-line-budget.mjs",
-  "node tests/governance/governance-test-v22-test-lane-registry.mjs",
+  "node tests/health/health-check-v22-test-lane-registry.mjs",
   "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk --json",
 ], "pre_slide_fast_package_suite_commands_mismatch");
 
 const testLanesSuite = manifest.package_suites.find((suite) => suite.id === "test-lanes");
 assert(testLanesSuite, "test_lanes_package_suite_missing");
 assert.deepEqual(testLanesSuite.commands, [
-  "node tests/governance/governance-test-v22-test-lane-registry.mjs",
-  "node tests/governance/governance-test-v22-test-lifecycle-cleanup.mjs",
-  "node tests/governance/governance-test-v22-verify-plan-mode.mjs",
+  "node tests/health/health-check-v22-test-lane-registry.mjs",
+  "node tests/health/health-check-v22-test-lifecycle-cleanup.mjs",
+  "node tests/health/health-check-v22-verify-plan-mode.mjs",
   "node tests/health/health-check-v22-smoke-classification-gate.mjs",
   "node tests/health/health-check-v22-smoke-eval-boundary.mjs",
 ], "test_lanes_package_suite_commands_mismatch");
@@ -238,10 +238,10 @@ assert.deepEqual(localReleaseCandidateSuite.commands, [
 ], "local_release_candidate_package_suite_commands_mismatch");
 
 const reviewSuite = manifest.suites.find((suite) => suite.id === "review");
-assert(reviewSuite?.commands.includes("node tests/governance/governance-test-v22-verify-plan-mode.mjs"), "review_suite_must_check_verify_plan_mode");
+assert(reviewSuite?.commands.includes("node tests/health/health-check-v22-verify-plan-mode.mjs"), "review_suite_must_check_verify_plan_mode");
 
 const localContractSuite = manifest.suites.find((suite) => suite.id === "local-contract");
-assert(localContractSuite?.commands.includes("node tests/governance/governance-test-v22-verify-plan-mode.mjs"), "local_contract_must_check_verify_plan_mode");
+assert(localContractSuite?.commands.includes("node tests/health/health-check-v22-verify-plan-mode.mjs"), "local_contract_must_check_verify_plan_mode");
 
 console.log(JSON.stringify({
   ok: true,

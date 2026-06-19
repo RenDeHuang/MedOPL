@@ -34,7 +34,7 @@ State: `active`
 - `tests/health/`: 最小健康 gate，长期应收敛到 `tests/hygiene/` 或 thin suite。
 - `tests/smoke/`: 用户主线 golden smoke。
 - `tests/contracts/`: true API/schema/runtime/data/release contract eval；tests 是 gate/consumer，不是 truth owner。
-- `tests/governance/`: retired governance tests 的临时迁移区，不再新增；保留项必须迁到 product/release/hygiene/backend/runtime/cloud。
+- `tests/governance/`: 已清退；不得新增。旧治理测试要么删除，要么迁到明确 owner 目录（product/release/hygiene/backend/runtime/cloud/contracts/health）。
 - `tests/suites/`: suite wrapper，只包装 active registry entries 或 explicit high-risk override entries。
 - `tests/regression/portal/`: Portal regression eval。
 - `tests/regression/opl/`: OPL / Gateway regression eval。
@@ -45,7 +45,7 @@ State: `active`
 
 ## Retired Governance Boundary
 
-`changes/` 已退役，不再是测试、开发或 closeout 的默认入口。不得新增 `changes/active/**` 或 `changes/archive/**`，也不得让 default verify 依赖 change package lifecycle。旧治理测试只能作为临时迁移对象存在；长期约束必须下沉到 product contracts、release boundary、hygiene gate、source behavior 或 runner behavior。
+`changes/` 已退役，不再是测试、开发或 closeout 的默认入口。不得新增 `changes/active/**` 或 `changes/archive/**`，也不得让 default verify 依赖 change package lifecycle。旧治理测试已从 `tests/governance/` 清退；长期约束必须下沉到 product contracts、release boundary、hygiene gate、source behavior 或 runner behavior。
 
 新增测试必须先选定 product/frontend/backend/runtime/release/cloud/hygiene/support 目录；不能为了便利新增 `scripts/smoke-test-*` 或把所有 repo-local eval 叫 smoke。
 
@@ -57,7 +57,7 @@ State: `active`
 
 目录约定可以被 changed-file policy 消费，用来推断普通改动面的推荐 lane；这不再是被禁止的“启发式”。真正需要 fail-closed 的是特殊 case：cloud/live/deploy、production claim、retired/tombstone guard、suite wrapper、future-authorized boundary 和其他不能接受误判的高风险边界，它们必须保留 explicit override 或等价的显式机器声明。
 
-Policy/discovery coverage gate 是 `node tests/governance/governance-test-v22-test-lane-registry.mjs`。该 gate 必须确认：
+Policy/discovery coverage gate 是 `node tests/health/health-check-v22-test-lane-registry.mjs`。该 gate 必须确认：
 
 - every `tests/**/*.mjs` outside fixtures appears exactly once in the classification registry;
 - every active test resolves to at least one verify suite, and every registry lane/category/surface maps to a policy surface;
@@ -80,7 +80,7 @@ active test 必须有 lane owner。每个 `tests/**/*.mjs` 都必须通过 class
 
 旧 alias / wrapper / facade / compat-only test 迁完 caller 后直接删除。historical proof / closeout evidence 不作为 active test 保留。duplicate aggregate test 必须合并或删除。history 只保摘要，git history 保细节。
 
-Test lifecycle cleanup gate 是 `node tests/governance/governance-test-v22-test-lifecycle-cleanup.mjs`。该 gate 必须确认：
+Test lifecycle cleanup gate 是 `node tests/health/health-check-v22-test-lifecycle-cleanup.mjs`。该 gate 必须确认：
 
 - every active test has registered `ownerSurface` and an allowed `lifecycleRole`;
 - forbidden active roles such as historical-proof, compat-only, alias-only, wrapper-only, and closeout-evidence-only cannot appear;

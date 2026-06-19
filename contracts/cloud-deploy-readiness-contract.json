@@ -6,7 +6,7 @@
   "machine_boundary": "Small consumer-first contract for local shape gates and future authorized deploy runner checks. It is not current launch status, gap history, provider evidence, or cloud execution authorization.",
   "consumers": [
     "scripts/v22-verify.mjs",
-    "tests/governance/governance-test-v22-current-state-index-loop.mjs"
+    "tests/cloud/cloud-test-v22-tke-bootstrap-preflight-local-gate.mjs"
   ],
   "cloud_deploy_readiness_contract": {
     "allowed_operation_classes": [

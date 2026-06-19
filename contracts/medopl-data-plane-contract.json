@@ -11,7 +11,7 @@
   "consumers": [
     "validate:active-platform",
     "tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
-    "tests/governance/governance-test-v22-validate-active-platform.mjs"
+    "tests/contracts/contract-test-v22-validate-active-platform.mjs"
   ],
   "consumer_tests": [
     "node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",

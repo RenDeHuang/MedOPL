@@ -53,7 +53,7 @@ Current summary: 当前主线是 MedOPL 作为产品控制面，为 OPL-Webui �
 | hygiene / retired changes boundary | `node tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs` |
 | Go local RC parity | `node tests/contracts/contract-test-v22-go-backend-service-surface.mjs`; `node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs` |
 | pre-cloud deployable RC | `node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs`; `go test ./...` from `services/medopl-go-backend`; `npm --prefix services/portal/frontend run typecheck` |
-| local SaaS backend RC | `node tests/governance/governance-test-v22-local-saas-backend-rc.mjs`; `npm run test:regression` |
+| local SaaS backend RC | `node tests/contracts/contract-test-v22-local-service-orchestration.mjs`; `npm run test:regression` |
 | real-cloud readiness lane | `node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk` |
 
 ## Cannot Claim

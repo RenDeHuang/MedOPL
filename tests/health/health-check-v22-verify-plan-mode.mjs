@@ -36,7 +36,7 @@ const [packageJson, manifest] = await Promise.all([
 
 assert.equal(packageJson.scripts["test:plan"], "node scripts/v22-verify.mjs plan --base origin/recovery/platform-v22-trunk", "package_must_expose_test_plan");
 assert(
-  manifest.package_suites.find((suite) => suite.id === "test-lanes")?.commands.includes("node tests/governance/governance-test-v22-verify-plan-mode.mjs"),
+  manifest.package_suites.find((suite) => suite.id === "test-lanes")?.commands.includes("node tests/health/health-check-v22-verify-plan-mode.mjs"),
   "test_lanes_package_must_run_verify_plan_mode_gate",
 );
 

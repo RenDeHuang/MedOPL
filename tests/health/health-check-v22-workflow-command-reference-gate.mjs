@@ -56,7 +56,8 @@ for (const expected of [
   "scripts/v22-verify.mjs",
   "scripts/v22-workflow-gate.mjs",
   "scripts/v22-repo-bloat-audit.mjs",
-  "tests/governance/governance-test-v22-product-engineering-loop-index.mjs",
+  "tests/health/health-check-v22-test-lane-registry.mjs",
+  "tests/health/health-check-v22-test-lifecycle-cleanup.mjs",
 ]) {
   await assertRepoFileExists(expected);
 }
