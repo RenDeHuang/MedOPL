@@ -18,6 +18,7 @@ const (
 	BillingStatusActive       = "active"
 	BillingStatusStopped      = "stopped"
 	AuditKindResourceRelease  = "resource.release"
+	AuditKindStorageDestroy   = "storage.destroy"
 )
 
 var (

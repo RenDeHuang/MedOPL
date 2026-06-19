@@ -197,6 +197,60 @@ func TestServiceRecordsFileRunArtifactBillingAuditAndRelease(t *testing.T) {
 	}
 }
 
+func TestServiceReleaseRetainsStorageUntilExplicitDestroyReceipt(t *testing.T) {
+	ctx := context.Background()
+	service := NewService(memory.NewControlPlaneStore())
+	launch := bindAndOpen(t, ctx, service)
+
+	release, err := service.Release(ctx, ReleaseInput{
+		WorkspaceID:       "workspace-v22",
+		ResourceBindingID: launch.ResourceBindingID,
+		StopBilling:       true,
+		IdempotencyKey:    "release-before-storage-destroy-once",
+	})
+	if err != nil {
+		t.Fatalf("Release() error = %v", err)
+	}
+	if !release.BillingStopped || release.Resource.Status != cpd.ResourceStatusReleased {
+		t.Fatalf("release = %+v", release)
+	}
+
+	gateAfterRelease, err := service.RuntimeGate(ctx, RuntimeGateInput{WorkspaceID: "workspace-v22", InvocationMode: "runtime_required"})
+	if err != nil {
+		t.Fatalf("RuntimeGate(after release) error = %v", err)
+	}
+	if gateAfterRelease.RuntimeState != "released" || gateAfterRelease.StorageState != "ready" {
+		t.Fatalf("release must retain storage for OPL-Webui projection: %+v", gateAfterRelease)
+	}
+	if gateAfterRelease.Release.DestroyStorage != "requires_explicit_user_intent" || gateAfterRelease.StorageBindingID == "" {
+		t.Fatalf("release storage intent projection = %+v", gateAfterRelease)
+	}
+
+	receipt, err := service.DestroyStorage(ctx, DestroyStorageInput{
+		WorkspaceID:       "workspace-v22",
+		ResourceBindingID: launch.ResourceBindingID,
+		StorageBindingID:  gateAfterRelease.StorageBindingID,
+		IdempotencyKey:    "destroy-storage-once",
+	})
+	if err != nil {
+		t.Fatalf("DestroyStorage() error = %v", err)
+	}
+	if !receipt.StorageDestroyed || !receipt.BillingStopped || receipt.StorageState != "destroyed" {
+		t.Fatalf("storage destroy receipt = %+v", receipt)
+	}
+	if receipt.AuditEvent.Kind != cpd.AuditKindStorageDestroy || receipt.AuditEvent.Status != "recorded" {
+		t.Fatalf("storage destroy audit = %+v", receipt.AuditEvent)
+	}
+
+	gateAfterDestroy, err := service.RuntimeGate(ctx, RuntimeGateInput{WorkspaceID: "workspace-v22", InvocationMode: "runtime_required"})
+	if err != nil {
+		t.Fatalf("RuntimeGate(after destroy) error = %v", err)
+	}
+	if gateAfterDestroy.StorageState != "destroyed" || gateAfterDestroy.Release.DestroyStorage != "completed" {
+		t.Fatalf("destroyed storage projection = %+v", gateAfterDestroy)
+	}
+}
+
 func TestServiceResourcesAreWorkspaceScopedAndReleaseFailsClosedWhenMissing(t *testing.T) {
 	ctx := context.Background()
 	service := NewService(memory.NewControlPlaneStore())
@@ -243,6 +297,22 @@ func TestServiceResourcesAreWorkspaceScopedAndReleaseFailsClosedWhenMissing(t *t
 		IdempotencyKey:    "release-wrong-workspace-once",
 	}); !errors.Is(err, cpd.ErrResourceNotFound) {
 		t.Fatalf("Release(wrong workspace) error = %v", err)
+	}
+
+	if _, err := service.DestroyStorage(ctx, DestroyStorageInput{
+		WorkspaceID:       "workspace-v22",
+		ResourceBindingID: "missing-binding",
+		IdempotencyKey:    "destroy-storage-missing-once",
+	}); !errors.Is(err, cpd.ErrResourceNotFound) {
+		t.Fatalf("DestroyStorage(missing) error = %v", err)
+	}
+
+	if _, err := service.DestroyStorage(ctx, DestroyStorageInput{
+		WorkspaceID:       "workspace-other",
+		ResourceBindingID: workspaceLaunch.ResourceBindingID,
+		IdempotencyKey:    "destroy-storage-wrong-workspace-once",
+	}); !errors.Is(err, cpd.ErrResourceNotFound) {
+		t.Fatalf("DestroyStorage(wrong workspace) error = %v", err)
 	}
 }
 

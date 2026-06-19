@@ -112,6 +112,14 @@ async function assertProductAuthorityContractsOwnPrecloudEvidence() {
   for (const control of ["tenant_scope", "workspace_scope", "quota_metering", "audit_event", "release_cleanup"]) {
     assert(dataPlane.medopl_data_plane_contract.required_controls.includes(control), `data_plane_contract_precloud_control_missing:${control}`);
   }
+  assert(
+    dataPlane.medopl_data_plane_contract.required_controls.includes("explicit_storage_destroy_intent"),
+    "data_plane_contract_precloud_storage_destroy_intent_missing",
+  );
+  assert(
+    dataPlane.medopl_data_plane_contract.required_receipts?.includes("storage_destroy_receipt"),
+    "data_plane_contract_precloud_storage_destroy_receipt_missing",
+  );
   for (const type of ["credit", "debit", "hold", "release", "refund", "adjustment"]) {
     assert(billing.medopl_billing_ledger_contract.ledger_entry_types.includes(type), `billing_contract_ledger_type_missing:${type}`);
   }

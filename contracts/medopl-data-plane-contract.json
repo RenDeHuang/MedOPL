@@ -36,7 +36,11 @@
       "workspace_scope",
       "quota_metering",
       "audit_event",
-      "release_cleanup"
+      "release_cleanup",
+      "explicit_storage_destroy_intent"
+    ],
+    "required_receipts": [
+      "storage_destroy_receipt"
     ],
     "forbidden_fields": [
       "raw_object_store_secret",

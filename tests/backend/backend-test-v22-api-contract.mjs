@@ -31,6 +31,7 @@ const requiredRouteMarkers = [
   "/billing/summary",
   "/api/admin/audit",
   "/v22/managed-environment/release",
+  "/v22/storage/destroy",
 ];
 for (const marker of requiredRouteMarkers) {
   assert(goRouteSurface.includes(marker), `api_contract_route_missing:${marker}`);
@@ -52,6 +53,17 @@ assert.equal(runtimeGate.consumer_role, "entry_and_chat_surface", "runtime_gate_
 assert.deepEqual(runtimeGate.invocation_modes, ["api_only", "runtime_required"], "runtime_gate_invocation_modes_mismatch");
 assert.equal(runtimeGate.ordinary_chat_owner, "opl-webui", "runtime_gate_ordinary_chat_owner_must_be_opl_webui");
 assert.equal(runtimeGate.runtime_required_owner, "medopl", "runtime_gate_runtime_required_owner_must_be_medopl");
+assert.equal(apiContract.medopl_api_contract.storage_destroy?.route, "POST /api/v22/storage/destroy", "storage_destroy_route_contract_missing");
+assert.deepEqual(
+  apiContract.medopl_api_contract.storage_destroy?.must_return,
+  ["ok", "storageDestroyed", "billingStopped", "storageBindingId", "storageState", "auditEvent"],
+  "storage_destroy_must_return_contract_mismatch",
+);
+assert.deepEqual(
+  apiContract.medopl_api_contract.storage_destroy?.must_not_return,
+  ["rawObjectStoreSecret", "signedUrl", "objectKey", "storageKey", "localPath", "bearerToken", "runtimeToken", "kubeconfig"],
+  "storage_destroy_forbidden_response_contract_mismatch",
+);
 
 for (const field of runtimeGate.must_return) {
   assert(

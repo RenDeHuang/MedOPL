@@ -15,6 +15,13 @@ const cloud = await readJson("contracts/medopl-cloud-boundary.json");
 const current = await readJson("tests/fixtures/v22/goal-current.json");
 
 assert.equal(release.authority_boundary.default_real_cloud_mutation, "forbidden_without_explicit_user_authorization", "release_must_fail_closed_for_real_cloud");
+assert.equal(
+  release.medopl_release_boundary.storage_destroy_policy?.runtime_release_default,
+  "retain_storage_until_explicit_user_intent",
+  "release_must_retain_storage_by_default",
+);
+assert(release.medopl_release_boundary.required_receipts.includes("storage_destroy_receipt"), "release_must_require_storage_destroy_receipt");
+assert(release.medopl_release_boundary.release_phases.includes("destroy_storage_intent"), "release_must_model_destroy_storage_intent");
 assert.equal(cloud.authority_boundary.default_real_cloud_execution, "forbidden_without_explicit_user_authorization", "cloud_must_fail_closed_for_real_cloud");
 assert.equal(current.release_readiness_state?.blocked_before_risky_execution, true, "current_must_block_risky_execution");
 for (const forbidden of ["secret", "true-cloud-mutation", "build-push-kubectl", "deploy", "live-test"]) {

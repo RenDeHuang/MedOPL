@@ -60,40 +60,40 @@ type NodePoolProjection struct {
 
 type RuntimeGateBilling struct {
 	FreezeStatus string  `json:"freezeStatus"`
-	FrozenAmount  float64 `json:"frozenAmount"`
-	Currency      string  `json:"currency"`
+	FrozenAmount float64 `json:"frozenAmount"`
+	Currency     string  `json:"currency"`
 }
 
 type RuntimeGateRelease struct {
 	CanReleaseRuntime bool   `json:"canReleaseRuntime"`
 	DestroyStorage    string `json:"destroyStorage"`
-	StopBilling        string `json:"stopBilling"`
+	StopBilling       string `json:"stopBilling"`
 }
 
 type RuntimeGateProjection struct {
-	Ok                     bool               `json:"ok"`
-	ProductOwner           string             `json:"productOwner"`
-	PrimaryConsumer        string             `json:"primaryConsumer"`
-	ConsumerRole           string             `json:"consumerRole"`
-	OrdinaryChatOwner      string             `json:"ordinaryChatOwner"`
-	RuntimeRequiredOwner   string             `json:"runtimeRequiredOwner"`
-	WorkspaceID            string             `json:"workspaceId"`
-	WorkspaceBindingID     string             `json:"workspaceBindingId"`
-	InvocationMode         string             `json:"invocationMode"`
-	MedOPLRuntimeRequired  bool               `json:"medoplRuntimeRequired"`
-	ProviderKeyStatus      string             `json:"providerKeyStatus"`
-	ProviderKeyRef         string             `json:"providerKeyRef,omitempty"`
-	RuntimePlanID          string             `json:"runtimePlanId"`
-	RuntimeBindingID       string             `json:"runtimeBindingId,omitempty"`
-	RuntimeState           string             `json:"runtimeState"`
-	StoragePlanID          string             `json:"storagePlanId"`
-	StorageBindingID       string             `json:"storageBindingId,omitempty"`
-	StorageState           string             `json:"storageState"`
-	NodePoolProjection     NodePoolProjection `json:"nodePoolProjection"`
-	Billing                RuntimeGateBilling `json:"billing"`
-	Release                RuntimeGateRelease `json:"release"`
-	NextAction             string             `json:"nextAction"`
-	CannotClaim            []string           `json:"cannotClaim"`
+	Ok                    bool               `json:"ok"`
+	ProductOwner          string             `json:"productOwner"`
+	PrimaryConsumer       string             `json:"primaryConsumer"`
+	ConsumerRole          string             `json:"consumerRole"`
+	OrdinaryChatOwner     string             `json:"ordinaryChatOwner"`
+	RuntimeRequiredOwner  string             `json:"runtimeRequiredOwner"`
+	WorkspaceID           string             `json:"workspaceId"`
+	WorkspaceBindingID    string             `json:"workspaceBindingId"`
+	InvocationMode        string             `json:"invocationMode"`
+	MedOPLRuntimeRequired bool               `json:"medoplRuntimeRequired"`
+	ProviderKeyStatus     string             `json:"providerKeyStatus"`
+	ProviderKeyRef        string             `json:"providerKeyRef,omitempty"`
+	RuntimePlanID         string             `json:"runtimePlanId"`
+	RuntimeBindingID      string             `json:"runtimeBindingId,omitempty"`
+	RuntimeState          string             `json:"runtimeState"`
+	StoragePlanID         string             `json:"storagePlanId"`
+	StorageBindingID      string             `json:"storageBindingId,omitempty"`
+	StorageState          string             `json:"storageState"`
+	NodePoolProjection    NodePoolProjection `json:"nodePoolProjection"`
+	Billing               RuntimeGateBilling `json:"billing"`
+	Release               RuntimeGateRelease `json:"release"`
+	NextAction            string             `json:"nextAction"`
+	CannotClaim           []string           `json:"cannotClaim"`
 }
 
 type LaunchLookupInput struct {
@@ -506,13 +506,20 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 	}
 	projection.RuntimeState = runtimeGateResourceState(resource.Status)
 	projection.StorageState = "ready"
+	if storageDestroyReceiptRecorded(ctx, service.store, workspaceID, resource.ResourceBindingID) {
+		projection.StorageState = "destroyed"
+	}
 	projection.Billing.FreezeStatus = resource.StopBilling.Status
 	if resource.StopBilling.Status == cpd.BillingStatusActive {
 		projection.Billing.FrozenAmount = 10
 	}
+	destroyStorage := "requires_explicit_user_intent"
+	if projection.StorageState == "destroyed" {
+		destroyStorage = "completed"
+	}
 	projection.Release = RuntimeGateRelease{
 		CanReleaseRuntime: resource.Status == cpd.ResourceStatusActive,
-		DestroyStorage:    "requires_explicit_user_intent",
+		DestroyStorage:    destroyStorage,
 		StopBilling:       resource.StopBilling.Status,
 	}
 	if resource.Status == cpd.ResourceStatusActive {

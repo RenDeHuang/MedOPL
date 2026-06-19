@@ -19,6 +19,7 @@ function runGoTest(packagePath, testName) {
 
 runGoTest("./internal/domain/controlplane", "TestReleaseStopsBillingAndKeepsHistoryAuditable");
 runGoTest("./internal/service/controlplane", "TestServiceResourcesAreWorkspaceScopedAndReleaseFailsClosedWhenMissing");
+runGoTest("./internal/service/controlplane", "TestServiceReleaseRetainsStorageUntilExplicitDestroyReceipt");
 
 console.log(JSON.stringify({
   ok: true,

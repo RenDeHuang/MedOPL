@@ -235,3 +235,24 @@ func releaseManagedEnvironment(service ControlPlaneService) gin.HandlerFunc {
 		ctx.JSON(http.StatusOK, payload)
 	}
 }
+
+func destroyStorage(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var request destroyStorageRequest
+		if err := ctx.ShouldBindJSON(&request); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "invalid_json"})
+			return
+		}
+		payload, err := service.DestroyStorage(ctx.Request.Context(), cps.DestroyStorageInput{
+			WorkspaceID:       defaultString(request.WorkspaceID, "workspace-local-rc"),
+			ResourceBindingID: request.ResourceBindingID,
+			StorageBindingID:  request.StorageBindingID,
+			IdempotencyKey:    defaultString(request.IdempotencyKey, "destroy-storage-local-rc"),
+		})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, payload)
+	}
+}

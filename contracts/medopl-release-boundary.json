@@ -23,6 +23,7 @@
       "freeze_runtime",
       "settle_billing",
       "export_files",
+      "destroy_storage_intent",
       "cleanup_resources",
       "write_receipt"
     ],
@@ -31,8 +32,14 @@
       "file_export_status",
       "billing_settlement",
       "audit_export_ref",
-      "resource_cleanup_ref"
+      "resource_cleanup_ref",
+      "storage_destroy_receipt"
     ],
+    "storage_destroy_policy": {
+      "runtime_release_default": "retain_storage_until_explicit_user_intent",
+      "destroy_requires": "explicit_user_storage_destroy_intent",
+      "receipt_owner": "MedOPL Data Plane"
+    },
     "must_not_claim_without": [
       "runtime_stop_receipt",
       "billing_settlement_receipt",

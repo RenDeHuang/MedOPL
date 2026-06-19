@@ -342,7 +342,7 @@ function runGoPackageTest(packagePath, testName, label) {
 }
 
 async function assertLocalRCControlPlaneParity() {
-  const serviceSource = await readRepoFile(`${serviceRoot}/internal/service/controlplane/service.go`);
+  const serviceSource = await readJoinedGoFiles(`${serviceRoot}/internal/service/controlplane`);
   const handlerSource = await readJoinedGoFiles(`${serviceRoot}/internal/server/handlers`);
   const billingApiSource = await readRepoFile("services/portal/frontend/src/api/portal/billing.ts");
   const resourcesApiSource = await readRepoFile("services/portal/frontend/src/api/portal/resources.ts");
@@ -356,7 +356,9 @@ async function assertLocalRCControlPlaneParity() {
     "OwnerScope: \"go-control-plane\"",
     "Resources(ctx",
     "Release(ctx",
+    "DestroyStorage(ctx",
     "ReleaseManagedResource",
+    "AuditKindStorageDestroy",
     "BillingStopped",
     "ResourceStatusActive",
   ]) {
@@ -370,6 +372,7 @@ async function assertLocalRCControlPlaneParity() {
     'api.GET("/costs/run"',
     'api.GET("/platform-provisioned-resources"',
     'api.POST("/v22/managed-environment/release"',
+    'api.POST("/v22/storage/destroy"',
   ]) {
     assertIncludes(handlerSource, marker, `go_local_rc_control_plane_handler:${marker}`);
   }

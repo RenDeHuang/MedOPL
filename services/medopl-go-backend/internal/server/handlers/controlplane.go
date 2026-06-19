@@ -25,6 +25,7 @@ type ControlPlaneService interface {
 	BillingDetails(ctx context.Context, input cps.WorkspaceInput) (cps.BillingDetails, error)
 	Resources(ctx context.Context, input cps.WorkspaceInput) (cps.ResourcesProjection, error)
 	Release(ctx context.Context, input cps.ReleaseInput) (cps.ReleaseResult, error)
+	DestroyStorage(ctx context.Context, input cps.DestroyStorageInput) (cps.StorageDestroyReceipt, error)
 }
 
 type bindProviderKeyRequest struct {
@@ -80,6 +81,13 @@ type releaseRequest struct {
 	IdempotencyKey    string `json:"idempotencyKey"`
 }
 
+type destroyStorageRequest struct {
+	WorkspaceID       string `json:"workspaceId"`
+	ResourceBindingID string `json:"resourceBindingId"`
+	StorageBindingID  string `json:"storageBindingId"`
+	IdempotencyKey    string `json:"idempotencyKey"`
+}
+
 func RegisterControlPlaneRoutes(api *gin.RouterGroup, service ControlPlaneService) {
 	api.GET("/provider/binding", getProviderBinding(service))
 	api.POST("/provider/bind", bindProviderKey(service))
@@ -105,6 +113,7 @@ func RegisterControlPlaneRoutes(api *gin.RouterGroup, service ControlPlaneServic
 	api.POST("/v22/managed-environment/readiness", managedEnvironmentReadiness(service))
 	api.POST("/v22/managed-environment/open", openManagedEnvironment(service))
 	api.POST("/v22/managed-environment/release", releaseManagedEnvironment(service))
+	api.POST("/v22/storage/destroy", destroyStorage(service))
 	api.POST("/opl/runtime-gate", runtimeGate(service))
 	api.POST("/opl/launch", openManagedEnvironment(service))
 	api.GET("/opl/launch-status/:launchId", launchStatus(service))

@@ -100,6 +100,30 @@
         "runtime_required_without_medopl_runtime",
         "storage_destroy_without_user_intent"
       ]
+    },
+    "storage_destroy": {
+      "route": "POST /api/v22/storage/destroy",
+      "owner": "medopl",
+      "primary_consumer": "opl-webui",
+      "intent": "explicit_user_storage_destroy",
+      "must_return": [
+        "ok",
+        "storageDestroyed",
+        "billingStopped",
+        "storageBindingId",
+        "storageState",
+        "auditEvent"
+      ],
+      "must_not_return": [
+        "rawObjectStoreSecret",
+        "signedUrl",
+        "objectKey",
+        "storageKey",
+        "localPath",
+        "bearerToken",
+        "runtimeToken",
+        "kubeconfig"
+      ]
     }
   }
 }
