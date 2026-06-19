@@ -4,6 +4,7 @@ import { rm, writeFile } from "node:fs/promises";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { planCommandsForFiles } from "../../scripts/v22-test-policy.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
@@ -57,6 +58,10 @@ assert(frontendPayload.recommendedCommands.includes("npm run test:fast"), "front
 assert(frontendPayload.recommendedCommands.includes("npm run test:lanes"), "frontend_plan_must_recommend_lane_gate");
 assert(frontendPayload.cannotClaim.includes("production readiness"), "frontend_plan_must_preserve_cannot_claim");
 assert.equal(frontendPayload.executesCommands, false, "plan_mode_must_not_execute_commands");
+assert.equal(typeof frontendPayload.preflight?.ok, "boolean", "frontend_plan_preflight_must_report_boolean_ok");
+assert(Array.isArray(frontendPayload.preflight?.checks), "frontend_plan_preflight_must_report_checks");
+assert(Array.isArray(frontendPayload.preflight?.missing), "frontend_plan_preflight_must_report_missing");
+assert(Array.isArray(frontendPayload.preflight?.recommendedSetupCommands), "frontend_plan_preflight_must_report_setup_commands");
 
 const frontendHumanPlan = runVerifyPlanHuman(["--files", "services/portal/frontend/src/app/routes.tsx"]);
 assert.equal(frontendHumanPlan.status, 0, `frontend_human_plan_must_exit_zero:${frontendHumanPlan.stderr || frontendHumanPlan.stdout}`);
@@ -89,6 +94,63 @@ assert(cloudPayload.recommendedCommands.includes("npm run test:cloud"), "cloud_p
 assert(cloudPayload.recommendedCommands.includes("npm run test:real-cloud-readiness"), "cloud_plan_must_recommend_readiness_lane");
 assert.equal(cloudPayload.authorizedCommands.includes("npm run test:cloud-future-authorized"), true, "cloud_plan_must_keep_future_authorized_separate");
 assert.equal(cloudPayload.recommendedCommands.includes("npm run test:cloud-future-authorized"), false, "cloud_plan_must_not_default_future_authorized");
+
+const apiContractPlan = runVerifyPlan(["--files", "contracts/medopl-api-contract.json"]);
+assert.equal(apiContractPlan.status, 0, `api_contract_plan_must_exit_zero:${apiContractPlan.stderr || apiContractPlan.stdout}`);
+const apiContractPayload = JSON.parse(apiContractPlan.stdout);
+for (const surface of ["contract", "frontend", "backend"]) {
+  assert(apiContractPayload.matchedSurfaces.includes(surface), `api_contract_plan_must_expand_surface:${surface}`);
+}
+for (const command of [
+  "npm run test:contract",
+  "npm run test:frontend",
+  "npm run test:backend",
+  "npm run test:regression",
+  "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
+]) {
+  assert(apiContractPayload.recommendedCommands.includes(command), `api_contract_plan_command_missing:${command}`);
+}
+assert.equal(typeof apiContractPayload.preflight?.ok, "boolean", "api_contract_plan_preflight_must_report_boolean_ok");
+
+const runtimeBridgeContractPlan = runVerifyPlan(["--files", "contracts/medopl-runtime-bridge-contract.json"]);
+assert.equal(runtimeBridgeContractPlan.status, 0, `runtime_bridge_contract_plan_must_exit_zero:${runtimeBridgeContractPlan.stderr || runtimeBridgeContractPlan.stdout}`);
+const runtimeBridgeContractPayload = JSON.parse(runtimeBridgeContractPlan.stdout);
+for (const surface of ["contract", "runtime", "regression"]) {
+  assert(runtimeBridgeContractPayload.matchedSurfaces.includes(surface), `runtime_bridge_contract_plan_must_expand_surface:${surface}`);
+}
+for (const command of [
+  "npm run test:contract",
+  "npm run test:runtime",
+  "npm run test:regression",
+]) {
+  assert(runtimeBridgeContractPayload.recommendedCommands.includes(command), `runtime_bridge_contract_plan_command_missing:${command}`);
+}
+
+const cloudBoundaryPlan = runVerifyPlan(["--files", "contracts/medopl-cloud-boundary.json"]);
+assert.equal(cloudBoundaryPlan.status, 0, `cloud_boundary_plan_must_exit_zero:${cloudBoundaryPlan.stderr || cloudBoundaryPlan.stdout}`);
+const cloudBoundaryPayload = JSON.parse(cloudBoundaryPlan.stdout);
+assert(cloudBoundaryPayload.matchedSurfaces.includes("cloud"), "cloud_boundary_plan_must_report_cloud_surface");
+assert(cloudBoundaryPayload.recommendedCommands.includes("npm run test:real-cloud-readiness"), "cloud_boundary_plan_must_recommend_local_readiness");
+assert.equal(cloudBoundaryPayload.recommendedCommands.includes("npm run test:cloud-future-authorized"), false, "cloud_boundary_plan_must_not_default_future_authorized");
+assert.equal(cloudBoundaryPayload.authorizedCommands.includes("npm run test:cloud-future-authorized"), true, "cloud_boundary_plan_must_keep_future_authorized_separate");
+
+const missingFrontendPreflight = planCommandsForFiles(
+  ["contracts/medopl-api-contract.json"],
+  {
+    exists(repoPath) {
+      return repoPath !== "services/portal/frontend/node_modules/typescript";
+    },
+  },
+);
+assert.equal(missingFrontendPreflight.preflight.ok, false, "api_contract_preflight_must_fail_when_frontend_typescript_missing");
+assert(
+  missingFrontendPreflight.preflight.missing.some((entry) => entry.id === "frontend-typescript-package"),
+  "api_contract_preflight_must_report_missing_frontend_typescript",
+);
+assert(
+  missingFrontendPreflight.preflight.recommendedSetupCommands.includes("npm --prefix services/portal/frontend ci"),
+  "api_contract_preflight_must_suggest_frontend_setup",
+);
 
 const fullLocalPlan = runVerifyPlan(["--profile", "full-local"]);
 assert.equal(fullLocalPlan.status, 0, `full_local_plan_must_exit_zero:${fullLocalPlan.stderr || fullLocalPlan.stdout}`);

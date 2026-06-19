@@ -7,6 +7,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { planCommandsForFiles } from "./v22-test-policy.mjs";
+import { runPlanWithReport } from "./v22-test-report.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -151,6 +152,7 @@ function planForOptions({ options, base }) {
     authorizedCommands: planned.authorizedCommands,
     reasons: planned.reasons,
     cannotClaim: planned.cannotClaim,
+    preflight: planned.preflight,
   };
 }
 
@@ -254,6 +256,17 @@ function runCommand(command) {
     stderr: result.stderr,
     ok: result.status === 0,
   };
+}
+
+async function runPlanForOptions({ options, base }) {
+  if (options.commands) throw new Error("run_plan_command_override_forbidden");
+  const plan = planForOptions({ options, base });
+  return runPlanWithReport({
+    repoRoot,
+    plan,
+    dryRun: Boolean(options["dry-run"]),
+    env: process.env,
+  });
 }
 
 async function validateActivePlatform({ manifest, current }) {
@@ -405,6 +418,7 @@ function printUsage() {
     "  node scripts/v22-verify.mjs list [--json]",
     "  node scripts/v22-verify.mjs active-platform [--quick] [--json]",
     "  node scripts/v22-verify.mjs plan [--base origin/recovery/platform-v22-trunk] [--files a,b] [--profile changed-surface|full-local] [--json]",
+    "  node scripts/v22-verify.mjs run-plan [--base origin/recovery/platform-v22-trunk] [--files a,b] [--profile changed-surface|full-local] [--dry-run] [--json]",
     "  node scripts/v22-verify.mjs current [--base origin/recovery/platform-v22-trunk] [--dry-run] [--json]",
     "  node scripts/v22-verify.mjs suite <id> [--base origin/recovery/platform-v22-trunk] [--dry-run] [--json]",
     "  node scripts/v22-verify.mjs package <id> [--base origin/recovery/platform-v22-trunk] [--dry-run] [--json]",
@@ -418,7 +432,7 @@ function renderHuman(payload) {
     `v22 verify ${payload.mode}`,
     `ok: ${payload.ok}`,
   ];
-  if (payload.mode === "plan") {
+  if (payload.mode === "plan" || payload.mode === "run-plan") {
     if (payload.profile) lines.push(`profile: ${payload.profile}`);
     lines.push(`executes_commands: ${payload.executesCommands}`);
     if ((payload.changedFiles || []).length > 0) {
@@ -448,6 +462,31 @@ function renderHuman(payload) {
     if ((payload.authorizedCommands || []).length > 0) {
       lines.push("authorized commands:");
       for (const command of payload.authorizedCommands) lines.push(`- ${command}`);
+    }
+    if (payload.mode === "run-plan" && payload.report?.commands) {
+      lines.push("run-plan commands:");
+      lines.push(`- planned: ${payload.report.commands.planned.length}`);
+      lines.push(`- executed: ${payload.report.commands.executed.length}`);
+      lines.push(`- skipped authorized: ${payload.report.commands.skippedAuthorized.length}`);
+    }
+    if (payload.preflight) {
+      lines.push(`preflight ok: ${payload.preflight.ok}`);
+      if ((payload.preflight.checks || []).length > 0) {
+        lines.push("preflight checks:");
+        for (const check of payload.preflight.checks) {
+          lines.push(`- [${check.ok ? "ok" : "missing"}] ${check.id}${check.path ? ` (${check.path})` : ""}`);
+        }
+      }
+      if ((payload.preflight.missing || []).length > 0) {
+        lines.push("preflight missing:");
+        for (const item of payload.preflight.missing) {
+          lines.push(`- ${item.id}${item.path ? ` (${item.path})` : ""}`);
+        }
+      }
+      if ((payload.preflight.recommendedSetupCommands || []).length > 0) {
+        lines.push("preflight recommended setup:");
+        for (const command of payload.preflight.recommendedSetupCommands) lines.push(`- ${command}`);
+      }
     }
     lines.push("cannot claim:");
     for (const claim of payload.cannotClaim || []) lines.push(`- ${claim}`);
@@ -502,6 +541,16 @@ async function main() {
       base: options.base || "origin/recovery/platform-v22-trunk",
     });
     process.stdout.write(options.json ? `${JSON.stringify(payload, null, 2)}\n` : renderHuman(payload));
+    return;
+  }
+
+  if (mode === "run-plan") {
+    const payload = await runPlanForOptions({
+      options,
+      base: options.base || "origin/recovery/platform-v22-trunk",
+    });
+    process.stdout.write(options.json ? `${JSON.stringify(payload, null, 2)}\n` : renderHuman(payload));
+    if (!payload.ok) process.exitCode = 1;
     return;
   }
 

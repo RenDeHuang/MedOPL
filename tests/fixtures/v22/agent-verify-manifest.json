@@ -126,6 +126,8 @@
         "tests/support/cloud-prework/lib/*.js",
         "tests/fixtures/v22/*.json",
         "scripts/v22-test-classification.mjs",
+        "scripts/v22-test-policy.mjs",
+        "scripts/v22-test-report.mjs",
         "scripts/v22-verify.mjs",
         "scripts/v22-workflow-gate.mjs",
         "scripts/workflow-gate/*.mjs",
@@ -205,6 +207,7 @@
         "node tests/health/health-check-v22-repo-hygiene-gate.mjs",
         "node tests/health/health-check-v22-smoke-classification-gate.mjs",
         "node tests/health/health-check-v22-smoke-eval-boundary.mjs",
+        "node tests/governance/governance-test-v22-dynamic-test-run-plan.mjs",
         "node tests/governance/governance-test-v22-verify-plan-mode.mjs",
         "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
         "node tests/health/health-check-v22-zero-compat-active-surface-gate.mjs",
@@ -236,6 +239,7 @@
         "node tests/contracts/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs",
         "node tests/contracts/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
         "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+        "node tests/governance/governance-test-v22-dynamic-test-run-plan.mjs",
         "node tests/governance/governance-test-v22-validate-active-platform.mjs",
         "node tests/governance/governance-test-v22-verify-plan-mode.mjs",
         "node tests/health/health-check-v22-contract-conflict-boundary.mjs",
@@ -317,6 +321,7 @@
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "node tests/backend/backend-test-v22-api-contract.mjs",
         "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+        "node tests/governance/governance-test-v22-dynamic-test-run-plan.mjs",
         "node tests/governance/governance-test-v22-validate-active-platform.mjs",
         "node tests/governance/governance-test-v22-verify-plan-mode.mjs",
         "node tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs",
@@ -395,6 +400,14 @@
         "npm run test:fast",
         "npm run test:lanes",
         "node tests/governance/governance-test-v22-root-verify-workflow-entrypoints.mjs"
+      ]
+    },
+    {
+      "id": "dynamic-test-system",
+      "commands": [
+        "npm run test:run-plan -- --dry-run --json",
+        "node tests/governance/governance-test-v22-dynamic-test-run-plan.mjs",
+        "node tests/governance/governance-test-v22-verify-plan-mode.mjs"
       ]
     },
     {

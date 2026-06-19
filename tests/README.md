@@ -8,19 +8,20 @@ State: `active`
 
 ## Lane Selection
 
-测试选择遵循 `Test Policy -> Discovery -> Overrides -> Plan/Run`，不把所有问题都塞进同一套大回归里：
+测试选择遵循 `Test Policy -> Discovery -> Preflight -> Run -> Report/Completion Gate`，不把所有问题都塞进同一套大回归里：
 
 - **Test Policy**：machine policy 定义 changed-file surface、environment、authorization、cannot-claim 和默认命令升级规则；Markdown 只做人读导航。
 - **Discovery**：runner 先消费 changed files 和 policy path / match rules，动态归类 main / targeted / authorized 候选面；surface metadata、contract refs、entry kind 和 authorization boundary 当前仍由 registry / manifest gate 校验，后续可继续并入 policy。
-- **Overrides**：高风险或不能容忍误判的边界必须显式 fail-closed 覆盖，例如 cloud/live/deploy、production claim、retired/tombstone guard 和 suite wrapper。
-- **Plan/Run**：先看计划，再执行 main lane + relevant targeted lane；更重的 staging / canary / release lane 以后由环境化 lane 承接。
+- **Preflight**：本轮只接受本地全动态测试系统。先执行 `npm run test:run-plan -- --dry-run --json`，读取 `changedFiles`、`matchedSurfaces`、`environments`、`authorizedEnvironments`、`reasons`、`recommendedCommands`、`authorizedCommands`、`preflight` 和 `cannotClaim`，确认 runner 只生成本地推荐命令，不自动升级到授权命令。
+- **Run**：确认计划后执行 `npm run test:run-plan`，runner 只执行 `recommendedCommands`。不自动执行 `authorizedCommands`，不执行 cloud/live/deploy/kubectl，也不把 future authorized profile 当作当前已完成入口。
+- **Report/Completion Gate**：计划输出里的 report、`cannotClaim` 和 preflight 结果都是完成判断的一部分；没有这些信息，不能声称闭环或 production readiness。
 
-- **main lane**：默认主线 gate，承接健康、烟测、契约和回归的常规验证。
+- **main lane**：默认主线 gate，base 承接健康、烟测和契约验证；回归由相关 surface 或 full/local RC 触发。
 - **targeted lane**：按 discovery 命中的变更面选最小相关测试面，前端、后端、runtime、release、hygiene / policy 等都应先从对应目录和 runner 入口下手。
 - **full/local RC lane**：用于发布前或大改动的本地 RC 证明，覆盖 main lane，并叠加与本次变更相关的 targeted lane。
 - **authorized lane**：只在显式授权边界内运行，面向受控 cloud / provider / dry-run / readonly diagnostics；它不是 production 证明，也不自动获得真实云执行权限。
 
-开发者不应在没有筛选的情况下直接跑“全部测试”来代替判断。默认先执行 `npm run test:plan`，查看 `changedFiles`、`matchedSurfaces`、`environments`、`authorizedEnvironments`、`reasons`、`recommendedCommands`、`authorizedCommands` 和 `cannotClaim`，再跑 main lane 加 relevant targeted lane。发布或大改动时，再升级到 full/local RC lane。local / full / RC 只说明本地或受控环境通过，不能 claim production。authorized cloud lane 也只覆盖授权包内的边界，不等于真实云授权。
+开发者不应在没有筛选的情况下直接跑“全部测试”来代替判断。默认先执行 `npm run test:run-plan -- --dry-run --json`，查看 `changedFiles`、`matchedSurfaces`、`environments`、`authorizedEnvironments`、`reasons`、`recommendedCommands`、`authorizedCommands`、`preflight` 和 `cannotClaim`，再跑 `npm run test:run-plan` 执行本地推荐命令。发布或大改动时，再升级到 full/local RC lane。local / full / RC 只说明本地或受控环境通过，不能 claim production。authorized cloud lane 也只覆盖授权包内的边界，不等于真实云授权，更不会被 runner 自动执行。
 
 ## Taxonomy
 
@@ -52,7 +53,7 @@ State: `active`
 
 ## Policy And Discovery
 
-`scripts/v22-test-policy.mjs`、`scripts/v22-test-classification.mjs` 和相关 fixture / manifest / runner 行为共同定义测试机器边界。当前 `test:plan` 由 policy 消费 changed files 和 path / match rules，生成 discovery 结果、lane 候选和 plan 命令；test file metadata、contract refs、entry kind、suite membership 和 authorization boundary 仍由 classification registry / manifest gate 校验。Policy coverage gate 负责确认 registry lane/category/surface 可以映射到当前 policy surface，避免两套分类漂移。
+`scripts/v22-test-policy.mjs`、`scripts/v22-test-classification.mjs` 和相关 fixture / manifest / runner 行为共同定义测试机器边界。当前 `test:plan` / `test:run-plan` 由 policy 消费 changed files 和 path / match rules，生成 discovery 结果、lane 候选和 plan 命令；test file metadata、contract refs、entry kind、suite membership 和 authorization boundary 仍由 classification registry / manifest gate 校验。Policy coverage gate 负责确认 registry lane/category/surface 可以映射到当前 policy surface，避免两套分类漂移。
 
 目录约定可以被 changed-file policy 消费，用来推断普通改动面的推荐 lane；这不再是被禁止的“启发式”。真正需要 fail-closed 的是特殊 case：cloud/live/deploy、production claim、retired/tombstone guard、suite wrapper、future-authorized boundary 和其他不能接受误判的高风险边界，它们必须保留 explicit override 或等价的显式机器声明。
 

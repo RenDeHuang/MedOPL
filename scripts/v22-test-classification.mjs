@@ -255,6 +255,7 @@ function fallbackEntry(file) {
   if (file.startsWith("tests/regression/runtime-bridge/")) return baseEntry(file, "regression-runtime-bridge", "local-regression", ["local-regression"]);
   if (file === "tests/contracts/contract-test-v22-go-backend-service-surface.mjs") return baseEntry(file, "contract", "contract-local", ["health", "local-contract"]);
   if (file === "tests/contracts/contract-test-v22-precloud-deployable-rc.mjs") return baseEntry(file, "contract", "contract-local", ["health", "local-contract"]);
+  if (file === "tests/governance/governance-test-v22-dynamic-test-run-plan.mjs") return baseEntry(file, "contract", "contract-local", ["health", "local-contract", "review"]);
   if (file === "tests/governance/governance-test-v22-verify-plan-mode.mjs") return baseEntry(file, "contract", "contract-local", ["health", "local-contract", "review"]);
   if (file.startsWith("tests/contracts/")) return baseEntry(file, "contract", "contract-local", ["local-contract"]);
   if (file.startsWith("tests/governance/")) return baseEntry(file, "retired-governance", "retired-governance", ["retired-governance"]);

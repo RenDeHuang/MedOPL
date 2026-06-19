@@ -1,3 +1,11 @@
+import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(__dirname, "..");
+
 const normalizeFile = (file) => String(file || "").replaceAll("\\", "/").replace(/^\.\//u, "");
 
 function matchesPrefix(file, prefixes = []) {
@@ -6,6 +14,27 @@ function matchesPrefix(file, prefixes = []) {
 
 function unique(items) {
   return [...new Set(items.filter(Boolean))];
+}
+
+function defaultExists(repoPath) {
+  return existsSync(path.join(repoRoot, String(repoPath || "")));
+}
+
+function canConnectToPort({ host, port }) {
+  const script = [
+    "const net = require('node:net');",
+    "const socket = net.createConnection({ host: process.argv[1], port: Number(process.argv[2]) });",
+    "socket.setTimeout(300);",
+    "socket.on('connect', () => { socket.destroy(); process.exit(0); });",
+    "socket.on('timeout', () => { socket.destroy(); process.exit(1); });",
+    "socket.on('error', () => process.exit(1));",
+  ].join("");
+  const result = spawnSync(process.execPath, ["-e", script, String(host || "127.0.0.1"), String(port)], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  return result.status === 0;
 }
 
 export const TEST_ENVIRONMENTS = Object.freeze(["local", "staging", "production-canary"]);
@@ -37,6 +66,115 @@ const TEST_PLAN_CHANGED_SURFACE_COMMANDS = Object.freeze([
 const TEST_PLAN_FULL_LOCAL_COMMANDS = Object.freeze([
   "npm run test:regression",
   "npm run verify:local-release-candidate",
+]);
+
+const PREFLIGHT_CHECK_DEFINITIONS = Object.freeze({
+  "frontend-typescript-package": Object.freeze({
+    id: "frontend-typescript-package",
+    label: "frontend TypeScript package",
+    path: "services/portal/frontend/node_modules/typescript",
+    setupCommand: "npm --prefix services/portal/frontend ci",
+  }),
+  "go-backend-package": Object.freeze({
+    id: "go-backend-package",
+    label: "Go backend package",
+    path: "services/medopl-go-backend/go.mod",
+    setupCommand: "bash -lc \"cd services/medopl-go-backend && go mod download\"",
+  }),
+  "runtime-bridge-path": Object.freeze({
+    id: "runtime-bridge-path",
+    label: "runtime bridge path",
+    path: "services/opl-runtime-bridge/src",
+  }),
+  "gateway-path": Object.freeze({
+    id: "gateway-path",
+    label: "gateway path",
+    path: "services/opl-web-gateway/src",
+  }),
+  "local-service-port-check": Object.freeze({
+    id: "local-service-port-check",
+    label: "local service port check",
+    kind: "tcp_ports",
+    ports: Object.freeze([
+      Object.freeze({ id: "portal-frontend", host: "127.0.0.1", port: 17180 }),
+      Object.freeze({ id: "go-backend", host: "127.0.0.1", port: 8789 }),
+      Object.freeze({ id: "opl-web-gateway", host: "127.0.0.1", port: 18789 }),
+      Object.freeze({ id: "runtime-bridge", host: "127.0.0.1", port: 8788 }),
+      Object.freeze({ id: "clean-opl-webui", host: "127.0.0.1", port: 18130 }),
+    ]),
+    setupCommand: "npm run local:services:start && npm run local:services:check -- --json",
+  }),
+});
+
+const DEPENDENCY_AWARE_DISCOVERY_RULES = Object.freeze([
+  Object.freeze({
+    id: "medopl-api-contract",
+    match(file) {
+      return /^contracts\/medopl-api-contract(?:[^/]*)$/u.test(file);
+    },
+    surfaces: Object.freeze(["backend", "frontend", "contract"]),
+    commands: Object.freeze([
+      "npm run test:backend",
+      "npm run test:frontend",
+      "npm run test:regression",
+      "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
+    ]),
+    reasons: Object.freeze([
+      Object.freeze({
+        ruleId: "dependency-aware-api-contract-backend",
+        surface: "backend",
+        environment: "local",
+        message: "API contract expands to backend verification surface",
+      }),
+      Object.freeze({
+        ruleId: "dependency-aware-api-contract-frontend",
+        surface: "frontend",
+        environment: "local",
+        message: "API contract expands to frontend and contract consumer surface",
+      }),
+    ]),
+  }),
+  Object.freeze({
+    id: "medopl-runtime-bridge-contract",
+    match(file) {
+      return /^contracts\/medopl-runtime-bridge-contract(?:[^/]*)$/u.test(file);
+    },
+    surfaces: Object.freeze(["runtime", "regression"]),
+    commands: Object.freeze([
+      "npm run test:runtime",
+      "npm run test:regression",
+    ]),
+    reasons: Object.freeze([
+      Object.freeze({
+        ruleId: "dependency-aware-runtime-bridge-contract",
+        surface: "runtime",
+        environment: "local",
+        message: "runtime bridge contract expands to runtime and regression runtime-bridge surfaces",
+      }),
+      Object.freeze({
+        ruleId: "dependency-aware-runtime-bridge-regression",
+        surface: "regression",
+        environment: "local",
+        message: "runtime bridge contract requires regression runtime-bridge coverage",
+      }),
+    ]),
+  }),
+  Object.freeze({
+    id: "medopl-cloud-boundary",
+    match(file) {
+      return /^contracts\/medopl-cloud-boundary(?:[^/]*)$/u.test(file);
+    },
+    surfaces: Object.freeze(["cloud"]),
+    commands: Object.freeze(["npm run test:real-cloud-readiness"]),
+    reasons: Object.freeze([
+      Object.freeze({
+        ruleId: "dependency-aware-cloud-boundary-local-readiness",
+        surface: "cloud",
+        environment: "local",
+        message: "cloud boundary remains local readiness plus authorized candidate only",
+      }),
+    ]),
+  }),
 ]);
 
 export const TEST_PLAN_CANNOT_CLAIM = Object.freeze([
@@ -238,7 +376,98 @@ function fileMatchesRule(file, rule) {
   return matchesPrefix(file, rule.pathPrefixes);
 }
 
-export function planCommandsForFiles(files, { profile = "changed-surface" } = {}) {
+function runPreflight(checkIds, { exists = defaultExists } = {}) {
+  const checks = [];
+  const missing = [];
+  const recommendedSetupCommands = [];
+
+  for (const checkId of unique(checkIds)) {
+    const definition = PREFLIGHT_CHECK_DEFINITIONS[checkId];
+    if (!definition) continue;
+    if (definition.kind === "tcp_ports") {
+      const ports = (definition.ports || []).map((port) => Object.freeze({
+        ...port,
+        ok: canConnectToPort(port),
+      }));
+      const ok = ports.every((port) => port.ok);
+      checks.push(Object.freeze({
+        id: definition.id,
+        ok,
+        kind: definition.kind,
+        label: definition.label,
+        ports: Object.freeze(ports),
+      }));
+      if (!ok) {
+        missing.push(Object.freeze({
+          id: definition.id,
+          label: definition.label,
+          ports: Object.freeze(ports.filter((port) => !port.ok)),
+        }));
+        if (definition.setupCommand) recommendedSetupCommands.push(definition.setupCommand);
+      }
+      continue;
+    }
+    const ok = Boolean(exists(definition.path));
+    checks.push(Object.freeze({
+      id: definition.id,
+      ok,
+      path: definition.path,
+      label: definition.label,
+    }));
+    if (!ok) {
+      missing.push(Object.freeze({
+        id: definition.id,
+        path: definition.path,
+        label: definition.label,
+      }));
+      if (definition.setupCommand) recommendedSetupCommands.push(definition.setupCommand);
+    }
+  }
+
+  return Object.freeze({
+    ok: missing.length === 0,
+    checks: Object.freeze(checks),
+    missing: Object.freeze(missing),
+    recommendedSetupCommands: Object.freeze(unique(recommendedSetupCommands)),
+  });
+}
+
+export function preflightTestPlan(plan, { exists = defaultExists } = {}) {
+  const checkIds = [];
+  const surfaces = new Set(plan?.matchedSurfaces || []);
+  const commands = new Set(plan?.recommendedCommands || []);
+
+  if (surfaces.has("frontend") || commands.has("npm run test:frontend")) checkIds.push("frontend-typescript-package");
+  if (surfaces.has("backend") || commands.has("npm run test:backend")) checkIds.push("go-backend-package");
+  if (surfaces.has("runtime") || commands.has("npm run test:runtime")) {
+    checkIds.push("runtime-bridge-path", "gateway-path", "local-service-port-check");
+  }
+  if (surfaces.has("regression") || commands.has("npm run test:regression")) {
+    checkIds.push("frontend-typescript-package", "runtime-bridge-path", "gateway-path", "local-service-port-check");
+  }
+
+  return runPreflight(checkIds, { exists });
+}
+
+function applyDependencyAwareDiscovery(file, state) {
+  for (const rule of DEPENDENCY_AWARE_DISCOVERY_RULES) {
+    if (!rule.match(file)) continue;
+    state.matchedSurfaces.push(...(rule.surfaces || []));
+    state.environments.push("local");
+    state.recommendedCommands.push(...(rule.commands || []));
+    for (const reason of rule.reasons || []) {
+      state.reasons.push(Object.freeze({
+        file,
+        ruleId: reason.ruleId,
+        surface: reason.surface,
+        environment: reason.environment,
+        message: reason.message,
+      }));
+    }
+  }
+}
+
+export function planCommandsForFiles(files, { profile = "changed-surface", exists = defaultExists } = {}) {
   const normalizedFiles = unique(files.map(normalizeFile));
   const matchedSurfaces = [];
   const environments = [];
@@ -272,9 +501,15 @@ export function planCommandsForFiles(files, { profile = "changed-surface" } = {}
         message: rule.reason,
       }));
     }
+    applyDependencyAwareDiscovery(file, {
+      matchedSurfaces,
+      environments,
+      recommendedCommands,
+      reasons,
+    });
   }
 
-  return Object.freeze({
+  const normalizedPlan = Object.freeze({
     matchedSurfaces: Object.freeze(unique(matchedSurfaces)),
     environments: Object.freeze(unique(environments)),
     authorizedEnvironments: Object.freeze(unique(authorizedEnvironments)),
@@ -282,5 +517,10 @@ export function planCommandsForFiles(files, { profile = "changed-surface" } = {}
     authorizedCommands: Object.freeze(unique(authorizedCommands)),
     reasons: Object.freeze(reasons),
     cannotClaim: Object.freeze(unique(cannotClaim)),
+  });
+
+  return Object.freeze({
+    ...normalizedPlan,
+    preflight: preflightTestPlan(normalizedPlan, { exists }),
   });
 }

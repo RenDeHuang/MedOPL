@@ -10,11 +10,12 @@ async function readRepoFile(repoPath) {
   return readFile(path.join(repoRoot, repoPath), "utf8");
 }
 
-const [packageJson, workflowSource, manifest, delivery] = await Promise.all([
+const [packageJson, workflowSource, manifest, delivery, testsReadme] = await Promise.all([
   readRepoFile("package.json").then(JSON.parse),
   readRepoFile(".github/workflows/verify.yml"),
   readRepoFile("tests/fixtures/v22/agent-verify-manifest.json").then(JSON.parse),
   readRepoFile("docs/delivery/README.md"),
+  readRepoFile("tests/README.md"),
 ]);
 
 const expectedScripts = {
@@ -41,6 +42,7 @@ const expectedScripts = {
   "test:real-cloud-readiness": "node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk",
   "test:cloud-future-authorized": "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk",
   "test:plan": "node scripts/v22-verify.mjs plan --base origin/recovery/platform-v22-trunk",
+  "test:run-plan": "node scripts/v22-verify.mjs run-plan --base origin/recovery/platform-v22-trunk",
   "test:fast": "node scripts/v22-verify.mjs package pre-slide-fast --base origin/recovery/platform-v22-trunk",
   "test:lanes": "node scripts/v22-verify.mjs package test-lanes --base origin/recovery/platform-v22-trunk",
   "verify:local-release-candidate": "node scripts/v22-verify.mjs package local-release-candidate --base origin/recovery/platform-v22-trunk",
@@ -79,6 +81,34 @@ for (const command of [
   "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
 ]) {
   assert(delivery.includes(command), `delivery_default_verification_missing:${command}`);
+}
+
+for (const expected of [
+  "Test Policy -> Discovery -> Preflight -> Run -> Report/Completion Gate",
+  "`npm run test:run-plan`",
+  "`recommendedCommands`",
+  "`authorizedCommands`",
+  "`cannotClaim`",
+  "只执行 `recommendedCommands`",
+  "不自动执行 `authorizedCommands`",
+  "不执行 cloud/live/deploy/kubectl",
+  "**Preflight**",
+  "**Report/Completion Gate**",
+]) {
+  assert(delivery.includes(expected), `delivery_dynamic_test_system_boundary_missing:${expected}`);
+}
+for (const expected of [
+  "Test Policy -> Discovery -> Preflight -> Run -> Report/Completion Gate",
+  "`npm run test:run-plan`",
+  "`recommendedCommands`",
+  "`authorizedCommands`",
+  "`cannotClaim`",
+  "只执行 `recommendedCommands`",
+  "不自动执行 `authorizedCommands`",
+  "**Preflight**",
+  "**Report/Completion Gate**",
+]) {
+  assert(testsReadme.includes(expected), `tests_readme_dynamic_test_system_boundary_missing:${expected}`);
 }
 
 for (const expected of [
@@ -159,6 +189,16 @@ for (const command of [
   "node tests/governance/governance-test-v22-root-verify-workflow-entrypoints.mjs",
 ]) {
   assert(packageSuite.commands.includes(command), `root_verify_package_suite_command_missing:${command}`);
+}
+
+const dynamicTestSuite = manifest.package_suites.find((suite) => suite.id === "dynamic-test-system" || suite.id === "test-run-plan");
+assert(dynamicTestSuite, "dynamic_test_system_package_suite_missing");
+for (const command of [
+  "npm run test:run-plan -- --dry-run --json",
+  "node tests/governance/governance-test-v22-dynamic-test-run-plan.mjs",
+  "node tests/governance/governance-test-v22-verify-plan-mode.mjs",
+]) {
+  assert(dynamicTestSuite.commands.includes(command), `dynamic_test_system_package_suite_command_missing:${command}`);
 }
 
 const preSlideFastSuite = manifest.package_suites.find((suite) => suite.id === "pre-slide-fast");
