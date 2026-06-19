@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  assertManifestSuiteAlignment,
   TEST_LANE_CONTRACT_REFS,
   TEST_LANE_REGISTRY,
   TEST_LANE_SUITES,
@@ -42,6 +43,12 @@ assert.equal(TEST_LANE_REGISTRY.length, actualTestFiles.length, "registry_count_
 
 const coverage = await assertTestLaneCoverage();
 assert.equal(coverage.ok, true, `test_lane_coverage_failed:${JSON.stringify(coverage, null, 2)}`);
+const manifestAlignment = assertManifestSuiteAlignment(manifest);
+assert.equal(manifestAlignment.ok, true, `manifest_suite_alignment_failed:${JSON.stringify(manifestAlignment, null, 2)}`);
+assert(
+  manifestAlignment.activeSuiteIds.includes("cloud"),
+  "manifest_suite_alignment_must_include_cloud_suite",
+);
 
 for (const entry of TEST_LANE_REGISTRY) {
   assert(entry.id, `registry_entry_missing_id:${entry.file}`);
