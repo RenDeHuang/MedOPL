@@ -26,6 +26,17 @@ node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-tr
 
 `golden-path` 是 default verify 的第一产品健康面；`health`、`local-contract`、`review` 和治理护栏仍存在，但 `changes/` 作为 change package 生命周期入口已退役，当前 truth 归 `contracts/`、`docs/active/README.md`、root `specs/**`、tests/fixtures/manifest 和 `validate:active-platform`。
 
+## Test Lane Selection
+
+交付时先按改动 surface 选 lane，再决定是否扩到更重的验证：
+
+- **main lane**：面向默认产品主线的常规 gate，优先覆盖 `test:health`、`test:smoke`、`test:contract` 和 `test:regression`。
+- **targeted lane**：按改动 surface 选最小相关面；例如前端改动看 `test:frontend`，后端改动看 `test:backend`，runtime / gateway 改动看 `test:runtime`，release / claim 边界改动看 `test:release`，治理或 registry 改动看 `test:hygiene`。
+- **full/local RC lane**：发布前或大改动时跑更完整的本地 RC / release-candidate 验证，至少覆盖 main lane，并补 `verify:local-release-candidate`、`verify:golden-path` 和与变更面相关的 targeted lane。
+- **authorized lane**：只有在显式授权包存在时才进入；它只代表受控 cloud / provider / mutation 边界，不自动等于真实云可用，也不自动等于 production。
+
+正式 review 前，开发者至少应跑 main lane 加上 relevant targeted lane；发布或大改动时，再提升到 full/local RC lane。local / full / RC 证明的是本地或受控环境下的可交付性，不是 production claim。authorized cloud lane 只授予被写明的授权范围，不授予真实云、deploy、kubectl 或 live-test 的默认权限。
+
 ## Framework Entry Commands
 
 ```bash

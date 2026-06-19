@@ -6,6 +6,17 @@ State: `active`
 
 `tests/**/*.mjs` 是 v22 repo-local eval 文件族，不再混放在 `scripts/`。测试围绕 active platform、product contracts、frontend/backend/runtime behavior、release boundary、cloud authorization、hygiene 和 golden path 组织；tests 是证据 consumer/gate，不是产品 truth owner。
 
+## Lane Selection
+
+测试选择先看改动 surface，再选 lane，不把所有问题都塞进同一套大回归里：
+
+- **main lane**：默认主线 gate，承接健康、烟测、契约和回归的常规验证。
+- **targeted lane**：按变更面选最小相关测试面，前端、后端、runtime、release、hygiene / registry 等都应先从对应目录和 runner 入口下手。
+- **full/local RC lane**：用于发布前或大改动的本地 RC 证明，覆盖 main lane，并叠加与本次变更相关的 targeted lane。
+- **authorized lane**：只在显式授权边界内运行，面向受控 cloud / provider / dry-run / readonly diagnostics；它不是 production 证明，也不自动获得真实云执行权限。
+
+开发者不应在没有筛选的情况下直接跑“全部测试”来代替判断。正式 review 前，至少完成 main lane 加 relevant targeted lane；发布或大改动时，再升级到 full/local RC lane。local / full / RC 只说明本地或受控环境通过，不能 claim production。authorized cloud lane 也只覆盖授权包内的边界，不等于真实云授权。
+
 ## Taxonomy
 
 - `tests/product/`: MedOPL product profile、commercial package、active platform 和 product contract eval。
@@ -44,6 +55,8 @@ Registry coverage gate 是 `node tests/governance/governance-test-v22-test-lane-
 - every registered test has at least one verify suite;
 - every registry entry uses allowed lane/tier/surface/entryKind/authorization values;
 - every registry entry references root `specs/**` machine owners rather than parsing `docs/specs/README.md` prose.
+
+这里的 registry / manifest 是机器边界；Markdown 只提供人读导航，不是机器接口。需要稳定分类、授权或 lane 判断时，必须落到 registry、manifest、fixture、source contract 或 runner 行为，不能让 README 章节名承担机器 truth。
 
 ## Active Test Lifecycle
 

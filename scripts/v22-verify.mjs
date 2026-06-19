@@ -100,6 +100,125 @@ function currentBranchName() {
   return result.status === 0 ? result.stdout.trim() : "";
 }
 
+function csvOption(value) {
+  return String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function gitLines(args) {
+  const result = spawnSync("git", args, {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+  if (result.status !== 0) return [];
+  return result.stdout.split("\n").map((item) => item.trim()).filter(Boolean);
+}
+
+function unique(items) {
+  return [...new Set(items.filter(Boolean))];
+}
+
+function changedFilesSince(base) {
+  return unique([
+    ...gitLines(["diff", "--name-only", `${base}...HEAD`]),
+    ...gitLines(["diff", "--name-only", "--cached"]),
+    ...gitLines(["diff", "--name-only"]),
+    ...gitLines(["ls-files", "--others", "--exclude-standard"]),
+  ]);
+}
+
+function commandsForChangedFiles(files) {
+  const commands = ["npm run test:fast", "npm run test:lanes"];
+  const authorizedCommands = [];
+  const normalized = files.map((file) => String(file || "").replaceAll("\\", "/"));
+
+  if (normalized.some((file) => file.startsWith("services/portal/frontend/") || file.startsWith("tests/frontend/"))) {
+    commands.push("npm run test:frontend", "npm run test:regression");
+  }
+  if (normalized.some((file) => file.startsWith("services/portal/") && !file.startsWith("services/portal/frontend/"))) {
+    commands.push("npm --prefix services/portal run check", "npm run test:regression");
+  }
+  if (normalized.some((file) => file.startsWith("services/medopl-go-backend/") || file.startsWith("tests/backend/"))) {
+    commands.push(
+      "npm run test:backend",
+      "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
+    );
+  }
+  if (normalized.some((file) => file.startsWith("services/opl-runtime-bridge/") || file.startsWith("services/opl-web-gateway/") || file.startsWith("tests/runtime/") || file.startsWith("tests/regression/runtime-bridge/") || file.startsWith("tests/regression/opl/"))) {
+    commands.push("npm run test:runtime", "npm run test:regression");
+  }
+  if (normalized.some((file) => file.startsWith("tests/release/") || file.startsWith("contracts/medopl-release-boundary") || file.startsWith("docs/evidence/"))) {
+    commands.push("npm run test:release");
+  }
+  if (normalized.some((file) => file.startsWith("tests/cloud/") || file.startsWith("tests/support/cloud-prework/") || file.startsWith("contracts/medopl-cloud-boundary"))) {
+    commands.push("npm run test:cloud", "npm run test:real-cloud-readiness");
+    authorizedCommands.push("npm run test:cloud-future-authorized");
+  }
+  if (normalized.some((file) => file.startsWith("scripts/") || file.startsWith("tests/governance/") || file.startsWith("tests/health/") || file.startsWith("tests/hygiene/") || file === "package.json" || file.startsWith("tests/fixtures/v22/"))) {
+    commands.push("npm run test:hygiene", "npm run test:health", "npm run test:contract");
+  }
+  if (normalized.some((file) => file.startsWith("contracts/") || file.startsWith("specs/"))) {
+    commands.push("npm run test:contract");
+  }
+  if (normalized.some((file) => file.startsWith("docs/") || file === "README.md" || file === "AGENTS.md" || file === "TASTE.md")) {
+    commands.push("npm run test:health", "npm run check:diff");
+  }
+
+  return {
+    recommendedCommands: unique(commands),
+    authorizedCommands: unique(authorizedCommands),
+  };
+}
+
+function planForOptions({ options, base }) {
+  const explicitFiles = csvOption(options.files);
+  const changedFiles = explicitFiles.length > 0 ? explicitFiles : changedFilesSince(base);
+  const profile = String(options.profile || "changed-surface");
+  const allowedProfiles = new Set(["changed-surface", "full-local"]);
+  if (!allowedProfiles.has(profile)) throw new Error(`unknown_plan_profile:${profile}`);
+  const baseCommands = ["npm run test:health", "npm run test:smoke", "npm run test:contract"];
+  const cannotClaim = [
+    "production readiness",
+    "real cloud execution",
+    "deploy completion",
+    "Kubernetes command success",
+    "live-test coverage",
+  ];
+  const surfaceCommands = commandsForChangedFiles(changedFiles);
+  if (profile === "full-local") {
+    return {
+      ok: true,
+      mode: "plan",
+      profile,
+      changedFiles,
+      executesCommands: false,
+      recommendedCommands: unique([
+        ...baseCommands,
+        "npm run test:regression",
+        "npm run test:fast",
+        "npm run test:lanes",
+        "npm run verify:local-release-candidate",
+        ...surfaceCommands.recommendedCommands,
+      ]),
+      authorizedCommands: surfaceCommands.authorizedCommands,
+      cannotClaim,
+    };
+  }
+  return {
+    ok: true,
+    mode: "plan",
+    profile,
+    changedFiles,
+    executesCommands: false,
+    recommendedCommands: unique([...baseCommands, ...surfaceCommands.recommendedCommands]),
+    authorizedCommands: surfaceCommands.authorizedCommands,
+    cannotClaim,
+  };
+}
+
 function branchOverrideForBranch({ branchName, manifest, base }) {
   const matchedSuites = (manifest.branch_override_suites ?? []).filter((suite) => {
     const suiteBranches = new Set([suite.branch, ...(suite.branches ?? [])].filter(Boolean));
@@ -350,6 +469,7 @@ function printUsage() {
     "Usage:",
     "  node scripts/v22-verify.mjs list [--json]",
     "  node scripts/v22-verify.mjs active-platform [--quick] [--json]",
+    "  node scripts/v22-verify.mjs plan [--base origin/recovery/platform-v22-trunk] [--files a,b] [--profile changed-surface|full-local] [--json]",
     "  node scripts/v22-verify.mjs current [--base origin/recovery/platform-v22-trunk] [--dry-run] [--json]",
     "  node scripts/v22-verify.mjs suite <id> [--base origin/recovery/platform-v22-trunk] [--dry-run] [--json]",
     "  node scripts/v22-verify.mjs package <id> [--base origin/recovery/platform-v22-trunk] [--dry-run] [--json]",
@@ -363,6 +483,23 @@ function renderHuman(payload) {
     `v22 verify ${payload.mode}`,
     `ok: ${payload.ok}`,
   ];
+  if (payload.mode === "plan") {
+    if (payload.profile) lines.push(`profile: ${payload.profile}`);
+    lines.push(`executes_commands: ${payload.executesCommands}`);
+    if ((payload.changedFiles || []).length > 0) {
+      lines.push("changed files:");
+      for (const file of payload.changedFiles) lines.push(`- ${file}`);
+    }
+    lines.push("recommended commands:");
+    for (const command of payload.recommendedCommands || []) lines.push(`- ${command}`);
+    if ((payload.authorizedCommands || []).length > 0) {
+      lines.push("authorized commands:");
+      for (const command of payload.authorizedCommands) lines.push(`- ${command}`);
+    }
+    lines.push("cannot claim:");
+    for (const claim of payload.cannotClaim || []) lines.push(`- ${claim}`);
+    return `${lines.join("\n")}\n`;
+  }
   if (payload.leafId) lines.push(`leaf: ${payload.leafId}`);
   if (payload.suiteId) lines.push(`suite: ${payload.suiteId}`);
   if (payload.packageId) lines.push(`package: ${payload.packageId}`);
@@ -403,6 +540,15 @@ async function main() {
     } else {
       process.stdout.write(`Active platform validation passed for ${payload.currentCursor}.\n`);
     }
+    return;
+  }
+
+  if (mode === "plan") {
+    const payload = planForOptions({
+      options,
+      base: options.base || "origin/recovery/platform-v22-trunk",
+    });
+    process.stdout.write(options.json ? `${JSON.stringify(payload, null, 2)}\n` : renderHuman(payload));
     return;
   }
 
