@@ -6,6 +6,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { planCommandsForFiles } from "./v22-test-policy.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -130,92 +131,26 @@ function changedFilesSince(base) {
   ]);
 }
 
-function commandsForChangedFiles(files) {
-  const commands = ["npm run test:fast", "npm run test:lanes"];
-  const authorizedCommands = [];
-  const normalized = files.map((file) => String(file || "").replaceAll("\\", "/"));
-
-  if (normalized.some((file) => file.startsWith("services/portal/frontend/") || file.startsWith("tests/frontend/"))) {
-    commands.push("npm run test:frontend", "npm run test:regression");
-  }
-  if (normalized.some((file) => file.startsWith("services/portal/") && !file.startsWith("services/portal/frontend/"))) {
-    commands.push("npm --prefix services/portal run check", "npm run test:regression");
-  }
-  if (normalized.some((file) => file.startsWith("services/medopl-go-backend/") || file.startsWith("tests/backend/"))) {
-    commands.push(
-      "npm run test:backend",
-      "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
-    );
-  }
-  if (normalized.some((file) => file.startsWith("services/opl-runtime-bridge/") || file.startsWith("services/opl-web-gateway/") || file.startsWith("tests/runtime/") || file.startsWith("tests/regression/runtime-bridge/") || file.startsWith("tests/regression/opl/"))) {
-    commands.push("npm run test:runtime", "npm run test:regression");
-  }
-  if (normalized.some((file) => file.startsWith("tests/release/") || file.startsWith("contracts/medopl-release-boundary") || file.startsWith("docs/evidence/"))) {
-    commands.push("npm run test:release");
-  }
-  if (normalized.some((file) => file.startsWith("tests/cloud/") || file.startsWith("tests/support/cloud-prework/") || file.startsWith("contracts/medopl-cloud-boundary"))) {
-    commands.push("npm run test:cloud", "npm run test:real-cloud-readiness");
-    authorizedCommands.push("npm run test:cloud-future-authorized");
-  }
-  if (normalized.some((file) => file.startsWith("scripts/") || file.startsWith("tests/governance/") || file.startsWith("tests/health/") || file.startsWith("tests/hygiene/") || file === "package.json" || file.startsWith("tests/fixtures/v22/"))) {
-    commands.push("npm run test:hygiene", "npm run test:health", "npm run test:contract");
-  }
-  if (normalized.some((file) => file.startsWith("contracts/") || file.startsWith("specs/"))) {
-    commands.push("npm run test:contract");
-  }
-  if (normalized.some((file) => file.startsWith("docs/") || file === "README.md" || file === "AGENTS.md" || file === "TASTE.md")) {
-    commands.push("npm run test:health", "npm run check:diff");
-  }
-
-  return {
-    recommendedCommands: unique(commands),
-    authorizedCommands: unique(authorizedCommands),
-  };
-}
-
 function planForOptions({ options, base }) {
   const explicitFiles = csvOption(options.files);
   const changedFiles = explicitFiles.length > 0 ? explicitFiles : changedFilesSince(base);
   const profile = String(options.profile || "changed-surface");
   const allowedProfiles = new Set(["changed-surface", "full-local"]);
   if (!allowedProfiles.has(profile)) throw new Error(`unknown_plan_profile:${profile}`);
-  const baseCommands = ["npm run test:health", "npm run test:smoke", "npm run test:contract"];
-  const cannotClaim = [
-    "production readiness",
-    "real cloud execution",
-    "deploy completion",
-    "Kubernetes command success",
-    "live-test coverage",
-  ];
-  const surfaceCommands = commandsForChangedFiles(changedFiles);
-  if (profile === "full-local") {
-    return {
-      ok: true,
-      mode: "plan",
-      profile,
-      changedFiles,
-      executesCommands: false,
-      recommendedCommands: unique([
-        ...baseCommands,
-        "npm run test:regression",
-        "npm run test:fast",
-        "npm run test:lanes",
-        "npm run verify:local-release-candidate",
-        ...surfaceCommands.recommendedCommands,
-      ]),
-      authorizedCommands: surfaceCommands.authorizedCommands,
-      cannotClaim,
-    };
-  }
+  const planned = planCommandsForFiles(changedFiles, { profile });
   return {
     ok: true,
     mode: "plan",
     profile,
     changedFiles,
     executesCommands: false,
-    recommendedCommands: unique([...baseCommands, ...surfaceCommands.recommendedCommands]),
-    authorizedCommands: surfaceCommands.authorizedCommands,
-    cannotClaim,
+    matchedSurfaces: planned.matchedSurfaces,
+    environments: planned.environments,
+    authorizedEnvironments: planned.authorizedEnvironments,
+    recommendedCommands: planned.recommendedCommands,
+    authorizedCommands: planned.authorizedCommands,
+    reasons: planned.reasons,
+    cannotClaim: planned.cannotClaim,
   };
 }
 
@@ -489,6 +424,24 @@ function renderHuman(payload) {
     if ((payload.changedFiles || []).length > 0) {
       lines.push("changed files:");
       for (const file of payload.changedFiles) lines.push(`- ${file}`);
+    }
+    if ((payload.matchedSurfaces || []).length > 0) {
+      lines.push("matched surfaces:");
+      for (const surface of payload.matchedSurfaces) lines.push(`- ${surface}`);
+    }
+    if ((payload.environments || []).length > 0) {
+      lines.push("environments:");
+      for (const environment of payload.environments) lines.push(`- ${environment}`);
+    }
+    if ((payload.authorizedEnvironments || []).length > 0) {
+      lines.push("authorized environments:");
+      for (const environment of payload.authorizedEnvironments) lines.push(`- ${environment}`);
+    }
+    if ((payload.reasons || []).length > 0) {
+      lines.push("reasons:");
+      for (const reason of payload.reasons) {
+        lines.push(`- [${reason.ruleId}] ${reason.surface} ${reason.file} (${reason.environment}): ${reason.message}`);
+      }
     }
     lines.push("recommended commands:");
     for (const command of payload.recommendedCommands || []) lines.push(`- ${command}`);

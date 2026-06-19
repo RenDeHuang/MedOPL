@@ -45,6 +45,12 @@ const frontendPayload = JSON.parse(frontendPlan.stdout);
 assert.equal(frontendPayload.ok, true, "frontend_plan_payload_must_be_ok");
 assert.equal(frontendPayload.mode, "plan", "frontend_plan_mode_mismatch");
 assert(frontendPayload.changedFiles.includes("services/portal/frontend/src/app/routes.tsx"), "frontend_plan_changed_file_missing");
+assert(frontendPayload.matchedSurfaces.includes("frontend"), "frontend_plan_must_report_frontend_surface");
+assert(frontendPayload.environments.includes("local"), "frontend_plan_must_report_local_environment");
+assert(
+  frontendPayload.reasons.some((reason) => reason.surface === "frontend" && reason.file === "services/portal/frontend/src/app/routes.tsx"),
+  "frontend_plan_must_report_reason_for_trigger_file",
+);
 assert(frontendPayload.recommendedCommands.includes("npm run test:frontend"), "frontend_plan_must_recommend_frontend_lane");
 assert(frontendPayload.recommendedCommands.includes("npm run test:regression"), "frontend_plan_must_recommend_regression_lane");
 assert(frontendPayload.recommendedCommands.includes("npm run test:fast"), "frontend_plan_must_recommend_fast_lane");
@@ -55,16 +61,19 @@ assert.equal(frontendPayload.executesCommands, false, "plan_mode_must_not_execut
 const frontendHumanPlan = runVerifyPlanHuman(["--files", "services/portal/frontend/src/app/routes.tsx"]);
 assert.equal(frontendHumanPlan.status, 0, `frontend_human_plan_must_exit_zero:${frontendHumanPlan.stderr || frontendHumanPlan.stdout}`);
 assert(frontendHumanPlan.stdout.includes("recommended commands:"), "frontend_human_plan_must_show_recommended_commands");
+assert(frontendHumanPlan.stdout.includes("matched surfaces:"), "frontend_human_plan_must_show_matched_surfaces");
+assert(frontendHumanPlan.stdout.includes("reasons:"), "frontend_human_plan_must_show_reasons");
 assert(frontendHumanPlan.stdout.includes("npm run test:frontend"), "frontend_human_plan_must_show_frontend_lane");
 assert(frontendHumanPlan.stdout.includes("cannot claim:"), "frontend_human_plan_must_show_cannot_claim");
 
-const untrackedProbePath = "tests/.verify-plan-working-tree-probe.mjs";
+const untrackedProbePath = "scripts/.verify-plan-working-tree-probe.mjs";
 await writeFile(path.join(repoRoot, untrackedProbePath), "export const probe = true;\n", "utf8");
 try {
   const defaultPlan = runVerifyPlan();
   assert.equal(defaultPlan.status, 0, `default_plan_must_exit_zero:${defaultPlan.stderr || defaultPlan.stdout}`);
   const defaultPayload = JSON.parse(defaultPlan.stdout);
   assert(defaultPayload.changedFiles.includes(untrackedProbePath), "default_plan_must_include_untracked_working_tree_file");
+  assert(defaultPayload.matchedSurfaces.includes("hygiene"), "default_plan_must_map_untracked_test_probe_to_hygiene_surface");
   assert(defaultPayload.recommendedCommands.includes("npm run test:hygiene"), "default_plan_must_recommend_hygiene_for_test_surface");
 } finally {
   await rm(path.join(repoRoot, untrackedProbePath), { force: true });
@@ -73,6 +82,9 @@ try {
 const cloudPlan = runVerifyPlan(["--files", "tests/cloud/cloud-test-v22-tencent-readonly-inventory-boundary.mjs"]);
 assert.equal(cloudPlan.status, 0, `cloud_plan_must_exit_zero:${cloudPlan.stderr || cloudPlan.stdout}`);
 const cloudPayload = JSON.parse(cloudPlan.stdout);
+assert(cloudPayload.matchedSurfaces.includes("cloud"), "cloud_plan_must_report_cloud_surface");
+assert(cloudPayload.environments.includes("local"), "cloud_plan_must_keep_default_cloud_gate_local");
+assert(cloudPayload.authorizedEnvironments.includes("staging"), "cloud_plan_must_report_staging_as_authorized_environment");
 assert(cloudPayload.recommendedCommands.includes("npm run test:cloud"), "cloud_plan_must_recommend_cloud_lane");
 assert(cloudPayload.recommendedCommands.includes("npm run test:real-cloud-readiness"), "cloud_plan_must_recommend_readiness_lane");
 assert.equal(cloudPayload.authorizedCommands.includes("npm run test:cloud-future-authorized"), true, "cloud_plan_must_keep_future_authorized_separate");
@@ -94,6 +106,8 @@ for (const command of [
 const fullLocalBackendPlan = runVerifyPlan(["--profile", "full-local", "--files", "services/medopl-go-backend/internal/server/router.go"]);
 assert.equal(fullLocalBackendPlan.status, 0, `full_local_backend_plan_must_exit_zero:${fullLocalBackendPlan.stderr || fullLocalBackendPlan.stdout}`);
 const fullLocalBackendPayload = JSON.parse(fullLocalBackendPlan.stdout);
+assert(fullLocalBackendPayload.matchedSurfaces.includes("backend"), "full_local_plan_must_report_backend_surface");
+assert(fullLocalBackendPayload.environments.includes("local"), "full_local_plan_must_report_local_environment");
 assert(fullLocalBackendPayload.recommendedCommands.includes("npm run test:backend"), "full_local_plan_must_include_backend_targeted_lane");
 assert(
   fullLocalBackendPayload.recommendedCommands.includes("bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\""),

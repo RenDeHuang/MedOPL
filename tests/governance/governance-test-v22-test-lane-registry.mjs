@@ -5,12 +5,19 @@ import { fileURLToPath } from "node:url";
 
 import {
   assertManifestSuiteAlignment,
+  assertPolicySurfaceCoverage,
   TEST_LANE_CONTRACT_REFS,
   TEST_LANE_REGISTRY,
   TEST_LANE_SUITES,
   assertTestLaneCoverage,
   listRegisteredTestFiles,
 } from "../../scripts/v22-test-classification.mjs";
+import {
+  TEST_ENVIRONMENTS,
+  TEST_SURFACES,
+  TEST_PLAN_BASE_COMMANDS,
+  TEST_SURFACE_RULES,
+} from "../../scripts/v22-test-policy.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
@@ -43,6 +50,8 @@ assert.equal(TEST_LANE_REGISTRY.length, actualTestFiles.length, "registry_count_
 
 const coverage = await assertTestLaneCoverage();
 assert.equal(coverage.ok, true, `test_lane_coverage_failed:${JSON.stringify(coverage, null, 2)}`);
+const policyCoverage = assertPolicySurfaceCoverage();
+assert.equal(policyCoverage.ok, true, `policy_surface_coverage_failed:${JSON.stringify(policyCoverage, null, 2)}`);
 const manifestAlignment = assertManifestSuiteAlignment(manifest);
 assert.equal(manifestAlignment.ok, true, `manifest_suite_alignment_failed:${JSON.stringify(manifestAlignment, null, 2)}`);
 assert(
@@ -64,6 +73,25 @@ for (const entry of TEST_LANE_REGISTRY) {
   }
   assert(Array.isArray(entry.verifySuites) && entry.verifySuites.length > 0, `registry_entry_missing_verify_suite:${entry.id}`);
 }
+
+assert.deepEqual(
+  TEST_PLAN_BASE_COMMANDS,
+  ["npm run test:health", "npm run test:smoke", "npm run test:contract"],
+  "policy_base_commands_must_match_verify_plan_baseline",
+);
+for (const rule of TEST_SURFACE_RULES) {
+  assert(TEST_SURFACES.includes(rule.surface), `policy_rule_surface_must_be_known:${rule.id}:${rule.surface}`);
+  assert(TEST_ENVIRONMENTS.includes(rule.environment), `policy_rule_environment_must_be_known:${rule.id}:${rule.environment}`);
+  if (rule.authorizedEnvironment) {
+    assert(TEST_ENVIRONMENTS.includes(rule.authorizedEnvironment), `policy_rule_authorized_environment_must_be_known:${rule.id}:${rule.authorizedEnvironment}`);
+  }
+}
+const cloudRule = TEST_SURFACE_RULES.find((rule) => rule.id === "cloud-boundary");
+assert(cloudRule, "policy_must_define_cloud_boundary_rule");
+assert.equal(cloudRule.environment, "local", "cloud_boundary_default_environment_must_remain_local");
+assert.equal(cloudRule.authorizedEnvironment, "staging", "cloud_boundary_authorized_environment_must_be_staging");
+assert.equal(cloudRule.commands.includes("npm run test:cloud-future-authorized"), false, "cloud_future_authorized_must_not_be_recommended_by_default");
+assert(cloudRule.authorizedCommands.includes("npm run test:cloud-future-authorized"), "cloud_future_authorized_must_remain_authorized_command");
 
 for (const suite of ["health", "smoke", "local-contract", "current", "review"]) {
   assert(TEST_LANE_SUITES[suite], `registry_suite_missing:${suite}`);

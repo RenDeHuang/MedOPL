@@ -8,14 +8,19 @@ State: `active`
 
 ## Lane Selection
 
-测试选择先看改动 surface，再选 lane，不把所有问题都塞进同一套大回归里：
+测试选择遵循 `Test Policy -> Discovery -> Overrides -> Plan/Run`，不把所有问题都塞进同一套大回归里：
+
+- **Test Policy**：machine policy 定义 changed-file surface、environment、authorization、cannot-claim 和默认命令升级规则；Markdown 只做人读导航。
+- **Discovery**：runner 先消费 changed files 和 policy path / match rules，动态归类 main / targeted / authorized 候选面；surface metadata、contract refs、entry kind 和 authorization boundary 当前仍由 registry / manifest gate 校验，后续可继续并入 policy。
+- **Overrides**：高风险或不能容忍误判的边界必须显式 fail-closed 覆盖，例如 cloud/live/deploy、production claim、retired/tombstone guard 和 suite wrapper。
+- **Plan/Run**：先看计划，再执行 main lane + relevant targeted lane；更重的 staging / canary / release lane 以后由环境化 lane 承接。
 
 - **main lane**：默认主线 gate，承接健康、烟测、契约和回归的常规验证。
-- **targeted lane**：按变更面选最小相关测试面，前端、后端、runtime、release、hygiene / registry 等都应先从对应目录和 runner 入口下手。
+- **targeted lane**：按 discovery 命中的变更面选最小相关测试面，前端、后端、runtime、release、hygiene / policy 等都应先从对应目录和 runner 入口下手。
 - **full/local RC lane**：用于发布前或大改动的本地 RC 证明，覆盖 main lane，并叠加与本次变更相关的 targeted lane。
 - **authorized lane**：只在显式授权边界内运行，面向受控 cloud / provider / dry-run / readonly diagnostics；它不是 production 证明，也不自动获得真实云执行权限。
 
-开发者不应在没有筛选的情况下直接跑“全部测试”来代替判断。正式 review 前，至少完成 main lane 加 relevant targeted lane；发布或大改动时，再升级到 full/local RC lane。local / full / RC 只说明本地或受控环境通过，不能 claim production。authorized cloud lane 也只覆盖授权包内的边界，不等于真实云授权。
+开发者不应在没有筛选的情况下直接跑“全部测试”来代替判断。默认先执行 `npm run test:plan`，查看 `changedFiles`、`matchedSurfaces`、`environments`、`authorizedEnvironments`、`reasons`、`recommendedCommands`、`authorizedCommands` 和 `cannotClaim`，再跑 main lane 加 relevant targeted lane。发布或大改动时，再升级到 full/local RC lane。local / full / RC 只说明本地或受控环境通过，不能 claim production。authorized cloud lane 也只覆盖授权包内的边界，不等于真实云授权。
 
 ## Taxonomy
 
@@ -24,12 +29,12 @@ State: `active`
 - `tests/backend/`: Go control-plane API、route coverage、Postgres/data-plane 和 billing ledger eval。
 - `tests/runtime/`: Runtime Bridge、Gateway、clean upstream OPL boundary 和 artifact/session/run eval。
 - `tests/release/`: release boundary、claim boundary、evidence redaction 和 cannot-claim eval。
-- `tests/hygiene/`: repo hygiene、secret hygiene、line budget、registry 和 runner sanity gate。
+- `tests/hygiene/`: repo hygiene、secret hygiene、line budget、policy/discovery guard 和 runner sanity gate。
 - `tests/health/`: 最小健康 gate，长期应收敛到 `tests/hygiene/` 或 thin suite。
 - `tests/smoke/`: 用户主线 golden smoke。
 - `tests/contracts/`: true API/schema/runtime/data/release contract eval；tests 是 gate/consumer，不是 truth owner。
 - `tests/governance/`: retired governance tests 的临时迁移区，不再新增；保留项必须迁到 product/release/hygiene/backend/runtime/cloud。
-- `tests/suites/`: suite wrapper，只包装 active registered tests。
+- `tests/suites/`: suite wrapper，只包装 active registry entries 或 explicit high-risk override entries。
 - `tests/regression/portal/`: Portal regression eval。
 - `tests/regression/opl/`: OPL / Gateway regression eval。
 - `tests/regression/runtime-bridge/`: Runtime Bridge regression eval。
@@ -45,28 +50,30 @@ State: `active`
 
 `docs/README.md` 必须把本文件作为 lifecycle taxonomy 的验证入口之一；docs 负责解释 truth，tests/fixtures/manifest 负责防止 truth、cursor、history 和 eval 漂移。
 
-## Test Lane Registry
+## Policy And Discovery
 
-`scripts/v22-test-classification.mjs` 是显式 test lane registry。每个 `tests/**/*.mjs` 文件必须登记 lane、tier、surface、entryKind、authorization、contract refs 和 verify suites；不得再靠文件名或目录启发式推断测试分类。
+`scripts/v22-test-policy.mjs`、`scripts/v22-test-classification.mjs` 和相关 fixture / manifest / runner 行为共同定义测试机器边界。当前 `test:plan` 由 policy 消费 changed files 和 path / match rules，生成 discovery 结果、lane 候选和 plan 命令；test file metadata、contract refs、entry kind、suite membership 和 authorization boundary 仍由 classification registry / manifest gate 校验。Policy coverage gate 负责确认 registry lane/category/surface 可以映射到当前 policy surface，避免两套分类漂移。
 
-Registry coverage gate 是 `node tests/governance/governance-test-v22-test-lane-registry.mjs`。该 gate 必须确认：
+目录约定可以被 changed-file policy 消费，用来推断普通改动面的推荐 lane；这不再是被禁止的“启发式”。真正需要 fail-closed 的是特殊 case：cloud/live/deploy、production claim、retired/tombstone guard、suite wrapper、future-authorized boundary 和其他不能接受误判的高风险边界，它们必须保留 explicit override 或等价的显式机器声明。
 
-- every `tests/**/*.mjs` file outside fixtures appears exactly once in `TEST_LANE_REGISTRY`;
-- every registered test has at least one verify suite;
-- every registry entry uses allowed lane/tier/surface/entryKind/authorization values;
-- every registry entry references root `specs/**` machine owners rather than parsing `docs/specs/README.md` prose.
+Policy/discovery coverage gate 是 `node tests/governance/governance-test-v22-test-lane-registry.mjs`。该 gate 必须确认：
 
-这里的 registry / manifest 是机器边界；Markdown 只提供人读导航，不是机器接口。需要稳定分类、授权或 lane 判断时，必须落到 registry、manifest、fixture、source contract 或 runner 行为，不能让 README 章节名承担机器 truth。
+- every `tests/**/*.mjs` outside fixtures appears exactly once in the classification registry;
+- every active test resolves to at least one verify suite, and every registry lane/category/surface maps to a policy surface;
+- every explicit override uses allowed lane/tier/surface/entryKind/authorization values and remains fail-closed;
+- policy entries reference root `specs/**` machine owners rather than parsing `docs/specs/README.md` prose.
+
+这里的 policy / manifest / fixture 是机器边界；Markdown 只提供人读导航，不是机器接口。需要稳定分类、授权、override 或 lane 判断时，必须落到 policy、manifest、fixture、source contract 或 runner 行为，不能让 README 章节名承担机器 truth。
 
 ## Active Test Lifecycle
 
-active test 必须有 lane owner。每个 `tests/**/*.mjs` 都必须通过 registry 声明 `ownerSurface` 和 `lifecycleRole`，并且 active test 必须证明 current owner surface。
+active test 必须有 lane owner。每个 `tests/**/*.mjs` 都必须通过 classification registry 或 explicit override 解析出 `ownerSurface` 和 `lifecycleRole`，并且 active test 必须证明 current owner surface。
 
 允许的 `lifecycleRole` 只有：
 
 - `current-owner`: 证明当前产品、runtime、source、docs 或 workflow owner 的行为。
 - `negative-retirement-guard`: 防止旧入口、旧兼容语义、secret/cloud/deploy 越界或 taxonomy 漂移复活。
-- `suite-wrapper`: 只包装 active registered tests，不能包装不存在的旧路径。
+- `suite-wrapper`: 只包装 active registry entries 或 explicit override entries，不能包装不存在的旧路径。
 - `real-cloud-readiness-boundary`: 只表达 readonly inventory / readonly diagnostics 的本地 readiness gate；真实 provider evidence 只能写入 `.runtime` 或外部临时状态，不进 git，不授权 secret、真实云、deploy、kubectl 或 live-test。
 - `future-authorized-boundary`: 只表达 explicit authorization fail-closed、runner dry-run/redaction 和 readonly diagnostics boundary；不授权真实云执行，不能保留 historical proof / closeout evidence / production topology 大测试作为 active eval。
 
@@ -74,16 +81,16 @@ active test 必须有 lane owner。每个 `tests/**/*.mjs` 都必须通过 regis
 
 Test lifecycle cleanup gate 是 `node tests/governance/governance-test-v22-test-lifecycle-cleanup.mjs`。该 gate 必须确认：
 
-- every active test has `ownerSurface` and an allowed `lifecycleRole`;
+- every active test has registered `ownerSurface` and an allowed `lifecycleRole`;
 - forbidden active roles such as historical-proof, compat-only, alias-only, wrapper-only, and closeout-evidence-only cannot appear;
-- suite-wrapper entries remain active registered tests;
+- suite-wrapper entries remain active registry entries or explicit override entries;
 - the zero-compat active surface gate remains in health and local-contract.
 
 ## Product Gate Boundary
 
 Product gates must verify machine contracts, API/schema behavior, page-state matrix coverage, runtime/data/release boundary, retired-path protection, manifest consistency and evidence state. They must not assert prose wording as machine truth beyond stable owner/purpose/state/machine-boundary markers that protect taxonomy drift.
 
-README-only taxonomy 是结构约束，不代表文档文本本身是机器接口。需要稳定机器判断时，必须新增 fixture schema、test lane registry、source contract 或 runner behavior；不能让 Markdown 章节标题成为默认 API。
+README-only taxonomy 是结构约束，不代表文档文本本身是机器接口。需要稳定机器判断时，必须新增 fixture schema、policy/discovery contract、source contract 或 runner behavior；不能让 Markdown 章节标题成为默认 API。
 
 ## Runner Boundary
 

@@ -1,6 +1,7 @@
 import { readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { TEST_POLICY_SURFACE_COVERAGE } from "./v22-test-policy.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -416,6 +417,36 @@ export function isSmokeClassifiedIn(scriptPath, { categories = DEFAULT_SMOKE_CAT
 
 export function listRegisteredTestFiles() {
   return TEST_LANE_REGISTRY.map((entry) => entry.file).sort();
+}
+
+export function assertPolicySurfaceCoverage() {
+  const laneCoverageErrors = [];
+  const categoryCoverageErrors = [];
+  const surfaceCoverageErrors = [];
+
+  for (const entry of TEST_LANE_REGISTRY) {
+    const laneSurfaces = TEST_POLICY_SURFACE_COVERAGE.laneToSurfaces[entry.lane] || [];
+    if (laneSurfaces.length === 0) {
+      laneCoverageErrors.push(`lane:${entry.lane}:${entry.file}`);
+    }
+
+    const categorySurfaces = TEST_POLICY_SURFACE_COVERAGE.categoryToSurfaces[entry.category] || [];
+    if (categorySurfaces.length === 0) {
+      categoryCoverageErrors.push(`category:${entry.category}:${entry.file}`);
+    }
+
+    const registrySurfaceCoverage = TEST_POLICY_SURFACE_COVERAGE.registrySurfaceToPolicySurfaces[entry.surface] || [];
+    if (registrySurfaceCoverage.length === 0) {
+      surfaceCoverageErrors.push(`surface:${entry.surface}:${entry.file}`);
+    }
+  }
+
+  return Object.freeze({
+    ok: laneCoverageErrors.length === 0 && categoryCoverageErrors.length === 0 && surfaceCoverageErrors.length === 0,
+    laneCoverageErrors: Object.freeze(laneCoverageErrors),
+    categoryCoverageErrors: Object.freeze(categoryCoverageErrors),
+    surfaceCoverageErrors: Object.freeze(surfaceCoverageErrors),
+  });
 }
 
 export function assertManifestSuiteAlignment(manifest, options = {}) {
