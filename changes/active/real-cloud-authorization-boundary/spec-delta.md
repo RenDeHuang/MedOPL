@@ -3,54 +3,43 @@
 Target specs:
 
 - specs/operations/spec.md
+- specs/framework/spec.md
+- specs/runtime/spec.md
+- specs/product/spec.md
 
 ## ADDED
 
-- No new durable requirement is accepted by this authoring package yet.
+- No new durable product/runtime behavior is added by this cleanup package.
 
 ## MODIFIED
 
-- `operations:real-cloud-authorization-boundary` must be represented as an active change package before any secret, provider, deploy, kubectl, build/push, live-test or true cloud mutation work can start.
-- The active boundary must point future work at `spec:v22-cloud-onboarding-workflow-boundary`: Gate-A is explicit user/process authorization, Gate-B is runner/allowlist/mode execution control, and missing either gate keeps `realCloudCalls=false`.
+- `operations:real-cloud-authorization-boundary` is the active gate before any secret, provider, deploy, kubectl, build/push, live-test, production ledger write or true cloud mutation work can start.
+- The active boundary points future work at `spec:v22-cloud-onboarding-workflow-boundary`: Gate-A is explicit user/process authorization, Gate-B is runner/allowlist/mode execution control, and missing either gate keeps `realCloudCalls=false`.
 - The required authorization record must name operation class, target environment, secret allowlist, API allowlist, budget, evidence sink and rollback owner. Raw evidence goes to `.runtime` or another approved non-git sink; git may only receive a sanitized summary.
-- The required future order remains `mock/snapshot provider -> readonly quote -> dry-run plan -> readonly inventory -> authorized create/release -> Package D deploy readiness planning for platform pool and VPC PostgreSQL -> authorized deploy -> canary / QA / status update`.
-- Stable上线 readiness now inserts Package D deploy readiness planning before deploy execution: target TKE cluster `cls-fi097sy4`, platform pool `np-cbk784r8`, VPC PostgreSQL endpoint `10.66.0.21:5432`, deploy/runtime env allowlists, default-disabled deploy execution gate, kubeconfig ref-only boundary, manifest scheduling to platform service pool, rollback plan shape and explicit readiness gaps.
-- Package D local shape gate is non-executing: `RUN_TENCENT_DEPLOY_EXECUTION` must remain `0`; the gate rejects raw kubeconfig YAML and tenant pool scheduling, and cannot make `releasePlanReady` or `realExecutionReady` true.
-- Package D reviewable release plan shape can now make `releasePlanReady=true` while keeping `realExecutionReady=false`. The shape covers image build plan, tag rule, TCR registry/namespace/region shape, Kubernetes namespace / deployment / service / config / secretRef shape, platform pool scheduling, VPC PostgreSQL runtime env injection, DB connectivity smoke plan, rollback plan and required redacted evidence classes.
-- Package D execution boundary / preflight gate splits secret/env input into `package-d-deploy.env` and `portal-runtime.env`: deploy env is limited to TCR credentials, registry / namespace / region, cluster id and kubeconfig ref; Portal runtime env is limited to admin identity/password and PostgreSQL URL/password. The gate can judge allowlisted inputs, fixed cluster / namespace / platform pool / DB endpoint / image targets and redacted evidence, but `realExecutionReady` remains false.
-- Package D production deploy apply/live is a repo-native future-authorized entrypoint, not a hand-run kubectl path. `production-deploy-plan` requires `RUN_TENCENT_DEPLOY_EXECUTION=0`; `production-deploy-apply` / `production-deploy-live` fail closed unless a separate cloud authorization supplies `RUN_TENCENT_DEPLOY_EXECUTION=1`, target cluster `cls-fi097sy4`, namespace `medopl-platform`, platform runner pool `np-6l4nkdto`, fixed image refs and SecretRefs.
-- The Package D apply/live command plan is limited to server-side dry-run before apply, allowlisted Package D ConfigMap/Deployment/Service apply in `medopl-platform`, rollout observe for `portal-frontend`, `medopl-go-backend`, `opl-web-gateway` and `opl-runtime-bridge`, namespace-scoped deployment/service/pod smoke shape checks, and rollback plan commands using `kubectl rollout undo` for those deployments.
-- Package D readonly service reachability is a repo-native future-authorized entrypoint, not a hand-run kubectl path. `in-cluster-http-smoke` requires `RUN_TENCENT_DEPLOY_EXECUTION=0`, target cluster `cls-fi097sy4`, namespace `medopl-platform`, platform runner pool `np-6l4nkdto`, a run-scoped `medopl-service-smoke-<runid>` temporary Job, and four fixed ClusterIP service endpoints: `portal-frontend:8080/`, `medopl-go-backend:8080/readyz`, `opl-web-gateway:8080/healthz` and `opl-runtime-bridge:8080/healthz`.
-- The Package D reachability command plan is limited to readonly `kubectl get` deployment/service/pods in `medopl-platform`, `kubectl create -f -` for the single temporary smoke Job, `kubectl wait`, `kubectl logs` for allowlisted smoke containers and `kubectl delete job <run-scoped-name>` cleanup. It must reject arbitrary URLs, `kubectl exec`, deploy, rollout, rollback, build/push, Tencent mutation and Package C live.
-- Package D production manifests must provide writable runtime paths for non-root containers: `portal-frontend` nginx pid/temp paths under `/tmp/nginx`, `opl-runtime-bridge` state root under `/tmp/medopl-runtime/.runtime`, no default `/.runtime`, and a pull strategy that can pick up a republished fixed tag.
-- Package C PostgreSQL ledger canary no longer treats local-machine access to the VPC private endpoint as the goal; successful real DB canary waits until the MedOPL service runs inside the VPC.
-- Production Launch Gap 01 is represented by the repo-native `production-launch-bootstrap-runner` contract/local gate. The gate covers first admin identity bootstrap shape, tenant bootstrap shape, workspace seed shape, providerKeyRef-only public boundary, local RC fallback separation, redacted evidence and Portal typed API to Go backend fail-closed route traceability.
-- The Production Launch Gap 01 contract keeps external access blocked. Ingress, LoadBalancer, DNS/TLS and public user access remain unavailable until the multi-tenant minimum launch closure reaches later gaps.
-- Production Launch Gap 02 is represented by the repo-native `production-launch-operation-runner` contract/local gate. The gate covers Portal action shape, Go backend operation request shape, Package C runner invocation boundary, ResourceBinding `requested` / `creating` / `ready` state transition contract, providerKeyRef-only public boundary, idempotency, local RC fallback separation, redacted evidence and Portal typed API to Go backend fail-closed route traceability.
-- The Production Launch Gap 02 contract keeps Package C live execution, Tencent mutation, production PostgreSQL ledger write/read and external access disabled. It only establishes the operation boundary for the next ResourceBinding PostgreSQL ledger live write/read contract gap.
+- The required future order is `readonly inventory -> TKE bootstrap preflight -> dry-run plan -> explicit authorization packet -> authorized tenant runtime provisioning -> ledger / billing / audit writeback -> canary / QA / status update`.
+- `tests/cloud/` now holds only small active cloud boundary tests: readonly inventory, Package C dry-run plan and TKE bootstrap preflight.
+- `tests/contracts/` holds true machine/API/schema/runtime contract evals; `tests/governance/` holds lifecycle/workflow/taxonomy evals; `tests/suites/` holds suite wrappers.
 
 ## REMOVED
 
-- No requirement is removed by this authoring package.
+- Package D deploy/external access/service reachability runners are removed from active tests/support.
+- Production-launch runner contracts are removed from active tests/support.
+- Tencent CLB diagnostics and real OPL WebUI future-authorized tests are removed from active cloud tests.
+- Package C live canary runner and PostgreSQL live ledger sink support are removed from active tests/support.
 
 ## CANNOT-CLAIM
 
 - This package does not authorize real cloud, deploy, kubectl, build/push, live-test or production release evidence.
 - This package does not prove provider credentials, cloud resource lifecycle, billing reconciliation or runtime deployment.
-- `releasePlanReady=true` does not mean image build, TCR push, Kubernetes dry-run/apply, DB smoke, rollback evidence or Package D execution has happened.
-- `executionPreflightGateReady=true` does not mean real deploy execution is authorized or ready.
-- Package D production-deploy-apply/live entrypoint existence and the first authorized apply attempt do not mean rollout success, post-deploy smoke or rollback execution has happened.
-- Package D service reachability runner existence does not mean in-cluster HTTP smoke has executed or Portal external/public access exists.
-- Production Launch Gap 01 local gate does not execute identity provider writes, tenant creation, workspace creation, provider credential binding, Package C live operations, billing, quota, workspace lifecycle or external access.
-- Production Launch Gap 02 local gate does not execute Package C live, Tencent mutation, production PostgreSQL ledger writes, billing, quota, workspace lifecycle or external access.
+- Deleted active runner paths cannot be retained as compatibility aliases.
 
 ## EVALS
 
 - `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --dry-run --json`
-- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs`
-- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs`
-- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs`
-- `node tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs`
-- `node tests/contract/contract-test-v22-real-cloud-authorization-boundary.mjs`
-- `node tests/contract/contract-test-v22-change-package-lifecycle.mjs`
+- `node tests/contracts/contract-test-v22-real-cloud-readiness-lane.mjs`
+- `node tests/cloud/cloud-test-v22-tke-bootstrap-preflight-local-gate.mjs`
+- `node tests/cloud/cloud-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs`
+- `node tests/cloud/cloud-test-v22-tencent-readonly-inventory-boundary.mjs`
+- `node tests/governance/governance-test-v22-real-cloud-authorization-boundary.mjs`
+- `node tests/governance/governance-test-v22-change-package-lifecycle.mjs`
 - `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk`

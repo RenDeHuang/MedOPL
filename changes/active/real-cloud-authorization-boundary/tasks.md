@@ -2,18 +2,10 @@
 
 - [x] Step 0: baseline audit current authorization cursor.
 - [x] Step 1: create active change package for the cursor.
-- [x] Step 1a: record Package D deploy readiness planning for stable上线 without deploy execution.
-- [x] Step 1b: add Package D local shape gate for default-disabled deploy env, Portal runtime PostgreSQL endpoint, manifest scheduling target and rollback plan shape.
-- [x] Step 1c: add Package D reviewable release plan shape with `releasePlanReady=true` and `realExecutionReady=false`.
-- [x] Step 1d: add Package D execution boundary preflight gate for split deploy/runtime env allowlists, redaction and fixed target checks while keeping `realExecutionReady=false`.
-- [x] Step 1e: add Package D production-deploy-apply/live runner contract and local/future-authorized gate without executing deploy.
-- [x] Step 1f: fix Package D portal/runtime bridge writable path contract after authorized production deploy rollout diagnostics.
-- [x] Step 1g: record Package D production-deploy-apply success and next ClusterIP reachability / external access strategy gap.
-- [x] Step 1h: add Package D repo-native readonly service reachability / in-cluster HTTP smoke runner contract and local/future-authorized gate without executing smoke.
-- [x] Step 1i: add Production Launch Gap 01 bootstrap contract/local gate for first admin, tenant, workspace seed and providerKeyRef-only boundary without executing live bootstrap.
-- [x] Step 1j: add Production Launch Gap 02 Portal -> Go backend -> Package C operation contract/local gate without executing Package C live.
-- [ ] Step 2: receive explicit authorization for any sensitive operation class.
-- [ ] Step 3: update spec delta after authorization scope is known.
-- [x] Step 4: run local future-authorized evals.
-- [ ] Step 5: run approved live evidence collection only if separately authorized.
-- [ ] Step 6: review, close out, archive and sync durable specs.
+- [x] Step 2: contract extraction keeps cloud authorization/deploy readiness as small consumer-first root contracts.
+- [x] Step 3: tests taxonomy migrated to contracts/governance/suites/cloud without compatibility aliases.
+- [x] Step 4: physically retire old Package D, production-launch, CLB diagnostics, real OPL WebUI future-authorized and Package C live canary active tests/support.
+- [x] Step 5: update active docs/spec/current cursor to current authorization-boundary truth.
+- [ ] Step 6: receive explicit authorization for any sensitive operation class.
+- [ ] Step 7: run approved live evidence collection only if separately authorized.
+- [ ] Step 8: review, close out, archive and sync durable specs.

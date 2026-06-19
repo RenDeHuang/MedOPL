@@ -39,7 +39,7 @@ CLI dry-run args
 - source: `tests/support/cloud-prework/v22-tke-bootstrap-preflight-plan.js`.
 - docs: `docs/specs/README.md`, `docs/active/README.md`, `docs/delivery/README.md` and this change package.
 - specs: `specs/operations/spec.md`, `specs/runtime/spec.md`.
-- tests: `tests/future-authorized/cloud/future-authorized-test-v22-tke-bootstrap-preflight-local-gate.mjs`.
+- tests: `tests/cloud/cloud-test-v22-tke-bootstrap-preflight-local-gate.mjs`.
 - registry: `scripts/v22-test-classification.mjs`, `tests/fixtures/v22/agent-verify-manifest.json`.
 
 ## Boundaries

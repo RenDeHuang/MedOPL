@@ -13,8 +13,8 @@ Status: archived
 
 ## Verification
 
-- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs`: pass.
-- `node tests/future-authorized/cloud/future-authorized-test-v22-real-opl-webui-runtime-bridge-flow.mjs`: pass with `authorization_required` and `executed=false` when no explicit WebUI source is provided.
+- `node tests/cloud/cloud-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs`: pass.
+- `node tests/cloud/cloud-test-v22-real-opl-webui-runtime-bridge-flow.mjs`: pass with `authorization_required` and `executed=false` when no explicit WebUI source is provided.
 - `npm run test:cloud-future-authorized`: pass.
 - `node tests/contract/contract-test-v22-test-lane-registry.mjs`: pass.
 - `node tests/contract/contract-test-v22-spec-eval-traceability.mjs`: pass.

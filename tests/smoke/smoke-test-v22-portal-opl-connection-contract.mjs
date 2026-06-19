@@ -14,7 +14,7 @@ const files = {
   productTruth: "docs/product/README.md",
   runtimeTruth: "docs/runtime/README.md",
   stateStoreSmoke: "tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs",
-  runtimeGate: "tests/contract/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
+  runtimeGate: "tests/contracts/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
   goControlplaneService: "services/medopl-go-backend/internal/service/controlplane/service.go",
   goControlplaneDomain: "services/medopl-go-backend/internal/domain/controlplane/controlplane.go",
   runtimeRoutes: "services/opl-runtime-bridge/src/runtime-bridge-routes.mjs",
@@ -82,7 +82,7 @@ assertIncludesAll(contents.runtimeTruth, [
 for (const scriptPath of [
   "tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs",
   "tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs",
-  "tests/contract/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
+  "tests/contracts/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
 ]) {
   assert(isSmokeClassifiedIn(scriptPath), `mvp_suite_includes_connection_contract_missing:${scriptPath}`);
 }

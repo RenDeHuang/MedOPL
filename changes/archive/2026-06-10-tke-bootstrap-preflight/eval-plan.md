@@ -8,7 +8,7 @@ Machine boundary: Eval commands below are the acceptance boundary for this packa
 ## Commands
 
 ```bash
-node tests/future-authorized/cloud/future-authorized-test-v22-tke-bootstrap-preflight-local-gate.mjs
+node tests/cloud/cloud-test-v22-tke-bootstrap-preflight-local-gate.mjs
 npm run test:cloud-future-authorized
 npm run gate:review
 npm run closeout:check

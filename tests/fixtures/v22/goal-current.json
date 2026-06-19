@@ -35,10 +35,10 @@
   "current_blockers": [
     "real_cloud_authorization_boundary_requires_explicit_user_authorization_before_secret_provider_cloud_deploy_kubectl_build_push_or_live_test",
     "precloud_deployable_rc_and_node_backend_physical_removal_are_local_precloud_evidence_not_production_or_real_cloud_evidence",
-    "future_real_cloud_readiness_must_start_with_readonly_quote_inventory_and_dry_run_plan_before_any_authorized_mutation",
-    "package_c_live_mutation_requires_tke_foundation_creation_readonly_observation_and_cluster_platform_service_pool_env_fields_before_authorization"
+    "default_cloud_verification_is_limited_to_readonly_inventory_dry_run_plan_and_tke_bootstrap_preflight",
+    "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth"
   ],
-  "current_problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. MedOPL Portal external access remains incomplete: Portal NodePort direct and CLB-like header matrix requests return HTTP 200, Portal Pod access logs show those NodePort requests as 200, and qcloud CLB health checks reach the Pod as HEAD / HTTP/1.1 user-agent clb-healthcheck with 200. DNS/TLS/Ingress/edge Service/Endpoint/Pod readiness are not the active blocker. The current Portal CLB lb-pwv9zgky still returns HTTPS 504 stgw while working OPL-Webui CLB lb-lhj3bgii returns HTTPS 200. Gap 08o run gap08o-tencent-clb-readonly-diagnostics-003 authenticated to Tencent API and confirmed CLBs, HTTPS listeners and registered targets, but runner/API shape gaps made rule, target-health and security-group diagnostics incomplete and rule_missing untrustworthy. The current unique gap remains production-launch-gap-08o-runner-fix; the latest cleanup closeout only compacted current_leaf owner payloads at b68768be93680d723685d7c3d681e2937522d96f and does not complete runtime, deploy, billing, public access or production readiness.",
+  "current_problem": "MedOPL current truth is a SaaS control plane for platform-provisioned / customer-dedicated OPL runtime, cloud compute, file space, billing, audit and release. It does not own OPL research capabilities. The active blocker is the real-cloud authorization boundary: default verification may only exercise readonly inventory, Package C dry-run planning and TKE bootstrap preflight local gates. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims require a separate explicit authorization package.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -114,7 +114,7 @@
       "depends_on": [
         "precloud-deployable-rc"
       ],
-      "history_summary": "Package C live canary and Package D preflight/plan readiness are landed. Package D production-deploy-apply pdrun-20260616-004 succeeded for four services inside TKE. Package D readonly service reachability / in-cluster HTTP smoke psr-20260617-004 passed: all four Deployments ready, all four ClusterIP Services on 8080 returned HTTP 200 through the repo-native smoke Job, cleanup verified NotFound and redaction audit passed. External/public user access is not exposed. Production launch Gap 01 and Gap 02 are now local-gated; the current next gap is ResourceBinding PostgreSQL ledger live write/read contract before billing/audit/quota, lifecycle, canary/rollback or external access. New secret/kubeconfig, kubectl, deploy, build/push, Ingress/LB mutation, Package C live and live-test remain separately authorized boundaries.",
+      "history_summary": "Active cursor remains blocked at real-cloud authorization. Historical Package C/Package D/cloud evidence stays provenance only; active verification keeps readonly inventory, Package C dry-run plan and TKE bootstrap preflight as small registered cloud lanes. No secret, provider call, Tencent mutation, kubectl, deploy, build/push, production ledger write, live-test or public access is authorized by default.",
       "landed_commit": "a272e07c2b462c4e61315536c701f03069b5f474"
     },
     {
@@ -185,64 +185,58 @@
     "gap_id": "real-cloud-authorization-boundary",
     "stage": "S7 real-cloud authorization boundary before readiness",
     "cursor_eligible": false,
-    "problem": "Package D is deployed inside TKE and in-cluster HTTP reachability passed. MedOPL Portal external access remains incomplete: portal-frontend-edge NodePort direct HTTP is 200, DNS portal.medopl.cn points to the qcloud CLB, TLS verification passes, Ingress is Ready=True, and qcloud console reports backend 10.66.0.42:30336 healthy, but the qcloud CLB lb-b33auprw still returns stgw 504. K8s-visible Ingress/Service shape now matches the working OPL-Webui entry closely; OPL-Webui HTTPS 200 is on lb-lhj3bgii, while the Portal failed LB has already gone through ClusterIP backend, NodePort backend, TkeServiceConfig add/remove and health-check annotation changes. Continuing to repair lb-b33auprw has low expected yield; directly reusing the OPL-Webui CLB would mix historical OPL-Webui and MedOPL Portal edge ownership. External/public user access remains not complete. The current unique gap is production-launch-gap-08n-medopl-shared-edge-clb-strategy: implement repo-native shared edge CLB strategy/local gate and authorization pack with explicit no-compat cleanup policy.",
+    "problem": "MedOPL current truth is a SaaS control plane for platform-provisioned / customer-dedicated OPL runtime, cloud compute, file space, billing, audit and release. It does not own OPL research capabilities. The active blocker is the real-cloud authorization boundary: default verification may only exercise readonly inventory, Package C dry-run planning and TKE bootstrap preflight local gates. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims require a separate explicit authorization package.",
     "verification_commands": [
-      "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
-      "node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs",
-      "node tests/contract/contract-test-v22-change-package-lifecycle.mjs",
-      "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
-      "node tests/contract/contract-test-v22-current-development-lines.mjs",
-      "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
-      "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
-      "node tests/contract/contract-test-v22-framework-truth-layering.mjs",
-      "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
-      "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
-      "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
-      "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
-      "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
-      "node tests/contract/contract-test-v22-spec-eval-traceability.mjs",
-      "node tests/contract/contract-test-v22-test-lane-registry.mjs",
-      "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
-      "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
-      "node tests/contract/contract-test-v22-real-cloud-authorization-boundary.mjs",
-      "node tests/contract/contract-test-v22-real-cloud-readiness-lane.mjs",
-      "node tests/contract/contract-test-v22-validate-active-platform.mjs",
-      "node tests/contract/contract-test-v22-local-service-orchestration.mjs",
-      "node tests/contract/contract-test-v22-local-saas-backend-rc.mjs",
+      "node tests/suites/suite-test-v22-golden-smoke.mjs",
+      "node tests/governance/governance-test-v22-ai-mvp-readiness-audit.mjs",
+      "node tests/governance/governance-test-v22-change-package-lifecycle.mjs",
+      "node tests/governance/governance-test-v22-cleanup-lifecycle-system.mjs",
+      "node tests/governance/governance-test-v22-current-development-lines.mjs",
+      "node tests/governance/governance-test-v22-current-state-index-loop.mjs",
+      "node tests/governance/governance-test-v22-docs-portfolio-lifecycle.mjs",
+      "node tests/governance/governance-test-v22-framework-truth-layering.mjs",
+      "node tests/governance/governance-test-v22-framework-workflow-convergence.mjs",
+      "node tests/governance/governance-test-v22-landing-closeout-automation.mjs",
+      "node tests/governance/governance-test-v22-product-engineering-loop-index.mjs",
+      "node tests/governance/governance-test-v22-review-secret-hygiene-gate.mjs",
+      "node tests/governance/governance-test-v22-root-verify-workflow-entrypoints.mjs",
+      "node tests/governance/governance-test-v22-spec-eval-traceability.mjs",
+      "node tests/governance/governance-test-v22-test-lane-registry.mjs",
+      "node tests/governance/governance-test-v22-test-lifecycle-cleanup.mjs",
+      "node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
+      "node tests/governance/governance-test-v22-real-cloud-authorization-boundary.mjs",
+      "node tests/contracts/contract-test-v22-real-cloud-readiness-lane.mjs",
+      "node tests/governance/governance-test-v22-validate-active-platform.mjs",
+      "node tests/contracts/contract-test-v22-local-service-orchestration.mjs",
+      "node tests/governance/governance-test-v22-local-saas-backend-rc.mjs",
       "node scripts/v22-local-services.mjs verify --dry-run --json",
       "npm run verify:local-release-candidate -- --dry-run --json",
-      "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
+      "node tests/suites/suite-test-v22-mvp.mjs",
       "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
       "node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk --json",
-      "node tests/future-authorized/cloud/future-authorized-test-v22-tke-bootstrap-preflight-local-gate.mjs",
-      "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-kubernetes-api-preflight-runner-local-gate.mjs",
-      "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-bootstrap-apply-runner-local-gate.mjs",
-      "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs",
-      "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs",
-      "node tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs",
-      "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json",
       "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
       "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
       "git diff --check -- docs specs changes tests scripts package.json",
       "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
       "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
-      "node tests/contract/contract-test-v22-local-portal-opl-delivery-rc.mjs"
+      "node tests/governance/governance-test-v22-local-portal-opl-delivery-rc.mjs"
     ],
     "allowed_files": [
       "docs/**/*.md",
       "specs/**/*.md",
       "changes/active/real-cloud-authorization-boundary/**",
       "changes/archive/**",
+      "contracts/*.json",
+      "contracts/README.md",
       "tests/**/*.mjs",
       "tests/support/cloud-prework/*.js",
+      "tests/support/cloud-prework/lib/*.js",
       "tests/fixtures/v22/*.json",
       "scripts/v22-test-classification.mjs",
       "scripts/v22-verify.mjs",
       "scripts/v22-workflow-gate.mjs",
-      "scripts/v22-landing-closeout.mjs",
-      "package.json",
-      "services/portal/frontend/src/api/portal/*",
-      "services/medopl-go-backend/internal/server/handlers/*"
+      "scripts/workflow-gate/*.mjs",
+      "package.json"
     ],
     "forbidden_files": [
       "deploy/*",
@@ -276,7 +270,7 @@
       "tests/fixtures/v22/goal-current.json",
       "tests/fixtures/v22/agent-verify-manifest.json"
     ],
-    "latest_local_evidence": "package-d-combined-in-cluster-preflight-pdrun-20260616-002"
+    "latest_local_evidence": "cloud-taxonomy-and-consumer-first-contract-cleanup"
   },
   "release_readiness_state": {
     "status": "authorization_required",
@@ -300,51 +294,29 @@
     "go_local_rc_closed_at": "0112813998456d879e9ea10782f224c29f3a166f",
     "required_sequence": [
       "real-cloud authorization boundary",
-      "mock/snapshot provider",
-      "readonly quote",
-      "dry-run plan",
       "readonly inventory",
-      "authorized create/release",
-      "Package D deploy readiness planning for platform pool and VPC PostgreSQL",
-      "authorized deploy",
+      "TKE bootstrap preflight",
+      "dry-run plan",
+      "explicit authorization packet",
+      "authorized tenant runtime provisioning",
+      "ledger / billing / audit writeback",
       "canary / QA / status update"
     ],
-    "latest_local_evidence": "production-launch-gap-01-bootstrap-contract-local-gate",
-    "package_c_live_canary": {
-      "status": "authorized_live_canary_completed",
-      "operation_id": "op-package-c-live-canary-live-full-lifecycle-2026-06-13",
-      "create_node_pool": "passed",
-      "scale_up": "passed",
-      "scale_down": "passed",
-      "delete_node_pool": "passed",
-      "cleanup_check": "passed_no_residual_tenant_pool_platform_pool_observed",
-      "protected_platform_node_pool_id": "np-cbk784r8",
-      "tag_resources": "tke_nodepool_unsupported_not_canonical",
-      "canonical_ownership_billing_truth": "medopl_postgresql_resource_binding_ledger_gated_sink_support_landed",
-      "cloud_operation_state_machine": "runner_local_evidence_and_repository_sink_contract_landed",
-      "state_machine_scope": "local_runtime_evidence_repository_contract_and_gated_postgres_sink_support_not_authorized_real_db_execution",
-      "repository_write_contract": "create_append_update_release_failed_cleanup_required_landed",
-      "postgres_ledger_sink": "gated_execution_support_prepare_only_and_live_canary_local_gate_landed_with_root_pg_driver",
-      "postgres_execution_gate": "RUN_MEDOPL_POSTGRES_LEDGER_EXECUTION=1_required",
-      "postgres_execution_status": "authorized_attempt_failed_closed_connection_preflight_timeout_no_db_write"
-    },
+    "latest_local_evidence": "cloud-taxonomy-and-consumer-first-contract-cleanup",
     "productionization_plan": [
-      "Production launch Gap 01: admin identity / tenant / workspace bootstrap contract local gate passed",
-      "Production launch Gap 02: Portal -> Go backend -> Package C production operation wiring contract",
-      "ResourceBinding PostgreSQL ledger successful in-VPC write/read canary",
-      "billing/audit ledger and quota enforcement closure",
-      "workspace suspend/resume/delete lifecycle closure",
-      "production smoke/canary plus rollback/cleanup evidence",
-      "external access strategy only after multi-tenant minimum launch closure"
+      "Keep real-cloud authorization boundary fail-closed",
+      "Run readonly inventory boundary only through real-cloud-readiness lane",
+      "Run Package C tenant runtime dry-run plan with no real cloud calls",
+      "Run TKE bootstrap preflight with no secret, kubectl, deploy or mutation",
+      "Create a separate explicit authorization packet before any real provider execution",
+      "After authorized execution, write MedOPL ledger / billing / audit evidence through the backend owner surface",
+      "Then run canary / QA / status update with redacted evidence outside git"
     ],
     "readinessGaps": [
-      "Production launch Gap 01: auth / identity / admin bootstrap plus tenant/workspace bootstrap contract",
-      "Portal -> backend -> Package C live operation wiring after bootstrap contract",
-      "ResourceBinding PostgreSQL ledger successful in-VPC write/read canary",
-      "billing/audit ledger and quota enforcement closure",
-      "workspace suspend/resume/delete lifecycle closure",
-      "production end-to-end smoke/canary and rollback/cleanup evidence",
-      "Portal external access strategy only after multi-tenant minimum launch closure"
+      "Explicit authorization packet for any real cloud execution",
+      "Production ledger / billing / audit writeback implementation and evidence",
+      "Authorized tenant runtime provisioning evidence",
+      "Production canary / QA / status update with redacted non-git evidence"
     ]
   },
   "ai_mvp_readiness_state": {
@@ -361,13 +333,12 @@
     ],
     "post_six_step_cloud_gate": [
       "real-cloud authorization boundary",
-      "mock/snapshot provider",
-      "readonly quote",
-      "dry-run plan",
       "readonly inventory",
-      "authorized create/release",
-      "Package D deploy readiness planning for platform pool and VPC PostgreSQL",
-      "authorized deploy",
+      "TKE bootstrap preflight",
+      "dry-run plan",
+      "explicit authorization packet",
+      "authorized tenant runtime provisioning",
+      "ledger / billing / audit writeback",
       "canary / QA / status update"
     ],
     "cannot_claim_after_six_steps": [
@@ -379,46 +350,39 @@
     ]
   },
   "verification_commands": [
-    "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
-    "node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs",
-    "node tests/contract/contract-test-v22-change-package-lifecycle.mjs",
-    "node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs",
-    "node tests/contract/contract-test-v22-current-development-lines.mjs",
-    "node tests/contract/contract-test-v22-current-state-index-loop.mjs",
-    "node tests/contract/contract-test-v22-docs-portfolio-lifecycle.mjs",
-    "node tests/contract/contract-test-v22-framework-truth-layering.mjs",
-    "node tests/contract/contract-test-v22-framework-workflow-convergence.mjs",
-    "node tests/contract/contract-test-v22-landing-closeout-automation.mjs",
-    "node tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
-    "node tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
-    "node tests/contract/contract-test-v22-root-verify-workflow-entrypoints.mjs",
-    "node tests/contract/contract-test-v22-spec-eval-traceability.mjs",
-    "node tests/contract/contract-test-v22-test-lane-registry.mjs",
-    "node tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
-    "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
-    "node tests/contract/contract-test-v22-real-cloud-authorization-boundary.mjs",
-    "node tests/contract/contract-test-v22-real-cloud-readiness-lane.mjs",
-    "node tests/contract/contract-test-v22-validate-active-platform.mjs",
-    "node tests/contract/contract-test-v22-local-service-orchestration.mjs",
-    "node tests/contract/contract-test-v22-local-saas-backend-rc.mjs",
+    "node tests/suites/suite-test-v22-golden-smoke.mjs",
+    "node tests/governance/governance-test-v22-ai-mvp-readiness-audit.mjs",
+    "node tests/governance/governance-test-v22-change-package-lifecycle.mjs",
+    "node tests/governance/governance-test-v22-cleanup-lifecycle-system.mjs",
+    "node tests/governance/governance-test-v22-current-development-lines.mjs",
+    "node tests/governance/governance-test-v22-current-state-index-loop.mjs",
+    "node tests/governance/governance-test-v22-docs-portfolio-lifecycle.mjs",
+    "node tests/governance/governance-test-v22-framework-truth-layering.mjs",
+    "node tests/governance/governance-test-v22-framework-workflow-convergence.mjs",
+    "node tests/governance/governance-test-v22-landing-closeout-automation.mjs",
+    "node tests/governance/governance-test-v22-product-engineering-loop-index.mjs",
+    "node tests/governance/governance-test-v22-review-secret-hygiene-gate.mjs",
+    "node tests/governance/governance-test-v22-root-verify-workflow-entrypoints.mjs",
+    "node tests/governance/governance-test-v22-spec-eval-traceability.mjs",
+    "node tests/governance/governance-test-v22-test-lane-registry.mjs",
+    "node tests/governance/governance-test-v22-test-lifecycle-cleanup.mjs",
+    "node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
+    "node tests/governance/governance-test-v22-real-cloud-authorization-boundary.mjs",
+    "node tests/contracts/contract-test-v22-real-cloud-readiness-lane.mjs",
+    "node tests/governance/governance-test-v22-validate-active-platform.mjs",
+    "node tests/contracts/contract-test-v22-local-service-orchestration.mjs",
+    "node tests/governance/governance-test-v22-local-saas-backend-rc.mjs",
     "node scripts/v22-local-services.mjs verify --dry-run --json",
     "npm run verify:local-release-candidate -- --dry-run --json",
-    "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
+    "node tests/suites/suite-test-v22-mvp.mjs",
     "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
     "node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk --json",
-    "node tests/future-authorized/cloud/future-authorized-test-v22-tke-bootstrap-preflight-local-gate.mjs",
-    "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-kubernetes-api-preflight-runner-local-gate.mjs",
-    "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-bootstrap-apply-runner-local-gate.mjs",
-    "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs",
-    "node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs",
-    "node tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs",
-    "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --json",
     "node scripts/v22-verify.mjs suite repo-hygiene --base origin/recovery/platform-v22-trunk --json",
     "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
     "git diff --check -- docs specs changes tests scripts package.json",
     "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
     "node tests/health/health-check-v22-workflow-command-reference-gate.mjs",
-    "node tests/contract/contract-test-v22-local-portal-opl-delivery-rc.mjs"
+    "node tests/governance/governance-test-v22-local-portal-opl-delivery-rc.mjs"
   ],
   "truth_source_files": [
     "docs/active/README.md",
@@ -505,7 +469,7 @@
     "status": "indexed",
     "branch": "cleanup/v22-test-lifecycle-cleanup-gate",
     "model": "gpt-5.4",
-    "gate": "tests/contract/contract-test-v22-test-lifecycle-cleanup.mjs",
+    "gate": "tests/governance/governance-test-v22-test-lifecycle-cleanup.mjs",
     "registry": "scripts/v22-test-classification.mjs",
     "manifest_policy": "test_lifecycle_cleanup_policy",
     "rules": [
@@ -643,20 +607,20 @@
       "git-push"
     ],
     "verification_commands": [
-      "node tests/contract/contract-test-v22-backend-go-convergence-program.mjs",
-      "node tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs",
-      "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
+      "node tests/governance/governance-test-v22-backend-go-convergence-program.mjs",
+      "node tests/contracts/contract-test-v22-node-portal-backend-physical-removal.mjs",
+      "node tests/contracts/contract-test-v22-go-backend-service-surface.mjs",
       "node scripts/v22-verify.mjs current --branch feat/v22-go-control-plane-mvp-takeover --base origin/recovery/platform-v22-trunk --dry-run --json",
       "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
-      "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs"
+      "node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs"
     ],
     "does_replace_current_cursor": true,
     "local_rc_parity": {
       "status": "closed",
       "evidence_level": "local_go_deterministic_rc_parity",
       "commands": [
-        "node tests/contract/contract-test-v22-go-backend-service-surface.mjs",
-        "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs"
+        "node tests/contracts/contract-test-v22-go-backend-service-surface.mjs",
+        "node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs"
       ],
       "can_claim": "Go-owned local RC projections cover provider/preflight/launch, billing/audit, resources and release/stop-billing through deterministic local evals; Node Portal backend is physically absent.",
       "cannot_claim": "live provider, production secret storage, real OPL upstream, real cloud, deploy, kubectl, build/push, production billing or production runtime evidence",
@@ -672,30 +636,33 @@
     "suite": "golden-path",
     "entrypoint": "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk",
     "smoke_entrypoint": "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk",
-    "first_command": "node tests/contract/contract-test-v22-golden-smoke-suite.mjs",
+    "first_command": "node tests/suites/suite-test-v22-golden-smoke.mjs",
     "can_claim": "repo-local golden path contract shape and fail-closed projection are covered before governance guardrails",
     "cannot_claim": "production runtime, real cloud, real billing, deploy, kubectl, build/push or live provider readiness"
   },
   "readinessGaps": [
-    "Production launch Gap 08h qcloud Ingress backend health-check configuration; external/public user access is not complete until health-check config dry-run/apply and HTTPS smoke evidence pass"
+    "Explicit authorization packet before any secret, provider, Tencent mutation, kubectl, deploy, build/push, live-test or production ledger write",
+    "Production ledger / billing / audit writeback remains unproven",
+    "Authorized tenant runtime provisioning remains unproven",
+    "Public access and production readiness remain unclaimed"
   ],
   "nextAuthorizationPrompt": {
     "target": "cloud-codex",
-    "runIdHint": "gap08o-tencent-clb-readonly-diagnostics-004",
-    "prompt": "按 active truth 做 gap-driven execution，不新增 loop。\n\n当前唯一 gap：Production launch Gap 08o rerun: Tencent CLB read-only diagnostics after runner SDK-call fix。\n\n当前事实：Package D 已 deployed inside TKE，in-cluster HTTP reachability passed。Portal NodePort direct 和 CLB-like header matrix 均 HTTP 200，Portal Pod access logs 记录 NodePort 请求 200，CLB healthcheck 持续进入 Pod 并返回 200。New/current Portal CLB lb-pwv9zgky 仍 HTTPS 504 stgw；working OPL-Webui CLB lb-lhj3bgii HTTPS 200。Gap 08o run gap08o-tencent-clb-readonly-diagnostics-003 已通过 Tencent API 认证并确认 Portal/OPL CLB、HTTPS:443 listener 和 registered target 存在，但 runner/API shape 对 DescribeRules、DescribeTargetsHealth、security group diagnostics 处理不正确，classification 不可信。\n\n本地 Gap 08o-runner-fix 已收口：runner 已改为使用/兼容 Tencent CLB readonly SDK shape：DescribeListeners/DescribeRules 等价解析 rules，DescribeTargets 按 location-id 过滤，DescribeTargetHealth 查询 target health，security-group 使用支持的 readonly 等价来源或明确 unsupported_api，customized config UnknownParameter 分类 unsupported_or_not_applicable 且不影响主诊断；如果 working OPL 也缺 rule evidence，不得输出 trustworthy rule_missing，必要 API 不完整时分类 incomplete_readonly_diagnosis。\n\n运行：\nnode tests/support/cloud-prework/tencent-clb-readonly-diagnostics-runner.js \\\n  --env /home/dev/.secrets/medopl/v22/tencent-clb-readonly.env \\\n  --run-id gap08o-tencent-clb-readonly-diagnostics-004 \\\n  --authorized 1 \\\n  --sdk-mode tencent-official-sdk-readonly \\\n  --enable-official-sdk-loader\n\n只允许 env key：TENCENTCLOUD_SECRET_ID, TENCENTCLOUD_SECRET_KEY, TENCENTCLOUD_REGION, PORTAL_CLB_INSTANCE_ID, OPL_CLB_INSTANCE_ID, PORTAL_HOST_DOMAIN, OPL_HOST_DOMAIN, EXPECTED_PORTAL_NODE_IP, EXPECTED_PORTAL_NODE_PORT, EXPECTED_OPL_NODE_PORT。固定值应包括 PORTAL_CLB_INSTANCE_ID=lb-pwv9zgky，OPL_CLB_INSTANCE_ID=lb-lhj3bgii，PORTAL_HOST_DOMAIN=portal.medopl.cn，OPL_HOST_DOMAIN=opl.medopl.cn，EXPECTED_PORTAL_NODE_IP=10.66.0.42，EXPECTED_PORTAL_NODE_PORT=30336，EXPECTED_OPL_NODE_PORT=32258。\n\n只允许 Tencent CLB read-only APIs：DescribeLoadBalancers, DescribeListeners, DescribeRules if available, DescribeTargets, DescribeTargetHealth, DescribeTargetsHealth only as legacy/compat enum not primary SDK call, DescribeLoadBalancerSecurityGroups if available/equivalent readonly security-group source, DescribeTargetGroups if relevant, DescribeCustomizedConfigAssociateList if relevant。\n\n必须输出 redacted evidence：.runtime/package-d-external-access-strategy/gap08o-tencent-clb-readonly-diagnostics-004/tencent-clb-readonly-diagnostics-redacted.json。诊断需包含 CLB exists/status/VIP/domain、listener 443、host/path/backend rule、registered targets、target health/failure reason、security group binding/default allow state、forwarding protocol/session/gzip/HTTP2/XFF/source IP mode diff、classified root cause 与 recommended next repair action。\n\n禁止：不修改 CLB；不修改 DNS；不修改 Kubernetes；不执行 kubectl；不 build/push；不 Package C live；不输出 Tencent SecretId/SecretKey；不输出 cert id 原文；不调用 Create*/Modify*/Delete*/Register*/Deregister*/Attach*/Detach*/Set*/Associate*/Disassociate*/Rewrite*/Batch*；不声明 public access complete。\n\n完成后同步 docs/active、docs/delivery、docs/history、tests/fixtures/v22/goal-current.json；npm run verify 和 npm run closeout:check -- --json 必须通过；commit/push 到 origin/recovery/platform-v22-trunk。"
+    "runIdHint": "real-cloud-authorization-boundary-next",
+    "prompt": "当前唯一 active truth 是 MedOPL real-cloud authorization boundary。先不要恢复 Package D / production-launch / CLB / live canary runner。若要做真实云执行，必须先提交独立授权包，写明 operation class、target environment、secret allowlist、API allowlist、budget、evidence sink、rollback owner；默认只允许 readonly inventory、Package C dry-run plan、TKE bootstrap preflight 的本地/显式边界验证。"
   },
   "nextLocalCodexPrompt": {
     "target": "local-codex",
-    "prompt": "当前唯一 gap 是 Gap 08o-runner-fix：修复 Tencent CLB readonly diagnostics runner 的 rules/target-health/security-group SDK 调用和 diff-based classification，然后授权云端 rerun gap08o-tencent-clb-readonly-diagnostics-004；不新增 loop，不执行云端 mutation。"
+    "prompt": "继续清退 active docs/spec/tests/fixtures 中的旧 Package D、production-launch、CLB diagnostics、Package C live canary 残留。保留 contracts 小型 consumer-first，tests 作为 validators/gates，默认 verify 不跑真实云或重型 release。"
   },
-  "package_d_deploy_readiness_plan_ref": {
+  "cloud_deploy_readiness_contract_ref": {
     "schema_version": 1,
-    "contract_path": "contracts/medopl-package-d-deploy-readiness.json",
-    "owner_field": "package_d_deploy_readiness_plan"
+    "contract_path": "contracts/cloud-deploy-readiness-contract.json",
+    "owner_field": "cloud_deploy_readiness_contract"
   },
-  "production_launch_goal_gap_map_ref": {
+  "cloud_authorization_boundary_contract_ref": {
     "schema_version": 1,
-    "contract_path": "contracts/medopl-production-launch-gap-map.json",
-    "owner_field": "production_launch_goal_gap_map"
+    "contract_path": "contracts/cloud-authorization-boundary-contract.json",
+    "owner_field": "cloud_authorization_boundary_contract"
   }
 }

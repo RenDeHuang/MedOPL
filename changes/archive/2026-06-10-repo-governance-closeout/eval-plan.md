@@ -10,8 +10,8 @@ Machine boundary: Commands below are local gates only.
 ```bash
 node tests/contract/contract-test-v22-cleanup-lifecycle-system.mjs
 node tests/future-authorized/cloud/future-authorized-test-v22-tencent-readonly-inventory-live-runner-local-gate.mjs
-node tests/future-authorized/cloud/future-authorized-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs
-node tests/future-authorized/cloud/future-authorized-test-v22-tke-bootstrap-preflight-local-gate.mjs
+node tests/cloud/cloud-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs
+node tests/cloud/cloud-test-v22-tke-bootstrap-preflight-local-gate.mjs
 npm run repo:bloat
 npm run line:budget
 npm run test:real-cloud-readiness

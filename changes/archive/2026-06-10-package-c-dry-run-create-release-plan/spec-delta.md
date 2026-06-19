@@ -13,7 +13,7 @@ Target specs:
 
 - `operations:package-c-dry-run-create-release-plan` records the Package C dry-run create/release plan proof in `specs/operations/spec.md`.
 - `spec:v22-tencent-dry-run-resource-plan-provider-boundary` gains `tests/support/cloud-prework/v22-tencent-create-release-dry-run-plan.js` as the Package C dry-run create/release plan runner.
-- `spec:v22-tencent-dry-run-resource-plan-provider-boundary` gains `tests/future-authorized/cloud/future-authorized-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs` as the local gate for the runner.
+- `spec:v22-tencent-dry-run-resource-plan-provider-boundary` gains `tests/cloud/cloud-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs` as the local gate for the runner.
 - Package C dry-run plans must describe workspace file space, workspace compute allocation, freeze-only billing and Kubernetes isolation controls.
 - Package C dry-run plans must keep `realCloudCalls=false`, `mutationExecuted=false`, `readsMutationSecret=false`, `writesLedger=false`, `callsKubectl=false`, `buildsOrPushesImage=false` and `chargeApplied=false`.
 
@@ -38,7 +38,7 @@ Target specs:
 
 ## EVALS
 
-- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs`
+- `node tests/cloud/cloud-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs`
 - `npm run test:cloud-future-authorized`
 - `npm run gate:review`
 - `git diff --check -- docs tests scripts changes package.json package-lock.json`

@@ -57,7 +57,7 @@ assertIncludesAll(startResult.stdout, [
   "本次不修改项",
   "污染防护",
   "推荐验证命令",
-  "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
+  "node tests/suites/suite-test-v22-mvp.mjs",
   "npm --prefix services/portal run frontend:typecheck",
 ], "start_output");
 
@@ -66,7 +66,7 @@ assertIncludesAll(startTemplate, [
   "Tencent Quote Provider change package",
   "docs/specs/README.md",
   "docs/specs/README.md",
-  "node tests/future-authorized/cloud/future-authorized-test-v22-tencent-official-sdk-provider-strategy-contract.mjs",
+  "node tests/cloud/cloud-test-v22-tencent-readonly-inventory-boundary.mjs",
 ], "tencent_quote_start_template");
 
 function localTestFilesFromTemplate(template) {
@@ -162,6 +162,22 @@ const reviewWithTokenNamedSmoke = evaluateReview({
 assert.equal(reviewWithTokenNamedSmoke.ok, true, "v22_smoke_file_with_token_in_name_must_not_be_secret_like_path");
 assert.deepEqual(reviewWithTokenNamedSmoke.secretLikePaths, [], "v22_smoke_file_with_token_in_name_secret_like_paths_must_be_empty");
 
+const reviewWithDeletedLegacySecretNamedTest = evaluateReview({
+  base: "recovery/platform-v22-trunk",
+  changedFiles: [
+    "tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs",
+  ],
+  changedStatuses: new Map([
+    ["tests/contract/contract-test-v22-review-secret-hygiene-gate.mjs", "D"],
+  ]),
+});
+assert.deepEqual(reviewWithDeletedLegacySecretNamedTest.secretLikePaths, [], "deleted_legacy_secret_named_test_must_not_be_secret_like_path");
+assert.equal(
+  reviewWithDeletedLegacySecretNamedTest.findings.some((finding) => finding.code === "secret_like_path_changed"),
+  false,
+  "deleted_legacy_secret_named_test_must_not_report_secret_like_path",
+);
+
 const reviewWithSmoke = evaluateReview({
   base: "recovery/platform-v22-trunk",
   changedFiles: [
@@ -171,7 +187,7 @@ const reviewWithSmoke = evaluateReview({
     "changes/archive/2026-05-23-repo-native-change-lifecycle/closeout.md",
     "services/portal/src/domain/example.mjs",
     "docs/specs/README.md",
-    "tests/contract/contract-test-v22-example-boundary.mjs",
+    "tests/contracts/contract-test-v22-example-boundary.mjs",
   ],
 });
 assert.equal(reviewWithSmoke.findings.some((finding) => finding.code === "services_changed_without_eval_plan_update"), false, "review_must_accept_service_eval_plan_update");
@@ -195,16 +211,17 @@ const reviewWithMissingCompletionAudit = evaluateReview({
     "changes/archive/2026-05-23-repo-native-change-lifecycle/eval-plan.md",
     "changes/archive/2026-05-23-repo-native-change-lifecycle/closeout.md",
     "services/portal/src/domain/example.mjs",
-    "tests/contract/contract-test-v22-example-boundary.mjs",
+    "tests/contracts/contract-test-v22-example-boundary.mjs",
   ],
   changedStatuses: new Map([
     ["changes/archive/2026-05-23-repo-native-change-lifecycle/closeout.md", "M"],
   ]),
 });
-assert.equal(reviewWithMissingCompletionAudit.ok, false, "review_must_block_change_package_without_completion_audit");
-assert(
+assert.equal(reviewWithMissingCompletionAudit.ok, true, "archive_provenance_package_must_not_require_current_completion_audit_shape");
+assert.equal(
   reviewWithMissingCompletionAudit.findings.some((finding) => finding.code === "formal_change_package_missing_completion_audit"),
-  "review_must_report_missing_completion_audit",
+  false,
+  "archive_provenance_package_must_not_report_missing_current_completion_audit",
 );
 
 const fullTaxonomyAuthorizedDeletes = evaluateReview({

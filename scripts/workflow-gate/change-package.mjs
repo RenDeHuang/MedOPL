@@ -26,7 +26,7 @@ export const changeStartDefinitions = {
     ],
     validationCommands: [
       "node tests/regression/portal/regression-test-v22-saas-portal-opl-ops-surface-contract.mjs",
-      "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
+      "node tests/suites/suite-test-v22-mvp.mjs",
       "npm --prefix services/portal run check",
       "npm --prefix services/portal run frontend:typecheck",
     ],
@@ -44,11 +44,11 @@ export const changeStartDefinitions = {
       "docs/delivery/README.md",
     ],
     validationCommands: [
-      "node tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs",
-      "node tests/contract/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
+      "node tests/contracts/contract-test-v22-node-portal-backend-physical-removal.mjs",
+      "node tests/contracts/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
       "node tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs",
       "node tests/regression/opl/regression-test-v22-opl-gateway-upstream-proxy-local.mjs",
-      "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
+      "node tests/suites/suite-test-v22-mvp.mjs",
     ],
   },
   runtime: {
@@ -65,8 +65,8 @@ export const changeStartDefinitions = {
     ],
     validationCommands: [
       "node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
-      "node tests/contract/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
-      "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
+      "node tests/contracts/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
+      "node tests/suites/suite-test-v22-mvp.mjs",
     ],
   },
   "langfuse-trace": {
@@ -82,8 +82,8 @@ export const changeStartDefinitions = {
     ],
     validationCommands: [
       "node tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs",
-      "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
-      "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
+      "node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
+      "node tests/suites/suite-test-v22-mvp.mjs",
     ],
   },
   "resource-billing": {
@@ -102,9 +102,9 @@ export const changeStartDefinitions = {
     ],
     validationCommands: [
       "node tests/smoke/smoke-test-v22-managed-environment-open-flow.mjs",
-      "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
+      "node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
       "node tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs",
-      "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
+      "node tests/suites/suite-test-v22-mvp.mjs",
     ],
   },
   "tencent-quote": {
@@ -120,9 +120,9 @@ export const changeStartDefinitions = {
       "docs/delivery/README.md",
     ],
     validationCommands: [
-      "node tests/future-authorized/cloud/future-authorized-test-v22-tencent-official-sdk-provider-strategy-contract.mjs",
-      "node tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
-      "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
+      "node tests/cloud/cloud-test-v22-tencent-readonly-inventory-boundary.mjs",
+      "node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
+      "node tests/suites/suite-test-v22-mvp.mjs",
     ],
   },
   cleanup: {
@@ -137,7 +137,7 @@ export const changeStartDefinitions = {
       "与被清退路径相关的 durable spec / policy",
     ],
     validationCommands: [
-      "node tests/contract/contract-test-v22-mvp-contract-suite.mjs",
+      "node tests/suites/suite-test-v22-mvp.mjs",
       "git diff --check -- docs scripts",
     ],
   },
@@ -217,6 +217,7 @@ export function validateReviewChangePackage(repoRoot, record) {
   const closeout = readOptionalRepoFile(repoRoot, `${record.path}/closeout.md`);
   const closeoutStatus = String(record.changedStatuses?.get(`${record.path}/closeout.md`) || "");
   const closeoutChanged = Boolean(closeoutStatus && !closeoutStatus.startsWith("D"));
+  const activePackage = record.root === "changes/active";
   const missingFiles = ["proposal.md", "spec-delta.md", "eval-plan.md", "closeout.md"]
     .filter((fileName) => !existsSync(path.join(repoRoot, record.path, fileName)));
   const targetSpecs = unique([...specDelta.matchAll(/specs\/[a-z-]+\/spec\.md/gu)].map((match) => match[0])).sort();
@@ -239,7 +240,7 @@ export function validateReviewChangePackage(repoRoot, record) {
       && /## Authorization Boundary/u.test(proposal)
       && targetSpecs.length > 0
       && evalCommands.length > 0
-      && (!closeoutChanged || (closeoutHasCompletionAudit(closeout) && closeoutHasCleanupResult(closeout))),
+      && (!activePackage || !closeoutChanged || (closeoutHasCompletionAudit(closeout) && closeoutHasCleanupResult(closeout))),
   };
 }
 

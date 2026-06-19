@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "owner": "MedOPL Platform",
+  "purpose": "cloud_authorization_boundary_machine_contract",
+  "state": "active",
+  "machine_boundary": "Small consumer-first contract for production launch gap identifiers, authorization boundaries, evidence sink rules, and redaction rules. It excludes run history, CLB identifiers, HTTP status observations, and current launch status.",
+  "consumers": [
+    "scripts/v22-verify.mjs",
+    "tests/governance/governance-test-v22-current-state-index-loop.mjs"
+  ],
+  "cloud_authorization_boundary_contract": {
+    "gap_schema": {
+      "id_pattern": "^production-launch-gap-[0-9]{2}[a-z]?$",
+      "required_fields": [
+        "gap_id",
+        "owner",
+        "authorization_class",
+        "evidence_sink",
+        "closure_gate"
+      ],
+      "status_values": [
+        "not_started",
+        "local_gate_ready",
+        "authorization_required",
+        "cloud_evidence_received",
+        "closed"
+      ]
+    },
+    "authorization_boundary": {
+      "default_real_cloud_execution": "forbidden_without_explicit_user_authorization",
+      "default_cloud_mutation": "forbidden_without_explicit_user_authorization",
+      "default_secret_read": "forbidden_without_explicit_user_authorization",
+      "local_contract_proof": "allowed"
+    },
+    "evidence_sink": {
+      "allowed_roots": [
+        ".runtime/"
+      ],
+      "durable_contract_storage": "forbidden",
+      "git_tracked_runtime_evidence": "forbidden"
+    },
+    "redaction": {
+      "required": true,
+      "forbidden_material": [
+        "provider_secret_id",
+        "provider_secret_key",
+        "bearer_token",
+        "kubeconfig_content",
+        "tls_private_key",
+        "database_password",
+        "portal_admin_password",
+        "raw_certificate_material"
+      ]
+    },
+    "forbidden_durable_fields": [
+      "run_id",
+      "provider_resource_id",
+      "http_status_observation",
+      "historical_gap_timeline",
+      "current_launch_status"
+    ]
+  }
+}

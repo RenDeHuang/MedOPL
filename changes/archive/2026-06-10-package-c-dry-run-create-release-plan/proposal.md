@@ -1,7 +1,7 @@
 Owner: `MedOPL`
 Purpose: `proposal`
 State: `archived_change`
-Machine boundary: `tests/support/cloud-prework/v22-tencent-create-release-dry-run-plan.js`, `tests/future-authorized/cloud/future-authorized-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs`, `scripts/v22-test-classification.mjs` and `tests/fixtures/v22/agent-verify-manifest.json` define the runnable local gate. `.runtime` reports are local evidence and stay out of git.
+Machine boundary: `tests/support/cloud-prework/v22-tencent-create-release-dry-run-plan.js`, `tests/cloud/cloud-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs`, `scripts/v22-test-classification.mjs` and `tests/fixtures/v22/agent-verify-manifest.json` define the runnable local gate. `.runtime` reports are local evidence and stay out of git.
 
 # Package C Dry-Run Create Release Plan Proposal
 

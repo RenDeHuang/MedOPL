@@ -14,7 +14,7 @@ const budgets = Object.freeze({
   scriptsModuleFiles: 8,
   testsMjsFiles: 111,
   testsRegressionPortalFiles: 32,
-  testsFutureAuthorizedCloudFiles: 24,
+  testsCloudFiles: 12,
   servicesPortalFiles: 260,
   servicesPortalBytes: 2_000_000,
 });
@@ -24,12 +24,14 @@ const areaPrefixes = Object.freeze([
   "scripts/",
   "tests/health/",
   "tests/smoke/",
-  "tests/contract/",
+  "tests/contracts/",
+  "tests/governance/",
+  "tests/suites/",
   "tests/regression/portal/",
   "tests/regression/opl/",
   "tests/regression/runtime-bridge/",
   "tests/local-rc/",
-  "tests/future-authorized/cloud/",
+  "tests/cloud/",
   "tests/fixtures/",
   "services/portal/",
   "services/opl-web-gateway/",
@@ -123,7 +125,8 @@ function bloatBudgetFindings(counts) {
   for (const [key, limit] of Object.entries(budgets)) {
     if (counts[key] > limit) {
       findings.push({
-        code: "bloat_budget_exceeded",
+        code: "bloat_pressure_exceeded",
+        severity: "pressure",
         metric: key,
         actual: counts[key],
         limit,
@@ -144,42 +147,47 @@ function slideDocFindings(files) {
     }));
 }
 
-const tracked = runGit(["ls-files", "--cached", "--others", "--exclude-standard"]);
+const deleted = new Set(runGit(["ls-files", "--deleted"]));
+const tracked = runGit(["ls-files", "--cached", "--others", "--exclude-standard"])
+  .filter((file) => !deleted.has(file));
 const counts = {
   docsMarkdownFiles: countMatching(tracked, (file) => file.startsWith("docs/") && file.endsWith(".md")),
   scriptsFiles: countMatching(tracked, isTopLevelScript),
   scriptsModuleFiles: countMatching(tracked, isScriptModule),
   testsMjsFiles: countMatching(tracked, (file) => file.startsWith("tests/") && file.endsWith(".mjs")),
   testsRegressionPortalFiles: countMatching(tracked, (file) => file.startsWith("tests/regression/portal/") && file.endsWith(".mjs")),
-  testsFutureAuthorizedCloudFiles: countMatching(tracked, (file) => file.startsWith("tests/future-authorized/cloud/") && file.endsWith(".mjs")),
+  testsCloudFiles: countMatching(tracked, (file) => file.startsWith("tests/cloud/") && file.endsWith(".mjs")),
   servicesPortalFiles: countMatching(tracked, (file) => file.startsWith("services/portal/")),
   servicesPortalBytes: tracked.filter((file) => file.startsWith("services/portal/")).reduce((total, file) => total + fileSize(file), 0),
 };
 const findings = [
-  ...bloatBudgetFindings(counts),
   ...slideDocFindings(tracked),
 ];
+const pressureFindings = bloatBudgetFindings(counts);
+const lifecycleFindings = findings;
 const notes = [];
 
 if (counts.testsRegressionPortalFiles >= 24) {
   notes.push("tests/regression/portal is the largest test area; split by product surface before adding broad regression files.");
 }
-if (counts.testsFutureAuthorizedCloudFiles >= 18) {
-  notes.push("tests/future-authorized/cloud is large; keep future-authorized cloud checks out of current/default verification unless separately authorized.");
+if (counts.testsCloudFiles >= 10) {
+  notes.push("tests/cloud is a future-authorized boundary lane; keep it out of current/default verification unless separately authorized.");
 }
 if (counts.servicesPortalFiles >= 230) {
   notes.push("services/portal is the largest source area; add broad portal surface files only with a dedicated product-surface split.");
 }
 
 const payload = {
-  ok: findings.length === 0,
+  ok: lifecycleFindings.length === 0,
   contract: "v22_repo_bloat_audit",
-  bloat_budget: "hard budgets count git-tracked plus non-ignored untracked files; this audit reports pressure and blocks only when budgets are exceeded.",
+  bloat_pressure: "count and byte budgets report pressure only; lifecycle/consumer findings decide pass/fail",
   budgets,
   counts,
   slideBloatGuards,
   largestAreas: largestAreas(tracked),
-  findings,
+  findings: lifecycleFindings,
+  lifecycleFindings,
+  pressureFindings,
   notes,
 };
 

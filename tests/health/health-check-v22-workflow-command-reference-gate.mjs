@@ -49,14 +49,14 @@ for (const expected of [
 }
 
 for (const expected of [
-  "tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs",
-  "tests/contract/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
-  "tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
+  "tests/contracts/contract-test-v22-node-portal-backend-physical-removal.mjs",
+  "tests/contracts/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
+  "tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
   "tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs",
   "scripts/v22-verify.mjs",
   "scripts/v22-workflow-gate.mjs",
   "scripts/v22-repo-bloat-audit.mjs",
-  "tests/contract/contract-test-v22-product-engineering-loop-index.mjs",
+  "tests/governance/governance-test-v22-product-engineering-loop-index.mjs",
 ]) {
   await assertRepoFileExists(expected);
 }

@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "owner": "MedOPL Platform",
+  "purpose": "cloud_deploy_readiness_machine_contract",
+  "state": "active",
+  "machine_boundary": "Small consumer-first contract for local shape gates and future authorized deploy runner checks. It is not current launch status, gap history, provider evidence, or cloud execution authorization.",
+  "consumers": [
+    "scripts/v22-verify.mjs",
+    "tests/governance/governance-test-v22-current-state-index-loop.mjs"
+  ],
+  "cloud_deploy_readiness_contract": {
+    "allowed_operation_classes": [
+      "non_executing_shape_gate",
+      "redacted_evidence_read",
+      "future_authorized_deploy_runner"
+    ],
+    "forbidden_ops": [
+      "real_cloud_mutation_without_explicit_authorization",
+      "kubectl_without_explicit_authorization",
+      "deploy_without_explicit_authorization",
+      "build_push_without_explicit_authorization",
+      "kubeconfig_content_read_without_explicit_authorization",
+      "raw_secret_output"
+    ],
+    "required_inputs": {
+      "execution_toggle": "RUN_TENCENT_DEPLOY_EXECUTION",
+      "execution_toggle_required_value_for_real_run": "1",
+      "kubeconfig": "reference_only",
+      "image_refs": "explicit_external_refs",
+      "secret_values": "backend_secret_boundary_only"
+    },
+    "runner_shape": {
+      "default_mode": "non_executing_shape_gate",
+      "real_run_requires": [
+        "explicit_user_authorization",
+        "allowlisted_env",
+        "redacted_evidence_sink",
+        "rollback_plan"
+      ],
+      "must_fail_closed_on": [
+        "missing_authorization",
+        "unknown_operation_class",
+        "raw_secret_material",
+        "unredacted_evidence"
+      ]
+    },
+    "evidence_shape": {
+      "sink": ".runtime/",
+      "redaction": "required",
+      "durable_contract_storage": "forbidden"
+    }
+  }
+}

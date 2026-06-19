@@ -6,7 +6,7 @@
 
 ## MODIFIED
 
-- `tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs` now owns the GitHub Actions workflow absence assertion.
+- `tests/cloud/cloud-test-v22-package-d-runner-image-publish-local-gate.mjs` now owns the GitHub Actions workflow absence assertion.
 - `scripts/v22-test-classification.mjs`, `tests/fixtures/v22/goal-current.json`, `tests/fixtures/v22/agent-verify-manifest.json` and `contracts/medopl-package-d-deploy-readiness.json` no longer list the retired workflow gate as an active executable.
 
 ## REMOVED
@@ -19,7 +19,7 @@ This cleanup does not prove runtime behavior, production readiness, deploy, bill
 
 ## EVALS
 
-- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs`
+- `node tests/cloud/cloud-test-v22-package-d-runner-image-publish-local-gate.mjs`
 - `node tests/contract/contract-test-v22-test-lane-registry.mjs`
 - `node tests/contract/contract-test-v22-current-state-index-loop.mjs`
 - `node tests/contract/contract-test-v22-real-cloud-readiness-lane.mjs`

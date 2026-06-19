@@ -3,10 +3,10 @@
 ## Required Commands
 
 ```bash
-node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs
-node tests/contract/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs
-node tests/contract/contract-test-v22-change-package-lifecycle.mjs
-node tests/contract/contract-test-v22-spec-eval-traceability.mjs
+node tests/governance/governance-test-v22-ai-mvp-readiness-audit.mjs
+node tests/contracts/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs
+node tests/governance/governance-test-v22-change-package-lifecycle.mjs
+node tests/governance/governance-test-v22-spec-eval-traceability.mjs
 node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs
 node tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs
 npm --prefix services/portal/frontend run typecheck

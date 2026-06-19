@@ -19,4 +19,4 @@ The verify runner resolves the active leaf from `agent-verify-manifest.json` and
 - source: none
 - docs: no product/runtime prose change
 - specs: `specs/framework/spec.md`
-- tests: `tests/contract/contract-test-v22-current-state-index-loop.mjs`, `tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs`, `tests/fixtures/v22/goal-current.json`
+- tests: `tests/contract/contract-test-v22-current-state-index-loop.mjs`, `tests/cloud/cloud-test-v22-tencent-deploy-execution-config-local-gate.mjs`, `tests/fixtures/v22/goal-current.json`

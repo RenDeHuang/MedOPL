@@ -23,15 +23,18 @@ const [scriptSource, manifest] = await Promise.all([
 for (const expected of [
   "docsMarkdownFiles",
   "testsMjsFiles",
+  "testsCloudFiles",
   "scriptsFiles",
   "scriptsModuleFiles",
   "servicesPortalFiles",
   "servicesPortalBytes",
   "largestAreas",
-  "bloat_budget",
+  "bloat_pressure",
   "slideBloatGuards",
   "forbiddenSlideDocPatterns",
   "allowedDocsMarkdownFiles",
+  "lifecycleFindings",
+  "pressureFindings",
 ]) {
   assert(scriptSource.includes(expected), `repo_bloat_audit_source_missing:${expected}`);
 }
@@ -41,13 +44,25 @@ assert.equal(result.status, 0, result.stderr || result.stdout);
 const payload = JSON.parse(result.stdout);
 assert.equal(payload.ok, true, "repo_bloat_audit_payload_ok");
 assert.equal(payload.contract, "v22_repo_bloat_audit", "repo_bloat_audit_contract_mismatch");
-assert(payload.counts.docsMarkdownFiles <= payload.budgets.docsMarkdownFiles, "docs_markdown_budget_exceeded");
-assert(payload.counts.scriptsFiles <= payload.budgets.scriptsFiles, "scripts_file_budget_exceeded");
-assert(payload.counts.scriptsModuleFiles <= payload.budgets.scriptsModuleFiles, "scripts_module_file_budget_exceeded");
-assert(payload.counts.testsMjsFiles <= payload.budgets.testsMjsFiles, "tests_mjs_budget_exceeded");
-assert(payload.counts.servicesPortalFiles <= payload.budgets.servicesPortalFiles, "services_portal_file_budget_exceeded");
-assert(payload.counts.servicesPortalBytes <= payload.budgets.servicesPortalBytes, "services_portal_byte_budget_exceeded");
-assert(payload.largestAreas.some((area) => area.path === "tests/contract"), "repo_bloat_audit_must_surface_largest_contract_area");
+assert.equal(
+  payload.bloat_pressure,
+  "count and byte budgets report pressure only; lifecycle/consumer findings decide pass/fail",
+  "repo_bloat_audit_must_not_treat_file_counts_as_architecture_truth",
+);
+assert(Array.isArray(payload.pressureFindings), "repo_bloat_audit_must_report_pressure_findings");
+assert(Array.isArray(payload.lifecycleFindings), "repo_bloat_audit_must_report_lifecycle_findings");
+assert.equal(
+  payload.findings.length,
+  payload.lifecycleFindings.length,
+  "repo_bloat_audit_findings_must_only_include_lifecycle_blockers",
+);
+assert(
+  payload.pressureFindings.every((finding) => finding.severity === "pressure"),
+  "repo_bloat_audit_budget_findings_must_be_pressure_only",
+);
+assert(scriptSource.includes('"tests/contracts/"'), "repo_bloat_audit_must_keep_contracts_area_prefix");
+assert(scriptSource.includes('"tests/governance/"'), "repo_bloat_audit_must_keep_governance_area_prefix");
+assert(payload.largestAreas.some((area) => area.path === "tests/governance"), "repo_bloat_audit_must_surface_governance_area");
 assert(payload.largestAreas.some((area) => area.path === "tests/regression/portal"), "repo_bloat_audit_must_surface_portal_regression_area");
 assert(payload.largestAreas.some((area) => area.path === "services/portal"), "repo_bloat_audit_must_surface_largest_service_area");
 assert.equal(

@@ -74,7 +74,7 @@ for (const [scriptPath, category] of Object.entries(SMOKE_CLASSIFICATION)) {
 const defaultScripts = listClassifiedSmokeScripts({ categories: DEFAULT_SMOKE_CATEGORIES });
 assert(defaultScripts.includes("tests/health/health-check-v22-smoke-classification-gate.mjs"), "default_suite_must_run_smoke_classification_gate");
 assert(defaultScripts.includes("tests/health/health-check-v22-smoke-eval-boundary.mjs"), "default_suite_must_run_smoke_eval_boundary_gate");
-assert(defaultScripts.includes("tests/contract/contract-test-v22-golden-smoke-suite.mjs"), "default_suite_must_register_golden_smoke_suite");
+assert(defaultScripts.includes("tests/suites/suite-test-v22-golden-smoke.mjs"), "default_suite_must_register_golden_smoke_suite");
 
 const healthScripts = listSmokeEvalScripts({ tiers: ["health-check"] });
 const goldenScripts = listSmokeEvalScripts({ tiers: ["smoke-golden"] });

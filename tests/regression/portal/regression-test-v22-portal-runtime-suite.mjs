@@ -23,8 +23,8 @@ const groups = new Map([
   ["api", [
     "tests/regression/portal/regression-test-v22-portal-frontend-api-surface-alignment.mjs",
     "tests/regression/portal/regression-test-v22-portal-local-api-action-browser.mjs",
-    "tests/contract/contract-test-v22-precloud-deployable-rc.mjs",
-    "tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs",
+    "tests/contracts/contract-test-v22-precloud-deployable-rc.mjs",
+    "tests/contracts/contract-test-v22-node-portal-backend-physical-removal.mjs",
   ]],
   ["build", [
     "services/portal:check",

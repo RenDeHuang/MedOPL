@@ -8,10 +8,10 @@ Status: authoring
 
 ## Verification
 
-- `node tests/contract/contract-test-v22-ai-mvp-readiness-audit.mjs`: passed after registering a no-authorization AI MVP readiness audit across MVP suite, pre-cloud RC, local Portal/OPL delivery RC, AI Runtime Contract, Runtime Bridge local E2E proofs, real-cloud authorization blocker and repo health context
-- `node tests/contract/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs`: passed after cannot-claim boundary review and source-owned MCP-compatible shape projection coverage
-- `node tests/contract/contract-test-v22-change-package-lifecycle.mjs`: passed
-- `node tests/contract/contract-test-v22-spec-eval-traceability.mjs`: passed
+- `node tests/governance/governance-test-v22-ai-mvp-readiness-audit.mjs`: passed after registering a no-authorization AI MVP readiness audit across MVP suite, pre-cloud RC, local Portal/OPL delivery RC, AI Runtime Contract, Runtime Bridge local E2E proofs, real-cloud authorization blocker and repo health context
+- `node tests/contracts/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs`: passed after cannot-claim boundary review and source-owned MCP-compatible shape projection coverage
+- `node tests/governance/governance-test-v22-change-package-lifecycle.mjs`: passed
+- `node tests/governance/governance-test-v22-spec-eval-traceability.mjs`: passed
 - `node tests/smoke/smoke-test-v22-runtime-bridge-session-run-file-provider-keyref-flow.mjs`: passed after file/artifact handler owner wiring and runtime-agent relay owner extraction
 - `node tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-state-store-atomic-flow.mjs`: passed
 - `node tests/regression/runtime-bridge/regression-test-v22-runtime-bridge-launch-mutation-owner-isolation.mjs`: passed after adding Runtime Bridge HTTP helper, contract payload, launch bootstrap projection, message dispatch, file/artifact handler and runtime-agent relay owners
@@ -21,13 +21,13 @@ Status: authoring
 - `node tests/regression/portal/regression-test-v22-portal-figma-make-interaction-readiness.mjs`: passed after admin model owner split and OPL entry view-state assertions moved to model ownership
 - `node tests/regression/portal/regression-test-v22-portal-frontend-surface-composables.mjs`: passed after admin model consolidation, Workspace file view-state owner extraction and AdminUsers filter/wallet payload owner extraction
 - `node tests/regression/portal/regression-test-v22-portal-package-surface-isolation.mjs`: passed after retiring unused Figma/shadcn UI source files from the active Portal frontend surface
-- `node tests/contract/contract-test-v22-test-lane-registry.mjs`: passed with the launch mutation owner isolation regression registered in `local-regression`
+- `node tests/governance/governance-test-v22-test-lane-registry.mjs`: passed with the launch mutation owner isolation regression registered in `local-regression`
 - `node tests/health/health-check-v22-smoke-classification-gate.mjs`: passed with 90 classified entries and 29 local-regression entries
 - `npm --prefix services/portal/frontend run typecheck`: passed
 - `npm run verify:golden-path -- --json`: passed
 - `npm run local:services:verify`: passed in dry-run mode
 - `npm run local:services:check:dry-run`: passed
-- `node tests/contract/contract-test-v22-precloud-deployable-rc.mjs`: passed
+- `node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs`: passed
 - `npm --prefix services/portal run check`: passed
 - `npm --prefix services/portal run frontend:typecheck`: passed
 - `npm run test:contract -- --json`: passed

@@ -9,7 +9,7 @@ Machine boundary: Commands below are the verification entrypoints.
 
 ```bash
 node tests/future-authorized/cloud/future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs
-node tests/future-authorized/cloud/future-authorized-test-v22-tencent-official-sdk-provider-strategy-contract.mjs
+node tests/cloud/cloud-test-v22-tencent-official-sdk-provider-strategy-contract.mjs
 npm run test:real-cloud-readiness
 npm run gate:review
 git diff --check -- docs tests scripts changes package.json package-lock.json

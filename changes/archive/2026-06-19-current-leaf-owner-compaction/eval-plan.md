@@ -4,7 +4,7 @@
 
 ```bash
 node tests/contract/contract-test-v22-current-state-index-loop.mjs
-node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs
+node tests/cloud/cloud-test-v22-tencent-deploy-execution-config-local-gate.mjs
 node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs
 node tests/contract/contract-test-v22-real-cloud-authorization-boundary.mjs
 node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk

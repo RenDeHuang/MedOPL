@@ -27,7 +27,7 @@ Affected plane: Framework
 
 - no-impact: 只调整 machine contract 存放位置与测试消费路径。
 - affected steps: current-state index loop、future-authorized local gate、framework/docs cleanup proof。
-- required golden path eval: `node tests/contract/contract-test-v22-current-state-index-loop.mjs`，`node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs`。
+- required golden path eval: `node tests/contract/contract-test-v22-current-state-index-loop.mjs`，`node tests/cloud/cloud-test-v22-tencent-deploy-execution-config-local-gate.mjs`。
 
 ## Authorization Boundary
 

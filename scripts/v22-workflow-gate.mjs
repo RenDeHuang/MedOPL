@@ -83,6 +83,7 @@ export function evaluateReview({
     && !isStrictMonolithCleanupAuthorizedDelete(file, changedStatuses.get(file), branchName));
   const secretLikePaths = normalizedFiles.filter((file) =>
     isSecretLikePath(file)
+    && !String(changedStatuses.get(file) || "").startsWith("D")
     && !isV22EvalPath(file)
     && !isStrictMonolithCleanupAuthorizedDelete(file, changedStatuses.get(file), branchName));
   const secretLikeAddedLines = secretLikeAddedLinesFrom(addedLines);

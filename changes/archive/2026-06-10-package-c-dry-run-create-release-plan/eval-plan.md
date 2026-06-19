@@ -8,7 +8,7 @@ Machine boundary: Commands below are the verification entrypoints.
 ## Required Commands
 
 ```bash
-node tests/future-authorized/cloud/future-authorized-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs
+node tests/cloud/cloud-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs
 npm run test:cloud-future-authorized
 npm run gate:review
 git diff --check -- docs tests scripts changes package.json package-lock.json

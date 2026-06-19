@@ -8,30 +8,26 @@ Status: local_boundary_audited
 
 ## Verification
 
-- `node tests/contract/contract-test-v22-change-package-lifecycle.mjs`: passed
-- `node tests/contract/contract-test-v22-real-cloud-authorization-boundary.mjs`: passed
-- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs`: passed
-- `node tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs`: passed
-- `node tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs`: passed
+- `node tests/governance/governance-test-v22-change-package-lifecycle.mjs`: passed via `npm run test:contract`
+- `node tests/governance/governance-test-v22-real-cloud-authorization-boundary.mjs`: passed
+- `node tests/contracts/contract-test-v22-real-cloud-readiness-lane.mjs`: passed via `npm run test:contract`
+- `node tests/cloud/cloud-test-v22-tencent-readonly-inventory-boundary.mjs`: passed via `npm run test:real-cloud-readiness`
+- `node tests/cloud/cloud-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs`: dry-run listed by `npm run test:cloud-future-authorized -- --dry-run --json`
+- `node tests/cloud/cloud-test-v22-tke-bootstrap-preflight-local-gate.mjs`: dry-run listed by `npm run test:cloud-future-authorized -- --dry-run --json`
 - `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --dry-run --json`: passed
-- `node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk --json`: passed
 - `npm run verify`: passed
-- `npm run closeout:check -- --json`: passed
-- `git diff --check -- docs changes specs tests scripts`: passed
+- `npm run test:health`: passed
+- `npm run test:contract`: passed
+- `npm run test:regression`: passed
+- `npm run gate:review`: passed
+- `npm run line:budget`: passed
+- `git diff --check -- docs specs changes tests scripts package.json contracts`: passed
 
 ## Can Claim
 
 - The future real-cloud authorization boundary is represented as an active change package.
-- The local boundary now records the required future authorization fields: operation class, target environment, secret allowlist, API allowlist, budget, evidence sink and rollback owner.
-- The post-boundary sequence is locked as `mock/snapshot provider -> readonly quote -> dry-run plan -> readonly inventory -> authorized create/release -> Package D deploy readiness planning for platform pool and VPC PostgreSQL -> authorized deploy -> canary / QA / status update`.
-- Package D deploy readiness planning is fixed for stable上线: cluster `cls-fi097sy4`, platform pool `np-cbk784r8`, VPC PostgreSQL `10.66.0.21:5432`, deploy secret/env allowlist, default-disabled deploy gate and readiness gaps.
-- Package D production deploy now has a repo-native apply/live runner entrypoint and local gate. It requires `RUN_TENCENT_DEPLOY_EXECUTION=1` for apply/live, keeps plan-only at `0`, and restricts kubectl command plans to allowlisted Package D apply, rollout observe, smoke shape checks and rollback plan commands.
-- Package D portal/runtime bridge writable path fixes are landed locally after authorized rollout diagnostics: nginx now writes pid/temp paths under `/tmp/nginx`, Runtime Bridge defaults to `/tmp/medopl-runtime/.runtime`, and production manifests mount writable `emptyDir` paths for both affected services.
-- Package D `production-deploy-apply` run `pdrun-20260616-004` is recorded as a successful in-cluster deploy: four Deployments ready `1/1`, four ClusterIP Services on `8080/http`, smoke shape checks `12/12` pass, rollback plan generated and redaction audit pass.
-- Package D now has a repo-native readonly service reachability / in-cluster HTTP smoke runner covered by the existing run-scoped Job local/future-authorized gate. The runner is run-scoped, uses fixed ClusterIP service endpoints, writes redacted `.runtime/package-d-service-reachability/<runid>/readonly-service-reachability-redacted.json` evidence and cleans up only its temporary smoke Job.
-- Production Launch Gap 01 now has a repo-native bootstrap contract/local gate. It covers first admin identity shape, tenant bootstrap shape, workspace seed shape, providerKeyRef-only public boundary, local RC fallback separation, Portal typed API to Go backend contract-only route traceability and redacted `.runtime/production-launch-bootstrap/<runid>/bootstrap-contract-redacted.json` evidence shape.
-- Production Launch Gap 02 now has a repo-native Portal -> Go backend -> Package C operation contract/local gate. It covers Portal action shape, Go backend operation request shape, Package C runner invocation boundary, ResourceBinding requested/creating/ready state contract, providerKeyRef-only boundary, idempotency, local RC fallback separation, Portal typed API to Go backend contract-only route traceability and redacted `.runtime/production-launch-operation/<runid>/operation-contract-redacted.json` evidence shape.
-- The next production launch gap is ResourceBinding PostgreSQL ledger live write/read contract. Portal external access strategy remains blocked until the multi-tenant minimum launch closure reaches that later phase.
+- The local boundary records the required future authorization fields: operation class, target environment, secret allowlist, API allowlist, budget, evidence sink and rollback owner.
+- Active cloud verification is small and registered: readonly inventory, Package C dry-run plan and TKE bootstrap preflight.
 - Raw live evidence, if later authorized, must stay in `.runtime` or another approved non-git evidence sink, with only sanitized summary entering git.
 
 ## Cannot Claim
@@ -39,10 +35,24 @@ Status: local_boundary_audited
 - New real cloud, deploy, kubectl, build/push, live-test or production release work is not authorized by this local closeout.
 - Any secret, provider credential, cloud resource, billing reconciliation or runtime deployment has been validated.
 - This package does not make MedOPL cloud online, production online, deploy ready, secret authorized or live-test authorized.
-- This package does not run Package D, read kubeconfig, build/push, kubectl, deploy or connect/write real PostgreSQL.
-- This package records that production deploy apply succeeded in-cluster and that a reachability runner exists, but it does not prove the in-cluster HTTP smoke has executed, external/public user access, Ingress/LoadBalancer/DNS/TLS, Portal self-service, production billing or rollback execution.
-- Production Launch Gap 01 does not execute first admin creation, tenant creation, workspace creation, provider credential binding, Package C live operation, billing, quota, workspace lifecycle or external access.
-- Production Launch Gap 02 does not execute Package C live, Tencent mutation, production PostgreSQL ledger write/read, billing, quota, workspace lifecycle or external access.
+- Historical Package D / production-launch / CLB diagnostics / Package C live canary evidence is not current truth.
+
+## Plan Completion Audit
+
+functional: partial
+code_cleanup: done
+docs_foldback: done
+verification: done
+retired_entrypoints: done
+cannot_claim: done
+
+## Cleanup Result
+
+deleted: legacy `tests/contract/*`, `tests/future-authorized/cloud/*`, retired Package D / production-launch / CLB / live-canary support files and oversized cloud deploy readiness contracts are removed from the active worktree
+folded: cloud authorization truth is folded into small consumer-first contracts, `tests/cloud`, active docs/specs and the current manifest
+retained: readonly inventory, Package C dry-run plan and TKE bootstrap preflight remain as explicit fail-closed local cloud boundary tests
+reason: MedOPL current truth is a SaaS platform that provisions customer-dedicated OPL runtime/cloud/file/billing/audit surfaces; deleted runners belonged to older live/provisioning routes that are not current truth
+next: archive this active package, then continue default verify thinning and any remaining prose-to-governance split as separate cleanup cursors
 
 ## Archive Target
 

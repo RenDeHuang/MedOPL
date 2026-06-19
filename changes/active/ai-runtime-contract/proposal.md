@@ -32,7 +32,7 @@ MedOPL v22 needs an AI runtime boundary that supports end-to-end AI MVP readines
 - improves: the local golden path gains a durable AI runtime adapter contract before real cloud/runtime authorization.
 - affected steps: Portal -> Gateway -> Runtime Bridge -> Runtime Agent/OPL ACP -> artifact/trace/billing/audit projection.
 - required golden path eval: `node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json`.
-- required contract eval: `node tests/contract/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs`.
+- required contract eval: `node tests/contracts/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs`.
 
 ## Authorization Boundary
 
@@ -50,4 +50,4 @@ MedOPL v22 needs an AI runtime boundary that supports end-to-end AI MVP readines
 - specs/runtime/spec.md
 - changes/README.md
 - services/opl-runtime-bridge
-- tests/contract/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs
+- tests/contracts/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs

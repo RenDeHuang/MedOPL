@@ -30,5 +30,5 @@ The added boundary defines a local dry-run preflight that describes the required
 
 ## EVALS
 
-- `node tests/future-authorized/cloud/future-authorized-test-v22-tke-bootstrap-preflight-local-gate.mjs`
+- `node tests/cloud/cloud-test-v22-tke-bootstrap-preflight-local-gate.mjs`
 - `node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk`

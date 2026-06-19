@@ -13,7 +13,7 @@ Status: landed
 
 ## Verification
 
-- `node tests/future-authorized/cloud/future-authorized-test-v22-tke-bootstrap-preflight-local-gate.mjs`: passed.
+- `node tests/cloud/cloud-test-v22-tke-bootstrap-preflight-local-gate.mjs`: passed.
 - `npm run test:cloud-future-authorized`: passed.
 - `node tests/contract/contract-test-v22-test-lane-registry.mjs`: passed.
 - `node tests/contract/contract-test-v22-spec-eval-traceability.mjs`: passed.

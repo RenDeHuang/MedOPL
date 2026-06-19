@@ -235,8 +235,8 @@ async function validateActivePlatform({ manifest, current }) {
     "specs/policies/spec.md",
     "specs/source/spec.md",
     "contracts/README.md",
-    "contracts/medopl-package-d-deploy-readiness.json",
-    "contracts/medopl-production-launch-gap-map.json",
+    "contracts/cloud-deploy-readiness-contract.json",
+    "contracts/cloud-authorization-boundary-contract.json",
     "scripts/v22-verify.mjs",
     "scripts/v22-workflow-gate.mjs",
   ]) {
@@ -244,10 +244,10 @@ async function validateActivePlatform({ manifest, current }) {
   }
 
   const contractRefs = [
-    current.current_leaf.package_d_deploy_readiness_ref,
-    current.current_leaf.production_launch_gap_map_ref,
-    current.package_d_deploy_readiness_ref,
-    current.production_launch_gap_map_ref,
+    current.current_leaf.cloud_deploy_readiness_contract_ref,
+    current.current_leaf.cloud_authorization_boundary_contract_ref,
+    current.cloud_deploy_readiness_contract_ref?.contract_path,
+    current.cloud_authorization_boundary_contract_ref?.contract_path,
   ].filter(Boolean);
   for (const ref of contractRefs) assertPath(ref);
 

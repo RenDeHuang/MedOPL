@@ -39,7 +39,7 @@ CLI dry-run args
 - source: `tests/support/cloud-prework/v22-tencent-create-release-dry-run-plan.js`.
 - docs: `docs/specs/README.md` and this change package.
 - specs: `specs/operations/spec.md`, `specs/runtime/spec.md`.
-- tests: `tests/future-authorized/cloud/future-authorized-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs`.
+- tests: `tests/cloud/cloud-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs`.
 - registry: `scripts/v22-test-classification.mjs`, `tests/fixtures/v22/agent-verify-manifest.json`.
 
 ## Boundaries

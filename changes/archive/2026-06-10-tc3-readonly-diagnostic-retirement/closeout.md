@@ -20,7 +20,7 @@ Implemented:
 Verification:
 
 - `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-tc3-diagnostic-cleanup-plan.mjs`: pass.
-- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-official-sdk-provider-strategy-contract.mjs`: pass.
+- `node tests/cloud/cloud-test-v22-tencent-official-sdk-provider-strategy-contract.mjs`: pass.
 - `npm run test:real-cloud-readiness`: pass.
 
 ## Can Claim

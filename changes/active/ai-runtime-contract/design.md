@@ -40,4 +40,4 @@ MCP-compatible boundary means tools / resources / prompts / artifacts / approval
 - source: existing `services/opl-runtime-bridge` Runtime Bridge, Runtime Agent relay, OPL ACP runtime surfaces and `runtime-bridge-mcp-compatible-shapes.mjs`.
 - specs: `specs/runtime/spec.md`.
 - docs: `docs/specs/README.md`, `docs/runtime/README.md`, `docs/framework/README.md`.
-- tests: `node tests/contract/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs`.
+- tests: `node tests/contracts/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs`.

@@ -19,7 +19,7 @@ const [
   adminOpsPage,
   portalAdminApi,
   goRouter,
-  goProjection,
+  goProjectionAdmin,
   suite,
 ] = await Promise.all([
   readFile("docs/specs/README.md", "utf8"),
@@ -28,8 +28,8 @@ const [
   readFile("services/portal/frontend/src/app/pages/admin/AdminOps.tsx", "utf8"),
   readFile("services/portal/frontend/src/api/portal/admin.ts", "utf8"),
   readFile("services/medopl-go-backend/internal/server/router.go", "utf8"),
-  readFile("services/medopl-go-backend/internal/server/handlers/portal_projection.go", "utf8"),
-  readFile("tests/contract/contract-test-v22-mvp-contract-suite.mjs", "utf8"),
+  readFile("services/medopl-go-backend/internal/server/handlers/portal_projection_admin.go", "utf8"),
+  readFile("tests/suites/suite-test-v22-mvp.mjs", "utf8"),
 ]);
 
 assertIncludes(specsIndex, "spec:v22-admin-ops-console-boundary", "specs_index_admin_ops_anchor");
@@ -43,8 +43,8 @@ assertIncludes(operationsSpec, "real cloud console operations", "operations_spec
 assertIncludes(operationsSpec, "secret reads", "operations_spec_admin_ops_cannot_claim_secret_reads");
 
 assertIncludes(goRouter, 'router.GET("/api/admin/ops", handlers.AdminOps())', "go_router_admin_ops_route");
-assertIncludes(goProjection, "func AdminOps() gin.HandlerFunc", "go_projection_admin_ops_handler");
-assertIncludes(goProjection, '"opsSurfaceEnabled": true', "go_projection_admin_ops_local_projection");
+assertIncludes(goProjectionAdmin, "func AdminOps() gin.HandlerFunc", "go_projection_admin_ops_handler");
+assertIncludes(goProjectionAdmin, '"opsSurfaceEnabled": true', "go_projection_admin_ops_local_projection");
 
 assertIncludes(portalAdminApi, 'goControlPlaneClient.get("/admin/ops")', "portal_admin_api_admin_ops_endpoint");
 assertIncludes(portalAdminApi, "ops_surface_disabled", "portal_admin_api_disabled_state");

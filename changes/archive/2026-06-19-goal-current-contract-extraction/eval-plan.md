@@ -4,7 +4,7 @@
 
 ```bash
 node tests/contract/contract-test-v22-current-state-index-loop.mjs
-node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs
+node tests/cloud/cloud-test-v22-tencent-deploy-execution-config-local-gate.mjs
 npm run test:health
 npm run test:contract
 git diff --check

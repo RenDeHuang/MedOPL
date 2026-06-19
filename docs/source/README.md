@@ -5,57 +5,41 @@ Purpose: `source_surface_truth_view`
 State: `hard_compacted_view`
 Machine boundary: 本文是 source surface 视角入口，不是第二份 current truth。实际允许写入范围仍由 `AGENTS.md`、contracts、branch manifest 和 landing gate 裁定；authoring branch 必须先按当前 truth / gap / eval 声明写入范围。
 
-当前被 tests/runner 直接消费的大型机器 owner payload 已拆到 root `contracts/**`；`tests/fixtures/v22/goal-current.json` 只保 machine cursor 与这些合同的引用字段，不再充当巨型 owner payload 仓库。
+当前被 tests/runner 直接消费的大型机器 owner payload 已收薄到 root `contracts/**` 小型 consumer-first 合同；`tests/fixtures/v22/goal-current.json` 只保 machine cursor 与这些合同的引用字段，不再充当巨型 owner payload 仓库。
 
 ## Large File Asset Triage
 
 长文件只作为扫描信号，不自动等于拆分或删除。清退顺序必须先判断 owner surface、machine consumer、test lane、lifecycle role 和 current-truth 归属；active caller 迁移完成前不得物理删除，被当前 owner surface 替代后不得保留旧过渡入口。
 
-当前 `>=500` 行文件分类：
+当前 `>=500` 行 git-tracked 文件分类：
 
 | File | Lines | owner type | consumer / lane | action |
 | --- | ---: | --- | --- | --- |
-| `services/portal/frontend/package-lock.json` | 6310 | generated dependency lock | npm install / frontend build | keep_durable_asset |
-| `contracts/medopl-package-d-deploy-readiness.json` | 3308 | machine contract payload | future-authorized deploy config gate / current-state loop | split_owner |
-| `contracts/medopl-production-launch-gap-map.json` | 1652 | machine contract payload | production launch gap gates / current-state loop | split_owner |
-| `package-lock.json` | 1352 | generated dependency lock | root package scripts | keep_durable_asset |
-| `tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs` | 995 | future-authorized gate | `future-authorized` lane | split_owner |
-| `tests/future-authorized/cloud/future-authorized-test-v22-cloud-cleanup-local-gate.mjs` | 943 | future-authorized gate | `future-authorized` lane | split_owner |
-| `tests/future-authorized/cloud/future-authorized-test-v22-production-cloud-topology-contract.mjs` | 940 | cloud topology contract test | `future-authorized` lane | keep_durable_asset |
-| `tests/support/cloud-prework/package-d-production-deploy-runner.js` | 939 | active pre-cloud runner | Package D manifest/materialization gates | split_owner |
-| `tests/support/cloud-prework/v22-package-c-live-canary-live-runner.js` | 921 | active authorized runner | Package C live-canary gates | split_owner |
-| `tests/smoke/smoke-test-v22-managed-user-loop-contract.mjs` | 883 | smoke current-owner test | `smoke` lane | split_owner |
-| `tests/support/cloud-prework/package-d-external-access-runner.js` | 879 | active pre-cloud runner | external-access local gates | keep_durable_asset |
-| `services/medopl-go-backend/internal/server/handlers/controlplane_test.go` | 872 | backend contract test | Go control-plane test suite | split_owner |
-| `tests/future-authorized/cloud/future-authorized-test-v22-package-d-run-scoped-job-runner-local-gate.mjs` | 849 | future-authorized gate | `future-authorized` lane | keep_durable_asset |
-| `tests/support/cloud-prework/tencent-clb-readonly-diagnostics-runner.js` | 840 | readonly diagnostics runner | CLB diagnostics local gate | keep_durable_asset |
-| `tests/support/cloud-prework/package-d-service-reachability-runner.js` | 774 | active pre-cloud runner | service reachability local gate | keep_durable_asset |
-| `tests/future-authorized/cloud/future-authorized-test-v22-package-c-live-canary-live-runner-local-gate.mjs` | 774 | future-authorized gate | `future-authorized` lane | keep_durable_asset |
-| `DESIGN.md` | 742 | human design source | design review / product UI alignment | keep_durable_asset |
-| `tests/support/cloud-prework/package-d-external-access-strategy-runner.js` | 726 | active pre-cloud runner | shared-edge / TLS strategy gates | keep_durable_asset |
-| `tests/future-authorized/cloud/future-authorized-test-v22-package-d-in-cluster-runner-manifest-materialization-gate.mjs` | 712 | future-authorized gate | `future-authorized` lane | keep_durable_asset |
-| `tests/support/cloud-prework/package-c-postgres-ledger-sink.js` | 704 | active PostgreSQL ledger sink | Package C ledger sink gate | split_owner_fix_cycle |
-| `tests/fixtures/v22/goal-current.json` | 701 | machine cursor fixture | verify / landing closeout / current-state gates | keep_durable_asset |
-| `tests/fixtures/v22/agent-verify-manifest.json` | 682 | verify manifest fixture | verify / health / contract gates | keep_durable_asset |
-| `services/medopl-go-backend/internal/service/controlplane/service.go` | 676 | backend service owner | Go control-plane handlers / tests | split_owner |
-| `services/portal/frontend/src/app/pages/Workspace.tsx` | 652 | active Portal page | frontend route / regression gates | split_owner |
-| `services/portal/frontend/src/app/pages/admin/AdminUsers.tsx` | 650 | active Portal admin page | frontend route / admin regression gates | split_owner |
-| `scripts/v22-local-services.mjs` | 562 | stable local-services CLI | package scripts / local service orchestration gates | split_owner |
-| `services/portal/frontend/src/app/pages/OPLEntry.tsx` | 556 | active Portal OPL entry page | frontend route / OPL entry gates | split_owner |
-| `services/medopl-go-backend/internal/server/handlers/controlplane_production_contracts.go` | 550 | backend production contract handler | Go control-plane route tests | split_owner |
-| `tests/future-authorized/cloud/future-authorized-test-v22-package-d-runner-image-publish-local-gate.mjs` | 549 | future-authorized gate | `future-authorized` lane | keep_durable_asset |
-| `services/opl-runtime-bridge/src/runtime-bridge-launch.mjs` | 545 | active runtime launch boundary | runtime-bridge regression gates | split_owner |
-| `services/portal/frontend/src/app/pages/Overview.tsx` | 532 | active Portal page | frontend route / regression gates | split_owner |
-| `services/portal/frontend/src/app/pages/TasksResults.tsx` | 520 | active Portal page | frontend route / task-result gates | split_owner |
-| `services/portal/frontend/src/app/pages/BillingAudit.tsx` | 508 | active Portal page | frontend route / billing-audit gates | split_owner |
-| `tests/regression/opl/regression-test-v22-opl-web-gateway-launch.mjs` | 502 | negative-retirement guard | `regression-opl` lane | keep_durable_asset |
-| `services/opl-runtime-bridge/src/opl-client.mjs` | 501 | active runtime client | runtime-bridge source / regression gates | split_owner |
+| `services/portal/frontend/package-lock.json` | 6311 | generated dependency lock | npm install / frontend build | keep_durable_asset |
+| `package-lock.json` | 1353 | generated dependency lock | root package scripts | keep_durable_asset |
+| `tests/smoke/smoke-test-v22-managed-user-loop-contract.mjs` | 884 | smoke current-owner test | smoke lane | split_owner |
+| `services/medopl-go-backend/internal/server/handlers/controlplane_test.go` | 873 | backend source/test owner | Go control-plane tests / handlers | split_owner |
+| `DESIGN.md` | 743 | human design source | design review / product UI alignment | keep_durable_asset |
+| `tests/fixtures/v22/goal-current.json` | 670 | machine fixture | verify / landing closeout / current-state gates | keep_durable_asset |
+| `services/medopl-go-backend/internal/service/controlplane/service.go` | 677 | backend source/test owner | Go control-plane tests / handlers | split_owner |
+| `services/portal/frontend/src/app/pages/Workspace.tsx` | 653 | active Portal page | frontend route / regression gates | split_owner |
+| `services/portal/frontend/src/app/pages/admin/AdminUsers.tsx` | 651 | active Portal page | frontend route / regression gates | split_owner |
+| `tests/fixtures/v22/agent-verify-manifest.json` | 646 | machine fixture | verify / landing closeout / current-state gates | keep_durable_asset |
+| `scripts/v22-local-services.mjs` | 563 | stable repo CLI | package scripts / local orchestration gates | split_owner |
+| `services/portal/frontend/src/app/pages/OPLEntry.tsx` | 557 | active Portal page | frontend route / regression gates | split_owner |
+| `services/medopl-go-backend/internal/server/handlers/controlplane_production_contracts.go` | 551 | backend source/test owner | Go control-plane tests / handlers | split_owner |
+| `services/opl-runtime-bridge/src/runtime-bridge-launch.mjs` | 546 | runtime bridge source | runtime-bridge regression gates | split_owner |
+| `services/portal/frontend/src/app/pages/Overview.tsx` | 533 | active Portal page | frontend route / regression gates | split_owner |
+| `services/portal/frontend/src/app/pages/TasksResults.tsx` | 521 | active Portal page | frontend route / regression gates | split_owner |
+| `services/portal/frontend/src/app/pages/BillingAudit.tsx` | 509 | active Portal page | frontend route / regression gates | split_owner |
+| `tests/regression/opl/regression-test-v22-opl-web-gateway-launch.mjs` | 503 | regression gate | registered regression lane | keep_durable_asset |
+| `services/opl-runtime-bridge/src/opl-client.mjs` | 502 | runtime bridge source | runtime-bridge regression gates | split_owner |
 
 Immediate cleanup order:
 
-1. Fix the `tests/support/cloud-prework/package-c-postgres-ledger-live-canary.js` and `tests/support/cloud-prework/package-c-postgres-ledger-sink.js` dependency cycle before further runner split work.
-2. Split over-broad machine contracts by actual source/test consumers; do not delete `contracts/**` payloads while they remain directly consumed.
-3. Collapse future-authorized local gates only after proving duplicate assertions and migrating active callers; current scanned gates remain active assets until that proof exists.
+1. Keep file count as pressure only; block only on missing owner, consumer, lifecycle or registry.
+2. Keep root `contracts/**` consumer-first and small; oversized Package D / production launch payloads have been physically retired from active contracts.
+3. Keep future-authorized cloud as a small explicit boundary lane; deleted one-off cloud gates must not return as current truth.
 4. Split active backend/frontend/runtime files by owner boundary; do not treat active product/source pages as historical cleanup candidates.
 5. Keep lockfiles and stable human design source unless their owner changes; they are not cleanup targets merely because they are long.
 
@@ -73,8 +57,8 @@ Go / pre-cloud deployment surface：
 - `services/medopl-go-backend` is the local pre-cloud SaaS backend deployment surface before real-cloud readiness.
 - `services/portal/frontend` is the Portal frontend deployment surface.
 - `scripts/v22-local-services.mjs` owns the repo-native local service plan, start/stop/status/logs lifecycle, local URL health probe and dry-run RC verification for Portal frontend, Go backend, OPL Web Gateway, Runtime Bridge and external clean OPL WebUI. PID and logs stay under `.runtime/local-services`; clean OPL WebUI is only an external endpoint and is never started or stopped by MedOPL. It does not read secrets, deploy, kubectl, build/push or call real cloud.
-- `tests/support/cloud-prework` owns bounded Tencent/TKE pre-cloud test support for readonly inventory, Package C dry-run planning, TKE bootstrap preflight, Package C live runner state-machine evidence, the gated Package C PostgreSQL ledger sink support path, Package D Kubernetes API server-side dry-run / bootstrap / run-scoped Job preflight runners, Package D private image publish runners, the repo-native Package D production deploy plan/apply runner and the Production Launch Gap 01 / Gap 02 / Gap 03 contract runners. Package C planning models tenant node pool lifecycle per tenant or workspace; TKE bootstrap preflight only records the unified cluster and platform service node pool foundation. Package D cloud runners are future-authorized entrypoints for later authorized Kubernetes API connectivity, `kubectl apply --server-side --dry-run=server`, bootstrap apply, preflight Job execution and production deploy apply through reviewed manifest shapes; the production launch bootstrap, operation and ledger runners are contract/local-gate only for first admin / tenant / workspace seed, Portal -> Go backend -> Package C operation shape, ResourceBinding / CloudOperation write/read shape, providerKeyRef boundary and redacted evidence. Local tests use fake inputs and fake kubectl/docker only. These support modules are not default `scripts/` control-plane entrypoints; they remain guarded by future-authorized tests, explicit authorization flags and `.runtime` evidence sinks.
-- `services/medopl-go-backend/internal/domain/controlplane`, `internal/repository/controlplane`, `internal/repository/memory`, `migrations/0001_baseline.sql` and `ent/schema/{resourcebinding,cloudoperation}.go` own the current PostgreSQL `resource_bindings` / `cloud_operations` ledger lower bound for Package C tenant node pool lifecycle. The repository contract now exposes create resource binding, append cloud operation event, node pool id update, lifecycle status update, released, failed and cleanupRequired writes; the memory implementation is the local/dry-run contract store. `tests/support/cloud-prework/v22-package-c-live-canary-live-runner.js` now projects the authorized tenant node pool lifecycle into the same ResourceBinding / CloudOperation status vocabulary for `.runtime` evidence and can call an injected ledger sink for repository write wiring. `tests/support/cloud-prework/package-c-postgres-ledger-sink.js` adds gated PostgreSQL execution sink support and CLI modes for prepare-only plus explicit live canary write/read/cleanup: both use the root `pg` driver dependency and require `RUN_MEDOPL_POSTGRES_LEDGER_EXECUTION=1`, allowlisted local DB env keys, schema/write-permission preflight and redacted `.runtime` evidence; live canary also requires `RUN_TENCENT_CREATE_RELEASE_EXECUTION=0`, a dedicated authorized ledger env file, existing tenant/workspace parent rows, canary-scoped `resourceBindingId`, post-write readback and cleanup readback-absent confirmation. This source surface records canonical ownership / billing truth in MedOPL ledger shape, not Tencent `tke:nodepool` tags. It does not implement Portal self-service opening, an authorized successful real PostgreSQL canary run, billing/audit ledger, workspace quota, deploy, kubectl or new Tencent mutation.
+- `tests/support/cloud-prework` owns only bounded Tencent/TKE pre-cloud test support that still has active consumers: readonly inventory support, Tencent official SDK readonly adapter shape, Package C dry-run create/release plan and TKE bootstrap preflight plan. Package D deploy/external access runners, production-launch runners, CLB diagnostics, Package C live canary runner and PostgreSQL live ledger sink support are physically retired from the active source surface.
+- `services/medopl-go-backend/internal/domain/controlplane`, `internal/repository/controlplane`, `internal/repository/memory`, `migrations/0001_baseline.sql` and `ent/schema/{resourcebinding,cloudoperation}.go` own the current PostgreSQL `resource_bindings` / `cloud_operations` ledger lower bound for tenant runtime lifecycle. The repository contract exposes create resource binding, append cloud operation event, node pool id update, lifecycle status update, released, failed and cleanupRequired writes; the memory implementation is the local/dry-run contract store. This source surface records canonical ownership / billing truth in MedOPL ledger shape. It does not implement authorized successful real PostgreSQL canary execution, production billing reconciliation, deploy, kubectl or new Tencent mutation.
 
 `services/medopl-go-backend` 必须通过 source、tests、fixtures、manifest、workflow review、package verification 和 pre-cloud deployable RC 进入 real-cloud-readiness；不能只靠目录存在或 prose claim 成为 production truth。当前 authoring branch 的 pre-cloud deployable RC 只覆盖 Portal frontend -> Go `/api`、provider/preflight/launch、workspace/file/run/artifact、billing/audit、resource projection、release/stop-billing 和 cloud connector fail-closed 的 deterministic local proof，不证明 live provider、真实 upstream OPL、real cloud 或 production billing。
 
@@ -109,8 +93,8 @@ Retirement surface：
 
 Backend physical removal gate：
 
-- `tests/contract/contract-test-v22-node-portal-backend-physical-removal.mjs` 是当前机器入口，验证 `services/portal/src` 不存在、Portal frontend 只走 Go `/api`、旧 Node facade/gate/fixture 不回到 manifest。
-- `tests/contract/contract-test-v22-backend-go-convergence-program.mjs` 只验证 Go takeover 已关闭、本地控制面 owner 是 `services/medopl-go-backend`、real-cloud 仍停在授权边界；不再依赖 backend inventory 或 migration-map fixture。
+- `tests/contracts/contract-test-v22-node-portal-backend-physical-removal.mjs` 是当前机器入口，验证 `services/portal/src` 不存在、Portal frontend 只走 Go `/api`、旧 Node facade/gate/fixture 不回到 manifest。
+- `tests/governance/governance-test-v22-backend-go-convergence-program.mjs` 只验证 Go takeover 已关闭、本地控制面 owner 是 `services/medopl-go-backend`、real-cloud 仍停在授权边界；不再依赖 backend inventory 或 migration-map fixture。
 
 Current docs / eval surface during migration：
 

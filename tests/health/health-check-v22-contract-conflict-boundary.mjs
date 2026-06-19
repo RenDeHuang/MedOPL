@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
 
-const mvpSuitePath = "tests/contract/contract-test-v22-mvp-contract-suite.mjs";
+const mvpSuitePath = "tests/suites/suite-test-v22-mvp.mjs";
 
 async function readRepoFile(filePath) {
   return readFile(path.join(repoRoot, filePath), "utf8");

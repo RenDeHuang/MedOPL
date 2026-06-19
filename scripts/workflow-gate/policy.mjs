@@ -56,9 +56,11 @@ export function isV22EvalPath(filePath) {
   return [
     /^tests\/smoke\/smoke-test-v22-.*\.mjs$/u,
     /^tests\/health\/health-check-v22-.*\.mjs$/u,
-    /^tests\/contract\/(?:.+\/)?contract-test-v22-.*\.mjs$/u,
+    /^tests\/contracts\/(?:.+\/)?contract-test-v22-.*\.mjs$/u,
+    /^tests\/governance\/governance-test-v22-.*\.mjs$/u,
+    /^tests\/suites\/suite-test-v22-.*\.mjs$/u,
     /^tests\/regression\/.+\/regression-test-v22-.*\.mjs$/u,
-    /^tests\/future-authorized\/cloud\/future-authorized-test-v22-.*\.mjs$/u,
+    /^tests\/cloud\/cloud-test-v22-.*\.mjs$/u,
   ].some((pattern) => pattern.test(normalized));
 }
 
@@ -120,7 +122,6 @@ export function isStrictMonolithCleanupAuthorizedDelete(filePath, status, branch
       /^services\/portal\/src(?:\/|$)/u,
       /^tests\/fixtures\/v22\/backend-go-convergence(?:\/|$)/u,
       /^tests\/local-rc\/local-rc-test-v22-provider-bound-message-backflow\.mjs$/u,
-      /^tests\/future-authorized\/cloud\/future-authorized-test-v22-(?:portal-cloud-operation-(?:postgres-canonical-store|test-api-local-gate|worker-entrypoint)|tencent-(?:dry-run-resource-plan-provider|readonly-inventory-(?:adapter-local-gate|local-guard|sdk-client)|readonly-quote-provider-boundary))\.mjs$/u,
       /^tests\/regression\/opl\/regression-test-v22-(?:opl-entry-preflight-auth-flow|opl-runtime-e2e-local-flow|portal-opl-api-runtime-loop|provider-secret-boundary-contract)\.mjs$/u,
       /^tests\/regression\/portal\/regression-test-v22-(?:account-wallet-billing-closure|admin-ops-disabled-product-state|admin-ops-local-projection-view|managed-resource-binding-plan-view|portal-admin-shared-helper-structure|portal-api-auth-boundary|portal-auth-landing-route|portal-cost-balance-trace-linkage|portal-file-space-management|portal-local-api-action-closure|portal-runtime-startup-config|portal-session-trace-view|portal-storage-mode-local-closure|portal-trace-file-linkage|portal-workbench-management-ui-api|workspace-storage-public-response)\.mjs$/u,
       /^tests\/regression\/runtime-bridge\/regression-test-v22-portal-runtime-bridge-api-local-flow\.mjs$/u,
@@ -141,8 +142,6 @@ export function isStrictMonolithCleanupAuthorizedDelete(filePath, status, branch
       ].join("|")})\\.mjs$`, "u"),
       /^tests\/fixtures\/v22\/(?:autonomous-goal-runner-policy|cloud-harness-manifest|goal-leaf-manifest\.schema|product-completion-scoreboard)\.json$/u,
       /^tests\/contract\/contract-test-v22-(?:agent-run-record-gate|autonomous-goal-runner|contract-eval-compaction|contract-smoke-eval-index-compaction|default-entry-narrative-gate|docs-taxonomy-skeleton|env-template-default-entry|goal-state-consistency|long-term-governance-surfaces|monolith-agent-workflow-entrypoint-and-trace-normalization|opl-style-taxonomy-hard-compaction|post-20fe9ac-agent-workflow-truth-and-repo-classification|post-merge-portal-opl-truth|product-goal-execution-order|product-goal-harness|program-board|release-readiness-auth-boundary|repo-governance-physical-compaction|repo-zoning-boundary|smoke-eval-physical-compaction|tests-taxonomy-hard-retirement|truth-freeze-physical-retirement|truth-repo-narrative-reference-unification)\.mjs$/u,
-      /^tests\/future-authorized\/cloud\/future-authorized-test-v22-(?:agent-workflow-cloud-onboarding|authorized-tencent-deploy-execution-contract|cloud-connection-runnable-path|cloud-harness-manifest-selector|cloud-onboarding-absorption-sequence|cloud-onboarding-board-status|cloud-onboarding-workflow-contract|cloud-resource-isolation-contract|discovery-governance-local-gate|opl-deployment-ownership-release-plan-contract|package-d-.+|portal-cloud-operation-async-worker-loop|portal-cloud-operation-runner-loop|portal-package-click-cloud-resource-loop|portal-production-cloud-operation-.+|real-resource-contract-alignment|tencent-readonly-inventory-.+|tencent-resource-lifecycle-.+)\.mjs$/u,
-      /^tests\/future-authorized\/cloud\/smoke-test-v22-(?:agent-workflow-cloud-onboarding|authorized-tencent-deploy-execution-contract|cloud-connection-runnable-path|cloud-harness-manifest-selector|cloud-onboarding-absorption-sequence|cloud-onboarding-board-status|cloud-onboarding-workflow-contract|cloud-resource-isolation-contract|discovery-governance-local-gate|opl-deployment-ownership-release-plan-contract|package-d-.+|portal-cloud-operation-async-worker-loop|portal-cloud-operation-runner-loop|portal-package-click-cloud-resource-loop|portal-production-cloud-operation-.+|real-resource-contract-alignment|tencent-readonly-inventory-.+|tencent-resource-lifecycle-.+)\.mjs$/u,
       /^tests\/health\/health-check-v22-archive-smoke-contract-physical-retirement-gate\.mjs$/u,
       /^tests\/health\/smoke-test-v22-(?:archive-smoke-contract-physical-retirement-gate|smoke-classification-gate|smoke-eval-boundary)\.mjs$/u,
       /^tests\/regression\/opl\/regression-test-v22-(?:gflabtoken-entry-contract|opl-dual-entry-contract|opl-productionization-.+|portal-opl-context-backflow-contract|real-opl-capability-contract-gate|real-opl-file-run-artifact-contract-gate|real-opl-provider-message-contract-gate)\.mjs$/u,

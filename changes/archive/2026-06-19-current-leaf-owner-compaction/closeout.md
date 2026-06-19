@@ -9,7 +9,7 @@ Status: archived
 ## Verification
 
 - `node tests/contract/contract-test-v22-current-state-index-loop.mjs`: pass
-- `node tests/future-authorized/cloud/future-authorized-test-v22-tencent-deploy-execution-config-local-gate.mjs`: pass
+- `node tests/cloud/cloud-test-v22-tencent-deploy-execution-config-local-gate.mjs`: pass
 - `node tests/contract/contract-test-v22-agent-verify-entrypoint.mjs`: pass
 - `node tests/contract/contract-test-v22-real-cloud-authorization-boundary.mjs`: pass
 - `node tests/contract/contract-test-v22-change-package-lifecycle.mjs`: pass
