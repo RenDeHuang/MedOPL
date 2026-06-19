@@ -87,6 +87,7 @@ export const TEST_LANE_CONTRACT_REFS = Object.freeze([
   "contracts/medopl-billing-ledger-contract.json",
   "contracts/medopl-release-boundary.json",
   "contracts/medopl-cloud-boundary.json",
+  "contracts/medopl-cloud-authorization-pack.json",
   "specs/product/spec.md",
   "specs/runtime/spec.md",
   "specs/operations/spec.md",

@@ -23,6 +23,7 @@ const PRODUCT_AUTHORITY_CONTRACTS = Object.freeze([
   "contracts/medopl-billing-ledger-contract.json",
   "contracts/medopl-release-boundary.json",
   "contracts/medopl-cloud-boundary.json",
+  "contracts/medopl-cloud-authorization-pack.json",
 ]);
 
 function parseArgs(argv) {
@@ -153,6 +154,7 @@ function planForOptions({ options, base }) {
     reasons: planned.reasons,
     cannotClaim: planned.cannotClaim,
     preflight: planned.preflight,
+    authorization: planned.authorization,
   };
 }
 
@@ -265,6 +267,7 @@ async function runPlanForOptions({ options, base }) {
     repoRoot,
     plan,
     dryRun: Boolean(options["dry-run"]),
+    includeAuthorized: Boolean(options["include-authorized"]),
     env: process.env,
   });
 }
@@ -395,7 +398,8 @@ async function validateActivePlatform({ manifest, current }) {
   assert(runtimeRetiredRoutes.includes("billing ledger owner 是 Portal/Go control plane"), "runtime_bridge_must_not_own_billing_truth");
 
   const releaseContract = readRepoJsonSync("contracts/medopl-release-boundary.json");
-  assert.equal(releaseContract.authority_boundary.default_real_cloud_mutation, "forbidden_without_explicit_user_authorization", "release_boundary_must_forbid_default_real_cloud_mutation");
+  assert.equal(releaseContract.authority_boundary.default_real_cloud_mutation, "allowed_when_authorization_pack_is_active", "release_boundary_must_use_machine_authorization_pack");
+  assert.equal(releaseContract.authority_boundary.authorization_pack, "contracts/medopl-cloud-authorization-pack.json", "release_boundary_must_reference_authorization_pack");
   assert(packageJson.scripts["verify:golden-path"], "golden_path_gate_script_missing");
   assert(packageJson.scripts["test:cloud"], "cloud_boundary_gate_script_missing");
   assert(packageJson.scripts["test:hygiene"], "secret_hygiene_gate_script_missing");
@@ -418,7 +422,7 @@ function printUsage() {
     "  node scripts/v22-verify.mjs list [--json]",
     "  node scripts/v22-verify.mjs active-platform [--quick] [--json]",
     "  node scripts/v22-verify.mjs plan [--base origin/recovery/platform-v22-trunk] [--files a,b] [--profile changed-surface|full-local] [--json]",
-    "  node scripts/v22-verify.mjs run-plan [--base origin/recovery/platform-v22-trunk] [--files a,b] [--profile changed-surface|full-local] [--dry-run] [--json]",
+    "  node scripts/v22-verify.mjs run-plan [--base origin/recovery/platform-v22-trunk] [--files a,b] [--profile changed-surface|full-local] [--dry-run] [--include-authorized] [--json]",
     "  node scripts/v22-verify.mjs current [--base origin/recovery/platform-v22-trunk] [--dry-run] [--json]",
     "  node scripts/v22-verify.mjs suite <id> [--base origin/recovery/platform-v22-trunk] [--dry-run] [--json]",
     "  node scripts/v22-verify.mjs package <id> [--base origin/recovery/platform-v22-trunk] [--dry-run] [--json]",
@@ -463,11 +467,20 @@ function renderHuman(payload) {
       lines.push("authorized commands:");
       for (const command of payload.authorizedCommands) lines.push(`- ${command}`);
     }
+    if (payload.authorization) {
+      lines.push(`authorization pack: ${payload.authorization.status || "unknown"}`);
+      if (payload.authorization.path) lines.push(`authorization pack path: ${payload.authorization.path}`);
+      if ((payload.authorization.blockers || []).length > 0) {
+        lines.push("authorization blockers:");
+        for (const blocker of payload.authorization.blockers) lines.push(`- ${blocker}`);
+      }
+    }
     if (payload.mode === "run-plan" && payload.report?.commands) {
       lines.push("run-plan commands:");
       lines.push(`- planned: ${payload.report.commands.planned.length}`);
       lines.push(`- executed: ${payload.report.commands.executed.length}`);
       lines.push(`- skipped authorized: ${payload.report.commands.skippedAuthorized.length}`);
+      lines.push(`- authorized executed: ${payload.report.commands.authorizedExecuted?.length || 0}`);
     }
     if (payload.preflight) {
       lines.push(`preflight ok: ${payload.preflight.ok}`);

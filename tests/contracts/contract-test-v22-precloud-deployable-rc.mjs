@@ -128,13 +128,23 @@ async function assertProductAuthorityContractsOwnPrecloudEvidence() {
   }
   assert.equal(
     release.authority_boundary.default_real_cloud_mutation,
-    "forbidden_without_explicit_user_authorization",
-    "release_contract_must_fail_closed_before_authorization",
+    "allowed_when_authorization_pack_is_active",
+    "release_contract_must_use_machine_authorization_pack",
+  );
+  assert.equal(
+    release.authority_boundary.authorization_pack,
+    "contracts/medopl-cloud-authorization-pack.json",
+    "release_contract_must_point_to_cloud_authorization_pack",
   );
   assert.equal(
     cloud.authority_boundary.default_real_cloud_execution,
-    "forbidden_without_explicit_user_authorization",
-    "cloud_contract_must_fail_closed_before_authorization",
+    "allowed_when_authorization_pack_is_active",
+    "cloud_contract_must_use_machine_authorization_pack",
+  );
+  assert.equal(
+    cloud.authority_boundary.authorization_pack,
+    "contracts/medopl-cloud-authorization-pack.json",
+    "cloud_contract_must_point_to_cloud_authorization_pack",
   );
 }
 

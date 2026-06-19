@@ -89,7 +89,8 @@
     "contracts/medopl-data-plane-contract.json",
     "contracts/medopl-billing-ledger-contract.json",
     "contracts/medopl-release-boundary.json",
-    "contracts/medopl-cloud-boundary.json"
+    "contracts/medopl-cloud-boundary.json",
+    "contracts/medopl-cloud-authorization-pack.json"
   ],
   "leaves": [
     {
@@ -114,7 +115,8 @@
         "contracts/medopl-data-plane-contract.json",
         "contracts/medopl-billing-ledger-contract.json",
         "contracts/medopl-release-boundary.json",
-        "contracts/medopl-cloud-boundary.json"
+        "contracts/medopl-cloud-boundary.json",
+        "contracts/medopl-cloud-authorization-pack.json"
       ],
       "allowed_files": [
         "docs/**/*.md",

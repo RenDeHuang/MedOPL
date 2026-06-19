@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  readCloudAuthorizationPack,
   planCommandsForFiles,
   preflightTestPlan,
 } from "../../scripts/v22-test-policy.mjs";
@@ -45,6 +46,20 @@ assert.equal(
   false,
   "cloud_plan_must_not_recommend_future_authorized_command",
 );
+assert.equal(cloudPlan.authorization.authorizedCommandsExecutable, true, "cloud_plan_must_see_active_authorization_pack");
+assert.equal(
+  cloudPlan.cannotClaim.includes("real cloud execution"),
+  false,
+  "cloud_plan_with_active_pack_must_not_forbid_real_cloud_execution_claim",
+);
+assert(cloudPlan.cannotClaim.includes("owner receipts complete"), "cloud_plan_must_still_block_receipt_completion_claim");
+
+const missingAuth = readCloudAuthorizationPack({
+  exists(repoPath) {
+    return repoPath !== "contracts/medopl-cloud-authorization-pack.json";
+  },
+});
+assert.equal(missingAuth.authorizedCommandsExecutable, false, "missing_authorization_pack_must_not_execute_authorized_commands");
 
 const frontendPreflight = preflightTestPlan(
   {
@@ -89,15 +104,18 @@ assert.equal(dryRun.report.completion.status, "not_started", "run_plan_dry_run_m
 assert(dryRun.report.commands.planned.includes("npm run test:cloud"), "run_plan_report_must_include_recommended_command");
 assert.equal(dryRun.report.commands.planned.includes("npm run test:cloud-future-authorized"), false, "run_plan_report_must_not_plan_authorized_command");
 assert(dryRun.report.commands.skippedAuthorized.includes("npm run test:cloud-future-authorized"), "run_plan_report_must_skip_authorized_command");
-assert(dryRun.cannotClaim.includes("real cloud execution"), "run_plan_must_preserve_cannot_claim");
+assert(dryRun.cannotClaim.includes("owner receipts complete"), "run_plan_must_preserve_receipt_cannot_claim");
 
 const tempDir = mkdtempSync(path.join(tmpdir(), "v22-run-plan-"));
-const successExecutor = path.join(tempDir, "success.mjs");
-const failureExecutor = path.join(tempDir, "failure.mjs");
+  const successExecutor = path.join(tempDir, "success.mjs");
+  const failureExecutor = path.join(tempDir, "failure.mjs");
+  const authorizedLog = path.join(tempDir, "authorized.log");
+  const authorizedExecutor = path.join(tempDir, "authorized.mjs");
 const successLog = path.join(tempDir, "success.log");
 try {
   writeFileSync(successExecutor, `import { appendFileSync } from "node:fs";\nconst logPath = ${JSON.stringify(successLog)};\nexport default async function runCommand(command) { appendFileSync(logPath, \`\${command}\\n\`); return { command, ok: true, status: 0 }; }\n`);
   writeFileSync(failureExecutor, "export default async function runCommand(command) { return command === \"npm run test:smoke\" ? { command, ok: false, status: 7 } : { command, ok: true, status: 0 }; }\n");
+  writeFileSync(authorizedExecutor, `import { appendFileSync } from "node:fs";\nconst logPath = ${JSON.stringify(authorizedLog)};\nexport default async function runCommand(command) { appendFileSync(logPath, \`\${command}\\n\`); return { command, ok: true, status: 0 }; }\n`);
 
   const commandOverride = runVerify(["run-plan", "--files", "scripts/v22-test-policy.mjs", "--commands", "node -e \"process.exit(0)\"", "--json"]);
   assert.equal(commandOverride.status, 1, "run_plan_must_reject_manual_command_override");
@@ -123,6 +141,21 @@ try {
     "local_recommended_commands_passed",
     "run_plan_stub_success_must_report_local_recommended_completion",
   );
+
+  const authorizedSuccess = parseJsonResult(
+    runVerify(
+      ["run-plan", "--files", "contracts/medopl-cloud-boundary.json", "--include-authorized", "--json"],
+      { V22_VERIFY_COMMAND_EXECUTOR: authorizedExecutor },
+    ),
+    "run_plan_authorized_success",
+  );
+  assert.equal(authorizedSuccess.ok, true, "run_plan_authorized_success_must_be_ok");
+  assert.equal(authorizedSuccess.includeAuthorized, true, "run_plan_authorized_success_must_enable_authorized_execution");
+  assert(
+    authorizedSuccess.report.commands.authorizedExecuted.some((entry) => entry.command === "npm run test:cloud-future-authorized"),
+    "run_plan_authorized_success_must_execute_cloud_future_authorized",
+  );
+  assert.equal(authorizedSuccess.report.commands.skippedAuthorized.length, 0, "authorized_run_must_not_skip_authorized_commands");
 
   const stubFailure = runVerify(
     ["run-plan", "--files", "scripts/v22-test-policy.mjs", "--json"],

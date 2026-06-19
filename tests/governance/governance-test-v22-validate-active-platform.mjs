@@ -70,6 +70,7 @@ for (const marker of [
   "contracts/medopl-billing-ledger-contract.json",
   "contracts/medopl-release-boundary.json",
   "contracts/medopl-cloud-boundary.json",
+  "contracts/medopl-cloud-authorization-pack.json",
   "global_forbidden_ops",
   "global_forbidden_files",
 ]) {

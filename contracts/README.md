@@ -19,6 +19,7 @@ MedOPL 的产品权威是 `platform-provisioned / customer-dedicated` 的 OPL Sa
 | `contracts/medopl-billing-ledger-contract.json` | Billing ledger and metering checks | Usage/billing ledger, not research-quality billing |
 | `contracts/medopl-release-boundary.json` | Release/cleanup receipt checks | Workspace release, settlement and cleanup boundary |
 | `contracts/medopl-cloud-boundary.json` | Cloud authority and authorization checks | Platform-operated cloud boundary for customer-dedicated runtime |
+| `contracts/medopl-cloud-authorization-pack.json` | Cloud execution authorization and receipt requirements | Machine authorization pack for cloud, deploy, kubectl, build/push and live-test execution |
 
 每个 product-authority JSON 必须保留 `schema_version`、`owner`、`purpose`、`state`、`authority_boundary`、`consumers` 或 `consumer_tests`，并保持小到可由 `validate:active-platform` 或 tests 直接枚举读取。
 

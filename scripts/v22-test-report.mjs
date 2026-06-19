@@ -40,7 +40,7 @@ async function loadExecutor({ repoRoot, env }) {
   return executor;
 }
 
-function createCommandRecords(plan) {
+function createCommandRecords(plan, { includeAuthorized = false } = {}) {
   return [
     ...(plan.recommendedCommands || []).map((command) => ({
       command,
@@ -50,8 +50,8 @@ function createCommandRecords(plan) {
     ...(plan.authorizedCommands || []).map((command) => ({
       command,
       source: "authorized",
-      status: "skipped",
-      skippedReason: "authorized_command_requires_explicit_approval",
+      status: includeAuthorized ? "planned" : "skipped",
+      ...(includeAuthorized ? {} : { skippedReason: "authorized_command_requires_explicit_authorization_pack" }),
     })),
   ];
 }
@@ -60,9 +60,11 @@ export async function runPlanWithReport({
   repoRoot,
   plan,
   dryRun = false,
+  includeAuthorized = false,
   env = process.env,
 }) {
-  const commands = createCommandRecords(plan);
+  const executableAuthorized = Boolean(includeAuthorized && plan.authorization?.authorizedCommandsExecutable);
+  const commands = createCommandRecords(plan, { includeAuthorized: executableAuthorized });
   const payload = {
     ok: true,
     mode: "run-plan",
@@ -78,6 +80,7 @@ export async function runPlanWithReport({
     preflight: plan.preflight,
     dryRun,
     executesCommands: !dryRun,
+    includeAuthorized: executableAuthorized,
     commands,
     report: {
       kind: "v22_dynamic_test_plan_report",
@@ -88,11 +91,13 @@ export async function runPlanWithReport({
       environments: plan.environments,
       authorizedEnvironments: plan.authorizedEnvironments,
       preflight: plan.preflight,
+      authorization: plan.authorization,
       cannotClaim: plan.cannotClaim,
       commands: {
         planned: [...(plan.recommendedCommands || [])],
         executed: [],
-        skippedAuthorized: [...(plan.authorizedCommands || [])],
+        skippedAuthorized: executableAuthorized ? [] : [...(plan.authorizedCommands || [])],
+        authorizedExecuted: [],
       },
       completion: {
         status: "not_started",
@@ -113,13 +118,26 @@ export async function runPlanWithReport({
     return payload;
   }
 
+  if (includeAuthorized && !plan.authorization?.authorizedCommandsExecutable) {
+    payload.ok = false;
+    payload.executesCommands = false;
+    payload.includeAuthorized = false;
+    for (const record of payload.commands) {
+      if (record.source !== "authorized") continue;
+      record.status = "skipped";
+      record.skippedReason = "authorization_pack_invalid";
+    }
+    payload.report.completion.status = "blocked";
+    return payload;
+  }
+
   if (dryRun) {
     return payload;
   }
 
   const executor = await loadExecutor({ repoRoot, env });
   for (const record of payload.commands) {
-    if (record.source !== "recommended") continue;
+    if (record.source !== "recommended" && !(record.source === "authorized" && executableAuthorized)) continue;
     const result = await executor(record.command, {
       mode: payload.mode,
       dryRun,
@@ -134,9 +152,17 @@ export async function runPlanWithReport({
     record.status = record.ok ? "executed" : "failed";
     payload.report.commands.executed.push({
       command: record.command,
+      source: record.source,
       ok: record.ok,
       status: record.exitCode,
     });
+    if (record.source === "authorized") {
+      payload.report.commands.authorizedExecuted.push({
+        command: record.command,
+        ok: record.ok,
+        status: record.exitCode,
+      });
+    }
     if (!record.ok) {
       payload.ok = false;
       payload.report.completion.status = "blocked";
@@ -144,7 +170,11 @@ export async function runPlanWithReport({
     }
   }
 
-  if (payload.ok) payload.report.completion.status = "local_recommended_commands_passed";
+  if (payload.ok) {
+    payload.report.completion.status = executableAuthorized
+      ? "recommended_and_authorized_commands_passed"
+      : "local_recommended_commands_passed";
+  }
 
   return payload;
 }

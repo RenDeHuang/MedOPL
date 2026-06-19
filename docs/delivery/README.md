@@ -11,7 +11,7 @@ Machine boundary: 本文是人读交付入口。当前执行 cursor、branch ove
 
 Go control-plane MVP takeover、precloud-deployable-rc、local SaaS backend RC、local Portal/OPL delivery RC 和 single-flow local product RC 只提供 local RC / cloud-deployable RC evidence。first proof 是 real local product RC；cloud proof 是 cloud-deployable RC；production proof 仍需 explicit authorization + runtime / storage / billing / audit / release owner receipts。历史 Package C live canary、Package D deploy/service reachability、production-launch Gap 01-08o、CLB diagnostics 和 public access 调试只保留为 archive / runtime provenance；它们不再是 active runner、active cloud test、current blocker 或默认 verify 入口。
 
-当前 active cloud surface 只保留三类小边界：readonly inventory、Package C dry-run create/release plan、TKE bootstrap preflight。任何 secret read、provider call、Tencent mutation、kubectl、deploy、build/push、production ledger write、live-test 或 public access completion claim 都必须另开显式授权包，并写清 operation class、target environment、secret allowlist、API allowlist、budget、evidence sink 和 rollback owner。
+当前 active cloud surface 只保留三类小边界：readonly inventory、Package C dry-run create/release plan、TKE bootstrap preflight。真实云、secret read、provider call、Tencent mutation、kubectl、deploy、build/push、production ledger write 和 live-test 只允许通过 `contracts/medopl-cloud-authorization-pack.json` 声明的机器授权包执行；执行 evidence 默认写入 `.runtime`，没有 runtime / storage / billing / audit / release owner receipt 仍不得 claim production complete。
 
 ## Default Verification
 
@@ -93,7 +93,7 @@ real-cloud authorization boundary
 -> canary / QA / status update
 ```
 
-Readonly, dry-run, mutation, deploy/kubectl and canary/live-test lanes must use separate authorization, secret allowlists, support modules and evidence. Active bounded local prework support lives under `tests/support/cloud-prework/` and currently covers only readonly inventory, Package C dry-run planning and TKE bootstrap preflight. Evidence with real secrets or live cloud responses stays in `.runtime` or another approved non-git sink and does not enter git.
+Readonly, dry-run, mutation, deploy/kubectl and canary/live-test lanes must use the machine authorization pack, secret allowlists, support modules and evidence. Active bounded local prework support lives under `tests/support/cloud-prework/` and currently covers readonly inventory, Package C dry-run planning and TKE bootstrap preflight; authorized execution is triggered by `run-plan --include-authorized`. Evidence with real secrets or live cloud responses stays in `.runtime` or another approved non-git sink and does not enter git.
 
 ## Productization Delivery Sequence
 

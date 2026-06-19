@@ -7,16 +7,19 @@
     "surface": "platform_provisioned_cloud_runtime",
     "customer_role": "service_consumer",
     "platform_role": "cloud_operator",
-    "default_real_cloud_execution": "forbidden_without_explicit_user_authorization"
+    "default_real_cloud_execution": "allowed_when_authorization_pack_is_active",
+    "authorization_pack": "contracts/medopl-cloud-authorization-pack.json"
   },
   "consumers": [
     "validate:active-platform",
     "tests/contracts/contract-test-v22-real-cloud-readiness-lane.mjs",
-    "tests/governance/governance-test-v22-real-cloud-authorization-boundary.mjs"
+    "tests/governance/governance-test-v22-real-cloud-authorization-boundary.mjs",
+    "tests/governance/governance-test-v22-dynamic-test-run-plan.mjs"
   ],
   "consumer_tests": [
     "node tests/contracts/contract-test-v22-real-cloud-readiness-lane.mjs",
-    "node tests/governance/governance-test-v22-real-cloud-authorization-boundary.mjs"
+    "node tests/governance/governance-test-v22-real-cloud-authorization-boundary.mjs",
+    "node tests/governance/governance-test-v22-dynamic-test-run-plan.mjs"
   ],
   "medopl_cloud_boundary": {
     "allowed_customer_concepts": [

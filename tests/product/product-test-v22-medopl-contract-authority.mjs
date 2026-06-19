@@ -15,6 +15,7 @@ const productContractPaths = Object.freeze([
   "contracts/medopl-billing-ledger-contract.json",
   "contracts/medopl-release-boundary.json",
   "contracts/medopl-cloud-boundary.json",
+  "contracts/medopl-cloud-authorization-pack.json",
 ]);
 
 async function readRepoFile(repoPath) {

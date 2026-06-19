@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -7,6 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 
 const normalizeFile = (file) => String(file || "").replaceAll("\\", "/").replace(/^\.\//u, "");
+export const CLOUD_AUTHORIZATION_PACK_PATH = "contracts/medopl-cloud-authorization-pack.json";
 
 function matchesPrefix(file, prefixes = []) {
   return prefixes.some((prefix) => file.startsWith(prefix));
@@ -179,11 +180,78 @@ const DEPENDENCY_AWARE_DISCOVERY_RULES = Object.freeze([
 
 export const TEST_PLAN_CANNOT_CLAIM = Object.freeze([
   "production readiness",
-  "real cloud execution",
   "deploy completion",
   "Kubernetes command success",
   "live-test coverage",
 ]);
+
+export const CLOUD_AUTHORIZED_CANNOT_CLAIM = Object.freeze([
+  "production readiness",
+  "production complete",
+  "commercial ready",
+  "owner receipts complete",
+]);
+
+export function readCloudAuthorizationPack({ exists = defaultExists, readFile = readFileSync } = {}) {
+  if (!exists(CLOUD_AUTHORIZATION_PACK_PATH)) {
+    return Object.freeze({
+      ok: false,
+      path: CLOUD_AUTHORIZATION_PACK_PATH,
+      status: "missing",
+      authorizedCommandsExecutable: false,
+      blockers: Object.freeze(["cloud_authorization_pack_missing"]),
+    });
+  }
+  try {
+    const pack = JSON.parse(readFile(path.join(repoRoot, CLOUD_AUTHORIZATION_PACK_PATH), "utf8"));
+    const active = pack.active_pack || {};
+    const requiredFields = [
+      ["state", pack.state],
+      ["active_pack.status", active.status],
+      ["active_pack.authorized_by", active.authorized_by],
+      ["active_pack.evidence_sink", active.evidence_sink],
+      ["active_pack.rollback_owner", active.rollback_owner],
+      ["active_pack.expires_at", active.expires_at],
+    ];
+    const missing = requiredFields.filter(([, value]) => !String(value || "").trim()).map(([key]) => key);
+    const lists = [
+      ["active_pack.target_environments", active.target_environments],
+      ["active_pack.operation_classes", active.operation_classes],
+      ["active_pack.secret_allowlist", active.secret_allowlist],
+      ["active_pack.api_allowlist", active.api_allowlist],
+      ["required_receipts_before_production_complete", pack.required_receipts_before_production_complete],
+    ];
+    for (const [key, value] of lists) {
+      if (!Array.isArray(value) || value.length === 0) missing.push(key);
+    }
+    const ok = pack.state === "active" && active.status === "authorized" && missing.length === 0;
+    return Object.freeze({
+      ok,
+      path: CLOUD_AUTHORIZATION_PACK_PATH,
+      id: active.id || "",
+      status: active.status || "invalid",
+      authorizedBy: active.authorized_by || "",
+      targetEnvironments: Object.freeze([...(active.target_environments || [])]),
+      operationClasses: Object.freeze([...(active.operation_classes || [])]),
+      secretAllowlist: Object.freeze([...(active.secret_allowlist || [])]),
+      apiAllowlist: Object.freeze([...(active.api_allowlist || [])]),
+      evidenceSink: active.evidence_sink || "",
+      rollbackOwner: active.rollback_owner || "",
+      expiresAt: active.expires_at || "",
+      requiredReceiptsBeforeProductionComplete: Object.freeze([...(pack.required_receipts_before_production_complete || [])]),
+      authorizedCommandsExecutable: ok,
+      blockers: Object.freeze(missing.map((key) => `cloud_authorization_pack_missing:${key}`)),
+    });
+  } catch (error) {
+    return Object.freeze({
+      ok: false,
+      path: CLOUD_AUTHORIZATION_PACK_PATH,
+      status: "invalid_json",
+      authorizedCommandsExecutable: false,
+      blockers: Object.freeze([`cloud_authorization_pack_invalid:${error.message}`]),
+    });
+  }
+}
 
 export const TEST_POLICY_SURFACE_COVERAGE = Object.freeze({
   laneToSurfaces: Object.freeze({
@@ -476,6 +544,7 @@ export function planCommandsForFiles(files, { profile = "changed-surface", exist
   const authorizedCommands = [];
   const cannotClaim = [...TEST_PLAN_CANNOT_CLAIM];
   const reasons = [];
+  const authorization = readCloudAuthorizationPack({ exists });
 
   if (profile === "changed-surface") {
     recommendedCommands.push(...TEST_PLAN_CHANGED_SURFACE_COMMANDS);
@@ -509,6 +578,15 @@ export function planCommandsForFiles(files, { profile = "changed-surface", exist
     });
   }
 
+  if (authorizedCommands.length > 0) {
+    if (authorization.authorizedCommandsExecutable) {
+      cannotClaim.push(...CLOUD_AUTHORIZED_CANNOT_CLAIM);
+      authorizedEnvironments.push(...authorization.targetEnvironments);
+    } else {
+      cannotClaim.push("real cloud execution");
+    }
+  }
+
   const normalizedPlan = Object.freeze({
     matchedSurfaces: Object.freeze(unique(matchedSurfaces)),
     environments: Object.freeze(unique(environments)),
@@ -517,6 +595,7 @@ export function planCommandsForFiles(files, { profile = "changed-surface", exist
     authorizedCommands: Object.freeze(unique(authorizedCommands)),
     reasons: Object.freeze(reasons),
     cannotClaim: Object.freeze(unique(cannotClaim)),
+    authorization,
   });
 
   return Object.freeze({

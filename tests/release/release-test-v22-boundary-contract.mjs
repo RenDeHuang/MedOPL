@@ -17,7 +17,8 @@ const cloud = await readJson("contracts/medopl-cloud-boundary.json");
 const api = await readJson("contracts/medopl-api-contract.json");
 const current = await readJson("tests/fixtures/v22/goal-current.json");
 
-assert.equal(release.authority_boundary.default_real_cloud_mutation, "forbidden_without_explicit_user_authorization", "release_must_fail_closed_for_real_cloud");
+assert.equal(release.authority_boundary.default_real_cloud_mutation, "allowed_when_authorization_pack_is_active", "release_must_use_machine_authorization_pack");
+assert.equal(release.authority_boundary.authorization_pack, "contracts/medopl-cloud-authorization-pack.json", "release_must_reference_cloud_authorization_pack");
 assert.equal(
   release.medopl_release_boundary.storage_destroy_policy?.runtime_release_default,
   "retain_storage_until_explicit_user_intent",
@@ -29,7 +30,8 @@ assert(api.medopl_api_contract.storage_destroy?.must_return.includes("releaseRec
 assert(TEST_LANE_SUITES.release.includes("tests/release/release-test-v22-boundary-contract.mjs"), "release_boundary_test_must_be_registered");
 assert(TEST_LANE_SUITES.backend.includes("tests/backend/backend-test-v22-api-contract.mjs"), "release_boundary_must_have_backend_api_consumer_gate");
 assert(TEST_LANE_SUITES.smoke.includes("tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs"), "release_boundary_must_have_golden_path_runtime_consumer_gate");
-assert.equal(cloud.authority_boundary.default_real_cloud_execution, "forbidden_without_explicit_user_authorization", "cloud_must_fail_closed_for_real_cloud");
+assert.equal(cloud.authority_boundary.default_real_cloud_execution, "allowed_when_authorization_pack_is_active", "cloud_must_use_machine_authorization_pack");
+assert.equal(cloud.authority_boundary.authorization_pack, "contracts/medopl-cloud-authorization-pack.json", "cloud_must_reference_authorization_pack");
 assert.equal(current.release_readiness_state?.blocked_before_risky_execution, true, "current_must_block_risky_execution");
 for (const forbidden of ["secret", "true-cloud-mutation", "build-push-kubectl", "deploy", "live-test"]) {
   assert(current.current_leaf.forbidden_ops.includes(forbidden), `current_release_forbidden_op_missing:${forbidden}`);

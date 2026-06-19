@@ -92,8 +92,13 @@ assertIncludesAll(officialSdkSupport, [
 
 assert.equal(
   cloudContract.authority_boundary.default_real_cloud_execution,
-  "forbidden_without_explicit_user_authorization",
-  "cloud_contract_must_fail_closed_by_default",
+  "allowed_when_authorization_pack_is_active",
+  "cloud_contract_must_use_machine_authorization_pack",
+);
+assert.equal(
+  cloudContract.authority_boundary.authorization_pack,
+  "contracts/medopl-cloud-authorization-pack.json",
+  "cloud_contract_must_reference_authorization_pack",
 );
 assertIncludesAll(JSON.stringify(cloudContract.medopl_cloud_boundary), [
   "provider_account",

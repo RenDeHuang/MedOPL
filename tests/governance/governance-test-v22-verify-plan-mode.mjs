@@ -71,7 +71,7 @@ assert(frontendHumanPlan.stdout.includes("reasons:"), "frontend_human_plan_must_
 assert(frontendHumanPlan.stdout.includes("npm run test:frontend"), "frontend_human_plan_must_show_frontend_lane");
 assert(frontendHumanPlan.stdout.includes("cannot claim:"), "frontend_human_plan_must_show_cannot_claim");
 
-const untrackedProbePath = "scripts/.verify-plan-working-tree-probe.mjs";
+const untrackedProbePath = `scripts/.verify-plan-working-tree-probe-${process.pid}.mjs`;
 await writeFile(path.join(repoRoot, untrackedProbePath), "export const probe = true;\n", "utf8");
 try {
   const defaultPlan = runVerifyPlan();
@@ -90,10 +90,14 @@ const cloudPayload = JSON.parse(cloudPlan.stdout);
 assert(cloudPayload.matchedSurfaces.includes("cloud"), "cloud_plan_must_report_cloud_surface");
 assert(cloudPayload.environments.includes("local"), "cloud_plan_must_keep_default_cloud_gate_local");
 assert(cloudPayload.authorizedEnvironments.includes("staging"), "cloud_plan_must_report_staging_as_authorized_environment");
+assert(cloudPayload.authorizedEnvironments.includes("production-canary"), "cloud_plan_must_report_production_canary_as_authorized_environment");
 assert(cloudPayload.recommendedCommands.includes("npm run test:cloud"), "cloud_plan_must_recommend_cloud_lane");
 assert(cloudPayload.recommendedCommands.includes("npm run test:real-cloud-readiness"), "cloud_plan_must_recommend_readiness_lane");
 assert.equal(cloudPayload.authorizedCommands.includes("npm run test:cloud-future-authorized"), true, "cloud_plan_must_keep_future_authorized_separate");
 assert.equal(cloudPayload.recommendedCommands.includes("npm run test:cloud-future-authorized"), false, "cloud_plan_must_not_default_future_authorized");
+assert.equal(cloudPayload.authorization.authorizedCommandsExecutable, true, "cloud_plan_must_have_active_authorization_pack");
+assert.equal(cloudPayload.cannotClaim.includes("real cloud execution"), false, "cloud_plan_must_allow_real_cloud_execution_under_pack");
+assert(cloudPayload.cannotClaim.includes("owner receipts complete"), "cloud_plan_must_still_require_owner_receipts");
 
 const apiContractPlan = runVerifyPlan(["--files", "contracts/medopl-api-contract.json"]);
 assert.equal(apiContractPlan.status, 0, `api_contract_plan_must_exit_zero:${apiContractPlan.stderr || apiContractPlan.stdout}`);
@@ -133,6 +137,7 @@ assert(cloudBoundaryPayload.matchedSurfaces.includes("cloud"), "cloud_boundary_p
 assert(cloudBoundaryPayload.recommendedCommands.includes("npm run test:real-cloud-readiness"), "cloud_boundary_plan_must_recommend_local_readiness");
 assert.equal(cloudBoundaryPayload.recommendedCommands.includes("npm run test:cloud-future-authorized"), false, "cloud_boundary_plan_must_not_default_future_authorized");
 assert.equal(cloudBoundaryPayload.authorizedCommands.includes("npm run test:cloud-future-authorized"), true, "cloud_boundary_plan_must_keep_future_authorized_separate");
+assert.equal(cloudBoundaryPayload.authorization.authorizedCommandsExecutable, true, "cloud_boundary_plan_must_use_active_pack");
 
 const missingFrontendPreflight = planCommandsForFiles(
   ["contracts/medopl-api-contract.json"],

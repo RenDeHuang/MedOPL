@@ -5,7 +5,8 @@
   "state": "active",
   "authority_boundary": {
     "surface": "customer_workspace_release_and_cleanup",
-    "default_real_cloud_mutation": "forbidden_without_explicit_user_authorization",
+    "default_real_cloud_mutation": "allowed_when_authorization_pack_is_active",
+    "authorization_pack": "contracts/medopl-cloud-authorization-pack.json",
     "release_claim_requires": "local_gate_and_owner_receipt"
   },
   "consumers": [

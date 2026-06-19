@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "owner": "MedOPL Operations",
+  "purpose": "machine_authorization_pack_for_cloud_execution",
+  "state": "active",
+  "authority_boundary": {
+    "surface": "cloud_execution_authorization",
+    "default_cloud_execution": "allowed_when_authorization_pack_is_active",
+    "default_cloud_mutation": "allowed_when_authorization_pack_is_active",
+    "default_secret_read": "allowed_when_secret_allowlist_matches_pack",
+    "production_claim_requires": "runtime_storage_billing_audit_release_owner_receipts"
+  },
+  "authorization_boundary": {
+    "default_cloud_execution": "allowed_when_authorization_pack_is_active",
+    "default_cloud_mutation": "allowed_when_authorization_pack_is_active",
+    "default_secret_read": "allowed_when_secret_allowlist_matches_pack",
+    "production_claim_requires": "runtime_storage_billing_audit_release_owner_receipts"
+  },
+  "active_pack": {
+    "id": "v22-cloud-execution-open-authority",
+    "status": "authorized",
+    "authorized_by": "user_request_2026-06-19",
+    "target_environments": [
+      "staging",
+      "production-canary"
+    ],
+    "operation_classes": [
+      "readonly_inventory",
+      "dry_run_plan",
+      "tenant_runtime_provisioning",
+      "storage_lifecycle",
+      "billing_audit_writeback",
+      "build_push",
+      "kubectl",
+      "deploy",
+      "live_test"
+    ],
+    "secret_allowlist": [
+      "TENCENT_READONLY_SECRET_ID",
+      "TENCENT_READONLY_SECRET_KEY",
+      "TENCENT_MUTATION_SECRET_ID",
+      "TENCENT_MUTATION_SECRET_KEY",
+      "TENCENT_DEPLOY_KUBECONFIG_REF",
+      "TCR_ID",
+      "TCR_SECRET",
+      "DATABASE_URL"
+    ],
+    "api_allowlist": [
+      "tencentcloud:readonly_inventory",
+      "tencentcloud:tke_node_pool_lifecycle",
+      "tencentcloud:cos_workspace_storage_lifecycle",
+      "kubernetes:server_side_dry_run",
+      "kubernetes:apply",
+      "container_registry:build_push",
+      "medopl:billing_audit_receipt_writeback"
+    ],
+    "evidence_sink": ".runtime/v22-cloud-authorization",
+    "redaction_required": true,
+    "rollback_owner": "MedOPL Operations",
+    "expires_at": "2026-07-19"
+  },
+  "required_receipts_before_production_complete": [
+    "runtime_owner_receipt",
+    "storage_owner_receipt",
+    "billing_owner_receipt",
+    "audit_owner_receipt",
+    "release_owner_receipt",
+    "opl_webui_consumer_receipt",
+    "production_deploy_receipt"
+  ],
+  "consumers": [
+    "scripts/v22-test-policy.mjs",
+    "scripts/v22-test-report.mjs",
+    "tests/governance/governance-test-v22-dynamic-test-run-plan.mjs",
+    "tests/governance/governance-test-v22-verify-plan-mode.mjs"
+  ],
+  "consumer_tests": [
+    "node tests/governance/governance-test-v22-dynamic-test-run-plan.mjs",
+    "node tests/governance/governance-test-v22-verify-plan-mode.mjs"
+  ]
+}

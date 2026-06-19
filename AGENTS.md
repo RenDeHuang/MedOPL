@@ -62,7 +62,7 @@
 - 叙述性文档不作为测试断言对象；可以测试 schema、fixture、manifest、registry、CLI/API 行为、runner 行为、生成产物结构、路径存在性和 owner boundary。
 - 声称“完成、落地、闭环、彻底清退、商业化 ready”前必须执行 Plan Completion Audit：逐项列出功能行为、代码清退、文档折叠、测试/验证、旧入口退役、cannot-claim，状态只能是 `done`、`partial`、`not_started` 或 `blocked`。docs、contract、测试绿或 closeout 不能单独替代真实 runtime 行为、可执行证据、owner receipt 或用户要求的验收。
 - 每个工程变更的 review/closeout 必须说明清退结果：删除了什么、折叠了什么、保留了什么、为什么保留、下一次清退门是什么。closeout 只允许落在 `docs/history/README.md`、release/evidence record、machine cursor 或 commit message；不得再新增 7 文件 change package。
-- 默认不得执行 build/push、kubectl、deploy、live-test 或真实云资源操作。
+- 真实云、build/push、kubectl、deploy、live-test 只能通过机器授权包和 package script 执行；缺少有效授权包时默认不得执行。
 
 ## 并行开发与工作树
 
@@ -75,7 +75,7 @@
 ## 授权与本地状态
 
 - 未授权不得读取 secret、raw provider key、token、kubeconfig、SSH private key 或云凭据。
-- 未授权不得执行真实云调用、build/push、kubectl、deploy、live-test，或修改 `deploy/*`、`.sentrux/*`、`adapters/*`、`infra/*`、one-person-lab upstream。
+- 未授权不得执行真实云调用、build/push、kubectl、deploy、live-test，或修改 `deploy/*`、`.sentrux/*`、`adapters/*`、`infra/*`、one-person-lab upstream；授权必须落在 `contracts/medopl-cloud-authorization-pack.json` 并由 runner/report 记录 evidence。
 - raw provider API key 只能进入后端密钥边界；前端最多持有 `providerKeyRef`、bound status 和一次性输入态，不能把 raw key、bearer token、launchToken/runtimeToken 写入 browser storage、全局 JS state、日志、evidence 或 git。
 - discovery/canary 需要用户明确授权边界；输出默认进入 `.runtime` 或外部临时状态，不进入 git，也不能自动变成 production dependency。
 - 项目临时状态、session、prompt、log、canary evidence 和本地运行副产物不成为 current truth。

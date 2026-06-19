@@ -15,7 +15,7 @@ MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管�
 | --- | --- |
 | current phase | `OPL-Webui runtime production slice before production authorization` |
 | current cursor | `opl-webui-runtime-production-slice` |
-| current blocker | MedOPL 当前 truth 是 OPL SaaS runtime/storage/billing/audit/release 控制面；OPL-Webui 是 primary consumer / entry surface，不是 MedOPL 子模块。OPL-Webui 登录用户日常 ordinary chat 不需要 MedOPL runtime；当 data analysis、文件任务、长任务或其他 `runtime_required` 能力出现时，OPL-Webui 通过 MedOPL runtime gate 在当前 workspace 开通平台代管 runtime / 文件空间，MedOPL 返回 runtimeBinding、storageBinding、nodePoolProjection、billing/freeze/audit/release 状态，用户继续在 OPL-Webui 内上传文件、运行 OPL task、拿 artifact，随后由 MedOPL 释放 runtime、停止计费和按显式意图销毁 storage。当前阻塞不是继续修旧 Package D / CLB / production-launch runner，而是把这条产品主线收口到 `opl-webui-runtime-production-slice`：first proof 只允许 real local product RC，cloud proof 只允许 cloud-deployable RC，production proof 必须 explicit authorization + runtime / storage / billing / audit / release owner receipts；任何 secret、provider call、Tencent mutation、kubectl、deploy、build/push、live-test、production ledger write 或 public access claim 仍需独立显式授权包。 |
+| current blocker | MedOPL 当前 truth 是 OPL SaaS runtime/storage/billing/audit/release 控制面；OPL-Webui 是 primary consumer / entry surface，不是 MedOPL 子模块。OPL-Webui 登录用户日常 ordinary chat 不需要 MedOPL runtime；当 data analysis、文件任务、长任务或其他 `runtime_required` 能力出现时，OPL-Webui 通过 MedOPL runtime gate 在当前 workspace 开通平台代管 runtime / 文件空间，MedOPL 返回 runtimeBinding、storageBinding、nodePoolProjection、billing/freeze/audit/release 状态，用户继续在 OPL-Webui 内上传文件、运行 OPL task、拿 artifact，随后由 MedOPL 释放 runtime、停止计费和按显式意图销毁 storage。当前阻塞不是继续修旧 Package D / CLB / production-launch runner，而是把这条产品主线收口到 `opl-webui-runtime-production-slice`：first proof 只允许 real local product RC，cloud proof 只允许 cloud-deployable RC；真实云执行能力由 `contracts/medopl-cloud-authorization-pack.json` 打开，production proof 仍必须补齐 runtime / storage / billing / audit / release owner receipts。 |
 | next owner | `MedOPL Platform` owns the OPL-Webui runtime production slice truth and local/cloud RC proof; `MedOPL Operations` remains owner for any separately authorized production execution package |
 | product authority gate | `validate:active-platform` |
 | default verification | `node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk` |
@@ -60,21 +60,21 @@ Current summary: 当前主线是 MedOPL 作为产品控制面，为 OPL-Webui �
 
 - 不能写成 `tests/**/*.mjs` 都是 smoke。
 - 不能写成 agent-run evidence 是当前产品真相。
-- 不能写成 `future-authorized` 等于真实云、deploy、kubectl、live-test 或 build/push 已授权。
+- 不能写成 `future-authorized` 等于 production complete；真实云、deploy、kubectl、live-test 或 build/push 只能通过机器授权包和 runner/report evidence 执行。
 - 不能宣称真实云生产闭环已完成，或把历史 Package D / production-launch / CLB evidence 扩大成新的真实云、deploy、kubectl、build/push、live-test 授权。
 - 不能把历史 Package D ClusterIP service、qcloud Ingress/NodePort/CLB diagnostics 写成 active runner、public user access、HTTPS smoke 或 production launch 已完成。
 - 不能把旧分散 docs、旧合同叶子或旧过程目录恢复成 current truth。
 - 不能把 active 写成 product/runtime/framework/spec/evidence/history 的总汇编。
 - 不能把 backend Go convergence program 写成第二份阶段板、旧式合同目录、旧式 recovery 目录或未注册测试。
-- 不能把 `real-cloud-authorization-boundary` 写成 secret、provider、cloud、deploy、kubectl、build/push 或 live-test 已授权；当前执行包只允许本地 dry-run / contract proof。
+- 不能把 `real-cloud-authorization-boundary` 写成 production complete；授权包只打开执行能力，不替代 runtime / storage / billing / audit / release receipt。
 - 不能宣称 `services/medopl-go-backend` 已经是 production backend，除非 Go local RC、manifest、tests、landing gate 和 post-merge closeout 已完成。
 - 不能把 Go local RC deterministic parity 写成 live provider、真实 OPL upstream、real-cloud、production billing 或 production runtime evidence。
 - 不能把 local SaaS backend RC 写成真实云、live provider、production runtime、production billing 或 production deploy 已完成。
-- 不能把 real-cloud readiness lane 写成已读取 secret、已调用真实云、已完成 readonly live inventory 或已授权 mutation/deploy/live-test。
+- 不能把 real-cloud readiness lane 写成 production complete；authorized mutation/deploy/live-test 必须由 `run-plan --include-authorized` 和授权包 evidence 证明。
 - 不能把 real local product RC 写成 cloud 上线。
 - 不能把 cloud-deployable RC 写成 production complete。
 - 没有 runtime / storage / billing / audit / release owner receipt，不得 claim production ready / production complete。
-- Forbidden live operation markers: secret read, provider operation, true cloud mutation, kubeconfig read, deploy, kubectl, build/push, Package D execution, live-test.
+- Live operation markers require machine authorization pack evidence: secret read, provider operation, true cloud mutation, kubeconfig read, deploy, kubectl, build/push, Package D execution, live-test.
 - 不能把 Node Portal backend 写成长期 active backend、过渡控制面、shell、facade、relay 或第二控制面；`services/portal/src` 已物理清退。
 - 不能跳过 post-merge closeout 直接把下一个 leaf 写成已完成或已 landed。
 - 不能把 governance gate 通过写成黄金链路健康；default verify 必须先暴露 golden path health。

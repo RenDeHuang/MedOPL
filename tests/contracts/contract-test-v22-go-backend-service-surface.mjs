@@ -142,11 +142,11 @@ function assertNotMatches(source, pattern, label) {
 }
 
 function goEnv() {
-  const goRoot = process.env.GOROOT || "/tmp/medopl-go-toolchain/root/usr/lib/go-1.22";
+  const env = { ...process.env };
+  delete env.GOROOT;
   return {
-    ...process.env,
-    GOROOT: goRoot,
-    PATH: `${goRoot}/bin:${process.env.PATH ?? ""}`,
+    ...env,
+    PATH: process.env.PATH ?? "",
     GOMODCACHE: process.env.GOMODCACHE || "/tmp/medopl-go-modcache",
     GOCACHE: process.env.GOCACHE || "/tmp/medopl-go-buildcache",
     GOPROXY: process.env.GOPROXY || "https://goproxy.cn,direct",
