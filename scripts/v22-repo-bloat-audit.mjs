@@ -63,12 +63,73 @@ const forbiddenSlideDocPatterns = Object.freeze([
   /^docs\/.*\/subslide[-/]/u,
 ]);
 
+const docsActiveAllowedFiles = Object.freeze([
+  "docs/active/README.md",
+]);
+
+const retiredChangePathPatterns = Object.freeze([
+  /^changes\/active(?:\/|$)/u,
+  /^changes\/archive(?:\/|$)/u,
+]);
+
+const forbiddenArtifactPathPatterns = Object.freeze([
+  /(?:^|\/)uploads?(?:\/|$)/u,
+  /(?:^|\/)runtime-artifacts?(?:\/|$)/u,
+  /(?:^|\/)raw-artifacts?(?:\/|$)/u,
+  /(?:^|\/)screenshots?(?:\/|$)/u,
+  /(?:^|\/)transcripts?(?:\/|$)/u,
+  /(?:^|\/)cloud-payloads?(?:\/|$)/u,
+  /(?:^|\/)raw-payloads?(?:\/|$)/u,
+  /(?:^|\/)payload-dumps?(?:\/|$)/u,
+  /(?:^|\/)build(?:\/|$)/u,
+  /(?:^|\/)dist(?:\/|$)/u,
+  /(?:^|\/)coverage(?:\/|$)/u,
+]);
+
+const forbiddenArtifactExtensions = Object.freeze([
+  ".har",
+  ".trace",
+  ".webm",
+  ".mp4",
+  ".mov",
+  ".zip",
+  ".tar",
+  ".tgz",
+  ".gz",
+]);
+
+const artifactPathAllowlistPatterns = Object.freeze([
+  /^tests\/fixtures\//u,
+  /^tests\/cloud\//u,
+  /^contracts\//u,
+]);
+
 const slideBloatGuards = Object.freeze({
   noPerSlideDocs: true,
   noSlideSubtaskDocs: true,
   noUnregisteredTests: true,
   allowedDocsMarkdownFiles,
   forbiddenSlideDocPatterns: forbiddenSlideDocPatterns.map((pattern) => pattern.source),
+});
+
+const docsActiveGuards = Object.freeze({
+  readmeOnly: true,
+  noMultiPlanSpecs: true,
+  allowedFiles: docsActiveAllowedFiles,
+});
+
+const retiredChangePathGuards = Object.freeze({
+  noChangesActive: true,
+  noChangesArchive: true,
+  forbiddenPathPatterns: retiredChangePathPatterns.map((pattern) => pattern.source),
+});
+
+const artifactBloatGuards = Object.freeze({
+  allowSmallFixtures: true,
+  allowContractsPointersAndReceipts: true,
+  forbiddenPathPatterns: forbiddenArtifactPathPatterns.map((pattern) => pattern.source),
+  forbiddenExtensions: forbiddenArtifactExtensions,
+  allowlistPathPatterns: artifactPathAllowlistPatterns.map((pattern) => pattern.source),
 });
 
 function runGit(args) {
@@ -147,6 +208,45 @@ function slideDocFindings(files) {
     }));
 }
 
+function docsActiveFindings(files) {
+  return files
+    .filter((file) => file.startsWith("docs/active/"))
+    .filter((file) => !docsActiveAllowedFiles.includes(file))
+    .map((file) => ({
+      code: "active_doc_bloat_forbidden",
+      file,
+      reason: "docs/active is README-only; active plan/goal detail must fold into current owner truth, contracts, tests, or history closeout",
+    }));
+}
+
+function retiredChangePathFindings(files) {
+  return files
+    .filter((file) => retiredChangePathPatterns.some((pattern) => pattern.test(file)))
+    .map((file) => ({
+      code: "retired_change_path_forbidden",
+      file,
+      reason: "changes/active and changes/archive are retired; closeout belongs in current owners, contracts, tests, or docs/history summary",
+    }));
+}
+
+function isAllowedArtifactFixture(file) {
+  return artifactPathAllowlistPatterns.some((pattern) => pattern.test(file));
+}
+
+function artifactBloatFindings(files) {
+  return files
+    .filter((file) => !isAllowedArtifactFixture(file))
+    .filter((file) => {
+      const extension = path.extname(file).toLowerCase();
+      return forbiddenArtifactPathPatterns.some((pattern) => pattern.test(file)) || forbiddenArtifactExtensions.includes(extension);
+    })
+    .map((file) => ({
+      code: "raw_artifact_bloat_forbidden",
+      file,
+      reason: "raw evidence bundles, uploads, transcripts, bulk screenshots, build output, and cloud payload dumps must stay out of git; keep only small manifests, pointers, contracts, or fixtures",
+    }));
+}
+
 const deleted = new Set(runGit(["ls-files", "--deleted"]));
 const tracked = runGit(["ls-files", "--cached", "--others", "--exclude-standard"])
   .filter((file) => !deleted.has(file));
@@ -162,6 +262,9 @@ const counts = {
 };
 const findings = [
   ...slideDocFindings(tracked),
+  ...docsActiveFindings(tracked),
+  ...retiredChangePathFindings(tracked),
+  ...artifactBloatFindings(tracked),
 ];
 const pressureFindings = bloatBudgetFindings(counts);
 const lifecycleFindings = findings;
@@ -184,6 +287,9 @@ const payload = {
   budgets,
   counts,
   slideBloatGuards,
+  docsActiveGuards,
+  retiredChangePathGuards,
+  artifactBloatGuards,
   largestAreas: largestAreas(tracked),
   findings: lifecycleFindings,
   lifecycleFindings,

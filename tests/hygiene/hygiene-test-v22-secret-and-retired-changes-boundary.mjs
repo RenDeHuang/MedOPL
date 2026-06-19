@@ -23,6 +23,16 @@ const hygiene = spawnSync(process.execPath, ["scripts/v22-repo-hygiene.mjs"], {
   stdio: "pipe",
 });
 assert.equal(hygiene.status, 0, hygiene.stderr || hygiene.stdout);
+
+const repoBloat = spawnSync(process.execPath, ["scripts/v22-repo-bloat-audit.mjs", "--json"], {
+  cwd: repoRoot,
+  encoding: "utf8",
+  stdio: "pipe",
+});
+assert.equal(repoBloat.status, 0, repoBloat.stderr || repoBloat.stdout);
+const repoBloatPayload = JSON.parse(repoBloat.stdout);
+assert.equal(repoBloatPayload.ok, true, "repo_bloat_audit_must_pass_current_repo");
+
 assert.equal(await exists("changes"), false, "changes_directory_must_stay_retired");
 
 console.log(JSON.stringify({

@@ -35,6 +35,12 @@ for (const expected of [
   "allowedDocsMarkdownFiles",
   "lifecycleFindings",
   "pressureFindings",
+  "docsActiveGuards",
+  "artifactBloatGuards",
+  "retiredChangePathGuards",
+  "active_doc_bloat_forbidden",
+  "retired_change_path_forbidden",
+  "raw_artifact_bloat_forbidden",
 ]) {
   assert(scriptSource.includes(expected), `repo_bloat_audit_source_missing:${expected}`);
 }
@@ -80,6 +86,37 @@ assert.equal(payload.slideBloatGuards.noPerSlideDocs, true, "repo_bloat_audit_mu
 assert.equal(payload.slideBloatGuards.noSlideSubtaskDocs, true, "repo_bloat_audit_must_forbid_slide_subtask_docs");
 assert.equal(payload.slideBloatGuards.noUnregisteredTests, true, "repo_bloat_audit_must_forbid_unregistered_tests");
 assert(Array.isArray(payload.slideBloatGuards.allowedDocsMarkdownFiles), "repo_bloat_audit_must_report_allowed_docs_markdown");
+assert(payload.docsActiveGuards, "repo_bloat_audit_must_report_docs_active_guards");
+assert.equal(payload.docsActiveGuards.readmeOnly, true, "repo_bloat_audit_must_keep_docs_active_readme_only");
+assert.equal(payload.docsActiveGuards.noMultiPlanSpecs, true, "repo_bloat_audit_must_forbid_active_plan_spec_sprawl");
+assert(payload.retiredChangePathGuards, "repo_bloat_audit_must_report_retired_change_path_guards");
+assert.equal(payload.retiredChangePathGuards.noChangesActive, true, "repo_bloat_audit_must_forbid_changes_active");
+assert.equal(payload.retiredChangePathGuards.noChangesArchive, true, "repo_bloat_audit_must_forbid_changes_archive");
+assert(payload.artifactBloatGuards, "repo_bloat_audit_must_report_artifact_bloat_guards");
+assert.equal(payload.artifactBloatGuards.allowSmallFixtures, true, "repo_bloat_audit_must_allow_small_fixtures");
+assert(Array.isArray(payload.artifactBloatGuards.forbiddenPathPatterns), "repo_bloat_audit_must_report_forbidden_artifact_paths");
+assert(Array.isArray(payload.artifactBloatGuards.forbiddenExtensions), "repo_bloat_audit_must_report_forbidden_artifact_extensions");
+assert(
+  payload.artifactBloatGuards.forbiddenPathPatterns.some((pattern) => pattern.includes("uploads")),
+  "repo_bloat_audit_must_guard_upload_paths",
+);
+assert(
+  payload.artifactBloatGuards.forbiddenPathPatterns.some((pattern) => pattern.includes("screenshots")),
+  "repo_bloat_audit_must_guard_screenshot_paths",
+);
+assert(
+  payload.artifactBloatGuards.forbiddenPathPatterns.some((pattern) => pattern.includes("transcript")),
+  "repo_bloat_audit_must_guard_transcript_paths",
+);
+assert(
+  payload.lifecycleFindings.every((finding) => [
+    "slide_doc_bloat_forbidden",
+    "active_doc_bloat_forbidden",
+    "retired_change_path_forbidden",
+    "raw_artifact_bloat_forbidden",
+  ].includes(finding.code)),
+  "repo_bloat_audit_must_use_known_lifecycle_finding_codes",
+);
 
 const suite = manifest.suites.find((item) => item.id === "repo-hygiene");
 assert(suite, "repo_hygiene_suite_missing");
