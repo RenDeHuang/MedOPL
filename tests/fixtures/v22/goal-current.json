@@ -24,30 +24,25 @@
   "last_updated_at": "2026-06-20",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "9e3daf1cd65930a50a893c271529880cd13cb3ec",
+  "base_trunk_head": "940def820ed9048eb6bea723ecfe37f4e1b4bf9f",
   "current_branch": "opl-webui-runtime-production-slice",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "opl-webui-runtime-production-slice",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "9e3daf1cd65930a50a893c271529880cd13cb3ec",
+  "last_landed_commit": "940def820ed9048eb6bea723ecfe37f4e1b4bf9f",
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "feat/v22-landing-push-policy",
-    "landed_commit": "9e3daf1cd65930a50a893c271529880cd13cb3ec",
+    "branch": "feat/v22-local-product-e2e-execution-rc",
+    "landed_commit": "940def820ed9048eb6bea723ecfe37f4e1b4bf9f",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
-      "npm run test:run-plan passed before trunk landing with 7 recommended commands executed",
-      "npm run verify passed before trunk landing",
-      "npm run test:health passed before trunk landing",
-      "npm run gate:review passed before trunk landing and after push",
-      "npm run repo:bloat passed with scriptsFiles pressure only",
-      "npm run line:budget passed",
-      "npm run test:lanes passed",
-      "npm run check:diff passed",
-      "feature branch pushed to origin/feat/v22-landing-push-policy",
-      "recovery/platform-v22-trunk ff-only merged and pushed",
-      "post-push npm run verify passed"
+      "npm run test:run-plan passed with 6 recommended commands executed",
+      "npm run verify passed",
+      "npm run test:health passed",
+      "npm run gate:review passed",
+      "npm run cloud:authorized:plan passed",
+      "cloud:authorized:execute failed closed without V22_CLOUD_COMMAND_EXECUTOR"
     ],
     "plan_completion_audit": {
       "functional": "done",
@@ -58,11 +53,11 @@
       "cannot_claim": "done"
     },
     "cleanup_result": {
-      "deleted": "no changes/active, changes/archive or raw evidence was restored",
-      "folded": "gated branch landing policy into AGENTS, delivery docs, tests README, slice runner and health gate",
-      "retained": "opl-webui-runtime-production-slice product cursor, cloud authorization and production receipt boundaries",
-      "reason": "allow feature branch push and gated trunk merge/push without weakening cloud/secret/deploy receipt requirements",
-      "next": "use current truth -> vision gap -> lane owner/consumer -> worktree branch -> implement -> run-plan -> targeted gates -> verify/review/bloat -> commit -> push feature branch -> ff-only merge trunk -> push trunk -> post-push verify -> tombstone cleanup"
+      "deleted": "no raw evidence or change package restored",
+      "folded": "local product execution RC hardened into runner and contract test",
+      "retained": "opl-webui-runtime-production-slice cursor and production receipt boundary",
+      "reason": "make local RC evidence precise and non-overclaiming",
+      "next": "continue cloud authorized receipt execution when external executor is configured"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "opl-webui-runtime-production-slice"
@@ -77,7 +72,7 @@
     "default_cloud_verification_is_limited_to_readonly_inventory_dry_run_plan_and_tke_bootstrap_preflight_before_production_receipts",
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth"
   ],
-  "current_problem": "MedOPL current truth is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is feat/v22-landing-push-policy at 9e3daf1cd65930a50a893c271529880cd13cb3ec, which allows feature branch push and gated trunk merge/push after fresh landing evidence without weakening cloud, secret, deploy or receipt requirements. The active blocker remains the opl-webui-runtime-production-slice proof ladder: first proof may only claim real local product RC, cloud proof may only claim cloud-deployable RC, and production proof requires explicit authorization plus runtime/storage/billing/audit/release owner receipts. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims require the active machine authorization pack plus runner/report evidence.",
+  "current_problem": "MedOPL current truth is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is feat/v22-local-product-e2e-execution-rc at 940def820ed9048eb6bea723ecfe37f4e1b4bf9f, which allows feature branch push and gated trunk merge/push after fresh landing evidence without weakening cloud, secret, deploy or receipt requirements. The active blocker remains the opl-webui-runtime-production-slice proof ladder: first proof may only claim real local product RC, cloud proof may only claim cloud-deployable RC, and production proof requires explicit authorization plus runtime/storage/billing/audit/release owner receipts. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims require the active machine authorization pack plus runner/report evidence. The latest landed closeout is feat/v22-local-product-e2e-execution-rc at 940def820ed9048eb6bea723ecfe37f4e1b4bf9f.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -394,9 +389,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/v22-landing-push-policy",
+  "last_landed_branch": "feat/v22-local-product-e2e-execution-rc",
   "last_landed_at": "2026-06-20",
-  "history_latest_branch": "feat/v22-landing-push-policy",
+  "history_latest_branch": "feat/v22-local-product-e2e-execution-rc",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,

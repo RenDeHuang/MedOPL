@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/v22-landing-push-policy`
-- latest landed commit: `9e3daf1cd65930a50a893c271529880cd13cb3ec`
+- latest landed branch: `feat/v22-local-product-e2e-execution-rc`
+- latest landed commit: `940def820ed9048eb6bea723ecfe37f4e1b4bf9f`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`

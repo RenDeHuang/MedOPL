@@ -51,6 +51,7 @@ const [packageJson, scriptSource, manifest, current] = await Promise.all([
   readJson("tests/fixtures/v22/agent-verify-manifest.json"),
   readJson("tests/fixtures/v22/goal-current.json"),
 ]);
+const activeTruth = await readRepoFile("docs/active/README.md");
 
 assert.equal(packageJson.scripts["validate:active-platform"], "node scripts/v22-verify.mjs active-platform", "package_script_mismatch");
 assert.equal(packageJson.scripts.verify, "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk", "verify_script_mismatch");
@@ -115,6 +116,24 @@ assert.equal(current.latest_landed_closeout?.landed_commit, lastLandedCommit, "l
 assert.equal(current.latest_landed_closeout?.branch, current.last_landed_branch, "latest_closeout_branch_must_match_current");
 assert.equal(current.latest_landed_closeout?.next_cursor, current.current_cursor, "latest_closeout_next_cursor_must_match_current_cursor");
 assert.equal(current.latest_landed_closeout?.post_merge_closeout, "completed", "latest_closeout_post_merge_must_be_completed");
+assertIncludes(activeTruth, current.latest_landed_closeout?.branch, "active_truth_latest_landed_branch");
+assertIncludes(activeTruth, current.latest_landed_closeout?.landed_commit, "active_truth_latest_landed_commit");
+assert(
+  current.current_problem.includes("opl-webui-runtime-production-slice"),
+  "current_problem_must_keep_active_product_cursor",
+);
+assertIncludes(current.current_problem, current.latest_landed_closeout?.branch, "current_problem_latest_landed_branch");
+assertIncludes(current.current_problem, current.latest_landed_closeout?.landed_commit, "current_problem_latest_landed_commit");
+const repoGateCloseoutPattern = /The latest repo\/gate closeout is ([^ ]+) at ([a-f0-9]{40})/u;
+const repoGateCloseout = current.current_problem.match(repoGateCloseoutPattern);
+assert(repoGateCloseout, "current_problem_latest_repo_gate_closeout_missing");
+assert.equal(repoGateCloseout[1], current.latest_landed_closeout?.branch, "current_problem_latest_repo_gate_branch_must_match_current");
+assert.equal(repoGateCloseout[2], current.latest_landed_closeout?.landed_commit, "current_problem_latest_repo_gate_commit_must_match_current");
+assert.equal(
+  current.current_problem.includes("PostgreSQL-only local production data closure"),
+  false,
+  "current_problem_must_not_regress_to_old_postgresql_closeout_text",
+);
 
 const quick = runNode(["scripts/v22-verify.mjs", "active-platform", "--quick", "--json"]);
 assert.equal(quick.status, 0, `active_platform_quick_must_pass:${quick.stderr || quick.stdout}`);

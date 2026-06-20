@@ -335,14 +335,45 @@ function parseVerificationSummary(verificationSummary) {
   return verificationLines.length > 0 ? verificationLines : ["post-push workflow gate and required verify commands passed."];
 }
 
-function renderCurrentProblem({ branch, landedCommit }) {
-  return [
-    "The next indexed local implementation leaf remains PostgreSQL-only local production data closure.",
-    `The latest governance closeout branch ${branch} landed at ${landedCommit} and does not implement PostgreSQL-only.`,
-  ].join(" ");
+function renderCurrentProblem({ currentProblem, branch, landedCommit }) {
+  const base = String(currentProblem || "").trim();
+  const repoGateSentence = `The latest repo/gate closeout is ${branch} at ${landedCommit}`;
+  const closeoutSentence = `The latest landed closeout is ${branch} at ${landedCommit}.`;
+  if (!base) return `${repoGateSentence}. ${closeoutSentence}`;
+  const withoutPreviousLanding = base.replace(/\s+The latest landed closeout is [^.]+ at [a-f0-9]{40}\./u, "");
+  const withRepoGate = withoutPreviousLanding.replace(
+    /The latest repo\/gate closeout is [^ ]+ at [a-f0-9]{40}/u,
+    repoGateSentence,
+  );
+  const next = withRepoGate.includes(repoGateSentence) ? withRepoGate : `${withRepoGate} ${repoGateSentence}.`;
+  return `${next} ${closeoutSentence}`;
+}
+
+function replaceRequired(source, pattern, replacement, label) {
+  if (!pattern.test(source)) throw new Error(`${label}_section_missing`);
+  return source.replace(pattern, replacement);
+}
+
+function renderActiveTruth({ active, branch, landedCommit }) {
+  let next = active;
+  next = replaceRequired(
+    next,
+    /\| latest repo closeout \| `[^`]+` \/ `[a-f0-9]{40}` \|/u,
+    `| latest repo closeout | \`${branch}\` / \`${landedCommit}\` |`,
+    "active_latest_repo_closeout",
+  );
+  next = replaceRequired(
+    next,
+    /最新 repo\/gate closeout 是 `[^`]+` \/ `[a-f0-9]{40}`，/u,
+    `最新 repo/gate closeout 是 \`${branch}\` / \`${landedCommit}\`，`,
+    "active_summary_latest_repo_closeout",
+  );
+  return next;
 }
 
 function renderHistoryIndex({ history, branch, landedCommit, nextCursor }) {
+  const pattern =
+    /## Latest Machine Cursor\n\n- latest landed branch: `[^`]+`\n- latest landed commit: `[a-f0-9]{40}`\n- next cursor: `[^`]+`/u;
   const replacement = [
     "## Latest Machine Cursor",
     "",
@@ -350,12 +381,7 @@ function renderHistoryIndex({ history, branch, landedCommit, nextCursor }) {
     `- latest landed commit: \`${landedCommit}\``,
     `- next cursor: \`${nextCursor}\``,
   ].join("\n");
-  const next = history.replace(
-    /## Latest Machine Cursor\n\n- latest landed branch: `[^`]+`\n- latest landed commit: `[a-f0-9]{40}`\n- next cursor: `[^`]+`/u,
-    replacement,
-  );
-  if (next === history) throw new Error("history_latest_machine_cursor_section_missing");
-  return next;
+  return replaceRequired(history, pattern, replacement, "history_latest_machine_cursor");
 }
 
 function generateCloseout({
@@ -400,17 +426,9 @@ function generateCloseout({
       post_merge_closeout: "completed",
       next_cursor: nextCursor,
     },
-    current_problem: renderCurrentProblem({ branch, landedCommit }),
+    current_problem: renderCurrentProblem({ currentProblem: current.current_problem, branch, landedCommit }),
   };
-  const updatedActive = active
-    .replace(
-      /最近已通过 landing gate 的治理闭环是 `[^`]+`，landed commit 为 `[a-f0-9]{40}`。/u,
-      `最近已通过 landing gate 的治理闭环是 \`${branch}\`，landed commit 为 \`${landedCommit}\`。`,
-    )
-    .replace(
-      /Current evidence: latest landed governance closeout is `[a-f0-9]{40}`;/u,
-      `Current evidence: latest landed governance closeout is \`${landedCommit}\`;`,
-    );
+  const updatedActive = renderActiveTruth({ active, branch, landedCommit });
 
   if (!dryRun) {
     writeRepoFile(files.history, updatedHistory);
