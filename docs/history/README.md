@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/v22-production-goal-runner`
-- latest landed commit: `26f05166eabfac74a0f4b600e34733c2377d4ac8`
+- latest landed branch: `feat/v22-goal-real-runner-receipts`
+- latest landed commit: `a584d2ee07c866eb9a125c31674b69fb79c18fb7`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
@@ -28,7 +28,8 @@ History 只保留短索引：
 - active change packages: retired; do not use as current source of truth
 - evidence index: `docs/evidence/README.md`
 - delivery closeout policy: `docs/delivery/README.md`
-- production goal runner RC: `feat/v22-production-goal-runner` maps cloud authorization operation classes to `cloud:goal:*`; Goal B dry-run plan is local/no-cloud, Goal C-F fail closed before env, real runner implementation and owner receipts.
+- production goal runner RC: `feat/v22-production-goal-runner` maps cloud authorization operation classes to `cloud:goal:*`; Goal B dry-run plan is local/no-cloud.
+- production goal runner receipt hardening: `feat/v22-goal-real-runner-receipts` / `a584d2ee07c866eb9a125c31674b69fb79c18fb7` keeps Goal A readonly inventory secret-file gated, adds Goal C/D/E/F external runner interfaces, writes owner receipt pointers only through the authorized executor, and requires receipt manifests to bind `operation_class`, `runner_id` and the current authorization run. This is runner/receipt infrastructure, not production completion.
 
 ## Tombstone Map
 

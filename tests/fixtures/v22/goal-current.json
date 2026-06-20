@@ -24,23 +24,23 @@
   "last_updated_at": "2026-06-20",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "26f05166eabfac74a0f4b600e34733c2377d4ac8",
+  "base_trunk_head": "a584d2ee07c866eb9a125c31674b69fb79c18fb7",
   "current_branch": "opl-webui-runtime-production-slice",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "opl-webui-runtime-production-slice",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "26f05166eabfac74a0f4b600e34733c2377d4ac8",
+  "last_landed_commit": "a584d2ee07c866eb9a125c31674b69fb79c18fb7",
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "feat/v22-production-goal-runner",
-    "landed_commit": "26f05166eabfac74a0f4b600e34733c2377d4ac8",
-    "landing_gate_result": "passed / ff-only landed / pushed",
+    "branch": "feat/v22-goal-real-runner-receipts",
+    "landed_commit": "a584d2ee07c866eb9a125c31674b69fb79c18fb7",
+    "landing_gate_result": "passed / ff-only landed / ready for trunk push",
     "post_push_verification": [
       "npm run verify passed",
-      "npm run test:health passed",
-      "npm run gate:review passed",
-      "remote trunk matches 26f05166eabfac74a0f4b600e34733c2377d4ac8"
+      "npm run test:contract passed",
+      "npm run test:cloud-future-authorized passed",
+      "npm run gate:review passed"
     ],
     "plan_completion_audit": {
       "functional": "done",
@@ -52,10 +52,10 @@
     },
     "cleanup_result": {
       "deleted": "none",
-      "folded": "production goal runner state into authorization pack current truth and history",
-      "retained": "Goal A-F proof ladder with C-F fail-closed before env runner and receipts",
-      "reason": "runner plumbing is current machine truth while raw evidence stays in .runtime",
-      "next": "Goal A readonly inventory live proof then Goal C storage lifecycle runner"
+      "folded": "Goal A/C/D/E/F runner receipt boundary into existing cloud authorization executor, production receipt boundary, tests and history",
+      "retained": "real cloud execution remains gated by explicit secret-file, external runner env and owner receipt manifest",
+      "reason": "runner/receipt interface is current machine truth while raw evidence stays in .runtime",
+      "next": "Goal A live readonly inventory with explicit secret-file, then real storage/runtime/deploy/live-test external runners"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "opl-webui-runtime-production-slice"
@@ -70,7 +70,7 @@
     "default_cloud_verification_is_limited_to_readonly_inventory_dry_run_plan_and_tke_bootstrap_preflight_before_production_receipts",
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth"
   ],
-  "current_problem": "MedOPL current truth is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is feat/v22-production-goal-runner at 26f05166eabfac74a0f4b600e34733c2377d4ac8, which allows feature branch push and gated trunk merge/push after fresh landing evidence without weakening cloud, secret, deploy or receipt requirements. The active blocker remains the opl-webui-runtime-production-slice proof ladder: first proof may only claim real local product RC, cloud proof may only claim cloud-deployable RC, and production proof requires explicit authorization plus runtime/storage/billing/audit/release owner receipts. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims require the active machine authorization pack plus runner/report evidence. The authorization pack now maps Goal A-F operation classes to `cloud:goal:*` package scripts: Goal A readonly inventory remains secret-file authorized, Goal B dry-run plan can produce local no-cloud deployment pointers, and Goal C-F fail closed until env, real runner implementation and owner receipts are present. The latest landed closeout is feat/v22-production-goal-runner at 26f05166eabfac74a0f4b600e34733c2377d4ac8.",
+  "current_problem": "MedOPL current truth is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is feat/v22-goal-real-runner-receipts at a584d2ee07c866eb9a125c31674b69fb79c18fb7, which allows feature branch push and gated trunk merge/push after fresh landing evidence without weakening cloud, secret, deploy or receipt requirements. The active blocker remains the opl-webui-runtime-production-slice proof ladder: first proof may only claim real local product RC, cloud proof may only claim cloud-deployable RC, and production proof requires explicit authorization plus runtime/storage/billing/audit/release owner receipts. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims require the active machine authorization pack plus runner/report evidence. The authorization pack now maps Goal A-F operation classes to `cloud:goal:*` package scripts: Goal A readonly inventory remains secret-file authorized, Goal B dry-run plan can produce local no-cloud deployment pointers, and Goal C-F now have explicit external runner + owner receipt interfaces that fail closed until required env, runner path and receipt output are present. Production complete still requires the seven receipt manifest with operation_class, runner_id and authorization_ref bound to the current authorization run. The latest landed closeout is feat/v22-goal-real-runner-receipts; production is not yet complete.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -388,7 +388,7 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/v22-production-goal-runner",
+  "last_landed_branch": "feat/v22-goal-real-runner-receipts",
   "last_landed_at": "2026-06-20",
   "history_latest_branch": "feat/v22-production-goal-runner",
   "post_merge_closeout_completed": true,
@@ -623,19 +623,22 @@
     "cannot_claim": "cloud online, production complete, production owner receipt, production runtime, real cloud, real billing, deploy, kubectl, build/push or live provider readiness"
   },
   "readinessGaps": [
-    "Explicit authorization packet before any secret, provider, Tencent mutation, kubectl, deploy, build/push, live-test or production runtime/storage/billing/audit/release claim",
-    "Production runtime / storage / billing / audit / release writeback remains unproven",
-    "Authorized tenant runtime provisioning and storage lifecycle remain unproven",
-    "Public access and production readiness remain unclaimed without owner receipts"
+    "Goal A live readonly inventory still requires explicit V22_TENCENT_READONLY_SECRET_FILE and redacted .runtime evidence pointer",
+    "Goal C storage lifecycle still requires real external runner, mutation secret-file, storage plan and storage/release owner receipts from authorized execution",
+    "Goal D tenant runtime provisioning still requires real external runner, mutation secret-file, runtime plan and runtime owner receipt from authorized execution",
+    "Goal E OPL-Webui consumer canary still requires real public/canary URLs, external canary runner and opl_webui_consumer_receipt",
+    "Goal F build/push, kubectl, deploy and live-test still require real registry/kube/deploy/live-test runners plus complete production receipt manifest",
+    "Production runtime / storage / billing / audit / release writeback remains unproven until all seven owner receipts are accepted",
+    "Public access and production readiness remain unclaimed without owner receipts and production manifest"
   ],
   "nextAuthorizationPrompt": {
     "target": "cloud-codex",
     "runIdHint": "opl-webui-runtime-production-slice-next",
-    "prompt": "当前唯一 active truth 是 MedOPL opl-webui-runtime-production-slice。先不要恢复 Package D / production-launch / CLB / live canary runner。若要做真实云执行或 production claim，必须先提交独立授权包，写明 operation class、target environment、secret allowlist、API allowlist、budget、evidence sink、rollback owner，并补齐 runtime / storage / billing / audit / release owner receipts；默认只允许 readonly inventory、Package C dry-run plan、TKE bootstrap preflight 的本地/显式边界验证。"
+    "prompt": "当前唯一 active truth 是 MedOPL opl-webui-runtime-production-slice。若要做真实云执行或 production claim，必须使用 active authorization pack，并为 Goal A/C/D/E/F 提供对应 secret-file、外部 runner env、target environment、budget、redacted evidence sink、rollback owner 和 owner receipts。默认验证仍不能读取 secret、调用真实云、kubectl、deploy、build/push 或 live-test。"
   },
   "nextLocalCodexPrompt": {
     "target": "local-codex",
-    "prompt": "继续清退 active docs/spec/tests/fixtures 中的旧 Package D、production-launch、CLB diagnostics、Package C live canary 残留。保留 contracts 小型 consumer-first，tests 作为 validators/gates，默认 verify 不跑真实云或重型 release。"
+    "prompt": "继续推进 Goal A/C/D/E/F 的真实外部 runner 接入和 receipt 校验；不要新增 active plan/change package，不要把 .runtime evidence 或云 payload 放入 git。下一步优先 Goal A live readonly inventory secret-file proof，其次 Goal C storage lifecycle 和 Goal D runtime provisioning runner。"
   },
   "cloud_deploy_readiness_contract_ref": {
     "schema_version": 1,
@@ -660,7 +663,10 @@
       "production_deploy_receipt"
     ],
     "receipt_manifest_policy": "small_pointer_and_summary_only",
-    "can_claim": "production complete only after authorized runner writes a complete receipt manifest with all seven owner receipts",
-    "cannot_claim": "local RC or cloud-deployable RC as production complete"
+    "can_claim": "production complete only after authorized runner writes a complete receipt manifest with all seven owner receipts bound to operation_class, runner_id and current authorization run",
+    "cannot_claim": "local RC, cloud-deployable RC, stub runner output or single operation receipt as production complete",
+    "receipt_operation_binding_required": true,
+    "receipt_authorization_ref_required": true,
+    "receipt_runner_id_required": true
   }
 }
