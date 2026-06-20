@@ -173,7 +173,7 @@ try {
     V22_PRODUCTION_GOAL_COMMAND: command,
     V22_GOAL_RUNNER_ID: "opl_webui_runtime_gate_live_test_runner",
     V22_GOAL_RECEIPT_TYPES: JSON.stringify(["opl_webui_consumer_receipt"]),
-    V22_GOAL_INPUTS: JSON.stringify({ operationClass: "live_test", oplWebuiConsumerCanaryUrl: "https://opl.medopl.cn", medoplPublicBaseUrl: "https://medopl.medopl.cn" }),
+    V22_GOAL_INPUTS: JSON.stringify({ operationClass: "live_test", oplWebuiConsumerCanaryUrl: "https://opl.medopl.cn", medoplPublicBaseUrl: "https://portal.medopl.cn" }),
   }), "live_runner");
   assert.deepEqual(live.summary.inputKeys, ["medoplPublicBaseUrl", "operationClass", "oplWebuiConsumerCanaryUrl"], "live_input_keys");
   assert.deepEqual(live.receipts.map((receipt) => receipt.type), ["opl_webui_consumer_receipt"], "live_receipt_type");

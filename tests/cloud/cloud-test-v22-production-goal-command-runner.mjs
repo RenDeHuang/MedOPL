@@ -84,7 +84,7 @@ try {
     DATABASE_URL: "postgres://ledger.example.invalid/db",
     TENCENT_DEPLOY_KUBECONFIG_REF: "kubeconfig-ref-test",
     V22_OPL_WEBUI_CONSUMER_CANARY_URL: "https://opl.medopl.cn",
-    V22_MEDOPL_PUBLIC_BASE_URL: "https://medopl.medopl.cn",
+    V22_MEDOPL_PUBLIC_BASE_URL: "https://portal.medopl.cn",
   };
 
   const missingExecute = run(["--operation", "storage_lifecycle"], baseEnv);
@@ -117,7 +117,7 @@ try {
   assert.equal(buildCheck.summary.requiredPathMissing.length, 0, "build_required_paths");
 
   const liveCheck = parseJson(run(["--operation", "live_test", "--check-config"], baseEnv), "live_check_config");
-  assert.deepEqual(liveCheck.summary.urls, ["https://opl.medopl.cn", "https://medopl.medopl.cn"], "live_urls");
+  assert.deepEqual(liveCheck.summary.urls, ["https://opl.medopl.cn", "https://portal.medopl.cn"], "live_urls");
 
   const emptyBuildDir = path.join(tempDir, "empty-build");
   const emptyManifestDir = path.join(tempDir, "empty-manifest");

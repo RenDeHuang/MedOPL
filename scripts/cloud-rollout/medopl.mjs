@@ -14,7 +14,7 @@ const namespace = process.env.MEDOPL_NAMESPACE ?? "medopl";
 const deployment = process.env.MEDOPL_DEPLOYMENT ?? "deployment/medopl-control-plane";
 const container = process.env.MEDOPL_CONTAINER ?? "control-plane";
 const podSelector = process.env.MEDOPL_POD_SELECTOR ?? "app.kubernetes.io/name=medopl";
-const baseUrl = (process.env.MEDOPL_BASE_URL || "https://medopl.medopl.cn").replace(/\/$/u, "");
+const baseUrl = (process.env.MEDOPL_BASE_URL || "https://portal.medopl.cn").replace(/\/$/u, "");
 const manifestFile = process.env.MEDOPL_KUBERNETES_MANIFEST ?? "deploy/medopl-cloud/medopl.k8s.json";
 const kubeconfigPath = process.env.TENCENT_DEPLOY_KUBECONFIG_REF || process.env.KUBECONFIG || "";
 const imageRepository = "uswccr.ccs.tencentyun.com/medopl/medopl-go-backend";

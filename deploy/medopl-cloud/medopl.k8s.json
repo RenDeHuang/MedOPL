@@ -61,7 +61,7 @@
                   },
                   {
                     "name": "MEDOPL_PUBLIC_BASE_URL",
-                    "value": "https://medopl.medopl.cn"
+                    "value": "https://portal.medopl.cn"
                   },
                   {
                     "name": "OPL_WEBUI_PUBLIC_BASE_URL",
@@ -138,14 +138,14 @@
         "tls": [
           {
             "hosts": [
-              "medopl.medopl.cn"
+              "portal.medopl.cn"
             ],
             "secretName": "medopl-tls"
           }
         ],
         "rules": [
           {
-            "host": "medopl.medopl.cn",
+            "host": "portal.medopl.cn",
             "http": {
               "paths": [
                 {

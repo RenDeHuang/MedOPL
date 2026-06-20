@@ -106,13 +106,13 @@ const ingress = findItem(items, "Ingress", "medopl");
 assert(ingress, "medopl_ingress_missing");
 assert.equal(ingress.metadata.namespace, "medopl", "ingress_namespace_mismatch");
 assert.equal(ingress.spec.ingressClassName, "qcloud", "ingress_must_use_qcloud_class");
-assert(ingress.spec.tls?.some((entry) => entry.hosts?.includes("medopl.medopl.cn")), "ingress_tls_must_include_medopl_host");
-assert(ingress.spec.rules?.some((rule) => rule.host === "medopl.medopl.cn"), "ingress_rule_must_include_medopl_host");
+assert(ingress.spec.tls?.some((entry) => entry.hosts?.includes("portal.medopl.cn")), "ingress_tls_must_include_medopl_host");
+assert(ingress.spec.rules?.some((rule) => rule.host === "portal.medopl.cn"), "ingress_rule_must_include_medopl_host");
 
 const rolloutSource = await readRepoFile("scripts/cloud-rollout/medopl.mjs");
 assertNoRawSecretValues(rolloutSource, "medopl_rollout_helper");
 for (const expected of [
-  "medopl.medopl.cn",
+  "portal.medopl.cn",
   "uswccr.ccs.tencentyun.com/medopl/medopl-go-backend",
   "MEDOPL_IMAGE",
   "MEDOPL_NAMESPACE",
