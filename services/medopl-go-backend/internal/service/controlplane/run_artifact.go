@@ -19,8 +19,8 @@ type StartRunInput struct {
 }
 
 type PublicRun struct {
-	TraceID string `json:"traceId"`
-	Status  string `json:"status"`
+	RunRef string `json:"runRef"`
+	Status string `json:"status"`
 }
 
 type PublicArtifact struct {
@@ -72,7 +72,7 @@ func (service *Service) StartRun(ctx context.Context, input StartRunInput) (Publ
 		Ok:        true,
 		Status:    "succeeded",
 		StatusURL: "/api/opl/runs/" + runID + "/status",
-		Run:       PublicRun{TraceID: "trace-" + shortID(runID), Status: "succeeded"},
+		Run:       PublicRun{RunRef: runID, Status: "succeeded"},
 		Artifacts: []PublicArtifact{{
 			ArtifactRef:    artifactRef,
 			WorkspaceID:    launch.WorkspaceID,
@@ -89,7 +89,7 @@ func (service *Service) StartRun(ctx context.Context, input StartRunInput) (Publ
 		LaunchID:       launch.LaunchID,
 		WorkspaceID:    launch.WorkspaceID,
 		ProviderKeyRef: launch.ProviderKeyRef,
-		TraceID:        result.Run.TraceID,
+		RunRef:         result.Run.RunRef,
 		Status:         result.Run.Status,
 		ToolName:       strings.TrimSpace(input.ToolName),
 		Message:        strings.TrimSpace(input.Message),

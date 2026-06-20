@@ -287,7 +287,7 @@ assertIncludes(workspaceSource, "handleUploadClick", "workspace_upload_action_mu
 assertIncludes(workspaceSource, "handleDownloadFile", "workspace_download_action_must_bind_download_url_action");
 assertIncludes(workspaceSource, "创建文件上传通道", "workspace_upload_action_must_have_product_boundary_copy");
 assertIncludes(workspaceSource, "创建结果下载通道", "workspace_download_action_must_have_product_boundary_copy");
-assertIncludes(workspaceSource, "更多文件操作请在 OPL 工作台完成", "workspace_more_file_action_must_have_product_boundary_copy");
+assertIncludes(workspaceSource, "更多文件操作请在 OPL 内完成", "workspace_more_file_action_must_have_product_boundary_copy");
 assertExcludes(workspaceSource, "<button className=\"p-1 hover:bg-neutral-100 rounded\">", "workspace_more_file_action_must_not_be_empty_raw_button");
 assertIncludes(workspaceSource, "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4", "workspace_summary_layout_must_reflow_mobile");
 assertIncludes(packagesSource, "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5", "packages_summary_layout_must_reflow_mobile");

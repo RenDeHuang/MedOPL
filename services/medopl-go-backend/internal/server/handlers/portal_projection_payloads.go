@@ -22,22 +22,22 @@ func workspaceFileTransfer(method string) gin.HandlerFunc {
 	}
 }
 
-func tracesPayload(workspaceID string) gin.H {
+func auditEventsPayload(workspaceID string) gin.H {
 	return gin.H{
 		"filters": gin.H{"userId": "user-local-rc", "workspaceId": workspaceID, "sessionId": "session-local-rc", "status": "succeeded"},
-		"summary": gin.H{"available": true, "mode": "precloud_local_rc", "traceCount": 1, "latestTraceAt": localTimestamp, "dataSource": "go-control-plane", "businessFactSource": "local_projection", "canonicalSource": "go-control-plane", "observabilityAttachmentSource": "none", "observabilityAvailable": false, "billingTruth": false},
+		"summary": gin.H{"available": true, "mode": "precloud_local_rc", "auditEventCount": 1, "latestAuditEventAt": localTimestamp, "dataSource": "go-control-plane", "businessFactSource": "local_projection", "canonicalSource": "go-control-plane", "observabilityAttachmentSource": "none", "observabilityAvailable": false, "billingTruth": false},
 		"items": []gin.H{{
-			"traceId": "trace-local-rc", "traceName": "Local RC Run", "title": "Local RC Run", "userId": "user-local-rc", "workspaceId": workspaceID, "workspaceSessionId": "workspace-session-local-rc", "runtimeSessionId": "runtime-session-local-rc", "taskRef": "run-local-rc", "model": "opl-local", "sessionId": "session-local-rc", "tokenCount": 0, "userAgent": "local-rc", "latencyMs": 0, "inputPreview": "local rc", "startedAt": localTimestamp, "updatedAt": localTimestamp, "status": "succeeded", "businessStatus": "succeeded", "url": "/workspace", "source": "go-control-plane", "customerDefaultTraceSurface": "portal", "customerDefaultLangfuseUi": false,
+			"auditEventId": "audit-event-local-rc", "runRef": "run-local-rc", "usageRef": "usage-local-rc", "title": "Local RC Run", "userId": "user-local-rc", "workspaceId": workspaceID, "workspaceSessionId": "workspace-session-local-rc", "runtimeSessionId": "runtime-session-local-rc", "taskRef": "run-local-rc", "model": "opl-local", "sessionId": "session-local-rc", "tokenCount": 0, "userAgent": "local-rc", "latencyMs": 0, "inputPreview": "local rc", "startedAt": localTimestamp, "updatedAt": localTimestamp, "status": "succeeded", "businessStatus": "succeeded", "url": "/workspace", "source": "go-control-plane", "customerDefaultAuditSurface": "admin", "customerDefaultLangfuseUi": false,
 			"resourceUsage": resourceUsage(workspaceID),
 			"costEstimate":  costEstimate(),
 			"balanceLink":   balanceLink(),
-			"runtimeTrace":  gin.H{"source": "go-control-plane", "ownerScope": "workspace", "taskRef": "run-local-rc", "workspaceId": workspaceID, "sessionId": "session-local-rc", "runStatus": "succeeded", "artifactStatus": "available", "artifactCount": 1, "linkedOutputCount": 1},
+			"runtimeAudit":  gin.H{"source": "go-control-plane", "ownerScope": "workspace", "taskRef": "run-local-rc", "workspaceId": workspaceID, "sessionId": "session-local-rc", "runStatus": "succeeded", "artifactStatus": "available", "artifactCount": 1, "linkedOutputCount": 1},
 			"files":         gin.H{"inputsCount": 1, "outputsCount": 1, "linkedOutputCount": 1, "linkedOutputFiles": []gin.H{outputProjection(workspaceID)}, "latestOutputs": []gin.H{{"name": "result.md", "size": 256, "downloadUrl": "/api/workspace/files/download-url?file=result.md"}}},
 			"billing":       gin.H{"pendingCost": 0, "exactCost": 1.35, "source": "go-control-plane"},
 		}},
 		"pagination":                pagination(1),
 		"dataSource":                "go-control-plane",
-		"customerTraceSurface":      "portal",
+		"customerAuditSurface":      "admin",
 		"customerDefaultLangfuseUi": false,
 		"note":                      "precloud_local_rc",
 	}
@@ -80,7 +80,7 @@ func managedResourceBindingPlan() gin.H {
 }
 
 func commercialProfile() gin.H {
-	return gin.H{"accountStatus": "active", "billingStatus": "funded", "entitlementStatus": "active", "walletBalance": 100, "balanceFloor": 1, "canEnterWorkbench": true, "canStartChargeableRun": true, "chargeBlockedReasons": []string{}, "priceTransparency": "local_rc", "group": nil}
+	return gin.H{"accountStatus": "active", "billingStatus": "funded", "entitlementStatus": "active", "walletBalance": 100, "balanceFloor": 1, "canEnterOpl": true, "canStartChargeableRun": true, "chargeBlockedReasons": []string{}, "priceTransparency": "local_rc", "group": nil}
 }
 
 func selectedServerPlan() gin.H {
@@ -98,7 +98,7 @@ func serverPlansSummary() gin.H {
 }
 
 func onboardingPayload() gin.H {
-	return gin.H{"nextStepId": "open-workbench", "items": []gin.H{{"id": "prepare", "title": "Prepare account", "state": "complete", "href": "/overview", "description": "local rc"}, {"id": "open-workbench", "title": "Open workbench", "state": "active", "href": "/workspace", "description": "local rc"}}}
+	return gin.H{"nextStepId": "enter-opl", "items": []gin.H{{"id": "prepare", "title": "Prepare account", "state": "complete", "href": "/overview", "description": "local rc"}, {"id": "enter-opl", "title": "Enter OPL", "state": "active", "href": "/opl-launch", "description": "local rc"}}}
 }
 
 func publicSettings() gin.H {

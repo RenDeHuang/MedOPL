@@ -29,7 +29,7 @@ assert(release.medopl_release_boundary.release_phases.includes("destroy_storage_
 assert(api.medopl_api_contract.storage_destroy?.must_return.includes("releaseReceipts"), "storage_destroy_api_must_return_release_receipts");
 assert(TEST_LANE_SUITES.release.includes("tests/release/release-test-v22-boundary-contract.mjs"), "release_boundary_test_must_be_registered");
 assert(TEST_LANE_SUITES.backend.includes("tests/backend/backend-test-v22-api-contract.mjs"), "release_boundary_must_have_backend_api_consumer_gate");
-assert(TEST_LANE_SUITES.smoke.includes("tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs"), "release_boundary_must_have_golden_path_runtime_consumer_gate");
+assert(TEST_LANE_SUITES.smoke.includes("tests/smoke/smoke-test-v22-portal-storage-usage-billing-flow.mjs"), "release_boundary_must_have_golden_path_runtime_consumer_gate");
 assert.equal(cloud.authority_boundary.default_real_cloud_execution, "allowed_when_authorization_pack_is_active", "cloud_must_use_machine_authorization_pack");
 assert.equal(cloud.authority_boundary.authorization_pack, "contracts/medopl-cloud-authorization-pack.json", "cloud_must_reference_authorization_pack");
 assert.equal(current.release_readiness_state?.blocked_before_risky_execution, true, "current_must_block_risky_execution");

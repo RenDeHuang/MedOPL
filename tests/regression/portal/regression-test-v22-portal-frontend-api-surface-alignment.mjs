@@ -42,9 +42,9 @@ const allowedAdjudicationStatuses = new Set([
 ]);
 
 const unusedAdjudications = {
-  "admin.ts:fetchAdminAgentTraces": {
+  "admin.ts:fetchAdminAuditEvents": {
     status: "future-reserved",
-    reason: "Admin trace endpoint exists, but current React admin route set uses alerts/audit/system/ops instead of a dedicated agent trace page.",
+    reason: "Admin audit event endpoint exists, but current React admin route set uses alerts/audit/system/ops instead of a dedicated audit event page.",
   },
   "admin.ts:fetchAdminGroups": {
     status: "future-reserved",
@@ -160,11 +160,11 @@ const unusedAdjudications = {
   },
   "sessions.ts:fetchSessions": {
     status: "future-reserved",
-    reason: "Session list is not exposed as an active React page; OPL owns the chat-first project/session workbench.",
+    reason: "Session list is not exposed as an active React page; OPL owns the chat-first project/session surface.",
   },
   "sessions.ts:fetchRuns": {
     status: "future-reserved",
-    reason: "Run list is not exposed as an active React page; MedOPL shows usage and billing references instead of a user trace surface.",
+    reason: "Run list is not exposed as an active React page; MedOPL shows usage and billing references instead of a user observability surface.",
   },
 };
 

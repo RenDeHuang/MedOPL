@@ -85,7 +85,7 @@ async function stopChild(child) {
 }
 
 async function withRuntime(fn) {
-  const runtimeRoot = await mkdtemp(path.join(os.tmpdir(), "v22-portal-workbench-ui-browser-"));
+  const runtimeRoot = await mkdtemp(path.join(os.tmpdir(), "v22-portal-resource-control-ui-browser-"));
   try {
     return await fn(runtimeRoot);
   } finally {
@@ -137,9 +137,9 @@ async function assertNoBadConsole(consoleMessages, failedRequests) {
   assert.deepEqual(filteredRequests, [], `browser_failed_requests:${JSON.stringify(filteredRequests)}`);
 }
 
-function assertWorkbenchCopy(bodyText, label, markers = ["资源总览", "计算资源", "存储空间"]) {
+function assertResourceControlCopy(bodyText, label, markers = ["资源总览", "计算资源", "存储空间"]) {
   for (const marker of markers) {
-    assert(bodyText.includes(marker), `${label}_managed_workbench_marker_missing:${marker}`);
+    assert(bodyText.includes(marker), `${label}_resource_control_marker_missing:${marker}`);
   }
   assert.equal(bodyText.includes("客户工作台"), false, `${label}_forbidden_customer_workbench_copy`);
   assert.equal(bodyText.includes("SecretId"), false, `${label}_forbidden_secret_id_copy`);
@@ -222,7 +222,7 @@ try {
     await waitReady(page, "正在读取 Portal 总览数据");
     await page.waitForSelector("text=总览", { timeout: 30000 });
     lastBodyText = await page.locator("body").innerText();
-    assertWorkbenchCopy(lastBodyText, "browser_overview");
+    assertResourceControlCopy(lastBodyText, "browser_overview");
     assert(lastBodyText.includes("选择套餐开通计算资源"), "browser_overview_open_compute_resource_cta_missing");
     assert(lastBodyText.includes("前往套餐与购买"), "browser_overview_packages_entry_missing");
     assert.equal(lastBodyText.includes("商业"), false, "browser_overview_forbidden_commercial_copy");
@@ -232,7 +232,7 @@ try {
     await waitReady(page, "正在读取计算资源数据");
     await page.waitForSelector("text=计算资源", { timeout: 30000 });
     lastBodyText = await page.locator("body").innerText();
-    assertWorkbenchCopy(lastBodyText, "browser_runtime_environment", ["计算资源", "存储空间"]);
+    assertResourceControlCopy(lastBodyText, "browser_runtime_environment", ["计算资源", "存储空间"]);
     assert(lastBodyText.includes("开通服务"), "browser_runtime_open_service_cta_missing");
     assert(lastBodyText.includes("当前订阅状态"), "browser_runtime_subscription_status_missing");
     assert(lastBodyText.includes("套餐价格尚待审批"), "browser_runtime_pricing_boundary_missing");
@@ -257,12 +257,12 @@ try {
 
   console.log(JSON.stringify({
     ok: true,
-    contract: "v22_portal_workbench_management_ui_browser",
+    contract: "v22_portal_resource_control_ui_browser",
     backendBaseUrl,
     frontendBaseUrl,
     checked: [
       "go_backend_vite_frontend_runtime",
-      "overview_workbench_copy",
+      "overview_resource_control_copy",
       "runtime_open_service_entry",
       "admin_system_authorization_boundary",
     ],
@@ -270,7 +270,7 @@ try {
 } catch (error) {
   console.error(JSON.stringify({
     ok: false,
-    contract: "v22_portal_workbench_management_ui_browser",
+    contract: "v22_portal_resource_control_ui_browser",
     backendBaseUrl,
     frontendBaseUrl,
     error: String(error.message || error),

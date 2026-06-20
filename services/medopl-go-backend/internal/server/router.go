@@ -44,7 +44,7 @@ func Router(cfg config.Config) *gin.Engine {
 	router.GET("/api/announcements", handlers.Announcements())
 	router.GET("/api/sessions", handlers.Sessions())
 	router.GET("/api/runs", handlers.Runs())
-	router.GET("/api/admin/agent-traces", handlers.SessionTraces())
+	router.GET("/api/admin/audit-events", handlers.AdminAuditEvents())
 	router.GET("/api/admin/overview", handlers.AdminOverview())
 	router.GET("/api/admin/users", handlers.AdminUsers())
 	router.GET("/api/admin/groups", handlers.AdminGroups())

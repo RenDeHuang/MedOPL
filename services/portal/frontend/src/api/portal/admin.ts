@@ -46,10 +46,10 @@ export interface AdminSystemPayload {
   publicSettings: PublicSettingsPayload;
 }
 
-export type AdminAgentTracesPayload = Record<string, any>;
+export type AdminAuditEventsPayload = Record<string, any>;
 
-export async function fetchAdminAgentTraces(params?: Record<string, string | number | undefined>) {
-  const { data } = await goControlPlaneClient.get<AdminAgentTracesPayload>("/admin/agent-traces", { params });
+export async function fetchAdminAuditEvents(params?: Record<string, string | number | undefined>) {
+  const { data } = await goControlPlaneClient.get<AdminAuditEventsPayload>("/admin/audit-events", { params });
   return data;
 }
 

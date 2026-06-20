@@ -33,14 +33,14 @@ assertIncludes(specsIndex, "spec:v22-saas-portal-opl-ops-surface-boundary", "spe
 assertIncludes(specsIndex, "spec:v22-portal-user-surface-boundary", "specs_index_user_anchor");
 assertIncludes(specsIndex, "spec:v22-portal-admin-ops-surface-boundary", "specs_index_admin_anchor");
 assertIncludes(specsIndex, "spec:v22-portal-structure-failure-isolation-boundary", "specs_index_structure_anchor");
-assertIncludes(specsIndex, "spec:v22-portal-workbench-management-ui-composition-boundary", "specs_index_composition_anchor");
+assertIncludes(specsIndex, "spec:v22-portal-resource-control-ui-composition-boundary", "specs_index_composition_anchor");
 assert.equal(/```json/u.test(specsIndex), false, "specs_index_must_not_embed_contract_role_json");
 
 assertIncludes(shared, "`runtime:saas-portal-opl-ops-surface-boundary`", "shared_contract_runtime_owner");
-assertIncludes(shared, "spec:v22-portal-workbench-management-ui-composition-boundary", "shared_contract_ui_delegate");
+assertIncludes(shared, "spec:v22-portal-resource-control-ui-composition-boundary", "shared_contract_ui_delegate");
 assertIncludes(userRole, "`product:portal-user-surface-boundary`", "user_role_product_owner");
 assertIncludes(adminRole, "`operations:portal-admin-ops-surface-boundary`", "admin_role_operations_owner");
-assertIncludes(structure, "`source:portal-workbench-management-ui-composition`", "structure_source_owner");
+assertIncludes(structure, "`source:portal-resource-control-ui-composition`", "structure_source_owner");
 assertIncludes(composition, "services/portal/frontend/src/app/**", "composition_source_app_owner");
 assertIncludes(composition, "services/portal/frontend/src/api/portal/**", "composition_source_api_owner");
 

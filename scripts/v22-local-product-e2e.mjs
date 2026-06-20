@@ -387,7 +387,7 @@ async function executeFlow(payload, options) {
   if (!result.ok) return failAt(payload, "run-task", result);
   completeEvidence(payload, "run_task", {
     artifactRef,
-    traceId: result.payload?.run?.traceId || "",
+    runRef: result.payload?.run?.runRef || "",
     status: result.payload?.status || "",
     artifactKind: result.payload?.artifacts?.[0]?.kind || "",
     workspaceId: result.payload?.artifacts?.[0]?.workspaceId || "",

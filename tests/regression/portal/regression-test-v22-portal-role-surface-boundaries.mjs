@@ -20,27 +20,41 @@ function extractArray(source, constName) {
 }
 
 const [
+  rootReadme,
+  activeReadme,
+  publicReadme,
   specsIndex,
   productSpec,
   operationsSpec,
   runtimeSpec,
+  frameworkReadme,
+  evidenceReadme,
+  sourceSpec,
   productReadme,
   pageStateMatrix,
   layout,
   roleContext,
   routes,
+  adminApi,
   adminModel,
   goRouter,
 ] = await Promise.all([
+  readFile("README.md", "utf8"),
+  readFile("docs/active/README.md", "utf8"),
+  readFile("docs/public/README.md", "utf8"),
   readFile("docs/specs/README.md", "utf8"),
   readFile("specs/product/spec.md", "utf8"),
   readFile("specs/operations/spec.md", "utf8"),
   readFile("specs/runtime/spec.md", "utf8"),
+  readFile("docs/framework/README.md", "utf8"),
+  readFile("docs/evidence/README.md", "utf8"),
+  readFile("specs/source/spec.md", "utf8"),
   readFile("docs/product/README.md", "utf8"),
   readFile("contracts/medopl-portal-page-state-matrix.json", "utf8"),
   readFile("services/portal/frontend/src/app/components/Layout.tsx", "utf8"),
   readFile("services/portal/frontend/src/app/contexts/RoleContext.tsx", "utf8"),
   readFile("services/portal/frontend/src/app/routes.tsx", "utf8"),
+  readFile("services/portal/frontend/src/api/portal/admin.ts", "utf8"),
   readFile("services/portal/frontend/src/app/data/portalAdminOpsModel.ts", "utf8"),
   readFile("services/medopl-go-backend/internal/server/router.go", "utf8"),
 ]);
@@ -59,6 +73,24 @@ assertIncludes(productReadme, "计算资源", "product_readme_compute_resource_l
 assertIncludes(productReadme, "存储空间里有什么", "product_readme_storage_inventory_language");
 assertNotIncludes(productReadme, "billing / trace / audit", "product_readme_must_not_keep_trace_in_golden_path");
 assertNotIncludes(productReadme, "Trace 不再作为用户主导航", "product_readme_must_state_trace_retirement_without_reintroducing_nav_copy");
+for (const [sourceName, sourceText] of [
+  ["root_readme", rootReadme],
+  ["active_readme", activeReadme],
+  ["public_readme", publicReadme],
+  ["product_readme", productReadme],
+  ["framework_readme", frameworkReadme],
+  ["evidence_readme", evidenceReadme],
+  ["runtime_spec", runtimeSpec],
+  ["source_spec", sourceSpec],
+]) {
+  assertNotIncludes(sourceText, "托管科研工作台", `${sourceName}_must_not_keep_workbench_product_truth`);
+  assertNotIncludes(sourceText, "运行轨迹", `${sourceName}_must_not_keep_trace_product_copy`);
+  assertNotIncludes(sourceText, "任务与结果", `${sourceName}_must_not_keep_tasks_results_product_copy`);
+  assertNotIncludes(sourceText, "工作台", `${sourceName}_must_not_keep_workbench_surface_copy`);
+  assertNotIncludes(sourceText, "files-billing-trace", `${sourceName}_must_not_keep_files_billing_trace_anchor`);
+  assertNotIncludes(sourceText, "trace metadata", `${sourceName}_must_not_keep_trace_metadata_surface`);
+  assertNotIncludes(sourceText, "trace projection", `${sourceName}_must_not_keep_trace_projection_surface`);
+}
 assertIncludes(pageStateMatrix, "\"resource_overview\"", "page_state_matrix_resource_overview");
 assertIncludes(pageStateMatrix, "\"packages_purchase\"", "page_state_matrix_packages_purchase");
 assertIncludes(pageStateMatrix, "\"compute_resource\"", "page_state_matrix_compute_resource");
@@ -99,6 +131,11 @@ assertNotIncludes(routes, 'path: "tasks"', "retired_tasks_route_must_stay_retire
 
 assertIncludes(goRouter, 'router.GET("/api/admin/overview", handlers.AdminOverview())', "go_router_admin_overview_route");
 assertIncludes(goRouter, 'router.GET("/api/admin/ops", handlers.AdminOps())', "go_router_admin_ops_route");
+assertNotIncludes(goRouter, "/api/admin/agent-traces", "go_router_must_retire_admin_agent_trace_route");
+assertIncludes(goRouter, "/api/admin/audit-events", "go_router_must_expose_admin_audit_events_route");
+assertNotIncludes(adminApi, "fetchAdminAgentTraces", "admin_api_must_retire_agent_trace_fetcher");
+assertNotIncludes(adminApi, "AdminAgentTracesPayload", "admin_api_must_retire_agent_trace_payload");
+assertIncludes(adminApi, "fetchAdminAuditEvents", "admin_api_must_expose_audit_events_fetcher");
 assertIncludes(adminModel, "markAdminBillingOp", "admin_model_local_billing_action");
 assertIncludes(adminModel, "saveAdminAnnouncement", "admin_model_local_announcement_action");
 assertIncludes(adminModel, "toggleAdminAnnouncement", "admin_model_local_toggle_announcement_action");

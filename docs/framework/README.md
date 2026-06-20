@@ -7,7 +7,7 @@ Machine boundary: 本文是人读 framework 模型入口，不是第二份 curre
 
 ## Framework Identity
 
-MedOPL Platform Framework 是把 clean One Person Lab upstream 交付为 `platform-provisioned / customer-dedicated` OPL SaaS 托管科研工作台的平台框架。它不复制 One Person Lab 的 AI runtime 业务语义，不持有 OPL domain truth，不重写 OPL chatbot、agent、科研任务判断或 upstream 内部状态。
+MedOPL Platform Framework 是把 clean One Person Lab upstream 所需的计算资源、存储空间、套餐、费用和释放能力交付为 `platform-provisioned / customer-dedicated` OPL SaaS 资源控制面的平台框架。它不复制 One Person Lab 的 AI runtime 业务语义，不持有 OPL domain truth，不重写 OPL chatbot、agent、科研任务判断或 upstream 内部状态。
 
 本 framework 持有的是 SaaS platform truth：
 
@@ -71,7 +71,7 @@ Contract package:
 - `spec:v22-saas-portal-opl-ops-surface-boundary`
 - `spec:v22-resource-plan-boundary`
 - `spec:v22-managed-environment-open-boundary`
-- `spec:v22-portal-files-billing-trace-boundary`
+- `spec:v22-portal-storage-usage-billing-boundary`
 
 Canonical source:
 
@@ -101,7 +101,7 @@ Smoke/eval gate:
 - `node tests/smoke/smoke-test-v22-saas-control-plane-user-experience-boundary.mjs`
 - `node tests/smoke/smoke-test-v22-resource-plan-contract.mjs`
 - `node tests/contracts/contract-test-v22-precloud-deployable-rc.mjs`
-- `node tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs`
+- `node tests/smoke/smoke-test-v22-portal-storage-usage-billing-flow.mjs`
 
 History boundary:
 
@@ -133,7 +133,7 @@ Canonical source:
 
 Public projection:
 
-- Portal "进入 OPL 工作台" and `/opl/entry/preflight`.
+- Portal "进入 OPL" and `/opl/entry/preflight`.
 - Gateway injects only sanitized context such as `workspaceId`, session/launch status, provider bound status and return URL.
 
 Evidence requirement:
@@ -164,7 +164,7 @@ Owner: `MedOPL Runtime Bridge`
 Active surface:
 
 - `services/opl-runtime-bridge`
-- Runtime Bridge state store, launch/session/run/message/file/artifact/trace routes
+- Runtime Bridge state store, launch/session/run/message/file/artifact routes and internal audit-event routes
 - Runtime Agent relay boundary
 - AI Runtime Contract and MCP-compatible boundary
 
@@ -177,7 +177,7 @@ Contract package:
 - `spec:v22-real-opl-capability-canary-boundary`
 - `spec:v22-real-opl-provider-message-canary-boundary`
 - `spec:v22-real-opl-file-run-artifact-canary-boundary`
-- `spec:v22-trace-metadata-boundary`
+- `spec:v22-runtime-bridge-session-run-file-provider-keyref-boundary`
 
 Canonical source:
 
@@ -186,7 +186,7 @@ Canonical source:
 
 Public projection:
 
-- Portal sees sanitized session, run, message, artifact, output file and trace metadata.
+- Portal sees sanitized session, run, message, artifact, output file and internal audit metadata.
 - AI Runtime Contract projects runtimeSession, runtimeTool, runtimeResource, runtimeRun, runtimeArtifact and runtimeApproval through the Runtime Bridge / Runtime Agent projection boundary.
 - MCP-compatible boundary is tools / resources / prompts / artifacts / approval shape compatibility only; current source proof is `runtime-bridge-mcp-compatible-shapes.mjs`, not a production MCP server.
 - Raw prompt, raw provider key, bearer token, launch token, runtime token, object key, local path and signed URL stay outside public projection, logs, evidence and git.
@@ -325,7 +325,7 @@ login / credit / provider key
 -> launch OPL
 -> upload file / task
 -> run / artifact
--> billing / trace / audit
+-> billing / audit receipt
 -> release / stop billing
 ```
 

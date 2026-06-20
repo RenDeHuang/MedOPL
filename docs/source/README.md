@@ -134,7 +134,7 @@ Current docs / eval surface during migration：
 | 旧 `med-autoscience-runner` | active service, runtime bridge dependency, default task runner |
 | 旧 `resource-provisioner` | active service, cloud lifecycle source, billing source |
 | OpenCost 主叙事 | product billing truth, Portal ledger source |
-| Langfuse 主产品叙事 | product trace truth, required production dependency |
+| Langfuse 主产品叙事 | product observability truth, required production dependency |
 | v19/v20/v21 OPL direct path / direct upstream path / internal path | user-visible entry, default OPL route, fixture |
 | one-person-lab upstream internals | active source import, Portal/Gateway/Runtime Bridge implementation surface |
 

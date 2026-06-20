@@ -54,7 +54,7 @@
       "status": "accepted",
       "issued_at": "2026-06-20T00:00:00Z",
       "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/audit-owner.json",
-      "summary": "Audit owner accepted export and trace receipt.",
+      "summary": "Audit owner accepted export and audit receipt.",
       "authorization_ref": "contracts/medopl-cloud-authorization-pack.json#run-v22-001",
       "operation_class": "billing_audit_writeback",
       "runner_id": "medopl_billing_audit_receipt_writer"

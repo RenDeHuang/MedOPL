@@ -16,7 +16,7 @@
 ## 开发原则
 
 - 维护开发判断默认遵循根层 `TASTE.md`；如果本仓事实、spec、runtime evidence 或更深层 `AGENTS.md` 需要局部偏离，必须写清偏离原因和适用范围。
-- MedOPL v22 的稳定产品边界是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管科研工作台。普通用户购买托管工作台、计算能力、文件空间、任务并发和运行环境；平台负责开通、隔离、计费、审计和释放。
+- MedOPL v22 的稳定产品边界是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 资源购买与控制面。普通用户购买和管理计算资源、存储空间、套餐、任务并发和费用；平台负责开通、隔离、计费、审计和释放。
 - MedOPL 不是云资源控制台，不把用户自配云资源、旧资源订单或旧 runner/provisioner 路线恢复为主线。
 - clean upstream OPL 保持干净。不得修改 upstream 源码，不得在 upstream 目录写 Portal/Gateway/Adapter/Runtime 代码，不得 import upstream 内部模块；只能通过 Gateway、Runtime Bridge / Runtime Agent、公开 API/CLI 和明确 anti-corruption mapping 适配。
 - 理想态优先，不把现状当长期架构。开发文档先设理想态，再写当前差距；差距不是妥协清单，也不是保留旧污染面的理由。

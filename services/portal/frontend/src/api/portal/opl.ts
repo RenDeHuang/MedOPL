@@ -155,7 +155,7 @@ export interface OplFileRefPayload {
 }
 
 export interface OplRunStatusPayload {
-  traceId?: string;
+  runRef?: string;
   status: string;
   error?: string;
 }

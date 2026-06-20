@@ -63,9 +63,9 @@ Not allowed in git:
 
 | Plane | Minimum local evidence | External evidence before production claim |
 | --- | --- | --- |
-| Product Plane | Portal smoke/regression proves sanitized user projection, billing/file/trace state and no cloud-console language | production Portal deployment, real tenant data projection review, admin/customer acceptance as applicable |
+| Product Plane | Portal smoke/regression proves sanitized user projection, storage/file refs and billing/audit receipts and no cloud-console language | production Portal deployment, real tenant data projection review, admin/customer acceptance as applicable |
 | Integration Plane | Gateway/preflight local tests prove clean upstream boundary and no raw token persistence | authorized upstream/WebUI canary and Gateway proxy evidence |
-| Runtime Plane | Runtime Bridge local tests prove launch/session/message/file/run/artifact/trace projection and fail-closed unsupported capabilities | authorized Runtime Agent / real OPL / production runtime evidence |
+| Runtime Plane | Runtime Bridge local tests prove launch/session/message/file/run/artifact projection with internal audit correlation and fail-closed unsupported capabilities | authorized Runtime Agent / real OPL / production runtime evidence |
 | Operations Plane | billing/freeze/admin/cloud future-authorized gates prove local contract and authorization boundaries | separate readonly inventory, mutation, deploy, billing reconciliation and audit evidence |
 
 ## Can-Claim / Cannot-Claim Discipline

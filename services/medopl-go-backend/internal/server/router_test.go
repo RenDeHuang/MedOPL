@@ -39,7 +39,7 @@ func TestRouterServesExpectedEndpoints(t *testing.T) {
 		{method: http.MethodPost, path: "/api/workspace/files/local-transfer", body: `{"workspaceId":"workspace-v22","fileName":"input.csv","kind":"inputs"}`},
 		{method: http.MethodGet, path: "/api/workspace/files/local-transfer?workspaceId=workspace-v22&file=result.md&kind=outputs"},
 		{method: http.MethodGet, path: "/api/announcements"},
-		{method: http.MethodGet, path: "/api/admin/agent-traces?workspaceId=workspace-v22"},
+		{method: http.MethodGet, path: "/api/admin/audit-events?workspaceId=workspace-v22"},
 		{method: http.MethodGet, path: "/api/admin/overview"},
 		{method: http.MethodGet, path: "/api/public/settings"},
 		{method: http.MethodGet, path: "/api/server-plans"},

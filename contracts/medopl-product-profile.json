@@ -41,8 +41,8 @@
         "ops_audit_receipts"
       ],
       "opl_webui_owns": [
-        "chat_first_project_session_workbench",
-        "file_workbench_experience",
+        "chat_first_project_session_surface",
+        "file_management_experience",
         "skill_upload",
         "research_task_user_experience",
         "ordinary_chat"
@@ -63,7 +63,7 @@
     ],
     "user_surface_forbidden_objects": [
       "chat",
-      "session_workbench",
+      "project_session_surface",
       "skill_upload",
       "raw_trace",
       "raw_log",

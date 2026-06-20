@@ -31,7 +31,7 @@ const forbiddenVisibleCopy = [
   "开通存储桶",
   "进阶升级",
   "进阶套餐",
-  "开通工作台资源",
+  "开通资源服务",
 ];
 
 for (const copy of forbiddenVisibleCopy) {

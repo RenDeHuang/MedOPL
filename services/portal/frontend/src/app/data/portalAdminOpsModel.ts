@@ -249,9 +249,9 @@ export async function loadAdminSystemModel() {
   return {
     siteName: stringValue(publicSettings.siteName, "MedOPL Portal"),
     siteLogo: stringValue(publicSettings.siteLogo, ""),
-    homeTitle: stringValue(publicSettings.siteSubtitle || publicSettings.homeContent, "托管 OPL 科研工作台"),
-    siteSubtitle: stringValue(publicSettings.siteSubtitle || publicSettings.homeContent, "托管 OPL 科研工作台"),
-    homeContent: stringValue(publicSettings.homeContent || publicSettings.siteSubtitle, "托管 OPL 科研工作台"),
+    homeTitle: stringValue(publicSettings.siteSubtitle || publicSettings.homeContent, "OPL 资源控制面"),
+    siteSubtitle: stringValue(publicSettings.siteSubtitle || publicSettings.homeContent, "OPL 资源控制面"),
+    homeContent: stringValue(publicSettings.homeContent || publicSettings.siteSubtitle, "OPL 资源控制面"),
     registrationEnabled: Boolean(system.allowRegistration),
     adminReadOnlyMessage,
     serviceStatus: {

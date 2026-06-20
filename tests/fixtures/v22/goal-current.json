@@ -572,7 +572,7 @@
         "id": "runtime-run-file-artifact-closure",
         "order": 5,
         "status": "closed",
-        "goal": "Align run, file, artifact and trace contracts with Runtime Bridge."
+        "goal": "Align run, file, artifact and audit-reference contracts with Runtime Bridge."
       },
       {
         "id": "workflow-facade",

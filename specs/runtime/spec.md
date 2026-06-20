@@ -7,7 +7,7 @@ Human index: `docs/runtime/README.md`, `docs/specs/README.md`
 
 ## Scope
 
-Runtime specs define Portal -> Gateway -> clean OPL upstream -> Runtime Bridge / Runtime Agent boundaries, including session, message, fileRef, run, artifact and trace projection.
+Runtime specs define Portal -> Gateway -> clean OPL upstream -> Runtime Bridge / Runtime Agent boundaries, including session, message, fileRef, run, artifact projection and internal audit correlation.
 
 | Requirement | Owner plane | Source surface | Required evals | Evidence level | Cannot claim |
 | --- | --- | --- | --- | --- | --- |
@@ -25,7 +25,7 @@ Runtime specs define Portal -> Gateway -> clean OPL upstream -> Runtime Bridge /
 | `runtime:mcp-compatible-boundary` | Runtime | `services/opl-runtime-bridge/src/runtime-bridge-mcp-compatible-shapes.mjs`, `specs/runtime/spec.md`, `docs/framework/README.md` | `node tests/contracts/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs` | local contract proof | MCP-compatible boundary authorizes external MCP clients, production MCP server, secret reads, real cloud, deploy, kubectl, build/push or live-test. |
 | `runtime:saas-portal-opl-ops-surface-boundary` | Product + Runtime + Operations | `docs/product/README.md`, `docs/runtime/README.md`, `services/portal/frontend/src/app/**`, `services/portal/frontend/src/api/portal/**`, `services/medopl-go-backend` | `node tests/regression/portal/regression-test-v22-saas-portal-opl-ops-surface-contract.mjs`; `node tests/regression/portal/regression-test-v22-portal-contract-role-consolidation.mjs` | local regression proof | Shared Portal/OPL/ops surface proof authorizes cloud-console UX, raw provider key exposure, launch/runtime tokens in browser storage, real cloud, deploy, production billing or direct upstream modification. |
 
-`runtime:saas-portal-opl-ops-surface-boundary` defines shared Portal / OPL entry / admin-ops product semantics only. Executable Portal UI composition is delegated to `spec:v22-portal-workbench-management-ui-composition-boundary` and source-owned by `specs/source/spec.md`, `services/portal/frontend/src/app/**` and `services/portal/frontend/src/api/portal/**`.
+`runtime:saas-portal-opl-ops-surface-boundary` defines shared Portal / OPL entry / admin-ops product semantics only. Executable Portal UI composition is delegated to `spec:v22-portal-resource-control-ui-composition-boundary` and source-owned by `specs/source/spec.md`, `services/portal/frontend/src/app/**` and `services/portal/frontend/src/api/portal/**`.
 
 Related evidence anchor: `evidence:local-provider-bound-message-proof`.
 

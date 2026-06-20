@@ -7,7 +7,7 @@ Machine boundary: 本文是唯一人读 current truth 文件。机器 cursor、l
 
 ## Ideal State
 
-MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 托管科研工作台。用户购买托管 OPL 服务和平台代管运行能力；平台负责开通、隔离、计费、审计和释放。产品细节见 `docs/product/README.md`，runtime 边界见 `docs/runtime/README.md`，contract lower bound 见 `docs/specs/README.md`。
+MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 OPL SaaS 资源购买与控制面。用户购买和管理 OPL 需要的计算资源、存储空间、套餐、任务并发和费用；平台负责开通、隔离、计费、审计和释放。产品细节见 `docs/product/README.md`，runtime 边界见 `docs/runtime/README.md`，contract lower bound 见 `docs/specs/README.md`。
 
 ## Current State
 

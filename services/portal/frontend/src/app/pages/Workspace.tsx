@@ -534,7 +534,7 @@ export function Workspace() {
                         size="sm"
                         variant="ghost"
                         disabled
-                        title="更多文件操作请在 OPL 工作台完成"
+                        title="更多文件操作请在 OPL 内完成"
                         aria-label="更多文件操作暂未接入"
                       >
                         <MoreVertical className="w-4 h-4 text-neutral-400" />

@@ -255,7 +255,7 @@ const PREFLIGHT_CHECK_DEFINITIONS = Object.freeze({
       Object.freeze({ id: "go-backend", host: "127.0.0.1", port: 8789 }),
       Object.freeze({ id: "opl-web-gateway", host: "127.0.0.1", port: 18789 }),
       Object.freeze({ id: "runtime-bridge", host: "127.0.0.1", port: 8788 }),
-      Object.freeze({ id: "clean-opl-webui", host: "127.0.0.1", port: 18130 }),
+      Object.freeze({ id: "clean-opl-webui", host: "127.0.0.1", port: 18130, required: false, external: true }),
     ]),
     setupCommand: "npm run local:services:start && npm run local:services:check -- --json",
   }),
@@ -662,7 +662,7 @@ function fileMatchesRule(file, rule) {
   return matchesPrefix(file, rule.pathPrefixes);
 }
 
-function runPreflight(checkIds, { exists = defaultExists } = {}) {
+function runPreflight(checkIds, { exists = defaultExists, canConnect = canConnectToPort } = {}) {
   const checks = [];
   const missing = [];
   const recommendedSetupCommands = [];
@@ -673,9 +673,11 @@ function runPreflight(checkIds, { exists = defaultExists } = {}) {
     if (definition.kind === "tcp_ports") {
       const ports = (definition.ports || []).map((port) => Object.freeze({
         ...port,
-        ok: canConnectToPort(port),
+        required: port.required !== false,
+        ok: canConnect(port),
       }));
-      const ok = ports.every((port) => port.ok);
+      const missingRequiredPorts = ports.filter((port) => port.required && !port.ok);
+      const ok = missingRequiredPorts.length === 0;
       checks.push(Object.freeze({
         id: definition.id,
         ok,
@@ -687,7 +689,7 @@ function runPreflight(checkIds, { exists = defaultExists } = {}) {
         missing.push(Object.freeze({
           id: definition.id,
           label: definition.label,
-          ports: Object.freeze(ports.filter((port) => !port.ok)),
+          ports: Object.freeze(missingRequiredPorts),
         }));
         if (definition.setupCommand) recommendedSetupCommands.push(definition.setupCommand);
       }
@@ -718,7 +720,7 @@ function runPreflight(checkIds, { exists = defaultExists } = {}) {
   });
 }
 
-export function preflightTestPlan(plan, { exists = defaultExists } = {}) {
+export function preflightTestPlan(plan, { exists = defaultExists, canConnect = canConnectToPort } = {}) {
   const checkIds = [];
   const surfaces = new Set(plan?.matchedSurfaces || []);
   const commands = new Set(plan?.recommendedCommands || []);
@@ -732,7 +734,7 @@ export function preflightTestPlan(plan, { exists = defaultExists } = {}) {
     checkIds.push("frontend-typescript-package", "runtime-bridge-path", "gateway-path", "local-service-port-check");
   }
 
-  return runPreflight(checkIds, { exists });
+  return runPreflight(checkIds, { exists, canConnect });
 }
 
 function applyDependencyAwareDiscovery(file, state) {

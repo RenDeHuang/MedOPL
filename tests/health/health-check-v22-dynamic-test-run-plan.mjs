@@ -283,11 +283,28 @@ assert(
 const runtimePreflight = preflightTestPlan({
   recommendedCommands: ["npm run test:runtime"],
   matchedSurfaces: ["runtime"],
+}, {
+  canConnect() {
+    return false;
+  },
 });
 assert.equal(runtimePreflight.ok, false, "runtime_preflight_must_fail_when_local_service_ports_are_unreachable");
 assert(
   runtimePreflight.missing.some((entry) => entry.id === "local-service-port-check"),
   "runtime_preflight_must_report_missing_local_service_ports",
+);
+const runtimePortCheck = runtimePreflight.checks.find((entry) => entry.id === "local-service-port-check");
+assert.equal(
+  runtimePortCheck?.ports.find((entry) => entry.id === "clean-opl-webui")?.required,
+  false,
+  "runtime_preflight_must_keep_clean_opl_webui_optional_external",
+);
+assert.equal(
+  runtimePreflight.missing
+    .find((entry) => entry.id === "local-service-port-check")
+    ?.ports.some((entry) => entry.id === "clean-opl-webui"),
+  false,
+  "runtime_preflight_must_not_block_on_external_clean_opl_webui",
 );
 assert(
   runtimePreflight.recommendedSetupCommands.includes("npm run local:services:start && npm run local:services:check -- --json"),

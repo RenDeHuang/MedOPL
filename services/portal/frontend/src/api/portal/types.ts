@@ -11,7 +11,7 @@ export interface CommercialProfile {
   entitlementStatus: string;
   walletBalance: number;
   balanceFloor: number;
-  canEnterWorkbench: boolean;
+  canEnterOpl: boolean;
   canStartChargeableRun: boolean;
   chargeBlockedReasons: string[];
   priceTransparency: string;

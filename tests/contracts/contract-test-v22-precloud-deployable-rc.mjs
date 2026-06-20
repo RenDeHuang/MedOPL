@@ -168,7 +168,7 @@ async function assertGoPrecloudSurface() {
     'api.POST("/lab-packages/activate"',
     'api.POST("/lab-packages/upgrade"',
     'GET("/api/announcements"',
-    'GET("/api/admin/agent-traces"',
+    'GET("/api/admin/audit-events"',
   ]) {
     assertIncludes(router, marker, `go_router_precloud_surface:${marker}`);
   }

@@ -49,7 +49,7 @@ Machine boundary: 本文是人读 spec 导航入口，不是稳定机器接口�
 | <a id="spec-v22-opl-deployment-ownership-release-plan-boundary"></a>`spec:v22-opl-deployment-ownership-release-plan-boundary` | [specs/runtime/spec.md](../../specs/runtime/spec.md) |
 | <a id="spec-v22-opl-entry-preflight-auth-boundary"></a>`spec:v22-opl-entry-preflight-auth-boundary` | [specs/runtime/spec.md](../../specs/runtime/spec.md) |
 | <a id="spec-v22-opl-work-message-file-run-boundary"></a>`spec:v22-opl-work-message-file-run-boundary` | [specs/runtime/spec.md](../../specs/runtime/spec.md) |
-| <a id="spec-v22-portal-files-billing-trace-boundary"></a>`spec:v22-portal-files-billing-trace-boundary` | [specs/runtime/spec.md](../../specs/runtime/spec.md) |
+| <a id="spec-v22-portal-storage-usage-billing-boundary"></a>`spec:v22-portal-storage-usage-billing-boundary` | [specs/runtime/spec.md](../../specs/runtime/spec.md) |
 | <a id="spec-v22-portal-opl-connection-boundary"></a>`spec:v22-portal-opl-connection-boundary` | [specs/runtime/spec.md](../../specs/runtime/spec.md) |
 | <a id="spec-v22-portal-opl-context-backflow-boundary"></a>`spec:v22-portal-opl-context-backflow-boundary` | [specs/runtime/spec.md](../../specs/runtime/spec.md) |
 | <a id="spec-v22-real-opl-capability-canary-boundary"></a>`spec:v22-real-opl-capability-canary-boundary` | [specs/runtime/spec.md](../../specs/runtime/spec.md) |
@@ -58,7 +58,6 @@ Machine boundary: 本文是人读 spec 导航入口，不是稳定机器接口�
 | <a id="spec-v22-runtime-bridge-session-run-file-provider-keyref-boundary"></a>`spec:v22-runtime-bridge-session-run-file-provider-keyref-boundary` | [specs/runtime/spec.md](../../specs/runtime/spec.md) |
 | <a id="spec-v22-saas-portal-opl-ops-surface-boundary"></a>`spec:v22-saas-portal-opl-ops-surface-boundary` | [specs/runtime/spec.md](../../specs/runtime/spec.md) |
 | <a id="spec-v22-token-provider-boundary"></a>`spec:v22-token-provider-boundary` | [specs/runtime/spec.md](../../specs/runtime/spec.md) |
-| <a id="spec-v22-trace-metadata-boundary"></a>`spec:v22-trace-metadata-boundary` | [specs/runtime/spec.md](../../specs/runtime/spec.md) |
 | <a id="spec-v22-upstream-opl-boundary"></a>`spec:v22-upstream-opl-boundary` | [specs/runtime/spec.md](../../specs/runtime/spec.md) |
 | <a id="spec-v22-admin-ops-console-boundary"></a>`spec:v22-admin-ops-console-boundary` | [specs/operations/spec.md](../../specs/operations/spec.md) |
 | <a id="spec-v22-authorized-tencent-create-release-boundary"></a>`spec:v22-authorized-tencent-create-release-boundary` | [specs/operations/spec.md](../../specs/operations/spec.md) |
@@ -84,7 +83,7 @@ Machine boundary: 本文是人读 spec 导航入口，不是稳定机器接口�
 | <a id="spec-v22-portal-figma-make-ui-implementation-boundary"></a>`spec:v22-portal-figma-make-ui-implementation-boundary` | [specs/source/spec.md](../../specs/source/spec.md) |
 | <a id="spec-v22-portal-structure-failure-isolation-boundary"></a>`spec:v22-portal-structure-failure-isolation-boundary` | [specs/source/spec.md](../../specs/source/spec.md) |
 | <a id="spec-v22-portal-ui-design-quality-audit-boundary"></a>`spec:v22-portal-ui-design-quality-audit-boundary` | [specs/source/spec.md](../../specs/source/spec.md) |
-| <a id="spec-v22-portal-workbench-management-ui-composition-boundary"></a>`spec:v22-portal-workbench-management-ui-composition-boundary` | [specs/source/spec.md](../../specs/source/spec.md) |
+| <a id="spec-v22-portal-resource-control-ui-composition-boundary"></a>`spec:v22-portal-resource-control-ui-composition-boundary` | [specs/source/spec.md](../../specs/source/spec.md) |
 | <a id="spec-v22-smoke-eval-boundary"></a>`spec:v22-smoke-eval-boundary` | [specs/source/spec.md](../../specs/source/spec.md) |
 
 ## Package Templates

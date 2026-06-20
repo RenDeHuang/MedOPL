@@ -117,7 +117,7 @@ export function AdminOps() {
             <p>
               当前管理台保留服务状态页面入口，但默认后端 API 会返回
               <span className="font-medium"> ops_surface_disabled </span>
-              产品态；请在启用运维 surface 后再查看底层服务探针、运行环境和外部组件状态。
+              产品态；请在启用运维 surface 后再查看底层服务探针、资源环境和外部组件状态。
             </p>
             <p className="text-orange-700">{adminReadOnlyMessage}</p>
           </CardContent>

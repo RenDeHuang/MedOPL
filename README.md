@@ -1,8 +1,8 @@
 # MedOPL v22
 
-MedOPL 是 One Person Lab 的开箱即用 SaaS 托管科研工作台，面向 AI 小白科研用户，同时服务平台运维人员进行账单、审计和运行状态治理。
+MedOPL 是 One Person Lab / OPL-Webui 的 SaaS 资源控制面，面向需要托管计算资源、存储空间、套餐、费用与释放能力的用户，同时服务平台运维人员进行账单、审计和资源状态治理。
 
-普通用户看到的是科研托管平台，不是云资源控制台，不是用户自配云资源。产品主语言是科研工作台、托管运行环境、工作空间、文件空间、会话、任务、输入文件、输出文件、运行轨迹、余额、消费、账单、预扣费、冻结金额、停止计费和审计状态。
+普通用户看到的是资源购买与计算资源管理 Portal，不是云资源控制台，不是用户自配云资源，也不是科研执行主界面。产品主语言是账号、OPL workspace、计算资源、存储空间、套餐、任务并发、输入文件、输出文件、余额、消费、账单、预扣费、冻结金额、停止计费和审计状态。
 
 One Person Lab 是 clean upstream：不修改 upstream 源码，不 import upstream 内部模块。MedOPL 只通过 OPL Web Gateway、Runtime Bridge / Runtime Agent、公开 API/CLI 和必要的内部 anti-corruption mapping 接入。
 
@@ -10,7 +10,7 @@ One Person Lab 是 clean upstream：不修改 upstream 源码，不 import upstr
 
 ## Active Surface
 
-- `services/portal`: Portal SaaS 科研托管平台控制面，包括 API/domain 小闭包和 Portal UI MVP。
+- `services/portal`: Portal SaaS 资源控制面，包括 API/domain 小闭包和 Portal UI MVP。
 - `services/opl-web-gateway`: OPL Web entry/preflight 与统一身份边界，当前不作为本分支修改范围。
 - `services/opl-runtime-bridge`: Runtime Bridge / Runtime Agent 合同边界，当前不作为本分支修改范围。
 - `contracts/medopl-*.json`: consumer-first 产品、Portal、API、runtime、data-plane、billing、release 和 cloud boundary 机器合同。
@@ -32,7 +32,7 @@ v22 人读合同和长期边界入口是 [docs/specs/README.md](./docs/specs/REA
 
 ## Default Entry
 
-默认入口只表达 v22 托管工作台真相：用户从 Portal “进入 OPL 工作台”或访问 `/opl/entry/preflight`，两条路径都进入同一套 Gateway / preflight / launch 逻辑。默认路径不是 v19/v20/v21 appliance，不是 `user_owned`，不是 `resource-order`，不是旧 runner/provisioner，不把 `deploy/*` 或 `adapters/*` 作为默认入口，也不把 OpenCost/Langfuse 写成主产品叙事。
+默认入口只表达 v22 资源控制面真相：用户从 Portal “进入 OPL”或访问 `/opl/entry/preflight`，两条路径都进入同一套 Gateway / preflight / launch 逻辑。默认路径不是 v19/v20/v21 appliance，不是 `user_owned`，不是 `resource-order`，不是旧 runner/provisioner，不把 `deploy/*` 或 `adapters/*` 作为默认入口，也不把 OpenCost/Langfuse 写成主产品叙事。
 
 ## Secret Hygiene
 

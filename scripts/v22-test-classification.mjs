@@ -125,7 +125,7 @@ const SMOKE_FILES = Object.freeze([
   "tests/smoke/smoke-test-v22-managed-environment-open-flow.mjs",
   "tests/smoke/smoke-test-v22-mvp-managed-opl-loop-contract.mjs",
   "tests/smoke/smoke-test-v22-managed-user-loop-contract.mjs",
-  "tests/smoke/smoke-test-v22-portal-files-billing-trace-flow.mjs",
+  "tests/smoke/smoke-test-v22-portal-storage-usage-billing-flow.mjs",
   "tests/smoke/smoke-test-v22-portal-opl-connection-contract.mjs",
   "tests/smoke/smoke-test-v22-pricing-plan-contract.mjs",
   "tests/smoke/smoke-test-v22-release-stop-billing-audit-flow.mjs",

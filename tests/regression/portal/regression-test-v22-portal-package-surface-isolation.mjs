@@ -149,10 +149,10 @@ for (const apiCall of [
 }
 assert.equal(portalModelSources.includes("fetchSessionTraces"), false, "portal_user_models_must_not_fetch_session_traces");
 
-assert(specsIndex.includes("spec:v22-portal-workbench-management-ui-composition-boundary"), "specs_index_must_reference_ui_composition_boundary");
+assert(specsIndex.includes("spec:v22-portal-resource-control-ui-composition-boundary"), "specs_index_must_reference_ui_composition_boundary");
 assert(specsIndex.includes("specs/source/spec.md"), "specs_index_must_point_to_source_spec");
 assert.equal(/```json/u.test(specsIndex), false, "specs_index_must_not_embed_ui_composition_json");
-assert(sourceSpec.includes("`source:portal-workbench-management-ui-composition`"), "source_spec_must_own_ui_composition");
+assert(sourceSpec.includes("`source:portal-resource-control-ui-composition`"), "source_spec_must_own_ui_composition");
 assert(sourceSpec.includes("/packages"), "source_spec_must_require_packages_purchase_route");
 assert(sourceSpec.includes("/advanced/servers"), "source_spec_must_retire_advanced_servers_route");
 assert(sourceSpec.includes("/runtime"), "source_spec_must_retire_runtime_route");

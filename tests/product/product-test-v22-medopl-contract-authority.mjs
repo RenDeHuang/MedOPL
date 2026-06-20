@@ -123,9 +123,14 @@ assert.equal(
   "product_profile_owner_split_must_make_compute_resource_lifecycle_medopl_owned",
 );
 assert.equal(
-  productProfile.medopl_product_profile.owner_split?.opl_webui_owns?.includes("chat_first_project_session_workbench"),
+  productProfile.medopl_product_profile.owner_split?.opl_webui_owns?.includes("chat_first_project_session_surface"),
   true,
-  "product_profile_owner_split_must_keep_chat_workbench_with_opl_webui",
+  "product_profile_owner_split_must_keep_chat_session_surface_with_opl_webui",
+);
+assert.equal(
+  productProfile.medopl_product_profile.owner_split?.opl_webui_owns?.includes("file_management_experience"),
+  true,
+  "product_profile_owner_split_must_keep_file_management_with_opl_webui",
 );
 
 const testDirs = await readdir(path.join(repoRoot, "tests"), { withFileTypes: true });

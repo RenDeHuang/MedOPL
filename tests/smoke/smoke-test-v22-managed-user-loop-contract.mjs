@@ -35,7 +35,7 @@ function createContractState() {
     ledger: [],
     auditEvents: [],
     workspaceFiles: [],
-    sessionTraces: [],
+    launchAuditEvents: [],
     runs: [],
   };
 }
@@ -337,14 +337,14 @@ function launchOplWorkspace(state, input) {
   );
   assert.ok(providerBinding, "bound_provider_key_ref_required");
 
-  const trace = {
-    id: `trace-${state.sessionTraces.length + 1}`,
+  const auditEvent = {
+    id: `launch-audit-${state.launchAuditEvents.length + 1}`,
     tenantId: binding.tenantId,
     userId: binding.userId,
     workspaceId: binding.workspaceId,
     resourceBindingId: binding.id,
     providerKeyRef: providerBinding.providerKeyRef,
-    sessionRef: `opl-session-ref-${state.sessionTraces.length + 1}`,
+    sessionRef: `opl-session-ref-${state.launchAuditEvents.length + 1}`,
     boundaryHops: [
       "portal",
       "opl_web_gateway",
@@ -365,7 +365,7 @@ function launchOplWorkspace(state, input) {
     },
     createdAt: input.createdAt || STARTED_AT,
   };
-  state.sessionTraces.push(trace);
+  state.launchAuditEvents.push(auditEvent);
   appendAudit(state, {
     tenantId: binding.tenantId,
     userId: binding.userId,
@@ -376,14 +376,14 @@ function launchOplWorkspace(state, input) {
     action: "opl_launch_prepared_through_gateway_runtime_bridge_runtime_agent",
     boundary: "gateway_runtime_bridge_runtime_agent",
   });
-  return publicClone(trace);
+  return publicClone(auditEvent);
 }
 
 function submitWorkspaceRun(state, input) {
   const binding = state.resourceBindings.find((item) => item.id === input.resourceBindingId && item.status === "active");
   assert.ok(binding, "active_binding_required_for_workspace_run");
-  const trace = state.sessionTraces.find((item) => item.id === input.traceId && item.resourceBindingId === binding.id);
-  assert.ok(trace, "session_trace_required_for_run");
+  const auditEvent = state.launchAuditEvents.find((item) => item.id === input.auditEventId && item.resourceBindingId === binding.id);
+  assert.ok(auditEvent, "audit_event_required_for_run");
 
   const run = {
     id: `run-${state.runs.length + 1}`,
@@ -391,7 +391,7 @@ function submitWorkspaceRun(state, input) {
     userId: binding.userId,
     workspaceId: binding.workspaceId,
     resourceBindingId: binding.id,
-    traceId: trace.id,
+    auditEventId: auditEvent.id,
     status: "completed",
     boundary: "runtime_agent",
     createdAt: input.createdAt || STARTED_AT,
@@ -403,11 +403,11 @@ function submitWorkspaceRun(state, input) {
     userId: binding.userId,
     workspaceId: binding.workspaceId,
     resourceBindingId: binding.id,
-    traceId: trace.id,
+    auditEventId: auditEvent.id,
     kind: "outputs",
     name: "result.json",
     relativePath: "outputs/result.json",
-    storageKey: `${binding.storage.rootPrefix}sessions/${trace.sessionRef}/outputs/result.json`,
+    storageKey: `${binding.storage.rootPrefix}sessions/${auditEvent.sessionRef}/outputs/result.json`,
     source: "runtime_agent_output",
     status: "active",
     createdAt: input.createdAt || STARTED_AT,
@@ -452,7 +452,7 @@ function readPortalSurface(state, input) {
       availableCents: billingAccount.balanceCents - billingAccount.frozenCents,
       activeResourceBindings: state.resourceBindings.filter((item) => item.billingAccountId === billingAccount.id && item.status === "active").length,
     },
-    sessionTraceMetadata: state.sessionTraces
+    auditMetadata: state.launchAuditEvents
       .filter((item) => item.tenantId === input.tenantId && item.userId === input.userId && item.workspaceId === input.workspaceId)
       .map((item) => ({
         id: item.id,
@@ -748,19 +748,19 @@ for (const binding of [starterBinding, proBinding]) {
   assert.match(binding.auditTag, /tenant:tenant-v22-managed\/user:user-v22-managed\/workspace:/, "binding_audit_tag_must_include_core_relationships");
 }
 
-const trace = launchOplWorkspace(state, {
+const auditEvent = launchOplWorkspace(state, {
   resourceBindingId: starterBinding.id,
   providerKeyRef: providerSurface.providerKeyRef,
 });
-assert.deepEqual(trace.boundaryHops, ["portal", "opl_web_gateway", "runtime_bridge", "runtime_agent"], "opl_launch_must_cross_gateway_runtime_bridge_runtime_agent");
-assert.equal(trace.upstreamBoundary.project, "one-person-lab", "launch_must_reference_upstream_boundary");
-assert.equal(trace.upstreamBoundary.sourceModified, false, "upstream_source_must_remain_clean");
-assert.equal(trace.upstreamBoundary.importsInternalModules, false, "adapter_must_not_import_upstream_internal_modules");
-assertSurfaceIsRedacted(trace, rawProviderKey, "trace_surface");
+assert.deepEqual(auditEvent.boundaryHops, ["portal", "opl_web_gateway", "runtime_bridge", "runtime_agent"], "opl_launch_must_cross_gateway_runtime_bridge_runtime_agent");
+assert.equal(auditEvent.upstreamBoundary.project, "one-person-lab", "launch_must_reference_upstream_boundary");
+assert.equal(auditEvent.upstreamBoundary.sourceModified, false, "upstream_source_must_remain_clean");
+assert.equal(auditEvent.upstreamBoundary.importsInternalModules, false, "adapter_must_not_import_upstream_internal_modules");
+assertSurfaceIsRedacted(auditEvent, rawProviderKey, "audit_event_surface");
 
 const run = submitWorkspaceRun(state, {
   resourceBindingId: starterBinding.id,
-  traceId: trace.id,
+  auditEventId: auditEvent.id,
 });
 assert.equal(run.status, "completed", "workspace_run_must_complete_in_contract");
 assert.equal(run.artifacts.length, 1, "workspace_run_must_create_artifact");
@@ -775,8 +775,8 @@ const portalSurface = readPortalSurface(state, {
 assert.equal(portalSurface.workspaceFiles.length, 1, "portal_must_read_workspace_file");
 assert.equal(portalSurface.workspaceFiles[0].relativePath, "outputs/result.json", "portal_workspace_file_path_mismatch");
 assert.equal(portalSurface.billingSummary.frozenCents, 15000, "portal_billing_summary_must_include_frozen_amount");
-assert.equal(portalSurface.sessionTraceMetadata.length, 1, "portal_must_read_session_trace_metadata");
-assert.deepEqual(portalSurface.sessionTraceMetadata[0].boundaryHops, trace.boundaryHops, "portal_trace_metadata_boundary_mismatch");
+assert.equal(portalSurface.auditMetadata.length, 1, "portal_must_read_audit_event_metadata");
+assert.deepEqual(portalSurface.auditMetadata[0].boundaryHops, auditEvent.boundaryHops, "portal_audit_metadata_boundary_mismatch");
 assertSurfaceIsRedacted(portalSurface, rawProviderKey, "portal_surface");
 
 const balanceRisk = previewPaidActionRisk(billingAccount, { nextActionCostCents: 6000 });

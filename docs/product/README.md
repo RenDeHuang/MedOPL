@@ -7,7 +7,7 @@ Machine boundary: 本文是产品视角入口，不是第二份 current truth。
 
 ## Product View
 
-MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 One Person Lab SaaS 资源控制面：用户在 MedOPL 购买和管理 OPL 需要的计算资源、存储空间、套餐、任务并发、费用与释放能力。OPL-Webui 是主要 consumer / entry surface：登录用户日常 ordinary chat、项目 / session、skill 上传、文件工作台和科研任务体验留在 OPL-Webui；只有数据分析、文件任务、长任务或其他 `runtime_required` 能力才通过 runtime gate 进入 MedOPL 控制面。MedOPL 不把自己写成 OPL-Webui，也不复制 OPL chatbot。
+MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 One Person Lab SaaS 资源控制面：用户在 MedOPL 购买和管理 OPL 需要的计算资源、存储空间、套餐、任务并发、费用与释放能力。OPL-Webui 是主要 consumer / entry surface：登录用户日常 ordinary chat、项目 / session、skill 上传、文件管理和科研任务体验留在 OPL-Webui；只有数据分析、文件任务、长任务或其他 `runtime_required` 能力才通过 runtime gate 进入 MedOPL 控制面。MedOPL 不把自己写成 OPL-Webui，也不复制 OPL chatbot。
 
 当前愿景收口到一条明确 slice：OPL-Webui 登录用户在当前 workspace 通过 MedOPL 选择套餐、开通计算资源和存储空间；MedOPL 返回 resourceBinding、storageBinding、billing/freeze/release 状态给 OPL-Webui；用户回到 OPL-Webui 做科研，MedOPL 只从资源视角展示存储空间清单、用量、费用、释放计算资源和按显式意图销毁存储空间。这个 slice 是 current 产品目标，不等于已经取得 production owner receipt。
 
@@ -15,9 +15,9 @@ MedOPL 不是云资源控制台。普通用户产品语言不展示 CVM、COS、
 
 用户主路径是：登录 OPL -> ordinary chat 或触发 runtime_required -> OPL entry surface 调用 MedOPL runtime gate -> MedOPL 引导用户购买套餐、开通计算资源和存储空间 -> MedOPL 展示资源是否可用、存储空间里有什么、费用是多少 -> 用户进入 OPL 继续科研 -> MedOPL 完成 release / stop billing / storage destroy intent。Portal 是资源购买与计算资源管理视角，不是普通 chat 的主入口。
 
-MedOPL 不回答科研问题，不复制 OPL chatbot，不评判 OPL 科研能力质量。MedOPL 负责计算资源、存储空间、套餐、任务并发、usage/billing、release、storage destroy intent 和运维审计 receipt；OPL-Webui 负责 ordinary chat、项目 / session、文件工作台、skill 上传、任务推进和结果展示体验；OPL 负责 framework、runtime semantics、agent / skill protocol 和科研执行 runtime。
+MedOPL 不回答科研问题，不复制 OPL chatbot，不评判 OPL 科研能力质量。MedOPL 负责计算资源、存储空间、套餐、任务并发、usage/billing、release、storage destroy intent 和运维审计 receipt；OPL-Webui 负责 ordinary chat、项目 / session、文件管理、skill 上传、任务推进和结果展示体验；OPL 负责 framework、runtime semantics、agent / skill protocol 和科研执行 runtime。
 
-普通用户主语言优先使用：账号、工作空间、计算资源、存储空间、套餐、任务并发、余额、冻结金额、费用与用量。租户、runtime、运行环境、environmentId、resourceBindingId 和 billingAttributionId 只能作为内部标签、对账标签或审计字段。
+普通用户主语言优先使用：账号、工作空间、计算资源、存储空间、套餐、任务并发、余额、冻结金额、费用与用量。租户、runtime、environmentId、resourceBindingId 和 billingAttributionId 只能作为内部标签、对账标签或审计字段。
 
 用户侧只回答六个资源问题：
 
@@ -89,7 +89,7 @@ Go backend 是 MedOPL control-plane business truth 的本地 MVP takeover 承载
 
 ## Optional Resource Lifecycle
 
-计算资源和存储空间不是默认强制能力。未开通计算资源时，账号可以充值、管理工作空间、上传文件、绑定自己的 gflabtoken 模型调用密钥、进入 OPL 或受限工作台，但不能跑平台托管计算任务。
+计算资源和存储空间不是默认强制能力。未开通计算资源时，账号可以充值、管理工作空间、上传文件、绑定自己的 gflabtoken 模型调用密钥、进入 OPL 或受限 OPL 界面，但不能跑平台托管计算任务。
 
 进入 OPL 和运行平台托管任务是两道 gate：OPL entry 要求账号、工作空间、Gateway / upstream entry 可用，并要求用户输入或已有自己的 gflabtoken API Key；managed run 还要求托管计算资源、存储空间、余额 / 冻结金额、`providerKeyRef` 和 Runtime Bridge 可用。
 
@@ -104,7 +104,7 @@ Go backend 是 MedOPL control-plane business truth 的本地 MVP takeover 承载
 
 - 计算资源可独立开通、扩容、缩容、释放。
 - 存储资源 / 存储空间可独立开通、扩容、删除。
-- 释放托管运行环境不等于删除存储空间。
+- 释放计算资源不等于删除存储空间。
 - 释放计算资源不删除存储空间。
 - 删除存储资源 / 存储空间，或独立欠费保留策略，才进入 7 天保护期。
 - 存储空间进入保护期或不可用时，新任务不能依赖该存储空间。
@@ -118,11 +118,11 @@ Go backend 是 MedOPL control-plane business truth 的本地 MVP takeover 承载
 2. 给用户充值额度。
 3. 用户登录 `portal.medopl.cn`。
 4. 用户进入工作空间，上传文件或提出任务意图。
-5. 用户在 OPL entry/preflight 或工作台 provider 绑定面输入自己的 gflabtoken API Key；已绑定用户不要求重复输入。
+5. 用户在 OPL entry/preflight 或 OPL provider 绑定面输入自己的 gflabtoken API Key；已绑定用户不要求重复输入。
 6. 用户进入 OPL，查看上下文、组织文件、准备任务和查看已有结果。
 7. 用户选择是否开通计算资源和存储空间。
 8. 如开通，用户选择基础套餐、Pro 套餐，或已进入 MedOPL plan catalog allowlist 的升级规格。
-9. 平台在统一 TKE 集群内为该租户或工作台创建独立 tenant node pool，并绑定存储空间、计费和审计；计算资源与存储空间可独立保留或释放。
+9. 平台在统一 TKE 集群内为该租户或 workspace resource binding 创建独立 tenant node pool，并绑定存储空间、计费和审计；计算资源与存储空间可独立保留或释放。
 10. Portal 展示账号的计算资源、存储空间、工作空间和资源绑定状态。
 11. 开通资源后开始预扣费或冻结金额。
 12. 用户通过 clean upstream OPL Web 工作。
@@ -163,7 +163,7 @@ Go backend 是 MedOPL control-plane business truth 的本地 MVP takeover 承载
 - billing：费用与用量、余额、冻结金额、计算用量、存储用量、每日费用、账单明细、停止计费核对和 T+1 审计状态。
 - opl-launch：进入 OPL、runtime_required gate、存储绑定 gate、provider key gate 和缺失步骤。
 
-用户侧不再有顶层 Trace。用量明细归 `billing`，资源文件归 `workspace`，审计 metadata 只作为账单 / 释放 / 存储生命周期 receipt 支撑。`api_only` 复用入口和上下文状态；`full_runtime` 复用计算资源、存储空间、套餐、账单和用量 surface；`customer_dedicated` 对客户可见前必须另开 UI implementation leaf，补专属隔离、审批窗口、客户级审计标签和变更窗口状态。
+用户侧没有观测性或调试主导航。用量明细归 `billing`，资源文件归 `workspace`，审计事件只作为账单 / 释放 / 存储生命周期 receipt 支撑。`api_only` 复用入口和上下文状态；`full_runtime` 复用计算资源、存储空间、套餐、账单和用量 surface；`customer_dedicated` 对客户可见前必须另开 UI implementation leaf，补专属隔离、审批窗口、客户级审计标签和变更窗口状态。
 
 ## Product Contract Groups
 
@@ -176,7 +176,7 @@ Go backend 是 MedOPL control-plane business truth 的本地 MVP takeover 承载
 | 商业化 UI 是否需要立即修改 | [spec:v22-commercial-ui-impact-decision](../specs/README.md#spec-v22-commercial-ui-impact-decision), [spec:v22-portal-ui-design-quality-audit-boundary](../specs/README.md#spec-v22-portal-ui-design-quality-audit-boundary) |
 | 余额、冻结金额、停止计费、`120min` 核对和 `T+1` 审计 | [spec:v22-billing-freeze-boundary](../specs/README.md#spec-v22-billing-freeze-boundary), [spec:v22-release-stop-billing-audit-boundary](../specs/README.md#spec-v22-release-stop-billing-audit-boundary), [spec:v22-pricing-snapshot-boundary](../specs/README.md#spec-v22-pricing-snapshot-boundary) |
 | OPL 入口、用户自带 gflabtoken provider key、providerKeyRef 和 raw key 禁泄露 | [spec:v22-token-provider-boundary](../specs/README.md#spec-v22-token-provider-boundary), [spec:v22-opl-entry-preflight-auth-boundary](../specs/README.md#spec-v22-opl-entry-preflight-auth-boundary), [spec:v22-portal-opl-connection-boundary](../specs/README.md#spec-v22-portal-opl-connection-boundary) |
-| 存储空间清单、文件资源引用、用量和账单 receipt | [spec:v22-portal-files-billing-trace-boundary](../specs/README.md#spec-v22-portal-files-billing-trace-boundary), [spec:v22-runtime-bridge-session-run-file-provider-keyref-boundary](../specs/README.md#spec-v22-runtime-bridge-session-run-file-provider-keyref-boundary), [spec:v22-trace-metadata-boundary](../specs/README.md#spec-v22-trace-metadata-boundary) |
+| 存储空间清单、文件资源引用、用量和账单 receipt | [spec:v22-portal-storage-usage-billing-boundary](../specs/README.md#spec-v22-portal-storage-usage-billing-boundary), [spec:v22-runtime-bridge-session-run-file-provider-keyref-boundary](../specs/README.md#spec-v22-runtime-bridge-session-run-file-provider-keyref-boundary) |
 | 管理台和普通用户边界 | [spec:v22-portal-user-surface-boundary](../specs/README.md#spec-v22-portal-user-surface-boundary), [spec:v22-portal-admin-ops-surface-boundary](../specs/README.md#spec-v22-portal-admin-ops-surface-boundary), [spec:v22-admin-ops-console-boundary](../specs/README.md#spec-v22-admin-ops-console-boundary) |
 
 ## Current Truth Pointer

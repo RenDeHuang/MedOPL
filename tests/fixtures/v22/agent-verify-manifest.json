@@ -314,7 +314,7 @@
         "node tests/regression/portal/regression-test-v22-portal-package-surface-isolation.mjs",
         "node tests/regression/portal/regression-test-v22-portal-role-surface-boundaries.mjs",
         "node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs",
-        "node tests/regression/portal/regression-test-v22-portal-workbench-management-ui-browser.mjs",
+        "node tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs",
         "node tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs",
         "node tests/regression/portal/regression-test-v22-saas-portal-opl-ops-surface-contract.mjs",
         "node tests/regression/runtime-bridge/regression-test-v22-opl-acp-runtime-bridge.mjs",

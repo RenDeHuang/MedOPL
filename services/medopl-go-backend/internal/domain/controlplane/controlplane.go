@@ -203,7 +203,7 @@ type RunRecord struct {
 	LaunchID       string
 	WorkspaceID    string
 	ProviderKeyRef string
-	TraceID        string
+	RunRef         string
 	Status         string
 	ToolName       string
 	Message        string

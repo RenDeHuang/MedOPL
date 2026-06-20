@@ -84,7 +84,7 @@ assert(specsIndex.includes("specs/runtime/spec.md"), "specs_index_must_point_to_
 assert.equal(/```json/u.test(specsIndex), false, "specs_index_must_not_embed_saas_surface_json");
 
 assert(runtimeSpec.includes("`runtime:saas-portal-opl-ops-surface-boundary`"), "runtime_spec_must_own_saas_surface_requirement");
-assert(runtimeSpec.includes("spec:v22-portal-workbench-management-ui-composition-boundary"), "runtime_spec_must_reference_composition_contract");
+assert(runtimeSpec.includes("spec:v22-portal-resource-control-ui-composition-boundary"), "runtime_spec_must_reference_composition_contract");
 assert(runtimeSpec.includes("cloud-console UX"), "runtime_spec_must_keep_cloud_console_cannot_claim");
 assert(runtimeSpec.includes("raw provider key exposure"), "runtime_spec_must_keep_raw_key_cannot_claim");
 
@@ -105,7 +105,7 @@ assertExcludesAll(productReadme, [
 ], "product_readme_forbidden_cloud_console_claim");
 
 assertIncludesAll(sourceSpec, [
-  "`source:portal-workbench-management-ui-composition`",
+  "`source:portal-resource-control-ui-composition`",
   "/overview",
   "/packages",
   "/resources",
@@ -150,7 +150,7 @@ assertExcludesAll(visibleSurface, [
   "运行轨迹",
   "Trace",
   "traceId",
-  "session trace metadata",
+  "session internal audit metadata",
   "云资源控制台",
   "cloud console",
   "tenantId",

@@ -7,7 +7,7 @@ Machine boundary: 本文是公开叙事目标入口。它不授权改产品合�
 
 ## Public Positioning
 
-MedOPL v22 对外应解释为托管 OPL 科研工作台服务。公开语言优先讲账号、工作空间、计算资源、文件空间、套餐、任务并发、余额、冻结金额、文件、任务、结果和费用。
+MedOPL v22 对外应解释为 OPL 的 SaaS 资源购买与管理服务。公开语言优先讲账号、OPL workspace、计算资源、存储空间、套餐、任务并发、余额、冻结金额、输入文件、输出文件和费用。
 
 ## Public Non-Goals
 
@@ -19,4 +19,3 @@ MedOPL v22 对外应解释为托管 OPL 科研工作台服务。公开语言优�
 ## Migration Status
 
 本 README 是 public taxonomy skeleton。当前公开入口仍以根 `README.md` 和产品合同为准；后续若需要公开网站或用户文档，必须先审阅产品 truth 和授权边界。
-

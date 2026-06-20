@@ -315,7 +315,7 @@ const mockBackend = http.createServer(async (request, response) => {
     return send(200, {
       ok: true,
       status: "succeeded",
-      run: { traceId: "trace-local", status: "succeeded" },
+      run: { runRef: "run-local", status: "succeeded" },
       artifacts: [{
         artifactRef: "artifact-local",
         workspaceId: "workspace-v22",

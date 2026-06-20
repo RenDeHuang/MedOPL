@@ -143,10 +143,10 @@ func WorkspaceFileLocalTransfer() gin.HandlerFunc {
 	}
 }
 
-func SessionTraces() gin.HandlerFunc {
+func AdminAuditEvents() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		workspaceID := workspaceIDFromRequest(ctx)
-		ctx.JSON(http.StatusOK, tracesPayload(workspaceID))
+		ctx.JSON(http.StatusOK, auditEventsPayload(workspaceID))
 	}
 }
 
