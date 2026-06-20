@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/v22-production-goal-runners`
-- latest landed commit: `c5ed3c63fb1611f98e84b2a3c5fed47f25b54bac`
+- latest landed branch: `feat/v22-cloud-closure-route`
+- latest landed commit: `e96d44cc39435603c037fe83b898d617757108f2`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
