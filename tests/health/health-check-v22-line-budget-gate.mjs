@@ -47,9 +47,15 @@ for (const expected of Object.keys(baseline.files)) {
     `line_budget_must_report_baseline_file:${expected}`,
   );
 }
-assert(
+assert.equal(
+  "services/medopl-go-backend/internal/service/controlplane/service.go" in baseline.files,
+  false,
+  "line_budget_baseline_must_retire_go_controlplane_service",
+);
+assert.equal(
   payload.oversize.some((entry) => entry.file === "services/medopl-go-backend/internal/service/controlplane/service.go"),
-  "line_budget_must_report_go_controlplane_service",
+  false,
+  "line_budget_must_not_report_split_go_controlplane_service",
 );
 
 const suite = manifest.suites.find((item) => item.id === "repo-hygiene");

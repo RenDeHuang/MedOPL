@@ -25,6 +25,49 @@ const STEP_DEFINITIONS = Object.freeze([
   { id: "destroy-storage", method: "POST", path: "/api/v22/storage/destroy" },
 ]);
 
+const SINGLE_FLOW_EVIDENCE_DEFINITIONS = Object.freeze([
+  {
+    id: "runtime_open",
+    stepId: "open-runtime",
+    requiredFields: ["launchId", "resourceBindingId"],
+  },
+  {
+    id: "storage_ready",
+    stepId: "runtime-gate",
+    requiredFields: ["storageBindingId", "storageState"],
+  },
+  {
+    id: "file_upload",
+    stepId: "upload-file",
+    requiredFields: ["fileRef"],
+  },
+  {
+    id: "run_task",
+    stepId: "run-task",
+    requiredFields: ["artifactRef"],
+  },
+  {
+    id: "artifact_projection",
+    stepId: "fetch-artifact",
+    requiredFields: ["artifactRef"],
+  },
+  {
+    id: "billing_audit_projection",
+    stepId: "billing-summary",
+    requiredFields: ["runCount", "ledgerCount"],
+  },
+  {
+    id: "release_runtime_stop_billing",
+    stepId: "release-runtime",
+    requiredFields: ["billingStopped", "auditEventId"],
+  },
+  {
+    id: "storage_destroy_intent",
+    stepId: "destroy-storage",
+    requiredFields: ["storageDestroyed", "storageState"],
+  },
+]);
+
 function parseArgs(argv) {
   const options = { json: false, execute: false, dryRun: false, baseUrl: DEFAULT_BASE_URL, timeoutMs: 2500 };
   for (let index = 0; index < argv.length; index += 1) {
@@ -60,8 +103,24 @@ function plannedSteps() {
   }));
 }
 
+function plannedSingleFlowEvidence(evidenceRef) {
+  return {
+    kind: "v22_local_product_single_flow_evidence",
+    owner: "services/medopl-go-backend",
+    evidenceCompleteness: "planned",
+    evidenceRef,
+    requiredEvidence: SINGLE_FLOW_EVIDENCE_DEFINITIONS.map((item) => ({
+      id: item.id,
+      stepId: item.stepId,
+      status: "planned",
+      requiredFields: item.requiredFields,
+    })),
+  };
+}
+
 function basePayload(options, runId) {
   const execute = Boolean(options.execute && !options.dryRun);
+  const ref = evidenceRef(runId);
   return {
     ok: true,
     kind: "v22_local_product_e2e_runner",
@@ -70,7 +129,7 @@ function basePayload(options, runId) {
     failClosed: true,
     baseUrl: options.baseUrl,
     runId,
-    evidenceRef: evidenceRef(runId),
+    evidenceRef: ref,
     executesRequests: execute,
     ownerBoundary: {
       directOwner: "services/medopl-go-backend",
@@ -94,6 +153,7 @@ function basePayload(options, runId) {
       "clean OPL WebUI availability",
     ],
     steps: plannedSteps(),
+    singleFlowEvidence: plannedSingleFlowEvidence(ref),
   };
 }
 
@@ -162,6 +222,46 @@ function mark(payload, id, result, extra = {}) {
   return result;
 }
 
+function evidenceById(payload, id) {
+  return payload.singleFlowEvidence.requiredEvidence.find((item) => item.id === id);
+}
+
+function evidenceFieldPresent(value) {
+  return value !== undefined && value !== null && value !== "";
+}
+
+function completeEvidence(payload, id, fields) {
+  const item = evidenceById(payload, id);
+  for (const field of item.requiredFields) {
+    if (!evidenceFieldPresent(fields[field])) {
+      throw new Error(`local_product_e2e_missing_evidence_field:${id}:${field}`);
+    }
+  }
+  Object.assign(item, {
+    status: "passed",
+    fields: redacted(fields),
+  });
+}
+
+function blockPendingEvidence(payload) {
+  for (const item of payload.singleFlowEvidence.requiredEvidence) {
+    if (item.status === "planned") item.status = "blocked";
+  }
+  payload.singleFlowEvidence.evidenceCompleteness = "blocked";
+}
+
+function failWithBlocker(payload, blocker) {
+  payload.ok = false;
+  blockPendingEvidence(payload);
+  payload.blocker = blocker;
+  return payload;
+}
+
+function completeSingleFlowEvidence(payload) {
+  const allPassed = payload.singleFlowEvidence.requiredEvidence.every((item) => item.status === "passed");
+  payload.singleFlowEvidence.evidenceCompleteness = allPassed ? "complete" : "blocked";
+}
+
 function requireField(result, field, stepId) {
   const value = result.payload?.[field];
   if (!value) throw new Error(`local_product_e2e_missing_field:${stepId}:${field}`);
@@ -173,13 +273,11 @@ async function executeFlow(payload, options) {
   let result = await requestJson({ ...common, stepId: "backend-health", method: "GET", path: "/healthz" });
   mark(payload, "backend-health", result);
   if (!result.ok) {
-    payload.ok = false;
-    payload.blocker = {
+    return failWithBlocker(payload, {
       type: "local_service_unreachable",
       step: "backend-health",
       detail: result.error || `http_${result.httpStatus}`,
-    };
-    return payload;
+    });
   }
 
   const workspaceId = "workspace-v22";
@@ -225,6 +323,7 @@ async function executeFlow(payload, options) {
   const resourceBindingId = requireField(result, "resourceBindingId", "open-runtime");
   mark(payload, "open-runtime", result, { launchId, resourceBindingId });
   if (!result.ok) return failAt(payload, "open-runtime", result);
+  completeEvidence(payload, "runtime_open", { launchId, resourceBindingId });
 
   result = await requestJson({
     ...common,
@@ -241,6 +340,11 @@ async function executeFlow(payload, options) {
   const storageBindingId = result.payload?.storageBindingId || "";
   mark(payload, "runtime-gate", result, { storageBindingId });
   if (!result.ok) return failAt(payload, "runtime-gate", result);
+  completeEvidence(payload, "storage_ready", {
+    storageBindingId,
+    storageState: result.payload?.storageState || "",
+    runtimeState: result.payload?.runtimeState || "",
+  });
 
   result = await requestJson({
     ...common,
@@ -257,6 +361,13 @@ async function executeFlow(payload, options) {
   const fileRef = requireField(result, "fileRef", "upload-file");
   mark(payload, "upload-file", result, { fileRef });
   if (!result.ok) return failAt(payload, "upload-file", result);
+  completeEvidence(payload, "file_upload", {
+    fileRef,
+    workspaceId: result.payload?.workspaceId || "",
+    providerKeyRef: result.payload?.providerKeyRef || "",
+    relativePath: result.payload?.file?.relativePath || "",
+    fileStatus: result.payload?.file?.status || "",
+  });
 
   result = await requestJson({
     ...common,
@@ -274,6 +385,14 @@ async function executeFlow(payload, options) {
   if (!artifactRef) throw new Error("local_product_e2e_missing_field:run-task:artifactRef");
   mark(payload, "run-task", result, { artifactRef });
   if (!result.ok) return failAt(payload, "run-task", result);
+  completeEvidence(payload, "run_task", {
+    artifactRef,
+    traceId: result.payload?.run?.traceId || "",
+    status: result.payload?.status || "",
+    artifactKind: result.payload?.artifacts?.[0]?.kind || "",
+    workspaceId: result.payload?.artifacts?.[0]?.workspaceId || "",
+    providerKeyRef: result.payload?.artifacts?.[0]?.providerKeyRef || "",
+  });
 
   result = await requestJson({
     ...common,
@@ -283,6 +402,14 @@ async function executeFlow(payload, options) {
   });
   mark(payload, "fetch-artifact", result, { artifactRef });
   if (!result.ok) return failAt(payload, "fetch-artifact", result);
+  completeEvidence(payload, "artifact_projection", {
+    artifactRef,
+    workspaceId: result.payload?.artifact?.workspaceId || "",
+    providerKeyRef: result.payload?.artifact?.providerKeyRef || "",
+    kind: result.payload?.artifact?.kind || "",
+    relativePath: result.payload?.artifact?.relativePath || "",
+    contentType: result.payload?.artifact?.contentType || "",
+  });
 
   result = await requestJson({
     ...common,
@@ -292,6 +419,11 @@ async function executeFlow(payload, options) {
   });
   mark(payload, "billing-summary", result);
   if (!result.ok) return failAt(payload, "billing-summary", result);
+  completeEvidence(payload, "billing_audit_projection", {
+    runCount: result.payload?.summary?.runCount,
+    ledgerCount: result.payload?.ledger?.length || 0,
+    source: result.payload?.source || "",
+  });
 
   result = await requestJson({
     ...common,
@@ -316,6 +448,15 @@ async function executeFlow(payload, options) {
   });
   mark(payload, "release-runtime", result);
   if (!result.ok) return failAt(payload, "release-runtime", result);
+  completeEvidence(payload, "release_runtime_stop_billing", {
+    billingStopped: result.payload?.billingStopped,
+    auditEventId: result.payload?.auditEvent?.id || "",
+    auditEventKind: result.payload?.auditEvent?.kind || "",
+    status: result.payload?.status || "",
+    runtimeStopped: result.payload?.receipts?.runtimeStopped || "",
+    billingSettlement: result.payload?.receipts?.billingSettlement || "",
+    storageDestroyReceipt: result.payload?.receipts?.storageDestroyReceipt || "",
+  });
 
   result = await requestJson({
     ...common,
@@ -331,7 +472,16 @@ async function executeFlow(payload, options) {
   });
   mark(payload, "destroy-storage", result);
   if (!result.ok) return failAt(payload, "destroy-storage", result);
+  completeEvidence(payload, "storage_destroy_intent", {
+    storageDestroyed: result.payload?.storageDestroyed,
+    storageState: result.payload?.storageState || "",
+    auditEventId: result.payload?.auditEvent?.id || "",
+    auditEventKind: result.payload?.auditEvent?.kind || "",
+    storageDestroyReceipt: result.payload?.releaseReceipts?.storageDestroyReceipt || "",
+    billingSettlement: result.payload?.releaseReceipts?.billingSettlement || "",
+  });
 
+  completeSingleFlowEvidence(payload);
   payload.completion = {
     status: "local_product_e2e_passed",
     receiptLevel: "local_rc",
@@ -340,13 +490,11 @@ async function executeFlow(payload, options) {
 }
 
 function failAt(payload, step, result) {
-  payload.ok = false;
-  payload.blocker = {
+  return failWithBlocker(payload, {
     type: "local_product_e2e_step_failed",
     step,
     detail: result.error || `http_${result.httpStatus}`,
-  };
-  return payload;
+  });
 }
 
 function writeEvidence(payload) {
@@ -376,11 +524,10 @@ try {
   process.stdout.write(options.json ? `${JSON.stringify(payload, null, 2)}\n` : renderHuman(payload));
   if (!payload.ok) process.exitCode = 1;
 } catch (error) {
-  payload.ok = false;
-  payload.blocker = {
+  failWithBlocker(payload, {
     type: "local_product_e2e_exception",
     detail: String(error.message || error),
-  };
+  });
   writeEvidence(payload);
   process.stdout.write(options.json ? `${JSON.stringify(payload, null, 2)}\n` : renderHuman(payload));
   process.exitCode = 1;

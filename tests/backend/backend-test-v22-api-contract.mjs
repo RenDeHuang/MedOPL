@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -10,17 +10,28 @@ async function readRepoFile(repoPath) {
   return readFile(path.join(repoRoot, repoPath), "utf8");
 }
 
+async function readRepoGoDir(repoPath) {
+  const absoluteDir = path.join(repoRoot, repoPath);
+  const names = await readdir(absoluteDir);
+  const goFiles = names.filter((name) => name.endsWith(".go") && !name.endsWith("_test.go")).sort();
+  const sources = await Promise.all(goFiles.map((name) => readRepoFile(path.join(repoPath, name))));
+  return sources.join("\n");
+}
+
 async function readJson(repoPath) {
   return JSON.parse(await readRepoFile(repoPath));
 }
 
 const apiContract = await readJson("contracts/medopl-api-contract.json");
+const controlplaneServiceSurface = await readRepoGoDir("services/medopl-go-backend/internal/service/controlplane");
+assert.equal(controlplaneServiceSurface.includes("func Test"), false, "api_contract_surface_must_exclude_go_test_files");
+assert.equal(controlplaneServiceSurface.includes("t.Fatalf"), false, "api_contract_surface_must_exclude_go_test_assertions");
 const goRouteSurface = [
   await readRepoFile("services/medopl-go-backend/internal/server/router.go"),
   await readRepoFile("services/medopl-go-backend/internal/server/handlers/controlplane.go"),
-  await readRepoFile("services/medopl-go-backend/internal/service/controlplane/service.go"),
+  controlplaneServiceSurface,
 ].join("\n");
-const serviceSurface = await readRepoFile("services/medopl-go-backend/internal/service/controlplane/service.go");
+const serviceSurface = controlplaneServiceSurface;
 const migration = await readRepoFile("services/medopl-go-backend/migrations/0001_baseline.sql");
 
 const requiredRouteMarkers = [

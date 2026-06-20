@@ -2,7 +2,5 @@
   "schema_version": 1,
   "default_limit": 1000,
   "purpose": "Lock existing oversized tracked code files so no file can grow silently while future new oversized files fail closed.",
-  "files": {
-    "services/medopl-go-backend/internal/service/controlplane/service.go": 1064
-  }
+  "files": {}
 }
