@@ -131,6 +131,7 @@ const reviewWithPostMergeCloseoutOnly = evaluateReview({
   base: "origin/recovery/platform-v22-trunk",
   changedFiles: [
     "docs/active/README.md",
+    "docs/delivery/README.md",
     "docs/history/README.md",
     "tests/fixtures/v22/goal-current.json",
   ],

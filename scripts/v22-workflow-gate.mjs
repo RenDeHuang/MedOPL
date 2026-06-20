@@ -41,6 +41,7 @@ const repoRoot = path.resolve(__dirname, "..");
 // node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk
 const closeoutOnlyFiles = new Set([
   "docs/active/README.md",
+  "docs/delivery/README.md",
   "docs/history/README.md",
   "tests/fixtures/v22/goal-current.json",
 ]);
