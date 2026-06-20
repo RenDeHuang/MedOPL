@@ -69,8 +69,8 @@ function isObject(value) {
 }
 
 function sanitizeSummary(value = {}) {
-  const json = JSON.stringify(value || {});
   const envSecrets = [
+    "V22_TENCENT_READONLY_SECRET_FILE",
     "V22_TENCENT_MUTATION_SECRET_FILE",
     "TENCENT_MUTATION_SECRET_ID",
     "TENCENT_MUTATION_SECRET_KEY",
@@ -81,18 +81,28 @@ function sanitizeSummary(value = {}) {
   ]
     .map((key) => String(process.env[key] || "").trim())
     .filter((item) => item.length >= 4);
-  let redacted = json
+  let redacted = JSON.stringify(redactValues(value || {}))
     .replace(/SecretId/gu, "SecretRef")
     .replace(/SecretKey/gu, "SecretRef")
-    .replace(/token/giu, "redacted_token_ref")
-    .replace(/kubeconfig/giu, "kubeconfig_ref")
-    .replace(/DATABASE_URL/gu, "DATABASE_URL_REF")
     .replace(/rawResponse/gu, "redacted_raw_response")
     .replace(/provider_response/gu, "provider_summary");
   for (const secret of envSecrets) {
     redacted = redacted.split(secret).join("redacted_secret_ref");
   }
   return JSON.parse(redacted);
+}
+
+function redactValues(value) {
+  if (Array.isArray(value)) return value.map((item) => redactValues(item));
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, redactValues(child)]));
+  }
+  if (typeof value !== "string") return value;
+  if (["kubeconfigRef", "TENCENT_DEPLOY_KUBECONFIG_REF"].includes(value)) return value;
+  if (/^postgres(?:ql)?:\/\//iu.test(value)) return "DATABASE_URL_REF";
+  if (/kubeconfig/iu.test(value)) return "kubeconfig_ref";
+  if (/token/iu.test(value)) return "redacted_token_ref";
+  return value;
 }
 
 function commandMustMatch(command, operationClass) {
@@ -289,11 +299,40 @@ function failClosedExternalRunner(command, context = {}) {
   return null;
 }
 
+function operationInputRefs(operationClass = "") {
+  const inputs = { operationClass };
+  if (operationClass === "tenant_runtime_provisioning") {
+    inputs.secretFile = process.env.V22_TENCENT_MUTATION_SECRET_FILE || "";
+    inputs.planFile = process.env.V22_TENCENT_RUNTIME_PLAN_FILE || "";
+  } else if (operationClass === "storage_lifecycle") {
+    inputs.secretFile = process.env.V22_TENCENT_MUTATION_SECRET_FILE || "";
+    inputs.planFile = process.env.V22_TENCENT_STORAGE_PLAN_FILE || "";
+  } else if (operationClass === "billing_audit_writeback") {
+    inputs.receiptFile = process.env.V22_MEDOPL_BILLING_AUDIT_RECEIPT_FILE || "";
+    inputs.databaseUrlRef = process.env.DATABASE_URL ? "DATABASE_URL" : "";
+  } else if (operationClass === "build_push") {
+    inputs.buildContext = process.env.V22_CONTAINER_BUILD_CONTEXT || "";
+    inputs.imageRef = process.env.V22_CONTAINER_IMAGE_REF || "";
+    inputs.registryCredentialRef = process.env.TCR_ID && process.env.TCR_SECRET ? "TCR_ID:TCR_SECRET" : "";
+  } else if (operationClass === "kubectl") {
+    inputs.kubeconfigRef = process.env.TENCENT_DEPLOY_KUBECONFIG_REF ? "TENCENT_DEPLOY_KUBECONFIG_REF" : "";
+    inputs.kubernetesManifestDir = process.env.V22_KUBERNETES_MANIFEST_DIR || "";
+  } else if (operationClass === "deploy") {
+    inputs.kubeconfigRef = process.env.TENCENT_DEPLOY_KUBECONFIG_REF ? "TENCENT_DEPLOY_KUBECONFIG_REF" : "";
+    inputs.deployPlanFile = process.env.V22_MEDOPL_DEPLOY_PLAN_FILE || "";
+  } else if (operationClass === "live_test") {
+    inputs.oplWebuiConsumerCanaryUrl = process.env.V22_OPL_WEBUI_CONSUMER_CANARY_URL || "";
+    inputs.medoplPublicBaseUrl = process.env.V22_MEDOPL_PUBLIC_BASE_URL || "";
+  }
+  return inputs;
+}
+
 function runExternalRunner(command, context = {}) {
   const runnerPath = String(process.env[OPERATION_EXTERNAL_RUNNER_ENV[context.operationClass]] || "").trim();
   const repoRoot = context.repoRoot || process.cwd();
   const resolvedPath = path.isAbsolute(runnerPath) ? runnerPath : path.join(repoRoot, runnerPath);
   const receiptTypes = Array.isArray(context.receiptTypes) ? context.receiptTypes.map(String) : [];
+  const inputRefs = operationInputRefs(context.operationClass);
   const result = spawnSync(process.execPath, [resolvedPath], {
     cwd: repoRoot,
     encoding: "utf8",
@@ -306,6 +345,7 @@ function runExternalRunner(command, context = {}) {
       V22_GOAL_RECEIPT_TYPES: JSON.stringify(receiptTypes),
       V22_GOAL_EVIDENCE_REF: String(context.evidenceRef || ""),
       V22_GOAL_AUTHORIZATION: JSON.stringify(context.authorization || {}),
+      V22_GOAL_INPUTS: JSON.stringify(inputRefs),
     },
   });
   let parsed = {};
@@ -340,6 +380,20 @@ function runExternalRunner(command, context = {}) {
           operationClass: context.operationClass,
           runnerId: context.runnerId,
           receiptType: receipt?.type || "",
+        }),
+      };
+    }
+    if (String(receipt.status || "") !== "accepted") {
+      return {
+        command,
+        ok: false,
+        status: 69,
+        summary: sanitizeSummary({
+          blocker: "production_goal_external_runner_receipt_not_accepted",
+          operationClass: context.operationClass,
+          runnerId: context.runnerId,
+          receiptType: receipt.type,
+          receiptStatus: receipt.status || "",
         }),
       };
     }

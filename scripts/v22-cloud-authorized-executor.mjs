@@ -134,14 +134,45 @@ function phasePlan(pack, cloudPack) {
 }
 
 function redactedSummary(value) {
-  const json = JSON.stringify(value || {});
-  const redacted = json
+  let redacted = JSON.stringify(redactValues(value || {}))
     .replace(/SecretId/gu, "SecretRef")
     .replace(/SecretKey/gu, "SecretRef")
-    .replace(/provider_response/gu, "provider_summary")
-    .replace(/kubeconfig/gu, "kubeconfig_ref")
-    .replace(/token/giu, "redacted_token_ref");
+    .replace(/provider_response/gu, "provider_summary");
+  for (const secret of secretValuesForRedaction()) {
+    redacted = redacted.split(secret).join("redacted_secret_ref");
+  }
   return JSON.parse(redacted || "{}");
+}
+
+function redactValues(value) {
+  if (Array.isArray(value)) return value.map((item) => redactValues(item));
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, redactValues(child)]));
+  }
+  if (typeof value !== "string") return value;
+  if (["kubeconfigRef", "TENCENT_DEPLOY_KUBECONFIG_REF"].includes(value)) return value;
+  if (/kubeconfig/iu.test(value)) return "kubeconfig_ref";
+  if (/token/iu.test(value)) return "redacted_token_ref";
+  return value;
+}
+
+function secretValuesForRedaction() {
+  return [
+    "TENCENT_READONLY_SECRET_ID",
+    "TENCENT_READONLY_SECRET_KEY",
+    "TENCENT_MUTATION_SECRET_ID",
+    "TENCENT_MUTATION_SECRET_KEY",
+    "TENCENT_DEPLOY_KUBECONFIG_REF",
+    "TCR_ID",
+    "TCR_SECRET",
+    "DATABASE_URL",
+  ]
+    .map((key) => String(process.env[key] || "").trim())
+    .filter((value) => value.length >= 4);
+}
+
+function redactedText(value = "") {
+  return String(redactedSummary({ value })?.value || "");
 }
 
 function basePayload({ options, pack, cloudPack }) {
@@ -300,12 +331,22 @@ async function executePayload(payload, options) {
       }
     }
     phase.status = "executed";
+    const receiptPointerRefs = phase.receiptTypes
+      .map((type) => receiptPointers.get(type)?.path || "")
+      .filter(Boolean);
     writeJson(phase.evidenceRef, {
       kind: "v22_cloud_authorized_phase_evidence",
       operationClass: phase.operationClass,
       status: phase.status,
       commandCount: phase.commands.length,
-      summary: "redacted phase evidence only",
+      resultSummaries: phase.results.map((result) => ({
+        command: result.command,
+        ok: result.ok,
+        status: result.status,
+        ...redactedSummary(result.summary || {}),
+      })),
+      receiptPointerRefs,
+      summary: "redacted phase evidence pointers only",
     });
   }
 
@@ -371,6 +412,9 @@ function writeReceiptManifest(payload, receiptPointers = new Map()) {
 }
 
 function writeOwnerReceiptPointer(payload, type, receipt = {}, receiptPointers = new Map()) {
+  if (receipt.status && receipt.status !== "accepted") {
+    throw new Error(`receipt_status_not_accepted:${type}:${receipt.status}`);
+  }
   const receiptPath = `${payload.evidenceSink}/${type}.json`;
   const issuedAt = new Date().toISOString();
   const pointer = {
@@ -380,7 +424,7 @@ function writeOwnerReceiptPointer(payload, type, receipt = {}, receiptPointers =
     owner: receipt.owner || RECEIPT_OWNERS[type] || "MedOPL Operations",
     status: receipt.status || "accepted",
     issued_at: receipt.issued_at || issuedAt,
-    summary: receipt.summary || `${type} accepted with redacted runtime evidence pointer.`,
+    summary: redactedText(receipt.summary || `${type} accepted with redacted runtime evidence pointer.`),
     authorization_ref: receipt.authorization_ref || `${AUTH_PACK_PATH}#${payload.authorization.runId}`,
     operation_class: receipt.operationClass || RECEIPT_OPERATION_CLASSES[type] || "",
     runner_id: receipt.runnerId || "",
