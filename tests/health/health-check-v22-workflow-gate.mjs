@@ -144,6 +144,27 @@ assert.equal(
 );
 assert.equal(reviewWithPostMergeCloseoutOnly.closeoutOnly, true, "post_merge_closeout_only_diff_must_be_reported");
 
+const reviewWithDeliveryCloseout = evaluateReview({
+  base: "origin/recovery/platform-v22-trunk",
+  changedFiles: [
+    "docs/active/README.md",
+    "docs/delivery/README.md",
+    "docs/history/README.md",
+    "tests/fixtures/v22/goal-current.json",
+  ],
+});
+assert.equal(reviewWithDeliveryCloseout.ok, true, "post_merge_delivery_closeout_must_pass_review_gate");
+assert.equal(reviewWithDeliveryCloseout.closeoutOnly, true, "post_merge_delivery_closeout_must_be_reported");
+
+const reviewWithCloseoutGateSelfUpdate = evaluateReview({
+  base: "origin/recovery/platform-v22-trunk",
+  changedFiles: [
+    "scripts/v22-workflow-gate.mjs",
+    "tests/health/health-check-v22-workflow-gate.mjs",
+  ],
+});
+assert.equal(reviewWithCloseoutGateSelfUpdate.ok, true, "workflow_gate_self_update_must_have_registered_eval");
+
 const reviewWithTokenNamedEval = evaluateReview({
   base: "recovery/platform-v22-trunk",
   changedFiles: [
