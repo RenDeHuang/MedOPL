@@ -39,6 +39,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 // Source-level command reference retained for contract traceability:
 // node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk
+const closeoutOnlyFiles = new Set([
+  "docs/active/README.md",
+  "docs/history/README.md",
+  "tests/fixtures/v22/goal-current.json",
+]);
 
 export {
   currentCommandReferenceSources,
@@ -76,6 +81,7 @@ export function evaluateReview({
   const specsChanged = normalizedFiles.some(isSpecPath);
   const contractsChanged = normalizedFiles.some((file) => file.startsWith("contracts/"));
   const evalChanged = normalizedFiles.some(isV22EvalPath);
+  const closeoutOnly = normalizedFiles.length > 0 && normalizedFiles.every((file) => closeoutOnlyFiles.has(file));
   const formalEngineeringChanged = normalizedFiles.some((file) => isFormalEngineeringChange(file) && !isChangePackagePath(file));
   const findings = [];
 
@@ -86,7 +92,7 @@ export function evaluateReview({
   if (missingLocalCommandReferences.length > 0) findings.push({ code: "missing_local_command_reference", severity: "blocker", references: missingLocalCommandReferences });
   if (servicesChanged && !evalChanged) findings.push({ code: "services_changed_without_registered_eval_update", severity: "blocker", message: "services/* 改动必须同时修改/新增已注册 eval；changes/ package 不再作为豁免。" });
   if ((specsChanged || contractsChanged) && !evalChanged) findings.push({ code: "contracts_or_specs_changed_without_registered_eval_update", severity: "blocker", message: "specs/contracts 改动必须同时修改/新增已注册 eval 或 active-platform runner；changes/ package 不再作为豁免。" });
-  if (formalEngineeringChanged && !evalChanged && !contractsChanged) findings.push({ code: "formal_change_without_machine_evidence_update", severity: "blocker", message: "正式工程变更必须绑定 source/test/runner/fixture/contract evidence；不得新增 change package。" });
+  if (formalEngineeringChanged && !evalChanged && !contractsChanged && !closeoutOnly) findings.push({ code: "formal_change_without_machine_evidence_update", severity: "blocker", message: "正式工程变更必须绑定 source/test/runner/fixture/contract evidence；不得新增 change package。" });
 
   const recommendedCommands = [...reviewRequiredCommands];
   if (normalizedFiles.some((file) => file.startsWith("services/portal/"))) recommendedCommands.push("npm --prefix services/portal run check");
@@ -109,6 +115,7 @@ export function evaluateReview({
     secretLikeAddedLines,
     missingLocalCommandReferences,
     missingLocalTestCommandReferences: missingLocalCommandReferences,
+    closeoutOnly,
     findings,
     recommendedCommands: unique(recommendedCommands),
   };

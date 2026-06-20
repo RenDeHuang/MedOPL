@@ -127,6 +127,22 @@ const reviewWithRegisteredEval = evaluateReview({
 assert.equal(reviewWithRegisteredEval.findings.some((finding) => finding.code === "services_changed_without_registered_eval_update"), false, "registered_eval_must_cover_services_change");
 assert.equal(reviewWithRegisteredEval.findings.some((finding) => finding.code === "contracts_or_specs_changed_without_registered_eval_update"), false, "registered_eval_must_cover_contracts_change");
 
+const reviewWithPostMergeCloseoutOnly = evaluateReview({
+  base: "origin/recovery/platform-v22-trunk",
+  changedFiles: [
+    "docs/active/README.md",
+    "docs/history/README.md",
+    "tests/fixtures/v22/goal-current.json",
+  ],
+});
+assert.equal(reviewWithPostMergeCloseoutOnly.ok, true, "post_merge_closeout_only_diff_must_pass_review_gate");
+assert.equal(
+  reviewWithPostMergeCloseoutOnly.findings.some((finding) => finding.code === "formal_change_without_machine_evidence_update"),
+  false,
+  "post_merge_closeout_only_diff_must_not_require_extra_machine_evidence",
+);
+assert.equal(reviewWithPostMergeCloseoutOnly.closeoutOnly, true, "post_merge_closeout_only_diff_must_be_reported");
+
 const reviewWithTokenNamedEval = evaluateReview({
   base: "recovery/platform-v22-trunk",
   changedFiles: [
