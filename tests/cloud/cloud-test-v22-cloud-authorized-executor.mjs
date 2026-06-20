@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -108,12 +108,106 @@ assert.equal(missingExecutorPayload.blocker.type, "cloud_command_executor_missin
 const tempDir = mkdtempSync(path.join(tmpdir(), "v22-cloud-executor-"));
 const commandLog = path.join(tempDir, "commands.log");
 const stubExecutor = path.join(tempDir, "cloud-stub.mjs");
-  const receiptStubExecutor = path.join(tempDir, "cloud-receipt-stub.mjs");
-  const unauthorizedReceiptExecutor = path.join(tempDir, "cloud-unauthorized-receipt-stub.mjs");
+const receiptStubExecutor = path.join(tempDir, "cloud-receipt-stub.mjs");
+const unauthorizedReceiptExecutor = path.join(tempDir, "cloud-unauthorized-receipt-stub.mjs");
 try {
   writeFileSync(stubExecutor, `import { appendFileSync } from "node:fs";\nconst logPath = ${JSON.stringify(commandLog)};\nexport default async function runCommand(command, context) { appendFileSync(logPath, \`\${context.operationClass}:\${context.runnerId}:\${command}\\n\`); return { command, ok: true, status: 0, summary: { operationClass: context.operationClass, runnerId: context.runnerId, repoRoot: Boolean(context.repoRoot), redacted: true } }; }\n`);
   writeFileSync(receiptStubExecutor, `export default async function runCommand(command, context) { for (const type of context.receiptTypes) context.writeReceipt(type, { summary: \`\${type} accepted by \${context.runnerId}\` }); return { command, ok: true, status: 0, summary: { operationClass: context.operationClass, receiptTypes: context.receiptTypes } }; }\n`);
   writeFileSync(unauthorizedReceiptExecutor, `export default async function runCommand(command, context) { context.writeReceipt("production_deploy_receipt", { summary: "unauthorized deploy receipt" }); return { command, ok: true, status: 0, summary: { operationClass: context.operationClass } }; }\n`);
+
+  const readonlyEnvFile = path.join(tempDir, "readonly.env");
+  const readonlySecretKeyName = ["TENCENT", "READONLY", "SECRET", "KEY"].join("_");
+  const readonlySecretValue = ["readonly", "credential", "stub"].join("-");
+  const readonlyExecutor = "tests/support/cloud-prework/cloud-authorized-readonly-executor.js";
+  const productionGoalExecutor = "tests/support/cloud-prework/cloud-authorized-production-goal-executor.js";
+  const mutationSecretFile = path.join(tempDir, "mutation.env");
+  const runtimePlanFile = path.join(tempDir, "runtime-plan.json");
+  const storagePlanFile = path.join(tempDir, "storage-plan.json");
+  const billingAuditReceiptFile = path.join(tempDir, "billing-audit-request.json");
+  const deployPlanFile = path.join(tempDir, "deploy-plan.json");
+  const kubernetesManifestDir = path.join(tempDir, "k8s");
+  const containerBuildContext = path.join(tempDir, "container-context");
+  const receiptBackedRunner = path.join(tempDir, "receipt-backed-runner.mjs");
+  mkdirSync(kubernetesManifestDir);
+  mkdirSync(containerBuildContext);
+  writeFileSync(readonlyEnvFile, [
+    "RUN_TENCENT_READONLY_INVENTORY=1",
+    "TENCENT_READONLY_SECRET_ID=readonly-secret-id",
+    `${readonlySecretKeyName}=${readonlySecretValue}`,
+    "TENCENT_READONLY_ACCOUNT_ID=123456789012",
+    "TENCENT_READONLY_REGIONS=na-siliconvalley",
+    "TENCENT_READONLY_ALLOWED_APIS=DescribeClusters,DescribeClusterNodePools,DescribeNodePools,GetCallerIdentity,DescribeBillSummary,HeadObject",
+    "",
+  ].join("\n"));
+  writeFileSync(mutationSecretFile, [
+    "RUN_TENCENT_CREATE_RELEASE_EXECUTION=1",
+    "TENCENT_MUTATION_SECRET_ID=mutation-secret-id",
+    "TENCENT_MUTATION_SECRET_KEY=mutation-secret-key",
+    "",
+  ].join("\n"));
+  writeFileSync(runtimePlanFile, JSON.stringify({ runtimeBindingId: "runtime-binding-test" }));
+  writeFileSync(storagePlanFile, JSON.stringify({ storageBindingId: "storage-binding-test" }));
+  writeFileSync(billingAuditReceiptFile, JSON.stringify({ billingReceiptRequestId: "billing-audit-test" }));
+  writeFileSync(deployPlanFile, JSON.stringify({ deployPlanId: "deploy-test" }));
+  writeFileSync(receiptBackedRunner, [
+    "const receiptTypes = JSON.parse(process.env.V22_GOAL_RECEIPT_TYPES || '[]');",
+    "const operationClass = process.env.V22_GOAL_OPERATION_CLASS || '';",
+    "const receipts = receiptTypes.map((type) => ({ type, status: 'accepted', summary: `${type} accepted by external runner for ${operationClass}` }));",
+    "console.log(JSON.stringify({ ok: true, summary: { operationClass, externalRunner: true, evidenceRefObserved: Boolean(process.env.V22_GOAL_EVIDENCE_REF) }, receipts }));",
+    "",
+  ].join("\n"));
+
+  const preflightMissing = jsonFrom(runExecutor(["--preflight", "--json"]), "cloud_executor_preflight_missing");
+  assert.equal(preflightMissing.ok, true, "cloud_executor_preflight_must_exit_zero_even_when_blocked");
+  assert.equal(preflightMissing.executionMode, "preflight", "cloud_executor_preflight_mode");
+  assert.equal(preflightMissing.executesCloudCommands, false, "cloud_executor_preflight_must_not_execute_cloud_commands");
+  assert.equal(preflightMissing.preflight.productionReady, false, "cloud_executor_preflight_missing_must_not_be_production_ready");
+  assert(
+    preflightMissing.preflight.phases.find((phase) => phase.operationClass === "readonly_inventory").missingEnv.includes("V22_TENCENT_READONLY_SECRET_FILE"),
+    "cloud_executor_preflight_must_report_readonly_secret_file",
+  );
+  assert(
+    preflightMissing.preflight.phases.find((phase) => phase.operationClass === "storage_lifecycle").missingEnv.includes("V22_TENCENT_MUTATION_SECRET_FILE"),
+    "cloud_executor_preflight_must_report_storage_mutation_secret_file",
+  );
+  assert(
+    preflightMissing.preflight.phases.find((phase) => phase.operationClass === "deploy").missingEnv.includes("TENCENT_DEPLOY_KUBECONFIG_REF"),
+    "cloud_executor_preflight_must_report_deploy_kubeconfig_ref",
+  );
+  assert.equal(JSON.stringify(preflightMissing).includes("mutation-secret-key"), false, "cloud_executor_preflight_must_not_print_secret_values");
+
+  const preflightReady = jsonFrom(runExecutor(["--preflight", "--json"], {
+    V22_TENCENT_READONLY_SECRET_FILE: readonlyEnvFile,
+    V22_TENCENT_MUTATION_SECRET_FILE: mutationSecretFile,
+    V22_TENCENT_RUNTIME_PLAN_FILE: runtimePlanFile,
+    V22_TENCENT_RUNTIME_PROVISIONING_RUNNER: receiptBackedRunner,
+    V22_TENCENT_STORAGE_PLAN_FILE: storagePlanFile,
+    V22_TENCENT_STORAGE_LIFECYCLE_RUNNER: receiptBackedRunner,
+    V22_MEDOPL_BILLING_AUDIT_RECEIPT_FILE: billingAuditReceiptFile,
+    V22_MEDOPL_BILLING_AUDIT_WRITEBACK_RUNNER: receiptBackedRunner,
+    DATABASE_URL: "postgres://example.invalid/redacted",
+    V22_CONTAINER_BUILD_CONTEXT: containerBuildContext,
+    V22_CONTAINER_IMAGE_REF: "registry.example.test/medopl/app:test",
+    V22_CONTAINER_BUILD_PUSH_RUNNER: receiptBackedRunner,
+    TCR_ID: "tcr-id-test",
+    TCR_SECRET: "tcr-secret-test",
+    TENCENT_DEPLOY_KUBECONFIG_REF: "kubeconfig-ref-test",
+    V22_KUBERNETES_MANIFEST_DIR: kubernetesManifestDir,
+    V22_KUBERNETES_APPLY_RUNNER: receiptBackedRunner,
+    V22_MEDOPL_DEPLOY_PLAN_FILE: deployPlanFile,
+    V22_MEDOPL_DEPLOY_RUNNER: receiptBackedRunner,
+    V22_OPL_WEBUI_CONSUMER_CANARY_URL: "https://opl.example.test/canary",
+    V22_MEDOPL_PUBLIC_BASE_URL: "https://medopl.example.test",
+    V22_OPL_WEBUI_CONSUMER_CANARY_RUNNER: receiptBackedRunner,
+  }), "cloud_executor_preflight_ready");
+  assert.equal(preflightReady.preflight.productionReady, true, "cloud_executor_preflight_ready_must_be_production_ready");
+  assert.equal(
+    preflightReady.preflight.phases.every((phase) => phase.ready === true),
+    true,
+    "cloud_executor_preflight_all_phases_ready",
+  );
+  assert.equal(JSON.stringify(preflightReady).includes("tcr-secret-test"), false, "cloud_executor_preflight_must_redact_tcr_secret");
+  assert.equal(JSON.stringify(preflightReady).includes("postgres://example.invalid"), false, "cloud_executor_preflight_must_redact_database_url");
 
   const single = jsonFrom(
     runExecutor(["--execute", "--operation", "readonly_inventory", "--json"], { V22_CLOUD_COMMAND_EXECUTOR: stubExecutor }),
@@ -161,45 +255,6 @@ try {
   const scoped = JSON.parse(scopedResult.stdout);
   assert.equal(scoped.ok, false, "cloud_executor_replay_without_receipts_must_still_fail");
 
-  const readonlyEnvFile = path.join(tempDir, "readonly.env");
-  const readonlySecretKeyName = ["TENCENT", "READONLY", "SECRET", "KEY"].join("_");
-  const readonlySecretValue = ["readonly", "credential", "stub"].join("-");
-  writeFileSync(readonlyEnvFile, [
-    "RUN_TENCENT_READONLY_INVENTORY=1",
-    "TENCENT_READONLY_SECRET_ID=readonly-secret-id",
-    `${readonlySecretKeyName}=${readonlySecretValue}`,
-    "TENCENT_READONLY_ACCOUNT_ID=123456789012",
-    "TENCENT_READONLY_REGIONS=na-siliconvalley",
-    "TENCENT_READONLY_ALLOWED_APIS=DescribeClusters,DescribeClusterNodePools,DescribeNodePools,GetCallerIdentity,DescribeBillSummary,HeadObject",
-    "",
-  ].join("\n"));
-  const readonlyExecutor = "tests/support/cloud-prework/cloud-authorized-readonly-executor.js";
-  const productionGoalExecutor = "tests/support/cloud-prework/cloud-authorized-production-goal-executor.js";
-  const mutationSecretFile = path.join(tempDir, "mutation.env");
-  const runtimePlanFile = path.join(tempDir, "runtime-plan.json");
-  const storagePlanFile = path.join(tempDir, "storage-plan.json");
-  const billingAuditReceiptFile = path.join(tempDir, "billing-audit-request.json");
-  const deployPlanFile = path.join(tempDir, "deploy-plan.json");
-  const kubernetesManifestDir = path.join(tempDir, "k8s");
-  const containerBuildContext = path.join(tempDir, "container-context");
-  const receiptBackedRunner = path.join(tempDir, "receipt-backed-runner.mjs");
-  writeFileSync(mutationSecretFile, [
-    "RUN_TENCENT_CREATE_RELEASE_EXECUTION=1",
-    "TENCENT_MUTATION_SECRET_ID=mutation-secret-id",
-    "TENCENT_MUTATION_SECRET_KEY=mutation-secret-key",
-    "",
-  ].join("\n"));
-  writeFileSync(runtimePlanFile, JSON.stringify({ runtimeBindingId: "runtime-binding-test" }));
-  writeFileSync(storagePlanFile, JSON.stringify({ storageBindingId: "storage-binding-test" }));
-  writeFileSync(billingAuditReceiptFile, JSON.stringify({ billingReceiptRequestId: "billing-audit-test" }));
-  writeFileSync(deployPlanFile, JSON.stringify({ deployPlanId: "deploy-test" }));
-  writeFileSync(receiptBackedRunner, [
-    "const receiptTypes = JSON.parse(process.env.V22_GOAL_RECEIPT_TYPES || '[]');",
-    "const operationClass = process.env.V22_GOAL_OPERATION_CLASS || '';",
-    "const receipts = receiptTypes.map((type) => ({ type, status: 'accepted', summary: `${type} accepted by external runner for ${operationClass}` }));",
-    "console.log(JSON.stringify({ ok: true, summary: { operationClass, externalRunner: true, evidenceRefObserved: Boolean(process.env.V22_GOAL_EVIDENCE_REF) }, receipts }));",
-    "",
-  ].join("\n"));
   const missingReadonlySecret = runExecutor(["--execute", "--operation", "readonly_inventory", "--json"], {
     V22_CLOUD_COMMAND_EXECUTOR: readonlyExecutor,
   });

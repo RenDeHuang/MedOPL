@@ -43,6 +43,7 @@ const expectedScripts = {
   "test:real-cloud-readiness": "node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk",
   "test:cloud-future-authorized": "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk",
   "cloud:authorized:plan": "node scripts/v22-cloud-authorized-executor.mjs --dry-run --json",
+  "cloud:goal:preflight": "node scripts/v22-cloud-authorized-executor.mjs --preflight --json",
   "cloud:authorized:execute": "node scripts/v22-cloud-authorized-executor.mjs --execute --json",
   "cloud:goal:readonly-inventory": "V22_CLOUD_COMMAND_EXECUTOR=tests/support/cloud-prework/cloud-authorized-production-goal-executor.js node scripts/v22-cloud-authorized-executor.mjs --execute --operation readonly_inventory --json",
   "cloud:goal:dry-run-plan": "V22_CLOUD_COMMAND_EXECUTOR=tests/support/cloud-prework/cloud-authorized-production-goal-executor.js node scripts/v22-cloud-authorized-executor.mjs --execute --operation dry_run_plan --json",

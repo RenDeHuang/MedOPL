@@ -32,13 +32,56 @@ const RECEIPT_OPERATION_CLASSES = Object.freeze({
   production_deploy_receipt: "deploy",
 });
 
+const OPERATION_REQUIRED_ENV = Object.freeze({
+  readonly_inventory: Object.freeze(["V22_TENCENT_READONLY_SECRET_FILE"]),
+  dry_run_plan: Object.freeze([]),
+  tenant_runtime_provisioning: Object.freeze([
+    "V22_TENCENT_MUTATION_SECRET_FILE",
+    "V22_TENCENT_RUNTIME_PLAN_FILE",
+    "V22_TENCENT_RUNTIME_PROVISIONING_RUNNER",
+  ]),
+  storage_lifecycle: Object.freeze([
+    "V22_TENCENT_MUTATION_SECRET_FILE",
+    "V22_TENCENT_STORAGE_PLAN_FILE",
+    "V22_TENCENT_STORAGE_LIFECYCLE_RUNNER",
+  ]),
+  billing_audit_writeback: Object.freeze([
+    "V22_MEDOPL_BILLING_AUDIT_RECEIPT_FILE",
+    "V22_MEDOPL_BILLING_AUDIT_WRITEBACK_RUNNER",
+    "DATABASE_URL",
+  ]),
+  build_push: Object.freeze([
+    "V22_CONTAINER_BUILD_CONTEXT",
+    "V22_CONTAINER_IMAGE_REF",
+    "V22_CONTAINER_BUILD_PUSH_RUNNER",
+    "TCR_ID",
+    "TCR_SECRET",
+  ]),
+  kubectl: Object.freeze([
+    "TENCENT_DEPLOY_KUBECONFIG_REF",
+    "V22_KUBERNETES_MANIFEST_DIR",
+    "V22_KUBERNETES_APPLY_RUNNER",
+  ]),
+  deploy: Object.freeze([
+    "TENCENT_DEPLOY_KUBECONFIG_REF",
+    "V22_MEDOPL_DEPLOY_PLAN_FILE",
+    "V22_MEDOPL_DEPLOY_RUNNER",
+  ]),
+  live_test: Object.freeze([
+    "V22_OPL_WEBUI_CONSUMER_CANARY_URL",
+    "V22_MEDOPL_PUBLIC_BASE_URL",
+    "V22_OPL_WEBUI_CONSUMER_CANARY_RUNNER",
+  ]),
+});
+
 function parseArgs(argv) {
-  const options = { json: false, dryRun: false, execute: false, operation: "" };
+  const options = { json: false, dryRun: false, execute: false, preflight: false, operation: "" };
   for (let index = 0; index < argv.length; index += 1) {
     const item = argv[index];
     if (item === "--json") options.json = true;
     else if (item === "--dry-run") options.dryRun = true;
     else if (item === "--execute") options.execute = true;
+    else if (item === "--preflight") options.preflight = true;
     else if (item === "--operation") {
       options.operation = argv[index + 1] || "";
       index += 1;
@@ -102,12 +145,12 @@ function redactedSummary(value) {
 }
 
 function basePayload({ options, pack, cloudPack }) {
-  const execute = Boolean(options.execute && !options.dryRun);
+  const execute = Boolean(options.execute && !options.dryRun && !options.preflight);
   const evidenceSink = safeEvidenceSink(pack);
   return {
     ok: true,
     kind: "v22_cloud_authorized_executor",
-    executionMode: execute ? "execute" : "dry-run",
+    executionMode: options.preflight ? "preflight" : execute ? "execute" : "dry-run",
     failClosed: true,
     executesCloudCommands: execute,
     authorization: {
@@ -123,6 +166,66 @@ function basePayload({ options, pack, cloudPack }) {
       "production complete without complete receipt manifest",
       "raw cloud payload",
       "raw secret material",
+    ],
+  };
+}
+
+function pathCheckKind(envKey) {
+  if (envKey.endsWith("_DIR")) return "directory";
+  if (envKey.endsWith("_CONTEXT")) return "directory";
+  if (envKey.endsWith("_RUNNER")) return "file";
+  if (envKey.endsWith("_FILE")) return "file";
+  return "";
+}
+
+function resolveEnvPath(value) {
+  return path.isAbsolute(value) ? value : path.join(repoRoot, value);
+}
+
+function buildPreflight(payload) {
+  const phases = payload.phases.map((phase) => {
+    const requiredEnv = OPERATION_REQUIRED_ENV[phase.operationClass] || [];
+    const missingEnv = requiredEnv.filter((envKey) => !String(process.env[envKey] || "").trim());
+    const pathChecks = requiredEnv
+      .map((envKey) => {
+        const kind = pathCheckKind(envKey);
+        if (!kind) return null;
+        const value = String(process.env[envKey] || "").trim();
+        const provided = value.length > 0;
+        const exists = provided ? existsSync(resolveEnvPath(value)) : false;
+        return {
+          env: envKey,
+          kind,
+          provided,
+          exists,
+        };
+      })
+      .filter(Boolean);
+    const failedPathEnv = pathChecks
+      .filter((check) => check.provided && !check.exists)
+      .map((check) => check.env);
+    const ready = missingEnv.length === 0 && failedPathEnv.length === 0;
+    return {
+      operationClass: phase.operationClass,
+      runnerId: phase.runnerId,
+      requiredEnv: [...requiredEnv],
+      missingEnv,
+      pathChecks,
+      ready,
+      cannotClaim: ready ? [] : [
+        "cloud operation executed",
+        "owner receipt accepted",
+        "production complete",
+      ],
+    };
+  });
+  return {
+    productionReady: phases.every((phase) => phase.ready),
+    phases,
+    cannotClaim: [
+      "real cloud operation executed by preflight",
+      "secret material read by preflight",
+      "production complete without execute receipts",
     ],
   };
 }
@@ -304,6 +407,7 @@ const cloudPack = existsSync(path.join(repoRoot, AUTH_PACK_PATH)) ? readJson(AUT
 let payload = basePayload({ options, pack, cloudPack });
 
 try {
+  if (options.preflight) payload.preflight = buildPreflight(payload);
   if (payload.executesCloudCommands) payload = await executePayload(payload, options);
   process.stdout.write(options.json ? `${JSON.stringify(payload, null, 2)}\n` : renderHuman(payload));
   if (!payload.ok) process.exitCode = 1;

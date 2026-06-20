@@ -7,11 +7,11 @@ Machine boundary: 本文是人读交付入口。当前执行 cursor、branch ove
 
 ## Current Cursor
 
-当前 product cursor 是 `opl-webui-runtime-production-slice`，状态是 local/cloud RC only / before production authorization。MedOPL 的当前 delivery truth 是：平台给 OPL-Webui 登录用户在当前 workspace 提供托管 runtime、文件空间、计费、审计和释放；MedOPL 不承担 OPL 自身科研能力。最新 product RC closeout 是 `feat/v22-local-product-rc-single-flow` / `4f195820dcb351030cb1064172bfec2062abc279`；最新 repo/gate closeout 是 `feat/v22-gate-self-consistency-rc` / `cbb163b12ff0b9d9b7da52b2bdba93f6ea01596e`，只表示 closeout/cursor 自洽、cloud authorization pack runner 消费和 plan-only worktree slice orchestration 已进入机器 gate，不升级为 production claim。
+当前 product cursor 是 `opl-webui-runtime-production-slice`，状态是 local/cloud RC only / before production authorization。MedOPL 的当前 delivery truth 是：平台给 OPL-Webui 登录用户在当前 workspace 提供托管 runtime、文件空间、计费、审计和释放；MedOPL 不承担 OPL 自身科研能力。最新 product RC closeout 是 `feat/v22-local-product-rc-single-flow` / `4f195820dcb351030cb1064172bfec2062abc279`；最新 repo/gate closeout 是 `feat/v22-goal-real-runner-receipts` / `a584d2ee07c866eb9a125c31674b69fb79c18fb7`，只表示 Goal A/C/D/E/F runner receipt boundary、cloud authorization executor 和 receipt manifest gate 已进入机器面，不升级为 production claim。
 
 Go control-plane MVP takeover、precloud-deployable-rc、local SaaS backend RC、local Portal/OPL delivery RC 和 single-flow local product RC 只提供 local RC / cloud-deployable RC evidence。first proof 是 real local product RC；cloud proof 是 cloud-deployable RC；production proof 仍需 explicit authorization + runtime / storage / billing / audit / release owner receipts。历史 Package C live canary、Package D deploy/service reachability、production-launch Gap 01-08o、CLB diagnostics 和 public access 调试只保留为 archive / runtime provenance；它们不再是 active runner、active cloud test、current blocker 或默认 verify 入口。
 
-当前 active cloud surface 只保留三类小边界：readonly inventory、Package C dry-run create/release plan、TKE bootstrap preflight。真实云、secret read、provider call、Tencent mutation、kubectl、deploy、build/push、production ledger write 和 live-test 只允许通过 `contracts/medopl-cloud-authorization-pack.json` 声明的机器授权包执行；执行 evidence 默认写入 `.runtime`。authorized command 执行后还必须写入 `contracts/medopl-production-receipt-boundary.json` 定义的 receipt manifest；没有七类 owner receipt 和小型 receipt manifest，仍不得 claim production complete。
+当前 active cloud surface 只保留三类小边界：readonly inventory、Package C dry-run create/release plan、TKE bootstrap preflight。`npm run cloud:goal:preflight` 是 Goal A-F 的安全前置检查入口，只报告缺失的 secret-file、plan file、external runner、kube/deploy/live-test 输入和 path readiness；它不读取 secret、不调用云、不写 `.runtime`，也不能替代 owner receipt。真实云、secret read、provider call、Tencent mutation、kubectl、deploy、build/push、production ledger write 和 live-test 只允许通过 `contracts/medopl-cloud-authorization-pack.json` 声明的机器授权包执行；执行 evidence 默认写入 `.runtime`。authorized command 执行后还必须写入 `contracts/medopl-production-receipt-boundary.json` 定义的 receipt manifest；没有七类 owner receipt 和小型 receipt manifest，仍不得 claim production complete。
 
 ## Default Verification
 
@@ -96,6 +96,7 @@ npm run local:services:logs
 npm run local:services:stop
 npm run verify:local-release-candidate
 npm run verify:golden-path
+npm run cloud:goal:preflight
 npm run test:health
 npm run test:smoke
 npm run test:contract
