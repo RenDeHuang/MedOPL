@@ -45,7 +45,30 @@ node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-tr
 
 ## Worktree Slice Flow
 
-标准开发 slice 入口是 `slice:start -> slice:plan -> slice:verify -> slice:land -> slice:post-push-verify -> slice:cleanup`。这些入口由 `scripts/v22-worktree-slice-orchestrator.mjs` 统一输出 plan-only JSON，复用 `v22-workflow-gate`、`v22-verify` 和 `v22-landing-closeout` 的现有机器 truth；默认不执行真实 merge、push、kubectl、deploy、build/push、live-test 或真实云 mutation。实际 landing operator 仍必须在明确授权后执行 git merge/push，并用 post-push verification 和 closeout/cursor 更新证明结果。
+标准开发 slice 入口是 `slice:start -> slice:plan -> slice:verify -> slice:land -> slice:post-push-verify -> slice:cleanup`。这些入口由 `scripts/v22-worktree-slice-orchestrator.mjs` 输出 plan / controlled-executor JSON，复用 `v22-workflow-gate`、`v22-verify` 和 `v22-landing-closeout` 的现有机器 truth。
+
+每个 gap 的默认 delivery loop 是：
+
+```text
+current truth
+-> vision gap
+-> lane owner/consumer
+-> worktree branch
+-> implement
+-> run-plan
+-> targeted gates
+-> verify/review/bloat
+-> commit
+-> push feature branch
+-> ff-only merge trunk
+-> push trunk
+-> post-push verify
+-> tombstone cleanup
+```
+
+`push feature branch` 允许作为每个 gap 的远端 review / backup / handoff 面；它不代表 trunk landed，也不能升级成 production claim。`ff-only merge trunk` 和 `push trunk` 不需要逐次口头授权，但只能在 fresh landing gate 通过后执行。最低 landing gate 是：`npm run test:run-plan -- --dry-run --json`、`npm run test:run-plan`、相关 targeted gates、`npm run verify`、`npm run test:health`、`npm run gate:review`、`npm run repo:bloat` 和 `npm run line:budget`。`post-push verify` 通过后再做 tombstone cleanup。
+
+真实云、secret、provider call、Tencent mutation、kubectl、deploy、build/push 和 live-test 不受一般 git landing policy 放开；它们仍必须通过机器授权包、runner evidence 和 `contracts/medopl-production-receipt-boundary.json` 定义的 receipt manifest。
 
 ## Framework Entry Commands
 

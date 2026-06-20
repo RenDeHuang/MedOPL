@@ -28,11 +28,14 @@ function assertNotIncludesAny(source, phrases, label) {
   }
 }
 
-const [packageJson, manifest, classificationSource, orchestratorSource] = await Promise.all([
+const [packageJson, manifest, classificationSource, orchestratorSource, agentsSource, deliverySource, testsReadmeSource] = await Promise.all([
   readFile(path.join(repoRoot, "package.json"), "utf8").then(JSON.parse),
   readFile(path.join(repoRoot, "tests/fixtures/v22/agent-verify-manifest.json"), "utf8").then(JSON.parse),
   readFile(path.join(repoRoot, "scripts/v22-test-classification.mjs"), "utf8"),
   readFile(path.join(repoRoot, "scripts/v22-worktree-slice-orchestrator.mjs"), "utf8"),
+  readFile(path.join(repoRoot, "AGENTS.md"), "utf8"),
+  readFile(path.join(repoRoot, "docs/delivery/README.md"), "utf8"),
+  readFile(path.join(repoRoot, "tests/README.md"), "utf8"),
 ]);
 
 assert.equal(packageJson.scripts?.["slice:start"], "node scripts/v22-worktree-slice-orchestrator.mjs start --json", "slice_start_script_must_exist");
@@ -64,6 +67,48 @@ assert.equal(planPayload.executesCommands, false, "slice_orchestrator_must_not_e
 assert.equal(planPayload.executionMode, "plan-only", "slice_orchestrator_must_be_plan_only");
 assert.equal(planPayload.usesRealMergePush, false, "slice_orchestrator_must_not_use_real_merge_push");
 assert.equal(planPayload.executionAllowed, false, "slice_orchestrator_default_must_not_allow_execution");
+assert.equal(planPayload.landingPolicy?.featureBranchPushAllowed, true, "slice_landing_policy_must_allow_feature_branch_push");
+assert.equal(planPayload.landingPolicy?.trunkMergePushAllowedAfterLandingGate, true, "slice_landing_policy_must_allow_trunk_push_after_gate");
+assert.equal(planPayload.landingPolicy?.requiresFreshLandingGate, true, "slice_landing_policy_must_require_fresh_landing_gate");
+assert.equal(planPayload.landingPolicy?.requiresPostPushVerify, true, "slice_landing_policy_must_require_post_push_verify");
+assert.deepEqual(planPayload.landingPolicy?.flow, [
+  "current truth",
+  "vision gap",
+  "lane owner/consumer",
+  "worktree branch",
+  "implement",
+  "run-plan",
+  "targeted gates",
+  "verify/review/bloat",
+  "commit",
+  "push feature branch",
+  "ff-only merge trunk",
+  "push trunk",
+  "post-push verify",
+  "tombstone cleanup",
+], "slice_landing_policy_flow_mismatch");
+for (const command of [
+  "npm run test:run-plan -- --dry-run --json",
+  "npm run test:run-plan",
+  "npm run verify",
+  "npm run test:health",
+  "npm run gate:review",
+  "npm run repo:bloat",
+  "npm run line:budget",
+]) {
+  assert(planPayload.landingPolicy?.landingGateCommands?.includes(command), `slice_landing_policy_gate_command_missing:${command}`);
+}
+for (const boundary of [
+  "secret",
+  "provider call",
+  "true cloud mutation",
+  "kubectl",
+  "deploy",
+  "build/push",
+  "live-test",
+]) {
+  assert(planPayload.landingPolicy?.authorizedOperationBoundaries?.includes(boundary), `slice_landing_policy_authorized_boundary_missing:${boundary}`);
+}
 assert.equal(planPayload.previousPhase, "", "slice_orchestrator_start_must_have_no_previous_phase");
 assert.equal(planPayload.nextPhase, "plan", "slice_orchestrator_start_must_point_to_plan");
 assert.deepEqual(planPayload.requires, [
@@ -111,10 +156,54 @@ assert.equal(landBlockedPayload.ok, false, "slice_land_without_git_mutation_payl
 assert.equal(landBlockedPayload.blockers.includes("slice_git_mutation_requires_allow_git_mutation"), true, "slice_land_without_git_mutation_blocker");
 assert.equal(landBlockedPayload.usesRealMergePush, false, "slice_land_without_git_mutation_must_not_merge_push");
 
+const executeLandWithoutGate = runSlice(["land", "--execute", "--allow-git-mutation", "--slice-id", testSliceId, "--json"]);
+assert.equal(executeLandWithoutGate.status, 1, "slice_land_git_mutation_without_landing_gate_must_fail_closed");
+const landWithoutGatePayload = JSON.parse(executeLandWithoutGate.stdout);
+assert.equal(landWithoutGatePayload.ok, false, "slice_land_without_landing_gate_payload_must_fail");
+assert.equal(landWithoutGatePayload.blockers.includes("slice_trunk_merge_push_requires_landing_gate_passed"), true, "slice_land_without_landing_gate_blocker");
+assert.equal(landWithoutGatePayload.usesRealMergePush, false, "slice_land_without_landing_gate_must_not_merge_push");
+
+const executeLandWithGate = runSlice(["land", "--execute", "--allow-git-mutation", "--landing-gate-passed", "--slice-id", testSliceId, "--json"]);
+const landGatePayload = JSON.parse(executeLandWithGate.stdout);
+assert.equal(landGatePayload.usesRealMergePush, true, "slice_land_with_gate_must_allow_ff_only_merge_push");
+assert.equal(landGatePayload.landingPolicy.trunkMergePushAllowedAfterLandingGate, true, "slice_land_policy_must_allow_trunk_merge_push_after_gate");
+assert.equal(
+  executeLandWithGate.status === 0 || landGatePayload.blockers?.some((blocker) => blocker.startsWith("slice_phase_command_failed:land:")),
+  true,
+  "slice_land_with_gate_must_enter_landing_gate_or_report_gate_command_failure",
+);
+
+const executeCleanupWithoutPostPush = runSlice(["cleanup", "--execute", "--allow-git-mutation", "--slice-id", testSliceId, "--json"]);
+assert.equal(executeCleanupWithoutPostPush.status, 1, "slice_cleanup_without_post_push_verify_must_fail_closed");
+const cleanupWithoutPostPushPayload = JSON.parse(executeCleanupWithoutPostPush.stdout);
+assert.equal(cleanupWithoutPostPushPayload.ok, false, "slice_cleanup_without_post_push_verify_payload_must_fail");
+assert.equal(cleanupWithoutPostPushPayload.blockers.includes("slice_cleanup_requires_post_push_verified"), true, "slice_cleanup_without_post_push_verify_blocker");
+
+const executeCleanupWithGate = runSlice(["cleanup", "--execute", "--allow-git-mutation", "--post-push-verified", "--slice-id", testSliceId, "--json"]);
+const cleanupPayload = JSON.parse(executeCleanupWithGate.stdout);
+assert.equal(cleanupPayload.usesRealMergePush, true, "slice_cleanup_after_post_push_verify_must_allow_cleanup");
+assert.equal(
+  executeCleanupWithGate.status === 0 || cleanupPayload.blockers?.some((blocker) => blocker.startsWith("slice_phase_command_failed:cleanup:")),
+  true,
+  "slice_cleanup_after_post_push_verify_must_enter_cleanup_gate_or_report_gate_command_failure",
+);
+
+for (const source of [agentsSource, deliverySource, testsReadmeSource]) {
+  assertIncludesAll(source, [
+    "push feature branch",
+    "ff-only merge trunk",
+    "push trunk",
+    "post-push verify",
+    "tombstone cleanup",
+    "真实云",
+    "授权包",
+    "receipt",
+  ], "slice_landing_policy_docs");
+}
+
 assertNotIncludesAny(orchestratorSource, [
   "changes/active",
   "changes/archive",
-  "kubectl",
   "docker",
 ], "slice_orchestrator_source");
 

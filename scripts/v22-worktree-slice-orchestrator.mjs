@@ -8,6 +8,40 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 const PHASES = ["start", "plan", "verify", "land", "post-push-verify", "cleanup"];
 const GIT_MUTATION_PHASES = new Set(["land", "cleanup"]);
+const LANDING_POLICY_FLOW = Object.freeze([
+  "current truth",
+  "vision gap",
+  "lane owner/consumer",
+  "worktree branch",
+  "implement",
+  "run-plan",
+  "targeted gates",
+  "verify/review/bloat",
+  "commit",
+  "push feature branch",
+  "ff-only merge trunk",
+  "push trunk",
+  "post-push verify",
+  "tombstone cleanup",
+]);
+const LANDING_GATE_COMMANDS = Object.freeze([
+  "npm run test:run-plan -- --dry-run --json",
+  "npm run test:run-plan",
+  "npm run verify",
+  "npm run test:health",
+  "npm run gate:review",
+  "npm run repo:bloat",
+  "npm run line:budget",
+]);
+const AUTHORIZED_OPERATION_BOUNDARIES = Object.freeze([
+  "secret",
+  "provider call",
+  "true cloud mutation",
+  "kubectl",
+  "deploy",
+  "build/push",
+  "live-test",
+]);
 const RETIRED_CHANGE_SURFACE_PREFIXES = Object.freeze([
   ["changes", "active", "**"].join("/"),
   ["changes", "archive", "**"].join("/"),
@@ -197,6 +231,20 @@ function buildPlan(phase, options = {}) {
       "scripts/v22-workflow-gate.mjs",
       "scripts/v22-landing-closeout.mjs",
     ],
+    landingPolicy: {
+      featureBranchPushAllowed: true,
+      trunkMergePushAllowedAfterLandingGate: true,
+      requiresFreshLandingGate: true,
+      requiresPostPushVerify: true,
+      mergeMode: "ff-only",
+      featureBranchPushClaim: "remote review/update only; not trunk landed",
+      trunkPushClaim: "allowed only after landing gate, ff-only merge and post-push verification",
+      flow: [...LANDING_POLICY_FLOW],
+      landingGateCommands: [...LANDING_GATE_COMMANDS],
+      authorizedOperationBoundaries: [...AUTHORIZED_OPERATION_BOUNDARIES],
+      authorizedOperationRequirement: "machine authorization pack plus production receipt manifest",
+      evidenceSink: ".runtime for raw execution evidence; git only carries contracts, source, tests, runner and compact history",
+    },
     cannotClaim: ["real merge", "real push", "destructive cloud execution", "live-test execution"],
     registeredScripts: {
       start: readPackageScripts()["slice:start"] || "",
@@ -219,6 +267,22 @@ function executePhase(phase, options) {
       executesCommands: false,
       usesRealMergePush: false,
       blockers: ["slice_git_mutation_requires_allow_git_mutation"],
+    };
+  }
+  if (phase === "land" && options["allow-git-mutation"] && !options["landing-gate-passed"]) {
+    return {
+      ...payload,
+      ok: false,
+      usesRealMergePush: false,
+      blockers: ["slice_trunk_merge_push_requires_landing_gate_passed"],
+    };
+  }
+  if (phase === "cleanup" && options["allow-git-mutation"] && !options["post-push-verified"]) {
+    return {
+      ...payload,
+      ok: false,
+      usesRealMergePush: false,
+      blockers: ["slice_cleanup_requires_post_push_verified"],
     };
   }
 

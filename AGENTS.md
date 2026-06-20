@@ -67,7 +67,10 @@
 ## 并行开发与工作树
 
 - 大改动、长链路工作、并行多 agent 开发，默认先从最新 `origin/recovery/platform-v22-trunk` 开独立 worktree，再在 worktree 内实现和验证。
-- authoring branch 默认不 push、不 merge；只有被明确指定为 landing operator 时，才可以执行 ff-only merge / push。
+- authoring branch 允许 push feature branch 到 GitHub，作为每个 gap 的远端 review / backup / handoff 面；push feature branch 不等于 trunk landed，不等于 production claim。
+- trunk landing 不需要逐次口头授权，但必须满足 landing gate：`current truth -> vision gap -> lane owner/consumer -> worktree branch -> implement -> run-plan -> targeted gates -> verify/review/bloat -> commit -> push feature branch -> ff-only merge trunk -> push trunk -> post-push verify -> tombstone cleanup`。
+- 执行 `ff-only merge trunk`、`push trunk` 或 cleanup 前，必须有 fresh landing gate evidence；至少包括 `npm run test:run-plan -- --dry-run --json`、`npm run test:run-plan`、相关 targeted gates、`npm run verify`、`npm run test:health`、`npm run gate:review`、`npm run repo:bloat` 和 `npm run line:budget`。post-push verify 通过后再做 tombstone cleanup。
+- 真实云、secret、provider call、kubectl、deploy、build/push 和 live-test 仍必须走机器授权包和 receipt manifest；feature branch push 或 trunk landing policy 不授予这些操作。
 - 需要多条 lane 时创建多个 worktree，不要把多条长线塞进同一工作目录。互不冲突才并行，完成后及时关闭 subagent、清理 worktree 和临时状态。
 - 创建/使用 git worktree 或 Codex native subagent 时，必须显式选择并记录模型；允许模型仅限 `gpt-5.4`、`gpt-5.3-codex`、`gpt-5.4-mini`。
 - subagent 只承接边界清晰、互不冲突、可独立验证的任务；不要让 subagent 持有唯一上下文或替代 landing review。
