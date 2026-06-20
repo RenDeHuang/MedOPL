@@ -126,6 +126,7 @@ const releaseImage = await readRepoFile(".github/workflows/release-image.yml");
 const cloudRollout = await readRepoFile(".github/workflows/cloud-rollout.yml");
 assertNoRawSecretValues(releaseImage, "release_image_workflow");
 assertNoRawSecretValues(cloudRollout, "cloud_rollout_workflow");
+assert.equal(cloudRollout.includes("medopl.medopl.cn"), false, "cloud_rollout_must_not_reference_retired_medopl_host");
 assert.equal(releaseImage.includes("workflow_run:"), false, "release_image_must_not_auto_push_after_verify");
 assert.equal(releaseImage.includes("docker/build-push-action"), false, "release_image_build_push_must_go_through_cloud_goal_runner");
 for (const expected of [
@@ -160,6 +161,9 @@ for (const expected of [
   "npm run cloud:goal -- --operation deploy",
   "npm run cloud:goal -- --operation live_test",
   "node scripts/cloud-rollout/medopl.mjs --apply",
+  "MEDOPL_BASE_URL: https://portal.medopl.cn",
+  "V22_MEDOPL_PUBLIC_BASE_URL: https://portal.medopl.cn",
+  "\"publicBaseUrl\": \"https://portal.medopl.cn\"",
 ]) {
   assert(cloudRollout.includes(expected), `cloud_rollout_workflow_missing:${expected}`);
 }

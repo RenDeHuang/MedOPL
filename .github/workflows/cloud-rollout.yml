@@ -39,9 +39,9 @@ jobs:
     env:
       MEDOPL_IMAGE: ${{ inputs.image }}
       MEDOPL_NAMESPACE: medopl
-      MEDOPL_BASE_URL: https://medopl.medopl.cn
+      MEDOPL_BASE_URL: https://portal.medopl.cn
       V22_KUBERNETES_MANIFEST_DIR: deploy/medopl-cloud
-      V22_MEDOPL_PUBLIC_BASE_URL: https://medopl.medopl.cn
+      V22_MEDOPL_PUBLIC_BASE_URL: https://portal.medopl.cn
       V22_OPL_WEBUI_CONSUMER_CANARY_URL: https://opl.medopl.cn
       V22_KUBERNETES_APPLY_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs
       V22_KUBERNETES_APPLY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation kubectl --execute --confirm-current-session-authorization
@@ -97,9 +97,9 @@ jobs:
     env:
       MEDOPL_IMAGE: ${{ inputs.image }}
       MEDOPL_NAMESPACE: medopl
-      MEDOPL_BASE_URL: https://medopl.medopl.cn
+      MEDOPL_BASE_URL: https://portal.medopl.cn
       V22_KUBERNETES_MANIFEST_DIR: deploy/medopl-cloud
-      V22_MEDOPL_PUBLIC_BASE_URL: https://medopl.medopl.cn
+      V22_MEDOPL_PUBLIC_BASE_URL: https://portal.medopl.cn
       V22_OPL_WEBUI_CONSUMER_CANARY_URL: https://opl.medopl.cn
     steps:
       - name: Checkout
@@ -122,7 +122,7 @@ jobs:
             "kind": "medopl_cloud_rollout_deploy_plan",
             "namespace": "medopl",
             "deployment": "medopl-control-plane",
-            "publicBaseUrl": "https://medopl.medopl.cn",
+            "publicBaseUrl": "https://portal.medopl.cn",
             "consumerBaseUrl": "https://opl.medopl.cn"
           }
           JSON
@@ -153,7 +153,7 @@ jobs:
     env:
       MEDOPL_IMAGE: ${{ inputs.image }}
       MEDOPL_NAMESPACE: medopl
-      MEDOPL_BASE_URL: https://medopl.medopl.cn
+      MEDOPL_BASE_URL: https://portal.medopl.cn
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -176,7 +176,7 @@ jobs:
     if: ${{ !inputs.apply && !inputs.rollback && inputs.availability_probe }}
     runs-on: [self-hosted, tencent-cloud, medopl]
     env:
-      MEDOPL_BASE_URL: https://medopl.medopl.cn
+      MEDOPL_BASE_URL: https://portal.medopl.cn
     steps:
       - name: Checkout
         uses: actions/checkout@v4
