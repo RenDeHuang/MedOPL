@@ -480,6 +480,16 @@
         "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
         "git diff --check -- docs specs tests scripts package.json services/portal/frontend/src services/medopl-go-backend services/opl-web-gateway services/opl-runtime-bridge"
       ]
+    },
+    {
+      "id": "cloud-release-candidate",
+      "commands": [
+        "node tests/cloud/cloud-test-v22-cloud-authorized-executor.mjs",
+        "node tests/cloud/cloud-test-v22-production-goal-command-runner.mjs",
+        "node tests/cloud/cloud-test-v22-production-goal-runners.mjs",
+        "node tests/release/release-test-v22-production-receipt-boundary.mjs",
+        "node scripts/v22-verify.mjs cloud-release-candidate --base origin/recovery/platform-v22-trunk --json"
+      ]
     }
   ],
   "branch_override_suites": []

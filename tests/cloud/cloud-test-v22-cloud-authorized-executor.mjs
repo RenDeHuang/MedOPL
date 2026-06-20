@@ -7,17 +7,17 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
-const expectedGoalScripts = Object.freeze({
-  readonly_inventory: "cloud:goal:readonly-inventory",
-  dry_run_plan: "cloud:goal:dry-run-plan",
-  tenant_runtime_provisioning: "cloud:goal:tenant-runtime-provisioning",
-  storage_lifecycle: "cloud:goal:storage-lifecycle",
-  billing_audit_writeback: "cloud:goal:billing-audit-writeback",
-  build_push: "cloud:goal:build-push",
-  kubectl: "cloud:goal:kubectl",
-  deploy: "cloud:goal:deploy",
-  live_test: "cloud:goal:live-test",
-});
+const expectedOperations = Object.freeze([
+  "readonly_inventory",
+  "dry_run_plan",
+  "tenant_runtime_provisioning",
+  "storage_lifecycle",
+  "billing_audit_writeback",
+  "build_push",
+  "kubectl",
+  "deploy",
+  "live_test",
+]);
 
 function runExecutor(args = [], env = {}) {
   return spawnSync(process.execPath, ["scripts/v22-cloud-authorized-executor.mjs", ...args], {
@@ -77,15 +77,20 @@ assert.equal(
   true,
   "production_goal_cloud_authorized_executor_adapter_must_exist",
 );
+assert.equal(
+  packageJson.scripts?.["cloud:goal"],
+  "V22_CLOUD_COMMAND_EXECUTOR=tests/support/cloud-prework/cloud-authorized-production-goal-executor.js node scripts/v22-cloud-authorized-executor.mjs --execute --json",
+  "root_package_must_expose_single_cloud_goal_entrypoint",
+);
+for (const scriptName of Object.keys(packageJson.scripts || {}).filter((name) => name.startsWith("cloud:goal:") && name !== "cloud:goal:preflight")) {
+  assert.fail(`root_package_must_not_keep_horizontal_cloud_goal_entrypoint:${scriptName}`);
+}
 const mappedGoalScripts = new Map((authPack.active_pack.operation_class_command_map || []).map((entry) => [entry.operation_class, entry]));
-for (const [operationClass, scriptName] of Object.entries(expectedGoalScripts)) {
-  assert.equal(typeof packageJson.scripts?.[scriptName], "string", `root_package_goal_script_missing:${scriptName}`);
-  assert(packageJson.scripts[scriptName].includes("--operation"), `root_package_goal_script_must_scope_operation:${scriptName}`);
-  assert(packageJson.scripts[scriptName].includes(operationClass), `root_package_goal_script_must_target_operation:${scriptName}:${operationClass}`);
+for (const operationClass of expectedOperations) {
   const mapping = mappedGoalScripts.get(operationClass);
   assert(mapping, `cloud_authorization_pack_goal_mapping_missing:${operationClass}`);
-  assert.equal(mapping.package_script, scriptName, `cloud_authorization_pack_goal_package_script_mismatch:${operationClass}`);
-  assert.deepEqual(mapping.commands, [`npm run ${scriptName}`], `cloud_authorization_pack_goal_command_mismatch:${operationClass}`);
+  assert.equal(mapping.package_script, "cloud:goal", `cloud_authorization_pack_goal_package_script_mismatch:${operationClass}`);
+  assert.deepEqual(mapping.commands, [`npm run cloud:goal -- --operation ${operationClass}`], `cloud_authorization_pack_goal_command_mismatch:${operationClass}`);
 }
 assert.equal(
   authPack.active_pack.operation_class_command_map.some((entry) => JSON.stringify(entry).includes("test:cloud-future-authorized")),

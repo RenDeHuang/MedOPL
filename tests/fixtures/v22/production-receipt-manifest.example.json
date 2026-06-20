@@ -92,5 +92,259 @@
       "operation_class": "deploy",
       "runner_id": "medopl_production_canary_deploy_runner"
     }
+  ],
+  "lifecycle_sections": [
+    {
+      "id": "authorization",
+      "owner": "MedOPL Operations",
+      "status": "done",
+      "run_id": "run-v22-001",
+      "issued_at": "2026-06-20T00:00:00Z",
+      "operation_class": "cloud_authorization",
+      "resource_refs": {
+        "authorizationRunId": "run-v22-001",
+        "workspaceId": "workspace-production-canary",
+        "resourceBindingId": "resource-binding-production-canary"
+      },
+      "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/lifecycle/authorization.json",
+      "evidence_hash": "sha256:authorization000000000000000000000000000000000000000000000000",
+      "summary": "authorization accepted with redacted pointer evidence only.",
+      "cannotClaim": [
+        "multi-region production",
+        "SLA proven",
+        "enterprise compliance"
+      ]
+    },
+    {
+      "id": "provider_inventory",
+      "owner": "MedOPL Operations",
+      "status": "done",
+      "run_id": "run-v22-001",
+      "issued_at": "2026-06-20T00:00:00Z",
+      "operation_class": "readonly_inventory",
+      "resource_refs": {
+        "authorizationRunId": "run-v22-001",
+        "workspaceId": "workspace-production-canary",
+        "resourceBindingId": "resource-binding-production-canary"
+      },
+      "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/lifecycle/provider_inventory.json",
+      "evidence_hash": "sha256:providerinventory000000000000000000000000000000000000000000000000",
+      "summary": "provider_inventory accepted with redacted pointer evidence only.",
+      "cannotClaim": [
+        "multi-region production",
+        "SLA proven",
+        "enterprise compliance"
+      ]
+    },
+    {
+      "id": "provision_plan",
+      "owner": "MedOPL Operations",
+      "status": "done",
+      "run_id": "run-v22-001",
+      "issued_at": "2026-06-20T00:00:00Z",
+      "operation_class": "dry_run_plan",
+      "resource_refs": {
+        "authorizationRunId": "run-v22-001",
+        "workspaceId": "workspace-production-canary",
+        "resourceBindingId": "resource-binding-production-canary"
+      },
+      "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/lifecycle/provision_plan.json",
+      "evidence_hash": "sha256:provisionplan000000000000000000000000000000000000000000000000",
+      "summary": "provision_plan accepted with redacted pointer evidence only.",
+      "cannotClaim": [
+        "multi-region production",
+        "SLA proven",
+        "enterprise compliance"
+      ]
+    },
+    {
+      "id": "mutation",
+      "owner": "MedOPL Operations",
+      "status": "done",
+      "run_id": "run-v22-001",
+      "issued_at": "2026-06-20T00:00:00Z",
+      "operation_class": "tenant_runtime_provisioning",
+      "resource_refs": {
+        "authorizationRunId": "run-v22-001",
+        "workspaceId": "workspace-production-canary",
+        "resourceBindingId": "resource-binding-production-canary"
+      },
+      "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/lifecycle/mutation.json",
+      "evidence_hash": "sha256:mutation000000000000000000000000000000000000000000000000",
+      "summary": "mutation accepted with redacted pointer evidence only.",
+      "cannotClaim": [
+        "multi-region production",
+        "SLA proven",
+        "enterprise compliance"
+      ]
+    },
+    {
+      "id": "data_plane",
+      "owner": "MedOPL Operations",
+      "status": "done",
+      "run_id": "run-v22-001",
+      "issued_at": "2026-06-20T00:00:00Z",
+      "operation_class": "storage_lifecycle",
+      "resource_refs": {
+        "authorizationRunId": "run-v22-001",
+        "workspaceId": "workspace-production-canary",
+        "resourceBindingId": "resource-binding-production-canary"
+      },
+      "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/lifecycle/data_plane.json",
+      "evidence_hash": "sha256:dataplane000000000000000000000000000000000000000000000000",
+      "summary": "data_plane accepted with redacted pointer evidence only.",
+      "cannotClaim": [
+        "multi-region production",
+        "SLA proven",
+        "enterprise compliance"
+      ]
+    },
+    {
+      "id": "runtime_execution",
+      "owner": "MedOPL Operations",
+      "status": "done",
+      "run_id": "run-v22-001",
+      "issued_at": "2026-06-20T00:00:00Z",
+      "operation_class": "tenant_runtime_provisioning",
+      "resource_refs": {
+        "authorizationRunId": "run-v22-001",
+        "workspaceId": "workspace-production-canary",
+        "resourceBindingId": "resource-binding-production-canary"
+      },
+      "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/lifecycle/runtime_execution.json",
+      "evidence_hash": "sha256:runtimeexecution000000000000000000000000000000000000000000000000",
+      "summary": "runtime_execution accepted with redacted pointer evidence only.",
+      "cannotClaim": [
+        "multi-region production",
+        "SLA proven",
+        "enterprise compliance"
+      ]
+    },
+    {
+      "id": "artifact",
+      "owner": "MedOPL Operations",
+      "status": "done",
+      "run_id": "run-v22-001",
+      "issued_at": "2026-06-20T00:00:00Z",
+      "operation_class": "live_test",
+      "resource_refs": {
+        "authorizationRunId": "run-v22-001",
+        "workspaceId": "workspace-production-canary",
+        "resourceBindingId": "resource-binding-production-canary"
+      },
+      "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/lifecycle/artifact.json",
+      "evidence_hash": "sha256:artifact000000000000000000000000000000000000000000000000",
+      "summary": "artifact accepted with redacted pointer evidence only.",
+      "cannotClaim": [
+        "multi-region production",
+        "SLA proven",
+        "enterprise compliance"
+      ]
+    },
+    {
+      "id": "billing",
+      "owner": "MedOPL Operations",
+      "status": "done",
+      "run_id": "run-v22-001",
+      "issued_at": "2026-06-20T00:00:00Z",
+      "operation_class": "billing_audit_writeback",
+      "resource_refs": {
+        "authorizationRunId": "run-v22-001",
+        "workspaceId": "workspace-production-canary",
+        "resourceBindingId": "resource-binding-production-canary"
+      },
+      "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/lifecycle/billing.json",
+      "evidence_hash": "sha256:billing000000000000000000000000000000000000000000000000",
+      "summary": "billing accepted with redacted pointer evidence only.",
+      "cannotClaim": [
+        "multi-region production",
+        "SLA proven",
+        "enterprise compliance"
+      ]
+    },
+    {
+      "id": "audit",
+      "owner": "MedOPL Operations",
+      "status": "done",
+      "run_id": "run-v22-001",
+      "issued_at": "2026-06-20T00:00:00Z",
+      "operation_class": "billing_audit_writeback",
+      "resource_refs": {
+        "authorizationRunId": "run-v22-001",
+        "workspaceId": "workspace-production-canary",
+        "resourceBindingId": "resource-binding-production-canary"
+      },
+      "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/lifecycle/audit.json",
+      "evidence_hash": "sha256:audit000000000000000000000000000000000000000000000000",
+      "summary": "audit accepted with redacted pointer evidence only.",
+      "cannotClaim": [
+        "multi-region production",
+        "SLA proven",
+        "enterprise compliance"
+      ]
+    },
+    {
+      "id": "cleanup",
+      "owner": "MedOPL Operations",
+      "status": "done",
+      "run_id": "run-v22-001",
+      "issued_at": "2026-06-20T00:00:00Z",
+      "operation_class": "storage_lifecycle",
+      "resource_refs": {
+        "authorizationRunId": "run-v22-001",
+        "workspaceId": "workspace-production-canary",
+        "resourceBindingId": "resource-binding-production-canary"
+      },
+      "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/lifecycle/cleanup.json",
+      "evidence_hash": "sha256:cleanup000000000000000000000000000000000000000000000000",
+      "summary": "cleanup accepted with redacted pointer evidence only.",
+      "cannotClaim": [
+        "multi-region production",
+        "SLA proven",
+        "enterprise compliance"
+      ]
+    },
+    {
+      "id": "post_destroy_inventory",
+      "owner": "MedOPL Operations",
+      "status": "done",
+      "run_id": "run-v22-001",
+      "issued_at": "2026-06-20T00:00:00Z",
+      "operation_class": "readonly_inventory",
+      "resource_refs": {
+        "authorizationRunId": "run-v22-001",
+        "workspaceId": "workspace-production-canary",
+        "resourceBindingId": "resource-binding-production-canary"
+      },
+      "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/lifecycle/post_destroy_inventory.json",
+      "evidence_hash": "sha256:postdestroyinventory000000000000000000000000000000000000000000000000",
+      "summary": "post_destroy_inventory accepted with redacted pointer evidence only.",
+      "cannotClaim": [
+        "multi-region production",
+        "SLA proven",
+        "enterprise compliance"
+      ]
+    },
+    {
+      "id": "consumer_canary",
+      "owner": "OPL-Webui Consumer",
+      "status": "done",
+      "run_id": "run-v22-001",
+      "issued_at": "2026-06-20T00:00:00Z",
+      "operation_class": "live_test",
+      "resource_refs": {
+        "authorizationRunId": "run-v22-001",
+        "workspaceId": "workspace-production-canary",
+        "resourceBindingId": "resource-binding-production-canary"
+      },
+      "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/lifecycle/consumer_canary.json",
+      "evidence_hash": "sha256:consumercanary000000000000000000000000000000000000000000000000",
+      "summary": "consumer_canary accepted with redacted pointer evidence only.",
+      "cannotClaim": [
+        "multi-region production",
+        "SLA proven",
+        "enterprise compliance"
+      ]
+    }
   ]
 }

@@ -278,6 +278,34 @@ async function runPlanForOptions({ options, base }) {
   });
 }
 
+async function verifyCloudReleaseCandidate({ base, receiptManifestPath = ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json" }) {
+  const [boundary, receiptManifest] = await Promise.all([
+    readJson(PRODUCTION_RECEIPT_BOUNDARY_PATH),
+    readJson(receiptManifestPath).catch(() => null),
+  ]);
+  const receiptResult = evaluateProductionReceiptManifest({ boundary, manifest: receiptManifest });
+  return {
+    ok: receiptResult.cloudReleaseCandidateComplete === true,
+    mode: "cloud-release-candidate",
+    base,
+    receiptManifestRef: receiptManifestPath,
+    cloudReleaseCandidateComplete: receiptResult.cloudReleaseCandidateComplete,
+    productionComplete: false,
+    missingReceiptTypes: receiptResult.missingReceiptTypes,
+    missingLifecycleSections: receiptResult.missingLifecycleSections,
+    blockers: receiptResult.blockers,
+    rawEvidenceViolations: receiptResult.rawEvidenceViolations,
+    unexpectedFieldViolations: receiptResult.unexpectedFieldViolations,
+    receiptMappingViolations: receiptResult.receiptMappingViolations,
+    cannotClaim: [
+      "production complete",
+      "multi-region production",
+      "SLA proven",
+      "enterprise compliance",
+    ],
+  };
+}
+
 async function validateActivePlatform({ manifest, current }) {
   const packageJson = await readJson("package.json");
 
@@ -421,10 +449,15 @@ async function validateActivePlatform({ manifest, current }) {
   });
   assert.equal(receiptManifestEvaluation.productionComplete, true, `production_receipt_manifest_example_must_be_complete:${JSON.stringify(receiptManifestEvaluation)}`);
   assert.equal(current.production_receipt_boundary?.contract, PRODUCTION_RECEIPT_BOUNDARY_PATH, "current_fixture_receipt_boundary_contract_mismatch");
-  assert.equal(current.production_receipt_boundary?.state, "active_not_complete", "current_fixture_receipt_boundary_state_mismatch");
+  assert.equal(current.production_receipt_boundary?.state, "active_not_complete_cloud_rc_gate_fail_closed", "current_fixture_receipt_boundary_state_mismatch");
   assert(packageJson.scripts["verify:golden-path"], "golden_path_gate_script_missing");
   assert(packageJson.scripts["test:cloud"], "cloud_boundary_gate_script_missing");
   assert(packageJson.scripts["test:hygiene"], "secret_hygiene_gate_script_missing");
+  assert.equal(
+    packageJson.scripts["verify:cloud-release-candidate"],
+    "node scripts/v22-verify.mjs package cloud-release-candidate --base origin/recovery/platform-v22-trunk",
+    "cloud_release_candidate_gate_script_mismatch",
+  );
 
   return {
     ok: true,
@@ -445,6 +478,7 @@ function printUsage() {
     "  node scripts/v22-verify.mjs active-platform [--quick] [--json]",
     "  node scripts/v22-verify.mjs plan [--base origin/recovery/platform-v22-trunk] [--files a,b] [--profile changed-surface|full-local] [--json]",
     "  node scripts/v22-verify.mjs run-plan [--base origin/recovery/platform-v22-trunk] [--files a,b] [--profile changed-surface|full-local] [--dry-run] [--include-authorized] [--json]",
+    "  node scripts/v22-verify.mjs cloud-release-candidate [--base origin/recovery/platform-v22-trunk] [--receipt-manifest .runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json] [--json]",
     "  node scripts/v22-verify.mjs current [--base origin/recovery/platform-v22-trunk] [--dry-run] [--json]",
     "  node scripts/v22-verify.mjs suite <id> [--base origin/recovery/platform-v22-trunk] [--dry-run] [--json]",
     "  node scripts/v22-verify.mjs package <id> [--base origin/recovery/platform-v22-trunk] [--dry-run] [--json]",
@@ -564,6 +598,30 @@ function renderHuman(payload) {
     for (const claim of payload.cannotClaim || []) lines.push(`- ${claim}`);
     return `${lines.join("\n")}\n`;
   }
+  if (payload.mode === "cloud-release-candidate") {
+    lines.push(`receipt manifest: ${payload.receiptManifestRef}`);
+    lines.push(`cloud release candidate complete: ${payload.cloudReleaseCandidateComplete}`);
+    lines.push(`production complete: ${payload.productionComplete}`);
+    if ((payload.missingReceiptTypes || []).length > 0) {
+      lines.push("missing receipt types:");
+      for (const type of payload.missingReceiptTypes) lines.push(`- ${type}`);
+    }
+    if ((payload.missingLifecycleSections || []).length > 0) {
+      lines.push("missing lifecycle sections:");
+      for (const section of payload.missingLifecycleSections) lines.push(`- ${section}`);
+    }
+    if ((payload.blockers || []).length > 0) {
+      lines.push("blockers:");
+      for (const blocker of payload.blockers) lines.push(`- ${blocker}`);
+    }
+    if ((payload.rawEvidenceViolations || []).length > 0) {
+      lines.push("raw evidence violations:");
+      for (const violation of payload.rawEvidenceViolations) lines.push(`- ${violation}`);
+    }
+    lines.push("cannot claim:");
+    for (const claim of payload.cannotClaim || []) lines.push(`- ${claim}`);
+    return `${lines.join("\n")}\n`;
+  }
   if (payload.leafId) lines.push(`leaf: ${payload.leafId}`);
   if (payload.suiteId) lines.push(`suite: ${payload.suiteId}`);
   if (payload.packageId) lines.push(`package: ${payload.packageId}`);
@@ -620,6 +678,16 @@ async function main() {
     const payload = await runPlanForOptions({
       options,
       base: options.base || "origin/recovery/platform-v22-trunk",
+    });
+    process.stdout.write(options.json ? `${JSON.stringify(payload, null, 2)}\n` : renderHuman(payload));
+    if (!payload.ok) process.exitCode = 1;
+    return;
+  }
+
+  if (mode === "cloud-release-candidate") {
+    const payload = await verifyCloudReleaseCandidate({
+      base: options.base || "origin/recovery/platform-v22-trunk",
+      receiptManifestPath: options["receipt-manifest"] || ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json",
     });
     process.stdout.write(options.json ? `${JSON.stringify(payload, null, 2)}\n` : renderHuman(payload));
     if (!payload.ok) process.exitCode = 1;

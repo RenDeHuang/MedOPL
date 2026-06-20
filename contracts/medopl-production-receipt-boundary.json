@@ -14,6 +14,7 @@
   "consumers": [
     "validate:active-platform",
     "scripts/v22-production-receipt-boundary.mjs",
+    "scripts/v22-verify.mjs cloud-release-candidate",
     "scripts/v22-test-report.mjs",
     "tests/release/release-test-v22-production-receipt-boundary.mjs",
     "tests/health/health-check-v22-production-receipt-boundary.mjs"
@@ -66,6 +67,22 @@
       "upload_file",
       "artifacts",
       "artifact"
-    ]
+    ],
+    "cloud_release_candidate_requires": "complete_lifecycle_sections_and_owner_receipts",
+    "required_lifecycle_sections": [
+      "authorization",
+      "provider_inventory",
+      "provision_plan",
+      "mutation",
+      "data_plane",
+      "runtime_execution",
+      "artifact",
+      "billing",
+      "audit",
+      "cleanup",
+      "post_destroy_inventory",
+      "consumer_canary"
+    ],
+    "lifecycle_section_policy": "small_redacted_pointer_hash_status_only"
   }
 }

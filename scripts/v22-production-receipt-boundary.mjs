@@ -28,7 +28,22 @@ const ALLOWED_TOP_LEVEL_FIELDS = Object.freeze([
   "target_environment",
   "authorization",
   "summary",
+  "lifecycle_sections",
   "receipts",
+]);
+
+const ALLOWED_LIFECYCLE_SECTION_FIELDS = Object.freeze([
+  "id",
+  "owner",
+  "status",
+  "run_id",
+  "issued_at",
+  "operation_class",
+  "resource_refs",
+  "evidence_ref",
+  "evidence_hash",
+  "summary",
+  "cannotClaim",
 ]);
 
 const ALLOWED_RECEIPT_FIELDS = Object.freeze([
@@ -101,6 +116,13 @@ function collectUnexpectedFields(manifest) {
     if (!topAllowed.has(key)) violations.push(key);
   }
   const receiptAllowed = new Set(ALLOWED_RECEIPT_FIELDS);
+  const sectionAllowed = new Set(ALLOWED_LIFECYCLE_SECTION_FIELDS);
+  for (const [index, section] of (manifest?.lifecycle_sections || []).entries()) {
+    if (!isObject(section)) continue;
+    for (const key of Object.keys(section)) {
+      if (!sectionAllowed.has(key)) violations.push(`lifecycle_sections[${index}].${key}`);
+    }
+  }
   for (const [index, receipt] of (manifest?.receipts || []).entries()) {
     if (!isObject(receipt)) continue;
     for (const key of Object.keys(receipt)) {
@@ -173,6 +195,9 @@ export function evaluateProductionReceiptManifest({ boundary, manifest }) {
   const requiredTypes = Array.isArray(receiptBoundary.required_receipt_types)
     ? receiptBoundary.required_receipt_types.map(String)
     : [];
+  const requiredLifecycleSections = Array.isArray(receiptBoundary.required_lifecycle_sections)
+    ? receiptBoundary.required_lifecycle_sections.map(String)
+    : [];
   const allowedCompletionLevels = asStringSet(receiptBoundary.allowed_completion_evidence_levels);
   const forbiddenCompletionLevels = asStringSet(receiptBoundary.forbidden_completion_evidence_levels);
   const completionState = String(receiptBoundary.production_complete_state || "complete");
@@ -181,8 +206,10 @@ export function evaluateProductionReceiptManifest({ boundary, manifest }) {
   if (!isObject(manifest)) {
     return Object.freeze({
       productionComplete: false,
+      cloudReleaseCandidateComplete: false,
       blockers: Object.freeze(["production_receipt_manifest_missing_or_invalid"]),
       missingReceiptTypes: Object.freeze([...requiredTypes]),
+      missingLifecycleSections: Object.freeze([...requiredLifecycleSections]),
       rawEvidenceViolations: Object.freeze([]),
       unexpectedFieldViolations: Object.freeze([]),
     });
@@ -208,8 +235,11 @@ export function evaluateProductionReceiptManifest({ boundary, manifest }) {
   }
 
   const receipts = Array.isArray(manifest.receipts) ? manifest.receipts : [];
+  const lifecycleSections = Array.isArray(manifest.lifecycle_sections) ? manifest.lifecycle_sections : [];
   const receiptTypes = receipts.map((receipt) => String(receipt?.type || "").trim()).filter(Boolean);
+  const lifecycleSectionIds = lifecycleSections.map((section) => String(section?.id || "").trim()).filter(Boolean);
   const missingReceiptTypes = requiredTypes.filter((type) => !receiptTypes.includes(type));
+  const missingLifecycleSections = requiredLifecycleSections.filter((section) => !lifecycleSectionIds.includes(section));
   const duplicateReceiptTypes = receiptTypes.filter((type, index) => receiptTypes.indexOf(type) !== index);
   for (const duplicate of unique(duplicateReceiptTypes)) {
     blockers.push(`production_receipt_manifest_duplicate_receipt:${duplicate}`);
@@ -221,6 +251,17 @@ export function evaluateProductionReceiptManifest({ boundary, manifest }) {
     if (receipt?.status !== "accepted") blockers.push(`production_receipt_manifest_receipt_not_accepted:${receipt?.type || "(missing)"}`);
     if (!isSafeRuntimePointer(receipt?.evidence_ref)) blockers.push(`production_receipt_manifest_receipt_evidence_ref_invalid:${receipt?.type || "(missing)"}`);
     if (!String(receipt?.summary || "").trim()) blockers.push(`production_receipt_manifest_receipt_summary_missing:${receipt?.type || "(missing)"}`);
+  }
+  for (const section of lifecycleSections) {
+    const id = String(section?.id || "").trim();
+    if (!requiredLifecycleSections.includes(id)) blockers.push(`production_receipt_manifest_unknown_lifecycle_section:${id || "(missing)"}`);
+    if (!String(section?.owner || "").trim()) blockers.push(`production_receipt_manifest_lifecycle_owner_missing:${id || "(missing)"}`);
+    if (section?.status !== "done") blockers.push(`production_receipt_manifest_lifecycle_not_done:${id || "(missing)"}`);
+    if (!String(section?.run_id || "").trim()) blockers.push(`production_receipt_manifest_lifecycle_run_id_missing:${id || "(missing)"}`);
+    if (!isSafeRuntimePointer(section?.evidence_ref)) blockers.push(`production_receipt_manifest_lifecycle_evidence_ref_invalid:${id || "(missing)"}`);
+    if (!String(section?.evidence_hash || "").trim()) blockers.push(`production_receipt_manifest_lifecycle_hash_missing:${id || "(missing)"}`);
+    if (!String(section?.summary || "").trim()) blockers.push(`production_receipt_manifest_lifecycle_summary_missing:${id || "(missing)"}`);
+    if (!Array.isArray(section?.cannotClaim)) blockers.push(`production_receipt_manifest_lifecycle_cannot_claim_missing:${id || "(missing)"}`);
   }
 
   const rawEvidenceViolations = unique(findRawEvidenceFields(manifest).map((field) => field.split(".").at(-1) || field));
@@ -250,9 +291,11 @@ export function evaluateProductionReceiptManifest({ boundary, manifest }) {
   if (receiptMappingViolations.length > 0) blockers.push("production_receipt_manifest_receipt_mapping_invalid");
 
   return Object.freeze({
-    productionComplete: blockers.length === 0 && missingReceiptTypes.length === 0,
+    cloudReleaseCandidateComplete: blockers.length === 0 && missingReceiptTypes.length === 0 && missingLifecycleSections.length === 0,
+    productionComplete: blockers.length === 0 && missingReceiptTypes.length === 0 && missingLifecycleSections.length === 0,
     blockers: Object.freeze(unique(blockers)),
     missingReceiptTypes: Object.freeze(missingReceiptTypes),
+    missingLifecycleSections: Object.freeze(missingLifecycleSections),
     rawEvidenceViolations: Object.freeze(rawEvidenceViolations),
     unexpectedFieldViolations: Object.freeze(unexpectedFieldViolations),
     receiptMappingViolations: Object.freeze(unique(receiptMappingViolations)),

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { readFile } from "node:fs/promises";
@@ -13,6 +14,14 @@ const repoRoot = path.resolve(__dirname, "../..");
 
 async function readJson(repoPath) {
   return JSON.parse(await readFile(path.join(repoRoot, repoPath), "utf8"));
+}
+
+function runVerifyCloudReleaseCandidate(args = []) {
+  return spawnSync(process.execPath, ["scripts/v22-verify.mjs", "cloud-release-candidate", "--json", ...args], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
 }
 
 const [boundary, cloudAuthorization, exampleManifest] = await Promise.all([
@@ -52,7 +61,9 @@ const complete = evaluateProductionReceiptManifest({
   manifest: exampleManifest,
 });
 assert.equal(complete.productionComplete, true, `complete_manifest_must_allow_production_complete:${JSON.stringify(complete, null, 2)}`);
+assert.equal(complete.cloudReleaseCandidateComplete, true, "complete_manifest_must_allow_cloud_release_candidate");
 assert.deepEqual(complete.missingReceiptTypes, [], "complete_manifest_must_have_no_missing_receipts");
+assert.deepEqual(complete.missingLifecycleSections, [], "complete_manifest_must_have_no_missing_lifecycle_sections");
 assert.deepEqual(complete.rawEvidenceViolations, [], "complete_manifest_must_not_embed_raw_evidence");
 assert.deepEqual(complete.receiptMappingViolations, [], "complete_manifest_must_match_operation_mapping");
 
@@ -99,7 +110,36 @@ const rawPayload = evaluateProductionReceiptManifest({
   },
 });
 assert.equal(rawPayload.productionComplete, false, "raw_payload_manifest_must_not_complete");
+assert.equal(rawPayload.cloudReleaseCandidateComplete, false, "raw_payload_manifest_must_not_claim_cloud_rc");
 assert(rawPayload.rawEvidenceViolations.includes("raw_cloud_payload"), "raw_payload_violation_missing");
+
+const missingLifecycleSection = evaluateProductionReceiptManifest({
+  boundary,
+  manifest: {
+    ...exampleManifest,
+    lifecycle_sections: exampleManifest.lifecycle_sections.filter((section) => section.id !== "post_destroy_inventory"),
+  },
+});
+assert.equal(missingLifecycleSection.productionComplete, false, "missing_lifecycle_section_manifest_must_not_complete");
+assert.equal(missingLifecycleSection.cloudReleaseCandidateComplete, false, "missing_lifecycle_section_manifest_must_not_claim_cloud_rc");
+assert.deepEqual(
+  missingLifecycleSection.missingLifecycleSections,
+  ["post_destroy_inventory"],
+  "missing_lifecycle_section_mismatch",
+);
+
+const rawLifecyclePayload = evaluateProductionReceiptManifest({
+  boundary,
+  manifest: {
+    ...exampleManifest,
+    lifecycle_sections: exampleManifest.lifecycle_sections.map((section) => section.id === "provider_inventory"
+      ? { ...section, provider_response: { raw: "must-not-commit" } }
+      : section),
+  },
+});
+assert.equal(rawLifecyclePayload.productionComplete, false, "raw_lifecycle_payload_manifest_must_not_complete");
+assert.equal(rawLifecyclePayload.cloudReleaseCandidateComplete, false, "raw_lifecycle_payload_manifest_must_not_claim_cloud_rc");
+assert(rawLifecyclePayload.rawEvidenceViolations.includes("provider_response"), "raw_lifecycle_payload_violation_missing");
 
 const wrongOperationMapping = evaluateProductionReceiptManifest({
   boundary,
@@ -145,6 +185,28 @@ assert(
   mismatchedAuthorizationRun.receiptMappingViolations.includes("production_deploy_receipt:authorization_ref_run_id"),
   "mismatched_authorization_run_violation_missing",
 );
+
+const missingManifestGate = runVerifyCloudReleaseCandidate([
+  "--receipt-manifest",
+  "tests/fixtures/v22/missing-production-receipt-manifest.json",
+]);
+assert.equal(missingManifestGate.status, 1, "cloud_rc_gate_missing_manifest_must_fail_closed");
+const missingManifestGatePayload = JSON.parse(missingManifestGate.stdout);
+assert.equal(missingManifestGatePayload.cloudReleaseCandidateComplete, false, "cloud_rc_gate_missing_manifest_must_not_complete");
+assert(
+  missingManifestGatePayload.blockers.includes("production_receipt_manifest_missing_or_invalid"),
+  "cloud_rc_gate_missing_manifest_blocker_missing",
+);
+
+const fixtureManifestGate = runVerifyCloudReleaseCandidate([
+  "--receipt-manifest",
+  "tests/fixtures/v22/production-receipt-manifest.example.json",
+]);
+assert.equal(fixtureManifestGate.status, 0, `cloud_rc_gate_fixture_manifest_must_pass:${fixtureManifestGate.stderr || fixtureManifestGate.stdout}`);
+const fixtureManifestGatePayload = JSON.parse(fixtureManifestGate.stdout);
+assert.equal(fixtureManifestGatePayload.cloudReleaseCandidateComplete, true, "cloud_rc_gate_fixture_manifest_must_complete");
+assert.equal(fixtureManifestGatePayload.productionComplete, false, "cloud_rc_gate_must_not_claim_production_complete");
+assert.deepEqual(fixtureManifestGatePayload.rawEvidenceViolations, [], "cloud_rc_gate_fixture_must_not_embed_raw_evidence");
 
 console.log(JSON.stringify({
   ok: true,

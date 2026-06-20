@@ -5,15 +5,15 @@ import path from "node:path";
 import readonlyExecutor from "./cloud-authorized-readonly-executor.js";
 
 const OPERATION_SCRIPTS = Object.freeze({
-  readonly_inventory: "cloud:goal:readonly-inventory",
-  dry_run_plan: "cloud:goal:dry-run-plan",
-  tenant_runtime_provisioning: "cloud:goal:tenant-runtime-provisioning",
-  storage_lifecycle: "cloud:goal:storage-lifecycle",
-  billing_audit_writeback: "cloud:goal:billing-audit-writeback",
-  build_push: "cloud:goal:build-push",
-  kubectl: "cloud:goal:kubectl",
-  deploy: "cloud:goal:deploy",
-  live_test: "cloud:goal:live-test",
+  readonly_inventory: "cloud:goal -- --operation readonly_inventory",
+  dry_run_plan: "cloud:goal -- --operation dry_run_plan",
+  tenant_runtime_provisioning: "cloud:goal -- --operation tenant_runtime_provisioning",
+  storage_lifecycle: "cloud:goal -- --operation storage_lifecycle",
+  billing_audit_writeback: "cloud:goal -- --operation billing_audit_writeback",
+  build_push: "cloud:goal -- --operation build_push",
+  kubectl: "cloud:goal -- --operation kubectl",
+  deploy: "cloud:goal -- --operation deploy",
+  live_test: "cloud:goal -- --operation live_test",
 });
 
 const OPERATION_REQUIRED_ENV = Object.freeze({

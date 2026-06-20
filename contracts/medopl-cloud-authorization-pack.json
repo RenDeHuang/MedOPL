@@ -62,18 +62,18 @@
         "operation_class": "readonly_inventory",
         "runner_id": "tencent_readonly_inventory_runner",
         "receipt_types": [],
-        "package_script": "cloud:goal:readonly-inventory",
+        "package_script": "cloud:goal",
         "commands": [
-          "npm run cloud:goal:readonly-inventory"
+          "npm run cloud:goal -- --operation readonly_inventory"
         ]
       },
       {
         "operation_class": "dry_run_plan",
         "runner_id": "kubernetes_server_side_dry_run_runner",
         "receipt_types": [],
-        "package_script": "cloud:goal:dry-run-plan",
+        "package_script": "cloud:goal",
         "commands": [
-          "npm run cloud:goal:dry-run-plan"
+          "npm run cloud:goal -- --operation dry_run_plan"
         ]
       },
       {
@@ -82,9 +82,9 @@
         "receipt_types": [
           "runtime_owner_receipt"
         ],
-        "package_script": "cloud:goal:tenant-runtime-provisioning",
+        "package_script": "cloud:goal",
         "commands": [
-          "npm run cloud:goal:tenant-runtime-provisioning"
+          "npm run cloud:goal -- --operation tenant_runtime_provisioning"
         ]
       },
       {
@@ -94,9 +94,9 @@
           "storage_owner_receipt",
           "release_owner_receipt"
         ],
-        "package_script": "cloud:goal:storage-lifecycle",
+        "package_script": "cloud:goal",
         "commands": [
-          "npm run cloud:goal:storage-lifecycle"
+          "npm run cloud:goal -- --operation storage_lifecycle"
         ]
       },
       {
@@ -106,27 +106,27 @@
           "billing_owner_receipt",
           "audit_owner_receipt"
         ],
-        "package_script": "cloud:goal:billing-audit-writeback",
+        "package_script": "cloud:goal",
         "commands": [
-          "npm run cloud:goal:billing-audit-writeback"
+          "npm run cloud:goal -- --operation billing_audit_writeback"
         ]
       },
       {
         "operation_class": "build_push",
         "runner_id": "container_registry_build_push_runner",
         "receipt_types": [],
-        "package_script": "cloud:goal:build-push",
+        "package_script": "cloud:goal",
         "commands": [
-          "npm run cloud:goal:build-push"
+          "npm run cloud:goal -- --operation build_push"
         ]
       },
       {
         "operation_class": "kubectl",
         "runner_id": "kubernetes_apply_runner",
         "receipt_types": [],
-        "package_script": "cloud:goal:kubectl",
+        "package_script": "cloud:goal",
         "commands": [
-          "npm run cloud:goal:kubectl"
+          "npm run cloud:goal -- --operation kubectl"
         ]
       },
       {
@@ -135,9 +135,9 @@
         "receipt_types": [
           "production_deploy_receipt"
         ],
-        "package_script": "cloud:goal:deploy",
+        "package_script": "cloud:goal",
         "commands": [
-          "npm run cloud:goal:deploy"
+          "npm run cloud:goal -- --operation deploy"
         ]
       },
       {
@@ -146,9 +146,9 @@
         "receipt_types": [
           "opl_webui_consumer_receipt"
         ],
-        "package_script": "cloud:goal:live-test",
+        "package_script": "cloud:goal",
         "commands": [
-          "npm run cloud:goal:live-test"
+          "npm run cloud:goal -- --operation live_test"
         ]
       }
     ],

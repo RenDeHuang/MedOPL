@@ -212,15 +212,15 @@ const TEST_PLAN_FULL_LOCAL_COMMANDS = Object.freeze([
 ]);
 
 export const CLOUD_GOAL_AUTHORIZED_COMMANDS = Object.freeze([
-  "npm run cloud:goal:readonly-inventory",
-  "npm run cloud:goal:dry-run-plan",
-  "npm run cloud:goal:tenant-runtime-provisioning",
-  "npm run cloud:goal:storage-lifecycle",
-  "npm run cloud:goal:billing-audit-writeback",
-  "npm run cloud:goal:build-push",
-  "npm run cloud:goal:kubectl",
-  "npm run cloud:goal:deploy",
-  "npm run cloud:goal:live-test",
+  "npm run cloud:goal -- --operation readonly_inventory",
+  "npm run cloud:goal -- --operation dry_run_plan",
+  "npm run cloud:goal -- --operation tenant_runtime_provisioning",
+  "npm run cloud:goal -- --operation storage_lifecycle",
+  "npm run cloud:goal -- --operation billing_audit_writeback",
+  "npm run cloud:goal -- --operation build_push",
+  "npm run cloud:goal -- --operation kubectl",
+  "npm run cloud:goal -- --operation deploy",
+  "npm run cloud:goal -- --operation live_test",
 ]);
 
 const PREFLIGHT_CHECK_DEFINITIONS = Object.freeze({

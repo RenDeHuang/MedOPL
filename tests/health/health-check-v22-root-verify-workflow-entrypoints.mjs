@@ -45,15 +45,8 @@ const expectedScripts = {
   "cloud:authorized:plan": "node scripts/v22-cloud-authorized-executor.mjs --dry-run --json",
   "cloud:goal:preflight": "node scripts/v22-cloud-authorized-executor.mjs --preflight --json",
   "cloud:authorized:execute": "node scripts/v22-cloud-authorized-executor.mjs --execute --json",
-  "cloud:goal:readonly-inventory": "V22_CLOUD_COMMAND_EXECUTOR=tests/support/cloud-prework/cloud-authorized-production-goal-executor.js node scripts/v22-cloud-authorized-executor.mjs --execute --operation readonly_inventory --json",
-  "cloud:goal:dry-run-plan": "V22_CLOUD_COMMAND_EXECUTOR=tests/support/cloud-prework/cloud-authorized-production-goal-executor.js node scripts/v22-cloud-authorized-executor.mjs --execute --operation dry_run_plan --json",
-  "cloud:goal:tenant-runtime-provisioning": "V22_CLOUD_COMMAND_EXECUTOR=tests/support/cloud-prework/cloud-authorized-production-goal-executor.js node scripts/v22-cloud-authorized-executor.mjs --execute --operation tenant_runtime_provisioning --json",
-  "cloud:goal:storage-lifecycle": "V22_CLOUD_COMMAND_EXECUTOR=tests/support/cloud-prework/cloud-authorized-production-goal-executor.js node scripts/v22-cloud-authorized-executor.mjs --execute --operation storage_lifecycle --json",
-  "cloud:goal:billing-audit-writeback": "V22_CLOUD_COMMAND_EXECUTOR=tests/support/cloud-prework/cloud-authorized-production-goal-executor.js node scripts/v22-cloud-authorized-executor.mjs --execute --operation billing_audit_writeback --json",
-  "cloud:goal:build-push": "V22_CLOUD_COMMAND_EXECUTOR=tests/support/cloud-prework/cloud-authorized-production-goal-executor.js node scripts/v22-cloud-authorized-executor.mjs --execute --operation build_push --json",
-  "cloud:goal:kubectl": "V22_CLOUD_COMMAND_EXECUTOR=tests/support/cloud-prework/cloud-authorized-production-goal-executor.js node scripts/v22-cloud-authorized-executor.mjs --execute --operation kubectl --json",
-  "cloud:goal:deploy": "V22_CLOUD_COMMAND_EXECUTOR=tests/support/cloud-prework/cloud-authorized-production-goal-executor.js node scripts/v22-cloud-authorized-executor.mjs --execute --operation deploy --json",
-  "cloud:goal:live-test": "V22_CLOUD_COMMAND_EXECUTOR=tests/support/cloud-prework/cloud-authorized-production-goal-executor.js node scripts/v22-cloud-authorized-executor.mjs --execute --operation live_test --json",
+  "cloud:goal": "V22_CLOUD_COMMAND_EXECUTOR=tests/support/cloud-prework/cloud-authorized-production-goal-executor.js node scripts/v22-cloud-authorized-executor.mjs --execute --json",
+  "verify:cloud-release-candidate": "node scripts/v22-verify.mjs package cloud-release-candidate --base origin/recovery/platform-v22-trunk",
   "test:plan": "node scripts/v22-verify.mjs plan --base origin/recovery/platform-v22-trunk",
   "test:run-plan": "node scripts/v22-verify.mjs run-plan --base origin/recovery/platform-v22-trunk",
   "slice:start": "node scripts/v22-worktree-slice-orchestrator.mjs start --json",
@@ -262,6 +255,16 @@ assert.deepEqual(localReleaseCandidateSuite.commands, [
   "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
   "git diff --check -- docs specs tests scripts package.json services/portal/frontend/src services/medopl-go-backend services/opl-web-gateway services/opl-runtime-bridge",
 ], "local_release_candidate_package_suite_commands_mismatch");
+
+const cloudReleaseCandidateSuite = manifest.package_suites.find((suite) => suite.id === "cloud-release-candidate");
+assert(cloudReleaseCandidateSuite, "cloud_release_candidate_package_suite_missing");
+assert.deepEqual(cloudReleaseCandidateSuite.commands, [
+  "node tests/cloud/cloud-test-v22-cloud-authorized-executor.mjs",
+  "node tests/cloud/cloud-test-v22-production-goal-command-runner.mjs",
+  "node tests/cloud/cloud-test-v22-production-goal-runners.mjs",
+  "node tests/release/release-test-v22-production-receipt-boundary.mjs",
+  "node scripts/v22-verify.mjs cloud-release-candidate --base origin/recovery/platform-v22-trunk --json",
+], "cloud_release_candidate_package_suite_commands_mismatch");
 
 const reviewSuite = manifest.suites.find((suite) => suite.id === "review");
 assert(reviewSuite?.commands.includes("node tests/health/health-check-v22-verify-plan-mode.mjs"), "review_suite_must_check_verify_plan_mode");
