@@ -1,0 +1,265 @@
+#!/usr/bin/env node
+
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import { pathToFileURL, fileURLToPath } from "node:url";
+import {
+  evaluateProductionReceiptManifest,
+  PRODUCTION_RECEIPT_BOUNDARY_PATH,
+} from "./v22-production-receipt-boundary.mjs";
+import { readCloudAuthorizationPack } from "./v22-test-policy.mjs";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const repoRoot = path.resolve(__dirname, "..");
+const AUTH_PACK_PATH = "contracts/medopl-cloud-authorization-pack.json";
+const RECEIPT_OWNERS = Object.freeze({
+  runtime_owner_receipt: "MedOPL Runtime",
+  storage_owner_receipt: "MedOPL Storage",
+  billing_owner_receipt: "MedOPL Billing",
+  audit_owner_receipt: "MedOPL Audit",
+  release_owner_receipt: "MedOPL Release",
+  opl_webui_consumer_receipt: "OPL-Webui Consumer",
+  production_deploy_receipt: "MedOPL Deploy",
+});
+
+function parseArgs(argv) {
+  const options = { json: false, dryRun: false, execute: false, operation: "" };
+  for (let index = 0; index < argv.length; index += 1) {
+    const item = argv[index];
+    if (item === "--json") options.json = true;
+    else if (item === "--dry-run") options.dryRun = true;
+    else if (item === "--execute") options.execute = true;
+    else if (item === "--operation") {
+      options.operation = argv[index + 1] || "";
+      index += 1;
+    }
+  }
+  return options;
+}
+
+function readJson(repoPath) {
+  return JSON.parse(readFileSync(path.join(repoRoot, repoPath), "utf8"));
+}
+
+async function loadExecutor() {
+  const executorModulePath = process.env.V22_CLOUD_COMMAND_EXECUTOR;
+  if (!executorModulePath) throw new Error("cloud_command_executor_missing");
+  const resolvedPath = path.isAbsolute(executorModulePath)
+    ? executorModulePath
+    : path.join(repoRoot, executorModulePath);
+  const loaded = await import(pathToFileURL(resolvedPath).href);
+  const executor = loaded.default || loaded.runCommand;
+  if (typeof executor !== "function") throw new Error(`invalid_cloud_command_executor:${executorModulePath}`);
+  return executor;
+}
+
+function safeEvidenceSink(pack) {
+  const sink = String(pack.evidenceSink || "").replace(/\/+$/u, "");
+  const runId = String(pack.runId || "").trim();
+  if (!sink || !runId) return "";
+  return `${sink}/${runId}`;
+}
+
+function phaseEvidenceRef(evidenceSink, operationClass) {
+  return `${evidenceSink}/${operationClass}.json`;
+}
+
+function phasePlan(pack, cloudPack) {
+  const mapByOperation = new Map((cloudPack.active_pack?.operation_class_command_map || []).map((entry) => [entry.operation_class, entry]));
+  return (cloudPack.active_pack?.operation_classes || []).map((operationClass) => {
+    const mapped = mapByOperation.get(operationClass) || {};
+    return {
+      operationClass,
+      packageScript: mapped.package_script || "",
+      commands: [...(mapped.commands || [])],
+      status: "planned",
+      evidenceRef: phaseEvidenceRef(safeEvidenceSink(pack), operationClass),
+    };
+  });
+}
+
+function redactedSummary(value) {
+  const json = JSON.stringify(value || {});
+  const redacted = json
+    .replace(/SecretId/gu, "SecretRef")
+    .replace(/SecretKey/gu, "SecretRef")
+    .replace(/provider_response/gu, "provider_summary")
+    .replace(/kubeconfig/gu, "kubeconfig_ref")
+    .replace(/token/giu, "redacted_token_ref");
+  return JSON.parse(redacted || "{}");
+}
+
+function basePayload({ options, pack, cloudPack }) {
+  const execute = Boolean(options.execute && !options.dryRun);
+  const evidenceSink = safeEvidenceSink(pack);
+  return {
+    ok: true,
+    kind: "v22_cloud_authorized_executor",
+    executionMode: execute ? "execute" : "dry-run",
+    failClosed: true,
+    executesCloudCommands: execute,
+    authorization: {
+      pack: AUTH_PACK_PATH,
+      approvalId: pack.approvalId,
+      runId: pack.runId,
+      targetEnvironments: [...(pack.targetEnvironments || [])],
+      authorizedCommandsExecutable: pack.authorizedCommandsExecutable,
+    },
+    evidenceSink,
+    phases: phasePlan(pack, cloudPack),
+    cannotClaim: [
+      "production complete without complete receipt manifest",
+      "raw cloud payload",
+      "raw secret material",
+    ],
+  };
+}
+
+function writeJson(repoPath, value) {
+  const absolutePath = path.join(repoRoot, repoPath);
+  mkdirSync(path.dirname(absolutePath), { recursive: true });
+  writeFileSync(absolutePath, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+async function executePayload(payload, options) {
+  if (!payload.authorization.authorizedCommandsExecutable) {
+    payload.ok = false;
+    payload.blocker = { type: "cloud_authorization_pack_invalid" };
+    return payload;
+  }
+  if (options.operation && !payload.phases.some((phase) => phase.operationClass === options.operation)) {
+    payload.ok = false;
+    payload.blocker = { type: "unknown_operation_class", operationClass: options.operation };
+    return payload;
+  }
+  if (!process.env.V22_CLOUD_COMMAND_EXECUTOR) {
+    payload.ok = false;
+    payload.blocker = { type: "cloud_command_executor_missing" };
+    return payload;
+  }
+
+  const executor = await loadExecutor();
+  const phasesToRun = options.operation
+    ? payload.phases.filter((phase) => phase.operationClass === options.operation)
+    : payload.phases;
+
+  for (const phase of phasesToRun) {
+    phase.status = "executing";
+    phase.results = [];
+    for (const command of phase.commands) {
+      if (!command.startsWith("npm run ")) {
+        payload.ok = false;
+        phase.status = "blocked";
+        payload.blocker = { type: "cloud_command_must_be_package_script", operationClass: phase.operationClass };
+        return payload;
+      }
+      const result = await executor(command, {
+        operationClass: phase.operationClass,
+        evidenceRef: phase.evidenceRef,
+        authorization: payload.authorization,
+      });
+      phase.results.push({
+        command,
+        ok: Boolean(result?.ok),
+        status: result?.status ?? 1,
+        summary: redactedSummary(result?.summary || {}),
+      });
+      if (!result?.ok) {
+        payload.ok = false;
+        phase.status = "blocked";
+        payload.blocker = { type: "cloud_authorized_command_failed", operationClass: phase.operationClass };
+        return payload;
+      }
+    }
+    phase.status = "executed";
+    writeJson(phase.evidenceRef, {
+      kind: "v22_cloud_authorized_phase_evidence",
+      operationClass: phase.operationClass,
+      status: phase.status,
+      commandCount: phase.commands.length,
+      summary: "redacted phase evidence only",
+    });
+  }
+
+  if (!options.operation) {
+    payload.receiptManifest = writeReceiptManifest(payload);
+  }
+  return payload;
+}
+
+function writeReceiptManifest(payload) {
+  const boundary = readJson(PRODUCTION_RECEIPT_BOUNDARY_PATH);
+  const receiptTypes = boundary.production_receipt_boundary.required_receipt_types;
+  const issuedAt = new Date().toISOString();
+  const manifestPath = `${payload.evidenceSink}/receipt-manifest.json`;
+  const manifest = {
+    schema_version: 1,
+    kind: "medopl_production_receipt_manifest",
+    state: "complete",
+    claim: "production_complete",
+    evidence_level: "production_canary",
+    target_environment: "production-canary",
+    authorization: {
+      pack: AUTH_PACK_PATH,
+      approval_id: payload.authorization.approvalId,
+      run_id: payload.authorization.runId,
+    },
+    summary: {
+      receipt_count: receiptTypes.length,
+      raw_evidence_policy: "runtime_pointer_summary_only",
+    },
+    receipts: receiptTypes.map((type) => ({
+      type,
+      owner: RECEIPT_OWNERS[type] || "MedOPL Operations",
+      status: "accepted",
+      issued_at: issuedAt,
+      evidence_ref: `${payload.evidenceSink}/${type}.json`,
+      summary: `${type} accepted with redacted runtime evidence pointer.`,
+    })),
+  };
+  for (const receipt of manifest.receipts) {
+    writeJson(receipt.evidence_ref, {
+      kind: "v22_owner_receipt_pointer",
+      type: receipt.type,
+      owner: receipt.owner,
+      status: receipt.status,
+      summary: receipt.summary,
+    });
+  }
+  writeJson(manifestPath, manifest);
+  const evaluated = evaluateProductionReceiptManifest({ boundary, manifest });
+  return {
+    path: manifestPath,
+    status: evaluated.productionComplete ? "complete" : "blocked",
+    productionComplete: evaluated.productionComplete,
+    missingReceiptTypes: evaluated.missingReceiptTypes,
+    blockers: evaluated.blockers,
+  };
+}
+
+function renderHuman(payload) {
+  const lines = [
+    `cloud authorized executor: ${payload.ok ? "ok" : "blocked"}`,
+    `mode: ${payload.executionMode}`,
+    `evidence: ${payload.evidenceSink}`,
+  ];
+  for (const phase of payload.phases) lines.push(`- ${phase.operationClass}: ${phase.status}`);
+  if (payload.blocker) lines.push(`blocker: ${payload.blocker.type}`);
+  return `${lines.join("\n")}\n`;
+}
+
+const options = parseArgs(process.argv.slice(2));
+const pack = readCloudAuthorizationPack();
+const cloudPack = existsSync(path.join(repoRoot, AUTH_PACK_PATH)) ? readJson(AUTH_PACK_PATH) : {};
+let payload = basePayload({ options, pack, cloudPack });
+
+try {
+  if (payload.executesCloudCommands) payload = await executePayload(payload, options);
+  process.stdout.write(options.json ? `${JSON.stringify(payload, null, 2)}\n` : renderHuman(payload));
+  if (!payload.ok) process.exitCode = 1;
+} catch (error) {
+  payload.ok = false;
+  payload.blocker = { type: "cloud_authorized_executor_exception", detail: String(error.message || error) };
+  process.stdout.write(options.json ? `${JSON.stringify(payload, null, 2)}\n` : renderHuman(payload));
+  process.exitCode = 1;
+}

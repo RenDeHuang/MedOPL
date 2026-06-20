@@ -41,6 +41,8 @@ const expectedScripts = {
   "test:regression": "node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk",
   "test:real-cloud-readiness": "node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk",
   "test:cloud-future-authorized": "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk",
+  "cloud:authorized:plan": "node scripts/v22-cloud-authorized-executor.mjs --dry-run --json",
+  "cloud:authorized:execute": "node scripts/v22-cloud-authorized-executor.mjs --execute --json",
   "test:plan": "node scripts/v22-verify.mjs plan --base origin/recovery/platform-v22-trunk",
   "test:run-plan": "node scripts/v22-verify.mjs run-plan --base origin/recovery/platform-v22-trunk",
   "slice:start": "node scripts/v22-worktree-slice-orchestrator.mjs start --json",
@@ -65,6 +67,8 @@ const expectedScripts = {
   "local:services:status": "node scripts/v22-local-services.mjs status --json",
   "local:services:logs": "node scripts/v22-local-services.mjs logs --json",
   "local:services:verify": "node scripts/v22-local-services.mjs verify --dry-run --json",
+  "local:product:e2e": "node scripts/v22-local-product-e2e.mjs --dry-run --json",
+  "local:product:e2e:execute": "node scripts/v22-local-product-e2e.mjs --execute --json",
 };
 
 assert.equal(packageJson.private, true, "root_package_must_be_private");
@@ -227,6 +231,7 @@ assert.deepEqual(testLanesSuite.commands, [
   "node tests/health/health-check-v22-worktree-slice-orchestrator.mjs",
   "node tests/health/health-check-v22-smoke-classification-gate.mjs",
   "node tests/health/health-check-v22-smoke-eval-boundary.mjs",
+  "node tests/cloud/cloud-test-v22-cloud-authorized-executor.mjs",
 ], "test_lanes_package_suite_commands_mismatch");
 
 assert.equal(manifest.package_suites.some((suite) => suite.id === "docs-engineering-loop"), false, "docs_engineering_loop_package_suite_must_remain_retired");
@@ -237,10 +242,12 @@ assert(localReleaseCandidateSuite, "local_release_candidate_package_suite_missin
 assert.deepEqual(localReleaseCandidateSuite.commands, [
   "node tests/contracts/contract-test-v22-local-service-orchestration.mjs",
   "node scripts/v22-local-services.mjs verify --dry-run --json",
+  "node scripts/v22-local-product-e2e.mjs --dry-run --json",
   "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
-  "node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk --json",
+  "npm --prefix services/portal run frontend:install",
   "npm --prefix services/portal run check",
+  "node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk --json",
   "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
   "git diff --check -- docs specs tests scripts package.json services/portal/frontend/src services/medopl-go-backend services/opl-web-gateway services/opl-runtime-bridge",
 ], "local_release_candidate_package_suite_commands_mismatch");

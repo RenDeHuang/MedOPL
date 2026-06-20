@@ -25,6 +25,8 @@
     "test:regression": "node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk",
     "test:real-cloud-readiness": "node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk",
     "test:cloud-future-authorized": "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk",
+    "cloud:authorized:plan": "node scripts/v22-cloud-authorized-executor.mjs --dry-run --json",
+    "cloud:authorized:execute": "node scripts/v22-cloud-authorized-executor.mjs --execute --json",
     "test:plan": "node scripts/v22-verify.mjs plan --base origin/recovery/platform-v22-trunk",
     "test:run-plan": "node scripts/v22-verify.mjs run-plan --base origin/recovery/platform-v22-trunk",
     "slice:start": "node scripts/v22-worktree-slice-orchestrator.mjs start --json",
@@ -48,7 +50,9 @@
     "local:services:stop": "node scripts/v22-local-services.mjs stop --json",
     "local:services:status": "node scripts/v22-local-services.mjs status --json",
     "local:services:logs": "node scripts/v22-local-services.mjs logs --json",
-    "local:services:verify": "node scripts/v22-local-services.mjs verify --dry-run --json"
+    "local:services:verify": "node scripts/v22-local-services.mjs verify --dry-run --json",
+    "local:product:e2e": "node scripts/v22-local-product-e2e.mjs --dry-run --json",
+    "local:product:e2e:execute": "node scripts/v22-local-product-e2e.mjs --execute --json"
   },
   "dependencies": {
     "cos-nodejs-sdk-v5": "^2.15.4",

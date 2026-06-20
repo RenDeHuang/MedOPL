@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { existsSync, rmSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -62,6 +63,7 @@ assert.equal(planPayload.failClosed, true, "slice_orchestrator_must_default_fail
 assert.equal(planPayload.executesCommands, false, "slice_orchestrator_must_not_execute_commands");
 assert.equal(planPayload.executionMode, "plan-only", "slice_orchestrator_must_be_plan_only");
 assert.equal(planPayload.usesRealMergePush, false, "slice_orchestrator_must_not_use_real_merge_push");
+assert.equal(planPayload.executionAllowed, false, "slice_orchestrator_default_must_not_allow_execution");
 assert.equal(planPayload.previousPhase, "", "slice_orchestrator_start_must_have_no_previous_phase");
 assert.equal(planPayload.nextPhase, "plan", "slice_orchestrator_start_must_point_to_plan");
 assert.deepEqual(planPayload.requires, [
@@ -78,14 +80,45 @@ assertIncludesAll(JSON.stringify(planPayload), [
   "scripts/v22-landing-closeout.mjs",
 ], "slice_orchestrator_dependencies");
 
+const testSliceId = `health-slice-${process.pid}`;
+const testSliceDir = path.join(repoRoot, ".runtime", "slices", testSliceId);
+rmSync(testSliceDir, { recursive: true, force: true });
+
+const executeStart = runSlice(["start", "--execute", "--slice-id", testSliceId, "--json"]);
+assert.equal(executeStart.status, 0, "slice_start_execute_must_succeed_without_git_mutation");
+const executePayload = JSON.parse(executeStart.stdout);
+assert.equal(executePayload.ok, true, "slice_start_execute_payload_must_be_ok");
+assert.equal(executePayload.dryRun, false, "slice_start_execute_must_not_be_dry_run");
+assert.equal(executePayload.executionMode, "controlled-executor", "slice_start_execute_must_use_controlled_executor");
+assert.equal(executePayload.executesCommands, true, "slice_start_execute_must_execute_local_evidence_write");
+assert.equal(executePayload.usesRealMergePush, false, "slice_start_execute_must_not_use_merge_push_without_extra_flag");
+assert.equal(executePayload.slice.id, testSliceId, "slice_start_execute_must_report_slice_id");
+assert.equal(executePayload.slice.manifestPath, `.runtime/slices/${testSliceId}/slice.json`, "slice_start_execute_manifest_path");
+assert.equal(existsSync(path.join(testSliceDir, "slice.json")), true, "slice_start_execute_must_write_runtime_manifest");
+const sliceManifest = JSON.parse(await readFile(path.join(testSliceDir, "slice.json"), "utf8"));
+assert.equal(sliceManifest.kind, "v22_worktree_slice_execution", "slice_manifest_kind");
+assert.equal(sliceManifest.slice_id, testSliceId, "slice_manifest_slice_id");
+assert.equal(sliceManifest.current_phase, "start", "slice_manifest_current_phase");
+assert.equal(sliceManifest.execution_mode, "controlled-executor", "slice_manifest_execution_mode");
+assert.equal(sliceManifest.git_mutation_allowed, false, "slice_manifest_must_default_git_mutation_off");
+assert.equal(sliceManifest.phases.start.status, "executed", "slice_manifest_start_phase_status");
+assert(sliceManifest.phases.start.evidence_ref.startsWith(`.runtime/slices/${testSliceId}/`), "slice_manifest_start_evidence_ref_must_be_runtime_pointer");
+
+const executeLandBlocked = runSlice(["land", "--execute", "--slice-id", testSliceId, "--json"]);
+assert.equal(executeLandBlocked.status, 1, "slice_land_execute_without_git_mutation_must_fail_closed");
+const landBlockedPayload = JSON.parse(executeLandBlocked.stdout);
+assert.equal(landBlockedPayload.ok, false, "slice_land_without_git_mutation_payload_must_fail");
+assert.equal(landBlockedPayload.blockers.includes("slice_git_mutation_requires_allow_git_mutation"), true, "slice_land_without_git_mutation_blocker");
+assert.equal(landBlockedPayload.usesRealMergePush, false, "slice_land_without_git_mutation_must_not_merge_push");
+
 assertNotIncludesAny(orchestratorSource, [
   "changes/active",
   "changes/archive",
-  "git push",
-  "git merge",
   "kubectl",
   "docker",
 ], "slice_orchestrator_source");
+
+rmSync(testSliceDir, { recursive: true, force: true });
 
 console.log(JSON.stringify({
   ok: true,

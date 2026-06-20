@@ -19,6 +19,14 @@ function runLocalServices(args = []) {
   });
 }
 
+function runLocalProductE2E(args = []) {
+  return spawnSync("node", ["scripts/v22-local-product-e2e.mjs", ...args], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+}
+
 function jsonFrom(result) {
   assert.equal(result.status, 0, result.stderr || result.stdout);
   return JSON.parse(result.stdout);
@@ -87,7 +95,41 @@ assert.equal(packageJson.scripts["local:services:stop"], "node scripts/v22-local
 assert.equal(packageJson.scripts["local:services:status"], "node scripts/v22-local-services.mjs status --json", "package_must_expose_status");
 assert.equal(packageJson.scripts["local:services:logs"], "node scripts/v22-local-services.mjs logs --json", "package_must_expose_logs");
 assert.equal(packageJson.scripts["local:services:verify"], "node scripts/v22-local-services.mjs verify --dry-run --json", "package_must_expose_local_service_verify");
+assert.equal(packageJson.scripts["local:product:e2e"], "node scripts/v22-local-product-e2e.mjs --dry-run --json", "package_must_expose_local_product_e2e");
+assert.equal(packageJson.scripts["local:product:e2e:execute"], "node scripts/v22-local-product-e2e.mjs --execute --json", "package_must_expose_local_product_e2e_execute");
 assert.equal(packageJson.scripts["verify:local-release-candidate"], "node scripts/v22-verify.mjs package local-release-candidate --base origin/recovery/platform-v22-trunk", "package_must_expose_local_release_candidate_verify");
+
+const e2ePlan = jsonFrom(runLocalProductE2E(["--dry-run", "--json"]));
+assert.equal(e2ePlan.ok, true, "local_product_e2e_dry_run_must_pass");
+assert.equal(e2ePlan.kind, "v22_local_product_e2e_runner", "local_product_e2e_kind");
+assert.equal(e2ePlan.executionMode, "dry-run", "local_product_e2e_must_default_dry_run");
+assert.equal(e2ePlan.executesRequests, false, "local_product_e2e_dry_run_must_not_execute_requests");
+assert.equal(e2ePlan.evidenceRef.startsWith(".runtime/local-product-e2e/"), true, "local_product_e2e_evidence_ref_must_be_runtime_pointer");
+assert.deepEqual(e2ePlan.steps.map((step) => step.id), [
+  "backend-health",
+  "bind-provider-key",
+  "managed-environment-readiness",
+  "open-runtime",
+  "runtime-gate",
+  "upload-file",
+  "run-task",
+  "fetch-artifact",
+  "billing-summary",
+  "resource-projection",
+  "release-runtime",
+  "destroy-storage",
+], "local_product_e2e_steps_mismatch");
+for (const step of e2ePlan.steps) {
+  assert.equal(step.status, "planned", `local_product_e2e_dry_run_step_status:${step.id}`);
+}
+assert.equal(JSON.stringify(e2ePlan).includes("local-rc-provider-key-material-that-must-stay-private"), false, "local_product_e2e_must_not_emit_raw_provider_key");
+
+const e2eBlocked = runLocalProductE2E(["--execute", "--json", "--base-url", "http://127.0.0.1:1"]);
+assert.equal(e2eBlocked.status, 1, "local_product_e2e_unreachable_backend_must_fail_closed");
+const e2eBlockedPayload = JSON.parse(e2eBlocked.stdout);
+assert.equal(e2eBlockedPayload.ok, false, "local_product_e2e_unreachable_payload_must_fail");
+assert.equal(e2eBlockedPayload.blocker?.type, "local_service_unreachable", "local_product_e2e_unreachable_blocker_type");
+assert.equal(e2eBlockedPayload.executesRequests, true, "local_product_e2e_execute_must_attempt_requests");
 
 const status = jsonFrom(runLocalServices(["status", "--json"]));
 assert.equal(status.ok, true, "status_must_be_deterministic_when_services_are_stopped");
