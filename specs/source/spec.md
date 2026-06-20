@@ -31,10 +31,10 @@ The active Portal workbench UI truth is the repo-native React/Vite/TypeScript fr
 
 Retired frontend routes:
 
-- `/packages`
 - `/advanced/servers`
 - `/runtime`
 - `/tasks`
+- `/trace`
 - `/opl`
 
 Retired frontend stack:
@@ -45,9 +45,9 @@ Retired frontend stack:
 Required user routes:
 
 - `/overview`
+- `/packages`
 - `/resources`
 - `/workspace`
-- `/trace`
 - `/billing`
 - `/opl-launch`
 

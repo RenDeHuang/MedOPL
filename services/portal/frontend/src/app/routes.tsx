@@ -17,9 +17,9 @@ function pageRoute(modulePath: string, exportName: string) {
 }
 
 const overviewRoute = pageRoute("./pages/Overview.tsx", "Overview");
+const packagesPurchaseRoute = pageRoute("./pages/PackagesPurchase.tsx", "PackagesPurchase");
 const runtimeEnvironmentRoute = pageRoute("./pages/RuntimeEnvironment.tsx", "RuntimeEnvironment");
 const workspaceRoute = pageRoute("./pages/Workspace.tsx", "Workspace");
-const tasksResultsRoute = pageRoute("./pages/TasksResults.tsx", "TasksResults");
 const billingAuditRoute = pageRoute("./pages/BillingAudit.tsx", "BillingAudit");
 const oplEntryRoute = pageRoute("./pages/OPLEntry.tsx", "OPLEntry");
 const adminDashboardRoute = pageRoute("./pages/admin/AdminDashboard.tsx", "AdminDashboard");
@@ -50,9 +50,9 @@ export const router = createBrowserRouter([
 
       // 普通用户路由
       { path: "overview", lazy: overviewRoute },
+      { path: "packages", lazy: packagesPurchaseRoute },
       { path: "resources", lazy: runtimeEnvironmentRoute },
       { path: "workspace", lazy: workspaceRoute },
-      { path: "trace", lazy: tasksResultsRoute },
       { path: "billing", lazy: billingAuditRoute },
       { path: "opl-launch", lazy: oplEntryRoute },
       { path: "portal/opl", element: <Navigate to="/opl-launch" replace /> },

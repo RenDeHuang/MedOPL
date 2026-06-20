@@ -94,6 +94,39 @@ assert.equal(productProfile.medopl_product_profile.primary_consumer_surface?.nam
 assert.equal(productProfile.medopl_product_profile.primary_consumer_surface?.ordinary_chat_owner, "opl-webui", "product_profile_ordinary_chat_owner_must_be_opl_webui");
 assert.equal(productProfile.medopl_product_profile.primary_consumer_surface?.runtime_required_owner, "medopl", "product_profile_runtime_required_owner_must_be_medopl");
 assert.equal(productProfile.medopl_product_profile.primary_consumer_surface?.integration_contract, "POST /api/opl/runtime-gate", "product_profile_runtime_gate_contract_mismatch");
+assert.deepEqual(
+  productProfile.medopl_product_profile.primary_user_offer,
+  [
+    "compute_resource",
+    "storage_space",
+    "package_plan",
+    "task_concurrency",
+    "usage_billing",
+    "resource_lifecycle",
+    "opl_entry",
+  ],
+  "product_profile_primary_offer_must_be_resource_control_surface",
+);
+assert.equal(
+  productProfile.medopl_product_profile.supporting_receipt_surface?.audit,
+  "billing_release_storage_lifecycle_receipt",
+  "product_profile_audit_must_be_supporting_receipt_not_primary_offer",
+);
+assert.equal(
+  productProfile.medopl_product_profile.user_surface_forbidden_objects?.includes("raw_trace"),
+  true,
+  "product_profile_user_surface_must_forbid_raw_trace",
+);
+assert.equal(
+  productProfile.medopl_product_profile.owner_split?.medopl_owns?.includes("compute_resource_lifecycle"),
+  true,
+  "product_profile_owner_split_must_make_compute_resource_lifecycle_medopl_owned",
+);
+assert.equal(
+  productProfile.medopl_product_profile.owner_split?.opl_webui_owns?.includes("chat_first_project_session_workbench"),
+  true,
+  "product_profile_owner_split_must_keep_chat_workbench_with_opl_webui",
+);
 
 const testDirs = await readdir(path.join(repoRoot, "tests"), { withFileTypes: true });
 const testDirNames = new Set(testDirs.filter((entry) => entry.isDirectory()).map((entry) => entry.name));

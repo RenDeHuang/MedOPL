@@ -256,7 +256,9 @@ try {
     await waitReady(page, "正在加载总览");
     lastBodyText = await page.locator("body").innerText();
     assert(lastBodyText.includes("总览"), "overview_must_render_with_go_backend");
-    assert(lastBodyText.includes("托管科研工作台"), "overview_must_render_product_spine");
+    assert(lastBodyText.includes("资源总览"), "overview_must_render_resource_control_spine");
+    assert(lastBodyText.includes("选择套餐开通计算资源"), "overview_must_render_compute_resource_cta");
+    assert(lastBodyText.includes("存储空间"), "overview_must_render_storage_space_spine");
 
     await page.getByRole("button", { name: "打开账号菜单" }).click();
     await page.getByRole("menuitem", { name: "账号信息" }).click();

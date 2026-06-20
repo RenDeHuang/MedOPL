@@ -10,13 +10,13 @@ function assertExcludes(source, forbidden, label) {
 }
 
 const workspaceSource = await readFile("services/portal/frontend/src/app/pages/Workspace.tsx", "utf8");
-const tasksSource = await readFile("services/portal/frontend/src/app/pages/TasksResults.tsx", "utf8");
+const packagesSource = await readFile("services/portal/frontend/src/app/pages/PackagesPurchase.tsx", "utf8");
 const billingSource = await readFile("services/portal/frontend/src/app/pages/BillingAudit.tsx", "utf8");
 const layoutSource = await readFile("services/portal/frontend/src/app/components/Layout.tsx", "utf8");
 
 for (const [label, source] of [
   ["workspace", workspaceSource],
-  ["tasks", tasksSource],
+  ["packages", packagesSource],
   ["billing", billingSource],
 ]) {
   assert(
@@ -46,7 +46,7 @@ for (const forbiddenCopy of [
   "云资源清单",
 ]) {
   assertExcludes(workspaceSource, forbiddenCopy, `workspace_forbidden_admin_or_cloud_copy:${forbiddenCopy}`);
-  assertExcludes(tasksSource, forbiddenCopy, `tasks_forbidden_admin_or_cloud_copy:${forbiddenCopy}`);
+  assertExcludes(packagesSource, forbiddenCopy, `packages_forbidden_admin_or_cloud_copy:${forbiddenCopy}`);
   assertExcludes(billingSource, forbiddenCopy, `billing_forbidden_admin_or_cloud_copy:${forbiddenCopy}`);
 }
 

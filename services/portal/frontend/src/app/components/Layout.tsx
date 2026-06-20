@@ -4,7 +4,7 @@ import {
   LayoutDashboard,
   Server,
   FolderOpen,
-  ListChecks,
+  ShoppingCart,
   Receipt,
   Play,
   HelpCircle,
@@ -28,11 +28,11 @@ import {
 
 // 普通用户导航
 const userNavigation = [
-  { name: "总览", path: "/overview", icon: LayoutDashboard },
-  { name: "运行环境", path: "/resources", icon: Server },
-  { name: "工作空间", path: "/workspace", icon: FolderOpen },
-  { name: "任务与结果", path: "/trace", icon: ListChecks },
-  { name: "账单与审计", path: "/billing", icon: Receipt },
+  { name: "资源总览", path: "/overview", icon: LayoutDashboard },
+  { name: "套餐与购买", path: "/packages", icon: ShoppingCart },
+  { name: "计算资源", path: "/resources", icon: Server },
+  { name: "存储空间", path: "/workspace", icon: FolderOpen },
+  { name: "费用与用量", path: "/billing", icon: Receipt },
   { name: "进入 OPL", path: "/opl-launch", icon: Play },
 ];
 
@@ -171,10 +171,10 @@ export function Layout() {
 function getPageTitle(pathname: string): string {
   const routes: Record<string, string> = {
     "/overview": "总览",
-    "/resources": "运行环境",
-    "/workspace": "工作空间",
-    "/trace": "任务与结果",
-    "/billing": "账单与审计",
+    "/resources": "计算资源",
+    "/workspace": "存储空间",
+    "/billing": "费用与用量",
+    "/packages": "套餐与购买",
     "/opl-launch": "进入 OPL",
     "/admin/dashboard": "管理总览",
     "/admin/users": "用户管理",

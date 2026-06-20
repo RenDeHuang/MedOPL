@@ -25,6 +25,7 @@ const [
   operationsSpec,
   runtimeSpec,
   productReadme,
+  pageStateMatrix,
   layout,
   roleContext,
   routes,
@@ -36,6 +37,7 @@ const [
   readFile("specs/operations/spec.md", "utf8"),
   readFile("specs/runtime/spec.md", "utf8"),
   readFile("docs/product/README.md", "utf8"),
+  readFile("contracts/medopl-portal-page-state-matrix.json", "utf8"),
   readFile("services/portal/frontend/src/app/components/Layout.tsx", "utf8"),
   readFile("services/portal/frontend/src/app/contexts/RoleContext.tsx", "utf8"),
   readFile("services/portal/frontend/src/app/routes.tsx", "utf8"),
@@ -52,12 +54,28 @@ assertIncludes(operationsSpec, "`operations:portal-admin-ops-surface-boundary`",
 assertIncludes(runtimeSpec, "`runtime:saas-portal-opl-ops-surface-boundary`", "runtime_spec_shared_surface_requirement");
 assertIncludes(productReadme, "普通用户产品语言不展示 CVM、COS、K8s、节点池或云控制台配置", "product_readme_user_surface_language");
 assertIncludes(productReadme, "管理台和普通用户边界", "product_readme_role_boundary");
+assertIncludes(productReadme, "用户侧只回答六个资源问题", "product_readme_resource_control_user_surface");
+assertIncludes(productReadme, "计算资源", "product_readme_compute_resource_language");
+assertIncludes(productReadme, "存储空间里有什么", "product_readme_storage_inventory_language");
+assertNotIncludes(productReadme, "billing / trace / audit", "product_readme_must_not_keep_trace_in_golden_path");
+assertNotIncludes(productReadme, "Trace 不再作为用户主导航", "product_readme_must_state_trace_retirement_without_reintroducing_nav_copy");
+assertIncludes(pageStateMatrix, "\"resource_overview\"", "page_state_matrix_resource_overview");
+assertIncludes(pageStateMatrix, "\"packages_purchase\"", "page_state_matrix_packages_purchase");
+assertIncludes(pageStateMatrix, "\"compute_resource\"", "page_state_matrix_compute_resource");
+assertIncludes(pageStateMatrix, "\"storage_space\"", "page_state_matrix_storage_space");
+assertIncludes(pageStateMatrix, "\"usage_billing\"", "page_state_matrix_usage_billing");
+assertIncludes(pageStateMatrix, "\"opl_entry\"", "page_state_matrix_opl_entry");
+assertNotIncludes(pageStateMatrix, "actor_trace", "page_state_matrix_must_not_own_actor_trace");
 
 const userNavigation = extractArray(layout, "userNavigation");
 const adminNavigation = extractArray(layout, "adminNavigation");
 
-for (const route of ["/overview", "/resources", "/workspace", "/trace", "/billing", "/opl-launch"]) {
+for (const route of ["/overview", "/packages", "/resources", "/workspace", "/billing", "/opl-launch"]) {
   assertIncludes(userNavigation, route, `user_navigation_route:${route}`);
+}
+assertNotIncludes(userNavigation, "/trace", "user_navigation_must_retire_trace_route");
+for (const label of ["资源总览", "套餐与购买", "计算资源", "存储空间", "费用与用量", "进入 OPL"]) {
+  assertIncludes(userNavigation, label, `user_navigation_label:${label}`);
 }
 for (const route of ["/admin/dashboard", "/admin/users", "/admin/alerts", "/admin/billing-ops", "/admin/audit", "/admin/system", "/admin/ops"]) {
   assertIncludes(adminNavigation, route, `admin_navigation_route:${route}`);
@@ -73,9 +91,11 @@ assertNotIncludes(roleContext, "../../api/portal/", "role_context_must_not_impor
 for (const route of ["admin/dashboard", "admin/users", "admin/alerts", "admin/billing-ops", "admin/audit", "admin/system", "admin/ops"]) {
   assertIncludes(routes, `path: "${route}"`, `admin_route_registered:${route}`);
 }
-for (const route of ["overview", "resources", "workspace", "trace", "billing", "opl-launch"]) {
+for (const route of ["overview", "packages", "resources", "workspace", "billing", "opl-launch"]) {
   assertIncludes(routes, `path: "${route}"`, `user_route_registered:${route}`);
 }
+assertNotIncludes(routes, 'path: "trace"', "trace_user_route_must_be_retired");
+assertNotIncludes(routes, 'path: "tasks"', "retired_tasks_route_must_stay_retired");
 
 assertIncludes(goRouter, 'router.GET("/api/admin/overview", handlers.AdminOverview())', "go_router_admin_overview_route");
 assertIncludes(goRouter, 'router.GET("/api/admin/ops", handlers.AdminOps())', "go_router_admin_ops_route");

@@ -38,7 +38,7 @@ export function Workspace() {
   if (query.status === "loading") {
     return (
       <div className="p-8 max-w-7xl mx-auto">
-        <Card className="border border-neutral-200 p-6 text-sm text-neutral-600">正在读取工作空间数据...</Card>
+        <Card className="border border-neutral-200 p-6 text-sm text-neutral-600">正在读取存储空间数据...</Card>
       </div>
     );
   }
@@ -82,10 +82,10 @@ export function Workspace() {
         credentials: "include",
       });
       if (!response.ok) throw new Error("workspace_upload_failed");
-      setActionMessage(`${file.name} 已上传，文件空间数据正在刷新。`);
+      setActionMessage(`${file.name} 已上传，存储空间数据正在刷新。`);
       setRefreshVersion((version) => version + 1);
     } catch {
-      setActionMessage(model.fileSpaceActionMessage || "上传通道暂不可用，请确认文件空间和托管运行环境状态。");
+      setActionMessage(model.fileSpaceActionMessage || "上传通道暂不可用，请确认存储空间和计算资源状态。");
     } finally {
       setPendingAction(null);
       if (uploadFileInputRef.current) uploadFileInputRef.current.value = "";
@@ -134,7 +134,7 @@ export function Workspace() {
 
   function renderOplEntryButton({ variant, className, showArrow = false }: { variant?: "outline"; className?: string; showArrow?: boolean } = {}) {
     return (
-      <Button asChild variant={variant} className={className} title={model.runStartMessage || "进入 OPL 工作台"}>
+      <Button asChild variant={variant} className={className} title={model.runStartMessage || "进入 OPL"}>
         <Link to="/opl-launch">
           进入 OPL
           {showArrow && <ArrowRight className="w-4 h-4" />}
@@ -157,9 +157,9 @@ export function Workspace() {
         <div className="mb-8 pb-8 border-b border-neutral-200">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-neutral-900 mb-3">工作空间</h1>
+              <h1 className="text-2xl font-semibold text-neutral-900 mb-3">存储空间</h1>
               <p className="text-neutral-600 text-sm">
-                当前工作空间可用，文件空间正常，可以上传输入文件或进入 OPL
+                当前存储空间可用，可以查看输入文件、输出文件和保留期
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -186,7 +186,7 @@ export function Workspace() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <FolderOpen className="w-4 h-4 text-neutral-600" />
-                <h2 className="font-semibold text-neutral-900">当前工作空间</h2>
+                <h2 className="font-semibold text-neutral-900">当前存储空间</h2>
               </div>
               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                 可用
@@ -196,19 +196,19 @@ export function Workspace() {
           <div className="p-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
               <div>
-                <div className="text-sm text-neutral-600 mb-1">工作空间名称</div>
+                <div className="text-sm text-neutral-600 mb-1">绑定 OPL workspace</div>
                 <div className="font-semibold text-neutral-900">{model.workspaceTitle}</div>
                 <div className="text-xs text-neutral-500 mt-1">创建于 {model.createdAt}</div>
               </div>
               <div>
-                <div className="text-sm text-neutral-600 mb-1">文件空间</div>
+                <div className="text-sm text-neutral-600 mb-1">存储空间</div>
                 <div className="font-semibold text-neutral-900">{model.fileSpaceUsed} / {model.fileSpaceTotal}</div>
                 <div className="text-xs text-neutral-500 mt-1">剩余 {model.fileSpaceAvailable}</div>
               </div>
               <div>
-                <div className="text-sm text-neutral-600 mb-1">工作空间状态</div>
+                <div className="text-sm text-neutral-600 mb-1">绑定状态</div>
                 <div className="font-semibold text-neutral-900">{model.status}</div>
-                <div className="text-xs text-neutral-500 mt-1">文件空间可读写</div>
+                <div className="text-xs text-neutral-500 mt-1">存储空间可读写</div>
               </div>
               <div>
                 <div className="text-sm text-neutral-600 mb-1">最近回流</div>
@@ -251,14 +251,14 @@ export function Workspace() {
         <div className="mb-8 pb-8 border-b border-neutral-200">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-neutral-900 mb-3">工作空间</h1>
+              <h1 className="text-2xl font-semibold text-neutral-900 mb-3">存储空间</h1>
               <p className="text-neutral-600 text-sm">
-                当前工作空间可用，可以查看任务与结果或进入 OPL
+                当前存储空间可用，可以查看输出文件资源清单或进入 OPL
               </p>
             </div>
             <div className="flex gap-3">
               <Button asChild variant="outline">
-                <Link to="/trace">查看任务与结果</Link>
+                <Link to="/billing">查看费用与用量</Link>
               </Button>
               {renderOplEntryButton({ className: "gap-2", showArrow: true })}
             </div>
@@ -274,7 +274,7 @@ export function Workspace() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <FolderOpen className="w-4 h-4 text-neutral-600" />
-                <h2 className="font-semibold text-neutral-900">当前工作空间</h2>
+                <h2 className="font-semibold text-neutral-900">当前存储空间</h2>
               </div>
               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                 可用
@@ -284,19 +284,19 @@ export function Workspace() {
           <div className="p-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
               <div>
-                <div className="text-sm text-neutral-600 mb-1">工作空间名称</div>
+                <div className="text-sm text-neutral-600 mb-1">绑定 OPL workspace</div>
                 <div className="font-semibold text-neutral-900">{model.workspaceTitle}</div>
                 <div className="text-xs text-neutral-500 mt-1">创建于 {model.createdAt}</div>
               </div>
               <div>
-                <div className="text-sm text-neutral-600 mb-1">文件空间</div>
+                <div className="text-sm text-neutral-600 mb-1">存储空间</div>
                 <div className="font-semibold text-neutral-900">{model.fileSpaceUsed} / {model.fileSpaceTotal}</div>
                 <div className="text-xs text-neutral-500 mt-1">剩余 {model.fileSpaceAvailable}</div>
               </div>
               <div>
-                <div className="text-sm text-neutral-600 mb-1">工作空间状态</div>
+                <div className="text-sm text-neutral-600 mb-1">绑定状态</div>
                 <div className="font-semibold text-neutral-900">{model.status}</div>
-                <div className="text-xs text-neutral-500 mt-1">文件空间可读写</div>
+                <div className="text-xs text-neutral-500 mt-1">存储空间可读写</div>
               </div>
               <div>
                 <div className="text-sm text-neutral-600 mb-1">输入文件</div>
@@ -313,11 +313,11 @@ export function Workspace() {
           </div>
           <h3 className="text-lg font-semibold text-neutral-900 mb-2">暂无输出文件</h3>
           <p className="text-sm text-neutral-600 mb-6 max-w-md text-center">
-            在 OPL 中完成任务后，输出结果将自动回流到工作空间
+            在 OPL 中完成任务后，输出文件会回流到存储空间清单
           </p>
           <div className="flex gap-3">
             <Button asChild variant="outline">
-              <Link to="/trace">查看任务与结果</Link>
+              <Link to="/billing">查看费用与用量</Link>
             </Button>
             {renderOplEntryButton()}
           </div>
@@ -334,13 +334,13 @@ export function Workspace() {
         <div className="mb-8 pb-8 border-b border-neutral-200">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-neutral-900 mb-3">工作空间</h1>
+              <h1 className="text-2xl font-semibold text-neutral-900 mb-3">存储空间</h1>
               <p className="text-neutral-600 text-sm">
-                文件空间当前不可用，需要先开通文件空间
+                存储空间当前不可用，需要先开通存储空间
               </p>
             </div>
             <Button asChild variant="outline">
-              <Link to="/resources">前往运行环境</Link>
+              <Link to="/resources">前往计算资源</Link>
             </Button>
           </div>
         </div>
@@ -352,12 +352,12 @@ export function Workspace() {
                 <AlertCircle className="w-6 h-6 text-amber-600" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-amber-900 mb-2">文件空间未开通</h3>
+                <h3 className="font-semibold text-amber-900 mb-2">存储空间未开通</h3>
                 <p className="text-sm text-amber-800 mb-4">
-                  当前文件空间未开通或不可写。前往运行环境与资源页开通文件空间后，即可上传文件和查看结果。
+                  当前存储空间未开通或不可写。前往计算资源页确认资源状态，或到套餐与购买页开通存储空间。
                 </p>
                 <Button asChild>
-                  <Link to="/resources">前往运行环境与资源</Link>
+                  <Link to="/packages">前往套餐与购买</Link>
                 </Button>
               </div>
             </div>
@@ -380,9 +380,9 @@ export function Workspace() {
       <div className="mb-8 pb-8 border-b border-neutral-200">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-neutral-900 mb-3">工作空间</h1>
+            <h1 className="text-2xl font-semibold text-neutral-900 mb-3">存储空间</h1>
             <p className="text-neutral-600 text-sm">
-              查看输入文件、输出文件、结果回流和文件空间状态
+              查看存储容量、已用空间、输入文件、输出文件和保留期
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -409,7 +409,7 @@ export function Workspace() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FolderOpen className="w-4 h-4 text-neutral-600" />
-              <h2 className="font-semibold text-neutral-900">当前工作空间</h2>
+              <h2 className="font-semibold text-neutral-900">当前存储空间</h2>
             </div>
             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
               <CheckCircle2 className="w-3 h-3 mr-1" />
@@ -420,20 +420,20 @@ export function Workspace() {
         <div className="p-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
             <div>
-              <div className="text-sm text-neutral-600 mb-1">工作空间名称</div>
+              <div className="text-sm text-neutral-600 mb-1">绑定 OPL workspace</div>
               <div className="font-semibold text-neutral-900">{model.workspaceTitle}</div>
               <div className="text-xs text-neutral-500 mt-1">创建于 {model.createdAt}</div>
             </div>
             <div>
-              <div className="text-sm text-neutral-600 mb-1">文件空间</div>
+              <div className="text-sm text-neutral-600 mb-1">存储空间</div>
               <div className="font-semibold text-neutral-900">{model.fileSpaceUsed} / {model.fileSpaceTotal}</div>
               <Progress value={model.fileSpacePercent} className="h-1.5 mt-2" />
               <div className="text-xs text-neutral-500 mt-1">{model.fileSpaceRetentionLabel}</div>
             </div>
             <div>
-              <div className="text-sm text-neutral-600 mb-1">工作空间状态</div>
+              <div className="text-sm text-neutral-600 mb-1">绑定状态</div>
               <div className="font-semibold text-neutral-900">{model.status}</div>
-              <div className="text-xs text-neutral-500 mt-1">文件空间可读写</div>
+              <div className="text-xs text-neutral-500 mt-1">存储空间可读写</div>
             </div>
             <div>
               <div className="text-sm text-neutral-600 mb-1">最近回流</div>
@@ -481,7 +481,7 @@ export function Workspace() {
                     size="sm"
                     variant="outline"
                     disabled={!model.fileSpaceBulkDeleteEnabled}
-                    title={model.fileSpaceBulkDeleteEnabled ? "删除后进入文件空间保护期" : model.fileSpaceSelectionLabel}
+                    title={model.fileSpaceBulkDeleteEnabled ? "删除后进入存储空间保护期" : model.fileSpaceSelectionLabel}
                   >
                     批量删除
                   </Button>
@@ -595,7 +595,7 @@ export function Workspace() {
                       </Button>
                       {file.taskId && (
                         <Button asChild size="sm" variant="ghost" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
-                          <Link to="/trace" aria-label={`查看 ${file.taskName || file.name} 的任务记录`}>
+                          <Link to="/billing" aria-label={`查看 ${file.taskName || file.name} 的用量明细`}>
                             <ExternalLink className="w-4 h-4" />
                           </Link>
                         </Button>
@@ -631,7 +631,7 @@ export function Workspace() {
 
         <Card className="p-4 border border-neutral-200">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-neutral-600">文件空间</span>
+            <span className="text-sm text-neutral-600">存储空间</span>
             <HardDrive className="w-4 h-4 text-neutral-400" />
           </div>
           <div className="text-2xl font-semibold text-neutral-900">{model.fileSpacePercent}%</div>

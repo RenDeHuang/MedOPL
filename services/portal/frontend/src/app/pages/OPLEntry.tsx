@@ -111,7 +111,7 @@ export function OPLEntry() {
             </h1>
           </div>
           <p className="text-neutral-600 mb-4">
-            准备完成，{countdown} 秒后自动进入 OPL 工作台
+            准备完成，{countdown} 秒后自动进入 OPL
           </p>
           <div className="flex gap-3">
             <Button asChild className="gap-2">
@@ -123,7 +123,7 @@ export function OPLEntry() {
             <Button asChild variant="outline" className="gap-2">
               <Link to="/workspace">
                 <ArrowLeft className="w-4 h-4" />
-                返回工作空间
+                返回存储空间
               </Link>
             </Button>
           </div>
@@ -143,12 +143,12 @@ export function OPLEntry() {
             </h1>
           </div>
           <p className="text-neutral-600 mb-4">
-            {query.data.userVisibleState || "正在准备工作空间和 OPL 会话，准备完成后将自动进入"}
+            {query.data.userVisibleState || "正在准备存储空间和 OPL 会话，准备完成后将自动进入"}
           </p>
           <Button asChild variant="outline" className="gap-2">
             <Link to="/workspace">
               <ArrowLeft className="w-4 h-4" />
-              返回工作空间
+              返回存储空间
             </Link>
           </Button>
         </div>
@@ -172,7 +172,7 @@ export function OPLEntry() {
           <Button asChild variant="outline" className="gap-2">
             <Link to="/workspace">
               <ArrowLeft className="w-4 h-4" />
-              返回工作空间
+              返回存储空间
             </Link>
           </Button>
         </div>
@@ -241,13 +241,13 @@ export function OPLEntry() {
             </h1>
           </div>
           <p className="text-neutral-600 mb-4">
-            运行环境尚未准备好，请先开通或启动运行环境
+            计算资源尚未准备好，请先开通计算资源
           </p>
           <div className="flex gap-3">
             <Button asChild className="gap-2">
               <Link to="/resources">
                 <Server className="w-4 h-4" />
-                去运行环境页
+                去计算资源页
               </Link>
             </Button>
             <Button asChild variant="outline" className="gap-2">
@@ -273,13 +273,13 @@ export function OPLEntry() {
             </h1>
           </div>
           <p className="text-neutral-600 mb-4">
-            工作空间不可用，请先检查工作空间和文件空间状态
+            存储空间不可用，请先检查存储空间状态
           </p>
           <div className="flex gap-3">
             <Button asChild className="gap-2">
               <Link to="/workspace">
                 <FolderOpen className="w-4 h-4" />
-                去工作空间页
+                去存储空间页
               </Link>
             </Button>
             <Button asChild variant="outline" className="gap-2">

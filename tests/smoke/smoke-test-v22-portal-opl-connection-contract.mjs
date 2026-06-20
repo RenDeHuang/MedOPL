@@ -76,11 +76,11 @@ assertIncludesAll(contents.sourceSpec, [
 
 assertIncludesAll(contents.productTruth, [
   "OPL-Webui 是主要 consumer / entry surface",
-  "ordinary chat 留在 OPL-Webui",
+  "OPL-Webui 负责 ordinary chat",
   "runtime_required",
-  "MedOPL 负责 runtime、storage、node pool projection、billing、audit、release 和 storage destroy intent",
+  "MedOPL 负责计算资源、存储空间、套餐、任务并发、usage/billing、release、storage destroy intent",
   "OPL entry / Gateway preflight / launch 边界",
-  "Runtime Bridge session、message、fileRef、run、artifact 和 trace projection",
+  "Runtime Bridge 只作为 OPL integration reference",
 ], "connection_product_truth");
 
 assert.equal(productProfile.medopl_product_profile.primary_consumer_surface.name, "opl-webui", "connection_primary_consumer_must_be_opl_webui");
@@ -89,8 +89,8 @@ assert.equal(productProfile.medopl_product_profile.primary_consumer_surface.runt
 assert.equal(apiContract.medopl_api_contract.runtime_gate.route, "POST /api/opl/runtime-gate", "connection_runtime_gate_route_mismatch");
 
 assertIncludesAll(contents.runtimeTruth, [
-  "OPL Web 用户可见入口必须是 Portal “进入 OPL 工作台”或 `/opl/entry/preflight`",
-  "Runtime Bridge 负责 session/message/run/file/artifact/provider route/providerKeyRef/trace projection",
+  "OPL entry 与 managed run 是两道 gate",
+  "Runtime Bridge 只负责 OPL integration reference",
   "Real OPL canary 是验证链路，不是 production completion claim",
 ], "connection_runtime_truth");
 

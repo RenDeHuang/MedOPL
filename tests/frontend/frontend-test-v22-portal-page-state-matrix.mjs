@@ -19,15 +19,17 @@ const routes = await readRepoFile("services/portal/frontend/src/app/routes.tsx")
 const layout = await readRepoFile("services/portal/frontend/src/app/components/Layout.tsx");
 
 const routeMarkers = new Map([
-  ["workspaces", ["Workspace", "/workspace"]],
-  ["runtime", ["RuntimeEnvironment", "/resources"]],
-  ["files", ["Workspace", "/workspace"]],
-  ["billing", ["BillingAudit", "/billing"]],
-  ["audit", ["BillingAudit", "/billing"]],
+  ["resource_overview", ["Overview", "/overview"]],
+  ["packages_purchase", ["PackagesPurchase", "/packages"]],
+  ["compute_resource", ["RuntimeEnvironment", "/resources"]],
+  ["storage_space", ["Workspace", "/workspace"]],
+  ["usage_billing", ["BillingAudit", "/billing"]],
+  ["opl_entry", ["OPLEntry", "/opl-launch"]],
   ["release", ["Workspace", "/workspace"]],
 ]);
 
 for (const page of matrix.medopl_portal_page_state_matrix.pages) {
+  assert(routeMarkers.has(page.id), `portal_page_matrix_route_owner_missing:${page.id}`);
   for (const marker of routeMarkers.get(page.id) || []) {
     assert(`${routes}\n${layout}`.includes(marker), `portal_page_state_marker_missing:${page.id}:${marker}`);
   }

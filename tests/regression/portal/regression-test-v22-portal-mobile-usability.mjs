@@ -12,7 +12,7 @@ function assertExcludes(source, forbidden, label) {
 const layoutSource = await readFile("services/portal/frontend/src/app/components/Layout.tsx", "utf8");
 const stylesSource = await readFile("services/portal/frontend/src/styles/index.css", "utf8");
 const workspaceSource = await readFile("services/portal/frontend/src/app/pages/Workspace.tsx", "utf8");
-const traceSource = await readFile("services/portal/frontend/src/app/pages/TasksResults.tsx", "utf8");
+const packagesSource = await readFile("services/portal/frontend/src/app/pages/PackagesPurchase.tsx", "utf8");
 const billingSource = await readFile("services/portal/frontend/src/app/pages/BillingAudit.tsx", "utf8");
 
 assertIncludes(layoutSource, "flex h-screen", "layout_must_keep_stable_app_shell");
@@ -23,7 +23,7 @@ assertIncludes(stylesSource, "tailwind.css", "styles_must_import_tailwind");
 
 for (const [label, source] of [
   ["workspace", workspaceSource],
-  ["trace", traceSource],
+  ["packages", packagesSource],
   ["billing", billingSource],
 ]) {
   assertIncludes(source, "grid", `${label}_must_use_responsive_grid`);

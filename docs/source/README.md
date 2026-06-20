@@ -30,7 +30,6 @@ Machine boundary: 本文是 source surface 视角入口，不是第二份 curren
 | `services/medopl-go-backend/internal/server/handlers/controlplane_production_contracts.go` | 551 | backend source/test owner | Go control-plane tests / handlers | split_owner |
 | `services/opl-runtime-bridge/src/runtime-bridge-launch.mjs` | 546 | runtime bridge source | runtime-bridge regression gates | split_owner |
 | `services/portal/frontend/src/app/pages/Overview.tsx` | 533 | active Portal page | frontend route / regression gates | split_owner |
-| `services/portal/frontend/src/app/pages/TasksResults.tsx` | 521 | active Portal page | frontend route / regression gates | split_owner |
 | `services/portal/frontend/src/app/pages/BillingAudit.tsx` | 509 | active Portal page | frontend route / regression gates | split_owner |
 | `tests/regression/opl/regression-test-v22-opl-web-gateway-launch.mjs` | 503 | regression gate | registered regression lane | keep_durable_asset |
 | `services/opl-runtime-bridge/src/opl-client.mjs` | 502 | runtime bridge source | runtime-bridge regression gates | split_owner |

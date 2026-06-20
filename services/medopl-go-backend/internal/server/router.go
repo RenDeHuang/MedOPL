@@ -41,8 +41,6 @@ func Router(cfg config.Config) *gin.Engine {
 	router.GET("/api/workspace/files/download-url", handlers.WorkspaceFileDownloadURL())
 	router.POST("/api/workspace/files/local-transfer", handlers.WorkspaceFileLocalTransfer())
 	router.GET("/api/workspace/files/local-transfer", handlers.WorkspaceFileLocalTransfer())
-	router.GET("/api/session-traces", handlers.SessionTraces())
-	router.GET("/api/traces", handlers.SessionTraces())
 	router.GET("/api/announcements", handlers.Announcements())
 	router.GET("/api/sessions", handlers.Sessions())
 	router.GET("/api/runs", handlers.Runs())

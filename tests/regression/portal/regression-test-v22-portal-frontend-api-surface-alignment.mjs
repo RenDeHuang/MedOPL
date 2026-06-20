@@ -15,7 +15,6 @@ const goControlPlanePath = path.join(repoRoot, "services", "medopl-go-backend", 
 
 const retiredShellPaths = [
   "/__portal-harness/components",
-  "/packages",
   "/advanced/servers",
   "/admin/trace",
   "/admin/user",
@@ -34,7 +33,6 @@ const requiredUsedExports = [
   "opl.ts:fetchOplRuntimeGate",
   "opl.ts:createOplFileRef",
   "opl.ts:startOplRun",
-  "opl.ts:fetchOplArtifact",
 ];
 
 const allowedAdjudicationStatuses = new Set([
@@ -82,7 +80,7 @@ const unusedAdjudications = {
   },
   "billing.ts:fetchRunCosts": {
     status: "future-reserved",
-    reason: "Run cost projection is not shown by the current trace page.",
+    reason: "Run cost projection is not shown by the current费用与用量 page yet.",
   },
   "opl.ts:sendOplMessage": {
     status: "future-reserved",
@@ -91,6 +89,10 @@ const unusedAdjudications = {
   "opl.ts:fetchOplMessageStatus": {
     status: "future-reserved",
     reason: "Message status belongs to the future OPL bridge backflow surface, not the current launch-only Portal UI.",
+  },
+  "opl.ts:fetchOplArtifact": {
+    status: "future-reserved",
+    reason: "Artifact fetch remains typed for OPL/runtime backflow, while current MedOPL user UI shows storage inventory and usage instead of an artifact detail page.",
   },
   "public.ts:fetchPublicSettings": {
     status: "backend-only",
@@ -158,15 +160,11 @@ const unusedAdjudications = {
   },
   "sessions.ts:fetchSessions": {
     status: "future-reserved",
-    reason: "Session list is not exposed as an active React page; current user trace page consumes session traces.",
+    reason: "Session list is not exposed as an active React page; OPL owns the chat-first project/session workbench.",
   },
   "sessions.ts:fetchRuns": {
     status: "future-reserved",
-    reason: "Run list is not exposed as an active React page; current task/result surface consumes session traces through an adapter.",
-  },
-  "traces.ts:fetchTraces": {
-    status: "backend-only",
-    reason: "Generic traces endpoint is admin scoped; ordinary React trace UI uses fetchSessionTraces.",
+    reason: "Run list is not exposed as an active React page; MedOPL shows usage and billing references instead of a user trace surface.",
   },
 };
 
@@ -470,7 +468,6 @@ const adjudicatedUnusedRows = unusedRows.map((row) => ({
 const retiredFrontendApiExports = [
   "admin.ts:updateAdminRegistrationSettings",
   "billing.ts:fetchBilling",
-  "traces.ts:fetchTraceSummary",
 ];
 const leakedRetiredExports = retiredFrontendApiExports.filter((key) => exportKeys.has(key));
 assert.deepEqual(leakedRetiredExports, [], `frontend_api_retired_exports_must_be_removed:${JSON.stringify(leakedRetiredExports)}`);

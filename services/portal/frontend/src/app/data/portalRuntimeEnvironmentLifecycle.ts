@@ -44,7 +44,7 @@ export function runtimeReleaseLifecycle(resources: PlatformProvisionedResourcesP
     auditStatus: lifecycleStatusText(auditStatus?.status),
     auditReadyAt: auditReadyAt ? dateText(auditReadyAt) : "T+1 审计后返回",
     auditPolicy: stringValue(auditStatus?.policy, "T+1"),
-    fileSpacePolicy: stringValue(releasePolicy?.protection, "文件空间独立保留"),
+    fileSpacePolicy: stringValue(releasePolicy?.protection, "存储空间独立保留"),
   };
 }
 

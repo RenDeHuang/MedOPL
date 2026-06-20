@@ -45,7 +45,6 @@ const bridgeSurface = `${bridgeRoutes}\n${bridgeLaunch}`;
 
 for (const marker of [
   'api.POST("/opl/runtime-gate"',
-  'router.GET("/api/session-traces"',
   'router.GET("/api/runs"',
   'api.POST("/provider/preflight"',
   'api.POST("/opl/launch"',
@@ -58,6 +57,11 @@ for (const marker of [
 ]) {
   assertIncludes(`${router}\n${controlplane}`, marker, `go_runtime_gate_surface:${marker}`);
 }
+assertNotMatches(
+  `${router}\n${controlplane}`,
+  /router\.GET\("\/api\/(?:session-)?traces"/u,
+  "runtime_gate_must_not_restore_user_trace_api_surface",
+);
 
 for (const marker of [
   "/api/opl/runtime-gate",

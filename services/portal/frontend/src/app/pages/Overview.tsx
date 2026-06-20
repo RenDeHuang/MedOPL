@@ -54,21 +54,21 @@ export function Overview() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Badge variant="outline" className="bg-neutral-100 text-neutral-600 border-neutral-200">
-                  托管科研工作台
+                  资源总览
                 </Badge>
                 <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
                   待开通
                 </Badge>
               </div>
               <h1 className="text-2xl font-semibold text-neutral-900 mb-3">
-                选择套餐开通服务
+                选择套餐开通计算资源
               </h1>
               <p className="text-neutral-600 text-sm max-w-2xl">
-                开通运行环境后即可使用托管科研工作台，文件和任务结果将自动保存
+                开通计算资源和存储空间后，即可回到 OPL 使用云端能力
               </p>
             </div>
             <Button asChild className="gap-2">
-              <Link to="/resources">
+              <Link to="/packages">
                 选择套餐
                 <ArrowRight className="w-4 h-4" />
               </Link>
@@ -83,12 +83,12 @@ export function Overview() {
                 <Server className="w-6 h-6 text-blue-600" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-blue-900 mb-2">运行环境未开通</h3>
+                <h3 className="font-semibold text-blue-900 mb-2">计算资源未开通</h3>
                 <p className="text-sm text-blue-800 mb-4">
-                  前往运行环境页面选择适合的套餐配置，开通后即可进入 OPL 开始科研工作。
+                  前往套餐与购买页面选择适合的配置，开通后即可进入 OPL。
                 </p>
                 <Button asChild>
-                  <Link to="/resources">前往运行环境</Link>
+                  <Link to="/packages">前往套餐与购买</Link>
                 </Button>
               </div>
             </div>
@@ -108,7 +108,7 @@ export function Overview() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <Badge variant="outline" className="bg-neutral-100 text-neutral-600 border-neutral-200">
-                  托管科研工作台
+                  资源总览
                 </Badge>
                 <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
                   <AlertCircle className="w-3 h-3 mr-1" />
@@ -116,7 +116,7 @@ export function Overview() {
                 </Badge>
               </div>
               <h1 className="text-2xl font-semibold text-neutral-900 mb-3">
-                工作台受限，请处理余额
+                资源受限，请处理余额
               </h1>
               <p className="text-neutral-600 text-sm max-w-2xl">
                 当前余额不足或冻结金额异常，部分功能受限，处理后即可恢复正常使用
@@ -191,7 +191,7 @@ export function Overview() {
                   当前可用余额不足，可能影响任务执行和资源使用。建议尽快充值以确保服务正常运行。
                 </p>
                 <Button asChild>
-                  <Link to="/billing">前往账单与审计</Link>
+                  <Link to="/billing">前往费用与用量</Link>
                 </Button>
               </div>
             </div>
@@ -210,7 +210,7 @@ export function Overview() {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <Badge variant="outline" className="bg-neutral-100 text-neutral-600 border-neutral-200">
-                托管科研工作台
+                资源总览
               </Badge>
               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                 <CheckCircle2 className="w-3 h-3 mr-1" />
@@ -218,10 +218,10 @@ export function Overview() {
               </Badge>
             </div>
             <h1 className="text-2xl font-semibold text-neutral-900 mb-3">
-              工作台运行正常，可以开始使用
+              计算资源和存储空间可用
             </h1>
             <p className="text-neutral-600 text-sm max-w-2xl">
-              运行环境已就绪，计算资源和文件空间正常，可以直接进入 OPL 开始科研工作
+              你的 OPL 云端计算资源和存储空间当前状态正常，可以进入 OPL 使用
             </p>
           </div>
           <Button asChild className="gap-2">
@@ -246,7 +246,7 @@ export function Overview() {
 
         <Card className="p-4 border border-neutral-200">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-neutral-600">文件空间</span>
+            <span className="text-sm text-neutral-600">存储空间</span>
             <HardDrive className="w-4 h-4 text-neutral-400" />
           </div>
           <div className="text-2xl font-semibold text-neutral-900">{model.storageUsed}</div>
@@ -321,7 +321,7 @@ export function Overview() {
         <Card className="border border-neutral-200">
           <div className="p-5 border-b border-neutral-200">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-neutral-900">运行环境</h2>
+              <h2 className="font-semibold text-neutral-900">计算资源</h2>
               <Button asChild variant="ghost" size="sm" className="gap-1 text-neutral-600 hover:text-neutral-900">
                 <Link to="/resources">
                   查看详情
@@ -345,7 +345,7 @@ export function Overview() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <HardDrive className="w-4 h-4 text-neutral-400" />
-                <span className="text-sm text-neutral-600">文件空间</span>
+                <span className="text-sm text-neutral-600">存储空间</span>
               </div>
               <div className="text-right">
                 <div className="font-semibold text-neutral-900">{model.storageUsed} / {model.storageTotal}</div>
@@ -386,7 +386,7 @@ export function Overview() {
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-neutral-900">最近任务</h2>
               <Button asChild variant="ghost" size="sm" className="gap-1 text-neutral-600 hover:text-neutral-900">
-                <Link to="/trace">
+                <Link to="/billing">
                   查看全部
                   <ExternalLink className="w-3 h-3" />
                 </Link>
@@ -460,7 +460,7 @@ export function Overview() {
                 <span className="font-medium text-neutral-900">{model.planSpec}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-neutral-600">文件空间</span>
+                <span className="text-neutral-600">存储空间</span>
                 <span className="font-medium text-neutral-900">{model.storageTotal}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
@@ -470,7 +470,7 @@ export function Overview() {
             </div>
 
             <div className="mt-4 pt-4 border-t border-neutral-200 text-xs text-neutral-600">
-              支持增加计算资源和扩容文件空间
+              支持增加计算资源和扩容存储空间
             </div>
           </div>
         </Card>
@@ -479,7 +479,7 @@ export function Overview() {
         <Card className="border border-neutral-200">
           <div className="p-5 border-b border-neutral-200">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-neutral-900">工作空间摘要</h2>
+              <h2 className="font-semibold text-neutral-900">存储空间摘要</h2>
               <Button asChild variant="ghost" size="sm" className="gap-1 text-neutral-600 hover:text-neutral-900">
                 <Link to="/workspace">
                   查看详情

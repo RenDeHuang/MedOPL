@@ -409,15 +409,17 @@ async function validateActivePlatform({ manifest, current }) {
   const pageMatrix = readRepoJsonSync("contracts/medopl-portal-page-state-matrix.json").medopl_portal_page_state_matrix;
   const routesSource = readRepoText("services/portal/frontend/src/app/routes.tsx");
   const routeMarkers = new Map([
-    ["workspaces", "Workspace"],
-    ["runtime", "RuntimeEnvironment"],
-    ["files", "Workspace"],
-    ["billing", "BillingAudit"],
-    ["audit", "BillingAudit"],
+    ["resource_overview", "Overview"],
+    ["packages_purchase", "PackagesPurchase"],
+    ["compute_resource", "RuntimeEnvironment"],
+    ["storage_space", "Workspace"],
+    ["usage_billing", "BillingAudit"],
+    ["opl_entry", "OPLEntry"],
     ["release", "Workspace"],
   ]);
   for (const page of pageMatrix.pages || []) {
-    assert(routesSource.includes(routeMarkers.get(page.id) || page.id), `portal_page_matrix_not_covered:${page.id}`);
+    assert(routeMarkers.has(page.id), `portal_page_matrix_route_owner_missing:${page.id}`);
+    assert(routesSource.includes(routeMarkers.get(page.id)), `portal_page_matrix_not_covered:${page.id}`);
   }
 
   const goRouteSurface = [

@@ -28,7 +28,7 @@ const forbiddenVisibleCopy = [
   "服务器编号",
   "节点池",
   "删除节点池",
-  "开通文件空间",
+  "开通存储桶",
   "进阶升级",
   "进阶套餐",
   "开通工作台资源",
@@ -46,12 +46,12 @@ for (const copy of ["CVM", "COS", "K8s", "TKE"]) {
 for (const required of [
   "基础版",
   "标准版",
-  "文件空间",
+  "存储空间",
   "并发任务",
   "价格待审批",
   "正式售价未定价",
   "不展示小时售价",
-  "当前页面仅展示状态，不提供资源调整动作。",
+  "套餐开通走 MedOPL plan catalog，不提供云资源调整动作。",
   "审计模式",
 ]) {
   assertIncludes(resourcesSurfaceSources, required, "ordinary_resource_surface_required_copy");

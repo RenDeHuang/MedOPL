@@ -27,11 +27,13 @@
     ],
     "pages": [
       {
-        "id": "workspaces",
+        "id": "resource_overview",
         "owns": [
-          "workspace_lifecycle",
-          "plan",
-          "runtime_status"
+          "current_package",
+          "compute_resource_status",
+          "storage_space_status",
+          "balance",
+          "next_resource_action"
         ],
         "states": [
           "empty",
@@ -42,38 +44,73 @@
         ]
       },
       {
-        "id": "runtime",
+        "id": "packages_purchase",
         "owns": [
-          "sessions",
-          "runs",
-          "task_concurrency"
+          "package_plan",
+          "compute_spec",
+          "included_storage",
+          "task_concurrency",
+          "price_label",
+          "purchase_action"
         ],
         "states": [
-          "idle",
-          "running",
-          "failed",
-          "stopping"
+          "catalog_ready",
+          "pending_price_approval",
+          "purchase_blocked",
+          "upgrade_available"
         ]
       },
       {
-        "id": "files",
+        "id": "compute_resource",
         "owns": [
-          "workspace_files",
-          "usage",
-          "retention"
+          "compute_status",
+          "compute_spec",
+          "task_concurrency",
+          "workspace_binding",
+          "release_state",
+          "stop_billing_state"
+        ],
+        "states": [
+          "not_opened",
+          "opening",
+          "idle",
+          "running",
+          "failed",
+          "releasing",
+          "released"
+        ]
+      },
+      {
+        "id": "storage_space",
+        "owns": [
+          "capacity",
+          "used_space",
+          "workspace_binding",
+          "input_file_inventory",
+          "output_file_inventory",
+          "retention",
+          "protection_period"
         ],
         "states": [
           "empty",
           "ready",
-          "quota_limited"
+          "quota_limited",
+          "protected",
+          "destroy_pending",
+          "destroyed"
         ]
       },
       {
-        "id": "billing",
+        "id": "usage_billing",
         "owns": [
           "balance",
+          "freeze",
+          "compute_usage",
+          "storage_usage",
           "ledger",
-          "invoices"
+          "invoices",
+          "stop_billing_reconciliation",
+          "audit_receipt"
         ],
         "states": [
           "trial",
@@ -83,15 +120,20 @@
         ]
       },
       {
-        "id": "audit",
+        "id": "opl_entry",
         "owns": [
-          "events",
-          "actor_trace",
-          "export_receipt"
+          "opl_entry_state",
+          "compute_resource_gate",
+          "storage_binding_gate",
+          "provider_key_gate",
+          "missing_next_step"
         ],
         "states": [
           "available",
-          "exporting"
+          "blocked_by_compute",
+          "blocked_by_storage",
+          "blocked_by_provider_key",
+          "blocked_by_balance"
         ]
       },
       {

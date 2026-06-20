@@ -66,14 +66,14 @@ assertIncludesAll(productSpec, [
 ], "saas_control_plane_product_spec");
 
 assertIncludesAll(productTruth, [
-  "One Person Lab SaaS 控制面和托管交付平台",
-  "用户购买托管 OPL runtime、文件空间、任务并发、计费、审计和释放能力",
+  "One Person Lab SaaS 资源控制面",
+  "用户在 MedOPL 购买和管理 OPL 需要的计算资源、存储空间、套餐、任务并发、费用与释放能力",
   "MedOPL 不是云资源控制台",
   "OPL-Webui 是主要 consumer / entry surface",
-  "ordinary chat 留在 OPL-Webui",
+  "OPL-Webui 负责 ordinary chat",
   "MedOPL 不回答科研问题，不复制 OPL chatbot",
-  "MedOPL 负责 runtime、storage、node pool projection、billing、audit、release 和 storage destroy intent",
-  "买了什么、能不能用、缺什么、下一步点哪里、结果在哪里、费用是否正常",
+  "MedOPL 负责计算资源、存储空间、套餐、任务并发、usage/billing、release、storage destroy intent",
+  "买了什么资源、资源是否可用、存储空间里有什么、套餐是什么、费用是多少、去哪里购买 / 升级 / 释放资源或进入 OPL",
 ], "saas_control_plane_product_truth");
 
 assert.equal(productProfile.medopl_product_profile.primary_consumer_surface.name, "opl-webui", "saas_control_plane_primary_consumer_must_be_opl_webui");

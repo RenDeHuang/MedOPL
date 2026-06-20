@@ -62,8 +62,8 @@ async function assertNodeBackendRetiredFromDeployableSurface() {
     "services/portal/frontend/src/api/portal/overview.ts",
     "services/portal/frontend/src/api/portal/workspace.ts",
     "services/portal/frontend/src/api/portal/commercial.ts",
+    "services/portal/frontend/src/api/portal/lab.ts",
     "services/portal/frontend/src/api/portal/sessions.ts",
-    "services/portal/frontend/src/api/portal/traces.ts",
     "services/portal/frontend/src/api/portal/admin.ts",
     "services/portal/frontend/src/api/portal/public.ts",
     "services/portal/frontend/src/api/portal/server-plans.ts",
@@ -162,11 +162,18 @@ async function assertGoPrecloudSurface() {
     'GET("/api/workspace/files/download-url"',
     'POST("/api/workspace/files/local-transfer"',
     'GET("/api/workspace/files/local-transfer"',
-    'GET("/api/session-traces"',
+    'api.GET("/lab-packages"',
+    'api.GET("/lab-subscription"',
+    'api.GET("/lab-entitlement"',
+    'api.POST("/lab-packages/activate"',
+    'api.POST("/lab-packages/upgrade"',
     'GET("/api/announcements"',
+    'GET("/api/admin/agent-traces"',
   ]) {
     assertIncludes(router, marker, `go_router_precloud_surface:${marker}`);
   }
+  assertNotIncludes(router, 'GET("/api/session-traces"', "go_router_must_retire_user_session_trace_surface");
+  assertNotIncludes(router, 'GET("/api/traces"', "go_router_must_retire_user_trace_surface");
   const cloudConnector = await readRepoFile("services/medopl-go-backend/internal/server/handlers/cloud_connector.go");
   for (const marker of ["authorization_required", "fail_closed", "real-cloud authorization package"]) {
     assertIncludes(cloudConnector, marker, `go_cloud_connector_fail_closed:${marker}`);

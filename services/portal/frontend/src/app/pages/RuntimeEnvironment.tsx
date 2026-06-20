@@ -14,7 +14,7 @@ export function RuntimeEnvironment() {
   const [activationPending, setActivationPending] = useState(false);
   const [activationError, setActivationError] = useState<string | null>(null);
 
-  if (query.status === "loading") return <div className="p-8 max-w-7xl mx-auto"><Card className="border border-neutral-200 p-6 text-sm text-neutral-600">正在读取运行环境数据...</Card></div>;
+  if (query.status === "loading") return <div className="p-8 max-w-7xl mx-auto"><Card className="border border-neutral-200 p-6 text-sm text-neutral-600">正在读取计算资源数据...</Card></div>;
   if (query.status === "error") return <div className="p-8 max-w-7xl mx-auto"><Card className="border border-red-200 bg-red-50 p-6 text-sm text-red-700">{query.error}</Card></div>;
 
   const model = query.data;
@@ -46,8 +46,9 @@ export function RuntimeEnvironment() {
     return (
       <div className="p-8 max-w-7xl mx-auto">
         <div className="mb-8 pb-8 border-b border-neutral-200">
-          <h1 className="text-2xl font-semibold text-neutral-900 mb-3">运行环境</h1>
+          <h1 className="text-2xl font-semibold text-neutral-900 mb-3">计算资源</h1>
           <Badge variant="outline" className="bg-neutral-100 text-neutral-600 border-neutral-200 text-sm px-3 py-1">未开通</Badge>
+          <p className="text-sm text-neutral-600 mt-3">套餐开通走 MedOPL plan catalog，不提供云资源调整动作。</p>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {model.plans.map((plan) => (
@@ -67,7 +68,7 @@ export function RuntimeEnvironment() {
                 </div>
                 <div className="space-y-2 text-sm text-neutral-700 mb-5">
                   <div className="flex justify-between"><span className="text-neutral-600">计算资源</span><span className="font-medium">{plan.cpu} 核 {plan.memory} GB</span></div>
-                  <div className="flex justify-between"><span className="text-neutral-600">文件空间</span><span className="font-medium">{plan.storage} GB</span></div>
+                  <div className="flex justify-between"><span className="text-neutral-600">存储空间</span><span className="font-medium">{plan.storage} GB</span></div>
                   <div className="flex justify-between"><span className="text-neutral-600">并发任务</span><span className="font-medium">最多 {plan.concurrent} 个</span></div>
                 </div>
                 <Button className="w-full" disabled={activationPending} onClick={(e) => { e.stopPropagation(); setShowConfirmDialog(true); }}>{activationPending ? "开通中..." : "开通服务"}</Button>
@@ -110,11 +111,12 @@ export function RuntimeEnvironment() {
     <div className="p-8 max-w-7xl mx-auto">
       <div className="mb-8 pb-8 border-b border-neutral-200 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-neutral-900 mb-3">运行环境</h1>
+          <h1 className="text-2xl font-semibold text-neutral-900 mb-3">计算资源</h1>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-md"><div className="w-2 h-2 rounded-full bg-green-600" /><span className="text-sm font-medium text-green-900">可用</span></div>
-            <span className="text-neutral-600">当前页面仅展示状态，不提供资源调整动作。</span>
+            <span className="text-neutral-600">查看当前计算资源是否可用、规格、计费状态和释放状态。</span>
           </div>
+          <p className="text-sm text-neutral-600 mt-3">套餐开通走 MedOPL plan catalog，不提供云资源调整动作。</p>
         </div>
         <Button asChild variant="outline"><Link to="/billing">查看计费</Link></Button>
       </div>
@@ -132,7 +134,7 @@ export function RuntimeEnvironment() {
         <div className="flex items-center justify-between mb-4"><div className="flex items-center gap-3"><h2 className="font-semibold text-neutral-900">当前配置</h2><Badge variant="outline" className="bg-white text-blue-700 border-blue-200">{model.currentPlanName}</Badge></div><div className="text-sm text-neutral-600">{model.billingStatus}</div></div>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
           <div className="flex items-center gap-3"><Server className="w-5 h-5 text-neutral-400" /><div><div className="text-xs text-neutral-600">计算资源</div><div className="font-semibold text-neutral-900">{model.computeSpec}</div></div></div>
-          <div className="flex items-center gap-3"><HardDrive className="w-5 h-5 text-neutral-400" /><div><div className="text-xs text-neutral-600">文件空间</div><div className="font-semibold text-neutral-900">{model.storageTotal}</div></div></div>
+          <div className="flex items-center gap-3"><HardDrive className="w-5 h-5 text-neutral-400" /><div><div className="text-xs text-neutral-600">存储空间</div><div className="font-semibold text-neutral-900">{model.storageTotal}</div></div></div>
           <div className="flex items-center gap-3"><Zap className="w-5 h-5 text-neutral-400" /><div><div className="text-xs text-neutral-600">价格状态</div><div className="font-semibold text-neutral-900">待审批</div></div></div>
           <div className="flex items-center gap-3"><Shield className="w-5 h-5 text-neutral-400" /><div><div className="text-xs text-neutral-600">审计模式</div><div className="font-semibold text-neutral-900">标准审计</div></div></div>
         </div>
@@ -141,7 +143,7 @@ export function RuntimeEnvironment() {
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
             <h2 className="font-semibold text-neutral-900">释放与停止计费</h2>
-            <p className="text-sm text-neutral-600 mt-1">停止计费核对在 120 分钟内完成，文件空间独立保留。</p>
+            <p className="text-sm text-neutral-600 mt-1">停止计费核对在 120 分钟内完成，存储空间独立保留。</p>
           </div>
           <Badge variant="outline" className="bg-white text-neutral-700 border-neutral-200">T+1 审计</Badge>
         </div>
@@ -149,7 +151,7 @@ export function RuntimeEnvironment() {
           <div><div className="text-xs text-neutral-600 mb-1">释放状态</div><div className="font-semibold text-neutral-900">{model.releaseLifecycle.releaseStatus}</div></div>
           <div><div className="text-xs text-neutral-600 mb-1">停止计费核对</div><div className="font-semibold text-neutral-900">{model.releaseLifecycle.stopBillingStatus}</div><div className="text-xs text-neutral-500 mt-1">{model.releaseLifecycle.stopBillingWindow} / {model.releaseLifecycle.stopBillingConfirmBy}</div></div>
           <div><div className="text-xs text-neutral-600 mb-1">审计状态</div><div className="font-semibold text-neutral-900">{model.releaseLifecycle.auditStatus}</div><div className="text-xs text-neutral-500 mt-1">{model.releaseLifecycle.auditPolicy} / {model.releaseLifecycle.auditReadyAt}</div></div>
-          <div><div className="text-xs text-neutral-600 mb-1">文件空间策略</div><div className="font-semibold text-neutral-900">{model.releaseLifecycle.fileSpacePolicy}</div></div>
+          <div><div className="text-xs text-neutral-600 mb-1">存储空间策略</div><div className="font-semibold text-neutral-900">{model.releaseLifecycle.fileSpacePolicy}</div></div>
         </div>
       </Card>
       <Card className="border border-neutral-200 p-5 mb-8">

@@ -64,7 +64,7 @@ assertIncludesAll(productTruth, [
   "MedOPL v22 是 `platform-provisioned / customer-dedicated`",
   "MedOPL 不是云资源控制台",
   "OPL-Webui 是主要 consumer / entry surface",
-  "ordinary chat 留在 OPL-Webui",
+  "OPL-Webui 负责 ordinary chat",
   "runtime_required",
   "已绑定用户不要求重复输入",
   "starter_2c4g_10gb",
@@ -72,7 +72,7 @@ assertIncludesAll(productTruth, [
   "7 天保护期",
   "`120min`",
   "`T+1`",
-  "释放计算资源不删除文件空间",
+  "释放计算资源不删除存储空间",
 ], "mvp_loop_product_truth");
 
 assert.equal(productProfile.medopl_product_profile.primary_consumer_surface.name, "opl-webui", "mvp_loop_primary_consumer_must_be_opl_webui");
@@ -95,9 +95,9 @@ assertIncludesAll(runtimeSpec, [
 ], "mvp_loop_runtime_spec");
 
 assertIncludesAll(runtimeTruth, [
-  "OPL workbench entry 与 managed run 是两道 gate",
+  "OPL entry 与 managed run 是两道 gate",
   "Portal frontend -> Go backend `/api`",
-  "Runtime Bridge 负责 session/message/run/file/artifact/provider route/providerKeyRef/trace projection",
+  "Runtime Bridge 只负责 OPL integration reference",
 ], "mvp_loop_runtime_truth");
 
 assertIncludesAll(sourceSpec, [

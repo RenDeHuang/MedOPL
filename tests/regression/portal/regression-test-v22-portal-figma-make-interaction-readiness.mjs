@@ -36,7 +36,7 @@ const [
   coreSource,
   sheetSource,
   overviewSource,
-  tasksSource,
+  packagesSource,
   workspaceSource,
   runtimeSource,
   oplEntrySource,
@@ -63,7 +63,7 @@ const [
   source(`${appRoot}/components/ui/core.tsx`),
   source(`${appRoot}/components/ui/sheet.tsx`),
   source(`${appRoot}/pages/Overview.tsx`),
-  source(`${appRoot}/pages/TasksResults.tsx`),
+  source(`${appRoot}/pages/PackagesPurchase.tsx`),
   source(`${appRoot}/pages/Workspace.tsx`),
   source(`${appRoot}/pages/RuntimeEnvironment.tsx`),
   source(`${appRoot}/pages/OPLEntry.tsx`),
@@ -111,9 +111,9 @@ for (const componentName of [
 }
 
 for (const [label, pageSource, routes] of [
-  ["overview", overviewSource, ["/resources", "/billing", "/opl-launch"]],
-  ["tasks_results", tasksSource, ["/opl-launch", "/workspace", "/trace"]],
-  ["workspace", workspaceSource, ["/opl-launch", "/trace", "/resources"]],
+  ["overview", overviewSource, ["/packages", "/billing", "/opl-launch"]],
+  ["packages_purchase", packagesSource, ["/resources"]],
+  ["workspace", workspaceSource, ["/opl-launch", "/billing", "/packages"]],
   ["runtime_environment", runtimeSource, ["/billing"]],
   ["opl_entry", oplEntrySource, ["/overview", "/workspace", "/resources", "/billing"]],
 ]) {
@@ -248,7 +248,7 @@ for (const [label, sourceText, forbidden] of [
 ]) {
   assertExcludes(sourceText, forbidden, `${label}_must_not_be_empty_clickable_button`);
 }
-assertIncludes(runtimeSource, "当前页面仅展示状态，不提供资源调整动作。", "runtime_adjust_actions_must_show_product_boundary");
+assertIncludes(runtimeSource, "套餐开通走 MedOPL plan catalog，不提供云资源调整动作。", "runtime_adjust_actions_must_show_product_boundary");
 assertExcludes(runtimeSource, "释放计算资源需要后端确认流程；当前入口未接入。", "runtime_release_action_must_be_physically_retired_from_user_ui");
 assertExcludes(runtimeSource, "删除存储资源需要后端确认流程；当前入口未接入。", "runtime_delete_storage_action_must_be_physically_retired_from_user_ui");
 assertIncludes(runtimeModelSource, "activateRuntimeEnvironmentPlan", "runtime_environment_model_must_wire_activation_action");
@@ -290,10 +290,10 @@ assertIncludes(workspaceSource, "创建结果下载通道", "workspace_download_
 assertIncludes(workspaceSource, "更多文件操作请在 OPL 工作台完成", "workspace_more_file_action_must_have_product_boundary_copy");
 assertExcludes(workspaceSource, "<button className=\"p-1 hover:bg-neutral-100 rounded\">", "workspace_more_file_action_must_not_be_empty_raw_button");
 assertIncludes(workspaceSource, "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4", "workspace_summary_layout_must_reflow_mobile");
-assertIncludes(tasksSource, "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5", "tasks_summary_layout_must_reflow_mobile");
+assertIncludes(packagesSource, "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5", "packages_summary_layout_must_reflow_mobile");
 assertIncludes(billingSource, "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6", "billing_summary_layout_must_reflow_mobile");
 
-for (const sourceText of [overviewSource, tasksSource, workspaceSource, runtimeSource, oplEntrySource, portalQuerySource]) {
+for (const sourceText of [overviewSource, packagesSource, workspaceSource, runtimeSource, oplEntrySource, portalQuerySource]) {
   assertExcludes(sourceText, "Request failed with status code", "portal_user_surface_must_not_expose_transport_error");
 }
 assertExcludes(portalQuerySource, "error instanceof Error ? error.message", "portal_query_error_must_not_directly_expose_error_message");

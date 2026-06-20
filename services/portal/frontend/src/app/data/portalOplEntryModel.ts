@@ -126,7 +126,7 @@ export function buildOplEntryLaunchSteps(input: {
   const { pageState, providerStepStatus, providerStepDetail, gatewayStepStatus, gatewayStepDetail, currentStage = "" } = input;
   if (pageState === "ready") {
     return [
-      { id: "workspace", label: "准备工作空间", status: "completed" },
+      { id: "workspace", label: "准备存储空间", status: "completed" },
       { id: "key", label: "确认密钥绑定状态", status: providerStepStatus, detail: providerStepDetail },
       { id: "session", label: "创建 OPL 会话", status: currentStage === "provider_key_bound" ? "in_progress" : "completed" },
       { id: "gateway", label: "确认 OPL 网关", status: gatewayStepStatus, detail: gatewayStepDetail },
@@ -135,7 +135,7 @@ export function buildOplEntryLaunchSteps(input: {
   }
   if (pageState === "preparing") {
     return [
-      { id: "workspace", label: "准备工作空间", status: "completed" },
+      { id: "workspace", label: "准备存储空间", status: "completed" },
       { id: "key", label: "确认密钥绑定状态", status: providerStepStatus, detail: providerStepDetail },
       { id: "session", label: "创建 OPL 会话", status: "in_progress" },
       { id: "gateway", label: "确认 OPL 网关", status: gatewayStepStatus, detail: gatewayStepDetail },
@@ -144,7 +144,7 @@ export function buildOplEntryLaunchSteps(input: {
   }
   if (pageState === "retrying") {
     return [
-      { id: "workspace", label: "准备工作空间", status: "completed" },
+      { id: "workspace", label: "准备存储空间", status: "completed" },
       { id: "key", label: "确认密钥绑定状态", status: providerStepStatus, detail: providerStepDetail },
       { id: "session", label: "创建 OPL 会话", status: "completed" },
       { id: "gateway", label: "确认 OPL 网关", status: gatewayStepStatus, detail: gatewayStepDetail },
@@ -153,7 +153,7 @@ export function buildOplEntryLaunchSteps(input: {
   }
   if (pageState === "blocked_by_provider_key") {
     return [
-      { id: "workspace", label: "准备工作空间", status: "completed" },
+      { id: "workspace", label: "准备存储空间", status: "completed" },
       { id: "key", label: "确认密钥绑定状态", status: providerStepStatus, detail: providerStepDetail },
       { id: "session", label: "创建 OPL 会话", status: "waiting" },
       { id: "gateway", label: "确认 OPL 网关", status: gatewayStepStatus, detail: gatewayStepDetail },
@@ -161,17 +161,17 @@ export function buildOplEntryLaunchSteps(input: {
     ];
   }
   if (pageState === "blocked_by_runtime") {
-    return blockedLaunchSteps("运行环境未就绪");
+    return blockedLaunchSteps("计算资源未就绪");
   }
   if (pageState === "workspace_required") {
-    return blockedLaunchSteps("工作空间不可用");
+    return blockedLaunchSteps("存储空间不可用");
   }
   if (pageState === "balance_insufficient") {
     return blockedLaunchSteps("余额不足或冻结金额不够");
   }
   if (["service_unavailable", "capability_not_supported", "opl_upstream_url_required"].includes(pageState)) {
     return [
-      { id: "workspace", label: "准备工作空间", status: "completed" },
+      { id: "workspace", label: "准备存储空间", status: "completed" },
       { id: "key", label: "确认密钥绑定状态", status: providerStepStatus, detail: providerStepDetail },
       { id: "session", label: "创建 OPL 会话", status: "completed" },
       { id: "gateway", label: "确认 OPL 网关", status: gatewayStepStatus, detail: gatewayStepDetail },
@@ -179,7 +179,7 @@ export function buildOplEntryLaunchSteps(input: {
     ];
   }
   return [
-    { id: "workspace", label: "准备工作空间", status: "completed" },
+    { id: "workspace", label: "准备存储空间", status: "completed" },
     { id: "key", label: "确认密钥绑定状态", status: providerStepStatus, detail: providerStepDetail },
     { id: "session", label: "创建 OPL 会话", status: "failed", detail: "会话创建失败" },
     { id: "gateway", label: "确认 OPL 网关", status: gatewayStepStatus, detail: gatewayStepDetail },
@@ -189,7 +189,7 @@ export function buildOplEntryLaunchSteps(input: {
 
 function blockedLaunchSteps(workspaceDetail: string): OplEntryLaunchStep[] {
   return [
-    { id: "workspace", label: "准备工作空间", status: "failed", detail: workspaceDetail },
+    { id: "workspace", label: "准备存储空间", status: "failed", detail: workspaceDetail },
     { id: "key", label: "确认密钥绑定状态", status: "waiting" },
     { id: "session", label: "创建 OPL 会话", status: "waiting" },
     { id: "gateway", label: "确认 OPL 网关", status: "waiting" },
@@ -207,43 +207,43 @@ export function buildOplEntryFailurePanel(pageState: OplEntryPageState): OplEntr
   }
   if (pageState === "blocked_by_runtime") {
     return {
-      message: "当前运行环境尚未准备好。请前往运行环境页面确认计算资源已正常开通并启动。",
+      message: "当前计算资源尚未准备好。请前往计算资源页面确认资源已正常开通。",
       suggestions: ["检查套餐是否已选择", "确认计算资源是否已激活", "查看是否有余额或冻结金额不足的问题"],
     };
   }
   if (pageState === "workspace_required") {
     return {
-      message: "工作空间当前不可用。请前往工作空间页面确认文件空间状态和工作空间配置。",
-      suggestions: ["检查文件空间是否可用", "确认工作空间是否已正确配置", "查看文件空间是否处于保护期或受限状态"],
+      message: "存储空间当前不可用。请前往存储空间页面确认存储空间状态和工作空间配置。",
+      suggestions: ["检查存储空间是否可用", "确认工作空间是否已正确配置", "查看存储空间是否处于保护期或受限状态"],
     };
   }
   if (pageState === "balance_insufficient") {
     return {
-      message: "当前余额不足或冻结金额不够。进入 OPL 需要足够的可用余额和冻结金额来支持工作台运行。",
+      message: "当前余额不足或冻结金额不够。进入 OPL 需要足够的可用余额和冻结金额来支持OPL 使用。",
       suggestions: ["前往账单页面查看余额和冻结金额状态", "如需充值，请联系管理员或使用充值功能", "确认是否有未处理的账单问题"],
     };
   }
   if (pageState === "service_unavailable") {
     return {
       message: "OPL 网关暂时不可用。这可能是临时性问题，建议稍后重试。",
-      suggestions: ["等待 1-2 分钟后重试", "如问题持续，请检查运行环境状态", "或联系技术支持获取帮助"],
+      suggestions: ["等待 1-2 分钟后重试", "如问题持续，请检查计算资源状态", "或联系技术支持获取帮助"],
     };
   }
   if (pageState === "capability_not_supported") {
     return {
       message: "当前能力暂不可用。请稍后重试或返回上一步。",
-      suggestions: ["稍后重试进入 OPL", "返回工作空间检查配置", "或前往运行环境页面查看状态"],
+      suggestions: ["稍后重试进入 OPL", "返回存储空间检查配置", "或前往计算资源页面查看状态"],
     };
   }
   if (pageState === "opl_upstream_url_required") {
     return {
       message: "当前 OPL 服务入口暂不可用。请稍后重试或联系平台。",
-      suggestions: ["等待几分钟后重试", "返回工作空间", "或联系技术支持"],
+      suggestions: ["等待几分钟后重试", "返回存储空间", "或联系技术支持"],
     };
   }
   return {
     message: "启动过程遇到未预期的问题。建议先重试，如果问题持续，请检查相关配置或联系支持。",
-    suggestions: ["尝试重新进入 OPL", "检查运行环境和工作空间状态", "查看账单和余额是否正常"],
+    suggestions: ["尝试重新进入 OPL", "检查计算资源和存储空间状态", "查看账单和余额是否正常"],
   };
 }
 

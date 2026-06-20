@@ -26,8 +26,8 @@ const adminPageSources = await Promise.all([
   "services/portal/frontend/src/app/pages/BillingAudit.tsx",
   "services/portal/frontend/src/app/pages/OPLEntry.tsx",
   "services/portal/frontend/src/app/pages/Overview.tsx",
+  "services/portal/frontend/src/app/pages/PackagesPurchase.tsx",
   "services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx",
-  "services/portal/frontend/src/app/pages/TasksResults.tsx",
   "services/portal/frontend/src/app/pages/Workspace.tsx",
   "services/portal/frontend/src/app/pages/system/Degraded.tsx",
   "services/portal/frontend/src/app/pages/system/Empty.tsx",
@@ -43,16 +43,16 @@ const adminPageSources = await Promise.all([
 ].map(async (filePath) => [filePath, await readFile(filePath, "utf8")]));
 const portalModelSources = await Promise.all([
   "services/portal/frontend/src/app/data/portalOverviewModel.ts",
+  "services/portal/frontend/src/app/data/portalPackagesPurchaseModel.ts",
   "services/portal/frontend/src/app/data/portalRuntimeEnvironmentModel.ts",
   "services/portal/frontend/src/app/data/portalWorkspaceModel.ts",
-  "services/portal/frontend/src/app/data/portalTasksResultsModel.ts",
   "services/portal/frontend/src/app/data/portalBillingAuditModel.ts",
   "services/portal/frontend/src/app/data/portalOplEntryModel.ts",
 ].map((filePath) => readFile(filePath, "utf8"))).then((sources) => sources.join("\n"));
 const specsIndex = await readFile("docs/specs/README.md", "utf8");
 const sourceSpec = await readFile("specs/source/spec.md", "utf8");
 
-for (const retiredRoute of ["/packages", "/advanced/servers", "/runtime", "/tasks"]) {
+for (const retiredRoute of ["/advanced/servers", "/runtime", "/tasks", "/trace"]) {
   assert.equal(routesSource.includes(retiredRoute), false, `retired_package_route_must_not_be_active:${retiredRoute}`);
   assert.equal(layoutSource.includes(retiredRoute), false, `retired_package_nav_must_not_be_active:${retiredRoute}`);
 }
@@ -133,30 +133,32 @@ for (const retiredUiComponent of [
   );
 }
 
-for (const route of ["/overview", "/resources", "/workspace", "/trace", "/billing", "/opl-launch"]) {
+for (const route of ["/overview", "/packages", "/resources", "/workspace", "/billing", "/opl-launch"]) {
   assert(routesSource.includes(`path: "${route.slice(1)}"`), `zip_user_route_missing:${route}`);
 }
 
 for (const apiCall of [
   "fetchMyResources",
+  "fetchPackageCatalog",
   "fetchOverview",
   "fetchWorkspace",
-  "fetchSessionTraces",
   "fetchBillingSummary",
   "fetchOplLaunchStatus",
 ]) {
   assert(portalModelSources.includes(apiCall), `portal_zip_model_api_call_missing:${apiCall}`);
 }
+assert.equal(portalModelSources.includes("fetchSessionTraces"), false, "portal_user_models_must_not_fetch_session_traces");
 
 assert(specsIndex.includes("spec:v22-portal-workbench-management-ui-composition-boundary"), "specs_index_must_reference_ui_composition_boundary");
 assert(specsIndex.includes("specs/source/spec.md"), "specs_index_must_point_to_source_spec");
 assert.equal(/```json/u.test(specsIndex), false, "specs_index_must_not_embed_ui_composition_json");
 assert(sourceSpec.includes("`source:portal-workbench-management-ui-composition`"), "source_spec_must_own_ui_composition");
-assert(sourceSpec.includes("/packages"), "source_spec_must_retire_packages_route");
+assert(sourceSpec.includes("/packages"), "source_spec_must_require_packages_purchase_route");
 assert(sourceSpec.includes("/advanced/servers"), "source_spec_must_retire_advanced_servers_route");
 assert(sourceSpec.includes("/runtime"), "source_spec_must_retire_runtime_route");
 assert(sourceSpec.includes("/tasks"), "source_spec_must_retire_tasks_route");
 assert(sourceSpec.includes("/opl"), "source_spec_must_retire_opl_short_route");
+assert(sourceSpec.includes("/trace"), "source_spec_must_retire_trace_route");
 
 console.log(JSON.stringify({
   ok: true,
@@ -165,7 +167,7 @@ console.log(JSON.stringify({
   retired: [
     "vue_packages_view",
     "vue_package_composable",
-    "packages_route",
+    "trace_route",
     "advanced_servers_route",
   ],
 }, null, 2));

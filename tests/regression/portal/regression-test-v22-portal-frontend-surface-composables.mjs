@@ -12,9 +12,9 @@ async function exists(filePath) {
 
 const pageSpecs = [
   ["overview", "services/portal/frontend/src/app/pages/Overview.tsx", "services/portal/frontend/src/app/data/portalOverviewModel.ts", "loadOverviewModel", "useOverviewModel"],
+  ["packages", "services/portal/frontend/src/app/pages/PackagesPurchase.tsx", "services/portal/frontend/src/app/data/portalPackagesPurchaseModel.ts", "fetchPackageCatalog", "usePackagesPurchaseModel"],
   ["resources", "services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx", "services/portal/frontend/src/app/data/portalRuntimeEnvironmentModel.ts", "loadRuntimeEnvironmentModel", "useRuntimeEnvironmentModel"],
   ["workspace", "services/portal/frontend/src/app/pages/Workspace.tsx", "services/portal/frontend/src/app/data/portalWorkspaceModel.ts", "loadWorkspaceModel", "useWorkspaceModel"],
-  ["trace", "services/portal/frontend/src/app/pages/TasksResults.tsx", "services/portal/frontend/src/app/data/portalTasksResultsModel.ts", "loadTasksResultsModel", "useTasksResultsModel"],
   ["billing", "services/portal/frontend/src/app/pages/BillingAudit.tsx", "services/portal/frontend/src/app/data/portalBillingAuditModel.ts", "loadBillingAuditModel", "useBillingAuditModel"],
   ["opl", "services/portal/frontend/src/app/pages/OPLEntry.tsx", "services/portal/frontend/src/app/data/portalOplEntryModel.ts", "loadOplEntryModel", "useOplEntryModel"],
   ["admin-dashboard", "services/portal/frontend/src/app/pages/admin/AdminDashboard.tsx", "services/portal/frontend/src/app/data/portalAdminOpsModel.ts", "loadAdminDashboardModel", "useAdminDashboardModel"],
@@ -34,6 +34,8 @@ for (const retiredPath of [
   "services/portal/frontend/src/composables/useOverviewSurface.ts",
   "services/portal/frontend/src/composables/useResourcesSurface.ts",
   "services/portal/frontend/src/composables/useTraceSurface.ts",
+  "services/portal/frontend/src/app/pages/TasksResults.tsx",
+  "services/portal/frontend/src/app/data/portalTasksResultsModel.ts",
   "services/portal/frontend/src/composables/useAdminUsersSurface.ts",
   "services/portal/frontend/src/app/data/portalAdminModels.ts",
   "services/portal/frontend/src/app/data/portalAdminAlertsModel.ts",
@@ -60,7 +62,7 @@ const apiCallSources = await Promise.all([
   "services/portal/frontend/src/app/data/portalOverviewModel.ts",
   "services/portal/frontend/src/app/data/portalRuntimeEnvironmentModel.ts",
   "services/portal/frontend/src/app/data/portalWorkspaceModel.ts",
-  "services/portal/frontend/src/app/data/portalTasksResultsModel.ts",
+  "services/portal/frontend/src/app/data/portalPackagesPurchaseModel.ts",
   "services/portal/frontend/src/app/data/portalBillingAuditModel.ts",
   "services/portal/frontend/src/app/data/portalOplEntryModel.ts",
 ].map((filePath) => readFile(filePath, "utf8")));
@@ -83,9 +85,9 @@ const adminPageSources = await Promise.all([
 
 for (const apiCall of [
   "fetchOverview",
+  "fetchPackageCatalog",
   "fetchMyResources",
   "fetchWorkspace",
-  "fetchSessionTraces",
   "fetchBillingSummary",
   "fetchBillingDetails",
   "createOplLaunch",

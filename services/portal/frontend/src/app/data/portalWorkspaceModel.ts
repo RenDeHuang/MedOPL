@@ -102,10 +102,10 @@ export async function loadWorkspaceModel() {
   const downloadUnavailableReason = canUseTransferActions
     ? ""
     : !entitlement?.enabled
-      ? "文件空间未开通"
+      ? "存储空间未开通"
       : !sessionId
         ? "当前没有可用 OPL 会话"
-        : "托管运行环境未绑定";
+        : "计算资源未绑定";
   const files = workspace.files.map<FileItem>((file) => {
     const relativePath = relativePathFromFile(file);
     const metadata = metadataByRelativePath.get(relativePath);
@@ -145,7 +145,7 @@ export async function loadWorkspaceModel() {
       canDownload: Boolean(entitlement?.enabled && outputSessionId && relativePath),
       downloadUnavailableReason: entitlement?.enabled
         ? outputSessionId ? "" : "当前结果缺少 OPL 会话"
-        : "文件空间未开通",
+        : "存储空间未开通",
       taskId: file.taskRef,
       taskName: file.sessionId || "会话输出",
       fileRef: file.fileRef || metadata?.fileRef || fileSpaceFile?.fileRef,
@@ -242,19 +242,18 @@ export async function loadWorkspaceModel() {
     }
     const run = await startOplRun({
       launchId,
-      message: `使用工作空间输入文件发起运行：${files.map((file) => file.name).join(", ")}`,
+      message: `使用存储空间输入文件发起运行：${files.map((file) => file.name).join(", ")}`,
       fileRefs,
       toolName: "workspace-files",
       mode: "full_runtime",
     });
-    const runProjection = run.run as { runId?: string; traceId?: string } | undefined;
+    const runProjection = run.run as { runId?: string } | undefined;
     return {
       ok: Boolean(run.ok),
       error: stringValue(run.error, ""),
       gate: stringValue(run.gate, ""),
       status: stringValue(run.status || run.run?.status, run.ok ? "submitted" : "gated"),
       runId: stringValue(runProjection?.runId, ""),
-      traceId: stringValue(runProjection?.traceId, ""),
     };
   }
 

@@ -18,12 +18,57 @@
   ],
   "medopl_product_profile": {
     "primary_user_offer": [
-      "managed_opl_workspace",
-      "dedicated_runtime",
-      "file_space",
+      "compute_resource",
+      "storage_space",
+      "package_plan",
       "task_concurrency",
-      "billing_account",
-      "audit_trace"
+      "usage_billing",
+      "resource_lifecycle",
+      "opl_entry"
+    ],
+    "supporting_receipt_surface": {
+      "audit": "billing_release_storage_lifecycle_receipt",
+      "run_ref": "usage_and_billing_reference_only",
+      "artifact_ref": "storage_inventory_reference_only"
+    },
+    "owner_split": {
+      "medopl_owns": [
+        "compute_resource_lifecycle",
+        "storage_space_lifecycle",
+        "package_plan_catalog",
+        "usage_billing",
+        "resource_release",
+        "ops_audit_receipts"
+      ],
+      "opl_webui_owns": [
+        "chat_first_project_session_workbench",
+        "file_workbench_experience",
+        "skill_upload",
+        "research_task_user_experience",
+        "ordinary_chat"
+      ],
+      "opl_owns": [
+        "framework_runtime_semantics",
+        "agent_skill_protocol",
+        "research_execution_runtime"
+      ]
+    },
+    "user_surface_fixed_objects": [
+      "resource_overview",
+      "package_purchase",
+      "compute_resource",
+      "storage_space_inventory",
+      "usage_billing",
+      "opl_entry"
+    ],
+    "user_surface_forbidden_objects": [
+      "chat",
+      "session_workbench",
+      "skill_upload",
+      "raw_trace",
+      "raw_log",
+      "cloud_console_fields",
+      "secret_token_or_signed_url"
     ],
     "primary_consumer_surface": {
       "name": "opl-webui",

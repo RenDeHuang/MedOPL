@@ -7,13 +7,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const frontendUserSurfacePaths = [
   "../../../services/portal/frontend/src/app/components/Layout.tsx",
   "../../../services/portal/frontend/src/app/pages/Overview.tsx",
+  "../../../services/portal/frontend/src/app/pages/PackagesPurchase.tsx",
   "../../../services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx",
   "../../../services/portal/frontend/src/app/pages/Workspace.tsx",
   "../../../services/portal/frontend/src/app/pages/BillingAudit.tsx",
-  "../../../services/portal/frontend/src/app/pages/TasksResults.tsx",
   "../../../services/portal/frontend/src/app/pages/OPLEntry.tsx",
 ].map((relativePath) => path.join(__dirname, relativePath));
-const traceViewPath = path.join(__dirname, "../../../services/portal/frontend/src/app/pages/TasksResults.tsx");
 
 function assertIncludesAll(source, expectedItems, label) {
   for (const expected of expectedItems) {
@@ -72,14 +71,12 @@ const [
   productReadme,
   sourceSpec,
   visibleSurface,
-  traceViewSource,
 ] = await Promise.all([
   readFile("docs/specs/README.md", "utf8"),
   readFile("specs/runtime/spec.md", "utf8"),
   readFile("docs/product/README.md", "utf8"),
   readFile("specs/source/spec.md", "utf8"),
   frontendBeginnerVisibleSurface(),
-  readFile(traceViewPath, "utf8"),
 ]);
 
 assert(specsIndex.includes("spec:v22-saas-portal-opl-ops-surface-boundary"), "specs_index_must_reference_saas_surface_contract");
@@ -94,9 +91,10 @@ assert(runtimeSpec.includes("raw provider key exposure"), "runtime_spec_must_kee
 assertIncludesAll(productReadme, [
   "MedOPL 不是云资源控制台。",
   "普通用户产品语言不展示 CVM、COS、K8s、节点池或云控制台配置。",
+  "用户侧只回答六个资源问题",
   "Portal 是 SaaS 控制面，不是科研 chatbot 或云控制台",
   "管理台和普通用户边界",
-  "进入 OPL 工作台",
+  "进入 OPL",
   "绑定自己的 gflabtoken 模型调用密钥",
 ], "product_readme_saas_surface_owner");
 assertExcludesAll(productReadme, [
@@ -109,37 +107,50 @@ assertExcludesAll(productReadme, [
 assertIncludesAll(sourceSpec, [
   "`source:portal-workbench-management-ui-composition`",
   "/overview",
+  "/packages",
   "/resources",
   "/workspace",
-  "/trace",
   "/billing",
   "/opl-launch",
-  "/packages",
   "/advanced/servers",
 ], "source_spec_ui_composition_owner");
+assertExcludesAll(sourceSpec, [
+  "Required user routes:\n\n- `/overview`\n- `/resources`\n- `/workspace`\n- `/trace`",
+], "source_spec_must_not_require_trace_user_route");
 
 assertIncludesAll(visibleSurface, [
-  "工作台",
-  "托管科研工作台",
-  "运行环境",
-  "工作空间",
-  "文件空间",
-  "任务",
+  "资源总览",
+  "套餐与购买",
+  "计算资源",
+  "存储空间",
+  "费用与用量",
+  "进入 OPL",
+  "你的 OPL 云端计算资源和存储空间当前状态",
+  "我买了什么资源",
+  "资源是否可用",
+  "存储空间里有什么",
+  "费用是多少",
+  "开通计算资源",
+  "存储空间",
   "输入文件",
   "输出文件",
   "余额",
   "账单",
+  "用量明细",
   "费用估算",
   "冻结金额",
   "价格待审批",
   "正式售价未定价",
-  "当前页面仅展示状态，不提供资源调整动作。",
   "审计状态",
-  "进入 OPL",
   "gflabtoken 模型调用密钥",
 ], "frontend_beginner_surface_copy");
 
 assertExcludesAll(visibleSurface, [
+  "任务与结果",
+  "运行轨迹",
+  "Trace",
+  "traceId",
+  "session trace metadata",
   "云资源控制台",
   "cloud console",
   "tenantId",
@@ -151,14 +162,10 @@ assertExcludesAll(visibleSurface, [
   "raw API key",
   "raw provider key",
   "backend secret boundary",
-  "session trace metadata",
   "API key",
   "API Key",
   "编号",
 ], "frontend_beginner_surface_copy");
-
-assert.equal(traceViewSource.includes("任务编号"), false, "trace_view_task_header_must_not_use_number_label");
-assert(traceViewSource.includes("任务"), "trace_view_task_header_must_use_task_label");
 
 console.log(JSON.stringify({
   ok: true,

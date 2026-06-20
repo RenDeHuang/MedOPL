@@ -38,8 +38,8 @@ func TestRouterServesExpectedEndpoints(t *testing.T) {
 		{method: http.MethodGet, path: "/api/workspace/files/download-url?workspaceId=workspace-v22&file=result.md&kind=outputs"},
 		{method: http.MethodPost, path: "/api/workspace/files/local-transfer", body: `{"workspaceId":"workspace-v22","fileName":"input.csv","kind":"inputs"}`},
 		{method: http.MethodGet, path: "/api/workspace/files/local-transfer?workspaceId=workspace-v22&file=result.md&kind=outputs"},
-		{method: http.MethodGet, path: "/api/session-traces?workspaceId=workspace-v22"},
 		{method: http.MethodGet, path: "/api/announcements"},
+		{method: http.MethodGet, path: "/api/admin/agent-traces?workspaceId=workspace-v22"},
 		{method: http.MethodGet, path: "/api/admin/overview"},
 		{method: http.MethodGet, path: "/api/public/settings"},
 		{method: http.MethodGet, path: "/api/server-plans"},
@@ -53,6 +53,17 @@ func TestRouterServesExpectedEndpoints(t *testing.T) {
 		router.ServeHTTP(rec, req)
 		if rec.Code != http.StatusOK && rec.Code != http.StatusPreconditionRequired {
 			t.Fatalf("%s %s status = %d body = %s", item.method, item.path, rec.Code, rec.Body.String())
+		}
+	}
+	for _, path := range []string{
+		"/api/session-traces?workspaceId=workspace-v22",
+		"/api/traces?workspaceId=workspace-v22",
+	} {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		if rec.Code != http.StatusNotFound {
+			t.Fatalf("%s retired customer trace API status = %d body = %s", path, rec.Code, rec.Body.String())
 		}
 	}
 	req := httptest.NewRequest(http.MethodGet, "/api/logout", nil)

@@ -77,7 +77,7 @@ export function BillingAudit() {
   if (query.status === "loading") {
     return (
       <div className="p-8 max-w-7xl mx-auto">
-        <Card className="border border-neutral-200 p-6 text-sm text-neutral-600">正在读取账单与审计数据...</Card>
+        <Card className="border border-neutral-200 p-6 text-sm text-neutral-600">正在读取费用与用量数据...</Card>
       </div>
     );
   }
@@ -115,13 +115,13 @@ export function BillingAudit() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <h1 className="text-2xl font-semibold text-neutral-900">账单与审计</h1>
+                <h1 className="text-2xl font-semibold text-neutral-900">费用与用量</h1>
                 <Badge variant="outline" className="bg-neutral-100 text-neutral-600 border-neutral-200">
                   核对已接入
                 </Badge>
               </div>
               <p className="text-neutral-600 text-sm">
-                查看余额、冻结金额、消费明细和审计状态
+                查看余额、冻结金额、计算用量、存储用量、账单明细和停止计费状态
               </p>
             </div>
             <Button variant="outline" className="gap-2" onClick={exportBillingRecords} title="当前时间窗口没有可导出的账单流水">
@@ -186,14 +186,14 @@ export function BillingAudit() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <h1 className="text-2xl font-semibold text-neutral-900">账单与审计</h1>
+              <h1 className="text-2xl font-semibold text-neutral-900">费用与用量</h1>
               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                 <CheckCircle2 className="w-3 h-3 mr-1" />
                 核对已接入
               </Badge>
             </div>
             <p className="text-neutral-600 text-sm">
-              余额充足，扣费正常，账单透明可追溯
+              余额、冻结金额、计算用量和存储用量可核对
             </p>
           </div>
           <div className="flex gap-3">
@@ -295,7 +295,7 @@ export function BillingAudit() {
           <Card className="p-4 border border-neutral-200">
             <div className="flex items-center gap-2 mb-2">
               <HardDrive className="w-4 h-4 text-neutral-400" />
-              <span className="text-sm text-neutral-600">文件空间</span>
+              <span className="text-sm text-neutral-600">存储空间</span>
             </div>
             <div className="text-xl font-semibold text-neutral-900 mb-1">{model.storageCost}</div>
             <div className="text-xs text-neutral-500">24% 总成本</div>
@@ -343,7 +343,7 @@ export function BillingAudit() {
           <div className="p-5 border-b border-neutral-200">
             <div className="flex items-center gap-2">
               <FolderOpen className="w-4 h-4 text-neutral-600" />
-              <h2 className="font-semibold text-neutral-900">工作空间费用</h2>
+              <h2 className="font-semibold text-neutral-900">资源费用</h2>
             </div>
           </div>
           <div className="p-5">

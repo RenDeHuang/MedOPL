@@ -137,7 +137,7 @@ async function assertNoBadConsole(consoleMessages, failedRequests) {
   assert.deepEqual(filteredRequests, [], `browser_failed_requests:${JSON.stringify(filteredRequests)}`);
 }
 
-function assertWorkbenchCopy(bodyText, label, markers = ["托管科研工作台", "运行环境"]) {
+function assertWorkbenchCopy(bodyText, label, markers = ["资源总览", "计算资源", "存储空间"]) {
   for (const marker of markers) {
     assert(bodyText.includes(marker), `${label}_managed_workbench_marker_missing:${marker}`);
   }
@@ -223,16 +223,16 @@ try {
     await page.waitForSelector("text=总览", { timeout: 30000 });
     lastBodyText = await page.locator("body").innerText();
     assertWorkbenchCopy(lastBodyText, "browser_overview");
-    assert(lastBodyText.includes("选择套餐开通服务"), "browser_overview_open_runtime_cta_missing");
-    assert(lastBodyText.includes("前往运行环境"), "browser_overview_runtime_entry_missing");
+    assert(lastBodyText.includes("选择套餐开通计算资源"), "browser_overview_open_compute_resource_cta_missing");
+    assert(lastBodyText.includes("前往套餐与购买"), "browser_overview_packages_entry_missing");
     assert.equal(lastBodyText.includes("商业"), false, "browser_overview_forbidden_commercial_copy");
     await assertNoGlobalHorizontalOverflow(page, "browser_overview");
 
     await page.goto(`${frontendBaseUrl}/resources`, { waitUntil: "domcontentloaded" });
-    await waitReady(page, "正在读取运行环境数据");
-    await page.waitForSelector("text=运行环境", { timeout: 30000 });
+    await waitReady(page, "正在读取计算资源数据");
+    await page.waitForSelector("text=计算资源", { timeout: 30000 });
     lastBodyText = await page.locator("body").innerText();
-    assertWorkbenchCopy(lastBodyText, "browser_runtime_environment", ["运行环境", "文件空间"]);
+    assertWorkbenchCopy(lastBodyText, "browser_runtime_environment", ["计算资源", "存储空间"]);
     assert(lastBodyText.includes("开通服务"), "browser_runtime_open_service_cta_missing");
     assert(lastBodyText.includes("当前订阅状态"), "browser_runtime_subscription_status_missing");
     assert(lastBodyText.includes("套餐价格尚待审批"), "browser_runtime_pricing_boundary_missing");

@@ -7,7 +7,7 @@ Human index: `docs/product/README.md`, `docs/specs/README.md`
 
 ## Scope
 
-Product specs define what users buy and what Portal may claim about accounts, workspaces, packages, file space, managed compute, billing, audit and OPL entry.
+Product specs define what users buy and what Portal may claim about accounts, workspaces, packages, storage space, managed compute resource, billing, usage, resource lifecycle and OPL entry.
 
 | Requirement | Owner plane | Source surface | Required evals | Evidence level | Cannot claim |
 | --- | --- | --- | --- | --- | --- |
@@ -54,16 +54,17 @@ Product specs define what users buy and what Portal may claim about accounts, wo
       "label": "Full managed runtime",
       "includes": [
         "平台托管计算",
-        "文件空间",
+        "存储空间",
         "任务并发",
         "余额/冻结金额",
-        "run/artifact/trace 回流",
+        "用量计费",
+        "资源清单",
         "释放和停止计费"
       ],
       "allowsPlatformManagedCompute": true,
       "requiresBalanceFreeze": true,
       "requiresFileSpace": true,
-      "medoplRequiredBecause": "需要平台代管计算、文件空间、计费、审计和释放。"
+      "medoplRequiredBecause": "需要平台代管计算、存储空间、计费、审计和释放。"
     },
     {
       "id": "customer_dedicated",
@@ -92,47 +93,60 @@ Product specs define what users buy and what Portal may claim about accounts, wo
   "contract": "v22_commercial_ui_impact_decision",
   "version": 1,
   "decision": "no_immediate_ui_code_change",
-  "reason": "existing_portal_surface_already_answers_required_customer_questions",
+      "reason": "existing_portal_surface_is_being_narrowed_to_resource_purchase_and_runtime_management",
   "requiredCustomerQuestions": [
-    "买了什么",
-    "能不能用",
-    "缺什么",
-    "下一步点哪里",
-    "结果在哪里",
-    "费用是否正常"
+    "我买了什么资源",
+    "资源是否可用",
+    "存储空间里有什么",
+    "套餐是什么",
+    "费用是多少",
+    "去哪里购买/升级/释放资源或进入 OPL"
   ],
   "existingUiCoverage": {
     "overview": [
-      "托管 OPL 科研工作台服务",
-      "工作台可用性",
-      "下一步动作"
+      "资源总览",
+      "当前套餐",
+      "计算资源状态",
+      "存储空间状态",
+      "下一步资源动作"
+    ],
+    "packages": [
+      "套餐与购买",
+      "基础套餐",
+      "Pro 套餐",
+      "计算规格",
+      "存储容量",
+      "并发数",
+      "购买/升级动作"
     ],
     "resources": [
       "计算资源",
-      "文件空间",
-      "套餐规格",
+      "规格",
+      "绑定的 OPL workspace",
+      "计费状态",
       "释放状态"
     ],
     "workspace": [
-      "文件列表",
-      "任务入口",
-      "输出结果"
-    ],
-    "trace": [
-      "任务运行轨迹",
-      "输出回流",
-      "费用关联"
+      "存储空间",
+      "容量",
+      "已用空间",
+      "输入文件 / 输出文件资源清单",
+      "保留期"
     ],
     "billing": [
       "余额",
       "冻结金额",
-      "运行费用",
-      "账本审计"
+      "计算用量",
+      "存储用量",
+      "账单明细",
+      "停止计费核对",
+      "T+1 审计状态"
     ],
     "oplLaunch": [
-      "进入 OPL 工作台",
-      "启动阶段",
-      "provider 绑定状态"
+      "进入 OPL",
+      "计算资源 gate",
+      "存储绑定 gate",
+      "provider key gate"
     ]
   },
   "commercialModelImpacts": [
