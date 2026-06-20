@@ -237,8 +237,6 @@ function startService(service, options) {
       cannotClaim: service.cannotClaim,
     };
   }
-  const current = statusForService(service);
-  if (current.status === "running") return { ...current, status: "already_running" };
   if (options.dryRun) {
     return {
       id: service.id,
@@ -252,6 +250,8 @@ function startService(service, options) {
       cannotClaim: service.cannotClaim,
     };
   }
+  const current = statusForService(service);
+  if (current.status === "running") return { ...current, status: "already_running" };
   ensureRuntimeRoot();
   const [bin, ...args] = commandToSpawn(service.command);
   if (!bin) {
@@ -419,9 +419,25 @@ async function probeService(service, timeoutMs) {
   const health = await probeUrl(service.healthUrl, service.expectedStatus, timeoutMs);
   const ready = service.readyUrl ? await probeUrl(service.readyUrl, service.expectedStatus, timeoutMs) : null;
   const ok = health.ok && (ready ? ready.ok : true);
+  if (service.external && !ok) {
+    return {
+      id: service.id,
+      ok: true,
+      required: false,
+      status: "external_optional_unreachable",
+      httpStatus: health.httpStatus,
+      readyHttpStatus: ready?.httpStatus,
+      error: health.error || ready?.error,
+      url: service.healthUrl,
+      readyUrl: service.readyUrl,
+      canClaim: "external clean upstream endpoint was not reachable; MedOPL local stack remains independently checkable",
+      cannotClaim: service.cannotClaim,
+    };
+  }
   return {
     id: service.id,
     ok,
+    required: !service.external,
     status: ok ? "reachable" : "unreachable",
     httpStatus: health.httpStatus,
     readyHttpStatus: ready?.httpStatus,
@@ -433,25 +449,43 @@ async function probeService(service, timeoutMs) {
   };
 }
 
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function probeServiceUntilReady(service, timeoutMs) {
+  if (service.external) return probeService(service, timeoutMs);
+  const deadline = Date.now() + Math.max(timeoutMs, 1);
+  let last = await probeService(service, Math.min(timeoutMs, 1000));
+  while (!last.ok && Date.now() < deadline) {
+    await delay(250);
+    last = await probeService(service, Math.min(Math.max(deadline - Date.now(), 1), 1000));
+  }
+  return last;
+}
+
 async function checkPayload(options) {
   const results = options.dryRun
     ? LOCAL_SERVICE_PLAN.map((service) => ({
         id: service.id,
         ok: true,
+        required: !service.external,
         status: "not_checked_dry_run",
         url: service.healthUrl,
         readyUrl: service.readyUrl,
         canClaim: "local service check plan is registered",
         cannotClaim: service.cannotClaim,
       }))
-    : await Promise.all(LOCAL_SERVICE_PLAN.map((service) => probeService(service, options.timeoutMs)));
+    : await Promise.all(LOCAL_SERVICE_PLAN.map((service) => probeServiceUntilReady(service, options.timeoutMs)));
+  const blockingResults = results.filter((result) => result.required !== false);
   return {
-    ok: results.every((result) => result.ok),
+    ok: blockingResults.every((result) => result.ok),
     mode: "check",
     dryRun: Boolean(options.dryRun),
     runtimeDir: RUNTIME_DIR,
     forbiddenOps: [...FORBIDDEN_OPS],
     services: LOCAL_SERVICE_PLAN.map(publicService),
+    blockingResults: blockingResults.map((result) => result.id),
     results,
   };
 }

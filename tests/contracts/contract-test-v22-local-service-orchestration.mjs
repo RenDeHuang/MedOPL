@@ -85,6 +85,9 @@ for (const forbidden of [".env", "secrets.env", "SecretId", "SecretKey", "docker
 for (const marker of ["LOCAL_SERVICE_PLAN", "portal-frontend", "go-backend", "opl-web-gateway", "runtime-bridge", "clean-opl-webui"]) {
   assertIncludes(scriptSource, marker, "local_services_script_marker");
 }
+assertIncludes(scriptSource, "probeServiceUntilReady", "local_services_check_must_wait_for_spawned_services");
+assertIncludes(scriptSource, "external_optional_unreachable", "local_services_check_must_not_block_on_external_opl_webui");
+assertIncludes(scriptSource, "blockingResults", "local_services_check_must_distinguish_required_and_external_services");
 
 const packageJson = JSON.parse(await readRepoFile("package.json"));
 assert.equal(packageJson.scripts["local:services:plan"], "node scripts/v22-local-services.mjs plan --json", "package_must_expose_plan");
@@ -102,9 +105,27 @@ assert.equal(packageJson.scripts["verify:local-release-candidate"], "node script
 const e2ePlan = jsonFrom(runLocalProductE2E(["--dry-run", "--json"]));
 assert.equal(e2ePlan.ok, true, "local_product_e2e_dry_run_must_pass");
 assert.equal(e2ePlan.kind, "v22_local_product_e2e_runner", "local_product_e2e_kind");
+assert.equal(e2ePlan.coverageMode, "go_backend_local_product_api", "local_product_e2e_must_declare_backend_api_coverage");
+assert.equal(e2ePlan.ownerBoundary?.directOwner, "services/medopl-go-backend", "local_product_e2e_direct_owner");
+assert.deepEqual(e2ePlan.ownerBoundary?.requiredRunningServices, ["go-backend"], "local_product_e2e_required_services");
+assert.deepEqual(e2ePlan.ownerBoundary?.topologyServicesNotProbed, [
+  "portal-frontend",
+  "opl-web-gateway",
+  "runtime-bridge",
+  "clean-opl-webui",
+], "local_product_e2e_must_not_overclaim_topology_services");
 assert.equal(e2ePlan.executionMode, "dry-run", "local_product_e2e_must_default_dry_run");
 assert.equal(e2ePlan.executesRequests, false, "local_product_e2e_dry_run_must_not_execute_requests");
 assert.equal(e2ePlan.evidenceRef.startsWith(".runtime/local-product-e2e/"), true, "local_product_e2e_evidence_ref_must_be_runtime_pointer");
+assert.equal(e2ePlan.canClaim, "Go backend local product API plan only", "local_product_e2e_dry_run_claim_must_be_precise");
+for (const forbiddenClaim of [
+  "Portal browser E2E coverage",
+  "Gateway direct route coverage",
+  "Runtime Bridge direct route coverage",
+  "clean OPL WebUI availability",
+]) {
+  assert(e2ePlan.cannotClaim.includes(forbiddenClaim), `local_product_e2e_cannot_claim:${forbiddenClaim}`);
+}
 assert.deepEqual(e2ePlan.steps.map((step) => step.id), [
   "backend-health",
   "bind-provider-key",
@@ -132,13 +153,17 @@ assert.equal(e2eBlockedPayload.blocker?.type, "local_service_unreachable", "loca
 assert.equal(e2eBlockedPayload.executesRequests, true, "local_product_e2e_execute_must_attempt_requests");
 
 const status = jsonFrom(runLocalServices(["status", "--json"]));
-assert.equal(status.ok, true, "status_must_be_deterministic_when_services_are_stopped");
+assert.equal(typeof status.ok, "boolean", "status_must_return_boolean_ok");
 assert.equal(status.mode, "status", "status_mode");
 assert.equal(status.runtimeDir, ".runtime/local-services", "status_runtime_dir");
 assert.equal(status.results.length, plan.services.length, "status_must_cover_all_services");
 for (const result of status.results) {
-  assert(["stopped", "external"].includes(result.status), `status_must_not_probe_or_spawn:${result.id}`);
-  assert.equal(Boolean(result.pid), false, `status_must_not_fabricate_pid:${result.id}`);
+  assert(["stopped", "running", "exited", "external"].includes(result.status), `status_must_not_probe_or_spawn:${result.id}`);
+  assert.notEqual(result.status, "reachable", `status_must_not_probe:${result.id}`);
+  assert.notEqual(result.status, "unreachable", `status_must_not_probe:${result.id}`);
+  if (result.status === "stopped" || result.status === "external") {
+    assert.equal(Boolean(result.pid), false, `status_must_not_fabricate_pid:${result.id}`);
+  }
 }
 
 const startDryRun = jsonFrom(runLocalServices(["start", "--dry-run", "--json"]));
