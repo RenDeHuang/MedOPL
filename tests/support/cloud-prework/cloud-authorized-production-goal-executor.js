@@ -1,4 +1,5 @@
 import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import path from "node:path";
 
 import readonlyExecutor from "./cloud-authorized-readonly-executor.js";
@@ -48,21 +49,50 @@ const OPERATION_REQUIRED_ENV = Object.freeze({
   ]),
 });
 
+const OPERATION_EXTERNAL_RUNNER_ENV = Object.freeze({
+  tenant_runtime_provisioning: "V22_TENCENT_RUNTIME_PROVISIONING_RUNNER",
+  storage_lifecycle: "V22_TENCENT_STORAGE_LIFECYCLE_RUNNER",
+  billing_audit_writeback: "V22_MEDOPL_BILLING_AUDIT_WRITEBACK_RUNNER",
+  build_push: "V22_CONTAINER_BUILD_PUSH_RUNNER",
+  kubectl: "V22_KUBERNETES_APPLY_RUNNER",
+  deploy: "V22_MEDOPL_DEPLOY_RUNNER",
+  live_test: "V22_OPL_WEBUI_CONSUMER_CANARY_RUNNER",
+});
+
 function expectedCommand(operationClass = "") {
   const script = OPERATION_SCRIPTS[operationClass];
   return script ? `npm run ${script}` : "";
 }
 
+function isObject(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
 function sanitizeSummary(value = {}) {
   const json = JSON.stringify(value || {});
-  return JSON.parse(json
+  const envSecrets = [
+    "V22_TENCENT_MUTATION_SECRET_FILE",
+    "TENCENT_MUTATION_SECRET_ID",
+    "TENCENT_MUTATION_SECRET_KEY",
+    "DATABASE_URL",
+    "TCR_ID",
+    "TCR_SECRET",
+    "TENCENT_DEPLOY_KUBECONFIG_REF",
+  ]
+    .map((key) => String(process.env[key] || "").trim())
+    .filter((item) => item.length >= 4);
+  let redacted = json
     .replace(/SecretId/gu, "SecretRef")
     .replace(/SecretKey/gu, "SecretRef")
     .replace(/token/giu, "redacted_token_ref")
     .replace(/kubeconfig/giu, "kubeconfig_ref")
     .replace(/DATABASE_URL/gu, "DATABASE_URL_REF")
     .replace(/rawResponse/gu, "redacted_raw_response")
-    .replace(/provider_response/gu, "provider_summary"));
+    .replace(/provider_response/gu, "provider_summary");
+  for (const secret of envSecrets) {
+    redacted = redacted.split(secret).join("redacted_secret_ref");
+  }
+  return JSON.parse(redacted);
 }
 
 function commandMustMatch(command, operationClass) {
@@ -195,10 +225,9 @@ function failClosedMissingEnv(command, context = {}) {
   if (missing.length === 0) {
     return {
       command,
-      ok: false,
-      status: 66,
+      ok: true,
+      status: 0,
       summary: sanitizeSummary({
-        blocker: "production_goal_live_runner_not_implemented",
         operationClass: context.operationClass,
         runnerId: context.runnerId,
         requiredEnvSatisfied: true,
@@ -222,6 +251,139 @@ function failClosedMissingEnv(command, context = {}) {
   };
 }
 
+function failClosedExternalRunner(command, context = {}) {
+  const runnerEnvKey = OPERATION_EXTERNAL_RUNNER_ENV[context.operationClass] || "";
+  const runnerPath = String(process.env[runnerEnvKey] || "").trim();
+  if (!runnerEnvKey || !runnerPath) {
+    return {
+      command,
+      ok: false,
+      status: 66,
+      summary: sanitizeSummary({
+        blocker: "production_goal_live_runner_missing",
+        operationClass: context.operationClass,
+        runnerId: context.runnerId,
+        requiredRunnerEnv: runnerEnvKey,
+        requiredEnvSatisfied: true,
+        receiptTypes: context.receiptTypes || [],
+        productionComplete: false,
+      }),
+    };
+  }
+  const repoRoot = context.repoRoot || process.cwd();
+  const resolvedPath = path.isAbsolute(runnerPath) ? runnerPath : path.join(repoRoot, runnerPath);
+  if (!existsSync(resolvedPath)) {
+    return {
+      command,
+      ok: false,
+      status: 66,
+      summary: sanitizeSummary({
+        blocker: "production_goal_live_runner_file_missing",
+        operationClass: context.operationClass,
+        runnerId: context.runnerId,
+        requiredRunnerEnv: runnerEnvKey,
+        productionComplete: false,
+      }),
+    };
+  }
+  return null;
+}
+
+function runExternalRunner(command, context = {}) {
+  const runnerPath = String(process.env[OPERATION_EXTERNAL_RUNNER_ENV[context.operationClass]] || "").trim();
+  const repoRoot = context.repoRoot || process.cwd();
+  const resolvedPath = path.isAbsolute(runnerPath) ? runnerPath : path.join(repoRoot, runnerPath);
+  const receiptTypes = Array.isArray(context.receiptTypes) ? context.receiptTypes.map(String) : [];
+  const result = spawnSync(process.execPath, [resolvedPath], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+    env: {
+      ...process.env,
+      V22_GOAL_COMMAND: command,
+      V22_GOAL_OPERATION_CLASS: String(context.operationClass || ""),
+      V22_GOAL_RUNNER_ID: String(context.runnerId || ""),
+      V22_GOAL_RECEIPT_TYPES: JSON.stringify(receiptTypes),
+      V22_GOAL_EVIDENCE_REF: String(context.evidenceRef || ""),
+      V22_GOAL_AUTHORIZATION: JSON.stringify(context.authorization || {}),
+    },
+  });
+  let parsed = {};
+  try {
+    parsed = JSON.parse(result.stdout || "{}");
+  } catch {
+    parsed = {};
+  }
+  if (result.status !== 0 || parsed.ok !== true) {
+    return {
+      command,
+      ok: false,
+      status: result.status ?? 1,
+      summary: sanitizeSummary({
+        blocker: "production_goal_external_runner_failed",
+        operationClass: context.operationClass,
+        runnerId: context.runnerId,
+        exitStatus: result.status ?? 1,
+      }),
+    };
+  }
+  const receipts = Array.isArray(parsed.receipts) ? parsed.receipts : [];
+  const receiptWrites = [];
+  for (const receipt of receipts) {
+    if (!isObject(receipt) || !receiptTypes.includes(String(receipt.type || ""))) {
+      return {
+        command,
+        ok: false,
+        status: 67,
+        summary: sanitizeSummary({
+          blocker: "production_goal_external_runner_receipt_not_allowed",
+          operationClass: context.operationClass,
+          runnerId: context.runnerId,
+          receiptType: receipt?.type || "",
+        }),
+      };
+    }
+    const pointer = context.writeReceipt(receipt.type, {
+      owner: receipt.owner,
+      status: receipt.status,
+      issued_at: receipt.issued_at,
+      summary: receipt.summary,
+      authorization_ref: receipt.authorization_ref,
+      operationClass: context.operationClass,
+      runnerId: context.runnerId,
+    });
+    receiptWrites.push(pointer.type);
+  }
+  const missingReceipts = receiptTypes.filter((type) => !receiptWrites.includes(type));
+  if (missingReceipts.length > 0) {
+    return {
+      command,
+      ok: false,
+      status: 68,
+      summary: sanitizeSummary({
+        blocker: "production_goal_external_runner_missing_required_receipts",
+        operationClass: context.operationClass,
+        runnerId: context.runnerId,
+        missingReceipts,
+      }),
+    };
+  }
+  return {
+    command,
+    ok: true,
+    status: 0,
+    summary: sanitizeSummary({
+      ...(isObject(parsed.summary) ? parsed.summary : {}),
+      operationClass: context.operationClass,
+      runnerId: context.runnerId,
+      externalRunner: true,
+      receiptsWritten: receiptWrites,
+      evidenceRef: context.evidenceRef || "",
+      productionComplete: false,
+    }),
+  };
+}
+
 export default async function runCommand(command, context = {}) {
   const mismatch = commandMustMatch(command, context.operationClass);
   if (mismatch) return mismatch;
@@ -232,5 +394,9 @@ export default async function runCommand(command, context = {}) {
   if (context.operationClass === "dry_run_plan") {
     return runDryRunPlan(command, context);
   }
-  return failClosedMissingEnv(command, context);
+  const envBlocker = failClosedMissingEnv(command, context);
+  if (!envBlocker.ok) return envBlocker;
+  const runnerBlocker = failClosedExternalRunner(command, context);
+  if (runnerBlocker) return runnerBlocker;
+  return runExternalRunner(command, context);
 }

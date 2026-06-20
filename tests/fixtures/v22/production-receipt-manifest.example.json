@@ -21,7 +21,10 @@
       "status": "accepted",
       "issued_at": "2026-06-20T00:00:00Z",
       "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/runtime-owner.json",
-      "summary": "Runtime owner accepted the production-canary runtime provisioning receipt."
+      "summary": "Runtime owner accepted the production-canary runtime provisioning receipt.",
+      "authorization_ref": "contracts/medopl-cloud-authorization-pack.json#run-v22-001",
+      "operation_class": "tenant_runtime_provisioning",
+      "runner_id": "tencent_tke_runtime_provisioning_runner"
     },
     {
       "type": "storage_owner_receipt",
@@ -29,7 +32,10 @@
       "status": "accepted",
       "issued_at": "2026-06-20T00:00:00Z",
       "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/storage-owner.json",
-      "summary": "Storage owner accepted workspace storage lifecycle receipt."
+      "summary": "Storage owner accepted workspace storage lifecycle receipt.",
+      "authorization_ref": "contracts/medopl-cloud-authorization-pack.json#run-v22-001",
+      "operation_class": "storage_lifecycle",
+      "runner_id": "tencent_cos_workspace_storage_runner"
     },
     {
       "type": "billing_owner_receipt",
@@ -37,7 +43,10 @@
       "status": "accepted",
       "issued_at": "2026-06-20T00:00:00Z",
       "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/billing-owner.json",
-      "summary": "Billing owner accepted meter, freeze and settlement receipt."
+      "summary": "Billing owner accepted meter, freeze and settlement receipt.",
+      "authorization_ref": "contracts/medopl-cloud-authorization-pack.json#run-v22-001",
+      "operation_class": "billing_audit_writeback",
+      "runner_id": "medopl_billing_audit_receipt_writer"
     },
     {
       "type": "audit_owner_receipt",
@@ -45,7 +54,10 @@
       "status": "accepted",
       "issued_at": "2026-06-20T00:00:00Z",
       "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/audit-owner.json",
-      "summary": "Audit owner accepted export and trace receipt."
+      "summary": "Audit owner accepted export and trace receipt.",
+      "authorization_ref": "contracts/medopl-cloud-authorization-pack.json#run-v22-001",
+      "operation_class": "billing_audit_writeback",
+      "runner_id": "medopl_billing_audit_receipt_writer"
     },
     {
       "type": "release_owner_receipt",
@@ -53,7 +65,10 @@
       "status": "accepted",
       "issued_at": "2026-06-20T00:00:00Z",
       "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/release-owner.json",
-      "summary": "Release owner accepted release and cleanup receipt."
+      "summary": "Release owner accepted release and cleanup receipt.",
+      "authorization_ref": "contracts/medopl-cloud-authorization-pack.json#run-v22-001",
+      "operation_class": "storage_lifecycle",
+      "runner_id": "tencent_cos_workspace_storage_runner"
     },
     {
       "type": "opl_webui_consumer_receipt",
@@ -61,7 +76,10 @@
       "status": "accepted",
       "issued_at": "2026-06-20T00:00:00Z",
       "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/opl-webui-consumer.json",
-      "summary": "OPL-Webui accepted runtime gate, upload, run and artifact projection receipt."
+      "summary": "OPL-Webui accepted runtime gate, upload, run and artifact projection receipt.",
+      "authorization_ref": "contracts/medopl-cloud-authorization-pack.json#run-v22-001",
+      "operation_class": "live_test",
+      "runner_id": "opl_webui_runtime_gate_live_test_runner"
     },
     {
       "type": "production_deploy_receipt",
@@ -69,7 +87,10 @@
       "status": "accepted",
       "issued_at": "2026-06-20T00:00:00Z",
       "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/production-deploy.json",
-      "summary": "Operations accepted production-canary deploy receipt."
+      "summary": "Operations accepted production-canary deploy receipt.",
+      "authorization_ref": "contracts/medopl-cloud-authorization-pack.json#run-v22-001",
+      "operation_class": "deploy",
+      "runner_id": "medopl_production_canary_deploy_runner"
     }
   ]
 }

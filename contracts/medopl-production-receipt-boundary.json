@@ -46,6 +46,9 @@
     "authorized_command_receipt_manifest_required": true,
     "receipt_manifest_path_pattern": ".runtime/v22-cloud-authorization/**/receipt-manifest.json",
     "receipt_manifest_policy": "small_pointer_and_summary_only",
+    "receipt_operation_binding_required": true,
+    "receipt_authorization_ref_required": true,
+    "receipt_runner_id_required": true,
     "forbidden_raw_manifest_fields": [
       "raw_cloud_payload",
       "raw_payload",

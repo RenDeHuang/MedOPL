@@ -22,6 +22,16 @@ const RECEIPT_OWNERS = Object.freeze({
   production_deploy_receipt: "MedOPL Deploy",
 });
 
+const RECEIPT_OPERATION_CLASSES = Object.freeze({
+  runtime_owner_receipt: "tenant_runtime_provisioning",
+  storage_owner_receipt: "storage_lifecycle",
+  billing_owner_receipt: "billing_audit_writeback",
+  audit_owner_receipt: "billing_audit_writeback",
+  release_owner_receipt: "storage_lifecycle",
+  opl_webui_consumer_receipt: "live_test",
+  production_deploy_receipt: "deploy",
+});
+
 function parseArgs(argv) {
   const options = { json: false, dryRun: false, execute: false, operation: "" };
   for (let index = 0; index < argv.length; index += 1) {
@@ -165,7 +175,12 @@ async function executePayload(payload, options) {
         authorization: payload.authorization,
         writeReceipt(type, receipt = {}) {
           if (!phase.receiptTypes.includes(type)) throw new Error(`receipt_type_not_allowed_for_operation:${phase.operationClass}:${type}`);
-          return writeOwnerReceiptPointer(payload, type, receipt, receiptPointers);
+          return writeOwnerReceiptPointer(payload, type, {
+            ...receipt,
+            operationClass: receipt.operationClass || phase.operationClass,
+            runnerId: receipt.runnerId || phase.runnerId,
+            authorization_ref: receipt.authorization_ref || `${AUTH_PACK_PATH}#${payload.authorization.runId}`,
+          }, receiptPointers);
         },
       });
       phase.results.push({
@@ -217,6 +232,9 @@ function writeReceiptManifest(payload, receiptPointers = new Map()) {
         issued_at: stored.issued_at || issuedAt,
         evidence_ref: stored.path || `${payload.evidenceSink}/${type}.json`,
         summary: stored.summary || `${type} accepted with redacted runtime evidence pointer.`,
+        authorization_ref: stored.authorization_ref || `${AUTH_PACK_PATH}#${payload.authorization.runId}`,
+        operation_class: stored.operation_class || RECEIPT_OPERATION_CLASSES[type] || "",
+        runner_id: stored.runner_id || "",
       };
     })
     .filter(Boolean);
@@ -260,6 +278,9 @@ function writeOwnerReceiptPointer(payload, type, receipt = {}, receiptPointers =
     status: receipt.status || "accepted",
     issued_at: receipt.issued_at || issuedAt,
     summary: receipt.summary || `${type} accepted with redacted runtime evidence pointer.`,
+    authorization_ref: receipt.authorization_ref || `${AUTH_PACK_PATH}#${payload.authorization.runId}`,
+    operation_class: receipt.operationClass || RECEIPT_OPERATION_CLASSES[type] || "",
+    runner_id: receipt.runnerId || "",
   };
   writeJson(receiptPath, pointer);
   receiptPointers.set(type, pointer);

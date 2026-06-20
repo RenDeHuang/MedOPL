@@ -108,10 +108,12 @@ assert.equal(missingExecutorPayload.blocker.type, "cloud_command_executor_missin
 const tempDir = mkdtempSync(path.join(tmpdir(), "v22-cloud-executor-"));
 const commandLog = path.join(tempDir, "commands.log");
 const stubExecutor = path.join(tempDir, "cloud-stub.mjs");
-const receiptStubExecutor = path.join(tempDir, "cloud-receipt-stub.mjs");
+  const receiptStubExecutor = path.join(tempDir, "cloud-receipt-stub.mjs");
+  const unauthorizedReceiptExecutor = path.join(tempDir, "cloud-unauthorized-receipt-stub.mjs");
 try {
   writeFileSync(stubExecutor, `import { appendFileSync } from "node:fs";\nconst logPath = ${JSON.stringify(commandLog)};\nexport default async function runCommand(command, context) { appendFileSync(logPath, \`\${context.operationClass}:\${context.runnerId}:\${command}\\n\`); return { command, ok: true, status: 0, summary: { operationClass: context.operationClass, runnerId: context.runnerId, repoRoot: Boolean(context.repoRoot), redacted: true } }; }\n`);
   writeFileSync(receiptStubExecutor, `export default async function runCommand(command, context) { for (const type of context.receiptTypes) context.writeReceipt(type, { summary: \`\${type} accepted by \${context.runnerId}\` }); return { command, ok: true, status: 0, summary: { operationClass: context.operationClass, receiptTypes: context.receiptTypes } }; }\n`);
+  writeFileSync(unauthorizedReceiptExecutor, `export default async function runCommand(command, context) { context.writeReceipt("production_deploy_receipt", { summary: "unauthorized deploy receipt" }); return { command, ok: true, status: 0, summary: { operationClass: context.operationClass } }; }\n`);
 
   const single = jsonFrom(
     runExecutor(["--execute", "--operation", "readonly_inventory", "--json"], { V22_CLOUD_COMMAND_EXECUTOR: stubExecutor }),
@@ -130,6 +132,15 @@ try {
   assert.equal(fullWithoutReceiptsPayload.ok, false, "cloud_executor_full_run_without_receipts_payload_must_fail");
   assert.equal(fullWithoutReceiptsPayload.receiptManifest.status, "blocked", "cloud_executor_full_run_without_receipts_manifest_must_block");
   assert(fullWithoutReceiptsPayload.receiptManifest.missingReceiptTypes.length > 0, "cloud_executor_full_run_without_receipts_must_report_missing_receipts");
+
+  const unauthorizedReceipt = runExecutor(["--execute", "--operation", "storage_lifecycle", "--json"], { V22_CLOUD_COMMAND_EXECUTOR: unauthorizedReceiptExecutor });
+  assert.equal(unauthorizedReceipt.status, 1, "cloud_executor_unauthorized_receipt_must_fail_closed");
+  const unauthorizedReceiptPayload = JSON.parse(unauthorizedReceipt.stdout);
+  assert.equal(
+    unauthorizedReceiptPayload.blocker.type,
+    "cloud_authorized_executor_exception",
+    "cloud_executor_unauthorized_receipt_blocker",
+  );
 
   const full = jsonFrom(
     runExecutor(["--execute", "--json"], { V22_CLOUD_COMMAND_EXECUTOR: receiptStubExecutor }),
@@ -164,6 +175,31 @@ try {
   ].join("\n"));
   const readonlyExecutor = "tests/support/cloud-prework/cloud-authorized-readonly-executor.js";
   const productionGoalExecutor = "tests/support/cloud-prework/cloud-authorized-production-goal-executor.js";
+  const mutationSecretFile = path.join(tempDir, "mutation.env");
+  const runtimePlanFile = path.join(tempDir, "runtime-plan.json");
+  const storagePlanFile = path.join(tempDir, "storage-plan.json");
+  const billingAuditReceiptFile = path.join(tempDir, "billing-audit-request.json");
+  const deployPlanFile = path.join(tempDir, "deploy-plan.json");
+  const kubernetesManifestDir = path.join(tempDir, "k8s");
+  const containerBuildContext = path.join(tempDir, "container-context");
+  const receiptBackedRunner = path.join(tempDir, "receipt-backed-runner.mjs");
+  writeFileSync(mutationSecretFile, [
+    "RUN_TENCENT_CREATE_RELEASE_EXECUTION=1",
+    "TENCENT_MUTATION_SECRET_ID=mutation-secret-id",
+    "TENCENT_MUTATION_SECRET_KEY=mutation-secret-key",
+    "",
+  ].join("\n"));
+  writeFileSync(runtimePlanFile, JSON.stringify({ runtimeBindingId: "runtime-binding-test" }));
+  writeFileSync(storagePlanFile, JSON.stringify({ storageBindingId: "storage-binding-test" }));
+  writeFileSync(billingAuditReceiptFile, JSON.stringify({ billingReceiptRequestId: "billing-audit-test" }));
+  writeFileSync(deployPlanFile, JSON.stringify({ deployPlanId: "deploy-test" }));
+  writeFileSync(receiptBackedRunner, [
+    "const receiptTypes = JSON.parse(process.env.V22_GOAL_RECEIPT_TYPES || '[]');",
+    "const operationClass = process.env.V22_GOAL_OPERATION_CLASS || '';",
+    "const receipts = receiptTypes.map((type) => ({ type, status: 'accepted', summary: `${type} accepted by external runner for ${operationClass}` }));",
+    "console.log(JSON.stringify({ ok: true, summary: { operationClass, externalRunner: true, evidenceRefObserved: Boolean(process.env.V22_GOAL_EVIDENCE_REF) }, receipts }));",
+    "",
+  ].join("\n"));
   const missingReadonlySecret = runExecutor(["--execute", "--operation", "readonly_inventory", "--json"], {
     V22_CLOUD_COMMAND_EXECUTOR: readonlyExecutor,
   });
@@ -207,6 +243,119 @@ try {
   assert.equal(storageMissingPayload.blocker.type, "cloud_authorized_command_failed", "production_goal_storage_missing_env_blocker");
   assert.equal(storagePhase.results[0].summary.blocker, "production_goal_required_env_missing", "production_goal_storage_missing_env_summary");
   assert.equal(JSON.stringify(storageMissingPayload).includes("TENCENT_MUTATION_SECRET_KEY="), false, "production_goal_missing_env_must_not_print_secret_assignment");
+
+  const storageMissingRunner = runExecutor(["--execute", "--operation", "storage_lifecycle", "--json"], {
+    V22_CLOUD_COMMAND_EXECUTOR: productionGoalExecutor,
+    V22_TENCENT_MUTATION_SECRET_FILE: mutationSecretFile,
+    V22_TENCENT_STORAGE_PLAN_FILE: storagePlanFile,
+  });
+  assert.equal(storageMissingRunner.status, 1, "production_goal_storage_without_runner_must_fail_closed");
+  const storageMissingRunnerPayload = JSON.parse(storageMissingRunner.stdout);
+  assert.equal(
+    storageMissingRunnerPayload.phases.find((phase) => phase.operationClass === "storage_lifecycle").results[0].summary.blocker,
+    "production_goal_live_runner_missing",
+    "production_goal_storage_missing_runner_summary",
+  );
+
+  const storageLive = jsonFrom(
+    runExecutor(["--execute", "--operation", "storage_lifecycle", "--json"], {
+      V22_CLOUD_COMMAND_EXECUTOR: productionGoalExecutor,
+      V22_TENCENT_MUTATION_SECRET_FILE: mutationSecretFile,
+      V22_TENCENT_STORAGE_PLAN_FILE: storagePlanFile,
+      V22_TENCENT_STORAGE_LIFECYCLE_RUNNER: receiptBackedRunner,
+    }),
+    "production_goal_storage_receipt_backed_runner",
+  );
+  const storageLivePhase = storageLive.phases.find((phase) => phase.operationClass === "storage_lifecycle");
+  assert.equal(storageLivePhase.status, "executed", "production_goal_storage_phase_must_execute_with_runner");
+  assert.equal(storageLivePhase.results[0].summary.receiptsWritten.length, 2, "production_goal_storage_must_write_two_receipts");
+  assert.equal(
+    existsSync(path.join(repoRoot, ".runtime/v22-cloud-authorization/run-v22-001/storage_owner_receipt.json")),
+    true,
+    "production_goal_storage_owner_receipt_pointer_must_exist",
+  );
+  assert.equal(
+    existsSync(path.join(repoRoot, ".runtime/v22-cloud-authorization/run-v22-001/release_owner_receipt.json")),
+    true,
+    "production_goal_release_owner_receipt_pointer_must_exist",
+  );
+
+  const runtimeLive = jsonFrom(
+    runExecutor(["--execute", "--operation", "tenant_runtime_provisioning", "--json"], {
+      V22_CLOUD_COMMAND_EXECUTOR: productionGoalExecutor,
+      V22_TENCENT_MUTATION_SECRET_FILE: mutationSecretFile,
+      V22_TENCENT_RUNTIME_PLAN_FILE: runtimePlanFile,
+      V22_TENCENT_RUNTIME_PROVISIONING_RUNNER: receiptBackedRunner,
+    }),
+    "production_goal_runtime_receipt_backed_runner",
+  );
+  assert.equal(
+    runtimeLive.phases.find((phase) => phase.operationClass === "tenant_runtime_provisioning").results[0].summary.receiptsWritten.includes("runtime_owner_receipt"),
+    true,
+    "production_goal_runtime_must_write_runtime_receipt",
+  );
+
+  const liveTest = jsonFrom(
+    runExecutor(["--execute", "--operation", "live_test", "--json"], {
+      V22_CLOUD_COMMAND_EXECUTOR: productionGoalExecutor,
+      V22_OPL_WEBUI_CONSUMER_CANARY_URL: "https://opl.example.test/canary",
+      V22_MEDOPL_PUBLIC_BASE_URL: "https://medopl.example.test",
+      V22_OPL_WEBUI_CONSUMER_CANARY_RUNNER: receiptBackedRunner,
+    }),
+    "production_goal_opl_webui_consumer_receipt_runner",
+  );
+  assert.equal(
+    liveTest.phases.find((phase) => phase.operationClass === "live_test").results[0].summary.receiptsWritten.includes("opl_webui_consumer_receipt"),
+    true,
+    "production_goal_live_test_must_write_opl_webui_consumer_receipt",
+  );
+
+  const deployLive = jsonFrom(
+    runExecutor(["--execute", "--operation", "deploy", "--json"], {
+      V22_CLOUD_COMMAND_EXECUTOR: productionGoalExecutor,
+      TENCENT_DEPLOY_KUBECONFIG_REF: "kubeconfig-ref-test",
+      V22_MEDOPL_DEPLOY_PLAN_FILE: deployPlanFile,
+      V22_MEDOPL_DEPLOY_RUNNER: receiptBackedRunner,
+    }),
+    "production_goal_deploy_receipt_runner",
+  );
+  assert.equal(
+    deployLive.phases.find((phase) => phase.operationClass === "deploy").results[0].summary.receiptsWritten.includes("production_deploy_receipt"),
+    true,
+    "production_goal_deploy_must_write_production_deploy_receipt",
+  );
+
+  const kubectlLive = jsonFrom(
+    runExecutor(["--execute", "--operation", "kubectl", "--json"], {
+      V22_CLOUD_COMMAND_EXECUTOR: productionGoalExecutor,
+      TENCENT_DEPLOY_KUBECONFIG_REF: "kubeconfig-ref-test",
+      V22_KUBERNETES_MANIFEST_DIR: kubernetesManifestDir,
+      V22_KUBERNETES_APPLY_RUNNER: receiptBackedRunner,
+    }),
+    "production_goal_kubectl_runner_without_receipts",
+  );
+  assert.equal(
+    kubectlLive.phases.find((phase) => phase.operationClass === "kubectl").results[0].summary.externalRunner,
+    true,
+    "production_goal_kubectl_must_use_external_runner",
+  );
+
+  const buildPushLive = jsonFrom(
+    runExecutor(["--execute", "--operation", "build_push", "--json"], {
+      V22_CLOUD_COMMAND_EXECUTOR: productionGoalExecutor,
+      V22_CONTAINER_BUILD_CONTEXT: containerBuildContext,
+      V22_CONTAINER_IMAGE_REF: "registry.example.test/medopl/app:test",
+      TCR_ID: "tcr-id-test",
+      TCR_SECRET: "tcr-secret-test",
+      V22_CONTAINER_BUILD_PUSH_RUNNER: receiptBackedRunner,
+    }),
+    "production_goal_build_push_runner_without_receipts",
+  );
+  assert.equal(
+    buildPushLive.phases.find((phase) => phase.operationClass === "build_push").results[0].summary.externalRunner,
+    true,
+    "production_goal_build_push_must_use_external_runner",
+  );
 } finally {
   rmSync(path.join(repoRoot, ".runtime/v22-cloud-authorization/run-v22-001"), { recursive: true, force: true });
   rmSync(tempDir, { recursive: true, force: true });

@@ -39,7 +39,19 @@ const ALLOWED_RECEIPT_FIELDS = Object.freeze([
   "evidence_ref",
   "summary",
   "authorization_ref",
+  "operation_class",
+  "runner_id",
 ]);
+
+const RECEIPT_OPERATION_CLASSES = Object.freeze({
+  runtime_owner_receipt: "tenant_runtime_provisioning",
+  storage_owner_receipt: "storage_lifecycle",
+  billing_owner_receipt: "billing_audit_writeback",
+  audit_owner_receipt: "billing_audit_writeback",
+  release_owner_receipt: "storage_lifecycle",
+  opl_webui_consumer_receipt: "live_test",
+  production_deploy_receipt: "deploy",
+});
 
 function isObject(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -48,6 +60,15 @@ function isObject(value) {
 function isSafeRuntimePointer(value) {
   const normalized = String(value || "").trim();
   return /^\.runtime(?:\/[A-Za-z0-9._*-]+)*$/u.test(normalized) && !normalized.includes("..");
+}
+
+function isSafeAuthorizationRef(value) {
+  const normalized = String(value || "").trim();
+  return /^contracts\/medopl-cloud-authorization-pack\.json#[A-Za-z0-9._:-]+$/u.test(normalized);
+}
+
+function isSafeRunnerId(value) {
+  return /^[A-Za-z0-9_.:-]+$/u.test(String(value || "").trim());
 }
 
 function unique(items) {
@@ -111,6 +132,15 @@ export function validateProductionReceiptBoundary({ boundary, cloudAuthorization
   }
   if (receiptBoundary.authorized_command_receipt_manifest_required !== true) {
     blockers.push("production_receipt_boundary_authorized_command_manifest_required");
+  }
+  if (receiptBoundary.receipt_operation_binding_required !== true) {
+    blockers.push("production_receipt_boundary_operation_binding_required");
+  }
+  if (receiptBoundary.receipt_authorization_ref_required !== true) {
+    blockers.push("production_receipt_boundary_authorization_ref_required");
+  }
+  if (receiptBoundary.receipt_runner_id_required !== true) {
+    blockers.push("production_receipt_boundary_runner_id_required");
   }
   if (requiredTypes.length !== 7) blockers.push("production_receipt_boundary_must_require_7_receipts");
   if (requiredTypes.join("\u0000") !== cloudRequiredTypes.join("\u0000")) {
@@ -195,8 +225,29 @@ export function evaluateProductionReceiptManifest({ boundary, manifest }) {
 
   const rawEvidenceViolations = unique(findRawEvidenceFields(manifest).map((field) => field.split(".").at(-1) || field));
   const unexpectedFieldViolations = collectUnexpectedFields(manifest);
+  const receiptMappingViolations = [];
+  const expectedAuthorizationRef = manifest?.authorization?.run_id
+    ? `contracts/medopl-cloud-authorization-pack.json#${manifest.authorization.run_id}`
+    : "";
+  for (const receipt of receipts) {
+    const type = String(receipt?.type || "").trim();
+    if (!type) continue;
+    const expectedOperationClass = RECEIPT_OPERATION_CLASSES[type];
+    if (expectedOperationClass && receipt?.operation_class !== expectedOperationClass) {
+      receiptMappingViolations.push(`${type}:operation_class`);
+    }
+    if (!isSafeAuthorizationRef(receipt?.authorization_ref)) {
+      receiptMappingViolations.push(`${type}:authorization_ref`);
+    } else if (expectedAuthorizationRef && receipt.authorization_ref !== expectedAuthorizationRef) {
+      receiptMappingViolations.push(`${type}:authorization_ref_run_id`);
+    }
+    if (!isSafeRunnerId(receipt?.runner_id)) {
+      receiptMappingViolations.push(`${type}:runner_id`);
+    }
+  }
   if (rawEvidenceViolations.length > 0) blockers.push("production_receipt_manifest_embeds_raw_evidence");
   if (unexpectedFieldViolations.length > 0) blockers.push("production_receipt_manifest_unexpected_fields");
+  if (receiptMappingViolations.length > 0) blockers.push("production_receipt_manifest_receipt_mapping_invalid");
 
   return Object.freeze({
     productionComplete: blockers.length === 0 && missingReceiptTypes.length === 0,
@@ -204,5 +255,6 @@ export function evaluateProductionReceiptManifest({ boundary, manifest }) {
     missingReceiptTypes: Object.freeze(missingReceiptTypes),
     rawEvidenceViolations: Object.freeze(rawEvidenceViolations),
     unexpectedFieldViolations: Object.freeze(unexpectedFieldViolations),
+    receiptMappingViolations: Object.freeze(unique(receiptMappingViolations)),
   });
 }

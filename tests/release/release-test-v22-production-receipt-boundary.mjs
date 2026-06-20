@@ -43,6 +43,9 @@ assert.equal(
   true,
   "authorized_cloud_command_must_write_receipt_manifest",
 );
+assert.equal(boundary.production_receipt_boundary.receipt_operation_binding_required, true, "receipt_operation_binding_must_be_required");
+assert.equal(boundary.production_receipt_boundary.receipt_authorization_ref_required, true, "receipt_authorization_ref_must_be_required");
+assert.equal(boundary.production_receipt_boundary.receipt_runner_id_required, true, "receipt_runner_id_must_be_required");
 
 const complete = evaluateProductionReceiptManifest({
   boundary,
@@ -51,6 +54,7 @@ const complete = evaluateProductionReceiptManifest({
 assert.equal(complete.productionComplete, true, `complete_manifest_must_allow_production_complete:${JSON.stringify(complete, null, 2)}`);
 assert.deepEqual(complete.missingReceiptTypes, [], "complete_manifest_must_have_no_missing_receipts");
 assert.deepEqual(complete.rawEvidenceViolations, [], "complete_manifest_must_not_embed_raw_evidence");
+assert.deepEqual(complete.receiptMappingViolations, [], "complete_manifest_must_match_operation_mapping");
 
 const localRcUpgrade = evaluateProductionReceiptManifest({
   boundary,
@@ -96,6 +100,51 @@ const rawPayload = evaluateProductionReceiptManifest({
 });
 assert.equal(rawPayload.productionComplete, false, "raw_payload_manifest_must_not_complete");
 assert(rawPayload.rawEvidenceViolations.includes("raw_cloud_payload"), "raw_payload_violation_missing");
+
+const wrongOperationMapping = evaluateProductionReceiptManifest({
+  boundary,
+  manifest: {
+    ...exampleManifest,
+    receipts: exampleManifest.receipts.map((receipt) => receipt.type === "runtime_owner_receipt"
+      ? { ...receipt, operation_class: "storage_lifecycle" }
+      : receipt),
+  },
+});
+assert.equal(wrongOperationMapping.productionComplete, false, "wrong_operation_mapping_manifest_must_not_complete");
+assert(
+  wrongOperationMapping.receiptMappingViolations.includes("runtime_owner_receipt:operation_class"),
+  "wrong_operation_mapping_violation_missing",
+);
+
+const missingAuthorizationRef = evaluateProductionReceiptManifest({
+  boundary,
+  manifest: {
+    ...exampleManifest,
+    receipts: exampleManifest.receipts.map((receipt) => receipt.type === "storage_owner_receipt"
+      ? { ...receipt, authorization_ref: "" }
+      : receipt),
+  },
+});
+assert.equal(missingAuthorizationRef.productionComplete, false, "missing_authorization_ref_manifest_must_not_complete");
+assert(
+  missingAuthorizationRef.receiptMappingViolations.includes("storage_owner_receipt:authorization_ref"),
+  "missing_authorization_ref_violation_missing",
+);
+
+const mismatchedAuthorizationRun = evaluateProductionReceiptManifest({
+  boundary,
+  manifest: {
+    ...exampleManifest,
+    receipts: exampleManifest.receipts.map((receipt) => receipt.type === "production_deploy_receipt"
+      ? { ...receipt, authorization_ref: "contracts/medopl-cloud-authorization-pack.json#different-run" }
+      : receipt),
+  },
+});
+assert.equal(mismatchedAuthorizationRun.productionComplete, false, "mismatched_authorization_run_manifest_must_not_complete");
+assert(
+  mismatchedAuthorizationRun.receiptMappingViolations.includes("production_deploy_receipt:authorization_ref_run_id"),
+  "mismatched_authorization_run_violation_missing",
+);
 
 console.log(JSON.stringify({
   ok: true,
