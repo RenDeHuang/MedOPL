@@ -24,17 +24,17 @@
   "last_updated_at": "2026-06-20",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "811bd66d83e96e9a1a84157a8c77f508c544146e",
+  "base_trunk_head": "9e3daf1cd65930a50a893c271529880cd13cb3ec",
   "current_branch": "opl-webui-runtime-production-slice",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "opl-webui-runtime-production-slice",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "811bd66d83e96e9a1a84157a8c77f508c544146e",
+  "last_landed_commit": "9e3daf1cd65930a50a893c271529880cd13cb3ec",
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
     "branch": "feat/v22-landing-push-policy",
-    "landed_commit": "811bd66d83e96e9a1a84157a8c77f508c544146e",
+    "landed_commit": "9e3daf1cd65930a50a893c271529880cd13cb3ec",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
       "npm run test:run-plan passed before trunk landing with 7 recommended commands executed",
@@ -77,7 +77,7 @@
     "default_cloud_verification_is_limited_to_readonly_inventory_dry_run_plan_and_tke_bootstrap_preflight_before_production_receipts",
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth"
   ],
-  "current_problem": "MedOPL current truth is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is feat/v22-landing-push-policy at 811bd66d83e96e9a1a84157a8c77f508c544146e, which allows feature branch push and gated trunk merge/push after fresh landing evidence without weakening cloud, secret, deploy or receipt requirements. The active blocker remains the opl-webui-runtime-production-slice proof ladder: first proof may only claim real local product RC, cloud proof may only claim cloud-deployable RC, and production proof requires explicit authorization plus runtime/storage/billing/audit/release owner receipts. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims require the active machine authorization pack plus runner/report evidence.",
+  "current_problem": "MedOPL current truth is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is feat/v22-landing-push-policy at 9e3daf1cd65930a50a893c271529880cd13cb3ec, which allows feature branch push and gated trunk merge/push after fresh landing evidence without weakening cloud, secret, deploy or receipt requirements. The active blocker remains the opl-webui-runtime-production-slice proof ladder: first proof may only claim real local product RC, cloud proof may only claim cloud-deployable RC, and production proof requires explicit authorization plus runtime/storage/billing/audit/release owner receipts. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims require the active machine authorization pack plus runner/report evidence.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
