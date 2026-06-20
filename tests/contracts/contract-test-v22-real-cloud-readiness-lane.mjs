@@ -14,6 +14,8 @@ const readinessFiles = [
 
 const futureBoundaryFiles = [
   "tests/cloud/cloud-test-v22-cloud-authorized-executor.mjs",
+  "tests/cloud/cloud-test-v22-production-goal-command-runner.mjs",
+  "tests/cloud/cloud-test-v22-production-goal-runners.mjs",
   "tests/cloud/cloud-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs",
   "tests/cloud/cloud-test-v22-tke-bootstrap-preflight-local-gate.mjs",
 ];

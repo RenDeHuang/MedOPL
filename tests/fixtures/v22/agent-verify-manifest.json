@@ -330,6 +330,8 @@
       "id": "cloud-future-authorized",
       "commands": [
         "node tests/cloud/cloud-test-v22-cloud-authorized-executor.mjs",
+        "node tests/cloud/cloud-test-v22-production-goal-command-runner.mjs",
+        "node tests/cloud/cloud-test-v22-production-goal-runners.mjs",
         "node tests/cloud/cloud-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs",
         "node tests/cloud/cloud-test-v22-tke-bootstrap-preflight-local-gate.mjs"
       ]

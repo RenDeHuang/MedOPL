@@ -137,8 +137,14 @@ const SMOKE_FILES = Object.freeze([
 const CLOUD_READINESS_FILES = Object.freeze(["tests/cloud/cloud-test-v22-tencent-readonly-inventory-boundary.mjs"]);
 const CLOUD_FUTURE_FILES = Object.freeze([
   "tests/cloud/cloud-test-v22-cloud-authorized-executor.mjs",
+  "tests/cloud/cloud-test-v22-production-goal-command-runner.mjs",
+  "tests/cloud/cloud-test-v22-production-goal-runners.mjs",
   "tests/cloud/cloud-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs",
   "tests/cloud/cloud-test-v22-tke-bootstrap-preflight-local-gate.mjs",
+]);
+const CLOUD_FUTURE_SUPPORT_FILES = Object.freeze([
+  "tests/support/cloud-prework/production-goal-command-runner.mjs",
+  "tests/support/cloud-prework/production-goal-runners.mjs",
 ]);
 const CURRENT_GATE_FILES = Object.freeze(["tests/contracts/contract-test-v22-validate-active-platform.mjs"]);
 const REVIEW_HEALTH_FILES = Object.freeze([
@@ -185,6 +191,7 @@ function lifecycleRoleForEntry({ authorization, entryKind, lane }) {
 function surfaceForFile(file) {
   if (file.includes("/portal/") || file.startsWith("tests/frontend/") || file.startsWith("tests/regression/portal/")) return "portal";
   if (file.includes("/runtime-bridge/") || file.startsWith("tests/runtime/") || file.startsWith("tests/regression/runtime-bridge/")) return "runtime-bridge";
+  if (file.startsWith("tests/support/cloud-prework/")) return "cloud";
   if (file.startsWith("tests/cloud/") || file.startsWith("tests/release/")) return "cloud";
   if (file.startsWith("tests/regression/opl/") || file.includes("-opl-")) return "opl";
   return "control-plane";
@@ -198,6 +205,7 @@ function contractsForFile(file, surface) {
   if (file.startsWith("tests/runtime/")) refs.add("contracts/medopl-runtime-bridge-contract.json");
   if (file.startsWith("tests/release/")) refs.add("contracts/medopl-release-boundary.json");
   if (file.startsWith("tests/cloud/")) refs.add("contracts/medopl-cloud-boundary.json");
+  if (file.startsWith("tests/support/cloud-prework/")) refs.add("contracts/medopl-cloud-boundary.json");
   if (file.startsWith("tests/hygiene/")) refs.add("contracts/medopl-product-profile.json");
   if (surface === "portal") refs.add("specs/product/spec.md");
   if (surface === "runtime-bridge" || surface === "opl") refs.add("specs/runtime/spec.md");
@@ -266,6 +274,7 @@ function explicitEntries() {
     ...SMOKE_FILES.map((file) => baseEntry(file, "smoke", "smoke-golden", ["smoke"])),
     ...CLOUD_READINESS_FILES.map((file) => baseEntry(file, "real-cloud-readiness", "real-cloud-readiness", ["cloud", "real-cloud-readiness"])),
     ...CLOUD_FUTURE_FILES.map((file) => baseEntry(file, "future-authorized", "future-authorized", ["cloud-future-authorized"])),
+    ...CLOUD_FUTURE_SUPPORT_FILES.map((file) => baseEntry(file, "future-authorized", "future-authorized", ["cloud-future-authorized"])),
     ...CURRENT_GATE_FILES.map((file) => gateSelfTestEntry(file, "contract", "contract-local", ["health", "local-contract", "current", "review"])),
     ...["tests/suites/suite-test-v22-golden-smoke.mjs", "tests/suites/suite-test-v22-mvp.mjs"]
       .map((file) => baseEntry(file, "contract", "contract-local", file.includes("golden") ? ["golden-path", "smoke"] : ["local-contract"])),
@@ -344,6 +353,14 @@ const SUITE_COMMAND_COVERAGE_ALIASES = Object.freeze({
   current: Object.freeze({
     "node scripts/v22-verify.mjs active-platform --json": Object.freeze([
       "tests/contracts/contract-test-v22-validate-active-platform.mjs",
+    ]),
+  }),
+  "cloud-future-authorized": Object.freeze({
+    "node tests/cloud/cloud-test-v22-production-goal-command-runner.mjs": Object.freeze([
+      "tests/support/cloud-prework/production-goal-command-runner.mjs",
+    ]),
+    "node tests/cloud/cloud-test-v22-production-goal-runners.mjs": Object.freeze([
+      "tests/support/cloud-prework/production-goal-runners.mjs",
     ]),
   }),
 });
