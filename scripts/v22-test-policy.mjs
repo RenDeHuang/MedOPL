@@ -35,12 +35,14 @@ function isSafeRuntimeEvidenceSink(value) {
 function normalizeMappingEntries(entries) {
   return (Array.isArray(entries) ? entries : []).map((entry) => ({
     operation_class: String(entry?.operation_class || "").trim(),
+    runner_id: String(entry?.runner_id || "").trim(),
+    receipt_types: Array.isArray(entry?.receipt_types) ? entry.receipt_types.map((type) => String(type || "").trim()).filter(Boolean) : [],
     package_script: String(entry?.package_script || "").trim(),
     commands: Array.isArray(entry?.commands) ? entry.commands.map((command) => String(command || "").trim()).filter(Boolean) : [],
   }));
 }
 
-function collectMappingProblems(active) {
+function collectMappingProblems(active, { requiredReceiptTypes = [] } = {}) {
   const blockers = [];
   const diagnostics = {};
 
@@ -50,6 +52,11 @@ function collectMappingProblems(active) {
   const mappingByClass = new Map(mappingEntries.map((entry) => [entry.operation_class, entry]));
   const mappingClasses = [...mappingByClass.keys()];
   diagnostics.operationClassMappings = mappingEntries;
+  const requiredReceiptTypeList = Array.isArray(requiredReceiptTypes) ? requiredReceiptTypes.map((type) => String(type || "").trim()).filter(Boolean) : [];
+  diagnostics.operationClassReceiptMappings = mappingEntries.map((entry) => ({
+    operation_class: entry.operation_class,
+    receipt_types: entry.receipt_types,
+  }));
 
   if (mappingEntries.length === 0) {
     blockers.push("cloud_authorization_pack_missing:active_pack.operation_class_command_map");
@@ -63,6 +70,9 @@ function collectMappingProblems(active) {
     if (!mapping.package_script) {
       blockers.push(`cloud_authorization_pack_mapping_missing:package_script:${operationClass}`);
     }
+    if (!mapping.runner_id) {
+      blockers.push(`cloud_authorization_pack_mapping_missing:runner_id:${operationClass}`);
+    }
     if (!mapping.commands.length) {
       blockers.push(`cloud_authorization_pack_mapping_missing:commands:${operationClass}`);
     }
@@ -75,6 +85,16 @@ function collectMappingProblems(active) {
   for (const operationClass of mappingClasses) {
     if (!operationClassSet.has(operationClass)) {
       blockers.push(`cloud_authorization_pack_mapping_extra:operation_class:${operationClass}`);
+    }
+  }
+  for (const receiptType of mappingEntries.flatMap((entry) => entry.receipt_types)) {
+    if (requiredReceiptTypeList.length > 0 && !requiredReceiptTypeList.includes(receiptType)) {
+      blockers.push(`cloud_authorization_pack_mapping_unknown_receipt_type:${receiptType}`);
+    }
+  }
+  for (const receiptType of requiredReceiptTypeList) {
+    if (!mappingEntries.some((entry) => entry.receipt_types.includes(receiptType))) {
+      blockers.push(`cloud_authorization_pack_mapping_missing:receipt_type:${receiptType}`);
     }
   }
 
@@ -369,7 +389,10 @@ export function readCloudAuthorizationPack({ exists = defaultExists, readFile = 
       if (!String(budget.currency || "").trim()) missing.push("active_pack.budget.currency_missing");
       if (!Number.isFinite(Number(budget.cost_ceiling)) || Number(budget.cost_ceiling) < 0) missing.push("active_pack.budget.cost_ceiling_invalid");
     }
-    const { blockers: mappingBlockers, diagnostics } = collectMappingProblems(active);
+    const rootRequiredReceipts = Array.isArray(pack.required_receipts_before_production_complete)
+      ? pack.required_receipts_before_production_complete
+      : [];
+    const { blockers: mappingBlockers, diagnostics } = collectMappingProblems(active, { requiredReceiptTypes: rootRequiredReceipts });
     missing.push(...mappingBlockers);
     const receiptManifestRequirement = active.post_authorized_command_receipt_manifest || {};
     if (receiptManifestRequirement.required !== true) {

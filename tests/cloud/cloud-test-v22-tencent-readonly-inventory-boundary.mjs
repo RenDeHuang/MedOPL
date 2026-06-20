@@ -29,6 +29,7 @@ const [
   cloudContract,
   manifest,
   readonlyRunner,
+  readonlyAuthorizedExecutor,
   officialSdkSupport,
 ] = await Promise.all([
   readFile("docs/specs/README.md", "utf8"),
@@ -36,6 +37,7 @@ const [
   readFile("contracts/medopl-cloud-boundary.json", "utf8").then(JSON.parse),
   readFile(manifestPath, "utf8").then(JSON.parse),
   readFile("tests/support/cloud-prework/tencent-readonly-inventory-support.js", "utf8"),
+  readFile("tests/support/cloud-prework/cloud-authorized-readonly-executor.js", "utf8"),
   readFile("tests/support/cloud-prework/lib/tencent-readonly-inventory-official-sdk-support.js", "utf8"),
 ]);
 const realCloudReadinessFiles = commandFiles(manifest.suites.find((entry) => entry.id === "real-cloud-readiness")?.commands || []);
@@ -77,6 +79,14 @@ assertIncludesAll(readonlyRunner, [
   "readsCosObjectBody: false",
   "callsMutationApi: false",
 ], "readonly_inventory_runner_boundary");
+assertIncludesAll(readonlyAuthorizedExecutor, [
+  "V22_TENCENT_READONLY_SECRET_FILE",
+  "V22_TENCENT_READONLY_SDK_MODE",
+  "readonly_inventory",
+  "tencent-readonly-inventory-support.js",
+  "readonly_secret_file_missing",
+  "sanitizeSummary",
+], "readonly_inventory_authorized_executor_boundary");
 
 assertIncludesAll(officialSdkSupport, [
   "describeAccount",
@@ -110,7 +120,7 @@ assertIncludesAll(JSON.stringify(cloudContract.medopl_cloud_boundary), [
   "provider_secret_key",
 ], "readonly_inventory_cloud_contract_boundary");
 
-assertNotIncludesAny(`${readonlyRunner}\n${officialSdkSupport}`, [
+assertNotIncludesAny(`${readonlyRunner}\n${readonlyAuthorizedExecutor}\n${officialSdkSupport}`, [
   "readFileSync(",
   "CreateCluster",
   "DeleteCluster",

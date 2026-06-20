@@ -38,6 +38,7 @@ const expectedScripts = {
   "test:health": "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk",
   "test:smoke": "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk",
   "test:contract": "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk",
+  "pretest:regression": "npm --prefix services/portal/frontend ci",
   "test:regression": "node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk",
   "test:real-cloud-readiness": "node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk",
   "test:cloud-future-authorized": "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk",
@@ -123,7 +124,7 @@ for (const expected of [
 
 for (const expected of [
   "recovery/platform-v22-trunk",
-  "npm --prefix services/portal ci",
+  "npm --prefix services/portal/frontend ci",
   "npm run verify:golden-path",
   "npm run verify:repo-hygiene",
   "npm run verify:health",
@@ -149,8 +150,8 @@ for (const expected of [
 assert(workflowSource.includes(expected), `verify_workflow_missing:${expected}`);
 }
 assert(
-  workflowSource.indexOf("npm --prefix services/portal ci") < workflowSource.indexOf("npm run test:regression"),
-  "verify_workflow_must_install_portal_dependencies_before_regression",
+  workflowSource.indexOf("npm --prefix services/portal/frontend ci") < workflowSource.indexOf("npm run test:regression"),
+  "verify_workflow_must_install_portal_frontend_dependencies_before_regression",
 );
 for (const expected of [
   "contents: read",

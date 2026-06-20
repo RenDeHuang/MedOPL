@@ -60,6 +60,8 @@
     "operation_class_command_map": [
       {
         "operation_class": "readonly_inventory",
+        "runner_id": "tencent_readonly_inventory_runner",
+        "receipt_types": [],
         "package_script": "test:cloud",
         "commands": [
           "npm run test:cloud",
@@ -68,6 +70,8 @@
       },
       {
         "operation_class": "dry_run_plan",
+        "runner_id": "kubernetes_server_side_dry_run_runner",
+        "receipt_types": [],
         "package_script": "test:cloud-future-authorized",
         "commands": [
           "npm run test:cloud-future-authorized"
@@ -75,6 +79,10 @@
       },
       {
         "operation_class": "tenant_runtime_provisioning",
+        "runner_id": "tencent_tke_runtime_provisioning_runner",
+        "receipt_types": [
+          "runtime_owner_receipt"
+        ],
         "package_script": "test:cloud-future-authorized",
         "commands": [
           "npm run test:cloud-future-authorized"
@@ -82,6 +90,11 @@
       },
       {
         "operation_class": "storage_lifecycle",
+        "runner_id": "tencent_cos_workspace_storage_runner",
+        "receipt_types": [
+          "storage_owner_receipt",
+          "release_owner_receipt"
+        ],
         "package_script": "test:cloud-future-authorized",
         "commands": [
           "npm run test:cloud-future-authorized"
@@ -89,6 +102,11 @@
       },
       {
         "operation_class": "billing_audit_writeback",
+        "runner_id": "medopl_billing_audit_receipt_writer",
+        "receipt_types": [
+          "billing_owner_receipt",
+          "audit_owner_receipt"
+        ],
         "package_script": "test:cloud-future-authorized",
         "commands": [
           "npm run test:cloud-future-authorized"
@@ -96,6 +114,8 @@
       },
       {
         "operation_class": "build_push",
+        "runner_id": "container_registry_build_push_runner",
+        "receipt_types": [],
         "package_script": "test:cloud-future-authorized",
         "commands": [
           "npm run test:cloud-future-authorized"
@@ -103,6 +123,8 @@
       },
       {
         "operation_class": "kubectl",
+        "runner_id": "kubernetes_apply_runner",
+        "receipt_types": [],
         "package_script": "test:cloud-future-authorized",
         "commands": [
           "npm run test:cloud-future-authorized"
@@ -110,6 +132,10 @@
       },
       {
         "operation_class": "deploy",
+        "runner_id": "medopl_production_canary_deploy_runner",
+        "receipt_types": [
+          "production_deploy_receipt"
+        ],
         "package_script": "test:cloud-future-authorized",
         "commands": [
           "npm run test:cloud-future-authorized"
@@ -117,6 +143,10 @@
       },
       {
         "operation_class": "live_test",
+        "runner_id": "opl_webui_runtime_gate_live_test_runner",
+        "receipt_types": [
+          "opl_webui_consumer_receipt"
+        ],
         "package_script": "test:cloud-future-authorized",
         "commands": [
           "npm run test:cloud-future-authorized"

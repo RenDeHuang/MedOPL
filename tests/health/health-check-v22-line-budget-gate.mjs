@@ -28,7 +28,7 @@ assert.equal(
   false,
   "line_budget_baseline_must_retire_gateway_launch_client_main",
 );
-for (const expected of [".mjs", ".ts", ".tsx", ".sh", ".ps1"]) {
+for (const expected of [".mjs", ".ts", ".tsx", ".sh", ".ps1", ".go"]) {
   assert(scriptSource.includes(expected), `line_budget_extension_missing:${expected}`);
 }
 for (const expected of ["stale baseline entry", "exceeds locked baseline", "baseline can be retired"]) {
@@ -47,6 +47,10 @@ for (const expected of Object.keys(baseline.files)) {
     `line_budget_must_report_baseline_file:${expected}`,
   );
 }
+assert(
+  payload.oversize.some((entry) => entry.file === "services/medopl-go-backend/internal/service/controlplane/service.go"),
+  "line_budget_must_report_go_controlplane_service",
+);
 
 const suite = manifest.suites.find((item) => item.id === "repo-hygiene");
 assert(suite, "repo_hygiene_suite_missing");

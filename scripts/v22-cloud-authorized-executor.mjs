@@ -70,6 +70,8 @@ function phasePlan(pack, cloudPack) {
     const mapped = mapByOperation.get(operationClass) || {};
     return {
       operationClass,
+      runnerId: mapped.runner_id || "",
+      receiptTypes: Array.isArray(mapped.receipt_types) ? mapped.receipt_types.map(String) : [],
       packageScript: mapped.package_script || "",
       commands: [...(mapped.commands || [])],
       status: "planned",
@@ -139,6 +141,7 @@ async function executePayload(payload, options) {
   }
 
   const executor = await loadExecutor();
+  const receiptPointers = new Map();
   const phasesToRun = options.operation
     ? payload.phases.filter((phase) => phase.operationClass === options.operation)
     : payload.phases;
@@ -154,9 +157,16 @@ async function executePayload(payload, options) {
         return payload;
       }
       const result = await executor(command, {
+        repoRoot,
         operationClass: phase.operationClass,
+        runnerId: phase.runnerId,
+        receiptTypes: phase.receiptTypes,
         evidenceRef: phase.evidenceRef,
         authorization: payload.authorization,
+        writeReceipt(type, receipt = {}) {
+          if (!phase.receiptTypes.includes(type)) throw new Error(`receipt_type_not_allowed_for_operation:${phase.operationClass}:${type}`);
+          return writeOwnerReceiptPointer(payload, type, receipt, receiptPointers);
+        },
       });
       phase.results.push({
         command,
@@ -182,16 +192,34 @@ async function executePayload(payload, options) {
   }
 
   if (!options.operation) {
-    payload.receiptManifest = writeReceiptManifest(payload);
+    payload.receiptManifest = writeReceiptManifest(payload, receiptPointers);
+    if (payload.receiptManifest.productionComplete !== true) {
+      payload.ok = false;
+      payload.blocker = { type: "production_receipt_manifest_incomplete" };
+    }
   }
   return payload;
 }
 
-function writeReceiptManifest(payload) {
+function writeReceiptManifest(payload, receiptPointers = new Map()) {
   const boundary = readJson(PRODUCTION_RECEIPT_BOUNDARY_PATH);
   const receiptTypes = boundary.production_receipt_boundary.required_receipt_types;
   const issuedAt = new Date().toISOString();
   const manifestPath = `${payload.evidenceSink}/receipt-manifest.json`;
+  const receipts = receiptTypes
+    .map((type) => {
+      const stored = receiptPointers.get(type);
+      if (!stored) return null;
+      return {
+        type,
+        owner: stored.owner || RECEIPT_OWNERS[type] || "MedOPL Operations",
+        status: stored.status || "accepted",
+        issued_at: stored.issued_at || issuedAt,
+        evidence_ref: stored.path || `${payload.evidenceSink}/${type}.json`,
+        summary: stored.summary || `${type} accepted with redacted runtime evidence pointer.`,
+      };
+    })
+    .filter(Boolean);
   const manifest = {
     schema_version: 1,
     kind: "medopl_production_receipt_manifest",
@@ -205,27 +233,11 @@ function writeReceiptManifest(payload) {
       run_id: payload.authorization.runId,
     },
     summary: {
-      receipt_count: receiptTypes.length,
+      receipt_count: receipts.length,
       raw_evidence_policy: "runtime_pointer_summary_only",
     },
-    receipts: receiptTypes.map((type) => ({
-      type,
-      owner: RECEIPT_OWNERS[type] || "MedOPL Operations",
-      status: "accepted",
-      issued_at: issuedAt,
-      evidence_ref: `${payload.evidenceSink}/${type}.json`,
-      summary: `${type} accepted with redacted runtime evidence pointer.`,
-    })),
+    receipts,
   };
-  for (const receipt of manifest.receipts) {
-    writeJson(receipt.evidence_ref, {
-      kind: "v22_owner_receipt_pointer",
-      type: receipt.type,
-      owner: receipt.owner,
-      status: receipt.status,
-      summary: receipt.summary,
-    });
-  }
   writeJson(manifestPath, manifest);
   const evaluated = evaluateProductionReceiptManifest({ boundary, manifest });
   return {
@@ -235,6 +247,23 @@ function writeReceiptManifest(payload) {
     missingReceiptTypes: evaluated.missingReceiptTypes,
     blockers: evaluated.blockers,
   };
+}
+
+function writeOwnerReceiptPointer(payload, type, receipt = {}, receiptPointers = new Map()) {
+  const receiptPath = `${payload.evidenceSink}/${type}.json`;
+  const issuedAt = new Date().toISOString();
+  const pointer = {
+    path: receiptPath,
+    kind: "v22_owner_receipt_pointer",
+    type,
+    owner: receipt.owner || RECEIPT_OWNERS[type] || "MedOPL Operations",
+    status: receipt.status || "accepted",
+    issued_at: receipt.issued_at || issuedAt,
+    summary: receipt.summary || `${type} accepted with redacted runtime evidence pointer.`,
+  };
+  writeJson(receiptPath, pointer);
+  receiptPointers.set(type, pointer);
+  return { path: receiptPath, ...pointer };
 }
 
 function renderHuman(payload) {

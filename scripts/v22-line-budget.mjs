@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
 const baselinePath = "tests/fixtures/v22/line-budget-baseline.json";
-const codeExtensions = Object.freeze([".mjs", ".js", ".cjs", ".ts", ".tsx", ".mts", ".cts", ".sh", ".ps1"]);
+const codeExtensions = Object.freeze([".mjs", ".js", ".cjs", ".ts", ".tsx", ".mts", ".cts", ".sh", ".ps1", ".go"]);
 const ignoredParts = Object.freeze(["node_modules", "dist", "build", "coverage", ".venv", "__pycache__"]);
 const ignoredSuffixes = Object.freeze([".min.js"]);
 
