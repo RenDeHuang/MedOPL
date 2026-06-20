@@ -1,742 +1,294 @@
-# MedOPL v22 Portal Design Source
+# MedOPL 资源控制台设计源
 
 模型记录：`gpt-5.4`
 
-本文件是 MedOPL v22 Portal UI 重构的设计执行源。它把 v22 合同中的产品真相转成可执行的视觉、信息架构、组件、文案、Figma Make 吸收和重构分片规则。
+归属：`MedOPL Portal`
+用途：`portal_ui_grammar_and_bias_gates`
+状态：`active_design_source`
+机器边界：本文件是人读设计源，不是机器接口。机器真相由 `contracts/`、Portal 源码、tests、fixtures、runner、CLI/API 行为和 runtime evidence 持有。
 
-本文件不替代 v22 合同、Figma Make ZIP source-of-truth、`services/portal/frontend/src/app/**` 的 React/Vite 实现，也不替代 eval。产品语义、角色边界、secret 边界、OPL 边界、云资源授权边界和验收入口仍以 `docs/active/README.md`、`docs/specs/README.md`、Figma Make ZIP、React app root、`tests/**/*.mjs` 和 `scripts/v22-verify.mjs` 为准；历史 UI evidence 不再是当前 UI 完成证据。
+本文件把 MedOPL 当前产品真相转成可执行的 UI 语法、Figma 约束、代码组件映射和验证边界。它不替代 `docs/product/README.md`、`contracts/medopl-product-profile.json`、`contracts/medopl-portal-page-state-matrix.json` 或前端实现。
 
-## 订阅合同包
+## 设计原则
 
-本设计源订阅以下 v22 当前真相和合同：
+MedOPL Portal 是资源购买与计算资源管理 Portal。用户在这里购买和管理 OPL 需要的计算资源、存储空间、套餐、费用与释放能力，然后回到 OPL 做科研。
 
-- `docs/active/README.md`
-- `docs/specs/README.md`
-- `docs/product/README.md`
-- `docs/source/README.md`
-- `docs/specs/README.md`
-- `docs/specs/README.md`
-- `docs/specs/README.md`
-- `docs/specs/README.md`
-- `docs/specs/README.md`
-- `docs/specs/README.md`
-- `docs/specs/README.md`
-- `docs/specs/README.md`
-- `docs/specs/README.md`
+设计系统的任务不是让页面更“像大厂后台”，而是让用户一眼知道：买了什么资源、资源能不能用、存储空间里有什么、费用是多少、哪里购买 / 升级 / 释放、是否可以进入 OPL。
 
-## 产品气质
+one-person-lab-app 的做法对 MedOPL 的启发是：App 仓库拥有用户界面真相，framework / runtime 只提供背后能力；外部 shell 和专业 agent 不抢 App 的用户界面真相。MedOPL 也一样：Portal 拥有资源控制台界面真相；OPL-Webui 拥有 chat-first 项目 / session / skill / 文件工作台；OPL 拥有 framework 和科研执行语义。MedOPL 不把 OPL-Webui 或 OPL 的主体验搬进 Portal。
 
-MedOPL Portal 是平台托管的 OPL 科研工作台控制面。它不是云资源控制台，不是营销站，不是 OPL chatbot，也不是普通云资源管理台。
+## 产品真相门
 
-用户购买的是托管科研工作台、计算能力、文件空间和运行环境。用户需要理解服务是否准备好、能不能进入 OPL、任务和结果在哪里、费用是否正常、什么时候释放计算资源但保留文件空间。
+MedOPL 是资源购买与计算资源管理 Portal，不是 chat，不是科研工作台，不是云控制台，不是 Trace 控制台。
 
-Portal 负责准备、管理、进入、回流、账单、审计和释放：
+普通用户进入 MedOPL 时，首屏只应该回答资源问题。所有页面都必须能回到这条主线：
 
-- 准备：账号、套餐、余额、模型调用密钥绑定状态、工作空间和托管运行环境条件。
-- 管理：托管运行环境、计算能力、文件空间、工作空间和状态回流。
-- 进入：从 Portal 进入 OPL 工作台，或引导用户完成 OPL preflight。
-- 回流：展示 OPL session、run、artifact、trace、输入文件和输出文件状态。
-- 账单：展示余额、预扣费、冻结金额、累计消费、今日消费、停止计费和 T+1 审计状态。
-- 审计：把释放、账单核对、任务失败、结果回流和管理台排障变成可查事实。
-- 释放：释放计算资源，保留文件空间，并让用户看到停止计费确认。
+```text
+账号 / 余额
+-> 套餐选择
+-> 开通计算资源
+-> 存储空间可用
+-> 绑定 OPL workspace
+-> 查看存储清单和用量
+-> 查看费用与账单
+-> 释放计算资源并停止计费
+-> 保留或销毁存储空间
+-> 进入 OPL
+```
 
-OPL 负责科研执行、chatbot、agent、文件理解和结果生成。Portal 不把科研聊天搬进自己的页面，不复制 OPL 的交互，也不把 OPL 内部实现写成 Portal 主叙事。
+不能把 local RC、设计稿、测试绿或浏览器截图写成 production complete。真实云、deploy、kubectl、build/push、live-test 和 owner receipt 仍走独立授权与 release gate。
 
-## UI 重构目标
+## 产品对象语法
 
-当前 Portal UI 的主要问题是说明书式、文字过多、组件表达弱、信息层级不够像 SaaS 科研工作台。重构目标是把页面从说明文档变成状态驱动的工作台。
+用户主界面只允许这些对象成为主面：
 
-目标状态：
+- 计算资源
+- 存储空间
+- 套餐
+- 费用与用量
+- 资源生命周期
+- 进入 OPL
 
-- 页面用状态、行动、风险、结果和费用组织，而不是用长段说明组织。
-- 首屏优先回答用户现在能做什么，而不是解释平台是什么。
-- 组件承载事实：状态条、行动区、能力卡、任务卡、费用卡、释放审计卡。
-- 文案变短，动作变明确，状态变可扫。
-- 普通用户不用理解 CVM、COS、K8s、TKE、节点池、分账标签或内部归因字段。
-- 管理台可以展示排障和归因，但必须与普通用户主线隔离。
+禁止成为用户主面的对象：
 
-普通用户首屏必须回答：
+- chat
+- session 主工作台
+- skill 上传主界面
+- raw trace
+- raw log
+- 云控制台字段
+- secret / token / signed URL
+- CVM / COS / K8s / TKE / kubeconfig / SecretId
 
-- 我买了什么？
-- 现在能不能用？
-- 下一步点哪里？
-- 文件、任务、结果在哪里？
-- 费用是否正常？
-- 是否正在扣费？
-- 什么时候释放计算资源但保留文件空间？
+允许作为资源视角投影的对象：
+
+- OPL workspace 绑定状态
+- 输入文件 / 输出文件资源清单
+- 运行引用，只作为用量和计费引用
+- artifact 引用，只作为存储清单引用
+- audit receipt，只作为账单、释放和存储生命周期证据
+
+## 用户任务流
+
+用户侧任务流固定为八类：
+
+1. 买资源：选择套餐，确认计算规格、存储容量、任务并发和价格。
+2. 开通计算资源：查看开通条件、余额 / 冻结金额、provider key gate 和预计开通状态。
+3. 查看存储：查看容量、已用空间、输入文件、输出文件、保留期和保护期。
+4. 查看费用：查看余额、冻结金额、计算用量、存储用量、账单明细和审计状态。
+5. 扩容：从套餐与购买或资源详情进入升级 / 扩容路径。
+6. 释放：释放计算资源，明确释放不删除存储空间。
+7. 停止计费确认：展示 120 分钟核对和 T+1 审计状态。
+8. 进入 OPL：只展示是否满足进入条件和缺失步骤，不复制 OPL 工作台。
 
 ## 信息架构
 
-Portal 信息架构按用户主线组织：服务状态 -> 下一步动作 -> 文件/任务/结果 -> 账单/释放/审计。
+用户侧固定为六个面：
 
-### Overview
+- 资源总览
+- 套餐与购买
+- 计算资源
+- 存储空间
+- 费用与用量
+- 进入 OPL
 
-Overview 是服务状态控制台，不是产品介绍页。
+运维侧固定为八个面：
+
+- 开通队列
+- 用户账户
+- 资源运维
+- 存储运维
+- 计费对账
+- 审计
+- 系统状态
+- 套餐配置
 
-必须包含：
+用户侧不出现观测性或调试主导航。用量明细归费用与用量；文件归存储空间；审计只作为账单、释放和存储生命周期 receipt 支撑。运维侧可以展示内部 ID 和排障归因，但不能泄露 secret，也不能让普通用户看到云控制台字段。
 
-- 服务状态：托管 OPL 工作台是否可用。
-- 下一步动作：进入 OPL、开通运行环境、处理密钥绑定、查看结果或查看账单。
-- 运行环境摘要：套餐、计算能力、文件空间、释放状态。
-- 账单摘要：余额、预扣费、冻结金额、今日消费、停止计费状态。
-- 文件和任务摘要：输入文件、输出文件、最近 run、artifact、trace。
-- 职责边界：Portal 负责准备和回流，OPL 负责科研执行。
+## 视觉语法
 
-避免：
+用户侧视觉语法：
 
-- 大段介绍 MedOPL。
-- 把 Overview 做成云资源仪表盘。
-- 同时放多个同等突出的主按钮。
-- 用内部枚举或 raw status 做主语言。
+- 最大内容宽度优先使用 `1120px` 到 `1200px`。
+- 首屏只保留一个主 CTA。
+- 首屏核心资源卡不超过三张：计算资源、存储空间、费用与用量。
+- 不使用深色 admin sidebar 统治用户侧。
+- 不做营销 hero，不做大面积渐变，不做装饰性背景。
+- 表格只用于可比较集合；用户侧详情优先使用状态、摘要和短列表。
+- 页面文案短句化，不能靠长段说明替代交互状态。
+- 卡片只承载真实对象或重复项，不把每个 section 都包成卡片。
+- 移动端不能横向溢出；表格必须折叠为卡片列表或横向安全容器。
 
-### Resources
+运维侧视觉语法：
 
-Resources 表达托管运行环境、计算能力、文件空间、套餐、释放和审计。
+- 运维首页优先展示待处理队列，而不是 KPI 墙。
+- 表格允许更高密度，但必须保留筛选、空态、失败态和行级动作。
+- 高风险动作必须放入确认弹窗或 drawer，不允许裸按钮直接执行。
 
-必须包含：
+## 语义令牌
 
-- 当前套餐和可用计算能力。
-- 文件空间额度和保留状态。
-- 托管运行环境是否可用、受限、释放中或已停止计费。
-- 释放计算资源和保留文件空间的差异。
-- 审计和停止计费确认状态。
+语义令牌不是颜色表，而是产品状态语言。Figma variables 和 CSS variables 必须同名，或在 contract 中有明确映射。
 
-避免：
+当前基础令牌：
 
-- 使用 CVM、COS、K8s、TKE、节点池、云资源控制台作为普通用户主语言。
-- 把平台内部资源池当作用户要管理的对象。
+- `resource.active`：计算资源可用。
+- `resource.blocked`：计算资源不可用或条件未满足。
+- `billing.warning`：余额、冻结金额、扣费或审计需要注意。
+- `release.pending`：释放或停止计费处于等待确认。
+- `storage.protected`：存储空间进入保留 / 保护期。
 
-### Workspace
+CSS 变量名使用短横线映射：
 
-Workspace 表达工作空间、输入文件、输出文件和保留状态。
+- `--resource-active`
+- `--resource-blocked`
+- `--billing-warning`
+- `--release-pending`
+- `--storage-protected`
 
-必须包含：
+语义令牌必须优先服务状态和可读性，不允许为了“清爽风”降低对比度或隐藏失败状态。
 
-- 当前工作空间。
-- 输入文件列表和上传/准备状态。
-- 输出文件列表和结果来源。
-- 文件空间是否保留、是否受限、是否需要扩容。
-- 文件与任务、结果、账单的关联提示。
+## 组件语法
 
-避免：
+组件先表达任务和状态，再表达装饰。AI、Figma 和代码都必须从这些组件语法组装页面，不允许临时拼出新主面。
 
-- 把文件空间写成对象存储控制台。
-- 暴露 objectKey、localPath、signedUrl、storageKey 或内部路径。
+核心组件：
 
-### Billing
+| 组件 | 用途 | 主要属性 |
+| --- | --- | --- |
+| `ResourceStatusCard` | 展示计算资源是否可用、规格、释放状态和下一步动作 | `status`, `title`, `spec`, `primaryAction`, `receiptState` |
+| `PlanCard` | 展示套餐、价格、计算规格、存储容量和购买动作 | `planId`, `priceState`, `computeSpec`, `storageSize`, `purchaseState` |
+| `StorageInventoryPanel` | 展示容量、已用空间、输入 / 输出文件和保留期 | `status`, `capacity`, `used`, `files`, `retentionState` |
+| `BillingSummary` | 展示余额、冻结金额、计算用量、存储用量和账单状态 | `status`, `balance`, `freeze`, `usage`, `auditState` |
+| `ReadinessChecklist` | 展示进入 OPL 或开通资源还缺什么 | `status`, `items`, `primaryAction` |
+| `ReleaseConfirmDialog` | 释放计算资源和停止计费确认 | `status`, `resourceName`, `billingStopState`, `storageRetention` |
+| `OpsQueueTable` | 运维侧处理开通、释放、账单、存储和审计队列 | `queueType`, `rows`, `filters`, `rowActions` |
 
-Billing 表达余额、预扣费、冻结金额、累计消费、今日消费和账单记录。
+组件禁止承担的职责：
 
-必须包含：
+- `ResourceStatusCard` 不展示云控制台字段。
+- `StorageInventoryPanel` 不展示 signed URL、object key 或本地路径。
+- `BillingSummary` 不展示 raw trace metadata。
+- `ReadinessChecklist` 不复制 OPL-Webui 的 chat/session/skill 工作台。
+- `OpsQueueTable` 不成为普通用户组件。
 
-- 当前余额和是否足够继续运行。
-- 预扣费、冻结金额、运行中扣费。
-- 累计消费和今日消费。
-- 停止计费确认。
-- T+1 审计状态。
-- 账单记录和与 run/workspace 的关联。
+## 状态 / 变体矩阵
 
-避免：
+核心组件必须覆盖这些状态：
 
-- 把账单写成观测数据或 trace metadata。
-- 用 Langfuse、OpenCost 或云账单原始字段作为普通用户主语言。
+- `loading`
+- `empty`
+- `ready`
+- `blocked`
+- `failed`
+- `pending`
+- `released`
+- `protected`
 
-### Trace
+状态含义：
 
-Trace 表达运行轨迹、session、run、artifact 和审计 metadata。
+- `loading`：数据读取中，必须有稳定高度或骨架，不能造成布局跳动。
+- `empty`：用户尚未购买 / 尚未开通 / 尚无文件。
+- `ready`：对象可用。
+- `blocked`：缺余额、缺 provider key、缺存储、缺计算资源或权限不足。
+- `failed`：开通、释放、对账或读取失败，需要恢复路径。
+- `pending`：开通中、释放中、计费核对中或审计中。
+- `released`：计算资源已释放，停止计费状态必须可见。
+- `protected`：存储空间处于保护期，必须提示保留到期和限制。
 
-必须包含：
+每个状态都必须在 Figma variant、代码 props 和测试 fixture 中有同名或映射。缺状态不能通过高保真视觉稿补救。
 
-- session 和 run 的状态。
-- 输入文件、运行状态、输出结果之间的链路。
-- artifact 是否已回流到工作空间。
-- 失败、等待、运行中、完成、审计中等状态。
-- trace metadata 的排障作用。
+## Figma 与代码映射
 
-避免：
+Figma 的组件、变体、变量、样式和 Code Connect 必须映射到代码组件 props。命名不一致时，contract 必须写明映射，不能靠人工记忆。
 
-- 把 trace 做成日志控制台。
-- 暴露 raw prompt、token、内部存储路径或 signed URL。
+示例：
 
-### Admin
-
-Admin 只服务管理员和运维，不影响普通用户主线。
-
-必须包含：
-
-- 用户管理、工作空间、资源管理、任务记录、账单管理、审计记录、站点设置和服务状态。
-- 全局状态、异常账单、释放失败、任务失败和审计查询。
-- 后台归因字段可以在排障详情中出现，但不能成为普通用户主语言。
-
-避免：
-
-- 在普通用户导航暴露 admin 入口。
-- 让普通用户看到全局账号、全局费用、全局任务或运维操作。
-
-## 组件系统
-
-组件系统的原则是：组件先表达状态和行动，再表达装饰。
-
-### 页面骨架
-
-#### DashboardPageLayout
-
-用于总览型页面，例如 Overview、Resources、Billing 摘要。
-
-承载：
-
-- 页面级服务状态。
-- 关键指标。
-- 主行动区。
-- 主要信息流。
-- 次要详情区。
-
-避免：
-
-- 把所有区域都包成大卡片。
-- 页面顶部放营销 hero。
-- 页面 slot 内重复造布局。
-
-#### TablePageLayout
-
-用于多对象比较，例如账单记录、任务记录、审计记录、管理台列表。
-
-承载：
-
-- 标题和简短说明。
-- 筛选和排序。
-- 表格或移动端卡片列表。
-- 分页。
-- 批量或单行操作。
-
-避免：
-
-- 用卡片网格展示大量可比较对象。
-- 没有空态、加载态或错误态。
-
-#### DetailPageLayout
-
-用于对象详情，例如 workspace、run、account、audit item。
-
-承载：
-
-- 主信息。
-- 侧边状态。
-- 关联文件、任务、账单和审计。
-
-避免：
-
-- 主次信息混在一列。
-- 没有明确返回和下一步。
-
-### 原语组件
-
-#### PageSection
-
-用于真实信息区块。标题要短，副标题只解释当前区块的用途。
-
-承载：
-
-- 一个清晰主题。
-- 一组相关状态或列表。
-- 可选行动。
-
-避免：
-
-- 作为装饰容器嵌套卡片。
-- 承载跨域混杂信息。
-
-#### MetricCard
-
-用于关键数值，不用于长文案。
-
-承载：
-
-- 余额、今日消费、冻结金额、文件空间、任务数、会话数。
-- 一条短 hint。
-
-避免：
-
-- 说明书段落。
-- 多个同等颜色的指标导致主次不清。
-
-#### StatusBadge
-
-用于稳定状态映射。
-
-承载：
-
-- 可用、受限、等待、运行中、完成、失败、审计中、已停止计费。
-
-避免：
-
-- raw status。
-- 内部枚举。
-- 无解释的颜色。
-
-#### DataTable
-
-用于多对象比较。
-
-承载：
-
-- 账单记录。
-- run 记录。
-- 文件列表。
-- 管理台记录。
-
-避免：
-
-- 单个对象详情。
-- 文本过长导致横向溢出。
-
-#### EmptyState
-
-用于说明当前为什么没有数据，并给出下一步。
-
-承载：
-
-- 空文件、空任务、空账单、未开通环境、未绑定密钥。
-
-避免：
-
-- 只写“暂无数据”。
-- 没有行动路径。
-
-#### ActionToolbar
-
-用于同一上下文下的动作集合。
-
-承载：
-
-- 主行动。
-- 次行动。
-- 危险操作。
-
-避免：
-
-- 多个主按钮并列。
-- 危险操作和普通操作视觉同权。
-
-#### FilterToolbar
-
-用于列表筛选。
-
-承载：
-
-- 时间范围。
-- 状态筛选。
-- 工作空间筛选。
-- 搜索。
-
-避免：
-
-- 把筛选散落在表格列头、卡片和页面顶部。
-
-#### PaginationBar
-
-用于列表分页。
-
-承载：
-
-- 当前页、总数、上一页、下一页。
-
-避免：
-
-- 让用户在长列表中迷失。
-
-### 业务组件
-
-#### 服务状态摘要
-
-用于 Overview 首屏和 Resources 顶部。
-
-承载：
-
-- 工作台可用性。
-- 托管运行环境状态。
-- 文件空间状态。
-- 计费状态。
-- 释放状态。
-
-避免：
-
-- 长篇解释平台职责。
-- 把云资源状态当作用户任务。
-
-#### 下一步行动区
-
-用于把当前状态转成唯一主行动。
-
-承载：
-
-- 进入 OPL。
-- 开通运行环境。
-- 处理密钥绑定。
-- 上传文件。
-- 查看结果。
-- 查看账单。
-
-避免：
-
-- 多个主 CTA。
-- 无状态依据的按钮。
-
-#### 资源能力卡
-
-用于 Resources 和 Overview 摘要。
-
-承载：
-
-- 套餐。
-- 计算能力。
-- 文件空间。
-- 并发/队列。
-- 释放策略。
-
-避免：
-
-- CVM、COS、K8s、TKE 主语言。
-
-#### 文件链路卡
-
-用于 Workspace 和 Overview 摘要。
-
-承载：
-
-- 输入文件。
-- 输出文件。
-- 文件空间保留。
-- 与任务和结果的关系。
-
-避免：
-
-- 存储内部字段。
-
-#### 任务运行卡
-
-用于 Trace 和 Overview 摘要。
-
-承载：
-
-- session。
-- run。
-- artifact。
-- 状态。
-- 下一步。
-
-避免：
-
-- 日志化堆叠。
-- raw trace metadata 作为主内容。
-
-#### 账单风险卡
-
-用于 Billing 和 Overview 摘要。
-
-承载：
-
-- 余额不足。
-- 冻结金额。
-- 预扣费。
-- 运行中扣费。
-- 异常账单。
-
-避免：
-
-- 把观测系统或云账单当作唯一真相。
-
-#### 释放审计卡
-
-用于 Resources、Billing 和 Admin。
-
-承载：
-
-- 释放计算资源。
-- 保留文件空间。
-- 停止计费确认。
-- T+1 审计。
-
-避免：
-
-- 让用户误以为释放会删除文件。
-- 让用户误以为停止计费立即等于审计完成。
-
-## 文案规则
-
-文案必须短句、状态优先、动作优先。
-
-推荐模式：
-
-- 状态：工作台可用。
-- 原因：运行环境和文件空间已就绪。
-- 动作：进入 OPL。
-
-不要写成：
-
-- “本平台为您提供一个集成了多种云资源能力的综合管理系统……”
-- “当前 resourceBinding 状态为 active。”
-- “请前往 CVM/COS/K8s 相关页面处理资源。”
-
-规则：
-
-- 每个区块标题不超过 12 个汉字，除非是业务专名。
-- 每个说明句优先控制在一行到两行。
-- 空态必须给下一步。
-- 错误态必须说明用户能做什么，不能只显示失败。
-- 主按钮使用动词：进入、开通、上传、查看、释放、处理。
-- 状态用用户语言：可用、受限、等待、运行中、已完成、需处理、审计中、已停止计费。
-
-避免：
-
-- 说明书段落。
-- raw status。
-- 内部枚举。
-- 斜杠组合词。
-- 英文散落。
-- “云资源控制台”“节点池”“CVM”“COS”“K8s”“TKE”作为普通用户主语言。
-- “客户工作台”“平台管理台”“商业化”“SaaS 总览”“运维面”“运营总台”“告警中心”“账务”等禁用主语言。
-
-中文主语言必须面向 AI 小白科研用户。管理员页面可以更专业，但默认摘要仍应优先使用用户管理、工作空间、任务记录、账单管理、审计记录和服务状态。
-
-## 视觉规则
-
-Portal 是高可扫描、高信息密度但不拥挤的 SaaS 科研工作台。
-
-### 布局
-
-- 页面第一屏优先放服务状态、下一步和关键摘要。
-- 详情下沉，避免首屏变说明页。
-- 桌面端使用稳定 grid、table 和 list。
-- 移动端使用单列和可读卡片，禁止横向溢出。
-- 管理台密度可以高于普通用户页。
-
-### 卡片
-
-卡片只用于真实信息单元，不做装饰堆叠。
-
-使用卡片时：
-
-- 一个卡片只承载一个主题。
-- 卡片内有明确标题、状态、数据或行动。
-- 卡片之间间距稳定。
-
-避免：
-
-- 卡片套卡片。
-- 大面积空白卡片。
-- 每个小字段都做成卡片。
-
-### 圆角、阴影和边框
-
-- 常规圆角建议不超过 8px。
-- 表格、列表、状态条优先使用轻边框和稳定间距。
-- 阴影只用于浮层、菜单和 modal。
-- 不用大圆角、大阴影制造“高级感”。
-
-### 色彩
-
-状态色克制：
-
-- 成功：可用、已完成、已停止计费。
-- 警告：等待、冻结、审计中、余额不足前兆。
-- 危险：失败、不可用、余额不足、释放失败。
-- 主色：唯一主行动和当前选中状态。
-
-避免：
-
-- 单一蓝紫渐变支配全站。
-- 装饰性渐变。
-- 仅靠颜色表达状态。
-
-### 字体和密度
-
-- 页面标题服务于定位，不做营销式大标题。
-- 组件标题短而明确。
-- 数值使用稳定宽度和清晰单位。
-- 表格和列表保持可比较。
-- 避免负 letter spacing。
-
-### 响应式
-
-- 所有页面在移动端不得横向溢出。
-- 长词、长 ID、金额、状态组合必须换行或截断。
-- 表格在移动端必须有可读替代形态。
-- 按钮文本不得挤压或覆盖。
-
-## Figma Make 吸收流程
-
-Figma Make 是当前 Portal 普通用户和管理员 UI 的实现源，不是 v22 产品真相源。DESIGN.md、v22 合同、`spec:v22-portal-figma-make-ui-implementation-boundary`、`services/portal/frontend/src/app/**`、`services/portal/frontend/src/app/data/portalAdapters.ts` 和 smoke 共同构成代码侧执行真相；历史 UI evidence 不再承载 current truth，旧路径防回归统一由 retired frontend surface gate 承接。
-
-当前吸收基准已经固定。后续产品系统重构必须保持 Figma 页面视觉、布局、信息架构和主路径不变，只允许改变工程结构、组件复用、状态处理和 API adapter 连接；任何视觉或信息架构变更必须回到 Figma 侧重新确认。
-
-推荐流程：
-
-1. 先按合同确认 Figma Make 页面没有改变 v22 产品语义。
-2. 清退历史 Vue / Pinia frontend surface 和旧路由。
-3. 将 Figma Make 普通用户和管理员 React UI 纳入 `services/portal/frontend`。
-4. 物理清退旧管理员 console residue，管理员 UI 改以新 ZIP 的 `src/app/pages/admin/*` 为准。
-5. 用现有 `/portal/api/*` adapter 替换 mock-only 数据。
-6. Codex 运行合同 smoke、surface suite、typecheck、build 和本地预览。
-7. 只有通过验证且用户认可的分支，才交给 B ff-only 吸收。
-
-Figma Make 吸收规则：
-
-- Figma 可以调整视觉表达，不能改变产品语义。
-- Portal 全体前端技术栈为 React + Vite + TypeScript + shadcn/Radix + lucide。
-- 当前 Figma Make 覆盖普通用户端和管理员端；管理员导航显示依赖 `/portal/api/me` 角色投影，真实权限仍由 `/portal/api/admin/*` 后端校验。
-- Figma 不得把 Portal 改成营销页、云控制台或 OPL chatbot。
-- Figma 版本评审应并排比较完整页面，不只比较单个 hero。
-- Figma 批注必须说明影响的页面、组件、状态和验收点。
-
-## 后续重构分片
-
-每个 slice 必须单独分支、单独验收、单独 commit。不得把多页重构、后端改动、依赖升级、真实云或 deploy 混进一个 UI slice。
-
-### Slice 1: Overview dashboard redesign
-
-目标：
-
-- 把 Overview 从说明书式首页改成服务状态控制台。
-- 首屏回答买了什么、能不能用、下一步点哪里、文件/任务/结果在哪里、费用是否正常。
-
-范围：
-
-- Overview view。
-- Overview components。
-- Overview fixtures。
-- Overview evalset page task / surface invariants / React route anchors。
-
-验收：
-
-- 七个主线问题在首屏可回答。
-- 有唯一主 CTA。
-- 无云控制台语言。
-
-### Slice 2: Resources redesign
-
-目标：
-
-- 把 Resources 改成托管运行环境和文件空间状态页。
-- 清楚表达计算资源释放和文件空间保留。
-
-范围：
-
-- Resources view。
-- Resources components。
-- Resources fixtures。
-- Resources evalset / React route anchors。
-
-验收：
-
-- 用户理解当前运行环境状态、套餐、算力、文件空间和释放审计。
-- 不出现 CVM/COS/K8s/TKE 主语言。
-
-### Slice 3: Workspace redesign
-
-目标：
-
-- 把 Workspace 改成输入文件、输出文件和文件空间保留状态页。
-
-范围：
-
-- Workspace view。
-- Workspace components。
-- Workspace fixtures。
-- Workspace evalset / React route anchors。
-
-验收：
-
-- 输入文件和输出结果路径清楚。
-- 释放后文件空间保留状态清楚。
-- 不泄露 objectKey、localPath、signedUrl 或内部存储字段。
-
-### Slice 4: Billing redesign
-
-目标：
-
-- 把 Billing 改成费用信任页。
-- 清楚表达余额、预扣费、冻结金额、累计消费、今日消费、停止计费和 T+1 审计。
-
-范围：
-
-- Billing view。
-- Billing components。
-- Billing fixtures。
-- Billing evalset / React route anchors。
-
-验收：
-
-- 用户能判断费用是否正常。
-- 用户能理解释放后的停止计费和审计状态。
-- 账单不依赖观测系统作为真相。
-
-### Slice 5: Trace redesign
-
-目标：
-
-- 把 Trace 改成任务、run、artifact 和审计 metadata 的状态回流页。
-
-范围：
-
-- Trace view。
-- Trace components。
-- Trace fixtures。
-- Trace evalset / React route anchors。
-
-验收：
-
-- session、run、artifact 链路清楚。
-- 失败、等待、运行中、完成和审计中状态清楚。
-- 不变成日志控制台。
-
-### Slice 6: Admin redesign
-
-目标：
-
-- 把 Admin 改成管理员/运维排障与审计后台。
-- 保持普通用户主线不受影响。
-
-范围：
-
-- Admin views。
-- Admin components。
-- Admin fixtures。
-- Admin evalset / route anchors in a future same-stack leaf。
-
-验收：
-
-- admin role surface 与普通用户 surface 隔离。
-- 管理员能查用户管理、工作空间、任务记录、账单管理、审计记录和服务状态。
-- 不展示 secret，不执行真实云操作，不真实扣费。
-
-## 验收命令
-
-设计源分支必须通过：
-
-```bash
-node tests/regression/portal/regression-test-v22-portal-ui-design-quality-audit.mjs
-node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs --group surface
-git diff --check -- DESIGN.md docs scripts services/portal/frontend
+```text
+Figma: ResourceStatusCard / status=active
+Code:  ResourceStatusCard.status = "ready"
+映射: resource.active -> --resource-active
 ```
 
-后续 UI implementation slice 还应按对应 leaf 增加：
+如果 Figma 状态名和代码状态名不同，必须在 `contracts/medopl-portal-page-state-matrix.json` 的 `figma_code_mapping` 中声明。优先使用相同命名，减少映射层。
 
-```bash
-npm --prefix services/portal/frontend run typecheck
-npm --prefix services/portal/frontend run build
-node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk
-```
+Figma 文件只能作为设计输入和审查面；repo 里的长期机器真相仍归 contracts、source、tests 和 runtime evidence。不要把 Figma 导出图、raw 截图、调试 payload 或临时视觉产物提交进 git。
 
-## 非目标
+## 页面模板
 
-本设计源分支不做以下事情：
+用户页使用清爽资源控制台模板：
 
-- 不修改 Portal 后端业务语义。
-- 不修改 Portal 后端、Gateway、Runtime Bridge 或 Runtime Agent。
-- 不修改 deploy、`.sentrux`、adapters 或 one-person-lab upstream。
-- 不读取 secret。
-- 不调用真实云。
-- 不执行 build/push/kubectl/live-test。
-- 不新增与 Portal frontend React/Vite/Figma Make 吸收无关的依赖。
-- 不把 Portal 改成云控制台、营销页、OPL chatbot 或普通云资源管理台。
+- 顶部状态句：当前资源是否可用、存储是否正常、费用是否需要注意。
+- 一个主 CTA：购买 / 升级 / 释放 / 进入 OPL 只能有一个最高优先级。
+- 三个核心资源块：计算资源、存储空间、费用与用量。
+- 次级详情使用短列表、drawer 或详情页，不在首屏铺满表格。
+
+运维页使用工作队列模板：
+
+- 顶部展示待处理事项。
+- 主体是开通、释放、账单、存储或审计队列。
+- 行级动作必须有权限、禁用原因和审计结果。
+
+购买页使用套餐对比和确认模板：
+
+- 当前套餐、推荐套餐、价格、计算规格、存储容量、任务并发和预计开通时间。
+- 购买 / 升级前必须展示费用边界和不能 claim 的能力。
+
+详情页使用状态 + 用量 + 动作 + receipt 模板：
+
+- 当前状态。
+- 用量摘要。
+- 可执行动作。
+- receipt / 审计状态。
+- 错误恢复路径。
+
+## 交互和可访问性
+
+交互必须先满足可达性，再谈视觉精致：
+
+- 所有主动作必须能键盘访问。
+- 焦点状态必须可见。
+- 禁用按钮必须说明原因。
+- 危险动作必须确认：释放计算资源、删除存储空间、退款、重试高风险开通。
+- 释放计算资源必须提示“不删除存储空间”。
+- 进入 OPL 必须展示 readiness checklist，不能只给一个失败 toast。
+- 表格在移动端必须可读，不能靠缩小字体硬塞。
+- 颜色不能是唯一状态表达；状态必须有文本或图标辅助。
+- loading、empty、blocked、failed 必须有可理解文案和下一步。
+
+可访问性审计不能只靠截图；后续可引入更完整的 keyboard、aria、contrast 和 screen-reader 检查。当前 slice 只能 claim 基础可访问性语法已固定，不能 claim 完整审计完成。
+
+## 验证 / 回归
+
+UI 验证分四层：
+
+1. `contract test`：验证产品对象和禁区。用户侧不得出现 chat、session 主工作台、skill 上传、raw trace、云控制台字段。
+2. `component state test`：验证组件状态矩阵、语义令牌和 Figma 与代码映射存在。
+3. `interaction test`：验证开通、释放、进入 OPL、账单查看、禁用态原因和恢复路径。
+4. `visual test`：验证关键页面截图、移动端、无横向溢出、主 CTA 可见和关键视觉锚点。
+
+视觉测试不能单独证明 UI 合格。截图可能因为环境变化产生噪声，也可能让糟糕页面稳定地通过。视觉测试只锁关键锚点，产品对象、状态、交互和可访问性仍由 contract、component state 和 browser interaction gate 共同判断。
+
+## 防偏门
+
+本仓 UI 自动化开发必须防三类偏倚：
+
+- 风格偏倚：不能滑向通用 shadcn / Tailwind / Vercel 默认味，也不能滑回深色企业后台。
+- 组件偏倚：不能因为组件库里有 card/table/sidebar，就把所有页面都堆成卡片、表格和侧栏。
+- 验证偏倚：不能只测文字存在、路由能开或截图稳定；必须验证任务流、状态和禁区。
+
+每次 UI 变更都要回答：是否复用现有组件语法、是否没有新增顶层入口、是否没有新增无 owner 的 contract、是否没有新增治理型 health test、是否没有把 Figma/raw evidence 提交进 git。
+
+## 当前交付边界
+
+本 slice 只固定 UI 语法和防偏 gate。它可以 claim：
+
+- 资源控制台设计源已对齐当前产品真相。
+- 用户侧对象、信息架构、视觉语法、语义令牌、组件语法和状态矩阵已进入合同 / 测试约束。
+- 后续 Figma 和代码实现有共同语法，不再靠 prompt 自由生成。
+
+本 slice 不能 claim：
+
+- 最终高保真 UI 已完成。
+- 完整可访问性审计已完成。
+- Storybook / Figma Code Connect 已接入完成。
+- 真实云执行、deploy、live-test 或 production complete。

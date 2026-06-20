@@ -1,19 +1,21 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "owner": "MedOPL Portal",
   "purpose": "portal_product_page_state_matrix",
   "state": "active",
   "authority_boundary": {
     "surface": "customer_control_plane",
-    "allowed_view": "platform_managed_workspace_state",
-    "forbidden_view": "raw_cloud_resource_console"
+    "allowed_view": "resource_purchase_and_compute_resource_management",
+    "forbidden_view": "chat_workbench_raw_trace_or_cloud_console"
   },
   "consumers": [
     "validate:active-platform",
-    "tests/contracts/contract-test-v22-validate-active-platform.mjs"
+    "tests/contracts/contract-test-v22-validate-active-platform.mjs",
+    "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
   ],
   "consumer_tests": [
-    "npm run validate:active-platform -- --quick --json"
+    "npm run validate:active-platform -- --quick --json",
+    "npm run test:frontend"
   ],
   "medopl_portal_page_state_matrix": {
     "global_states": [
@@ -150,6 +152,267 @@
           "blocked"
         ]
       }
-    ]
+    ],
+    "ui_grammar": {
+      "truth_gate": "MedOPL 是资源购买与计算资源管理 Portal；不是 chat、科研工作台、云控制台或 Trace 控制台。",
+      "allowed_user_objects": [
+        "compute_resource",
+        "storage_space",
+        "package_plan",
+        "usage_billing",
+        "resource_lifecycle",
+        "opl_entry"
+      ],
+      "forbidden_user_objects": [
+        "chat",
+        "project_session_surface",
+        "skill_upload",
+        "raw_trace",
+        "raw_log",
+        "cloud_console_fields",
+        "secret_token_or_signed_url"
+      ],
+      "user_task_flow": [
+        "purchase_resource",
+        "open_compute_resource",
+        "inspect_storage_space",
+        "review_usage_billing",
+        "upgrade_or_expand",
+        "release_compute_resource",
+        "confirm_stop_billing",
+        "enter_opl"
+      ],
+      "user_information_architecture": [
+        "resource_overview",
+        "packages_purchase",
+        "compute_resource",
+        "storage_space",
+        "usage_billing",
+        "opl_entry"
+      ],
+      "ops_information_architecture": [
+        "provisioning_queue",
+        "user_accounts",
+        "resource_operations",
+        "storage_operations",
+        "billing_reconciliation",
+        "audit",
+        "system_status",
+        "plan_catalog"
+      ],
+      "visual_grammar": {
+        "customer_pages_max_width": "1120px_to_1200px",
+        "customer_pages_primary_cta_limit": "one_per_view",
+        "customer_pages_card_count_limit": "three_core_resource_cards_on_first_view",
+        "tables_only_for_comparable_sets": "true",
+        "ops_pages_queue_first": "true",
+        "no_dark_admin_sidebar_for_customer": "true",
+        "no_marketing_hero_for_customer": "true",
+        "mobile_horizontal_overflow_allowed": "false"
+      },
+      "semantic_tokens": [
+        "resource.active",
+        "resource.blocked",
+        "billing.warning",
+        "release.pending",
+        "storage.protected"
+      ],
+      "component_grammar": [
+        {
+          "name": "ResourceStatusCard",
+          "figma_component": "ResourceStatusCard",
+          "code_component": "ResourceStatusCard",
+          "props": [
+            "status",
+            "title",
+            "spec",
+            "primaryAction",
+            "receiptState"
+          ],
+          "states": [
+            "loading",
+            "empty",
+            "ready",
+            "blocked",
+            "failed",
+            "pending",
+            "released",
+            "protected"
+          ]
+        },
+        {
+          "name": "PlanCard",
+          "figma_component": "PlanCard",
+          "code_component": "PlanCard",
+          "props": [
+            "planId",
+            "priceState",
+            "computeSpec",
+            "storageSize",
+            "purchaseState"
+          ],
+          "states": [
+            "loading",
+            "empty",
+            "ready",
+            "blocked",
+            "failed",
+            "pending",
+            "released",
+            "protected"
+          ]
+        },
+        {
+          "name": "StorageInventoryPanel",
+          "figma_component": "StorageInventoryPanel",
+          "code_component": "StorageInventoryPanel",
+          "props": [
+            "status",
+            "capacity",
+            "used",
+            "files",
+            "retentionState"
+          ],
+          "states": [
+            "loading",
+            "empty",
+            "ready",
+            "blocked",
+            "failed",
+            "pending",
+            "released",
+            "protected"
+          ]
+        },
+        {
+          "name": "BillingSummary",
+          "figma_component": "BillingSummary",
+          "code_component": "BillingSummary",
+          "props": [
+            "status",
+            "balance",
+            "freeze",
+            "usage",
+            "auditState"
+          ],
+          "states": [
+            "loading",
+            "empty",
+            "ready",
+            "blocked",
+            "failed",
+            "pending",
+            "released",
+            "protected"
+          ]
+        },
+        {
+          "name": "ReadinessChecklist",
+          "figma_component": "ReadinessChecklist",
+          "code_component": "ReadinessChecklist",
+          "props": [
+            "status",
+            "items",
+            "primaryAction"
+          ],
+          "states": [
+            "loading",
+            "empty",
+            "ready",
+            "blocked",
+            "failed",
+            "pending",
+            "released",
+            "protected"
+          ]
+        },
+        {
+          "name": "ReleaseConfirmDialog",
+          "figma_component": "ReleaseConfirmDialog",
+          "code_component": "ReleaseConfirmDialog",
+          "props": [
+            "status",
+            "resourceName",
+            "billingStopState",
+            "storageRetention"
+          ],
+          "states": [
+            "loading",
+            "empty",
+            "ready",
+            "blocked",
+            "failed",
+            "pending",
+            "released",
+            "protected"
+          ]
+        },
+        {
+          "name": "OpsQueueTable",
+          "figma_component": "OpsQueueTable",
+          "code_component": "OpsQueueTable",
+          "props": [
+            "queueType",
+            "rows",
+            "filters",
+            "rowActions"
+          ],
+          "states": [
+            "loading",
+            "empty",
+            "ready",
+            "blocked",
+            "failed",
+            "pending",
+            "released",
+            "protected"
+          ]
+        }
+      ],
+      "figma_code_mapping": [
+        {
+          "figma_component": "ResourceStatusCard",
+          "code_component": "ResourceStatusCard",
+          "variant_prop": "status",
+          "allowed_values": [
+            "loading",
+            "empty",
+            "ready",
+            "blocked",
+            "failed",
+            "pending",
+            "released",
+            "protected"
+          ],
+          "token_mapping": {
+            "ready": "resource.active",
+            "blocked": "resource.blocked",
+            "pending": "release.pending",
+            "protected": "storage.protected"
+          }
+        }
+      ],
+      "page_templates": [
+        "customer_resource_console",
+        "ops_queue",
+        "plan_comparison_checkout",
+        "status_usage_action_receipt_detail"
+      ],
+      "interaction_accessibility": [
+        "keyboard_accessible_primary_actions",
+        "visible_focus_state",
+        "disabled_reason_required",
+        "dangerous_action_confirmation",
+        "release_does_not_delete_storage_notice",
+        "mobile_table_collapse_required",
+        "color_not_sole_status_signal"
+      ],
+      "eval_layers": [
+        "contract",
+        "component_state",
+        "interaction",
+        "visual"
+      ]
+    }
   }
 }

@@ -142,8 +142,19 @@ function assertResourceControlCopy(bodyText, label, markers = ["资源总览", "
     assert(bodyText.includes(marker), `${label}_resource_control_marker_missing:${marker}`);
   }
   assert.equal(bodyText.includes("客户工作台"), false, `${label}_forbidden_customer_workbench_copy`);
+  assert.equal(bodyText.includes("Trace"), false, `${label}_forbidden_trace_nav_copy`);
+  assert.equal(bodyText.includes("trace"), false, `${label}_forbidden_trace_nav_copy_lower`);
+  assert.equal(bodyText.includes("Chat"), false, `${label}_forbidden_chat_copy`);
+  assert.equal(bodyText.includes("Skill"), false, `${label}_forbidden_skill_copy`);
   assert.equal(bodyText.includes("SecretId"), false, `${label}_forbidden_secret_id_copy`);
   assert.equal(bodyText.includes("kubeconfig"), false, `${label}_forbidden_kubeconfig_copy`);
+}
+
+async function assertPrimaryActionReachable(page, label) {
+  const primaryActions = await page.locator("a,button").filter({
+    hasText: /购买|开通|进入 OPL|释放|查看|前往/u,
+  }).count();
+  assert(primaryActions > 0, `${label}_primary_action_missing`);
 }
 
 const { chromium } = await loadPlaywright();
@@ -226,7 +237,13 @@ try {
     assert(lastBodyText.includes("选择套餐开通计算资源"), "browser_overview_open_compute_resource_cta_missing");
     assert(lastBodyText.includes("前往套餐与购买"), "browser_overview_packages_entry_missing");
     assert.equal(lastBodyText.includes("商业"), false, "browser_overview_forbidden_commercial_copy");
+    await assertPrimaryActionReachable(page, "browser_overview");
     await assertNoGlobalHorizontalOverflow(page, "browser_overview");
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await assertNoGlobalHorizontalOverflow(page, "browser_overview_mobile");
+    await assertPrimaryActionReachable(page, "browser_overview_mobile");
+    await page.setViewportSize({ width: 1440, height: 920 });
 
     await page.goto(`${frontendBaseUrl}/resources`, { waitUntil: "domcontentloaded" });
     await waitReady(page, "正在读取计算资源数据");
@@ -238,6 +255,7 @@ try {
     assert(lastBodyText.includes("套餐价格尚待审批"), "browser_runtime_pricing_boundary_missing");
     assert.equal(lastBodyText.includes("CVM"), false, "browser_runtime_must_not_expose_cloud_console_copy");
     assert.equal(lastBodyText.includes("K8s"), false, "browser_runtime_must_not_expose_cloud_console_copy");
+    await assertPrimaryActionReachable(page, "browser_runtime_environment");
     await assertNoGlobalHorizontalOverflow(page, "browser_runtime_environment");
 
     await page.goto(`${frontendBaseUrl}/admin/system`, { waitUntil: "domcontentloaded" });
