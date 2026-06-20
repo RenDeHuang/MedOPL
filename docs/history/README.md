@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/v22-cloud-closure-route`
-- latest landed commit: `618f523ce38e4714f345e9fa49921a2256d1c182`
+- latest landed branch: `feat/v22-retire-stale-narratives`
+- latest landed commit: `da401fd1e82c3dcd03ebee714a882a54b331f5fe`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
