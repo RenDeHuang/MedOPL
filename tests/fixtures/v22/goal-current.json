@@ -70,7 +70,7 @@
     "default_cloud_verification_is_limited_to_readonly_inventory_dry_run_plan_and_tke_bootstrap_preflight_before_production_receipts",
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth"
   ],
-  "current_problem": "MedOPL current truth is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is feat/v22-cloud-executor-real-runner-rc at f38617cc743430b766322e49655c51ddf9df315a, which allows feature branch push and gated trunk merge/push after fresh landing evidence without weakening cloud, secret, deploy or receipt requirements. The active blocker remains the opl-webui-runtime-production-slice proof ladder: first proof may only claim real local product RC, cloud proof may only claim cloud-deployable RC, and production proof requires explicit authorization plus runtime/storage/billing/audit/release owner receipts. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims require the active machine authorization pack plus runner/report evidence. The latest landed closeout is feat/v22-cloud-executor-real-runner-rc at f38617cc743430b766322e49655c51ddf9df315a.",
+  "current_problem": "MedOPL current truth is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is feat/v22-cloud-executor-real-runner-rc at f38617cc743430b766322e49655c51ddf9df315a, which allows feature branch push and gated trunk merge/push after fresh landing evidence without weakening cloud, secret, deploy or receipt requirements. The active blocker remains the opl-webui-runtime-production-slice proof ladder: first proof may only claim real local product RC, cloud proof may only claim cloud-deployable RC, and production proof requires explicit authorization plus runtime/storage/billing/audit/release owner receipts. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims require the active machine authorization pack plus runner/report evidence. The authorization pack now maps Goal A-F operation classes to `cloud:goal:*` package scripts: Goal A readonly inventory remains secret-file authorized, Goal B dry-run plan can produce local no-cloud deployment pointers, and Goal C-F fail closed until env, real runner implementation and owner receipts are present. The latest landed closeout is feat/v22-cloud-executor-real-runner-rc at f38617cc743430b766322e49655c51ddf9df315a.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -312,17 +312,18 @@
     "productionization_plan": [
       "Keep opl-webui-runtime-production-slice fail-closed until production owner receipts exist",
       "Run readonly inventory boundary only through real-cloud-readiness lane",
-      "Run Package C tenant runtime dry-run plan with no real cloud calls",
+      "Run Package C tenant runtime dry-run plan with no real cloud calls through cloud:goal:dry-run-plan",
       "Run TKE bootstrap preflight with no secret, kubectl, deploy or mutation",
-      "Create a separate explicit authorization packet before any real provider execution or production claim",
+      "Use the active cloud authorization pack cloud:goal operation map before any provider execution or production claim",
       "After authorized execution, write MedOPL runtime / storage / billing / audit / release evidence through the backend owner surface",
       "Then run canary / QA / status update with redacted evidence outside git"
     ],
     "readinessGaps": [
-      "Explicit authorization packet for any real cloud execution or production claim",
-      "Production runtime / storage / billing / audit / release writeback implementation and evidence",
-      "Authorized tenant runtime provisioning and storage lifecycle evidence",
-      "Production canary / QA / status update with redacted non-git evidence"
+      "Goal A readonly inventory live proof with explicit secret-file and redacted evidence pointer",
+      "Goal C real storage lifecycle runner and owner receipts",
+      "Goal D real runtime provisioning runner and owner receipts",
+      "Goal E OPL-Webui consumer canary receipt",
+      "Goal F production deploy/live-test receipts and complete production manifest"
     ]
   },
   "ai_mvp_readiness_state": {

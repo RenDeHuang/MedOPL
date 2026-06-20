@@ -7,6 +7,17 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
+const expectedGoalScripts = Object.freeze({
+  readonly_inventory: "cloud:goal:readonly-inventory",
+  dry_run_plan: "cloud:goal:dry-run-plan",
+  tenant_runtime_provisioning: "cloud:goal:tenant-runtime-provisioning",
+  storage_lifecycle: "cloud:goal:storage-lifecycle",
+  billing_audit_writeback: "cloud:goal:billing-audit-writeback",
+  build_push: "cloud:goal:build-push",
+  kubectl: "cloud:goal:kubectl",
+  deploy: "cloud:goal:deploy",
+  live_test: "cloud:goal:live-test",
+});
 
 function runExecutor(args = [], env = {}) {
   return spawnSync(process.execPath, ["scripts/v22-cloud-authorized-executor.mjs", ...args], {
@@ -26,6 +37,8 @@ function jsonFrom(result, label) {
 }
 
 const dryRun = jsonFrom(runExecutor(["--dry-run", "--json"]), "cloud_executor_dry_run");
+const packageJson = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8"));
+const authPack = JSON.parse(readFileSync(path.join(repoRoot, "contracts/medopl-cloud-authorization-pack.json"), "utf8"));
 assert.equal(dryRun.ok, true, "cloud_executor_dry_run_must_pass");
 assert.equal(dryRun.kind, "v22_cloud_authorized_executor", "cloud_executor_kind");
 assert.equal(dryRun.executionMode, "dry-run", "cloud_executor_must_default_dry_run");
@@ -58,6 +71,26 @@ assert.equal(
   existsSync(path.join(repoRoot, "tests/support/cloud-prework/cloud-authorized-readonly-executor.js")),
   true,
   "readonly_inventory_cloud_authorized_executor_adapter_must_exist",
+);
+assert.equal(
+  existsSync(path.join(repoRoot, "tests/support/cloud-prework/cloud-authorized-production-goal-executor.js")),
+  true,
+  "production_goal_cloud_authorized_executor_adapter_must_exist",
+);
+const mappedGoalScripts = new Map((authPack.active_pack.operation_class_command_map || []).map((entry) => [entry.operation_class, entry]));
+for (const [operationClass, scriptName] of Object.entries(expectedGoalScripts)) {
+  assert.equal(typeof packageJson.scripts?.[scriptName], "string", `root_package_goal_script_missing:${scriptName}`);
+  assert(packageJson.scripts[scriptName].includes("--operation"), `root_package_goal_script_must_scope_operation:${scriptName}`);
+  assert(packageJson.scripts[scriptName].includes(operationClass), `root_package_goal_script_must_target_operation:${scriptName}:${operationClass}`);
+  const mapping = mappedGoalScripts.get(operationClass);
+  assert(mapping, `cloud_authorization_pack_goal_mapping_missing:${operationClass}`);
+  assert.equal(mapping.package_script, scriptName, `cloud_authorization_pack_goal_package_script_mismatch:${operationClass}`);
+  assert.deepEqual(mapping.commands, [`npm run ${scriptName}`], `cloud_authorization_pack_goal_command_mismatch:${operationClass}`);
+}
+assert.equal(
+  authPack.active_pack.operation_class_command_map.some((entry) => JSON.stringify(entry).includes("test:cloud-future-authorized")),
+  false,
+  "cloud_authorization_pack_goal_mapping_must_not_use_future_authorized_test_lane",
 );
 
 const blocked = runExecutor(["--execute", "--operation", "does_not_exist", "--json"]);
@@ -130,6 +163,7 @@ try {
     "",
   ].join("\n"));
   const readonlyExecutor = "tests/support/cloud-prework/cloud-authorized-readonly-executor.js";
+  const productionGoalExecutor = "tests/support/cloud-prework/cloud-authorized-production-goal-executor.js";
   const missingReadonlySecret = runExecutor(["--execute", "--operation", "readonly_inventory", "--json"], {
     V22_CLOUD_COMMAND_EXECUTOR: readonlyExecutor,
   });
@@ -151,6 +185,28 @@ try {
   assert.equal(JSON.stringify(readonlyFake).includes(readonlySecretValue), false, "readonly_adapter_output_must_redact_secret_value");
   assert.equal(JSON.stringify(readonlyFake).includes("rawResponse"), false, "readonly_adapter_output_must_not_embed_raw_response");
   assert(readonlyPhase.results[0].summary.reportPath, "readonly_adapter_summary_must_include_report_pointer");
+
+  const dryRunGoal = jsonFrom(
+    runExecutor(["--execute", "--operation", "dry_run_plan", "--json"], {
+      V22_CLOUD_COMMAND_EXECUTOR: productionGoalExecutor,
+    }),
+    "production_goal_dry_run_plan",
+  );
+  const dryRunGoalPhase = dryRunGoal.phases.find((phase) => phase.operationClass === "dry_run_plan");
+  assert.equal(dryRunGoalPhase.status, "executed", "production_goal_dry_run_phase_must_execute");
+  assert.equal(dryRunGoalPhase.results[0].summary.realCloudCalls, false, "production_goal_dry_run_must_not_call_real_cloud");
+  assert.equal(dryRunGoalPhase.results[0].summary.mutationExecuted, false, "production_goal_dry_run_must_not_mutate");
+  assert(dryRunGoalPhase.results[0].summary.reportPaths.length >= 2, "production_goal_dry_run_must_write_plan_report_pointers");
+
+  const storageMissingEnv = runExecutor(["--execute", "--operation", "storage_lifecycle", "--json"], {
+    V22_CLOUD_COMMAND_EXECUTOR: productionGoalExecutor,
+  });
+  assert.equal(storageMissingEnv.status, 1, "production_goal_storage_without_env_must_fail_closed");
+  const storageMissingPayload = JSON.parse(storageMissingEnv.stdout);
+  const storagePhase = storageMissingPayload.phases.find((phase) => phase.operationClass === "storage_lifecycle");
+  assert.equal(storageMissingPayload.blocker.type, "cloud_authorized_command_failed", "production_goal_storage_missing_env_blocker");
+  assert.equal(storagePhase.results[0].summary.blocker, "production_goal_required_env_missing", "production_goal_storage_missing_env_summary");
+  assert.equal(JSON.stringify(storageMissingPayload).includes("TENCENT_MUTATION_SECRET_KEY="), false, "production_goal_missing_env_must_not_print_secret_assignment");
 } finally {
   rmSync(path.join(repoRoot, ".runtime/v22-cloud-authorization/run-v22-001"), { recursive: true, force: true });
   rmSync(tempDir, { recursive: true, force: true });

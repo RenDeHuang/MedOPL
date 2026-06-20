@@ -4,7 +4,10 @@ import { rm, writeFile } from "node:fs/promises";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { planCommandsForFiles } from "../../scripts/v22-test-policy.mjs";
+import {
+  CLOUD_GOAL_AUTHORIZED_COMMANDS,
+  planCommandsForFiles,
+} from "../../scripts/v22-test-policy.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
@@ -93,8 +96,12 @@ assert(cloudPayload.authorizedEnvironments.includes("staging"), "cloud_plan_must
 assert(cloudPayload.authorizedEnvironments.includes("production-canary"), "cloud_plan_must_report_production_canary_as_authorized_environment");
 assert(cloudPayload.recommendedCommands.includes("npm run test:cloud"), "cloud_plan_must_recommend_cloud_lane");
 assert(cloudPayload.recommendedCommands.includes("npm run test:real-cloud-readiness"), "cloud_plan_must_recommend_readiness_lane");
-assert.equal(cloudPayload.authorizedCommands.includes("npm run test:cloud-future-authorized"), true, "cloud_plan_must_keep_future_authorized_separate");
-assert.equal(cloudPayload.recommendedCommands.includes("npm run test:cloud-future-authorized"), false, "cloud_plan_must_not_default_future_authorized");
+assert.deepEqual(cloudPayload.authorizedCommands, CLOUD_GOAL_AUTHORIZED_COMMANDS, "cloud_plan_must_keep_goal_authorized_commands_separate");
+assert.equal(
+  CLOUD_GOAL_AUTHORIZED_COMMANDS.some((command) => cloudPayload.recommendedCommands.includes(command)),
+  false,
+  "cloud_plan_must_not_default_goal_authorized_commands",
+);
 assert.equal(cloudPayload.authorization.authorizedCommandsExecutable, true, "cloud_plan_must_have_active_authorization_pack");
 assert(Array.isArray(cloudPayload.authorization.diagnostics?.operationClassMappings), "cloud_plan_must_include_operation_class_diagnostics");
 assert(cloudPayload.authorization.diagnostics.operationClassMappings.length > 0, "cloud_plan_must_report_operation_class_diagnostics");
@@ -137,8 +144,12 @@ assert.equal(cloudBoundaryPlan.status, 0, `cloud_boundary_plan_must_exit_zero:${
 const cloudBoundaryPayload = JSON.parse(cloudBoundaryPlan.stdout);
 assert(cloudBoundaryPayload.matchedSurfaces.includes("cloud"), "cloud_boundary_plan_must_report_cloud_surface");
 assert(cloudBoundaryPayload.recommendedCommands.includes("npm run test:real-cloud-readiness"), "cloud_boundary_plan_must_recommend_local_readiness");
-assert.equal(cloudBoundaryPayload.recommendedCommands.includes("npm run test:cloud-future-authorized"), false, "cloud_boundary_plan_must_not_default_future_authorized");
-assert.equal(cloudBoundaryPayload.authorizedCommands.includes("npm run test:cloud-future-authorized"), true, "cloud_boundary_plan_must_keep_future_authorized_separate");
+assert.equal(
+  CLOUD_GOAL_AUTHORIZED_COMMANDS.some((command) => cloudBoundaryPayload.recommendedCommands.includes(command)),
+  false,
+  "cloud_boundary_plan_must_not_default_goal_authorized_commands",
+);
+assert.deepEqual(cloudBoundaryPayload.authorizedCommands, CLOUD_GOAL_AUTHORIZED_COMMANDS, "cloud_boundary_plan_must_keep_goal_authorized_commands_separate");
 assert.equal(cloudBoundaryPayload.authorization.authorizedCommandsExecutable, true, "cloud_boundary_plan_must_use_active_pack");
 assert(Array.isArray(cloudBoundaryPayload.authorization.diagnostics?.secretAllowlistMappings), "cloud_boundary_plan_must_expose_secret_allowlist_diagnostics");
 assert(cloudBoundaryPayload.authorization.diagnostics.secretAllowlistMappings.length > 0, "cloud_boundary_plan_must_report_secret_allowlist_diagnostics");

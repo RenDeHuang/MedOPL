@@ -13,6 +13,7 @@ import {
   listRegisteredTestFiles,
 } from "../../scripts/v22-test-classification.mjs";
 import {
+  CLOUD_GOAL_AUTHORIZED_COMMANDS,
   TEST_ENVIRONMENTS,
   TEST_SURFACES,
   TEST_PLAN_BASE_COMMANDS,
@@ -90,8 +91,10 @@ const cloudRule = TEST_SURFACE_RULES.find((rule) => rule.id === "cloud-boundary"
 assert(cloudRule, "policy_must_define_cloud_boundary_rule");
 assert.equal(cloudRule.environment, "local", "cloud_boundary_default_environment_must_remain_local");
 assert.equal(cloudRule.authorizedEnvironment, "staging", "cloud_boundary_authorized_environment_must_be_staging");
-assert.equal(cloudRule.commands.includes("npm run test:cloud-future-authorized"), false, "cloud_future_authorized_must_not_be_recommended_by_default");
-assert(cloudRule.authorizedCommands.includes("npm run test:cloud-future-authorized"), "cloud_future_authorized_must_remain_authorized_command");
+for (const command of CLOUD_GOAL_AUTHORIZED_COMMANDS) {
+  assert.equal(cloudRule.commands.includes(command), false, `cloud_goal_must_not_be_recommended_by_default:${command}`);
+}
+assert.deepEqual([...cloudRule.authorizedCommands], CLOUD_GOAL_AUTHORIZED_COMMANDS, "cloud_goal_commands_must_remain_authorized_commands");
 
 for (const suite of ["health", "smoke", "local-contract", "current", "review"]) {
   assert(TEST_LANE_SUITES[suite], `registry_suite_missing:${suite}`);

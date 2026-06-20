@@ -28,6 +28,7 @@ History 只保留短索引：
 - active change packages: retired; do not use as current source of truth
 - evidence index: `docs/evidence/README.md`
 - delivery closeout policy: `docs/delivery/README.md`
+- production goal runner RC: `feat/v22-production-goal-runner` maps cloud authorization operation classes to `cloud:goal:*`; Goal B dry-run plan is local/no-cloud, Goal C-F fail closed before env, real runner implementation and owner receipts.
 
 ## Tombstone Map
 

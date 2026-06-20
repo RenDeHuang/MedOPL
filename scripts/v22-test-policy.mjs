@@ -211,6 +211,18 @@ const TEST_PLAN_FULL_LOCAL_COMMANDS = Object.freeze([
   "npm run verify:local-release-candidate",
 ]);
 
+export const CLOUD_GOAL_AUTHORIZED_COMMANDS = Object.freeze([
+  "npm run cloud:goal:readonly-inventory",
+  "npm run cloud:goal:dry-run-plan",
+  "npm run cloud:goal:tenant-runtime-provisioning",
+  "npm run cloud:goal:storage-lifecycle",
+  "npm run cloud:goal:billing-audit-writeback",
+  "npm run cloud:goal:build-push",
+  "npm run cloud:goal:kubectl",
+  "npm run cloud:goal:deploy",
+  "npm run cloud:goal:live-test",
+]);
+
 const PREFLIGHT_CHECK_DEFINITIONS = Object.freeze({
   "frontend-typescript-package": Object.freeze({
     id: "frontend-typescript-package",
@@ -588,7 +600,7 @@ export const TEST_SURFACE_RULES = Object.freeze([
       "npm run test:cloud",
       "npm run test:real-cloud-readiness",
     ]),
-    authorizedCommands: Object.freeze(["npm run test:cloud-future-authorized"]),
+    authorizedCommands: CLOUD_GOAL_AUTHORIZED_COMMANDS,
     cannotClaim: Object.freeze([
       "future-authorized cloud mutation",
       "production canary coverage",

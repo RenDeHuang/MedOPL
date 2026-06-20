@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
+  CLOUD_GOAL_AUTHORIZED_COMMANDS,
   readCloudAuthorizationPack,
   planCommandsForFiles,
   preflightTestPlan,
@@ -48,11 +49,11 @@ for (const command of ["npm run test:contract", "npm run test:backend", "npm run
 }
 
 const cloudPlan = planCommandsForFiles(["contracts/medopl-cloud-boundary.json"]);
-assert(cloudPlan.authorizedCommands.includes("npm run test:cloud-future-authorized"), "cloud_plan_must_keep_future_authorized_command");
+assert.deepEqual(cloudPlan.authorizedCommands, CLOUD_GOAL_AUTHORIZED_COMMANDS, "cloud_plan_must_keep_goal_authorized_commands");
 assert.equal(
-  cloudPlan.recommendedCommands.includes("npm run test:cloud-future-authorized"),
+  CLOUD_GOAL_AUTHORIZED_COMMANDS.some((command) => cloudPlan.recommendedCommands.includes(command)),
   false,
-  "cloud_plan_must_not_recommend_future_authorized_command",
+  "cloud_plan_must_not_recommend_goal_authorized_commands",
 );
 assert.equal(cloudPlan.authorization.authorizedCommandsExecutable, true, "cloud_plan_must_see_active_authorization_pack");
 assert.equal(
@@ -313,8 +314,12 @@ assert.equal(
   "run_plan_report_receipt_manifest_contract_mismatch",
 );
 assert(dryRun.report.commands.planned.includes("npm run test:cloud"), "run_plan_report_must_include_recommended_command");
-assert.equal(dryRun.report.commands.planned.includes("npm run test:cloud-future-authorized"), false, "run_plan_report_must_not_plan_authorized_command");
-assert(dryRun.report.commands.skippedAuthorized.includes("npm run test:cloud-future-authorized"), "run_plan_report_must_skip_authorized_command");
+assert.equal(
+  CLOUD_GOAL_AUTHORIZED_COMMANDS.some((command) => dryRun.report.commands.planned.includes(command)),
+  false,
+  "run_plan_report_must_not_plan_authorized_commands",
+);
+assert.deepEqual(dryRun.report.commands.skippedAuthorized, CLOUD_GOAL_AUTHORIZED_COMMANDS, "run_plan_report_must_skip_goal_authorized_commands");
 assert(dryRun.cannotClaim.includes("owner receipts complete"), "run_plan_must_preserve_receipt_cannot_claim");
 
 const tempDir = mkdtempSync(path.join(tmpdir(), "v22-run-plan-"));
@@ -328,7 +333,7 @@ try {
   writeFileSync(successExecutor, `import { appendFileSync } from "node:fs";\nconst logPath = ${JSON.stringify(successLog)};\nexport default async function runCommand(command) { appendFileSync(logPath, \`\${command}\\n\`); return { command, ok: true, status: 0 }; }\n`);
   writeFileSync(failureExecutor, "export default async function runCommand(command) { return command === \"npm run test:smoke\" ? { command, ok: false, status: 7 } : { command, ok: true, status: 0 }; }\n");
   writeFileSync(authorizedExecutor, `import { appendFileSync } from "node:fs";\nconst logPath = ${JSON.stringify(authorizedLog)};\nexport default async function runCommand(command) { appendFileSync(logPath, \`\${command}\\n\`); return { command, ok: true, status: 0 }; }\n`);
-  writeFileSync(authorizedWithReceiptExecutor, `import { copyFileSync, mkdirSync } from "node:fs";\nimport path from "node:path";\nexport default async function runCommand(command, context) { if (command === "npm run test:cloud-future-authorized") { const target = path.join(context.repoRoot, ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json"); mkdirSync(path.dirname(target), { recursive: true }); copyFileSync(path.join(context.repoRoot, "tests/fixtures/v22/production-receipt-manifest.example.json"), target); } return { command, ok: true, status: 0 }; }\n`);
+  writeFileSync(authorizedWithReceiptExecutor, `import { copyFileSync, mkdirSync } from "node:fs";\nimport path from "node:path";\nexport default async function runCommand(command, context) { if (command.startsWith("npm run cloud:goal:")) { const target = path.join(context.repoRoot, ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json"); mkdirSync(path.dirname(target), { recursive: true }); copyFileSync(path.join(context.repoRoot, "tests/fixtures/v22/production-receipt-manifest.example.json"), target); } return { command, ok: true, status: 0 }; }\n`);
 
   const commandOverride = runVerify(["run-plan", "--files", "scripts/v22-test-policy.mjs", "--commands", "node -e \"process.exit(0)\"", "--json"]);
   assert.equal(commandOverride.status, 1, "run_plan_must_reject_manual_command_override");
@@ -362,9 +367,10 @@ try {
   assert.equal(authorizedMissingReceipt.status, 1, "authorized_run_without_receipt_manifest_must_exit_one");
   const authorizedMissingReceiptPayload = JSON.parse(authorizedMissingReceipt.stdout);
   assert.equal(authorizedMissingReceiptPayload.includeAuthorized, true, "authorized_run_must_enable_authorized_execution");
-  assert(
-    authorizedMissingReceiptPayload.report.commands.authorizedExecuted.some((entry) => entry.command === "npm run test:cloud-future-authorized"),
-    "run_plan_authorized_must_execute_cloud_future_authorized_before_receipt_gate",
+  assert.deepEqual(
+    authorizedMissingReceiptPayload.report.commands.authorizedExecuted.map((entry) => entry.command),
+    CLOUD_GOAL_AUTHORIZED_COMMANDS,
+    "run_plan_authorized_must_execute_goal_authorized_commands_before_receipt_gate",
   );
   assert.equal(authorizedMissingReceiptPayload.ok, false, "authorized_run_without_receipt_manifest_must_fail_closed");
   assert.equal(
