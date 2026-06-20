@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,6 +14,14 @@ async function readRepoFile(repoPath) {
 
 async function readRepoJson(repoPath) {
   return JSON.parse(await readRepoFile(repoPath));
+}
+
+function git(args) {
+  return spawnSync("git", args, {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
 }
 
 function listItems(manifest) {
@@ -174,7 +183,13 @@ assert.equal(packageJson.scripts["cloud:rollout:dry-run"], "node scripts/cloud-r
 assert.equal(packageJson.scripts["cloud:rollout:availability"], "node scripts/cloud-rollout/medopl.mjs --availability-probe", "cloud_rollout_availability_script_missing");
 
 const goalCurrent = await readRepoJson("tests/fixtures/v22/goal-current.json");
-assert.equal(goalCurrent.last_landed_commit, "618f523ce38e4714f345e9fa49921a2256d1c182", "goal_current_must_sync_latest_landed_commit");
+assert.equal(
+  goalCurrent.last_landed_commit,
+  goalCurrent.latest_landed_closeout?.landed_commit,
+  "goal_current_must_sync_latest_landed_commit",
+);
+const landedAncestor = git(["merge-base", "--is-ancestor", goalCurrent.last_landed_commit, "HEAD"]);
+assert.equal(landedAncestor.status, 0, `goal_current_landed_commit_must_be_head_ancestor:${landedAncestor.stderr}`);
 
 const review = evaluateReview({
   base: "origin/recovery/platform-v22-trunk",
