@@ -1,0 +1,70 @@
+name: Release Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Commit SHA or branch to build after local/CI verify passes.
+        required: true
+        type: string
+      image_tag:
+        description: Optional image tag. Defaults to the checked out short commit SHA.
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  build-push:
+    name: Build and Push MedOPL Image
+    runs-on: [self-hosted, tencent-cloud, medopl]
+    environment: production
+    env:
+      V22_CONTAINER_BUILD_CONTEXT: services/medopl-go-backend
+      V22_CONTAINER_IMAGE_REPOSITORY: uswccr.ccs.tencentyun.com/medopl/medopl-go-backend
+      V22_CONTAINER_BUILD_PUSH_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs
+      V22_CONTAINER_BUILD_PUSH_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation build_push --execute --confirm-current-session-authorization
+      V22_CONTAINER_BUILD_PUSH_SHELL: >-
+        printf '%s' "$TCR_SECRET" | docker login uswccr.ccs.tencentyun.com --username "$TCR_ID" --password-stdin
+        && docker buildx build --push -f services/medopl-go-backend/Dockerfile -t "$V22_CONTAINER_IMAGE_REF" "$V22_CONTAINER_BUILD_CONTEXT"
+      TCR_ID: ${{ secrets.TCR_USERNAME }}
+      TCR_SECRET: ${{ secrets.TCR_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Cloud goal preflight
+        run: npm run cloud:goal:preflight
+
+      - name: Image metadata
+        id: meta
+        shell: bash
+        run: |
+          head_sha="$(git rev-parse HEAD)"
+          short_sha="${head_sha::7}"
+          image_tag="${{ inputs.image_tag }}"
+          if [ -z "$image_tag" ]; then
+            image_tag="$short_sha"
+          fi
+          if ! printf '%s' "$image_tag" | grep -Eq '^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$'; then
+            echo "image_tag is outside the allowed container tag format." >&2
+            exit 1
+          fi
+          image="${V22_CONTAINER_IMAGE_REPOSITORY}:${image_tag}"
+          echo "short_sha=${short_sha}" >> "$GITHUB_OUTPUT"
+          echo "image_tag=${image_tag}" >> "$GITHUB_OUTPUT"
+          echo "image=${image}" >> "$GITHUB_OUTPUT"
+          echo "V22_CONTAINER_IMAGE_REF=${image}" >> "$GITHUB_ENV"
+
+      - name: Build push receipt lane
+        run: npm run cloud:goal -- --operation build_push
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push cloud image through receipt runner
+        run: npm run cloud:goal -- --operation build_push

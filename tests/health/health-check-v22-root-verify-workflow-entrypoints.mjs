@@ -62,7 +62,7 @@ const expectedScripts = {
   "repo:hygiene": "node scripts/v22-repo-hygiene.mjs",
   "repo:bloat": "node scripts/v22-repo-bloat-audit.mjs --json",
   "line:budget": "node scripts/v22-line-budget.mjs",
-  "check:diff": "git diff --check -- AGENTS.md README.md TASTE.md contracts docs specs tests scripts package.json .github",
+  "check:diff": "git diff --check -- AGENTS.md README.md TASTE.md contracts docs specs tests scripts deploy package.json .github",
   "local:services:plan": "node scripts/v22-local-services.mjs plan --json",
   "local:services:check": "node scripts/v22-local-services.mjs check --json",
   "local:services:check:dry-run": "node scripts/v22-local-services.mjs check --dry-run --json",
@@ -73,6 +73,8 @@ const expectedScripts = {
   "local:services:verify": "node scripts/v22-local-services.mjs verify --dry-run --json",
   "local:product:e2e": "node scripts/v22-local-product-e2e.mjs --dry-run --json",
   "local:product:e2e:execute": "node scripts/v22-local-product-e2e.mjs --execute --json",
+  "cloud:rollout:dry-run": "node scripts/cloud-rollout/medopl.mjs",
+  "cloud:rollout:availability": "node scripts/cloud-rollout/medopl.mjs --availability-probe",
 };
 
 assert.equal(packageJson.private, true, "root_package_must_be_private");
@@ -260,6 +262,7 @@ const cloudReleaseCandidateSuite = manifest.package_suites.find((suite) => suite
 assert(cloudReleaseCandidateSuite, "cloud_release_candidate_package_suite_missing");
 assert.deepEqual(cloudReleaseCandidateSuite.commands, [
   "node tests/cloud/cloud-test-v22-cloud-authorized-executor.mjs",
+  "node tests/cloud/cloud-test-v22-medopl-github-cloud-rollout-shape.mjs",
   "node tests/cloud/cloud-test-v22-production-goal-command-runner.mjs",
   "node tests/cloud/cloud-test-v22-production-goal-runners.mjs",
   "node tests/release/release-test-v22-production-receipt-boundary.mjs",

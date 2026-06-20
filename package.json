@@ -41,7 +41,7 @@
     "repo:hygiene": "node scripts/v22-repo-hygiene.mjs",
     "repo:bloat": "node scripts/v22-repo-bloat-audit.mjs --json",
     "line:budget": "node scripts/v22-line-budget.mjs",
-    "check:diff": "git diff --check -- AGENTS.md README.md TASTE.md contracts docs specs tests scripts package.json .github",
+    "check:diff": "git diff --check -- AGENTS.md README.md TASTE.md contracts docs specs tests scripts deploy package.json .github",
     "test:fast": "node scripts/v22-verify.mjs package pre-slide-fast --base origin/recovery/platform-v22-trunk",
     "test:lanes": "node scripts/v22-verify.mjs package test-lanes --base origin/recovery/platform-v22-trunk",
     "verify:local-release-candidate": "node scripts/v22-verify.mjs package local-release-candidate --base origin/recovery/platform-v22-trunk",
@@ -56,6 +56,8 @@
     "local:product:e2e": "node scripts/v22-local-product-e2e.mjs --dry-run --json",
     "local:product:e2e:execute": "node scripts/v22-local-product-e2e.mjs --execute --json",
     "cloud:goal": "V22_CLOUD_COMMAND_EXECUTOR=tests/support/cloud-prework/cloud-authorized-production-goal-executor.js node scripts/v22-cloud-authorized-executor.mjs --execute --json",
+    "cloud:rollout:dry-run": "node scripts/cloud-rollout/medopl.mjs",
+    "cloud:rollout:availability": "node scripts/cloud-rollout/medopl.mjs --availability-probe",
     "verify:cloud-release-candidate": "node scripts/v22-verify.mjs package cloud-release-candidate --base origin/recovery/platform-v22-trunk"
   },
   "dependencies": {

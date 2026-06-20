@@ -1,0 +1,185 @@
+name: Cloud Rollout
+
+on:
+  workflow_dispatch:
+    inputs:
+      image:
+        description: Full image tag/digest or release short commit tag to deploy.
+        required: true
+        type: string
+      target_environment:
+        description: Deployment target.
+        required: true
+        type: choice
+        options:
+          - production
+      apply:
+        description: Run rollout mutation after production environment approval.
+        required: true
+        default: false
+        type: boolean
+      rollback:
+        description: Run approved rollback instead of forward apply.
+        required: true
+        default: false
+        type: boolean
+      availability_probe:
+        description: Run no-secret availability probe against the public MedOPL host.
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  production-dry-run:
+    name: Production Dry Run
+    runs-on: [self-hosted, tencent-cloud, medopl]
+    env:
+      MEDOPL_IMAGE: ${{ inputs.image }}
+      MEDOPL_NAMESPACE: medopl
+      MEDOPL_BASE_URL: https://medopl.medopl.cn
+      V22_KUBERNETES_MANIFEST_DIR: deploy/medopl-cloud
+      V22_MEDOPL_PUBLIC_BASE_URL: https://medopl.medopl.cn
+      V22_OPL_WEBUI_CONSUMER_CANARY_URL: https://opl.medopl.cn
+      V22_KUBERNETES_APPLY_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs
+      V22_KUBERNETES_APPLY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation kubectl --execute --confirm-current-session-authorization
+      V22_MEDOPL_DEPLOY_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs
+      V22_MEDOPL_DEPLOY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation deploy --execute --confirm-current-session-authorization
+      V22_OPL_WEBUI_CONSUMER_CANARY_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs
+      V22_OPL_WEBUI_CONSUMER_CANARY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation live_test --execute --confirm-current-session-authorization
+      V22_MEDOPL_DEPLOY_PLAN_FILE: ${{ runner.temp }}/medopl-deploy-plan.json
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Cloud goal preflight
+        run: npm run cloud:goal:preflight
+
+      - name: Validate image allowlist
+        shell: bash
+        run: |
+          image="$(printf '%s' "$MEDOPL_IMAGE" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+          short_tag_pattern='^[0-9a-f]{7,40}$'
+          if [[ "$image" =~ $short_tag_pattern ]]; then
+            image="uswccr.ccs.tencentyun.com/medopl/medopl-go-backend:$image"
+          fi
+          tag_pattern='^uswccr\.ccs\.tencentyun\.com/medopl/medopl-go-backend:[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$'
+          digest_pattern='^uswccr\.ccs\.tencentyun\.com/medopl/medopl-go-backend@sha256:[0-9a-f]{64}$'
+          if [[ "$image" =~ $tag_pattern || "$image" =~ $digest_pattern ]]; then
+            echo "MEDOPL_IMAGE=$image" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          echo "MEDOPL_IMAGE is outside the allowed MedOPL image registry." >&2
+          exit 1
+
+      - name: Rollout dry-run
+        run: node scripts/cloud-rollout/medopl.mjs
+
+  rollout-mutation-guard:
+    name: Rollout Mutation Guard
+    if: ${{ inputs.apply && inputs.rollback }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject conflicting rollout mutations
+        shell: bash
+        run: |
+          echo "apply=true and rollback=true are mutually exclusive." >&2
+          exit 1
+
+  production-apply:
+    name: Production Apply
+    needs: production-dry-run
+    if: ${{ inputs.apply && !inputs.rollback }}
+    runs-on: [self-hosted, tencent-cloud, medopl]
+    environment: production
+    env:
+      MEDOPL_IMAGE: ${{ inputs.image }}
+      MEDOPL_NAMESPACE: medopl
+      MEDOPL_BASE_URL: https://medopl.medopl.cn
+      V22_KUBERNETES_MANIFEST_DIR: deploy/medopl-cloud
+      V22_MEDOPL_PUBLIC_BASE_URL: https://medopl.medopl.cn
+      V22_OPL_WEBUI_CONSUMER_CANARY_URL: https://opl.medopl.cn
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Write kubeconfig file
+        env:
+          KUBECONFIG_CONTENT: ${{ secrets.KUBECONFIG }}
+        shell: bash
+        run: |
+          printf '%s' "$KUBECONFIG_CONTENT" > "$RUNNER_TEMP/kubeconfig"
+          chmod 600 "$RUNNER_TEMP/kubeconfig"
+          echo "TENCENT_DEPLOY_KUBECONFIG_REF=$RUNNER_TEMP/kubeconfig" >> "$GITHUB_ENV"
+
+      - name: Create deploy plan
+        shell: bash
+        run: |
+          cat > "$V22_MEDOPL_DEPLOY_PLAN_FILE" <<'JSON'
+          {
+            "kind": "medopl_cloud_rollout_deploy_plan",
+            "namespace": "medopl",
+            "deployment": "medopl-control-plane",
+            "publicBaseUrl": "https://medopl.medopl.cn",
+            "consumerBaseUrl": "https://opl.medopl.cn"
+          }
+          JSON
+
+      - name: Kubernetes receipt lane
+        run: npm run cloud:goal -- --operation kubectl
+
+      - name: Deploy receipt lane
+        run: npm run cloud:goal -- --operation deploy
+
+      - name: Rollout apply
+        run: node scripts/cloud-rollout/medopl.mjs --apply
+
+      - name: OPL-Webui consumer canary receipt lane
+        if: ${{ inputs.availability_probe }}
+        run: npm run cloud:goal -- --operation live_test
+
+      - name: MedOPL availability probe
+        if: ${{ inputs.availability_probe }}
+        run: node scripts/cloud-rollout/medopl.mjs --availability-probe
+
+  production-rollback:
+    name: Production Rollback
+    needs: production-dry-run
+    if: ${{ inputs.rollback && !inputs.apply }}
+    runs-on: [self-hosted, tencent-cloud, medopl]
+    environment: production
+    env:
+      MEDOPL_IMAGE: ${{ inputs.image }}
+      MEDOPL_NAMESPACE: medopl
+      MEDOPL_BASE_URL: https://medopl.medopl.cn
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Write kubeconfig file
+        env:
+          KUBECONFIG_CONTENT: ${{ secrets.KUBECONFIG }}
+        shell: bash
+        run: |
+          printf '%s' "$KUBECONFIG_CONTENT" > "$RUNNER_TEMP/kubeconfig"
+          chmod 600 "$RUNNER_TEMP/kubeconfig"
+          echo "TENCENT_DEPLOY_KUBECONFIG_REF=$RUNNER_TEMP/kubeconfig" >> "$GITHUB_ENV"
+
+      - name: Rollout rollback
+        run: node scripts/cloud-rollout/medopl.mjs --rollback
+
+  production-availability-probe-current:
+    name: Production Availability Probe Current
+    needs: production-dry-run
+    if: ${{ !inputs.apply && !inputs.rollback && inputs.availability_probe }}
+    runs-on: [self-hosted, tencent-cloud, medopl]
+    env:
+      MEDOPL_BASE_URL: https://medopl.medopl.cn
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run no-secret availability probe
+        run: node scripts/cloud-rollout/medopl.mjs --availability-probe

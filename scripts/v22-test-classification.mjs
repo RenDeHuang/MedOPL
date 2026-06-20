@@ -272,6 +272,7 @@ function explicitEntries() {
     ...HEALTH_FILES.map((file) => baseEntry(file, "health", "health-check", ["health", "hygiene", "local-contract"])),
     ...REVIEW_HEALTH_FILES.map((file) => baseEntry(file, "health", "health-check", ["health", "hygiene", "local-contract", "review"])),
     ...SMOKE_FILES.map((file) => baseEntry(file, "smoke", "smoke-golden", ["smoke"])),
+    baseEntry("tests/cloud/cloud-test-v22-medopl-github-cloud-rollout-shape.mjs", "cloud", "cloud-boundary", ["cloud-release-candidate"]),
     ...CLOUD_READINESS_FILES.map((file) => baseEntry(file, "real-cloud-readiness", "real-cloud-readiness", ["cloud", "real-cloud-readiness"])),
     ...CLOUD_FUTURE_FILES.map((file) => baseEntry(file, "future-authorized", "future-authorized", ["cloud-future-authorized"])),
     ...CLOUD_FUTURE_SUPPORT_FILES.map((file) => baseEntry(file, "future-authorized", "future-authorized", ["cloud-future-authorized"])),

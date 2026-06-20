@@ -8,6 +8,12 @@ export const forbiddenPathPatterns = [
   /(?:^|\/)upstream(?:\/|$)/,
 ];
 
+const allowedTestedDeployShapePaths = new Set([
+  "deploy/medopl-cloud/medopl.k8s.json",
+  ".github/workflows/cloud-rollout.yml",
+  ".github/workflows/release-image.yml",
+]);
+
 export const secretLikePathPatterns = [
   /(?:^|\/)\.env(?:\.|$)/i,
   /\.env$/i,
@@ -33,6 +39,7 @@ export const secretLikeAddedLinePatterns = [
 
 export function isForbiddenPath(filePath) {
   const normalized = normalizePath(filePath);
+  if (allowedTestedDeployShapePaths.has(normalized)) return false;
   return forbiddenPathPatterns.some((pattern) => pattern.test(normalized));
 }
 

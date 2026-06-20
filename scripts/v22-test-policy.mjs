@@ -592,6 +592,10 @@ export const TEST_SURFACE_RULES = Object.freeze([
     pathPrefixes: Object.freeze([
       "tests/cloud/",
       "tests/support/cloud-prework/",
+      "deploy/medopl-cloud/",
+      ".github/workflows/cloud-rollout.yml",
+      ".github/workflows/release-image.yml",
+      "scripts/cloud-rollout/medopl.mjs",
     ]),
     match(file) {
       return file.startsWith("contracts/medopl-cloud-boundary");
