@@ -47,6 +47,8 @@ node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-tr
 
 标准开发 slice 入口是 `slice:start -> slice:plan -> slice:verify -> slice:land -> slice:post-push-verify -> slice:cleanup`。这些入口由 `scripts/v22-worktree-slice-orchestrator.mjs` 输出 plan / controlled-executor JSON，复用 `v22-workflow-gate`、`v22-verify` 和 `v22-landing-closeout` 的现有机器 truth。
 
+`slice:start --execute` 也是开发准入控制入口。每个 slice 必须先写入 `.runtime/slices/<slice-id>/slice.json`，其中 `admission` 固定本轮 `slice_type`、`owner_surface`、`target_claim`、`minimum_evidence_slice`、允许/禁止路径、是否允许新增顶层脚本/contract/health test、是否触云、是否允许改 active docs、是否必须 hold bloat 和 `cannot_claim`。`product` slice 默认不允许新增 `scripts/v22-*.mjs`、不允许新增 `tests/health/*.mjs`、不允许触 cloud/deploy/live-test，不允许把 local/cloud RC 升级为 production complete。`automation` / `cloud` / `cleanup` slice 必须显式写清 owner、证据和 cannot-claim；cloud slice 还必须绑定 `operation_class`、`evidence_sink` 和 receipt manifest requirement。
+
 每个 gap 的默认 delivery loop 是：
 
 ```text
@@ -66,7 +68,7 @@ current truth
 -> tombstone cleanup
 ```
 
-`push feature branch` 允许作为每个 gap 的远端 review / backup / handoff 面；它不代表 trunk landed，也不能升级成 production claim。`ff-only merge trunk` 和 `push trunk` 不需要逐次口头授权，但只能在 fresh landing gate 通过后执行。最低 landing gate 是：`npm run test:run-plan -- --dry-run --json`、`npm run test:run-plan`、相关 targeted gates、`npm run verify`、`npm run test:health`、`npm run gate:review`、`npm run repo:bloat` 和 `npm run line:budget`。`post-push verify` 通过后再做 tombstone cleanup。
+`push feature branch` 允许作为每个 gap 的远端 review / backup / handoff 面；它不代表 trunk landed，也不能升级成 production claim。`ff-only merge trunk` 和 `push trunk` 不需要逐次口头授权，但只能在 fresh landing gate 通过后执行。最低 landing gate 是：`npm run test:run-plan -- --dry-run --json`、`npm run test:run-plan`、相关 targeted gates、`npm run verify`、`npm run test:health`、`npm run gate:review -- --slice-id <slice-id>`、`npm run repo:bloat -- --diff --slice-id <slice-id>` 和 `npm run line:budget`。`gate:review` 和 `repo:bloat --diff` 会消费 slice admission，拦截本次 diff 的越界 owner path、新增顶层控制脚本、新增 health 治理测试、未准入 contract、cloud surface 越权和超线文件继续增长。`post-push verify` 通过后再做 tombstone cleanup。
 
 真实云、secret、provider call、Tencent mutation、kubectl、deploy、build/push 和 live-test 不受一般 git landing policy 放开；它们仍必须通过机器授权包、runner evidence 和 `contracts/medopl-production-receipt-boundary.json` 定义的 receipt manifest。
 

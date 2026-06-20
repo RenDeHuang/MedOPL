@@ -34,6 +34,8 @@ import {
   secretLikeAddedLinesFrom,
 } from "./workflow-gate/policy.mjs";
 import { printUsage, renderCheckpointReport, renderReviewReport } from "./workflow-gate/report.mjs";
+import { evaluateSliceAdmission, readSliceAdmission } from "./workflow-gate/admission.mjs";
+import { lineBudgetDiffForChangedFiles } from "./workflow-gate/line-budget-diff.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -64,6 +66,8 @@ export function evaluateReview({
   changedStatuses = changedFileStatusesSince(repoRoot, base),
   addedLines = addedLinesSince(repoRoot, base),
   missingLocalCommandReferences = findMissingLocalCommandReferences(repoRoot),
+  sliceAdmission,
+  lineBudgetDiff,
 } = {}) {
   const normalizedFiles = changedFiles.map((file) => String(file || "").replaceAll("\\", "/").replace(/^\.\//, "")).filter(Boolean);
   const authorizedCleanupDeletions = normalizedFiles.filter((file) =>
@@ -85,6 +89,12 @@ export function evaluateReview({
   const closeoutOnly = normalizedFiles.length > 0 && normalizedFiles.every((file) => closeoutOnlyFiles.has(file));
   const formalEngineeringChanged = normalizedFiles.some((file) => isFormalEngineeringChange(file) && !isChangePackagePath(file));
   const findings = [];
+  findings.push(...evaluateSliceAdmission({
+    changedFiles: normalizedFiles,
+    changedStatuses,
+    sliceAdmission,
+    lineBudgetDiff,
+  }));
 
   if (retiredChangePathWrites.length > 0) findings.push({ code: "retired_changes_path_write", severity: "blocker", files: retiredChangePathWrites });
   if (forbiddenPaths.length > 0) findings.push({ code: "forbidden_path_changed", severity: "blocker", files: forbiddenPaths });
@@ -118,6 +128,7 @@ export function evaluateReview({
     missingLocalTestCommandReferences: missingLocalCommandReferences,
     closeoutOnly,
     findings,
+    sliceAdmission: sliceAdmission || null,
     recommendedCommands: unique(recommendedCommands),
   };
 }
@@ -155,7 +166,16 @@ async function main() {
     process.exitCode = 2;
     return;
   }
-  if (mode === "review") return void process.stdout.write(renderReviewReport(evaluateReview({ base: options.base || "recovery/platform-v22-trunk" })));
+  if (mode === "review") {
+    const base = options.base || "recovery/platform-v22-trunk";
+    const changedFiles = changedFilesSince(repoRoot, base);
+    return void process.stdout.write(renderReviewReport(evaluateReview({
+      base,
+      changedFiles,
+      sliceAdmission: readSliceAdmission(repoRoot, options["slice-id"]),
+      lineBudgetDiff: lineBudgetDiffForChangedFiles(repoRoot, { base, changedFiles }),
+    })));
+  }
   if (mode === "checkpoint") return void process.stdout.write(renderCheckpointReport(evaluateCheckpoint()));
   printUsage();
   process.exitCode = 2;

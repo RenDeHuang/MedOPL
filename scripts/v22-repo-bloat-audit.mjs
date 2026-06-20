@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
-import { existsSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { lineBudgetDiffForChangedFiles } from "./workflow-gate/line-budget-diff.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "..");
@@ -145,6 +146,146 @@ function runGit(args) {
   return result.stdout.split("\n").map((line) => line.trim()).filter(Boolean);
 }
 
+function parseArgs(argv) {
+  const options = {};
+  for (let i = 0; i < argv.length; i += 1) {
+    const item = argv[i];
+    if (!item.startsWith("--")) continue;
+    const key = item.slice(2);
+    const next = argv[i + 1];
+    if (!next || next.startsWith("--")) {
+      options[key] = true;
+    } else {
+      options[key] = next;
+      i += 1;
+    }
+  }
+  return options;
+}
+
+function normalizeFile(file) {
+  return String(file || "").replaceAll("\\", "/").replace(/^\.\//u, "");
+}
+
+function changedFilesSince(base) {
+  const outputs = [
+    ...runGit(["diff", "--name-only", `${base}...HEAD`]),
+    ...runGit(["diff", "--name-only", "--cached"]),
+    ...runGit(["diff", "--name-only"]),
+    ...runGit(["ls-files", "--others", "--exclude-standard"]),
+  ];
+  return [...new Set(outputs.map(normalizeFile).filter(Boolean))];
+}
+
+function changedFileStatusesSince(base) {
+  const outputs = [
+    { output: runGit(["diff", "--name-status", `${base}...HEAD`]), override: false },
+    { output: runGit(["diff", "--name-status", "--cached"]), override: true },
+    { output: runGit(["diff", "--name-status"]), override: true },
+  ];
+  const statuses = new Map();
+  for (const { output, override } of outputs) {
+    for (const line of output.map((item) => item.trim()).filter(Boolean)) {
+      const [status, ...paths] = line.split(/\s+/u);
+      const file = normalizeFile(paths.at(-1));
+      if (file && (override || !statuses.has(file))) statuses.set(file, status);
+    }
+  }
+  for (const file of changedFilesSince(base)) {
+    if (!statuses.has(file)) statuses.set(file, "A");
+  }
+  return statuses;
+}
+
+function readSliceAdmission(sliceId) {
+  if (!sliceId || sliceId === true) return null;
+  const safeSliceId = String(sliceId).trim().replace(/[^a-zA-Z0-9._-]+/gu, "-").replace(/^-+|-+$/gu, "");
+  if (!safeSliceId) return null;
+  const manifestPath = path.join(repoRoot, ".runtime", "slices", safeSliceId, "slice.json");
+  if (!existsSync(manifestPath)) throw new Error(`slice_manifest_not_found:${path.relative(repoRoot, manifestPath)}`);
+  const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+  return manifest.admission || null;
+}
+
+function isNewTargetStatus(status) {
+  const value = String(status || "");
+  return value.startsWith("A") || value.startsWith("C") || value.startsWith("R") || value.includes("A");
+}
+
+function patternMatches(file, pattern) {
+  const normalized = normalizeFile(pattern);
+  if (!normalized) return false;
+  if (normalized.endsWith("/**")) return file === normalized.slice(0, -3) || file.startsWith(normalized.slice(0, -2));
+  if (normalized.endsWith("/")) return file.startsWith(normalized);
+  return file === normalized;
+}
+
+function isAllowedByAdmission(file, admission) {
+  const allowed = admission?.allowed_paths || [];
+  if (allowed.length === 0) return true;
+  return allowed.some((pattern) => patternMatches(file, pattern));
+}
+
+export function evaluateDiffAdmission({
+  changedFiles = [],
+  changedStatuses = new Map(),
+  sliceAdmission,
+  lineBudgetDiff = {},
+} = {}) {
+  const files = changedFiles.map(normalizeFile).filter(Boolean);
+  const findings = [];
+  if (!sliceAdmission) {
+    return {
+      ok: true,
+      contract: "v22_repo_bloat_diff_admission",
+      changedFiles: files,
+      sliceAdmission: null,
+      findings,
+    };
+  }
+
+  const outsideAllowed = files.filter((file) => !isAllowedByAdmission(file, sliceAdmission));
+  if (outsideAllowed.length > 0) {
+    findings.push({ code: "diff_changed_file_outside_allowed_paths", severity: "blocker", files: outsideAllowed });
+  }
+
+  const newTopLevelScripts = files.filter((file) =>
+    /^scripts\/v22-[^/]+\.mjs$/u.test(file)
+    && isNewTargetStatus(changedStatuses.get(file)));
+  if (!sliceAdmission.new_top_level_scripts_allowed && newTopLevelScripts.length > 0) {
+    findings.push({ code: "diff_new_top_level_script_forbidden", severity: "blocker", files: newTopLevelScripts });
+  }
+
+  const newHealthTests = files.filter((file) =>
+    /^tests\/health\/[^/]+\.mjs$/u.test(file)
+    && isNewTargetStatus(changedStatuses.get(file)));
+  if (!sliceAdmission.new_health_tests_allowed && newHealthTests.length > 0) {
+    findings.push({ code: "diff_new_health_test_forbidden", severity: "blocker", files: newHealthTests });
+  }
+
+  const newContracts = files.filter((file) =>
+    /^contracts\/[^/]+\.json$/u.test(file)
+    && isNewTargetStatus(changedStatuses.get(file)));
+  if (!sliceAdmission.new_contracts_allowed && newContracts.length > 0) {
+    findings.push({ code: "diff_new_contract_forbidden", severity: "blocker", files: newContracts });
+  }
+
+  if (sliceAdmission.must_reduce_or_hold_bloat) {
+    const grownOversizeFiles = lineBudgetDiff.grownOversizeFiles || [];
+    if (grownOversizeFiles.length > 0) {
+      findings.push({ code: "diff_oversize_file_growth_forbidden", severity: "blocker", files: grownOversizeFiles.map((item) => item.file || item) });
+    }
+  }
+
+  return {
+    ok: findings.length === 0,
+    contract: "v22_repo_bloat_diff_admission",
+    changedFiles: files,
+    sliceAdmission,
+    findings,
+  };
+}
+
 function areaForFile(filePath) {
   return areaPrefixes.find((prefix) => filePath.startsWith(prefix))?.replace(/\/$/u, "") || filePath.split("/")[0];
 }
@@ -247,55 +388,77 @@ function artifactBloatFindings(files) {
     }));
 }
 
-const deleted = new Set(runGit(["ls-files", "--deleted"]));
-const tracked = runGit(["ls-files", "--cached", "--others", "--exclude-standard"])
-  .filter((file) => !deleted.has(file));
-const counts = {
-  docsMarkdownFiles: countMatching(tracked, (file) => file.startsWith("docs/") && file.endsWith(".md")),
-  scriptsFiles: countMatching(tracked, isTopLevelScript),
-  scriptsModuleFiles: countMatching(tracked, isScriptModule),
-  testsMjsFiles: countMatching(tracked, (file) => file.startsWith("tests/") && file.endsWith(".mjs")),
-  testsRegressionPortalFiles: countMatching(tracked, (file) => file.startsWith("tests/regression/portal/") && file.endsWith(".mjs")),
-  testsCloudFiles: countMatching(tracked, (file) => file.startsWith("tests/cloud/") && file.endsWith(".mjs")),
-  servicesPortalFiles: countMatching(tracked, (file) => file.startsWith("services/portal/")),
-  servicesPortalBytes: tracked.filter((file) => file.startsWith("services/portal/")).reduce((total, file) => total + fileSize(file), 0),
-};
-const findings = [
-  ...slideDocFindings(tracked),
-  ...docsActiveFindings(tracked),
-  ...retiredChangePathFindings(tracked),
-  ...artifactBloatFindings(tracked),
-];
-const pressureFindings = bloatBudgetFindings(counts);
-const lifecycleFindings = findings;
-const notes = [];
+export function evaluateRepoBloatAudit({ diff = false, base = "origin/recovery/platform-v22-trunk", sliceAdmission = null } = {}) {
+  const deleted = new Set(runGit(["ls-files", "--deleted"]));
+  const tracked = runGit(["ls-files", "--cached", "--others", "--exclude-standard"])
+    .filter((file) => !deleted.has(file));
+  const counts = {
+    docsMarkdownFiles: countMatching(tracked, (file) => file.startsWith("docs/") && file.endsWith(".md")),
+    scriptsFiles: countMatching(tracked, isTopLevelScript),
+    scriptsModuleFiles: countMatching(tracked, isScriptModule),
+    testsMjsFiles: countMatching(tracked, (file) => file.startsWith("tests/") && file.endsWith(".mjs")),
+    testsRegressionPortalFiles: countMatching(tracked, (file) => file.startsWith("tests/regression/portal/") && file.endsWith(".mjs")),
+    testsCloudFiles: countMatching(tracked, (file) => file.startsWith("tests/cloud/") && file.endsWith(".mjs")),
+    servicesPortalFiles: countMatching(tracked, (file) => file.startsWith("services/portal/")),
+    servicesPortalBytes: tracked.filter((file) => file.startsWith("services/portal/")).reduce((total, file) => total + fileSize(file), 0),
+  };
+  const findings = [
+    ...slideDocFindings(tracked),
+    ...docsActiveFindings(tracked),
+    ...retiredChangePathFindings(tracked),
+    ...artifactBloatFindings(tracked),
+  ];
+  const pressureFindings = bloatBudgetFindings(counts);
+  const lifecycleFindings = findings;
+  const notes = [];
 
-if (counts.testsRegressionPortalFiles >= 24) {
-  notes.push("tests/regression/portal is the largest test area; split by product surface before adding broad regression files.");
-}
-if (counts.testsCloudFiles >= 10) {
-  notes.push("tests/cloud is a future-authorized boundary lane; keep it out of current/default verification unless separately authorized.");
-}
-if (counts.servicesPortalFiles >= 230) {
-  notes.push("services/portal is the largest source area; add broad portal surface files only with a dedicated product-surface split.");
+  if (counts.testsRegressionPortalFiles >= 24) {
+    notes.push("tests/regression/portal is the largest test area; split by product surface before adding broad regression files.");
+  }
+  if (counts.testsCloudFiles >= 10) {
+    notes.push("tests/cloud is a future-authorized boundary lane; keep it out of current/default verification unless separately authorized.");
+  }
+  if (counts.servicesPortalFiles >= 230) {
+    notes.push("services/portal is the largest source area; add broad portal surface files only with a dedicated product-surface split.");
+  }
+
+  const diffFiles = diff ? changedFilesSince(base) : [];
+  const diffAdmission = diff
+    ? evaluateDiffAdmission({
+      changedFiles: diffFiles,
+      changedStatuses: changedFileStatusesSince(base),
+      sliceAdmission,
+      lineBudgetDiff: lineBudgetDiffForChangedFiles(repoRoot, { base, changedFiles: diffFiles }),
+    })
+    : null;
+  const diffFindings = diffAdmission?.findings || [];
+
+  return {
+    ok: lifecycleFindings.length === 0 && diffFindings.length === 0,
+    contract: "v22_repo_bloat_audit",
+    bloat_pressure: "count and byte budgets report pressure only; lifecycle/consumer findings decide pass/fail",
+    budgets,
+    counts,
+    slideBloatGuards,
+    docsActiveGuards,
+    retiredChangePathGuards,
+    artifactBloatGuards,
+    largestAreas: largestAreas(tracked),
+    findings: [...lifecycleFindings, ...diffFindings],
+    lifecycleFindings,
+    diffAdmission,
+    pressureFindings,
+    notes,
+  };
 }
 
-const payload = {
-  ok: lifecycleFindings.length === 0,
-  contract: "v22_repo_bloat_audit",
-  bloat_pressure: "count and byte budgets report pressure only; lifecycle/consumer findings decide pass/fail",
-  budgets,
-  counts,
-  slideBloatGuards,
-  docsActiveGuards,
-  retiredChangePathGuards,
-  artifactBloatGuards,
-  largestAreas: largestAreas(tracked),
-  findings: lifecycleFindings,
-  lifecycleFindings,
-  pressureFindings,
-  notes,
-};
-
-process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
-if (!payload.ok) process.exitCode = 1;
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  const options = parseArgs(process.argv.slice(2));
+  const payload = evaluateRepoBloatAudit({
+    diff: Boolean(options.diff),
+    base: options.base || "origin/recovery/platform-v22-trunk",
+    sliceAdmission: readSliceAdmission(options["slice-id"]),
+  });
+  process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+  if (!payload.ok) process.exitCode = 1;
+}

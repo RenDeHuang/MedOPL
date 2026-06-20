@@ -12,7 +12,9 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
 const workflowModuleFiles = [
+  "scripts/workflow-gate/admission.mjs",
   "scripts/workflow-gate/git-diff.mjs",
+  "scripts/workflow-gate/line-budget-diff.mjs",
   "scripts/workflow-gate/policy.mjs",
   "scripts/workflow-gate/command-reference.mjs",
   "scripts/workflow-gate/report.mjs",
@@ -164,6 +166,100 @@ const reviewWithCloseoutGateSelfUpdate = evaluateReview({
   ],
 });
 assert.equal(reviewWithCloseoutGateSelfUpdate.ok, true, "workflow_gate_self_update_must_have_registered_eval");
+
+const productAdmission = {
+  slice_type: "product",
+  owner_surface: "backend",
+  allowed_paths: ["services/", "tests/backend/", "contracts/"],
+  forbidden_paths: ["changes/active/**", "changes/archive/**"],
+  new_top_level_scripts_allowed: false,
+  new_contracts_allowed: false,
+  new_health_tests_allowed: false,
+  touches_cloud: false,
+  touches_active_docs: false,
+  must_reduce_or_hold_bloat: true,
+  cannot_claim: ["production complete"],
+};
+
+const reviewProductAdmissionViolation = evaluateReview({
+  base: "origin/recovery/platform-v22-trunk",
+  changedFiles: [
+    "services/medopl-go-backend/internal/service/controlplane/service.go",
+    "scripts/v22-new-control-surface.mjs",
+    "tests/health/health-check-v22-new-governance.mjs",
+    "tests/backend/backend-test-v22-api-contract.mjs",
+  ],
+  changedStatuses: new Map([
+    ["scripts/v22-new-control-surface.mjs", "A"],
+    ["tests/health/health-check-v22-new-governance.mjs", "R100"],
+  ]),
+  sliceAdmission: productAdmission,
+  lineBudgetDiff: {
+    grownOversizeFiles: [
+      {
+        file: "services/medopl-go-backend/internal/service/controlplane/service.go",
+        before: 1064,
+        after: 1065,
+      },
+    ],
+  },
+});
+assert.equal(reviewProductAdmissionViolation.ok, false, "product_slice_admission_violation_must_block_review");
+assert(reviewProductAdmissionViolation.findings.some((finding) => finding.code === "slice_new_top_level_script_forbidden"), "product_slice_must_block_new_top_level_script");
+assert(reviewProductAdmissionViolation.findings.some((finding) => finding.code === "slice_new_health_test_forbidden"), "product_slice_must_block_new_health_test");
+assert(reviewProductAdmissionViolation.findings.some((finding) => finding.code === "slice_oversize_file_growth_forbidden"), "product_slice_must_block_oversize_service_growth");
+assert(
+  reviewProductAdmissionViolation.findings.find((finding) => finding.code === "slice_new_health_test_forbidden")?.files.includes("tests/health/health-check-v22-new-governance.mjs"),
+  "product_slice_must_treat_renamed_health_test_as_new_target",
+);
+
+const reviewProductAdmissionAllowed = evaluateReview({
+  base: "origin/recovery/platform-v22-trunk",
+  changedFiles: [
+    "services/medopl-go-backend/internal/service/controlplane/runtime_lifecycle.go",
+    "tests/backend/backend-test-v22-api-contract.mjs",
+  ],
+  changedStatuses: new Map(),
+  sliceAdmission: productAdmission,
+  missingLocalCommandReferences: [],
+});
+assert.equal(
+  reviewProductAdmissionAllowed.findings.some((finding) => finding.code?.startsWith("slice_")),
+  false,
+  "product_slice_allowed_owner_paths_must_not_raise_slice_findings",
+);
+
+const cloudAdmission = {
+  slice_type: "cloud",
+  owner_surface: "cloud",
+  operation_class: "readonly_inventory",
+  evidence_sink: ".runtime/v22-cloud-authorization",
+  receipt_manifest_required: true,
+  allowed_paths: ["scripts/", "tests/cloud/", "contracts/"],
+  forbidden_paths: ["changes/active/**", "changes/archive/**"],
+  new_top_level_scripts_allowed: false,
+  new_contracts_allowed: false,
+  new_health_tests_allowed: false,
+  touches_cloud: true,
+  touches_active_docs: false,
+  must_reduce_or_hold_bloat: true,
+  cannot_claim: ["production complete"],
+};
+const reviewCloudAdmissionAllowed = evaluateReview({
+  base: "origin/recovery/platform-v22-trunk",
+  changedFiles: [
+    "scripts/v22-cloud-authorized-executor.mjs",
+    "tests/cloud/cloud-test-v22-cloud-authorized-executor.mjs",
+    "contracts/medopl-cloud-authorization-pack.json",
+  ],
+  sliceAdmission: cloudAdmission,
+  missingLocalCommandReferences: [],
+});
+assert.equal(
+  reviewCloudAdmissionAllowed.findings.some((finding) => finding.code?.startsWith("slice_cloud_admission_")),
+  false,
+  "cloud_slice_with_operation_evidence_receipt_must_pass_cloud_admission",
+);
 
 const reviewWithTokenNamedEval = evaluateReview({
   base: "recovery/platform-v22-trunk",

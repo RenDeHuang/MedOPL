@@ -360,6 +360,7 @@ try {
     "run_plan_stub_success_must_report_local_recommended_completion",
   );
 
+  rmSync(path.join(repoRoot, ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json"), { force: true });
   const authorizedMissingReceipt = runVerify(
     ["run-plan", "--files", "contracts/medopl-cloud-boundary.json", "--include-authorized", "--json"],
     { V22_VERIFY_COMMAND_EXECUTOR: authorizedExecutor },
@@ -413,7 +414,7 @@ try {
   );
   assert.equal(stubFailurePayload.report.completion.status, "blocked", "run_plan_stub_failure_must_report_blocked_completion");
 } finally {
-  rmSync(path.join(repoRoot, ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json"), { force: true });
+  rmSync(path.join(repoRoot, ".runtime/v22-cloud-authorization/run-v22-001"), { recursive: true, force: true });
   rmSync(tempDir, { recursive: true, force: true });
 }
 

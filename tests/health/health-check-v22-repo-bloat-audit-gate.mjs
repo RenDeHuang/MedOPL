@@ -4,6 +4,8 @@ import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { evaluateDiffAdmission } from "../../scripts/v22-repo-bloat-audit.mjs";
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
 
@@ -41,6 +43,11 @@ for (const expected of [
   "active_doc_bloat_forbidden",
   "retired_change_path_forbidden",
   "raw_artifact_bloat_forbidden",
+  "lineBudgetDiffForChangedFiles",
+  "isNewTargetStatus",
+  "...runGit([\"diff\", \"--name-only\"",
+  "output.map((item) => item.trim())",
+  "diff_oversize_file_growth_forbidden",
 ]) {
   assert(scriptSource.includes(expected), `repo_bloat_audit_source_missing:${expected}`);
 }
@@ -117,6 +124,71 @@ assert(
   ].includes(finding.code)),
   "repo_bloat_audit_must_use_known_lifecycle_finding_codes",
 );
+
+const productDiffAdmission = evaluateDiffAdmission({
+  changedFiles: [
+    "scripts/v22-extra-control-surface.mjs",
+    "tests/health/health-check-v22-extra-governance.mjs",
+    "services/medopl-go-backend/internal/service/controlplane/service.go",
+  ],
+  changedStatuses: new Map([
+    ["scripts/v22-extra-control-surface.mjs", "A"],
+    ["tests/health/health-check-v22-extra-governance.mjs", "C100"],
+  ]),
+  sliceAdmission: {
+    slice_type: "product",
+    owner_surface: "backend",
+    new_top_level_scripts_allowed: false,
+    new_health_tests_allowed: false,
+    new_contracts_allowed: false,
+    touches_cloud: false,
+    touches_active_docs: false,
+    must_reduce_or_hold_bloat: true,
+    cannot_claim: ["production complete"],
+  },
+  lineBudgetDiff: {
+    grownOversizeFiles: [
+      {
+        file: "services/medopl-go-backend/internal/service/controlplane/service.go",
+        before: 1064,
+        after: 1065,
+      },
+    ],
+  },
+});
+assert.equal(productDiffAdmission.ok, false, "repo_bloat_diff_admission_must_block_product_control_surface_growth");
+assert(productDiffAdmission.findings.some((finding) => finding.code === "diff_new_top_level_script_forbidden"), "repo_bloat_diff_must_block_new_top_level_script");
+assert(productDiffAdmission.findings.some((finding) => finding.code === "diff_new_health_test_forbidden"), "repo_bloat_diff_must_block_new_health_test");
+assert(productDiffAdmission.findings.some((finding) => finding.code === "diff_oversize_file_growth_forbidden"), "repo_bloat_diff_must_block_oversize_file_growth");
+assert(
+  productDiffAdmission.findings.find((finding) => finding.code === "diff_new_health_test_forbidden")?.files.includes("tests/health/health-check-v22-extra-governance.mjs"),
+  "repo_bloat_diff_must_treat_copied_health_test_as_new_target",
+);
+
+const cloudDiffAdmission = evaluateDiffAdmission({
+  changedFiles: [
+    "scripts/v22-cloud-authorized-executor.mjs",
+    "tests/cloud/cloud-test-v22-cloud-authorized-executor.mjs",
+    "contracts/medopl-cloud-authorization-pack.json",
+  ],
+  sliceAdmission: {
+    slice_type: "cloud",
+    owner_surface: "cloud",
+    operation_class: "readonly_inventory",
+    evidence_sink: ".runtime/v22-cloud-authorization",
+    receipt_manifest_required: true,
+    allowed_paths: ["scripts/", "tests/cloud/", "contracts/"],
+    new_top_level_scripts_allowed: false,
+    new_health_tests_allowed: false,
+    new_contracts_allowed: false,
+    touches_cloud: true,
+    touches_active_docs: false,
+    must_reduce_or_hold_bloat: true,
+    cannot_claim: ["production complete"],
+  },
+});
+assert.equal(cloudDiffAdmission.ok, true, "repo_bloat_diff_admission_must_allow_existing_cloud_owner_surface");
+assert.deepEqual(cloudDiffAdmission.findings, [], "repo_bloat_diff_admission_allowed_cloud_findings_must_be_empty");
 
 const suite = manifest.suites.find((item) => item.id === "repo-hygiene");
 assert(suite, "repo_hygiene_suite_missing");

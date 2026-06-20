@@ -129,7 +129,7 @@ const testSliceId = `health-slice-${process.pid}`;
 const testSliceDir = path.join(repoRoot, ".runtime", "slices", testSliceId);
 rmSync(testSliceDir, { recursive: true, force: true });
 
-const executeStart = runSlice(["start", "--execute", "--slice-id", testSliceId, "--json"]);
+const executeStart = runSlice(["start", "--execute", "--slice-id", testSliceId, "--owner-surface", "backend", "--json"]);
 assert.equal(executeStart.status, 0, "slice_start_execute_must_succeed_without_git_mutation");
 const executePayload = JSON.parse(executeStart.stdout);
 assert.equal(executePayload.ok, true, "slice_start_execute_payload_must_be_ok");
@@ -146,6 +146,30 @@ assert.equal(sliceManifest.slice_id, testSliceId, "slice_manifest_slice_id");
 assert.equal(sliceManifest.current_phase, "start", "slice_manifest_current_phase");
 assert.equal(sliceManifest.execution_mode, "controlled-executor", "slice_manifest_execution_mode");
 assert.equal(sliceManifest.git_mutation_allowed, false, "slice_manifest_must_default_git_mutation_off");
+assert.equal(sliceManifest.admission?.slice_type, "product", "slice_manifest_must_default_to_product_admission");
+assert.equal(sliceManifest.admission?.owner_surface, "backend", "slice_manifest_must_accept_owner_surface");
+assert.equal(sliceManifest.admission?.target_claim, "local product implementation slice", "slice_manifest_must_default_target_claim");
+assert.equal(sliceManifest.admission?.minimum_evidence_slice, "test:run-plan plus targeted owner lane", "slice_manifest_must_default_minimum_evidence");
+assert.deepEqual(sliceManifest.admission?.allowed_paths, [
+  "services/",
+  "tests/backend/",
+  "tests/product/",
+  "tests/smoke/",
+  "contracts/",
+  "specs/",
+  "docs/active/README.md",
+  "docs/delivery/README.md",
+  "docs/history/README.md",
+  "tests/fixtures/v22/",
+], "product_slice_default_allowed_paths_mismatch");
+assert(sliceManifest.admission?.forbidden_paths?.includes("changes/active/**"), "slice_manifest_must_keep_retired_changes_forbidden");
+assert.equal(sliceManifest.admission?.new_top_level_scripts_allowed, false, "product_slice_must_not_allow_new_top_level_scripts");
+assert.equal(sliceManifest.admission?.new_contracts_allowed, false, "product_slice_must_not_allow_new_contracts_by_default");
+assert.equal(sliceManifest.admission?.new_health_tests_allowed, false, "product_slice_must_not_allow_new_health_tests");
+assert.equal(sliceManifest.admission?.touches_cloud, false, "product_slice_must_not_touch_cloud_by_default");
+assert.equal(sliceManifest.admission?.touches_active_docs, false, "product_slice_must_not_touch_active_docs_by_default");
+assert.equal(sliceManifest.admission?.must_reduce_or_hold_bloat, true, "slice_manifest_must_hold_bloat_by_default");
+assert(sliceManifest.admission?.cannot_claim?.includes("production complete"), "slice_manifest_must_keep_production_claim_blocked");
 assert.equal(sliceManifest.phases.start.status, "executed", "slice_manifest_start_phase_status");
 assert(sliceManifest.phases.start.evidence_ref.startsWith(`.runtime/slices/${testSliceId}/`), "slice_manifest_start_evidence_ref_must_be_runtime_pointer");
 
@@ -208,6 +232,37 @@ assertNotIncludesAny(orchestratorSource, [
 ], "slice_orchestrator_source");
 
 rmSync(testSliceDir, { recursive: true, force: true });
+
+const automationSliceId = `automation-slice-${process.pid}`;
+const automationSliceDir = path.join(repoRoot, ".runtime", "slices", automationSliceId);
+rmSync(automationSliceDir, { recursive: true, force: true });
+const executeAutomationStart = runSlice([
+  "start",
+  "--execute",
+  "--slice-id",
+  automationSliceId,
+  "--slice-type",
+  "automation",
+  "--owner-surface",
+  "workflow",
+  "--target-claim",
+  "slice executor admission control",
+  "--minimum-evidence",
+  "workflow gate self-test",
+  "--json",
+]);
+assert.equal(executeAutomationStart.status, 0, "automation_slice_start_execute_must_succeed");
+const automationManifest = JSON.parse(await readFile(path.join(automationSliceDir, "slice.json"), "utf8"));
+assert.equal(automationManifest.admission?.slice_type, "automation", "automation_slice_manifest_type");
+assert.equal(automationManifest.admission?.owner_surface, "workflow", "automation_slice_manifest_owner");
+assert.equal(automationManifest.admission?.target_claim, "slice executor admission control", "automation_slice_manifest_target_claim");
+assert.equal(automationManifest.admission?.minimum_evidence_slice, "workflow gate self-test", "automation_slice_manifest_minimum_evidence");
+assert.equal(automationManifest.admission?.new_top_level_scripts_allowed, false, "automation_slice_must_still_default_no_new_top_level_scripts");
+assert.equal(automationManifest.admission?.new_health_tests_allowed, false, "automation_slice_must_still_default_no_new_health_tests");
+assert(automationManifest.admission?.allowed_paths?.includes("scripts/"), "automation_slice_must_allow_scripts_surface");
+assert(automationManifest.admission?.allowed_paths?.includes("tests/hygiene/"), "automation_slice_must_allow_hygiene_surface");
+assert(automationManifest.admission?.cannot_claim?.includes("product behavior changed"), "automation_slice_must_not_claim_product_behavior_changed");
+rmSync(automationSliceDir, { recursive: true, force: true });
 
 console.log(JSON.stringify({
   ok: true,

@@ -46,6 +46,75 @@ const RETIRED_CHANGE_SURFACE_PREFIXES = Object.freeze([
   ["changes", "active", "**"].join("/"),
   ["changes", "archive", "**"].join("/"),
 ]);
+const SLICE_TYPES = Object.freeze(["product", "automation", "cloud", "cleanup"]);
+const DEFAULT_SLICE_OWNER_BY_TYPE = Object.freeze({
+  product: "backend",
+  automation: "workflow",
+  cloud: "cloud",
+  cleanup: "hygiene",
+});
+const DEFAULT_TARGET_CLAIM_BY_TYPE = Object.freeze({
+  product: "local product implementation slice",
+  automation: "development automation control slice",
+  cloud: "single cloud goal execution boundary",
+  cleanup: "retired surface cleanup slice",
+});
+const DEFAULT_MINIMUM_EVIDENCE_BY_TYPE = Object.freeze({
+  product: "test:run-plan plus targeted owner lane",
+  automation: "workflow gate self-test",
+  cloud: "cloud authorized plan plus redacted receipt pointer",
+  cleanup: "repo hygiene plus history closeout",
+});
+const DEFAULT_ALLOWED_PATHS_BY_TYPE = Object.freeze({
+  product: Object.freeze([
+    "services/",
+    "tests/backend/",
+    "tests/product/",
+    "tests/smoke/",
+    "contracts/",
+    "specs/",
+    "docs/active/README.md",
+    "docs/delivery/README.md",
+    "docs/history/README.md",
+    "tests/fixtures/v22/",
+  ]),
+  automation: Object.freeze([
+    "scripts/",
+    "scripts/workflow-gate/",
+    "tests/health/",
+    "tests/hygiene/",
+    "tests/fixtures/v22/",
+    "tests/README.md",
+    "docs/delivery/README.md",
+    "docs/history/README.md",
+    "package.json",
+  ]),
+  cloud: Object.freeze([
+    "scripts/",
+    "tests/cloud/",
+    "tests/release/",
+    "tests/fixtures/v22/",
+    "contracts/",
+    "specs/operations/",
+    "docs/delivery/README.md",
+    "docs/history/README.md",
+    "package.json",
+  ]),
+  cleanup: Object.freeze([
+    "docs/",
+    "tests/",
+    "scripts/",
+    "contracts/",
+    "specs/",
+    "package.json",
+  ]),
+});
+const DEFAULT_CANNOT_CLAIM_BY_TYPE = Object.freeze({
+  product: Object.freeze(["production complete", "real cloud executed", "deploy/live-test executed"]),
+  automation: Object.freeze(["product behavior changed", "production complete", "real cloud executed"]),
+  cloud: Object.freeze(["production complete", "all cloud goals executed", "owner receipt accepted"]),
+  cleanup: Object.freeze(["new product behavior", "production complete", "real cloud executed"]),
+});
 const PHASE_DETAILS = Object.freeze({
   start: Object.freeze({
     requires: Object.freeze(["clean worktree or isolated feature worktree", "base ref origin/recovery/platform-v22-trunk"]),
@@ -94,6 +163,55 @@ function sanitizeId(value) {
     .slice(0, 80);
 }
 
+function csvOption(value) {
+  if (!value) return [];
+  return String(value)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function boolOption(value, defaultValue = false) {
+  if (value === undefined) return defaultValue;
+  if (value === true) return true;
+  if (value === false) return false;
+  return ["1", "true", "yes", "on"].includes(String(value).toLowerCase());
+}
+
+function normalizeSliceType(value) {
+  const sliceType = String(value || "product").trim();
+  if (!SLICE_TYPES.includes(sliceType)) throw new Error(`unknown_slice_type:${sliceType}`);
+  return sliceType;
+}
+
+function buildAdmission(options = {}) {
+  const sliceType = normalizeSliceType(options["slice-type"]);
+  const ownerSurface = String(options["owner-surface"] || DEFAULT_SLICE_OWNER_BY_TYPE[sliceType] || sliceType).trim();
+  const allowedPaths = csvOption(options["allowed-paths"]);
+  const forbiddenPaths = csvOption(options["forbidden-paths"]);
+  const cannotClaim = csvOption(options["cannot-claim"]);
+  return {
+    schema_version: 1,
+    kind: "v22_development_admission",
+    slice_type: sliceType,
+    owner_surface: ownerSurface,
+    target_claim: String(options["target-claim"] || DEFAULT_TARGET_CLAIM_BY_TYPE[sliceType]).trim(),
+    minimum_evidence_slice: String(options["minimum-evidence"] || DEFAULT_MINIMUM_EVIDENCE_BY_TYPE[sliceType]).trim(),
+    allowed_paths: allowedPaths.length > 0 ? allowedPaths : [...DEFAULT_ALLOWED_PATHS_BY_TYPE[sliceType]],
+    forbidden_paths: forbiddenPaths.length > 0 ? forbiddenPaths : [...RETIRED_CHANGE_SURFACE_PREFIXES],
+    new_top_level_scripts_allowed: boolOption(options["allow-new-top-level-script"], false),
+    new_contracts_allowed: boolOption(options["allow-new-contract"], false),
+    new_health_tests_allowed: boolOption(options["allow-new-health-test"], false),
+    touches_cloud: boolOption(options["touches-cloud"], sliceType === "cloud"),
+    touches_active_docs: boolOption(options["touches-active-docs"], false),
+    must_reduce_or_hold_bloat: boolOption(options["must-reduce-or-hold-bloat"], true),
+    operation_class: options["operation-class"] || "",
+    evidence_sink: options["evidence-sink"] || (sliceType === "cloud" ? ".runtime/v22-cloud-authorization" : ".runtime/slices"),
+    receipt_manifest_required: boolOption(options["receipt-manifest-required"], sliceType === "cloud"),
+    cannot_claim: cannotClaim.length > 0 ? cannotClaim : [...DEFAULT_CANNOT_CLAIM_BY_TYPE[sliceType]],
+  };
+}
+
 function currentBranchName() {
   const result = spawnSync("git", ["branch", "--show-current"], {
     cwd: repoRoot,
@@ -126,6 +244,7 @@ function readSliceManifest(sliceId) {
 
 function initialSliceManifest({ sliceId, options }) {
   const branch = currentBranchName();
+  const admission = buildAdmission(options);
   return {
     schema_version: 1,
     kind: "v22_worktree_slice_execution",
@@ -141,6 +260,7 @@ function initialSliceManifest({ sliceId, options }) {
     allowed_files: [],
     forbidden_files: [...RETIRED_CHANGE_SURFACE_PREFIXES],
     cannot_claim: ["destructive cloud execution", "live-test execution", "production complete"],
+    admission,
     phases: Object.fromEntries(PHASES.map((phase) => [phase, { status: "pending" }])),
   };
 }
@@ -205,6 +325,7 @@ function buildPlan(phase, options = {}) {
   const allowGitMutation = Boolean(options["allow-git-mutation"]);
   const sliceId = sanitizeId(options["slice-id"]) || defaultSliceId();
   const paths = slicePaths(sliceId);
+  const admission = buildAdmission(options);
   return {
     ok: true,
     kind: "v22_worktree_slice_orchestrator_plan",
@@ -226,6 +347,7 @@ function buildPlan(phase, options = {}) {
       id: sliceId,
       manifestPath: paths.publicManifestPath,
     },
+    admission,
     workflowDependencies: [
       "scripts/v22-verify.mjs",
       "scripts/v22-workflow-gate.mjs",

@@ -10,6 +10,7 @@ export function renderReviewReport(review) {
     secretLikePaths: review.secretLikePaths,
     secretLikeAddedLines: review.secretLikeAddedLines,
     missingLocalCommandReferences: review.missingLocalCommandReferences,
+    sliceAdmission: review.sliceAdmission,
     findings: review.findings,
     recommendedCommands: review.recommendedCommands,
   }, null, 2)}\n`;
