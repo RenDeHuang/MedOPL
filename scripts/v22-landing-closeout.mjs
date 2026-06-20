@@ -111,6 +111,7 @@ function closeoutCommitLooksLikeCloseout(commit) {
     /^changes\/archive\/\d{4}-\d{2}-\d{2}-[a-z0-9-]+\/(?:proposal|spec-delta|design|tasks|eval-plan|review|closeout)\.md$/u,
     /^changes\/active\/[a-z0-9-]+\/(?:proposal|spec-delta|design|tasks|eval-plan|review|closeout)\.md$/u,
     /^tests\/fixtures\/v22\/(?:goal-current|agent-verify-manifest)\.json$/u,
+    /^tests\/contracts\/contract-test-v22-validate-active-platform\.mjs$/u,
     /^tests\/smoke\/smoke-test-v22-saas-control-plane-user-experience-boundary\.mjs$/u,
     /^scripts\/v22-landing-closeout\.mjs$/u,
   ];

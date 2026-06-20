@@ -45,9 +45,10 @@ function assertNotIncludes(source, marker, label) {
   assert.equal(String(source).includes(marker), false, `${label}_must_not_include:${marker}`);
 }
 
-const [packageJson, scriptSource, manifest, current] = await Promise.all([
+const [packageJson, scriptSource, landingCloseoutSource, manifest, current] = await Promise.all([
   readJson("package.json"),
   readRepoFile("scripts/v22-verify.mjs"),
+  readRepoFile("scripts/v22-landing-closeout.mjs"),
   readJson("tests/fixtures/v22/agent-verify-manifest.json"),
   readJson("tests/fixtures/v22/goal-current.json"),
 ]);
@@ -78,6 +79,12 @@ for (const marker of [
 ]) {
   assertIncludes(scriptSource, marker, "active_platform_wrapper_source");
 }
+
+assertIncludes(
+  landingCloseoutSource,
+  "tests\\/contracts\\/contract-test-v22-validate-active-platform\\.mjs",
+  "landing_closeout_allowed_closeout_files",
+);
 
 for (const forbidden of [
   "kubectl ",
