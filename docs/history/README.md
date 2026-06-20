@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/v22-cloud-goal-preflight`
-- latest landed commit: `93771d950b9838302621010125d1487136c6feb2`
+- latest landed branch: `feat/v22-cloud-production-runners`
+- latest landed commit: `6c29c9960862e252b13d7834135aa52368798591`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
