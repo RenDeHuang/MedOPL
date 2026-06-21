@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/v22-phase3-cloud-deploy-shape`
-- latest landed commit: `12f6219322e74df7bfd87b35b553d9ec637aea26`
+- latest landed branch: `feat/v22-phase4-github-tke-preconditions`
+- latest landed commit: `0086f166c54a4eb7ef2c59db0a6de5aa9a559ce5`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
