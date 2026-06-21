@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/v22-phase4-github-tke-preconditions`
-- latest landed commit: `0086f166c54a4eb7ef2c59db0a6de5aa9a559ce5`
+- latest landed branch: `feat/v22-goal-a-readonly-inventory-receipt`
+- latest landed commit: `b359ae73b14c915876b1331a0073983d12a91ae3`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
