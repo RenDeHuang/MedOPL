@@ -154,6 +154,18 @@ assert(
   rolloutSource.includes("JSON.parse(result.stdout)") && rolloutSource.includes("health_probe_must_validate_go_backend_health_json"),
   "post_rollout_health_probe_must_validate_go_backend_health_json_not_static_html",
 );
+assert(
+  rolloutSource.includes("runRoutingDiagnostics()"),
+  "post_rollout_must_run_routing_diagnostics_before_public_health_probe",
+);
+assert(
+  rolloutSource.includes("kubectl get service") && rolloutSource.includes("kubectl get ingress") && rolloutSource.includes("kubectl get endpoints"),
+  "rollout_diagnostics_must_capture_service_ingress_endpoints",
+);
+assert(
+  rolloutSource.includes("dns resolution") && rolloutSource.includes("getent"),
+  "rollout_diagnostics_must_capture_public_dns_without_tls_bypass",
+);
 
 const releaseImage = await readRepoFile(".github/workflows/release-image.yml");
 const cloudRollout = await readRepoFile(".github/workflows/cloud-rollout.yml");

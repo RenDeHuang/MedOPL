@@ -120,8 +120,16 @@ function runRolloutStatus() {
 function runPostRolloutChecks() {
   capture("deployment image", "kubectl", kubectlArgs(["get", deployment, "-o", `jsonpath={.spec.template.spec.containers[?(@.name=="${container}")].image}`]));
   run("pod status", "kubectl", kubectlArgs(["get", "pod", "-l", podSelector, "-o", "wide"]));
+  runRoutingDiagnostics();
   runHealthProbe("healthz", `${baseUrl}/healthz`);
   runHealthProbe("readyz", `${baseUrl}/readyz`);
+}
+
+function runRoutingDiagnostics() {
+  capture("kubectl get service", "kubectl", kubectlArgs(["get", "service", "medopl-control-plane", "-o", "wide"]));
+  capture("kubectl get ingress", "kubectl", kubectlArgs(["get", "ingress", "medopl", "-o", "wide"]));
+  capture("kubectl get endpoints", "kubectl", kubectlArgs(["get", "endpoints", "medopl-control-plane", "-o", "wide"]));
+  capture("dns resolution", "getent", ["hosts", new URL(baseUrl).hostname]);
 }
 
 function runHealthProbe(label, url) {
