@@ -38,7 +38,7 @@ const expectedScripts = {
   "test:health": "node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk",
   "test:smoke": "node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk",
   "test:contract": "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk",
-  "pretest:regression": "npm --prefix services/portal/frontend ci && mkdir -p .runtime/browser-test && npm --prefix .runtime/browser-test install --no-save playwright@1.58.2",
+  "pretest:regression": "npm --prefix services/portal/frontend ci && mkdir -p .runtime/browser-test && npm --prefix .runtime/browser-test install --no-save playwright@1.58.2 && npx --prefix .runtime/browser-test playwright install chromium",
   "test:regression": "node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk",
   "test:real-cloud-readiness": "node scripts/v22-verify.mjs suite real-cloud-readiness --base origin/recovery/platform-v22-trunk",
   "test:cloud-future-authorized": "node scripts/v22-verify.mjs suite cloud-future-authorized --base origin/recovery/platform-v22-trunk",
@@ -156,7 +156,8 @@ for (const expected of [
 }
 assert(
   packageJson.scripts["pretest:regression"].includes("npm --prefix services/portal/frontend ci")
-    && packageJson.scripts["pretest:regression"].includes("npm --prefix .runtime/browser-test install --no-save playwright@1.58.2"),
+    && packageJson.scripts["pretest:regression"].includes("npm --prefix .runtime/browser-test install --no-save playwright@1.58.2")
+    && packageJson.scripts["pretest:regression"].includes("npx --prefix .runtime/browser-test playwright install chromium"),
   "regression_pretest_must_install_frontend_and_browser_dependencies",
 );
 for (const expected of [
