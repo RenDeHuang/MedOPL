@@ -28,7 +28,7 @@ MedOPL 是资源购买与计算资源管理 Portal，不是 chat，不是科研�
 -> 套餐选择
 -> 开通计算资源
 -> 存储空间可用
--> 绑定 OPL workspace
+-> 绑定工作空间
 -> 查看存储清单和用量
 -> 查看费用与账单
 -> 释放计算资源并停止计费
@@ -62,7 +62,7 @@ MedOPL 是资源购买与计算资源管理 Portal，不是 chat，不是科研�
 
 允许作为资源视角投影的对象：
 
-- OPL workspace 绑定状态
+- 工作空间绑定状态
 - 输入文件 / 输出文件资源清单
 - 运行引用，只作为用量和计费引用
 - artifact 引用，只作为存储清单引用
@@ -122,6 +122,10 @@ MedOPL 是资源购买与计算资源管理 Portal，不是 chat，不是科研�
 - Logo 不拥有页面语义 `h1`；当前页面内容标题拥有唯一 `h1`。
 - 导航、顶栏按钮和主动作的移动触控目标不得小于 `44px`。
 - 移动端不能横向溢出；表格必须折叠为卡片列表或横向安全容器。
+- 品牌主色冻结为 Teal `#0F766E`。用户侧主视觉不得使用默认科技蓝或默认紫作为主色。
+- 基础交互必须覆盖 hover、active、focus-visible、disabled 和 cursor；可点击控件默认不是 `cursor: default`。
+- motion 只允许颜色、背景、边框、阴影、transform 和 opacity 这类轻属性；不得使用 `transition-all`，并必须尊重 reduced motion。
+- 用户可见文案使用中文资源控制面叙事；不得泄漏 `workspace`、`Runtime`、`not_activated`、`funded`、`MedOPL plan catalog` 这类工程或后端状态词。
 
 运维侧视觉语法：
 

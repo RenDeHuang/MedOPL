@@ -27,6 +27,32 @@ export function stringValue(value: unknown, fallback = "未返回") {
   return typeof value === "string" && value.trim() ? value.trim() : fallback;
 }
 
+export function statusText(value: unknown, fallback = "未返回") {
+  const raw = stringValue(value, fallback);
+  const labels: Record<string, string> = {
+    active: "可用",
+    inactive: "不可用",
+    pending: "处理中",
+    pending_usage: "等待 T+1 精确账单",
+    pending_real_cloud: "等待授权",
+    precloud_local_rc: "本地核对",
+    local_rc: "本地核对",
+    local_ledger: "本地账本",
+    funded: "已入账",
+    support_ready: "资金已确认",
+    not_activated: "待开通",
+    not_authorized: "未授权",
+    not_started: "未开始",
+    completed: "已完成",
+    succeeded: "已完成",
+    running: "运行中",
+    failed: "失败",
+    gated: "等待条件满足",
+    submitted: "已提交",
+  };
+  return labels[raw] || raw.replace(/_/g, " ");
+}
+
 export function keyPart(value: unknown, fallback = "none") {
   if (typeof value === "string" && value.trim()) return value.trim().replace(/[^a-zA-Z0-9._:-]+/g, "_");
   if (typeof value === "number" && Number.isFinite(value)) return String(value);

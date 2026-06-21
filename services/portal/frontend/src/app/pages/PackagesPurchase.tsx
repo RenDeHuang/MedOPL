@@ -57,7 +57,7 @@ export function PackagesPurchase() {
         </Card>
         <Card className="border border-neutral-200 p-4">
           <div className="text-sm text-neutral-600 mb-1">资源是否可用</div>
-          <div className="text-xl font-semibold text-neutral-900">{model.subscription.status}</div>
+          <div className="text-xl font-semibold text-neutral-900">{model.subscriptionStatusText}</div>
         </Card>
         <Card className="border border-neutral-200 p-4">
           <div className="text-sm text-neutral-600 mb-1">存储空间里有什么</div>
@@ -80,7 +80,7 @@ export function PackagesPurchase() {
           freeze={`¥ ${model.frozenAmount.toFixed(2)}`}
           usage={model.currentPackageName}
           usageLabel="当前套餐"
-          auditState={model.subscription.status}
+          auditState={model.subscriptionStatusText}
         />
       </div>
 
@@ -113,9 +113,9 @@ export function PackagesPurchase() {
         })}
       </div>
 
-      <Card className="border border-blue-200 bg-blue-50 p-5">
-        <div className="font-semibold text-blue-900 mb-1">购买后去哪里使用？</div>
-        <p className="text-sm text-blue-900">
+      <Card className="border border-teal-200 bg-teal-50 p-5">
+        <div className="font-semibold text-teal-900 mb-1">购买后去哪里使用？</div>
+        <p className="text-sm text-teal-900">
           购买和开通发生在 MedOPL；聊天、项目、session、skill 上传和科研任务体验回到 OPL。
         </p>
       </Card>

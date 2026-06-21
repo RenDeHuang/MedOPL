@@ -62,7 +62,7 @@ export function UserMenu({
     <>
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
-          <button className="flex min-h-11 min-w-11 items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-neutral-100" aria-label="打开账号菜单">
+          <button className="flex min-h-11 min-w-11 cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 transition-[color,background-color,box-shadow,transform] hover:bg-neutral-100 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 motion-reduce:transition-none motion-reduce:active:translate-y-0" aria-label="打开账号菜单">
             <Avatar className="w-8 h-8">
               <AvatarFallback className="bg-neutral-200 text-neutral-700 text-xs">
                 {initials.slice(0, 2)}

@@ -76,15 +76,15 @@ export function Overview() {
           </div>
         </div>
 
-        <Card className="border border-blue-200 bg-blue-50">
+        <Card className="border border-teal-200 bg-teal-50">
           <div className="p-6">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                <Server className="w-6 h-6 text-blue-600" />
+              <div className="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
+                <Server className="w-6 h-6 text-teal-700" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-blue-900 mb-2">计算资源未开通</h3>
-                <p className="text-sm text-blue-800 mb-4">
+                <h3 className="font-semibold text-teal-900 mb-2">计算资源未开通</h3>
+                <p className="text-sm text-teal-800 mb-4">
                   前往套餐与购买页面选择适合的配置，开通后即可进入 OPL。
                 </p>
                 <Button asChild>
@@ -398,7 +398,7 @@ export function Overview() {
               <div key={i} className="flex items-center justify-between py-2 hover:bg-neutral-50 rounded px-2 -mx-2 transition-colors">
                 <div className="flex items-center gap-3 flex-1">
                   {task.status === "running" && (
-                    <PlayCircle className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                    <PlayCircle className="w-4 h-4 text-teal-700 flex-shrink-0" />
                   )}
                   {task.status === "completed" && (
                     <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
@@ -415,7 +415,7 @@ export function Overview() {
                   </div>
                 </div>
                 {task.files > 0 && (
-                  <Button asChild variant="ghost" size="sm" className="text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                  <Button asChild variant="ghost" size="sm" className="text-xs text-teal-700 hover:bg-teal-50 hover:text-teal-800">
                     <Link to="/workspace">查看结果</Link>
                   </Button>
                 )}
@@ -444,7 +444,7 @@ export function Overview() {
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-neutral-600">当前套餐</span>
-                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200">
                   {model.planName}
                 </Badge>
               </div>

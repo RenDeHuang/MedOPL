@@ -248,7 +248,7 @@ for (const [label, sourceText, forbidden] of [
 ]) {
   assertExcludes(sourceText, forbidden, `${label}_must_not_be_empty_clickable_button`);
 }
-assertIncludes(runtimeSource, "套餐开通走 MedOPL plan catalog，不提供云资源调整动作。", "runtime_adjust_actions_must_show_product_boundary");
+assertIncludes(runtimeSource, "套餐目录由平台维护，不提供云资源调整动作。", "runtime_adjust_actions_must_show_product_boundary");
 assertExcludes(runtimeSource, "释放计算资源需要后端确认流程；当前入口未接入。", "runtime_release_action_must_be_physically_retired_from_user_ui");
 assertExcludes(runtimeSource, "删除存储资源需要后端确认流程；当前入口未接入。", "runtime_delete_storage_action_must_be_physically_retired_from_user_ui");
 assertIncludes(runtimeModelSource, "activateRuntimeEnvironmentPlan", "runtime_environment_model_must_wire_activation_action");

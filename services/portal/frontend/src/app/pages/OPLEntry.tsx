@@ -65,7 +65,7 @@ export function OPLEntry() {
       return (
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
-            <Badge className="bg-blue-50 text-blue-700 border-blue-200">准备中</Badge>
+            <Badge className="bg-teal-50 text-teal-700 border-teal-200">准备中</Badge>
             <h2 className="text-2xl font-semibold text-neutral-900">进入 OPL</h2>
           </div>
           <p className="text-neutral-600 mb-4">正在读取 OPL 启动状态和 Portal bootstrap。</p>
@@ -135,7 +135,7 @@ export function OPLEntry() {
       return (
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
-            <Badge className="bg-blue-50 text-blue-700 border-blue-200">
+            <Badge className="bg-teal-50 text-teal-700 border-teal-200">
               准备中
             </Badge>
             <h2 className="text-2xl font-semibold text-neutral-900">
@@ -159,7 +159,7 @@ export function OPLEntry() {
       return (
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
-            <Badge className="bg-blue-50 text-blue-700 border-blue-200">
+            <Badge className="bg-teal-50 text-teal-700 border-teal-200">
               重试中
             </Badge>
             <h2 className="text-2xl font-semibold text-neutral-900">
@@ -406,7 +406,7 @@ export function OPLEntry() {
                     <CheckCircle2 className="w-5 h-5 text-green-600" />
                   )}
                   {step.status === "in_progress" && (
-                    <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                    <Loader2 className="w-5 h-5 text-teal-700 animate-spin" />
                   )}
                   {step.status === "failed" && (
                     <AlertCircle className="w-5 h-5 text-red-600" />
@@ -431,7 +431,7 @@ export function OPLEntry() {
                         step.status === "completed"
                           ? "text-neutral-900"
                           : step.status === "in_progress"
-                          ? "text-blue-700"
+                          ? "text-teal-700"
                           : step.status === "failed"
                           ? "text-red-700"
                           : "text-neutral-400"
@@ -445,7 +445,7 @@ export function OPLEntry() {
                       </Badge>
                     )}
                     {step.status === "in_progress" && (
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-xs">
+                      <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200 text-xs">
                         进行中
                       </Badge>
                     )}
@@ -524,9 +524,9 @@ export function OPLEntry() {
 
       {/* Ready 状态下的自动跳转提示 */}
       {pageState === "ready" && (
-        <Alert className="border-blue-200 bg-blue-50">
-          <AlertCircle className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-blue-900 text-sm">
+        <Alert className="border-teal-200 bg-teal-50">
+          <AlertCircle className="h-4 w-4 text-teal-700" />
+          <AlertDescription className="text-teal-900 text-sm">
             准备完成后将自动进入 OPL。您也可以点击上方按钮立即进入。
           </AlertDescription>
         </Alert>
@@ -534,9 +534,9 @@ export function OPLEntry() {
 
       {/* Preparing 状态下的轻提示 */}
       {pageState === "preparing" && (
-        <Alert className="border-blue-200 bg-blue-50">
-          <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
-          <AlertDescription className="text-blue-900 text-sm">
+        <Alert className="border-teal-200 bg-teal-50">
+          <Loader2 className="h-4 w-4 text-teal-700 animate-spin" />
+          <AlertDescription className="text-teal-900 text-sm">
             {query.status === "ready" ? query.data.userVisibleState : "正在准备中，预计需要 1-2 分钟。准备完成后将自动跳转。"}
           </AlertDescription>
         </Alert>
@@ -544,9 +544,9 @@ export function OPLEntry() {
 
       {/* Retrying 状态下的提示 */}
       {pageState === "retrying" && (
-        <Alert className="border-blue-200 bg-blue-50">
-          <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
-          <AlertDescription className="text-blue-900 text-sm">
+        <Alert className="border-teal-200 bg-teal-50">
+          <Loader2 className="h-4 w-4 text-teal-700 animate-spin" />
+          <AlertDescription className="text-teal-900 text-sm">
             正在重新尝试连接，请稍候。
           </AlertDescription>
         </Alert>

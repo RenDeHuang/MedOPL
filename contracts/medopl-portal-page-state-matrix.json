@@ -140,7 +140,7 @@
         ],
         "states": [
           "trial",
-          "funded",
+          "funds_confirmed",
           "past_due",
           "frozen"
         ],
@@ -257,7 +257,28 @@
         "required_h1_owner": "page_content",
         "logo_heading_allowed": false,
         "mobile_touch_target_min_px": 44,
-        "card_radius_max_px": 8
+        "card_radius_max_px": 8,
+        "brand_primary_hex": "#0F766E",
+        "forbidden_primary_hues": [
+          "default_technology_blue",
+          "default_technology_purple"
+        ],
+        "transition_all_allowed": false,
+        "allowed_motion_properties": [
+          "colors",
+          "background-color",
+          "border-color",
+          "box-shadow",
+          "transform",
+          "opacity"
+        ],
+        "forbidden_visible_internal_terms": [
+          "workspace",
+          "Runtime",
+          "not_activated",
+          "funded",
+          "MedOPL plan catalog"
+        ]
       },
       "semantic_tokens": [
         "resource.active",

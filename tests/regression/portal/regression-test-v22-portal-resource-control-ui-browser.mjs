@@ -148,6 +148,13 @@ function assertResourceControlCopy(bodyText, label, markers = ["资源总览", "
   assert.equal(bodyText.includes("Skill"), false, `${label}_forbidden_skill_copy`);
   assert.equal(bodyText.includes("SecretId"), false, `${label}_forbidden_secret_id_copy`);
   assert.equal(bodyText.includes("kubeconfig"), false, `${label}_forbidden_kubeconfig_copy`);
+  for (const forbiddenInternalTerm of ["workspace", "Runtime", "not_activated", "funded", "MedOPL plan catalog"]) {
+    assert.equal(
+      bodyText.includes(forbiddenInternalTerm),
+      false,
+      `${label}_forbidden_internal_ui_copy:${forbiddenInternalTerm}`,
+    );
+  }
 }
 
 async function assertPrimaryActionReachable(page, label) {
@@ -174,6 +181,71 @@ async function assertTouchTargets(page, selector, label) {
     }).filter((item) => item.height < 44 || item.width < 44),
   );
   assert.deepEqual(undersized, [], `${label}_touch_target_below_44px:${JSON.stringify(undersized)}`);
+}
+
+async function assertAgradeInteractionSystem(page, label) {
+  const system = await page.evaluate(() => {
+    const rootStyles = getComputedStyle(document.documentElement);
+    const visibleControlNodes = [...document.querySelectorAll("a,button,input,[role='button']")]
+      .filter((node) => {
+        const rect = node.getBoundingClientRect();
+        const styles = getComputedStyle(node);
+        return rect.width > 0 && rect.height > 0 && styles.visibility !== "hidden" && styles.display !== "none";
+      });
+    return {
+      primary: rootStyles.getPropertyValue("--primary").trim(),
+      undersized: visibleControlNodes.map((node) => {
+        const rect = node.getBoundingClientRect();
+        return {
+          text: node.textContent?.trim() || node.getAttribute("aria-label") || node.getAttribute("title") || node.getAttribute("data-slot") || node.tagName,
+          tag: node.tagName.toLowerCase(),
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+          disabled: node.hasAttribute("disabled") || node.getAttribute("aria-disabled") === "true",
+        };
+      }).filter((item) => item.width < 44 || item.height < 44),
+      defaultCursorControls: visibleControlNodes.map((node) => {
+        const rect = node.getBoundingClientRect();
+        const styles = getComputedStyle(node);
+        return {
+          text: node.textContent?.trim() || node.getAttribute("aria-label") || node.getAttribute("title") || node.tagName,
+          tag: node.tagName.toLowerCase(),
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+          cursor: styles.cursor,
+          disabled: node.hasAttribute("disabled") || node.getAttribute("aria-disabled") === "true",
+        };
+      }).filter((item) => !item.disabled && item.cursor === "default"),
+      transitionAllControls: visibleControlNodes.map((node) => {
+        const styles = getComputedStyle(node);
+        return {
+          text: node.textContent?.trim() || node.getAttribute("aria-label") || node.getAttribute("title") || node.tagName,
+          transitionProperty: styles.transitionProperty,
+        };
+      }).filter((item) => item.transitionProperty.split(",").map((part) => part.trim()).includes("all")),
+    };
+  });
+  assert.equal(system.primary, "#0F766E", `${label}_brand_primary_must_be_frozen_teal:${JSON.stringify(system)}`);
+  assert.deepEqual(system.undersized, [], `${label}_visible_control_touch_target_below_44px:${JSON.stringify(system.undersized)}`);
+  assert.deepEqual(system.defaultCursorControls, [], `${label}_enabled_controls_must_not_use_default_cursor:${JSON.stringify(system.defaultCursorControls)}`);
+  assert.deepEqual(system.transitionAllControls, [], `${label}_controls_must_not_transition_all:${JSON.stringify(system.transitionAllControls)}`);
+
+  const focusCandidate = page.locator("nav a[href='/overview'], nav a[href='/resources'], button:enabled, a[href]").first();
+  await focusCandidate.focus();
+  const focusState = await focusCandidate.evaluate((node) => {
+    const styles = getComputedStyle(node);
+    return {
+      outlineStyle: styles.outlineStyle,
+      outlineWidth: styles.outlineWidth,
+      boxShadow: styles.boxShadow,
+    };
+  });
+  assert(
+    focusState.outlineStyle !== "none" ||
+      focusState.outlineWidth !== "0px" ||
+      (focusState.boxShadow && focusState.boxShadow !== "none"),
+    `${label}_focus_visible_state_missing:${JSON.stringify(focusState)}`,
+  );
 }
 
 async function assertBillingFirstViewDensity(page, label) {
@@ -349,6 +421,7 @@ try {
     assertResourceControlCopy(lastBodyText, "browser_overview");
     await assertFirstH1(page, "总览", "browser_overview");
     await assertTouchTargets(page, "nav a, nav button, header button", "browser_overview");
+    await assertAgradeInteractionSystem(page, "browser_overview");
     assert(lastBodyText.includes("选择套餐开通计算资源"), "browser_overview_open_compute_resource_cta_missing");
     assert(lastBodyText.includes("前往套餐与购买"), "browser_overview_packages_entry_missing");
     assert.equal(lastBodyText.includes("商业"), false, "browser_overview_forbidden_commercial_copy");
@@ -368,6 +441,7 @@ try {
     assertResourceControlCopy(lastBodyText, "browser_runtime_environment", ["计算资源", "存储空间"]);
     await assertFirstH1(page, "计算资源", "browser_runtime_environment");
     await assertTouchTargets(page, "nav a, nav button, header button", "browser_runtime_environment");
+    await assertAgradeInteractionSystem(page, "browser_runtime_environment");
     assert(lastBodyText.includes("开通服务"), "browser_runtime_open_service_cta_missing");
     assert(lastBodyText.includes("当前订阅状态"), "browser_runtime_subscription_status_missing");
     assert(lastBodyText.includes("套餐价格尚待审批"), "browser_runtime_pricing_boundary_missing");
@@ -386,6 +460,7 @@ try {
     lastBodyText = await page.locator("body").innerText();
     assertResourceControlCopy(lastBodyText, "browser_billing", ["费用与用量", "账单"]);
     await assertFirstH1(page, "费用与用量", "browser_billing");
+    await assertAgradeInteractionSystem(page, "browser_billing");
     await assertBillingFirstViewDensity(page, "browser_billing");
     await assertBillingSummaryLedgerShape(page, "browser_billing");
     await assertNoGlobalHorizontalOverflow(page, "browser_billing");
@@ -403,6 +478,7 @@ try {
     assert.equal(userBodyText.includes("站点设置"), false, "browser_user_overview_must_not_show_admin_system_nav");
     await assertFirstH1(userPage, "总览", "browser_user_overview");
     await assertTouchTargets(userPage, "nav a, nav button, header button", "browser_user_overview");
+    await assertAgradeInteractionSystem(userPage, "browser_user_overview");
     await assertNoGlobalHorizontalOverflow(userPage, "browser_user_overview");
     await userContext.close();
 

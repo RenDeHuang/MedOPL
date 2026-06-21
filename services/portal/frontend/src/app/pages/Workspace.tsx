@@ -178,7 +178,7 @@ export function Workspace() {
           </div>
         </div>
         {actionMessage && (
-          <Card className="border border-blue-200 bg-blue-50 p-4 mb-6 text-sm text-blue-700">{actionMessage}</Card>
+          <Card className="border border-teal-200 bg-teal-50 p-4 mb-6 text-sm text-teal-800">{actionMessage}</Card>
         )}
 
         {/* Workspace Info */}
@@ -197,7 +197,7 @@ export function Workspace() {
           <div className="p-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
               <div>
-                <div className="text-sm text-neutral-600 mb-1">绑定 OPL workspace</div>
+                <div className="text-sm text-neutral-600 mb-1">绑定工作空间</div>
                 <div className="font-semibold text-neutral-900">{model.workspaceTitle}</div>
                 <div className="text-xs text-neutral-500 mt-1">创建于 {model.createdAt}</div>
               </div>
@@ -266,7 +266,7 @@ export function Workspace() {
           </div>
         </div>
         {actionMessage && (
-          <Card className="border border-blue-200 bg-blue-50 p-4 mb-6 text-sm text-blue-700">{actionMessage}</Card>
+          <Card className="border border-teal-200 bg-teal-50 p-4 mb-6 text-sm text-teal-800">{actionMessage}</Card>
         )}
 
         {/* Workspace Info */}
@@ -285,7 +285,7 @@ export function Workspace() {
           <div className="p-5">
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
               <div>
-                <div className="text-sm text-neutral-600 mb-1">绑定 OPL workspace</div>
+                <div className="text-sm text-neutral-600 mb-1">绑定工作空间</div>
                 <div className="font-semibold text-neutral-900">{model.workspaceTitle}</div>
                 <div className="text-xs text-neutral-500 mt-1">创建于 {model.createdAt}</div>
               </div>
@@ -401,7 +401,7 @@ export function Workspace() {
         </div>
       </div>
       {actionMessage && (
-        <Card className="border border-blue-200 bg-blue-50 p-4 mb-6 text-sm text-blue-700">{actionMessage}</Card>
+        <Card className="border border-teal-200 bg-teal-50 p-4 mb-6 text-sm text-teal-800">{actionMessage}</Card>
       )}
 
       <div className="mb-6">
@@ -433,7 +433,7 @@ export function Workspace() {
         <div className="p-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
             <div>
-              <div className="text-sm text-neutral-600 mb-1">绑定 OPL workspace</div>
+              <div className="text-sm text-neutral-600 mb-1">绑定工作空间</div>
               <div className="font-semibold text-neutral-900">{model.workspaceTitle}</div>
               <div className="text-xs text-neutral-500 mt-1">创建于 {model.createdAt}</div>
             </div>
@@ -581,7 +581,7 @@ export function Workspace() {
                           {file.taskName && (
                             <>
                               <span>·</span>
-                              <span className="truncate text-blue-600">来自 {file.taskName}</span>
+                              <span className="truncate text-teal-700">来自 {file.taskName}</span>
                             </>
                           )}
                         </div>
@@ -607,7 +607,7 @@ export function Workspace() {
                         下载
                       </Button>
                       {file.taskId && (
-                        <Button asChild size="sm" variant="ghost" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                        <Button asChild size="sm" variant="ghost" className="text-teal-700 hover:bg-teal-50 hover:text-teal-800">
                           <Link to="/billing" aria-label={`查看 ${file.taskName || file.name} 的用量明细`}>
                             <ExternalLink className="w-4 h-4" />
                           </Link>

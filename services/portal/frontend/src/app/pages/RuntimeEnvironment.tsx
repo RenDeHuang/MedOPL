@@ -9,7 +9,7 @@ import {
   ResourceStatusCard,
 } from "../components/ResourceControlComponents";
 
-type ServiceStatus = "not_activated" | "active";
+type ServiceStatus = "not_opened" | "active";
 
 export function RuntimeEnvironment() {
   const [refreshVersion, setRefreshVersion] = useState(0);
@@ -47,24 +47,24 @@ export function RuntimeEnvironment() {
     }
   };
 
-  if (serviceStatus === "not_activated") {
+  if (serviceStatus === "not_opened") {
     return (
       <div className="p-8 max-w-7xl mx-auto">
         <div className="mb-8 pb-8 border-b border-neutral-200">
           <h2 className="text-2xl font-semibold text-neutral-900 mb-3">计算资源</h2>
           <Badge variant="outline" className="bg-neutral-100 text-neutral-600 border-neutral-200 text-sm px-3 py-1">未开通</Badge>
-          <p className="text-sm text-neutral-600 mt-3">套餐开通走 MedOPL plan catalog，不提供云资源调整动作。</p>
+          <p className="text-sm text-neutral-600 mt-3">套餐目录由平台维护，不提供云资源调整动作。</p>
         </div>
         <div className="mb-6">
           <ResourceStatusCard
             status="empty"
-            title="当前 workspace 尚未开通 Runtime"
-            spec="选择一个 MedOPL 套餐后，平台会为当前 OPL workspace 开通计算资源和存储空间。"
-            receiptState={model.subscription.status}
+            title="当前工作空间尚未开通计算环境"
+            spec="选择一个 MedOPL 套餐后，平台会为当前工作空间开通计算资源和存储空间。"
+            receiptState={model.subscriptionStatusText}
             primaryAction={<Button onClick={() => setShowConfirmDialog(true)}>开通服务</Button>}
             metrics={[
-              { label: "工作空间", value: model.workspaceId || "未返回" },
-              { label: "实验室权益", value: model.entitlement.entitlement.message || "未返回" },
+              { label: "工作空间", value: model.workspaceDisplayName },
+              { label: "实验室权益", value: model.entitlementMessageText },
               { label: "价格状态", value: "待审批" },
               { label: "存储策略", value: "随套餐开通" },
             ]}
@@ -96,7 +96,7 @@ export function RuntimeEnvironment() {
         <ReadinessChecklist
           status="pending"
           items={[
-            { label: "工作空间归属", detail: model.workspaceId || "使用当前登录账户的 OPL workspace", state: model.workspaceId ? "ready" : "pending" },
+            { label: "工作空间归属", detail: model.workspaceDisplayName, state: model.workspaceId ? "ready" : "pending" },
             { label: "套餐选择", detail: current.name, state: "ready" },
             { label: "价格审批", detail: current.priceLabel || "正式售价未定价", state: current.pendingProductApproval ? "pending" : "ready" },
             { label: "计费边界", detail: "开通后按已审批合同计费，真实扣费以后端账本为准。", state: "protected" },
@@ -106,14 +106,14 @@ export function RuntimeEnvironment() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <Card className="border border-neutral-200 p-4">
             <div className="text-xs text-neutral-600 mb-1">当前订阅状态</div>
-            <div className="font-semibold text-neutral-900">{model.subscription.status}</div>
+            <div className="font-semibold text-neutral-900">{model.subscriptionStatusText}</div>
           </Card>
           <Card className="border border-neutral-200 p-4">
             <div className="text-xs text-neutral-600 mb-1">实验室权益</div>
-            <div className="font-semibold text-neutral-900">{model.entitlement.entitlement.message || "未返回"}</div>
+            <div className="font-semibold text-neutral-900">{model.entitlementMessageText}</div>
           </Card>
         </div>
-        <Alert className="mt-6 border-blue-200 bg-blue-50"><AlertCircle className="h-4 w-4 text-blue-600" /><AlertDescription className="text-blue-900 text-sm">套餐价格尚待审批，开通后将按已审批合同计费。</AlertDescription></Alert>
+        <Alert className="mt-6 border-teal-200 bg-teal-50"><AlertCircle className="h-4 w-4 text-teal-700" /><AlertDescription className="text-teal-900 text-sm">套餐价格尚待审批，开通后将按已审批合同计费。</AlertDescription></Alert>
         <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
           <DialogContent className="max-w-2xl">
             <DialogHeader><DialogTitle>确认开通服务</DialogTitle><DialogDescription>请确认配置信息。价格待审批，不展示小时售价。</DialogDescription></DialogHeader>
@@ -143,7 +143,7 @@ export function RuntimeEnvironment() {
             <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-md"><div className="w-2 h-2 rounded-full bg-green-600" /><span className="text-sm font-medium text-green-900">可用</span></div>
             <span className="text-neutral-600">查看当前计算资源是否可用、规格、计费状态和释放状态。</span>
           </div>
-          <p className="text-sm text-neutral-600 mt-3">套餐开通走 MedOPL plan catalog，不提供云资源调整动作。</p>
+          <p className="text-sm text-neutral-600 mt-3">套餐目录由平台维护，不提供云资源调整动作。</p>
         </div>
         <Button asChild variant="outline"><Link to="/billing">查看计费</Link></Button>
       </div>
@@ -165,15 +165,15 @@ export function RuntimeEnvironment() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <Card className="border border-neutral-200 p-4">
           <div className="text-xs text-neutral-600 mb-1">当前订阅状态</div>
-          <div className="font-semibold text-neutral-900">{model.subscription.status}</div>
+          <div className="font-semibold text-neutral-900">{model.subscriptionStatusText}</div>
         </Card>
         <Card className="border border-neutral-200 p-4">
           <div className="text-xs text-neutral-600 mb-1">实验室权益</div>
-          <div className="font-semibold text-neutral-900">{model.entitlement.entitlement.message || "未返回"}</div>
+          <div className="font-semibold text-neutral-900">{model.entitlementMessageText}</div>
         </Card>
       </div>
       <div className="mb-8 p-6 bg-neutral-50 rounded-lg border border-neutral-200">
-        <div className="flex items-center justify-between mb-4"><div className="flex items-center gap-3"><h2 className="font-semibold text-neutral-900">当前配置</h2><Badge variant="outline" className="bg-white text-blue-700 border-blue-200">{model.currentPlanName}</Badge></div><div className="text-sm text-neutral-600">{model.billingStatus}</div></div>
+        <div className="flex items-center justify-between mb-4"><div className="flex items-center gap-3"><h2 className="font-semibold text-neutral-900">当前配置</h2><Badge variant="outline" className="bg-white text-teal-700 border-teal-200">{model.currentPlanName}</Badge></div><div className="text-sm text-neutral-600">{model.billingStatus}</div></div>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
           <div className="flex items-center gap-3"><Server className="w-5 h-5 text-neutral-400" /><div><div className="text-xs text-neutral-600">计算资源</div><div className="font-semibold text-neutral-900">{model.computeSpec}</div></div></div>
           <div className="flex items-center gap-3"><HardDrive className="w-5 h-5 text-neutral-400" /><div><div className="text-xs text-neutral-600">存储空间</div><div className="font-semibold text-neutral-900">{model.storageTotal}</div></div></div>

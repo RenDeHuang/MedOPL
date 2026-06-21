@@ -60,25 +60,30 @@ export function Layout() {
       {/* Sidebar */}
       <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-neutral-200 bg-white flex flex-col md:flex-none">
         {/* Logo */}
-        <div className="h-14 border-b border-neutral-200 flex items-center px-4">
-          <Link to="/overview" className="font-semibold text-neutral-900">
+        <div className="h-14 border-b border-neutral-200 flex items-center px-3">
+          <Link
+            to="/overview"
+            className="inline-flex min-h-11 min-w-11 cursor-pointer items-center rounded-md px-2 font-semibold text-neutral-900 transition-[color,background-color,box-shadow] hover:bg-neutral-100 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 motion-reduce:transition-none motion-reduce:active:translate-y-0"
+          >
             MedOPL Portal
           </Link>
         </div>
 
         {/* Navigation */}
         <nav className="flex-none md:flex-1 p-3 space-y-3 md:space-y-1 overflow-y-auto">
-          <div className="flex gap-2 overflow-x-auto pb-1 md:block md:space-y-1 md:overflow-visible md:pb-0">
+          <div data-ui-pattern="mobile-nav-scroll-hint" className="relative -mx-1 px-1 after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-6 after:bg-gradient-to-l after:from-white after:to-transparent md:after:hidden">
+            <div className="flex gap-2 overflow-x-auto pb-1 pr-6 md:block md:space-y-1 md:overflow-visible md:pb-0 md:pr-0">
             {userNavigation.map((item) => {
               const isActive = location.pathname === item.path;
               return (
                 <Link
                   key={item.path}
                   to={item.path}
+                  aria-current={isActive ? "page" : undefined}
                   className={cn(
-                    "flex min-h-11 min-w-11 shrink-0 items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors md:shrink",
+                    "flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm transition-[color,background-color,box-shadow,transform] active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 motion-reduce:transition-none motion-reduce:active:translate-y-0 md:shrink",
                     isActive
-                      ? "bg-neutral-900 text-white"
+                      ? "bg-primary text-white"
                       : "text-neutral-700 hover:bg-neutral-100"
                   )}
                 >
@@ -87,6 +92,7 @@ export function Layout() {
                 </Link>
               );
             })}
+            </div>
           </div>
 
           {/* RoleContext 不是安全边界；真实 admin 权限由 Go /api/admin/* 后端校验。 */}
@@ -96,7 +102,7 @@ export function Layout() {
               <div className="space-y-1">
                 <button
                   onClick={() => setAdminExpanded(!adminExpanded)}
-                  className="flex min-h-11 w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold text-neutral-500 transition-colors hover:text-neutral-700"
+                  className="flex min-h-11 w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-xs font-semibold text-neutral-500 transition-[color,background-color,box-shadow,transform] hover:bg-neutral-100 hover:text-neutral-700 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 motion-reduce:transition-none motion-reduce:active:translate-y-0"
                 >
                   <span>管理台</span>
                   {adminExpanded ? (
@@ -106,17 +112,19 @@ export function Layout() {
                   )}
                 </button>
                 {adminExpanded && (
-                  <div className="flex gap-2 overflow-x-auto pb-1 md:block md:space-y-1 md:overflow-visible md:pb-0">
+                  <div data-ui-pattern="mobile-nav-scroll-hint" className="relative -mx-1 px-1 after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-6 after:bg-gradient-to-l after:from-white after:to-transparent md:after:hidden">
+                    <div className="flex gap-2 overflow-x-auto pb-1 pr-6 md:block md:space-y-1 md:overflow-visible md:pb-0 md:pr-0">
                     {adminNavigation.map((item) => {
                       const isActive = location.pathname === item.path;
                       return (
                         <Link
                           key={item.path}
                           to={item.path}
+                          aria-current={isActive ? "page" : undefined}
                           className={cn(
-                            "flex min-h-11 min-w-11 shrink-0 items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors md:shrink",
+                            "flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-sm transition-[color,background-color,box-shadow,transform] active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 motion-reduce:transition-none motion-reduce:active:translate-y-0 md:shrink",
                             isActive
-                              ? "bg-neutral-900 text-white"
+                              ? "bg-primary text-white"
                               : "text-neutral-700 hover:bg-neutral-100"
                           )}
                         >
@@ -125,6 +133,7 @@ export function Layout() {
                         </Link>
                       );
                     })}
+                    </div>
                   </div>
                 )}
               </div>

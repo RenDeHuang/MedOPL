@@ -19,6 +19,17 @@
   "medopl_portal_interaction_flow_contract": {
     "secret_boundary": "frontend_may_hold_providerKeyRef_bound_status_and_one_time_input_only",
     "dangerous_action_policy": "release_or_destroy_actions_require_confirmation_and_disabled_reason",
+    "interaction_states": {
+      "min_touch_target_px": 44,
+      "transition_all_allowed": false,
+      "required": [
+        "hover",
+        "active",
+        "focus-visible",
+        "disabled",
+        "cursor"
+      ]
+    },
     "flows": [
       {
         "id": "open_compute_resource",

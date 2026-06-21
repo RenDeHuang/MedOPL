@@ -23,8 +23,59 @@
         "nav_link",
         "nav_button",
         "header_action",
-        "primary_action"
+        "primary_action",
+        "logo_link",
+        "tabs_trigger",
+        "input",
+        "switch"
       ]
+    },
+    "brand": {
+      "primary_hex": "#0F766E",
+      "primary_name": "Teal",
+      "forbidden_primary_hues": [
+        "default_technology_blue",
+        "default_technology_purple"
+      ]
+    },
+    "motion": {
+      "transition_all_allowed": false,
+      "duration_ms_max": 180,
+      "reduced_motion_respected": true,
+      "allowed_transition_properties": [
+        "colors",
+        "background-color",
+        "border-color",
+        "box-shadow",
+        "transform",
+        "opacity"
+      ]
+    },
+    "interaction_states": {
+      "required": [
+        "hover",
+        "active",
+        "focus-visible",
+        "disabled",
+        "cursor"
+      ]
+    },
+    "copy": {
+      "language": "zh-CN_resource_control_plane",
+      "forbidden_visible_terms": [
+        "workspace",
+        "Runtime",
+        "not_activated",
+        "funded",
+        "MedOPL plan catalog"
+      ],
+      "preferred_terms": {
+        "workspace": "工作空间",
+        "Runtime": "计算环境",
+        "not_activated": "待开通",
+        "funded": "已入账",
+        "MedOPL plan catalog": "套餐目录"
+      }
     },
     "card": {
       "radius_max_px": 8,

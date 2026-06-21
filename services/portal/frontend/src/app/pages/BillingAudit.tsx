@@ -51,7 +51,7 @@ interface TaskCost {
 function getTaskStatusIcon(status: string) {
   switch (status) {
     case "running":
-      return <PlayCircle className="w-4 h-4 text-blue-600" />;
+      return <PlayCircle className="w-4 h-4 text-teal-700" />;
     case "completed":
       return <CheckCircle2 className="w-4 h-4 text-green-600" />;
     case "failed":
@@ -95,7 +95,7 @@ export function BillingAudit() {
   const pageState: PageState = model.billingRecords.length === 0 ? "empty-ledger" : "ready";
   const canExportBilling = model.billingRecords.length > 0;
   const support = model.supportBoundary;
-  const billingStateLabel = support?.fundingStatus || support?.supportStatus || "local ledger";
+  const billingStateLabel = support?.fundingStatus || support?.supportStatus || "本地账本";
   const canStartPaidRun = support ? support.canStartPaidRun : model.billingRecords.length > 0;
 
   const exportBillingRecords = () => {
@@ -395,7 +395,7 @@ export function BillingAudit() {
             </Table>
           </div>
           <div className="p-4 border-t border-neutral-200 text-sm text-neutral-600 text-center">
-            账户、工作空间、资源绑定和 billing attribution 使用同一 owner scope 查询
+            账户、工作空间、资源绑定和费用归属使用同一口径查询
           </div>
         </Card>
 
@@ -410,7 +410,7 @@ export function BillingAudit() {
           <div className="p-5 space-y-4">
             <div>
               <div className="text-sm text-neutral-600 mb-2">审计模式</div>
-              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+              <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200">
                 T+1 对账
               </Badge>
             </div>
@@ -418,7 +418,7 @@ export function BillingAudit() {
             <div>
               <div className="text-sm text-neutral-600 mb-2">待结算金额</div>
               <div className="font-semibold text-neutral-900">{model.pendingCost}</div>
-              <div className="text-xs text-neutral-500 mt-1">pending usage 不作为最终扣费</div>
+              <div className="text-xs text-neutral-500 mt-1">待结算用量不作为最终扣费</div>
             </div>
 
             <div>

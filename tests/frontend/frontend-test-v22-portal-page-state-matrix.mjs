@@ -22,11 +22,26 @@ const routes = await readRepoFile("services/portal/frontend/src/app/routes.tsx")
 const layout = await readRepoFile("services/portal/frontend/src/app/components/Layout.tsx");
 const designSource = await readRepoFile("DESIGN.md");
 const themeSource = await readRepoFile("services/portal/frontend/src/styles/theme.css");
+const coreUiSource = await readRepoFile("services/portal/frontend/src/app/components/ui/core.tsx");
+const tabsSource = await readRepoFile("services/portal/frontend/src/app/components/ui/tabs.tsx");
+const switchSource = await readRepoFile("services/portal/frontend/src/app/components/ui/switch.tsx");
 const resourceControlComponents = await readRepoFile("services/portal/frontend/src/app/components/ResourceControlComponents.tsx");
 const runtimeEnvironmentPage = await readRepoFile("services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx");
 const packagesPurchasePage = await readRepoFile("services/portal/frontend/src/app/pages/PackagesPurchase.tsx");
 const workspacePage = await readRepoFile("services/portal/frontend/src/app/pages/Workspace.tsx");
 const billingAuditPage = await readRepoFile("services/portal/frontend/src/app/pages/BillingAudit.tsx");
+const overviewPage = await readRepoFile("services/portal/frontend/src/app/pages/Overview.tsx");
+const oplEntryPage = await readRepoFile("services/portal/frontend/src/app/pages/OPLEntry.tsx");
+
+const userVisibleSource = [
+  layout,
+  runtimeEnvironmentPage,
+  packagesPurchasePage,
+  workspacePage,
+  billingAuditPage,
+  overviewPage,
+  oplEntryPage,
+].join("\n");
 
 const routeMarkers = new Map([
   ["resource_overview", ["Overview", "/overview"]],
@@ -201,7 +216,83 @@ assert.equal(uiQualityContract.medopl_portal_ui_quality_contract.card.radius_max
 assert.equal(uiQualityContract.medopl_portal_ui_quality_contract.semantic_heading.logo_h1_allowed, false, "ui_quality_logo_h1_mismatch");
 assert.equal(uiQualityContract.medopl_portal_ui_quality_contract.billing.first_view_extra_kpi_cards_max, 0, "ui_quality_billing_kpi_budget_mismatch");
 
+assert.equal(uiQualityContract.medopl_portal_ui_quality_contract.brand.primary_hex, "#0F766E", "ui_quality_brand_primary_hex_mismatch");
+assert.deepEqual(
+  uiQualityContract.medopl_portal_ui_quality_contract.brand.forbidden_primary_hues,
+  ["default_technology_blue", "default_technology_purple"],
+  "ui_quality_forbidden_primary_hues_mismatch",
+);
+assert.equal(uiQualityContract.medopl_portal_ui_quality_contract.motion.transition_all_allowed, false, "ui_quality_transition_all_must_be_forbidden");
+for (const property of ["colors", "background-color", "border-color", "box-shadow", "transform", "opacity"]) {
+  assert(
+    uiQualityContract.medopl_portal_ui_quality_contract.motion.allowed_transition_properties.includes(property),
+    `ui_quality_motion_property_missing:${property}`,
+  );
+}
+for (const state of ["hover", "active", "focus-visible", "disabled", "cursor"]) {
+  assert(
+    uiQualityContract.medopl_portal_ui_quality_contract.interaction_states.required.includes(state),
+    `ui_quality_interaction_state_missing:${state}`,
+  );
+}
+for (const target of ["logo_link", "tabs_trigger", "input", "switch"]) {
+  assert(
+    uiQualityContract.medopl_portal_ui_quality_contract.touch_target.applies_to.includes(target),
+    `ui_quality_touch_target_scope_missing:${target}`,
+  );
+}
+for (const forbiddenTerm of ["workspace", "Runtime", "not_activated", "funded", "MedOPL plan catalog"]) {
+  assert(
+    uiQualityContract.medopl_portal_ui_quality_contract.copy.forbidden_visible_terms.includes(forbiddenTerm),
+    `ui_quality_forbidden_visible_term_missing:${forbiddenTerm}`,
+  );
+}
+for (const forbiddenVisiblePhrase of [
+  "MedOPL plan catalog",
+  "当前 workspace",
+  "尚未开通 Runtime",
+  "OPL workspace",
+  "local ledger",
+]) {
+  assert.equal(
+    userVisibleSource.includes(forbiddenVisiblePhrase),
+    false,
+    `portal_visible_internal_phrase_must_be_retired:${forbiddenVisiblePhrase}`,
+  );
+}
+assert(themeSource.includes("--primary: #0F766E;"), "portal_theme_primary_must_use_frozen_teal");
+for (const forbiddenColor of ["--primary: #030213;", "--release-pending: #2563eb;", "--storage-protected: #6d28d9;"]) {
+  assert.equal(themeSource.includes(forbiddenColor), false, `portal_theme_default_blue_purple_or_black_primary_must_retire:${forbiddenColor}`);
+}
+for (const [label, source] of [
+  ["core", coreUiSource],
+  ["tabs", tabsSource],
+  ["switch", switchSource],
+  ["layout", layout],
+  ["resource_components", resourceControlComponents],
+]) {
+  assert.equal(source.includes("transition-all"), false, `portal_transition_all_must_not_be_used:${label}`);
+}
+assert(coreUiSource.includes("cursor-pointer"), "portal_button_cursor_pointer_missing");
+assert(coreUiSource.includes("active:translate-y-px"), "portal_button_active_state_missing");
+assert(coreUiSource.includes("disabled:cursor-not-allowed"), "portal_button_disabled_cursor_missing");
+assert(coreUiSource.includes("min-h-11"), "portal_input_touch_target_min_height_missing");
+assert(tabsSource.includes("min-h-11"), "portal_tabs_touch_target_min_height_missing");
+assert(tabsSource.includes("cursor-pointer"), "portal_tabs_cursor_pointer_missing");
+assert(switchSource.includes("min-h-11"), "portal_switch_touch_target_min_height_missing");
+assert(switchSource.includes("min-w-11"), "portal_switch_touch_target_min_width_missing");
+assert(layout.includes("data-ui-pattern=\"mobile-nav-scroll-hint\""), "portal_mobile_nav_scroll_hint_missing");
+assert(layout.includes("aria-current={isActive ? \"page\" : undefined}"), "portal_nav_current_page_semantics_missing");
+
 const flowById = new Map(interactionFlowContract.medopl_portal_interaction_flow_contract.flows.map((flow) => [flow.id, flow]));
+assert.equal(interactionFlowContract.medopl_portal_interaction_flow_contract.interaction_states.min_touch_target_px, 44, "interaction_flow_touch_target_min_mismatch");
+assert.equal(interactionFlowContract.medopl_portal_interaction_flow_contract.interaction_states.transition_all_allowed, false, "interaction_flow_transition_all_must_be_forbidden");
+for (const requiredState of ["hover", "active", "focus-visible", "disabled", "cursor"]) {
+  assert(
+    interactionFlowContract.medopl_portal_interaction_flow_contract.interaction_states.required.includes(requiredState),
+    `interaction_flow_required_state_missing:${requiredState}`,
+  );
+}
 for (const flowId of [
   "open_compute_resource",
   "purchase_or_upgrade_plan",

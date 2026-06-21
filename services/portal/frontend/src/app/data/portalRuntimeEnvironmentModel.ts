@@ -9,7 +9,7 @@ import {
   upgradeLabPackage,
 } from "../../api/portal/lab";
 import { fetchMyResources } from "../../api/portal/resources";
-import { gb, numberValue, stringValue } from "./portalFormatters";
+import { gb, numberValue, statusText, stringValue } from "./portalFormatters";
 import {
   packageConcurrent,
   packageCpu,
@@ -52,8 +52,13 @@ export async function loadRuntimeEnvironmentModel() {
   }));
   if (plans.length === 0) throw new PortalDisplayError(PORTAL_DATA_UNAVAILABLE_MESSAGE);
   return {
-    serviceStatus: activeBinding ? "active" : "not_activated",
+    serviceStatus: activeBinding ? "active" : "not_opened",
     workspaceId,
+    workspaceDisplayName: "当前工作空间",
+    subscriptionStatusText: statusText(subscription.status),
+    entitlementMessageText: entitlement.entitlement.message && !entitlement.entitlement.message.includes("_")
+      ? entitlement.entitlement.message
+      : statusText(entitlement.entitlement.status, entitlement.entitlement.enabled ? "已开通实验室套餐" : "尚未开通实验室套餐。"),
     currentPlanName: subscription.currentPackageName || entitlement.entitlement.packageName || "已开通托管套餐",
     computeSpec: activeBinding?.computeResource?.instanceType || "未返回",
     storageTotal: gb(storageCapacityGb),
@@ -61,7 +66,7 @@ export async function loadRuntimeEnvironmentModel() {
     storageAvailable: gb(Math.max(0, storageCapacityGb - numberValue(protection?.consumedAmount))),
     storagePercent: storageCapacityGb > 0 ? Math.min(100, Math.round((numberValue(protection?.consumedAmount) / storageCapacityGb) * 100)) : 0,
     frozenAmount: `¥ ${numberValue(protection?.frozenAmount).toFixed(2)}`,
-    billingStatus: protection?.status || activeBinding?.status || "未返回",
+    billingStatus: statusText(protection?.status || activeBinding?.status),
     releaseLifecycle,
     plans,
     subscription: subscription as LabSubscriptionPayload,

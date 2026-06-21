@@ -19,8 +19,8 @@ export type ResourceControlState =
 
 const stateTone: Record<ResourceControlState, { badge: string; panel: string; label: string }> = {
   loading: {
-    badge: "bg-blue-50 text-blue-700 border-blue-200",
-    panel: "border-blue-200 bg-blue-50",
+    badge: "bg-teal-50 text-teal-700 border-teal-200",
+    panel: "border-teal-200 bg-teal-50",
     label: "读取中",
   },
   empty: {
@@ -44,8 +44,8 @@ const stateTone: Record<ResourceControlState, { badge: string; panel: string; la
     label: "失败",
   },
   pending: {
-    badge: "bg-[var(--release-pending-background)] text-[var(--release-pending)] border-blue-200",
-    panel: "border-blue-200 bg-[var(--release-pending-background)]",
+    badge: "bg-[var(--release-pending-background)] text-[var(--release-pending)] border-teal-200",
+    panel: "border-teal-200 bg-[var(--release-pending-background)]",
     label: "处理中",
   },
   released: {
@@ -54,8 +54,8 @@ const stateTone: Record<ResourceControlState, { badge: string; panel: string; la
     label: "已释放",
   },
   protected: {
-    badge: "bg-[var(--storage-protected-background)] text-[var(--storage-protected)] border-purple-200",
-    panel: "border-purple-200 bg-[var(--storage-protected-background)]",
+    badge: "bg-[var(--storage-protected-background)] text-[var(--storage-protected)] border-slate-200",
+    panel: "border-slate-200 bg-[var(--storage-protected-background)]",
     label: "保护期",
   },
 };

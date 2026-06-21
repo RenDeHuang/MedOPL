@@ -51,7 +51,7 @@ for (const required of [
   "价格待审批",
   "正式售价未定价",
   "不展示小时售价",
-  "套餐开通走 MedOPL plan catalog，不提供云资源调整动作。",
+  "套餐目录由平台维护，不提供云资源调整动作。",
   "审计模式",
 ]) {
   assertIncludes(resourcesSurfaceSources, required, "ordinary_resource_surface_required_copy");
