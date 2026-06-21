@@ -155,6 +155,13 @@ function assertResourceControlCopy(bodyText, label, markers = ["资源总览", "
       `${label}_forbidden_internal_ui_copy:${forbiddenInternalTerm}`,
     );
   }
+  for (const forbiddenEngineeringTerm of ["mutation", "runner phase", "claim", "future-authorized", "ops_surface_disabled"]) {
+    assert.equal(
+      bodyText.includes(forbiddenEngineeringTerm),
+      false,
+      `${label}_forbidden_engineering_ui_copy:${forbiddenEngineeringTerm}`,
+    );
+  }
 }
 
 async function assertPrimaryActionReachable(page, label) {
@@ -342,6 +349,40 @@ async function assertBillingSummaryLedgerShape(page, label) {
   assert.equal(metrics.nestedMetricTileCount, 0, `${label}_billing_summary_must_not_use_nested_metric_tiles:${JSON.stringify(metrics)}`);
 }
 
+async function assertHeadingHierarchy(page, label) {
+  const headings = await page.locator("h1,h2,h3,h4,h5,h6").evaluateAll((nodes) =>
+    nodes.map((node) => ({
+      level: Number(node.tagName.slice(1)),
+      text: node.textContent?.trim() || "",
+    })).filter((item) => item.text.length > 0),
+  );
+  assert(headings.length > 0, `${label}_headings_missing`);
+  assert.equal(headings[0].level, 1, `${label}_first_heading_must_be_h1:${JSON.stringify(headings)}`);
+  for (let index = 1; index < headings.length; index += 1) {
+    assert(
+      headings[index].level <= headings[index - 1].level + 1,
+      `${label}_heading_level_skip:${JSON.stringify(headings)}`,
+    );
+  }
+}
+
+async function assertStateFeedbackPatterns(page, label) {
+  const metrics = await page.evaluate(() => ({
+    stateFeedbackCount: document.querySelectorAll("[data-ui-pattern='state-feedback']").length,
+    liveRegionCount: document.querySelectorAll("[data-ui-pattern='state-feedback'][role='status']").length,
+    tableCount: document.querySelectorAll("[data-slot='table']").length,
+    responsiveTableCount: document.querySelectorAll("[data-ui-pattern='responsive-data-table']").length,
+  }));
+  assert(metrics.stateFeedbackCount > 0, `${label}_state_feedback_pattern_missing:${JSON.stringify(metrics)}`);
+  assert(metrics.liveRegionCount > 0, `${label}_state_feedback_live_region_missing:${JSON.stringify(metrics)}`);
+  if (label.includes("billing")) {
+    assert(metrics.tableCount > 0, `${label}_billing_table_missing:${JSON.stringify(metrics)}`);
+  }
+  if (metrics.tableCount > 0) {
+    assert.equal(metrics.responsiveTableCount, metrics.tableCount, `${label}_responsive_data_table_pattern_missing:${JSON.stringify(metrics)}`);
+  }
+}
+
 const { chromium } = await loadPlaywright();
 const backendPort = await freePort();
 const vitePort = await freePort();
@@ -420,8 +461,10 @@ try {
     lastBodyText = await page.locator("body").innerText();
     assertResourceControlCopy(lastBodyText, "browser_overview");
     await assertFirstH1(page, "总览", "browser_overview");
+    await assertHeadingHierarchy(page, "browser_overview");
     await assertTouchTargets(page, "nav a, nav button, header button", "browser_overview");
     await assertAgradeInteractionSystem(page, "browser_overview");
+    await assertStateFeedbackPatterns(page, "browser_overview");
     assert(lastBodyText.includes("选择套餐开通计算资源"), "browser_overview_open_compute_resource_cta_missing");
     assert(lastBodyText.includes("前往套餐与购买"), "browser_overview_packages_entry_missing");
     assert.equal(lastBodyText.includes("商业"), false, "browser_overview_forbidden_commercial_copy");
@@ -440,8 +483,10 @@ try {
     lastBodyText = await page.locator("body").innerText();
     assertResourceControlCopy(lastBodyText, "browser_runtime_environment", ["计算资源", "存储空间"]);
     await assertFirstH1(page, "计算资源", "browser_runtime_environment");
+    await assertHeadingHierarchy(page, "browser_runtime_environment");
     await assertTouchTargets(page, "nav a, nav button, header button", "browser_runtime_environment");
     await assertAgradeInteractionSystem(page, "browser_runtime_environment");
+    await assertStateFeedbackPatterns(page, "browser_runtime_environment");
     assert(lastBodyText.includes("开通服务"), "browser_runtime_open_service_cta_missing");
     assert(lastBodyText.includes("当前订阅状态"), "browser_runtime_subscription_status_missing");
     assert(lastBodyText.includes("套餐价格尚待审批"), "browser_runtime_pricing_boundary_missing");
@@ -449,6 +494,9 @@ try {
     assert.equal(lastBodyText.includes("K8s"), false, "browser_runtime_must_not_expose_cloud_console_copy");
     if (lastBodyText.includes("释放与停止计费")) {
       assert(lastBodyText.includes("释放交互接入中"), "browser_runtime_release_partial_state_missing");
+      assert.equal(lastBodyText.includes("mutation"), false, "browser_runtime_release_must_not_expose_mutation_copy");
+      assert.equal(lastBodyText.includes("claim"), false, "browser_runtime_release_must_not_expose_claim_copy");
+      assert.equal(lastBodyText.includes("runner phase"), false, "browser_runtime_release_must_not_expose_phase_copy");
     }
     await assertRuntimePlanDensity(page, "browser_runtime_environment");
     await assertPrimaryActionReachable(page, "browser_runtime_environment");
@@ -460,7 +508,9 @@ try {
     lastBodyText = await page.locator("body").innerText();
     assertResourceControlCopy(lastBodyText, "browser_billing", ["费用与用量", "账单"]);
     await assertFirstH1(page, "费用与用量", "browser_billing");
+    await assertHeadingHierarchy(page, "browser_billing");
     await assertAgradeInteractionSystem(page, "browser_billing");
+    await assertStateFeedbackPatterns(page, "browser_billing");
     await assertBillingFirstViewDensity(page, "browser_billing");
     await assertBillingSummaryLedgerShape(page, "browser_billing");
     await assertNoGlobalHorizontalOverflow(page, "browser_billing");
@@ -477,8 +527,10 @@ try {
     assert.equal(userBodyText.includes("管理台"), false, "browser_user_overview_must_not_show_admin_nav");
     assert.equal(userBodyText.includes("站点设置"), false, "browser_user_overview_must_not_show_admin_system_nav");
     await assertFirstH1(userPage, "总览", "browser_user_overview");
+    await assertHeadingHierarchy(userPage, "browser_user_overview");
     await assertTouchTargets(userPage, "nav a, nav button, header button", "browser_user_overview");
     await assertAgradeInteractionSystem(userPage, "browser_user_overview");
+    await assertStateFeedbackPatterns(userPage, "browser_user_overview");
     await assertNoGlobalHorizontalOverflow(userPage, "browser_user_overview");
     await userContext.close();
 
@@ -491,6 +543,8 @@ try {
     assert(lastBodyText.includes("服务状态摘要"), "browser_admin_service_status_summary_missing");
     assert(lastBodyText.includes("真实云资源、真实扣费或高风险设置仍需单独授权接口"), "browser_admin_authorization_boundary_missing");
     assert.equal(lastBodyText.includes("商业"), false, "browser_admin_forbidden_commercial_copy");
+    await assertHeadingHierarchy(page, "browser_admin_system");
+    await assertStateFeedbackPatterns(page, "browser_admin_system");
     await assertNoGlobalHorizontalOverflow(page, "browser_admin_system");
 
     await assertNoBadConsole(consoleMessages, failedRequests);

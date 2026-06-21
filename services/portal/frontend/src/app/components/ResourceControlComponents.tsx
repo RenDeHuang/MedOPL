@@ -95,7 +95,13 @@ export function ResourceStatusCard({
   metrics?: Array<{ label: string; value: string; hint?: string }>;
 }) {
   return (
-    <Card className={cn("border p-5", stateTone[status].panel)} data-ui-component="ResourceStatusCard">
+    <Card
+      className={cn("border p-5", stateTone[status].panel)}
+      data-ui-component="ResourceStatusCard"
+      data-ui-pattern="state-feedback"
+      role="status"
+      aria-live="polite"
+    >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -155,8 +161,11 @@ export function PlanCard({
   return (
     <Card
       data-ui-component="PlanCard"
+      data-ui-pattern="state-feedback"
       data-plan-id={planId}
       data-density={density}
+      role={purchaseState === "ready" || purchaseState === "pending" || purchaseState === "blocked" ? "status" : undefined}
+      aria-live={purchaseState === "ready" || purchaseState === "pending" || purchaseState === "blocked" ? "polite" : undefined}
       className={cn(
         "border overflow-hidden transition-colors",
         selected ? "border-neutral-900 shadow-sm" : "border-neutral-200",
@@ -241,7 +250,13 @@ export function StorageInventoryPanel({
   percent: number;
 }) {
   return (
-    <Card className="border border-neutral-200 p-5" data-ui-component="StorageInventoryPanel">
+    <Card
+      className="border border-neutral-200 p-5"
+      data-ui-component="StorageInventoryPanel"
+      data-ui-pattern="state-feedback"
+      role="status"
+      aria-live="polite"
+    >
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="mb-2 flex items-center gap-2">
@@ -288,7 +303,13 @@ export function BillingSummary({
     { label: "审计", value: auditState },
   ];
   return (
-    <Card className="border border-neutral-200 p-5" data-ui-component="BillingSummary">
+    <Card
+      className="border border-neutral-200 p-5"
+      data-ui-component="BillingSummary"
+      data-ui-pattern="state-feedback"
+      role="status"
+      aria-live="polite"
+    >
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="mb-2 flex items-center gap-2">
@@ -321,7 +342,13 @@ export function ReadinessChecklist({
   primaryAction?: ReactNode;
 }) {
   return (
-    <Card className="border border-neutral-200 p-5" data-ui-component="ReadinessChecklist">
+    <Card
+      className="border border-neutral-200 p-5"
+      data-ui-component="ReadinessChecklist"
+      data-ui-pattern="state-feedback"
+      role="status"
+      aria-live="polite"
+    >
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="mb-2 flex items-center gap-2">

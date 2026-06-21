@@ -125,7 +125,8 @@ MedOPL 是资源购买与计算资源管理 Portal，不是 chat，不是科研�
 - 品牌主色冻结为 Teal `#0F766E`。用户侧主视觉不得使用默认科技蓝或默认紫作为主色。
 - 基础交互必须覆盖 hover、active、focus-visible、disabled 和 cursor；可点击控件默认不是 `cursor: default`。
 - motion 只允许颜色、背景、边框、阴影、transform 和 opacity 这类轻属性；不得使用 `transition-all`，并必须尊重 reduced motion。
-- 用户可见文案使用中文资源控制面叙事；不得泄漏 `workspace`、`Runtime`、`not_activated`、`funded`、`MedOPL plan catalog` 这类工程或后端状态词。
+- A+/S 级 UI 冻结原则，不冻结像素；冻结组件状态一致性、状态反馈、响应式表格、管理台标题层级和空错态恢复底线。
+- 用户可见文案使用中文资源控制面叙事；不得泄漏 `workspace`、`Runtime`、`not_activated`、`funded`、`MedOPL plan catalog`、`mutation`、`runner phase`、`claim`、`future-authorized`、`ops_surface_disabled` 这类工程或后端状态词。
 
 运维侧视觉语法：
 
@@ -265,8 +266,11 @@ Figma 文件只能作为设计输入和审查面；repo 里的长期机器真相
 - 表格在移动端必须可读，不能靠缩小字体硬塞。
 - 颜色不能是唯一状态表达；状态必须有文本或图标辅助。
 - loading、empty、blocked、failed 必须有可理解文案和下一步。
+- 关键状态摘要必须可被浏览器回归识别为状态反馈，并提供 live region；存在表格的页面必须使用响应式安全容器。
 
 可访问性审计不能只靠截图；后续可引入更完整的 keyboard、aria、contrast 和 screen-reader 检查。当前 slice 只能 claim 基础可访问性语法已固定，不能 claim 完整审计完成。
+
+Production ready 声明不能来自 UI 绿灯、合同绿灯、本地截图或 local RC。必须另有 staging / prod-like canary、角色边界浏览器 gate、release owner receipt、安全依赖 gate 和可观测 receipt；Release 仍处于 partial fail-closed 时不能声明 production complete。
 
 ## 验证 / 回归
 

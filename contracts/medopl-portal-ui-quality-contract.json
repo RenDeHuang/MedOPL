@@ -67,14 +67,24 @@
         "Runtime",
         "not_activated",
         "funded",
-        "MedOPL plan catalog"
+        "MedOPL plan catalog",
+        "mutation",
+        "runner phase",
+        "claim",
+        "future-authorized",
+        "ops_surface_disabled"
       ],
       "preferred_terms": {
         "workspace": "工作空间",
         "Runtime": "计算环境",
         "not_activated": "待开通",
         "funded": "已入账",
-        "MedOPL plan catalog": "套餐目录"
+        "MedOPL plan catalog": "套餐目录",
+        "mutation": "能力接入",
+        "runner phase": "平台接入阶段",
+        "claim": "声明",
+        "future-authorized": "待授权",
+        "ops_surface_disabled": "运维入口未启用"
       }
     },
     "card": {
@@ -103,6 +113,32 @@
       "dangerous_action_confirmation_required": true,
       "reduced_motion_respected": true,
       "color_not_sole_status_signal": true
+    },
+    "production_readiness": {
+      "claim_requires_runtime_receipt": true,
+      "cannot_claim_from": [
+        "ui_green",
+        "contract_green",
+        "local_browser_screenshot",
+        "local_rc"
+      ],
+      "required_gates": [
+        "staging_or_prod_like_canary",
+        "role_boundary_browser_gate",
+        "release_owner_receipt",
+        "security_dependency_gate",
+        "observability_receipt"
+      ]
+    },
+    "a_plus_s_floor": {
+      "freeze_scope": "principles_not_pixels",
+      "required": [
+        "component_state_consistency",
+        "status_feedback",
+        "responsive_data_tables",
+        "admin_template_hierarchy",
+        "empty_error_recovery"
+      ]
     },
     "style": {
       "tone": "clean_restrained_resource_control_plane",

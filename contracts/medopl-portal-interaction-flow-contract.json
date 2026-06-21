@@ -30,6 +30,16 @@
         "cursor"
       ]
     },
+    "production_claim_policy": {
+      "claim_requires_runtime_receipt": true,
+      "release_partial_state_blocks_production_claim": true,
+      "cannot_claim_from": [
+        "ui_green",
+        "contract_green",
+        "local_browser_screenshot",
+        "local_rc"
+      ]
+    },
     "flows": [
       {
         "id": "open_compute_resource",

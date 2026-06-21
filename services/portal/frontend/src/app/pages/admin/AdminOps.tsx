@@ -115,9 +115,7 @@ export function AdminOps() {
           <CardContent className="space-y-3 text-sm text-orange-800">
             <p>{disabledMessage || "未启用平台托管运维入口。"}</p>
             <p>
-              当前管理台保留服务状态页面入口，但默认后端 API 会返回
-              <span className="font-medium"> ops_surface_disabled </span>
-              产品态；请在启用运维 surface 后再查看底层服务探针、资源环境和外部组件状态。
+              当前管理台保留服务状态页面入口；请在平台运维入口启用后再查看底层服务探针、资源环境和外部组件状态。
             </p>
             <p className="text-orange-700">{adminReadOnlyMessage}</p>
           </CardContent>
@@ -269,14 +267,14 @@ export function AdminOps() {
         </CardContent>
       </Card>
 
-      {/* Future-authorized 操作边界 */}
+      {/* 待授权操作边界 */}
       <Card>
         <CardHeader>
-          <CardTitle>Future-authorized 操作边界</CardTitle>
+          <CardTitle>待授权操作边界</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="mb-3 text-sm text-neutral-600">
-            真实云资源操作未授权、真实扣费未授权、真实资源释放未授权均保持 disabled/future-authorized 状态。
+            真实云资源操作、真实扣费和真实资源释放在授权前保持禁用状态。
           </div>
           <div className="space-y-3">
             {futureAuthorizedActions.map((item: FutureAuthorizedAction) => (

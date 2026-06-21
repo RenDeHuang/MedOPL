@@ -19,6 +19,7 @@ import {
   Shield,
   ExternalLink,
 } from "lucide-react";
+import { ResourceStatusCard } from "../components/ResourceControlComponents";
 
 type ServiceStatus = "ready" | "restricted" | "unprovisioned" | "degraded";
 
@@ -76,24 +77,17 @@ export function Overview() {
           </div>
         </div>
 
-        <Card className="border border-teal-200 bg-teal-50">
-          <div className="p-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
-                <Server className="w-6 h-6 text-teal-700" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-teal-900 mb-2">计算资源未开通</h3>
-                <p className="text-sm text-teal-800 mb-4">
-                  前往套餐与购买页面选择适合的配置，开通后即可进入 OPL。
-                </p>
-                <Button asChild>
-                  <Link to="/packages">前往套餐与购买</Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Card>
+        <ResourceStatusCard
+          status="empty"
+          title="计算资源未开通"
+          spec="前往套餐与购买页面选择适合的配置，开通后即可进入 OPL。"
+          receiptState="待开通"
+          primaryAction={
+            <Button asChild>
+              <Link to="/packages">前往套餐与购买</Link>
+            </Button>
+          }
+        />
       </div>
     );
   }

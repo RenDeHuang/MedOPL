@@ -277,7 +277,24 @@
           "Runtime",
           "not_activated",
           "funded",
-          "MedOPL plan catalog"
+          "MedOPL plan catalog",
+          "mutation",
+          "runner phase",
+          "claim",
+          "future-authorized",
+          "ops_surface_disabled"
+        ]
+      },
+      "production_readiness": {
+        "claim_requires_runtime_receipt": true,
+        "release_partial_state_blocks_production_claim": true,
+        "freeze_scope": "principles_not_pixels",
+        "required_gates": [
+          "staging_or_prod_like_canary",
+          "role_boundary_browser_gate",
+          "release_owner_receipt",
+          "security_dependency_gate",
+          "observability_receipt"
         ]
       },
       "semantic_tokens": [

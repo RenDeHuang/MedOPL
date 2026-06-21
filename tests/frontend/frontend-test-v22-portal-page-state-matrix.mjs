@@ -25,6 +25,7 @@ const themeSource = await readRepoFile("services/portal/frontend/src/styles/them
 const coreUiSource = await readRepoFile("services/portal/frontend/src/app/components/ui/core.tsx");
 const tabsSource = await readRepoFile("services/portal/frontend/src/app/components/ui/tabs.tsx");
 const switchSource = await readRepoFile("services/portal/frontend/src/app/components/ui/switch.tsx");
+const tableSource = await readRepoFile("services/portal/frontend/src/app/components/ui/table.tsx");
 const resourceControlComponents = await readRepoFile("services/portal/frontend/src/app/components/ResourceControlComponents.tsx");
 const runtimeEnvironmentPage = await readRepoFile("services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx");
 const packagesPurchasePage = await readRepoFile("services/portal/frontend/src/app/pages/PackagesPurchase.tsx");
@@ -215,6 +216,25 @@ assert.equal(uiQualityContract.medopl_portal_ui_quality_contract.touch_target.mi
 assert.equal(uiQualityContract.medopl_portal_ui_quality_contract.card.radius_max_px, 8, "ui_quality_card_radius_mismatch");
 assert.equal(uiQualityContract.medopl_portal_ui_quality_contract.semantic_heading.logo_h1_allowed, false, "ui_quality_logo_h1_mismatch");
 assert.equal(uiQualityContract.medopl_portal_ui_quality_contract.billing.first_view_extra_kpi_cards_max, 0, "ui_quality_billing_kpi_budget_mismatch");
+assert.equal(uiQualityContract.medopl_portal_ui_quality_contract.production_readiness.claim_requires_runtime_receipt, true, "ui_quality_production_claim_must_require_runtime_receipt");
+assert.deepEqual(
+  uiQualityContract.medopl_portal_ui_quality_contract.production_readiness.cannot_claim_from,
+  ["ui_green", "contract_green", "local_browser_screenshot", "local_rc"],
+  "ui_quality_production_claim_forbidden_evidence_mismatch",
+);
+for (const gate of ["staging_or_prod_like_canary", "role_boundary_browser_gate", "release_owner_receipt", "security_dependency_gate", "observability_receipt"]) {
+  assert(
+    uiQualityContract.medopl_portal_ui_quality_contract.production_readiness.required_gates.includes(gate),
+    `ui_quality_production_ready_gate_missing:${gate}`,
+  );
+}
+assert.equal(uiQualityContract.medopl_portal_ui_quality_contract.a_plus_s_floor.freeze_scope, "principles_not_pixels", "ui_quality_must_not_freeze_pixels");
+for (const floor of ["component_state_consistency", "status_feedback", "responsive_data_tables", "admin_template_hierarchy", "empty_error_recovery"]) {
+  assert(
+    uiQualityContract.medopl_portal_ui_quality_contract.a_plus_s_floor.required.includes(floor),
+    `ui_quality_a_plus_s_floor_missing:${floor}`,
+  );
+}
 
 assert.equal(uiQualityContract.medopl_portal_ui_quality_contract.brand.primary_hex, "#0F766E", "ui_quality_brand_primary_hex_mismatch");
 assert.deepEqual(
@@ -253,6 +273,11 @@ for (const forbiddenVisiblePhrase of [
   "尚未开通 Runtime",
   "OPL workspace",
   "local ledger",
+  "mutation",
+  "runner phase",
+  "claim",
+  "future-authorized",
+  "ops_surface_disabled",
 ]) {
   assert.equal(
     userVisibleSource.includes(forbiddenVisiblePhrase),
@@ -281,12 +306,18 @@ assert(tabsSource.includes("min-h-11"), "portal_tabs_touch_target_min_height_mis
 assert(tabsSource.includes("cursor-pointer"), "portal_tabs_cursor_pointer_missing");
 assert(switchSource.includes("min-h-11"), "portal_switch_touch_target_min_height_missing");
 assert(switchSource.includes("min-w-11"), "portal_switch_touch_target_min_width_missing");
+assert(tableSource.includes("data-ui-pattern=\"responsive-data-table\""), "portal_table_responsive_pattern_missing");
+assert.equal(coreUiSource.includes("<h4"), false, "portal_card_title_must_not_create_heading_skip");
+assert(resourceControlComponents.includes("data-ui-pattern=\"state-feedback\""), "portal_state_feedback_pattern_missing");
+assert(resourceControlComponents.includes("role=\"status\""), "portal_state_feedback_live_region_missing");
 assert(layout.includes("data-ui-pattern=\"mobile-nav-scroll-hint\""), "portal_mobile_nav_scroll_hint_missing");
 assert(layout.includes("aria-current={isActive ? \"page\" : undefined}"), "portal_nav_current_page_semantics_missing");
 
 const flowById = new Map(interactionFlowContract.medopl_portal_interaction_flow_contract.flows.map((flow) => [flow.id, flow]));
 assert.equal(interactionFlowContract.medopl_portal_interaction_flow_contract.interaction_states.min_touch_target_px, 44, "interaction_flow_touch_target_min_mismatch");
 assert.equal(interactionFlowContract.medopl_portal_interaction_flow_contract.interaction_states.transition_all_allowed, false, "interaction_flow_transition_all_must_be_forbidden");
+assert.equal(interactionFlowContract.medopl_portal_interaction_flow_contract.production_claim_policy.claim_requires_runtime_receipt, true, "interaction_flow_production_claim_must_require_runtime_receipt");
+assert.equal(interactionFlowContract.medopl_portal_interaction_flow_contract.production_claim_policy.release_partial_state_blocks_production_claim, true, "interaction_flow_release_partial_state_must_block_production_claim");
 for (const requiredState of ["hover", "active", "focus-visible", "disabled", "cursor"]) {
   assert(
     interactionFlowContract.medopl_portal_interaction_flow_contract.interaction_states.required.includes(requiredState),
@@ -320,6 +351,8 @@ assert.equal(flowById.get("release_compute_resource")?.claimable, false, "releas
 for (const layer of ["contract", "component_state", "interaction", "visual"]) {
   assert(grammar.eval_layers.includes(layer), `portal_eval_layer_missing:${layer}`);
 }
+assert.equal(grammar.production_readiness.claim_requires_runtime_receipt, true, "portal_page_matrix_production_claim_must_require_runtime_receipt");
+assert.equal(grammar.production_readiness.release_partial_state_blocks_production_claim, true, "portal_page_matrix_release_partial_state_must_block_production_claim");
 
 console.log(JSON.stringify({
   ok: true,

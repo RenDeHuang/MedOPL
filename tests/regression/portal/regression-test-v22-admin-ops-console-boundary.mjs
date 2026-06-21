@@ -63,9 +63,10 @@ assertIncludes(adminOpsModel, "workspaceId", "admin_ops_model_cost_allocation_wo
 assertIncludes(adminOpsModel, "environmentId", "admin_ops_model_cost_allocation_environment");
 
 assertIncludes(adminOpsPage, "平台托管运维入口未启用", "admin_ops_page_disabled_copy");
-assertIncludes(adminOpsPage, "ops_surface_disabled", "admin_ops_page_disabled_error_copy");
+assertNotIncludes(adminOpsPage, "ops_surface_disabled", "admin_ops_page_must_not_render_disabled_error_code");
 assertIncludes(adminOpsPage, "本地运维投影", "admin_ops_page_local_projection_copy");
-assertIncludes(adminOpsPage, "Future-authorized 操作边界", "admin_ops_page_future_authorized_copy");
+assertIncludes(adminOpsPage, "待授权操作边界", "admin_ops_page_future_authorized_copy");
+assertNotIncludes(adminOpsPage, "future-authorized", "admin_ops_page_must_not_render_future_authorized_code");
 assertIncludes(adminOpsPage, "此页面仅展示服务层状态摘要,不提供云资源直接操作能力。", "admin_ops_page_no_direct_cloud_operation_copy");
 
 for (const forbidden of [

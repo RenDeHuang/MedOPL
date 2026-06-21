@@ -150,7 +150,7 @@ export function AdminSystem() {
 
           {/* 功能开关 */}
           <div className="space-y-4">
-            <h3 className="text-sm font-medium text-neutral-900">功能开关</h3>
+            <div className="text-sm font-medium text-neutral-900">功能开关</div>
 
             <div className="flex items-center justify-between">
               <div className="space-y-1">
@@ -195,7 +195,7 @@ export function AdminSystem() {
       </Card>
 
       {/* 服务状态摘要区 */}
-      <Card>
+      <Card data-ui-pattern="state-feedback" role="status" aria-live="polite">
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle>服务状态摘要</CardTitle>
@@ -231,7 +231,7 @@ export function AdminSystem() {
 
           {/* 关键链路摘要 */}
           <div className="space-y-3">
-            <h3 className="text-sm font-medium text-neutral-900">关键链路状态</h3>
+            <div className="text-sm font-medium text-neutral-900">关键链路状态</div>
             <div className="space-y-2">
               {serviceStatus.keyRoutes.map((route) => (
                 <div
@@ -247,7 +247,7 @@ export function AdminSystem() {
 
           {/* 安全检查摘要 */}
           <div className="space-y-3">
-            <h3 className="text-sm font-medium text-neutral-900">安全检查摘要</h3>
+            <div className="text-sm font-medium text-neutral-900">安全检查摘要</div>
             <div className="flex items-center gap-4 p-4 rounded-md border border-neutral-200 bg-neutral-50">
               <div className="flex-1">
                 <div className="text-sm text-neutral-600">
@@ -272,7 +272,7 @@ export function AdminSystem() {
 
           {/* 性能状态摘要 */}
           <div className="space-y-3">
-            <h3 className="text-sm font-medium text-neutral-900">性能状态摘要</h3>
+            <div className="text-sm font-medium text-neutral-900">性能状态摘要</div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-4 rounded-md border border-neutral-200 bg-neutral-50">
                 <div className="text-xs text-neutral-500 mb-1">平均响应时间</div>
