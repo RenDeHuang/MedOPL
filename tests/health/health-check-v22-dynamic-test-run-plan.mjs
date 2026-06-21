@@ -412,9 +412,14 @@ try {
     "authorized_run_with_receipt_manifest_must_report_complete_manifest",
   );
   assert.equal(
-    authorizedWithReceipt.report.productionReceiptManifest.productionComplete,
+    authorizedWithReceipt.report.productionReceiptManifest.cloudReleaseCandidateComplete,
     true,
-    "authorized_run_with_receipt_manifest_must_evaluate_production_completion",
+    "authorized_run_with_receipt_manifest_must_evaluate_cloud_rc_completion",
+  );
+  assert.equal(
+    authorizedWithReceipt.report.productionReceiptManifest.productionComplete,
+    false,
+    "authorized_run_with_receipt_manifest_must_not_claim_production_completion",
   );
 
   const stubFailure = runVerify(

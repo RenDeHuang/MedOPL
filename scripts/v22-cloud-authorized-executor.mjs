@@ -384,7 +384,7 @@ async function executePayload(payload, options) {
 
 function finalizeReceiptManifest(payload, receiptPointers) {
   payload.receiptManifest = writeReceiptManifest(payload, receiptPointers);
-  if (payload.receiptManifest.productionComplete !== true) {
+  if (payload.receiptManifest.cloudReleaseCandidateComplete !== true) {
     payload.ok = false;
     payload.blocker = { type: "production_receipt_manifest_incomplete" };
   }
@@ -418,7 +418,7 @@ function writeReceiptManifest(payload, receiptPointers = new Map()) {
     schema_version: 1,
     kind: "medopl_production_receipt_manifest",
     state: "complete",
-    claim: "production_complete",
+    claim: "cloud_release_candidate",
     evidence_level: "production_canary",
     target_environment: "production-canary",
     authorization: {
@@ -456,7 +456,8 @@ function writeReceiptManifest(payload, receiptPointers = new Map()) {
   const evaluated = evaluateProductionReceiptManifest({ boundary, manifest });
   return {
     path: manifestPath,
-    status: evaluated.productionComplete ? "complete" : "blocked",
+    status: evaluated.cloudReleaseCandidateComplete ? "complete" : "blocked",
+    cloudReleaseCandidateComplete: evaluated.cloudReleaseCandidateComplete,
     productionComplete: evaluated.productionComplete,
     missingReceiptTypes: evaluated.missingReceiptTypes,
     blockers: evaluated.blockers,

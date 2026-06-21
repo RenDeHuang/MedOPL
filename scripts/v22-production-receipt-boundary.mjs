@@ -218,7 +218,7 @@ export function evaluateProductionReceiptManifest({ boundary, manifest }) {
   if (manifest.kind !== "medopl_production_receipt_manifest") {
     blockers.push("production_receipt_manifest_kind_mismatch");
   }
-  if (manifest.claim !== "production_complete") {
+  if (!["cloud_release_candidate", "production_complete"].includes(manifest.claim)) {
     blockers.push("production_receipt_manifest_claim_mismatch");
   }
   if (manifest.state !== completionState) {
@@ -290,9 +290,10 @@ export function evaluateProductionReceiptManifest({ boundary, manifest }) {
   if (unexpectedFieldViolations.length > 0) blockers.push("production_receipt_manifest_unexpected_fields");
   if (receiptMappingViolations.length > 0) blockers.push("production_receipt_manifest_receipt_mapping_invalid");
 
+  const complete = blockers.length === 0 && missingReceiptTypes.length === 0 && missingLifecycleSections.length === 0;
   return Object.freeze({
-    cloudReleaseCandidateComplete: blockers.length === 0 && missingReceiptTypes.length === 0 && missingLifecycleSections.length === 0,
-    productionComplete: blockers.length === 0 && missingReceiptTypes.length === 0 && missingLifecycleSections.length === 0,
+    cloudReleaseCandidateComplete: complete,
+    productionComplete: complete && manifest.claim === "production_complete",
     blockers: Object.freeze(unique(blockers)),
     missingReceiptTypes: Object.freeze(missingReceiptTypes),
     missingLifecycleSections: Object.freeze(missingLifecycleSections),

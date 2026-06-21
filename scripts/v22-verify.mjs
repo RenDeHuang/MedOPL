@@ -451,7 +451,8 @@ async function validateActivePlatform({ manifest, current }) {
     boundary: productionReceiptBoundary,
     manifest: productionReceiptManifestExample,
   });
-  assert.equal(receiptManifestEvaluation.productionComplete, true, `production_receipt_manifest_example_must_be_complete:${JSON.stringify(receiptManifestEvaluation)}`);
+  assert.equal(receiptManifestEvaluation.cloudReleaseCandidateComplete, true, `production_receipt_manifest_example_must_allow_cloud_rc:${JSON.stringify(receiptManifestEvaluation)}`);
+  assert.equal(receiptManifestEvaluation.productionComplete, false, "production_receipt_manifest_example_must_not_claim_production_complete");
   assert.equal(current.production_receipt_boundary?.contract, PRODUCTION_RECEIPT_BOUNDARY_PATH, "current_fixture_receipt_boundary_contract_mismatch");
   assert.equal(current.production_receipt_boundary?.state, "active_not_complete_cloud_rc_gate_fail_closed", "current_fixture_receipt_boundary_state_mismatch");
   assert(packageJson.scripts["verify:golden-path"], "golden_path_gate_script_missing");

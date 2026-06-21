@@ -2,7 +2,7 @@
   "schema_version": 1,
   "kind": "medopl_production_receipt_manifest",
   "state": "complete",
-  "claim": "production_complete",
+  "claim": "cloud_release_candidate",
   "evidence_level": "production_canary",
   "target_environment": "production-canary",
   "authorization": {

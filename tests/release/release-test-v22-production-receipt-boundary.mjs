@@ -60,8 +60,8 @@ const complete = evaluateProductionReceiptManifest({
   boundary,
   manifest: exampleManifest,
 });
-assert.equal(complete.productionComplete, true, `complete_manifest_must_allow_production_complete:${JSON.stringify(complete, null, 2)}`);
 assert.equal(complete.cloudReleaseCandidateComplete, true, "complete_manifest_must_allow_cloud_release_candidate");
+assert.equal(complete.productionComplete, false, "cloud_rc_manifest_must_not_allow_production_complete");
 assert.deepEqual(complete.missingReceiptTypes, [], "complete_manifest_must_have_no_missing_receipts");
 assert.deepEqual(complete.missingLifecycleSections, [], "complete_manifest_must_have_no_missing_lifecycle_sections");
 assert.deepEqual(complete.rawEvidenceViolations, [], "complete_manifest_must_not_embed_raw_evidence");

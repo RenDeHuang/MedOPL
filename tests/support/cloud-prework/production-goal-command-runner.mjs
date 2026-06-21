@@ -354,6 +354,119 @@ async function runBuildPush(operation) {
   return { evidenceRef, imageRef: process.env.V22_CONTAINER_IMAGE_REF, shellStatus: shell.status };
 }
 
+function assertPublicPayload(value, operation) {
+  const text = JSON.stringify(value || {});
+  if (/SecretId|SecretKey|BEGIN (?:OPENSSH|RSA).*PRIVATE KEY|postgres(?:ql)?:\/\/|sk-[A-Za-z0-9_-]{20,}/iu.test(text)) {
+    fail("production_goal_live_test_sensitive_payload", { operationClass: operation }, 1);
+  }
+}
+
+async function fetchWithTimeout(url, options = {}) {
+  const timeoutMs = Number(process.env.V22_PRODUCTION_GOAL_HTTP_TIMEOUT_MS || 8000);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      redirect: "manual",
+      ...options,
+      headers: {
+        connection: "close",
+        ...(options.headers || {}),
+      },
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function requestJson({ baseUrl, path: requestPath, method = "GET", body, operation, stepId }) {
+  const url = `${String(baseUrl || "").replace(/\/$/u, "")}${requestPath}`;
+  let response;
+  try {
+    response = await fetchWithTimeout(url, {
+      method,
+      headers: body ? { "content-type": "application/json" } : {},
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch (error) {
+    fail(`production_goal_live_test_${stepId}_failed`, {
+      operationClass: operation,
+      url,
+      errorCode: error?.name || "FetchError",
+    }, 1);
+  }
+  const text = await response.text();
+  let payload = {};
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch {
+    fail(`production_goal_live_test_${stepId}_failed`, {
+      operationClass: operation,
+      url,
+      status: response.status,
+      contentType: response.headers.get("content-type") || "",
+      bodyShape: "non_json",
+    }, 1);
+  }
+  assertPublicPayload(payload, operation);
+  if (!response.ok) {
+    fail(`production_goal_live_test_${stepId}_failed`, {
+      operationClass: operation,
+      url,
+      status: response.status,
+      payloadSummary: payload,
+    }, 1);
+  }
+  return payload;
+}
+
+async function requestText({ url, operation, stepId }) {
+  let response;
+  try {
+    response = await fetchWithTimeout(url);
+  } catch (error) {
+    fail(`production_goal_live_test_${stepId}_failed`, {
+      operationClass: operation,
+      url,
+      errorCode: error?.name || "FetchError",
+    }, 1);
+  }
+  const text = await response.text();
+  if (response.status >= 500) {
+    fail(`production_goal_live_test_${stepId}_failed`, {
+      operationClass: operation,
+      url,
+      status: response.status,
+    }, 1);
+  }
+  if (/SecretId|SecretKey|BEGIN (?:OPENSSH|RSA).*PRIVATE KEY|postgres(?:ql)?:\/\/|sk-[A-Za-z0-9_-]{20,}/iu.test(text)) {
+    fail("production_goal_live_test_sensitive_payload", { operationClass: operation, stepId }, 1);
+  }
+  return { status: response.status, contentType: response.headers.get("content-type") || "", textLength: text.length };
+}
+
+function requireFields(payload, fields, blocker, operation) {
+  const missing = fields.filter((field) => {
+    const value = field.split(".").reduce((node, key) => node?.[key], payload);
+    return value === undefined || value === null || value === "";
+  });
+  if (missing.length > 0) {
+    fail(blocker, { operationClass: operation, missingFields: missing }, 1);
+  }
+}
+
+function assertGoHealth(payload, stepId, operation) {
+  if (payload?.service !== "medopl-go-backend" || payload?.status !== "ok") {
+    fail("production_goal_live_test_medopl_health_failed", {
+      operationClass: operation,
+      stepId,
+      service: payload?.service || "",
+      status: payload?.status || "",
+    }, 1);
+  }
+}
+
 async function runKubectl(operation) {
   const command = process.env.V22_KUBERNETES_APPLY_SHELL
     || `kubectl --kubeconfig ${JSON.stringify(process.env.TENCENT_DEPLOY_KUBECONFIG_REF)} apply -f ${JSON.stringify(process.env.V22_KUBERNETES_MANIFEST_DIR)}`;
@@ -385,18 +498,162 @@ async function runDeploy(operation) {
 }
 
 async function runLiveTest(operation) {
-  const urls = [process.env.V22_OPL_WEBUI_CONSUMER_CANARY_URL, process.env.V22_MEDOPL_PUBLIC_BASE_URL].filter(Boolean);
+  const oplBaseUrl = String(process.env.V22_OPL_WEBUI_CONSUMER_CANARY_URL || "").replace(/\/$/u, "");
+  const medoplBaseUrl = String(process.env.V22_MEDOPL_PUBLIC_BASE_URL || "").replace(/\/$/u, "");
+  const workspaceId = `goal-f-production-canary-${Date.now()}`;
   const observed = [];
-  for (const url of urls) {
-    const response = await fetch(url, { redirect: "manual" });
-    if (response.status >= 500) fail("production_goal_live_test_http_failed", { operationClass: operation, url, status: response.status }, 1);
-    observed.push({ url, status: response.status });
-  }
+
+  const oplEntry = await requestText({ url: oplBaseUrl, operation, stepId: "opl_webui_public_entry" });
+  observed.push({ step: "opl_webui_public_entry", url: oplBaseUrl, status: oplEntry.status });
+
+  const health = await requestJson({ baseUrl: medoplBaseUrl, path: "/healthz", operation, stepId: "medopl_healthz" });
+  assertGoHealth(health, "medopl_healthz", operation);
+  observed.push({ step: "medopl_healthz", status: 200 });
+  const ready = await requestJson({ baseUrl: medoplBaseUrl, path: "/readyz", operation, stepId: "medopl_readyz" });
+  assertGoHealth(ready, "medopl_readyz", operation);
+  observed.push({ step: "medopl_readyz", status: 200 });
+
+  const provider = await requestJson({
+    baseUrl: medoplBaseUrl,
+    path: "/api/v22/provider-key",
+    method: "POST",
+    body: {
+      tenantId: "tenant-goal-f-canary",
+      portalUserId: "user-goal-f-canary",
+      workspaceId,
+      apiKey: "goal-f-canary-provider-key-redacted",
+      idempotencyKey: `${workspaceId}-provider`,
+    },
+    operation,
+    stepId: "bind_provider_key",
+  });
+  requireFields(provider, ["providerKeyRef"], "production_goal_live_test_provider_key_failed", operation);
+  observed.push({ step: "bind_provider_key", providerKeyStatus: provider.boundStatus || "bound" });
+
+  const launch = await requestJson({
+    baseUrl: medoplBaseUrl,
+    path: "/api/v22/managed-environment/open",
+    method: "POST",
+    body: {
+      tenantId: "tenant-goal-f-canary",
+      portalUserId: "user-goal-f-canary",
+      workspaceId,
+      idempotencyKey: `${workspaceId}-open-runtime`,
+    },
+    operation,
+    stepId: "open_runtime",
+  });
+  requireFields(launch, ["launchId", "resourceBindingId"], "production_goal_live_test_open_runtime_failed", operation);
+  observed.push({ step: "open_runtime", runtimeRef: "runtime_ref" });
+
+  const gate = await requestJson({
+    baseUrl: medoplBaseUrl,
+    path: "/api/opl/runtime-gate",
+    method: "POST",
+    body: { workspaceId, invocationMode: "runtime_required" },
+    operation,
+    stepId: "runtime_gate",
+  });
+  requireFields(gate, ["ok", "workspaceId", "runtimeState", "storageState", "nodePoolProjection.state"], "production_goal_live_test_runtime_gate_failed", operation);
+  if (gate.ok !== true) fail("production_goal_live_test_runtime_gate_failed", { operationClass: operation, reason: "ok_false" }, 1);
+  observed.push({ step: "runtime_gate", runtimeState: gate.runtimeState, storageState: gate.storageState });
+
+  const launchQuery = `?launchId=${encodeURIComponent(launch.launchId)}`;
+  const file = await requestJson({
+    baseUrl: medoplBaseUrl,
+    path: `/api/opl/files${launchQuery}`,
+    method: "POST",
+    body: {
+      fileName: "goal-f-canary.csv",
+      relativePath: "inputs/goal-f-canary.csv",
+      contentType: "text/csv",
+      sizeBytes: 32,
+    },
+    operation,
+    stepId: "upload_file",
+  });
+  requireFields(file, ["fileRef"], "production_goal_live_test_upload_file_failed", operation);
+  observed.push({ step: "upload_file", fileRef: "file_ref" });
+
+  const run = await requestJson({
+    baseUrl: medoplBaseUrl,
+    path: `/api/opl/runs${launchQuery}`,
+    method: "POST",
+    body: {
+      message: "goal f production canary",
+      fileRefs: [file.fileRef],
+      toolName: "runtime_required",
+      requestId: `${workspaceId}-run`,
+    },
+    operation,
+    stepId: "run_task",
+  });
+  requireFields(run, ["artifactRef"], "production_goal_live_test_run_task_failed", operation);
+  observed.push({ step: "run_task", artifactRef: "artifact_ref" });
+
+  const artifact = await requestJson({
+    baseUrl: medoplBaseUrl,
+    path: `/api/opl/artifacts/${encodeURIComponent(run.artifactRef)}${launchQuery}`,
+    operation,
+    stepId: "fetch_artifact",
+  });
+  requireFields(artifact, ["artifactRef"], "production_goal_live_test_fetch_artifact_failed", operation);
+  observed.push({ step: "fetch_artifact", artifactRef: "artifact_ref" });
+
+  const billing = await requestJson({
+    baseUrl: medoplBaseUrl,
+    path: `/api/billing/summary?workspaceId=${encodeURIComponent(workspaceId)}`,
+    operation,
+    stepId: "billing_summary",
+  });
+  requireFields(billing, ["runCount", "ledgerCount"], "production_goal_live_test_billing_summary_failed", operation);
+  observed.push({ step: "billing_summary", runCount: billing.runCount, ledgerCount: billing.ledgerCount });
+
+  const release = await requestJson({
+    baseUrl: medoplBaseUrl,
+    path: "/api/v22/managed-environment/release",
+    method: "POST",
+    body: {
+      workspaceId,
+      resourceBindingId: launch.resourceBindingId,
+      stopBilling: true,
+      idempotencyKey: `${workspaceId}-release-runtime`,
+    },
+    operation,
+    stepId: "release_runtime",
+  });
+  requireFields(release, ["billingStopped", "auditEventId"], "production_goal_live_test_release_runtime_failed", operation);
+  observed.push({ step: "release_runtime", billingStopped: release.billingStopped === true });
+
+  const storage = await requestJson({
+    baseUrl: medoplBaseUrl,
+    path: "/api/v22/storage/destroy",
+    method: "POST",
+    body: {
+      workspaceId,
+      resourceBindingId: launch.resourceBindingId,
+      storageBindingId: gate.storageBindingId || file.storageBindingId || "storage-canary",
+      idempotencyKey: `${workspaceId}-destroy-storage`,
+    },
+    operation,
+    stepId: "destroy_storage",
+  });
+  requireFields(storage, ["storageDestroyed", "storageState"], "production_goal_live_test_destroy_storage_failed", operation);
+  observed.push({ step: "destroy_storage", storageState: storage.storageState });
+
+  const steps = observed.map((item) => item.step);
   const evidenceRef = safeWriteRuntimeEvidence(operation, {
     status: "accepted",
+    flowCompleteness: "medopl_public_api_product_e2e",
     observed,
   });
-  return { evidenceRef, urls, observed };
+  return {
+    evidenceRef,
+    urls: [oplBaseUrl, medoplBaseUrl],
+    flowCompleteness: "medopl_public_api_product_e2e",
+    steps,
+    observed,
+  };
 }
 
 async function runOperation(operation) {

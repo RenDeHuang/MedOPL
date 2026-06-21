@@ -30,7 +30,7 @@ if (args.has("--help")) {
 
 if (availabilityProbe) {
   await runAvailabilityProbe();
-  process.exit(0);
+  process.exit(process.exitCode || 0);
 }
 
 if (rollback) {
@@ -152,7 +152,7 @@ async function runAvailabilityProbe() {
         endpoint,
         status: response.status,
         durationMs: Date.now() - started,
-        ok: response.status === 200 && body.ok === true,
+        ok: response.status === 200 && body.status === "ok" && body.service === "medopl-go-backend",
       });
     } catch (error) {
       checks.push({
@@ -172,7 +172,7 @@ async function runAvailabilityProbe() {
     rawLogPolicy: { storesRawLogs: false, storesSecretValues: false },
   };
   console.log(JSON.stringify(summary));
-  if (!summary.ok) process.exitCode = 1;
+  process.exitCode = summary.ok ? 0 : 1;
 }
 
 function printDryRun() {

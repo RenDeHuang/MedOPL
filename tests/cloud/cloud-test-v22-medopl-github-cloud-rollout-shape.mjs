@@ -142,6 +142,14 @@ for (const expected of [
 ]) {
   assert(rolloutSource.includes(expected), `rollout_helper_contract_missing:${expected}`);
 }
+assert(
+  rolloutSource.includes("process.exit(summary.ok ? 0 : 1)") || rolloutSource.includes("process.exitCode = summary.ok ? 0 : 1"),
+  "availability_probe_must_fail_closed_when_go_health_contract_fails",
+);
+assert(
+  rolloutSource.includes("body.status === \"ok\"") && rolloutSource.includes("body.service === \"medopl-go-backend\""),
+  "availability_probe_must_validate_go_backend_health_json_not_static_html",
+);
 
 const releaseImage = await readRepoFile(".github/workflows/release-image.yml");
 const cloudRollout = await readRepoFile(".github/workflows/cloud-rollout.yml");

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -62,6 +62,125 @@ function assertNoSensitiveText(text = "", label = "output") {
   }
 }
 
+async function startCanaryServer(mode = "full") {
+  const child = spawn(process.execPath, ["-e", `
+const { createServer } = require("node:http");
+const mode = process.argv[1];
+async function readRequestJson(request) {
+  const chunks = [];
+  for await (const chunk of request) chunks.push(chunk);
+  const text = Buffer.concat(chunks).toString("utf8");
+  return text ? JSON.parse(text) : {};
+}
+const server = createServer(async (request, response) => {
+  const url = new URL(request.url || "/", "http://127.0.0.1");
+  const sendJson = (status, payload) => {
+    response.writeHead(status, { "content-type": "application/json", connection: "close" });
+    response.end(JSON.stringify(payload));
+  };
+  if (mode === "html-medopl" && (url.pathname === "/healthz" || url.pathname === "/readyz")) {
+    response.writeHead(200, { "content-type": "text/html", connection: "close" });
+    response.end("<!doctype html><title>wrong upstream</title>");
+    return;
+  }
+  if (url.pathname === "/") {
+    response.writeHead(200, { "content-type": "text/html", connection: "close" });
+    response.end("<!doctype html><title>OPL WebUI</title>");
+    return;
+  }
+  if (url.pathname === "/healthz" || url.pathname === "/readyz") {
+    sendJson(200, { service: "medopl-go-backend", status: "ok", mode: "production" });
+    return;
+  }
+  if (url.pathname === "/api/v22/provider-key" && request.method === "POST") {
+    const body = await readRequestJson(request);
+    sendJson(200, { ok: true, workspaceId: body.workspaceId, providerKeyRef: "pkref_canary", boundStatus: "bound" });
+    return;
+  }
+  if (url.pathname === "/api/v22/managed-environment/open" && request.method === "POST") {
+    const body = await readRequestJson(request);
+    sendJson(200, { launchId: "launch_canary", resourceBindingId: "rb_canary", workspaceId: body.workspaceId });
+    return;
+  }
+  if (url.pathname === "/api/opl/runtime-gate" && request.method === "POST") {
+    const body = await readRequestJson(request);
+    sendJson(200, {
+      ok: true,
+      productOwner: "medopl",
+      primaryConsumer: "opl-webui",
+      workspaceId: body.workspaceId,
+      medoplRuntimeRequired: true,
+      providerKeyStatus: "bound",
+      providerKeyRef: "pkref_canary",
+      runtimeState: "ready",
+      storageState: "ready",
+      runtimeBindingId: "rb_canary",
+      storageBindingId: "storage_canary",
+      nodePoolProjection: { nodePoolRef: "nodepool_canary", state: "ready", customerVisible: false },
+      consumerProjection: { uploadEnabled: true, runEnabled: true, artifactEnabled: true },
+    });
+    return;
+  }
+  if (url.pathname === "/api/opl/files" && request.method === "POST") {
+    sendJson(200, { ok: true, fileRef: "file_canary", storageBindingId: "storage_canary" });
+    return;
+  }
+  if (url.pathname === "/api/opl/runs" && request.method === "POST") {
+    sendJson(200, { ok: true, runRef: "run_canary", artifactRef: "artifact_canary" });
+    return;
+  }
+  if (url.pathname === "/api/opl/artifacts/artifact_canary" && request.method === "GET") {
+    sendJson(200, { ok: true, artifactRef: "artifact_canary", fileRef: "artifact_file_canary" });
+    return;
+  }
+  if (url.pathname === "/api/billing/summary" && request.method === "GET") {
+    sendJson(200, { ok: true, runCount: 1, ledgerCount: 1 });
+    return;
+  }
+  if (url.pathname === "/api/v22/managed-environment/release" && request.method === "POST") {
+    sendJson(200, { ok: true, billingStopped: true, auditEventId: "audit_release_canary", runtimeState: "released" });
+    return;
+  }
+  if (url.pathname === "/api/v22/storage/destroy" && request.method === "POST") {
+    sendJson(200, { ok: true, storageDestroyed: true, storageState: "destroyed", auditEventId: "audit_destroy_canary" });
+    return;
+  }
+  sendJson(404, { ok: false, error: "not_found", path: url.pathname });
+});
+server.listen(0, "127.0.0.1", () => {
+  const address = server.address();
+  process.stdout.write("READY " + address.port + "\\n");
+});
+process.on("SIGTERM", () => server.close(() => process.exit(0)));
+`, mode], {
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  const port = await new Promise((resolve, reject) => {
+    let buffer = "";
+    const timer = setTimeout(() => reject(new Error("canary_server_start_timeout")), 5000);
+    child.stdout.on("data", (chunk) => {
+      buffer += chunk.toString("utf8");
+      const match = buffer.match(/READY (\d+)/u);
+      if (match) {
+        clearTimeout(timer);
+        resolve(Number(match[1]));
+      }
+    });
+    child.on("exit", (code) => {
+      clearTimeout(timer);
+      reject(new Error(`canary_server_exited:${code}`));
+    });
+  });
+  return {
+    baseUrl: `http://127.0.0.1:${port}`,
+    close: () => new Promise((resolve) => {
+      child.once("exit", resolve);
+      child.kill("SIGTERM");
+    }),
+  };
+}
+
+const canaryServers = [];
 const tempDir = mkdtempSync(path.join(tmpdir(), "v22-production-command-runner-"));
 try {
   const mutationSecretFile = path.join(tempDir, "mutation.env");
@@ -156,6 +275,45 @@ try {
   const liveCheck = parseJson(run(["--operation", "live_test", "--check-config"], baseEnv), "live_check_config");
   assert.deepEqual(liveCheck.summary.urls, ["https://opl.medopl.cn", "https://portal.medopl.cn"], "live_urls");
 
+  const badCanary = await startCanaryServer("html-medopl");
+  canaryServers.push(badCanary);
+  const htmlMedopl = run(["--operation", "live_test", "--execute", "--confirm-current-session-authorization"], {
+    ...baseEnv,
+    V22_OPL_WEBUI_CONSUMER_CANARY_URL: badCanary.baseUrl,
+    V22_MEDOPL_PUBLIC_BASE_URL: badCanary.baseUrl,
+  });
+  assert.notEqual(htmlMedopl.status, 0, "live_test_must_fail_when_medopl_health_is_static_html");
+  assert(
+    (htmlMedopl.stdout + htmlMedopl.stderr).includes("production_goal_live_test_medopl_healthz_failed"),
+    "live_test_html_health_blocker",
+  );
+  assertNoSensitiveText(htmlMedopl.stdout + htmlMedopl.stderr, "live_test_html_health");
+
+  const goodCanary = await startCanaryServer("full");
+  canaryServers.push(goodCanary);
+  const liveExecute = parseJson(run(["--operation", "live_test", "--execute", "--confirm-current-session-authorization"], {
+    ...baseEnv,
+    V22_OPL_WEBUI_CONSUMER_CANARY_URL: goodCanary.baseUrl,
+    V22_MEDOPL_PUBLIC_BASE_URL: goodCanary.baseUrl,
+  }), "live_test_execute_full_product_api_canary");
+  assert.equal(liveExecute.summary.flowCompleteness, "medopl_public_api_product_e2e", "live_test_must_execute_product_api_canary");
+  assert.deepEqual(liveExecute.summary.steps, [
+    "opl_webui_public_entry",
+    "medopl_healthz",
+    "medopl_readyz",
+    "bind_provider_key",
+    "open_runtime",
+    "runtime_gate",
+    "upload_file",
+    "run_task",
+    "fetch_artifact",
+    "billing_summary",
+    "release_runtime",
+    "destroy_storage",
+  ], "live_test_product_api_steps");
+  assert.equal(liveExecute.summary.productionComplete, false, "live_test_must_not_claim_production_complete");
+  assertNoSensitiveText(JSON.stringify(liveExecute), "live_test_execute");
+
   const emptyBuildDir = path.join(tempDir, "empty-build");
   const emptyManifestDir = path.join(tempDir, "empty-manifest");
   mkdirSync(emptyBuildDir);
@@ -189,6 +347,9 @@ try {
     `deploy_runner_must_call_rollout_status_with_resource_kind:${kubectlArgs}`,
   );
 } finally {
+  for (const server of canaryServers.reverse()) {
+    await server.close();
+  }
   rmSync(tempDir, { recursive: true, force: true });
 }
 

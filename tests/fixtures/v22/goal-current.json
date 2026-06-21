@@ -70,9 +70,10 @@
     "opl_webui_runtime_production_slice_requires_explicit_authorization_and_owner_receipts_before_any_production_claim",
     "precloud_deployable_rc_and_node_backend_physical_removal_are_local_or_cloud_rc_evidence_not_production_or_real_cloud_evidence",
     "default_cloud_verification_is_limited_to_readonly_inventory_dry_run_plan_and_tke_bootstrap_preflight_before_production_receipts",
-    "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth"
+    "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth",
+    "public_portal_medopl_api_routes_static_html_not_go_control_plane"
   ],
-  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is chore/v22-trunk-cloud-rc-current-closeout at 12358872adee43977ae26771703e5840c8f619a0, after Goal F cloud release candidate wiring landed in feat/v22-goal-f-production-receipt-manifest at 90a89b75b2a4613719ce9c424367fb35ed51495c and CI self-contained fixes landed on trunk. Goal A readonly inventory, Goal C storage lifecycle, Goal D tenant runtime provisioning, Goal E OPL-Webui HTTPS consumer canary, and Goal F build_push / kubectl / deploy / billing_audit_writeback / live_test receipt lanes have remote authorized workflow evidence. GitHub Release Image run 27911002260 succeeded on current trunk 12358872adee43977ae26771703e5840c8f619a0; GitHub Cloud Rollout run 27911028428 succeeded on current trunk 12358872adee43977ae26771703e5840c8f619a0 and uploaded a redacted receipt-manifest artifact with seven owner receipts and receipt manifest evidence; GitHub v22 verify run 27910822077 succeeded on current trunk 12358872adee43977ae26771703e5840c8f619a0. Local verify passes; local verify:cloud-release-candidate is intentionally evidence-dependent and passes only when the redacted receipt-manifest artifact is present under .runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json. This allows a cloud release candidate claim only, not production complete. The remaining vision gap after current trunk cloud RC is the full OPL-Webui product E2E canary: login/session -> runtime_required -> MedOPL runtime/storage open -> upload -> fileRef -> run -> artifact -> billing/audit -> release/stop billing -> optional storage destroy, with raw evidence kept outside git.",
+  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is chore/v22-trunk-cloud-rc-current-closeout at 12358872adee43977ae26771703e5840c8f619a0, after Goal F cloud release candidate wiring landed in feat/v22-goal-f-production-receipt-manifest at 90a89b75b2a4613719ce9c424367fb35ed51495c and CI self-contained fixes landed on trunk. Goal A readonly inventory, Goal C storage lifecycle, Goal D tenant runtime provisioning, Goal E OPL-Webui HTTPS consumer canary, and Goal F build_push / kubectl / deploy / billing_audit_writeback / live_test receipt lanes have remote authorized workflow evidence. GitHub Release Image run 27911570626 succeeded on current trunk d0adf57751efacce4e9867fdcbe78b1420bab71d and built/pushed image tag d0adf57; GitHub Cloud Rollout run 27911590272 applied the deployment and uploaded receipt artifacts, but log and public probes show the current live-test/availability path was previously too shallow. portal.medopl.cn/healthz and /readyz currently return static nginx HTML, and /api/opl/runtime-gate is not publicly routed to the Go control-plane. This state allows only cloud release candidate evidence after fail-closed receipt manifest verification; it does not allow production complete or full OPL-Webui product E2E. The next gap is public API routing plus full product E2E canary: login/session or canary token -> runtime_required -> MedOPL runtime/storage open -> upload -> fileRef -> run -> artifact -> billing/audit -> release/stop billing -> optional storage destroy, with raw evidence kept outside git.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -281,7 +282,7 @@
     "latest_local_evidence": "cloud-taxonomy-and-consumer-first-contract-cleanup"
   },
   "release_readiness_state": {
-    "status": "goal_f_cloud_release_candidate_evidence_available_remote_manifest_required_locally",
+    "status": "cloud_rc_gate_hardened_public_api_e2e_blocked",
     "cursor_eligible": false,
     "blocked_before_risky_execution": true,
     "forbidden_until_executable": [
@@ -318,7 +319,9 @@
     ],
     "readinessGaps": [
       "Full OPL-Webui runtime-required product E2E canary is not yet proven beyond public HTTPS availability and owner receipt manifest.",
-      "Need canary credentials/session and test workspace/providerKeyRef to exercise login/session, runtime gate, upload, fileRef, run, artifact, billing/audit, release/stop billing and optional storage destroy."
+      "Need canary credentials/session and test workspace/providerKeyRef to exercise login/session, runtime gate, upload, fileRef, run, artifact, billing/audit, release/stop billing and optional storage destroy.",
+      "portal.medopl.cn public routing must expose MedOPL Go control-plane JSON for /healthz and /readyz instead of static Portal HTML.",
+      "portal.medopl.cn or an approved API host must route /api/opl/runtime-gate, provider-key, managed-environment, files, runs, artifacts, billing, release and storage destroy endpoints to medopl-control-plane before full E2E canary can pass."
     ],
     "external_preconditions": {
       "github": {
@@ -529,6 +532,17 @@
         "full OPL-Webui login/runtime-required/upload/run/artifact/release E2E completed"
       ],
       "receipt_manifest_schema": "seven_owner_receipts_plus_required_lifecycle_sections"
+    },
+    "latest_trunk_cloud_runs": {
+      "trunk_commit": "d0adf57751efacce4e9867fdcbe78b1420bab71d",
+      "release_image_run_id": "27911570626",
+      "release_image_tag": "d0adf57",
+      "cloud_rollout_run_id": "27911590272",
+      "post_push_verify_run_id": "27911408134",
+      "cloud_rollout_workflow_conclusion": "success_with_previous_availability_false_positive_detected",
+      "public_api_blocker": "portal.medopl.cn serves static nginx HTML for /healthz and /readyz; /api/opl/runtime-gate is not routed to Go control-plane",
+      "fixed_by_this_slice": "availability probe and live_test fail closed unless MedOPL Go API JSON and runtime/storage/upload/run/artifact/billing/release/destroy API flow pass",
+      "raw_evidence_committed": false
     }
   },
   "ai_mvp_readiness_state": {
@@ -863,8 +877,8 @@
       "production_deploy_receipt"
     ],
     "receipt_manifest_policy": "small_pointer_and_summary_only",
-    "can_claim": "cloud release candidate only after a complete small receipt manifest has all lifecycle sections and seven owner receipts; production complete remains separately forbidden by this gate",
-    "cannot_claim": "local RC, cloud-deployable RC, stub runner output, single operation receipt, or cloud RC gate pass as production complete",
+    "can_claim": "cloud release candidate only after a complete small receipt manifest has all lifecycle sections and seven owner receipts; generated manifests must use claim=cloud_release_candidate unless a separate production-complete gate exists",
+    "cannot_claim": "local RC, cloud-deployable RC, stub runner output, single operation receipt, workflow success, shallow live-test, or cloud RC gate pass as production complete",
     "receipt_operation_binding_required": true,
     "receipt_authorization_ref_required": true,
     "receipt_runner_id_required": true,
@@ -885,6 +899,6 @@
       "consumer_canary"
     ]
   },
-  "base_trunk_head": "12358872adee43977ae26771703e5840c8f619a0",
+  "base_trunk_head": "d0adf57751efacce4e9867fdcbe78b1420bab71d",
   "last_landed_commit": "12358872adee43977ae26771703e5840c8f619a0"
 }

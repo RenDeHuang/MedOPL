@@ -109,8 +109,9 @@ function validateWrittenReceiptManifest(repoRoot, plan) {
     ];
     return {
       ok: rawBlockers.length === 0,
-      status: evaluated.productionComplete ? "complete" : "present",
+      status: evaluated.cloudReleaseCandidateComplete ? "complete" : "present",
       path: manifestPath,
+      cloudReleaseCandidateComplete: evaluated.cloudReleaseCandidateComplete,
       productionComplete: evaluated.productionComplete,
       blockers: rawBlockers,
       missingReceiptTypes: evaluated.missingReceiptTypes,
