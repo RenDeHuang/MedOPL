@@ -250,7 +250,7 @@ async function runRuntimeProvisioning(operation) {
       profile: { httpProfile: { reqTimeout: 30 } },
     });
     await client.DescribeClusters({ ClusterIds: [clusterId] });
-    await client.DescribeClusterNodePools({ ClusterId: clusterId, NodePoolIds: [nodePoolId] });
+    await client.DescribeClusterNodePools({ ClusterId: clusterId });
     sdkSummary = { sdkChecked: true, clusterObserved: true, nodePoolObserved: true };
   }
   const evidenceRef = safeWriteRuntimeEvidence(operation, {

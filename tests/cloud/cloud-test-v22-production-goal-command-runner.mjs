@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -8,6 +8,18 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
 const runner = "tests/support/cloud-prework/production-goal-command-runner.mjs";
+const runnerSource = readFileSync(path.join(repoRoot, runner), "utf8");
+
+assert.equal(
+  runnerSource.includes("DescribeClusterNodePools({ ClusterId: clusterId, NodePoolIds"),
+  false,
+  "runtime_tke_node_pool_probe_must_not_pass_unsupported_node_pool_ids",
+);
+assert.equal(
+  runnerSource.includes("DescribeClusterNodePools({ ClusterId: clusterId })"),
+  true,
+  "runtime_tke_node_pool_probe_must_use_cluster_only_request_shape",
+);
 
 function run(args = [], env = {}) {
   return spawnSync(process.execPath, [runner, ...args], {
