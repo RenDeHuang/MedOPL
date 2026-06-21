@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `chore/v22-goal-f-trunk-run-closeout`
-- latest landed commit: `db25f3405ca3711e628dc19bbaed720a8e60941a`
+- latest landed branch: `chore/v22-trunk-cloud-rc-current-closeout`
+- latest landed commit: `12358872adee43977ae26771703e5840c8f619a0`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
@@ -40,7 +40,7 @@ History 只保留短索引：
 - Goal D runtime provisioning: `feat/v22-goal-d-runtime-provisioning-receipt` executed `tenant_runtime_provisioning` through the active cloud authorization pack with the Tencent official TKE SDK, observed the configured cluster and node pool, and accepted the runtime owner receipt pointer. Raw evidence remains in `.runtime`; git only records redacted pointers and cannot claim runtime workload deploy, kubectl, image push, live-test or production completion.
 - Goal E OPL-Webui consumer canary: `feat/v22-goal-e-opl-webui-consumer-receipt` executed `live_test` through the active cloud authorization pack, observed HTTPS 200 for OPL-Webui and MedOPL Portal public URLs, and accepted the OPL-Webui consumer receipt pointer. Raw evidence remains in `.runtime`; git only records redacted pointers and cannot claim runtime task completion, deploy, build/push, billing/audit writeback or production completion.
 - Portal A+/production UI hardening: `feat/v22-portal-a-plus-production-ui-hardening` freezes production-ready claim gates and A+/S UI floors in existing Portal contracts, consumes them through current frontend/regression tests, removes user-visible engineering status terms, and keeps Release fail-closed until owner receipt exists.
-- Goal F cloud release candidate wiring: `feat/v22-goal-f-production-receipt-manifest` / `90a89b75b2a4613719ce9c424367fb35ed51495c` wires Release Image and Cloud Rollout through build/push, runtime, storage, billing/audit, kubectl, deploy, live-test and receipt-manifest lanes. Current trunk `037851cc0e101346e147c73e1bce90a388cdd896` reran Release Image run `27910619863` and Cloud Rollout run `27910639805`; both succeeded and the Cloud Rollout uploaded the `medopl-production-receipt-manifest` redacted artifact. This is cloud release candidate evidence only. The redacted manifest stays as GitHub Actions artifact / `.runtime` pointer evidence and is not committed to git; production complete and full OPL-Webui product E2E remain unclaimed.
+- Goal F cloud release candidate wiring: `feat/v22-goal-f-production-receipt-manifest` / `90a89b75b2a4613719ce9c424367fb35ed51495c` wires Release Image and Cloud Rollout through build/push, runtime, storage, billing/audit, kubectl, deploy, live-test and receipt-manifest lanes. Current trunk `12358872adee43977ae26771703e5840c8f619a0` reran Release Image run `27911002260` and Cloud Rollout run `27911028428`; both succeeded and the Cloud Rollout uploaded the `medopl-production-receipt-manifest` redacted artifact. This is cloud release candidate evidence only. The redacted manifest stays as GitHub Actions artifact / `.runtime` pointer evidence and is not committed to git; production complete and full OPL-Webui product E2E remain unclaimed.
 
 ## Tombstone Map
 
