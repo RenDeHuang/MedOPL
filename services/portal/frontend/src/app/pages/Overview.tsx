@@ -60,9 +60,9 @@ export function Overview() {
                   待开通
                 </Badge>
               </div>
-              <h1 className="text-2xl font-semibold text-neutral-900 mb-3">
+              <h2 className="text-2xl font-semibold text-neutral-900 mb-3">
                 选择套餐开通计算资源
-              </h1>
+              </h2>
               <p className="text-neutral-600 text-sm max-w-2xl">
                 开通计算资源和存储空间后，即可回到 OPL 使用云端能力
               </p>
@@ -115,9 +115,9 @@ export function Overview() {
                   受限
                 </Badge>
               </div>
-              <h1 className="text-2xl font-semibold text-neutral-900 mb-3">
+              <h2 className="text-2xl font-semibold text-neutral-900 mb-3">
                 资源受限，请处理余额
-              </h1>
+              </h2>
               <p className="text-neutral-600 text-sm max-w-2xl">
                 当前余额不足或冻结金额异常，部分功能受限，处理后即可恢复正常使用
               </p>
@@ -217,9 +217,9 @@ export function Overview() {
                 可用
               </Badge>
             </div>
-            <h1 className="text-2xl font-semibold text-neutral-900 mb-3">
+            <h2 className="text-2xl font-semibold text-neutral-900 mb-3">
               计算资源和存储空间可用
-            </h1>
+            </h2>
             <p className="text-neutral-600 text-sm max-w-2xl">
               你的 OPL 云端计算资源和存储空间当前状态正常，可以进入 OPL 使用
             </p>

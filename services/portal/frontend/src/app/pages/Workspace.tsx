@@ -158,7 +158,7 @@ export function Workspace() {
         <div className="mb-8 pb-8 border-b border-neutral-200">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-neutral-900 mb-3">存储空间</h1>
+              <h2 className="text-2xl font-semibold text-neutral-900 mb-3">存储空间</h2>
               <p className="text-neutral-600 text-sm">
                 当前存储空间可用，可以查看输入文件、输出文件和保留期
               </p>
@@ -252,7 +252,7 @@ export function Workspace() {
         <div className="mb-8 pb-8 border-b border-neutral-200">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-neutral-900 mb-3">存储空间</h1>
+              <h2 className="text-2xl font-semibold text-neutral-900 mb-3">存储空间</h2>
               <p className="text-neutral-600 text-sm">
                 当前存储空间可用，可以查看输出文件资源清单或进入 OPL
               </p>
@@ -335,7 +335,7 @@ export function Workspace() {
         <div className="mb-8 pb-8 border-b border-neutral-200">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-neutral-900 mb-3">存储空间</h1>
+              <h2 className="text-2xl font-semibold text-neutral-900 mb-3">存储空间</h2>
               <p className="text-neutral-600 text-sm">
                 存储空间当前不可用，需要先开通存储空间
               </p>
@@ -381,7 +381,7 @@ export function Workspace() {
       <div className="mb-8 pb-8 border-b border-neutral-200">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-neutral-900 mb-3">存储空间</h1>
+            <h2 className="text-2xl font-semibold text-neutral-900 mb-3">存储空间</h2>
             <p className="text-neutral-600 text-sm">
               查看存储容量、已用空间、输入文件、输出文件和保留期
             </p>

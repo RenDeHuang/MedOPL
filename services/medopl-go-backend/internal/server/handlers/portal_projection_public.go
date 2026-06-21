@@ -8,11 +8,15 @@ import (
 
 func CurrentUser() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
+		role := "admin"
+		if ctx.GetHeader("x-medopl-local-role") == "user" {
+			role = "user"
+		}
 		ctx.JSON(http.StatusOK, gin.H{
 			"id":                 "user-local-rc",
 			"name":               "MedOPL Local User",
 			"email":              "local@medopl.test",
-			"role":               "admin",
+			"role":               role,
 			"status":             "active",
 			"accountStatus":      "active",
 			"billingStatus":      "funded",

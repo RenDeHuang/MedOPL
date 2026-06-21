@@ -1,0 +1,168 @@
+{
+  "schema_version": 1,
+  "owner": "MedOPL Portal",
+  "purpose": "portal_interaction_flow_contract",
+  "state": "active",
+  "authority_boundary": {
+    "surface": "customer_control_plane_interactions",
+    "allowed_view": "resource_purchase_storage_billing_opl_entry_and_release_state",
+    "forbidden_view": "chat_workbench_raw_trace_or_cloud_console"
+  },
+  "consumers": [
+    "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+    "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs"
+  ],
+  "consumer_tests": [
+    "npm run test:frontend",
+    "npm run test:regression"
+  ],
+  "medopl_portal_interaction_flow_contract": {
+    "secret_boundary": "frontend_may_hold_providerKeyRef_bound_status_and_one_time_input_only",
+    "dangerous_action_policy": "release_or_destroy_actions_require_confirmation_and_disabled_reason",
+    "flows": [
+      {
+        "id": "open_compute_resource",
+        "entry_route": "/resources",
+        "primary_action": "open_service",
+        "backend_api": "POST /api/v22/managed-environment/open",
+        "disabled_reason_required": true,
+        "states": {
+          "loading": "show_stable_loading_card",
+          "empty": "show_plan_selection_and_readiness",
+          "blocked": "show_missing_balance_provider_key_or_workspace_reason",
+          "failed": "show_retryable_error",
+          "success": "show_active_compute_resource_status"
+        },
+        "consumer_tests": [
+          "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+          "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs"
+        ]
+      },
+      {
+        "id": "purchase_or_upgrade_plan",
+        "entry_route": "/packages",
+        "primary_action": "purchase_or_upgrade",
+        "backend_api": "GET /api/server-plans",
+        "disabled_reason_required": true,
+        "states": {
+          "loading": "show_stable_loading_card",
+          "empty": "show_no_catalog_state",
+          "blocked": "show_pending_price_or_balance_reason",
+          "failed": "show_catalog_error",
+          "success": "show_plan_catalog_and_current_plan"
+        },
+        "consumer_tests": [
+          "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
+        ]
+      },
+      {
+        "id": "bind_provider_key",
+        "entry_route": "/opl-launch",
+        "primary_action": "bind_provider_key",
+        "backend_api": "POST /api/provider/bind",
+        "disabled_reason_required": true,
+        "states": {
+          "loading": "show_provider_key_status_loading",
+          "empty": "show_one_time_provider_key_input",
+          "blocked": "show_provider_key_required_reason",
+          "failed": "show_bind_retry_message",
+          "success": "show_providerKeyRef_bound_status"
+        },
+        "consumer_tests": [
+          "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
+        ]
+      },
+      {
+        "id": "enter_opl",
+        "entry_route": "/opl-launch",
+        "primary_action": "enter_opl",
+        "backend_api": "POST /api/opl/launch",
+        "disabled_reason_required": true,
+        "states": {
+          "loading": "show_opl_readiness_loading",
+          "empty": "show_readiness_checklist",
+          "blocked": "show_missing_compute_storage_provider_key_or_balance",
+          "failed": "show_launch_retry_message",
+          "success": "show_launch_countdown_or_direct_link"
+        },
+        "consumer_tests": [
+          "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
+        ]
+      },
+      {
+        "id": "upload_workspace_file",
+        "entry_route": "/workspace",
+        "primary_action": "upload_file",
+        "backend_api": "POST /api/workspace/files/local-transfer",
+        "disabled_reason_required": true,
+        "states": {
+          "loading": "show_storage_loading",
+          "empty": "show_empty_input_inventory",
+          "blocked": "show_storage_unavailable_reason",
+          "failed": "show_upload_retry_message",
+          "success": "show_uploaded_file_in_inventory"
+        },
+        "consumer_tests": [
+          "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
+        ]
+      },
+      {
+        "id": "download_workspace_file",
+        "entry_route": "/workspace",
+        "primary_action": "download_file",
+        "backend_api": "GET /api/workspace/files/local-transfer",
+        "disabled_reason_required": true,
+        "states": {
+          "loading": "show_download_pending_state",
+          "empty": "show_no_downloadable_files",
+          "blocked": "show_file_not_available_reason",
+          "failed": "show_download_retry_message",
+          "success": "start_browser_download"
+        },
+        "consumer_tests": [
+          "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
+        ]
+      },
+      {
+        "id": "export_billing",
+        "entry_route": "/billing",
+        "primary_action": "export_billing",
+        "backend_api": "GET /api/billing/export.csv",
+        "disabled_reason_required": true,
+        "states": {
+          "loading": "show_billing_loading",
+          "empty": "show_no_ledger_export_notice",
+          "blocked": "show_export_unavailable_reason",
+          "failed": "show_export_retry_message",
+          "success": "start_csv_download"
+        },
+        "consumer_tests": [
+          "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+          "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs"
+        ]
+      },
+      {
+        "id": "release_compute_resource",
+        "entry_route": "/resources",
+        "primary_action": "release_compute_resource",
+        "backend_api": "POST /api/v22/managed-environment/release",
+        "implementation_state": "partial_fail_closed_pending_release_mutation",
+        "claimable": false,
+        "disabled_reason_required": true,
+        "dangerous_action_confirmation_required": true,
+        "storage_deletion_notice_required": true,
+        "states": {
+          "loading": "show_release_state_loading",
+          "empty": "show_release_not_applicable",
+          "blocked": "show_release_mutation_pending_owner_reason",
+          "failed": "show_release_error_without_claiming_mutation_complete",
+          "success": "show_release_receipt_after_mutation_owner_exists"
+        },
+        "consumer_tests": [
+          "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+          "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs"
+        ]
+      }
+    ]
+  }
+}

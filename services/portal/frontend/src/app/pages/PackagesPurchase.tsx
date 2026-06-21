@@ -32,7 +32,7 @@ export function PackagesPurchase() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <h1 className="text-2xl font-semibold text-neutral-900">套餐与购买</h1>
+              <h2 className="text-2xl font-semibold text-neutral-900">套餐与购买</h2>
               <Badge variant="outline" className="bg-neutral-100 text-neutral-700 border-neutral-200">
                 当前套餐 {model.currentPackageName}
               </Badge>

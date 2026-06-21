@@ -78,6 +78,8 @@ export const TEST_LIFECYCLE_CLEANUP_POLICY = Object.freeze({
 export const TEST_LANE_CONTRACT_REFS = Object.freeze([
   "contracts/medopl-product-profile.json",
   "contracts/medopl-portal-page-state-matrix.json",
+  "contracts/medopl-portal-interaction-flow-contract.json",
+  "contracts/medopl-portal-ui-quality-contract.json",
   "contracts/medopl-api-contract.json",
   "contracts/medopl-runtime-bridge-contract.json",
   "contracts/medopl-data-plane-contract.json",
@@ -200,7 +202,11 @@ function surfaceForFile(file) {
 function contractsForFile(file, surface) {
   const refs = new Set(["specs/framework/spec.md"]);
   if (file.startsWith("tests/product/")) refs.add("contracts/medopl-product-profile.json");
-  if (file.startsWith("tests/frontend/")) refs.add("contracts/medopl-portal-page-state-matrix.json");
+  if (file.startsWith("tests/frontend/")) {
+    refs.add("contracts/medopl-portal-page-state-matrix.json");
+    refs.add("contracts/medopl-portal-interaction-flow-contract.json");
+    refs.add("contracts/medopl-portal-ui-quality-contract.json");
+  }
   if (file.startsWith("tests/backend/")) refs.add("contracts/medopl-api-contract.json");
   if (file.startsWith("tests/runtime/")) refs.add("contracts/medopl-runtime-bridge-contract.json");
   if (file.startsWith("tests/release/")) refs.add("contracts/medopl-release-boundary.json");

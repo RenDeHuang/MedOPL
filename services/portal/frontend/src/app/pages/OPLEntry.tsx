@@ -66,7 +66,7 @@ export function OPLEntry() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
             <Badge className="bg-blue-50 text-blue-700 border-blue-200">准备中</Badge>
-            <h1 className="text-2xl font-semibold text-neutral-900">进入 OPL</h1>
+            <h2 className="text-2xl font-semibold text-neutral-900">进入 OPL</h2>
           </div>
           <p className="text-neutral-600 mb-4">正在读取 OPL 启动状态和 Portal bootstrap。</p>
         </div>
@@ -78,7 +78,7 @@ export function OPLEntry() {
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
             <Badge className="bg-red-50 text-red-700 border-red-200">启动失败</Badge>
-            <h1 className="text-2xl font-semibold text-neutral-900">进入 OPL</h1>
+            <h2 className="text-2xl font-semibold text-neutral-900">进入 OPL</h2>
           </div>
           <p className="text-neutral-600 mb-4">{query.error || OPL_GATEWAY_UNAVAILABLE_MESSAGE}</p>
           <div className="flex gap-3">
@@ -106,9 +106,9 @@ export function OPLEntry() {
             <Badge className="bg-green-50 text-green-700 border-green-200">
               即将进入
             </Badge>
-            <h1 className="text-2xl font-semibold text-neutral-900">
+            <h2 className="text-2xl font-semibold text-neutral-900">
               进入 OPL
-            </h1>
+            </h2>
           </div>
           <p className="text-neutral-600 mb-4">
             准备完成，{countdown} 秒后自动进入 OPL
@@ -138,9 +138,9 @@ export function OPLEntry() {
             <Badge className="bg-blue-50 text-blue-700 border-blue-200">
               准备中
             </Badge>
-            <h1 className="text-2xl font-semibold text-neutral-900">
+            <h2 className="text-2xl font-semibold text-neutral-900">
               进入 OPL
-            </h1>
+            </h2>
           </div>
           <p className="text-neutral-600 mb-4">
             {query.data.userVisibleState || "正在准备存储空间和 OPL 会话，准备完成后将自动进入"}
@@ -162,9 +162,9 @@ export function OPLEntry() {
             <Badge className="bg-blue-50 text-blue-700 border-blue-200">
               重试中
             </Badge>
-            <h1 className="text-2xl font-semibold text-neutral-900">
+            <h2 className="text-2xl font-semibold text-neutral-900">
               进入 OPL
-            </h1>
+            </h2>
           </div>
           <p className="text-neutral-600 mb-4">
             正在重新尝试连接 OPL 网关，请稍候
@@ -186,9 +186,9 @@ export function OPLEntry() {
             <Badge className="bg-orange-50 text-orange-700 border-orange-200">
               启动受限
             </Badge>
-            <h1 className="text-2xl font-semibold text-neutral-900">
+            <h2 className="text-2xl font-semibold text-neutral-900">
               进入 OPL
-            </h1>
+            </h2>
           </div>
           <p className="text-neutral-600 mb-4">
             当前模型调用密钥状态未满足进入条件
@@ -236,9 +236,9 @@ export function OPLEntry() {
             <Badge className="bg-orange-50 text-orange-700 border-orange-200">
               启动受限
             </Badge>
-            <h1 className="text-2xl font-semibold text-neutral-900">
+            <h2 className="text-2xl font-semibold text-neutral-900">
               进入 OPL
-            </h1>
+            </h2>
           </div>
           <p className="text-neutral-600 mb-4">
             计算资源尚未准备好，请先开通计算资源
@@ -268,9 +268,9 @@ export function OPLEntry() {
             <Badge className="bg-orange-50 text-orange-700 border-orange-200">
               启动受限
             </Badge>
-            <h1 className="text-2xl font-semibold text-neutral-900">
+            <h2 className="text-2xl font-semibold text-neutral-900">
               进入 OPL
-            </h1>
+            </h2>
           </div>
           <p className="text-neutral-600 mb-4">
             存储空间不可用，请先检查存储空间状态
@@ -300,9 +300,9 @@ export function OPLEntry() {
             <Badge className="bg-orange-50 text-orange-700 border-orange-200">
               启动受限
             </Badge>
-            <h1 className="text-2xl font-semibold text-neutral-900">
+            <h2 className="text-2xl font-semibold text-neutral-900">
               进入 OPL
-            </h1>
+            </h2>
           </div>
           <p className="text-neutral-600 mb-4">
             当前余额不足或冻结金额不够，请先处理账单状态
@@ -332,9 +332,9 @@ export function OPLEntry() {
             <Badge className="bg-red-50 text-red-700 border-red-200">
               启动失败
             </Badge>
-            <h1 className="text-2xl font-semibold text-neutral-900">
+            <h2 className="text-2xl font-semibold text-neutral-900">
               进入 OPL
-            </h1>
+            </h2>
           </div>
           <p className="text-neutral-600 mb-4">
             {OPL_GATEWAY_UNAVAILABLE_MESSAGE}
@@ -364,9 +364,9 @@ export function OPLEntry() {
           <Badge className="bg-red-50 text-red-700 border-red-200">
             启动失败
           </Badge>
-          <h1 className="text-2xl font-semibold text-neutral-900">
+          <h2 className="text-2xl font-semibold text-neutral-900">
             进入 OPL
-          </h1>
+          </h2>
         </div>
         <p className="text-neutral-600 mb-4">
           启动过程遇到问题，请重试或检查相关配置

@@ -112,11 +112,15 @@ MedOPL 是资源购买与计算资源管理 Portal，不是 chat，不是科研�
 - 最大内容宽度优先使用 `1120px` 到 `1200px`。
 - 首屏只保留一个主 CTA。
 - 首屏核心资源卡不超过三张：计算资源、存储空间、费用与用量。
+- 费用与用量首屏固定为一个 `BillingSummary`、一条资金状态带、下方账单表 / 分组明细；不恢复 6 张 KPI 卡墙。
 - 不使用深色 admin sidebar 统治用户侧。
 - 不做营销 hero，不做大面积渐变，不做装饰性背景。
 - 表格只用于可比较集合；用户侧详情优先使用状态、摘要和短列表。
 - 页面文案短句化，不能靠长段说明替代交互状态。
 - 卡片只承载真实对象或重复项，不把每个 section 都包成卡片。
+- 卡片圆角上限为 `8px`；默认组件不得恢复大圆角卡片墙。
+- Logo 不拥有页面语义 `h1`；当前页面内容标题拥有唯一 `h1`。
+- 导航、顶栏按钮和主动作的移动触控目标不得小于 `44px`。
 - 移动端不能横向溢出；表格必须折叠为卡片列表或横向安全容器。
 
 运维侧视觉语法：
@@ -162,6 +166,8 @@ CSS 变量名使用短横线映射：
 | `ReadinessChecklist` | 展示进入 OPL 或开通资源还缺什么 | `status`, `items`, `primaryAction` |
 | `ReleaseConfirmDialog` | 释放计算资源和停止计费确认 | `status`, `resourceName`, `billingStopState`, `storageRetention` |
 | `OpsQueueTable` | 运维侧处理开通、释放、账单、存储和审计队列 | `queueType`, `rows`, `filters`, `rowActions` |
+
+当前 `ReleaseConfirmDialog` 只能标记为 `partial_fail_closed_pending_release_mutation`。真实 release mutation 未接入前，UI 只能展示“释放交互接入中”、停止计费和存储保留规则，不能 claim 释放确认交互已完成。
 
 组件禁止承担的职责：
 
@@ -221,6 +227,7 @@ Figma 文件只能作为设计输入和审查面；repo 里的长期机器真相
 - 一个主 CTA：购买 / 升级 / 释放 / 进入 OPL 只能有一个最高优先级。
 - 三个核心资源块：计算资源、存储空间、费用与用量。
 - 次级详情使用短列表、drawer 或详情页，不在首屏铺满表格。
+- 费用与用量页不使用 KPI 墙；首屏只放一个账务摘要、一条资金状态带，明细进入下方表格和分组列表。
 
 运维页使用工作队列模板：
 

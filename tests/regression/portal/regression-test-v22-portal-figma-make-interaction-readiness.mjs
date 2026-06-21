@@ -291,7 +291,10 @@ assertIncludes(workspaceSource, "更多文件操作请在 OPL 内完成", "works
 assertExcludes(workspaceSource, "<button className=\"p-1 hover:bg-neutral-100 rounded\">", "workspace_more_file_action_must_not_be_empty_raw_button");
 assertIncludes(workspaceSource, "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4", "workspace_summary_layout_must_reflow_mobile");
 assertIncludes(packagesSource, "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5", "packages_summary_layout_must_reflow_mobile");
-assertIncludes(billingSource, "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6", "billing_summary_layout_must_reflow_mobile");
+assertIncludes(billingSource, 'data-ui-section="billing-first-view"', "billing_first_view_contract_marker_missing");
+assertIncludes(billingSource, "BillingSummary", "billing_first_view_must_keep_single_summary_component");
+assertIncludes(billingSource, 'data-ui-pattern="billing-status-band"', "billing_first_view_must_keep_funding_status_band");
+assertExcludes(billingSource, "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6", "billing_first_view_must_not_restore_kpi_wall");
 
 for (const sourceText of [overviewSource, packagesSource, workspaceSource, runtimeSource, oplEntrySource, portalQuerySource]) {
   assertExcludes(sourceText, "Request failed with status code", "portal_user_surface_must_not_expose_transport_error");

@@ -43,7 +43,13 @@
           "active",
           "suspended",
           "released"
-        ]
+        ],
+        "required_h1_owner": "page_content",
+        "mobile_touch_target_min_px": 44,
+        "first_view_card_budget": {
+          "core_resource_cards": 3,
+          "extra_kpi_cards": 0
+        }
       },
       {
         "id": "packages_purchase",
@@ -60,7 +66,13 @@
           "pending_price_approval",
           "purchase_blocked",
           "upgrade_available"
-        ]
+        ],
+        "required_h1_owner": "page_content",
+        "mobile_touch_target_min_px": 44,
+        "first_view_card_budget": {
+          "core_resource_cards": 2,
+          "extra_kpi_cards": 0
+        }
       },
       {
         "id": "compute_resource",
@@ -80,7 +92,13 @@
           "failed",
           "releasing",
           "released"
-        ]
+        ],
+        "required_h1_owner": "page_content",
+        "mobile_touch_target_min_px": 44,
+        "first_view_card_budget": {
+          "core_resource_cards": 3,
+          "extra_kpi_cards": 0
+        }
       },
       {
         "id": "storage_space",
@@ -100,7 +118,13 @@
           "protected",
           "destroy_pending",
           "destroyed"
-        ]
+        ],
+        "required_h1_owner": "page_content",
+        "mobile_touch_target_min_px": 44,
+        "first_view_card_budget": {
+          "core_resource_cards": 3,
+          "extra_kpi_cards": 0
+        }
       },
       {
         "id": "usage_billing",
@@ -119,7 +143,14 @@
           "funded",
           "past_due",
           "frozen"
-        ]
+        ],
+        "required_h1_owner": "page_content",
+        "mobile_touch_target_min_px": 44,
+        "first_view_card_budget": {
+          "core_resource_cards": 1,
+          "extra_kpi_cards": 0
+        },
+        "first_view_layout": "billing_summary_status_band_then_ledger_details"
       },
       {
         "id": "opl_entry",
@@ -136,7 +167,13 @@
           "blocked_by_storage",
           "blocked_by_provider_key",
           "blocked_by_balance"
-        ]
+        ],
+        "required_h1_owner": "page_content",
+        "mobile_touch_target_min_px": 44,
+        "first_view_card_budget": {
+          "core_resource_cards": 1,
+          "extra_kpi_cards": 0
+        }
       },
       {
         "id": "release",
@@ -150,7 +187,13 @@
           "pending",
           "completed",
           "blocked"
-        ]
+        ],
+        "required_h1_owner": "page_content",
+        "mobile_touch_target_min_px": 44,
+        "first_view_card_budget": {
+          "core_resource_cards": 1,
+          "extra_kpi_cards": 0
+        }
       }
     ],
     "ui_grammar": {
@@ -208,7 +251,13 @@
         "ops_pages_queue_first": "true",
         "no_dark_admin_sidebar_for_customer": "true",
         "no_marketing_hero_for_customer": "true",
-        "mobile_horizontal_overflow_allowed": "false"
+        "mobile_horizontal_overflow_allowed": "false",
+        "billing_first_view_layout": "billing_summary_status_band_then_ledger_details",
+        "billing_first_view_extra_kpi_cards_max": 0,
+        "required_h1_owner": "page_content",
+        "logo_heading_allowed": false,
+        "mobile_touch_target_min_px": 44,
+        "card_radius_max_px": 8
       },
       "semantic_tokens": [
         "resource.active",
@@ -345,7 +394,9 @@
             "pending",
             "released",
             "protected"
-          ]
+          ],
+          "implementation_state": "partial_fail_closed_pending_release_mutation",
+          "claimable": false
         },
         {
           "name": "OpsQueueTable",
@@ -388,7 +439,140 @@
             "ready": "resource.active",
             "blocked": "resource.blocked",
             "pending": "release.pending",
-            "protected": "storage.protected"
+            "protected": "storage.protected",
+            "failed": "resource.blocked"
+          }
+        },
+        {
+          "figma_component": "PlanCard",
+          "code_component": "PlanCard",
+          "variant_prop": "status",
+          "allowed_values": [
+            "loading",
+            "empty",
+            "ready",
+            "blocked",
+            "failed",
+            "pending",
+            "released",
+            "protected"
+          ],
+          "token_mapping": {
+            "ready": "resource.active",
+            "blocked": "resource.blocked",
+            "pending": "release.pending",
+            "protected": "storage.protected",
+            "failed": "resource.blocked"
+          }
+        },
+        {
+          "figma_component": "StorageInventoryPanel",
+          "code_component": "StorageInventoryPanel",
+          "variant_prop": "status",
+          "allowed_values": [
+            "loading",
+            "empty",
+            "ready",
+            "blocked",
+            "failed",
+            "pending",
+            "released",
+            "protected"
+          ],
+          "token_mapping": {
+            "ready": "resource.active",
+            "blocked": "resource.blocked",
+            "pending": "release.pending",
+            "protected": "storage.protected",
+            "failed": "resource.blocked"
+          }
+        },
+        {
+          "figma_component": "BillingSummary",
+          "code_component": "BillingSummary",
+          "variant_prop": "status",
+          "allowed_values": [
+            "loading",
+            "empty",
+            "ready",
+            "blocked",
+            "failed",
+            "pending",
+            "released",
+            "protected"
+          ],
+          "token_mapping": {
+            "ready": "resource.active",
+            "blocked": "resource.blocked",
+            "pending": "release.pending",
+            "protected": "storage.protected",
+            "failed": "resource.blocked"
+          }
+        },
+        {
+          "figma_component": "ReadinessChecklist",
+          "code_component": "ReadinessChecklist",
+          "variant_prop": "status",
+          "allowed_values": [
+            "loading",
+            "empty",
+            "ready",
+            "blocked",
+            "failed",
+            "pending",
+            "released",
+            "protected"
+          ],
+          "token_mapping": {
+            "ready": "resource.active",
+            "blocked": "resource.blocked",
+            "pending": "release.pending",
+            "protected": "storage.protected",
+            "failed": "resource.blocked"
+          }
+        },
+        {
+          "figma_component": "ReleaseConfirmDialog",
+          "code_component": "ReleaseConfirmDialog",
+          "variant_prop": "status",
+          "allowed_values": [
+            "loading",
+            "empty",
+            "ready",
+            "blocked",
+            "failed",
+            "pending",
+            "released",
+            "protected"
+          ],
+          "token_mapping": {
+            "ready": "resource.active",
+            "blocked": "resource.blocked",
+            "pending": "release.pending",
+            "protected": "storage.protected",
+            "failed": "resource.blocked"
+          }
+        },
+        {
+          "figma_component": "OpsQueueTable",
+          "code_component": "OpsQueueTable",
+          "variant_prop": "status",
+          "allowed_values": [
+            "loading",
+            "empty",
+            "ready",
+            "blocked",
+            "failed",
+            "pending",
+            "released",
+            "protected"
+          ],
+          "token_mapping": {
+            "ready": "resource.active",
+            "blocked": "resource.blocked",
+            "pending": "release.pending",
+            "protected": "storage.protected",
+            "failed": "resource.blocked"
           }
         }
       ],

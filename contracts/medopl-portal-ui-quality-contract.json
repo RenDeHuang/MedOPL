@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "owner": "MedOPL Portal",
+  "purpose": "portal_ui_quality_contract",
+  "state": "active",
+  "authority_boundary": {
+    "surface": "customer_control_plane_visual_and_accessibility_floor",
+    "allowed_view": "clean_resource_control_plane",
+    "forbidden_view": "marketing_hero_card_wall_cloud_console_or_workbench"
+  },
+  "consumers": [
+    "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+    "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs"
+  ],
+  "consumer_tests": [
+    "npm run test:frontend",
+    "npm run test:regression"
+  ],
+  "medopl_portal_ui_quality_contract": {
+    "touch_target": {
+      "min_px": 44,
+      "applies_to": [
+        "nav_link",
+        "nav_button",
+        "header_action",
+        "primary_action"
+      ]
+    },
+    "card": {
+      "radius_max_px": 8,
+      "no_card_inside_card": true,
+      "first_view_card_budget_default": {
+        "core_resource_cards": 3,
+        "extra_kpi_cards": 0
+      }
+    },
+    "semantic_heading": {
+      "required_h1_owner": "page_content",
+      "logo_h1_allowed": false,
+      "unique_content_h1": true
+    },
+    "billing": {
+      "first_view_layout": "billing_summary_status_band_then_ledger_details",
+      "first_view_extra_kpi_cards_max": 0,
+      "summary_component_count": 1,
+      "status_band_count": 1
+    },
+    "accessibility": {
+      "visible_focus_state_required": true,
+      "disabled_reason_required": true,
+      "no_horizontal_overflow": true,
+      "dangerous_action_confirmation_required": true,
+      "reduced_motion_respected": true,
+      "color_not_sole_status_signal": true
+    },
+    "style": {
+      "tone": "clean_restrained_resource_control_plane",
+      "no_marketing_hero": true,
+      "no_gradient_orb_background": true,
+      "no_dark_admin_sidebar_for_customer": true
+    }
+  }
+}

@@ -9,6 +9,8 @@ const repoRoot = path.resolve(__dirname, "../..");
 const productContractPaths = Object.freeze([
   "contracts/medopl-product-profile.json",
   "contracts/medopl-portal-page-state-matrix.json",
+  "contracts/medopl-portal-interaction-flow-contract.json",
+  "contracts/medopl-portal-ui-quality-contract.json",
   "contracts/medopl-api-contract.json",
   "contracts/medopl-runtime-bridge-contract.json",
   "contracts/medopl-data-plane-contract.json",

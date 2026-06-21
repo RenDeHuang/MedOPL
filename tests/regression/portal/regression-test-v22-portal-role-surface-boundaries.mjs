@@ -38,6 +38,7 @@ const [
   adminApi,
   adminModel,
   goRouter,
+  goPublicProjection,
 ] = await Promise.all([
   readFile("README.md", "utf8"),
   readFile("docs/active/README.md", "utf8"),
@@ -57,6 +58,7 @@ const [
   readFile("services/portal/frontend/src/api/portal/admin.ts", "utf8"),
   readFile("services/portal/frontend/src/app/data/portalAdminOpsModel.ts", "utf8"),
   readFile("services/medopl-go-backend/internal/server/router.go", "utf8"),
+  readFile("services/medopl-go-backend/internal/server/handlers/portal_projection_public.go", "utf8"),
 ]);
 
 assertIncludes(specsIndex, "spec:v22-portal-user-surface-boundary", "specs_index_user_surface_anchor");
@@ -131,6 +133,9 @@ assertNotIncludes(routes, 'path: "tasks"', "retired_tasks_route_must_stay_retire
 
 assertIncludes(goRouter, 'router.GET("/api/admin/overview", handlers.AdminOverview())', "go_router_admin_overview_route");
 assertIncludes(goRouter, 'router.GET("/api/admin/ops", handlers.AdminOps())', "go_router_admin_ops_route");
+assertIncludes(goPublicProjection, "x-medopl-local-role", "go_public_projection_must_support_local_role_visual_gate");
+assertIncludes(goPublicProjection, 'role = "user"', "go_public_projection_must_allow_user_role_visual_gate");
+assertIncludes(goPublicProjection, 'role := "admin"', "go_public_projection_must_default_admin_role_visual_gate");
 assertNotIncludes(goRouter, "/api/admin/agent-traces", "go_router_must_retire_admin_agent_trace_route");
 assertIncludes(goRouter, "/api/admin/audit-events", "go_router_must_expose_admin_audit_events_route");
 assertNotIncludes(adminApi, "fetchAdminAgentTraces", "admin_api_must_retire_agent_trace_fetcher");

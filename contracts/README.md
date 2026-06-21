@@ -13,6 +13,8 @@ MedOPL 的产品权威是 `platform-provisioned / customer-dedicated` 的 OPL Sa
 | --- | --- | --- |
 | `contracts/medopl-product-profile.json` | active platform product identity checks | Product profile and non-responsibility boundary |
 | `contracts/medopl-portal-page-state-matrix.json` | Portal page/state coverage checks | Customer control-plane states, not cloud console states |
+| `contracts/medopl-portal-interaction-flow-contract.json` | Portal interaction flow checks | Customer flow states, not chat/workbench ownership |
+| `contracts/medopl-portal-ui-quality-contract.json` | Portal UI quality checks | Measurable visual/accessibility floor, not screenshot truth |
 | `contracts/medopl-api-contract.json` | API surface and secret-boundary checks | Portal/API resource identity and fail-closed response shape |
 | `contracts/medopl-runtime-bridge-contract.json` | Runtime bridge / OPL boundary checks | Gateway/bridge/agent integration only; no upstream internals |
 | `contracts/medopl-data-plane-contract.json` | File/artifact ownership checks | Platform-managed workspace data plane |

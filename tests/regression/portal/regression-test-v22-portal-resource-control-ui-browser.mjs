@@ -157,6 +157,47 @@ async function assertPrimaryActionReachable(page, label) {
   assert(primaryActions > 0, `${label}_primary_action_missing`);
 }
 
+async function assertFirstH1(page, expected, label) {
+  const h1Texts = await page.locator("h1").evaluateAll((nodes) => nodes.map((node) => node.textContent?.trim()).filter(Boolean));
+  assert.equal(h1Texts[0], expected, `${label}_first_h1_mismatch:${JSON.stringify(h1Texts)}`);
+}
+
+async function assertTouchTargets(page, selector, label) {
+  const undersized = await page.locator(selector).evaluateAll((nodes) =>
+    nodes.map((node) => {
+      const rect = node.getBoundingClientRect();
+      return {
+        text: node.textContent?.trim() || node.getAttribute("aria-label") || "",
+        width: Math.round(rect.width),
+        height: Math.round(rect.height),
+      };
+    }).filter((item) => item.height < 44 || item.width < 44),
+  );
+  assert.deepEqual(undersized, [], `${label}_touch_target_below_44px:${JSON.stringify(undersized)}`);
+}
+
+async function assertBillingFirstViewDensity(page, label) {
+  const metrics = await page.evaluate(() => {
+    const billingRoot = document.querySelector("[data-page-id='usage_billing']");
+    const firstView = document.querySelector("[data-ui-section='billing-first-view']");
+    const extraKpiCards = document.querySelectorAll("[data-ui-section='billing-first-view'] [data-ui-pattern='billing-extra-kpi-card']");
+    return {
+      hasBillingRoot: Boolean(billingRoot),
+      hasFirstView: Boolean(firstView),
+      billingSummaryCount: document.querySelectorAll("[data-ui-section='billing-first-view'] [data-ui-component='BillingSummary']").length,
+      statusBandCount: document.querySelectorAll("[data-ui-section='billing-first-view'] [data-ui-pattern='billing-status-band']").length,
+      extraKpiCardCount: extraKpiCards.length,
+      firstViewCardCount: document.querySelectorAll("[data-ui-section='billing-first-view'] [data-slot='card']").length,
+    };
+  });
+  assert.equal(metrics.hasBillingRoot, true, `${label}_billing_page_marker_missing`);
+  assert.equal(metrics.hasFirstView, true, `${label}_billing_first_view_missing`);
+  assert.equal(metrics.billingSummaryCount, 1, `${label}_billing_summary_count_mismatch:${JSON.stringify(metrics)}`);
+  assert.equal(metrics.statusBandCount, 1, `${label}_billing_status_band_count_mismatch:${JSON.stringify(metrics)}`);
+  assert.equal(metrics.extraKpiCardCount, 0, `${label}_billing_extra_kpi_cards_must_be_zero:${JSON.stringify(metrics)}`);
+  assert(metrics.firstViewCardCount <= 1, `${label}_billing_first_view_card_budget_exceeded:${JSON.stringify(metrics)}`);
+}
+
 const { chromium } = await loadPlaywright();
 const backendPort = await freePort();
 const vitePort = await freePort();
@@ -234,6 +275,8 @@ try {
     await page.waitForSelector("text=总览", { timeout: 30000 });
     lastBodyText = await page.locator("body").innerText();
     assertResourceControlCopy(lastBodyText, "browser_overview");
+    await assertFirstH1(page, "总览", "browser_overview");
+    await assertTouchTargets(page, "nav a, nav button, header button", "browser_overview");
     assert(lastBodyText.includes("选择套餐开通计算资源"), "browser_overview_open_compute_resource_cta_missing");
     assert(lastBodyText.includes("前往套餐与购买"), "browser_overview_packages_entry_missing");
     assert.equal(lastBodyText.includes("商业"), false, "browser_overview_forbidden_commercial_copy");
@@ -250,13 +293,43 @@ try {
     await page.waitForSelector("text=计算资源", { timeout: 30000 });
     lastBodyText = await page.locator("body").innerText();
     assertResourceControlCopy(lastBodyText, "browser_runtime_environment", ["计算资源", "存储空间"]);
+    await assertFirstH1(page, "计算资源", "browser_runtime_environment");
+    await assertTouchTargets(page, "nav a, nav button, header button", "browser_runtime_environment");
     assert(lastBodyText.includes("开通服务"), "browser_runtime_open_service_cta_missing");
     assert(lastBodyText.includes("当前订阅状态"), "browser_runtime_subscription_status_missing");
     assert(lastBodyText.includes("套餐价格尚待审批"), "browser_runtime_pricing_boundary_missing");
     assert.equal(lastBodyText.includes("CVM"), false, "browser_runtime_must_not_expose_cloud_console_copy");
     assert.equal(lastBodyText.includes("K8s"), false, "browser_runtime_must_not_expose_cloud_console_copy");
+    if (lastBodyText.includes("释放与停止计费")) {
+      assert(lastBodyText.includes("释放交互接入中"), "browser_runtime_release_partial_state_missing");
+    }
     await assertPrimaryActionReachable(page, "browser_runtime_environment");
     await assertNoGlobalHorizontalOverflow(page, "browser_runtime_environment");
+
+    await page.goto(`${frontendBaseUrl}/billing`, { waitUntil: "domcontentloaded" });
+    await waitReady(page, "正在读取费用与用量数据");
+    await page.waitForSelector("text=费用与用量", { timeout: 30000 });
+    lastBodyText = await page.locator("body").innerText();
+    assertResourceControlCopy(lastBodyText, "browser_billing", ["费用与用量", "账单"]);
+    await assertFirstH1(page, "费用与用量", "browser_billing");
+    await assertBillingFirstViewDensity(page, "browser_billing");
+    await assertNoGlobalHorizontalOverflow(page, "browser_billing");
+
+    const userContext = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+      extraHTTPHeaders: { "x-medopl-local-role": "user" },
+    });
+    const userPage = await userContext.newPage();
+    await userPage.goto(`${frontendBaseUrl}/overview`, { waitUntil: "domcontentloaded" });
+    await waitReady(userPage, "正在读取 Portal 总览数据");
+    const userBodyText = await userPage.locator("body").innerText();
+    assertResourceControlCopy(userBodyText, "browser_user_overview");
+    assert.equal(userBodyText.includes("管理台"), false, "browser_user_overview_must_not_show_admin_nav");
+    assert.equal(userBodyText.includes("站点设置"), false, "browser_user_overview_must_not_show_admin_system_nav");
+    await assertFirstH1(userPage, "总览", "browser_user_overview");
+    await assertTouchTargets(userPage, "nav a, nav button, header button", "browser_user_overview");
+    await assertNoGlobalHorizontalOverflow(userPage, "browser_user_overview");
+    await userContext.close();
 
     await page.goto(`${frontendBaseUrl}/admin/system`, { waitUntil: "domcontentloaded" });
     await waitReady(page, "正在读取站点设置");
@@ -282,6 +355,8 @@ try {
       "go_backend_vite_frontend_runtime",
       "overview_resource_control_copy",
       "runtime_open_service_entry",
+      "billing_first_view_density",
+      "customer_user_nav_visual_gate",
       "admin_system_authorization_boundary",
     ],
   }, null, 2));

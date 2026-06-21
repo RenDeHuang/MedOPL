@@ -107,6 +107,10 @@ export function BillingAudit() {
     triggerCsvDownload("/api/billing/export.csv");
   };
 
+  const fundingTone = canStartPaidRun
+    ? "border-green-200 bg-green-50 text-green-900"
+    : "border-orange-200 bg-orange-50 text-orange-900";
+
   // Empty Ledger State
   if (pageState === "empty-ledger") {
     return (
@@ -116,7 +120,7 @@ export function BillingAudit() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <h1 className="text-2xl font-semibold text-neutral-900">费用与用量</h1>
+                <h2 className="text-2xl font-semibold text-neutral-900">费用与用量</h2>
                 <Badge variant="outline" className="bg-neutral-100 text-neutral-600 border-neutral-200">
                   核对已接入
                 </Badge>
@@ -138,32 +142,20 @@ export function BillingAudit() {
           </div>
         )}
 
-        {/* Financial Summary */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-8">
-          <Card className="p-4 border border-neutral-200">
-            <div className="text-sm text-neutral-600 mb-1">余额</div>
-            <div className="text-xl font-semibold text-neutral-900">{model.balance}</div>
-          </Card>
-          <Card className="p-4 border border-neutral-200">
-            <div className="text-sm text-neutral-600 mb-1">可用余额</div>
-            <div className="text-xl font-semibold text-neutral-900">{model.availableBalance}</div>
-          </Card>
-          <Card className="p-4 border border-neutral-200">
-            <div className="text-sm text-neutral-600 mb-1">冻结金额</div>
-            <div className="text-xl font-semibold text-orange-600">{model.frozenAmount}</div>
-          </Card>
-          <Card className="p-4 border border-neutral-200">
-            <div className="text-sm text-neutral-600 mb-1">今日消费</div>
-            <div className="text-xl font-semibold text-neutral-900">¥ 0.00</div>
-          </Card>
-          <Card className="p-4 border border-neutral-200">
-            <div className="text-sm text-neutral-600 mb-1">当前窗口</div>
-            <div className="text-xl font-semibold text-neutral-900">¥ 0.00</div>
-          </Card>
-          <Card className="p-4 border border-neutral-200">
-            <div className="text-sm text-neutral-600 mb-1">流水记录</div>
-            <div className="text-xl font-semibold text-neutral-900">0</div>
-          </Card>
+        <div data-page-id="usage_billing" data-ui-section="billing-first-view" className="mb-8 space-y-4">
+          <BillingSummary
+            status={canStartPaidRun ? "ready" : "blocked"}
+            balance={model.balance}
+            freeze={model.frozenAmount}
+            usage="¥ 0.00"
+            auditState={billingStateLabel}
+          />
+          <div data-ui-pattern="billing-status-band" className={`rounded-lg border px-4 py-3 text-sm ${fundingTone}`}>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <span className="font-medium">{billingStateLabel}</span>
+              <span>可用余额 {model.availableBalance} / 冻结金额 {model.frozenAmount} / 当前窗口无流水</span>
+            </div>
+          </div>
         </div>
 
         <div className="flex flex-col items-center justify-center py-16">
@@ -181,13 +173,13 @@ export function BillingAudit() {
 
   // Ready State
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div data-page-id="usage_billing" className="p-8 max-w-7xl mx-auto">
       {/* Hero - Billing Status and Financial Summary */}
       <div className="mb-8 pb-8 border-b border-neutral-200">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <h1 className="text-2xl font-semibold text-neutral-900">费用与用量</h1>
+              <h2 className="text-2xl font-semibold text-neutral-900">费用与用量</h2>
               <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
                 <CheckCircle2 className="w-3 h-3 mr-1" />
                 核对已接入
@@ -206,10 +198,9 @@ export function BillingAudit() {
         </div>
       </div>
 
-      {/* Financial Metrics */}
-      <div className="mb-8">
-        <h2 className="font-semibold text-neutral-900 mb-4">资金摘要</h2>
-        <div className="mb-4">
+      <div data-ui-section="billing-first-view" className="mb-8 space-y-4">
+        <h2 className="font-semibold text-neutral-900">资金摘要</h2>
+        <div>
           <BillingSummary
             status={canStartPaidRun ? "ready" : "blocked"}
             balance={model.balance}
@@ -218,60 +209,13 @@ export function BillingAudit() {
             auditState={billingStateLabel}
           />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-          <Card className="p-4 border border-neutral-200">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-neutral-600">余额</span>
-              <Wallet className="w-4 h-4 text-neutral-400" />
-            </div>
-            <div className="text-2xl font-semibold text-neutral-900">{model.balance}</div>
-            <div className="text-xs text-neutral-500 mt-1">总余额</div>
-          </Card>
-
-          <Card className="p-4 border border-neutral-200">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-neutral-600">可用余额</span>
-              <DollarSign className="w-4 h-4 text-neutral-400" />
-            </div>
-            <div className="text-2xl font-semibold text-neutral-900">{model.availableBalance}</div>
-            <div className="text-xs text-neutral-500 mt-1">扣除冻结</div>
-          </Card>
-
-          <Card className="p-4 border border-orange-200 bg-orange-50">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-orange-700">冻结金额</span>
-              <AlertCircle className="w-4 h-4 text-orange-600" />
-            </div>
-            <div className="text-2xl font-semibold text-orange-700">{model.frozenAmount}</div>
-            <div className="text-xs text-orange-600 mt-1">按账户归属和资源绑定计算</div>
-          </Card>
-
-          <Card className="p-4 border border-neutral-200">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-neutral-600">今日消费</span>
-              <TrendingDown className="w-4 h-4 text-neutral-400" />
-            </div>
-            <div className="text-2xl font-semibold text-neutral-900">{model.todayCost}</div>
-            <div className="text-xs text-neutral-500 mt-1">费用估算</div>
-          </Card>
-
-          <Card className="p-4 border border-neutral-200">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-neutral-600">累计消费</span>
-              <TrendingDown className="w-4 h-4 text-neutral-400" />
-            </div>
-            <div className="text-2xl font-semibold text-neutral-900">{model.totalCost}</div>
-            <div className="text-xs text-neutral-500 mt-1">本月</div>
-          </Card>
-
-          <Card className="p-4 border border-neutral-200">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-neutral-600">账户流水</span>
-              <Wallet className="w-4 h-4 text-neutral-400" />
-            </div>
-            <div className="text-2xl font-semibold text-neutral-900">{model.billingRecords.length}</div>
-            <div className="text-xs text-neutral-500 mt-1">当前筛选窗口</div>
-          </Card>
+        <div data-ui-pattern="billing-status-band" className={`rounded-lg border px-4 py-3 text-sm ${fundingTone}`}>
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
+            <div><span className="text-neutral-600">可用余额</span> <span className="font-semibold text-neutral-900">{model.availableBalance}</span></div>
+            <div><span className="text-neutral-600">累计消费</span> <span className="font-semibold text-neutral-900">{model.totalCost}</span></div>
+            <div><span className="text-neutral-600">待结算</span> <span className="font-semibold text-neutral-900">{model.pendingCost}</span></div>
+            <div><span className="text-neutral-600">流水记录</span> <span className="font-semibold text-neutral-900">{model.billingRecords.length}</span></div>
+          </div>
         </div>
       </div>
 
@@ -331,19 +275,6 @@ export function BillingAudit() {
             <div className="text-xs text-neutral-500 mt-1">T+1 精确账单核对</div>
           </Card>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
-        <Card className="p-4 border border-neutral-200">
-          <div className="text-sm text-neutral-600 mb-1">待结算</div>
-          <div className="text-2xl font-semibold text-neutral-900">{model.pendingCost}</div>
-          <div className="text-xs text-neutral-500 mt-1">运行中预扣，等待 T+1 精确账单校准</div>
-        </Card>
-        <Card className="p-4 border border-neutral-200">
-          <div className="text-sm text-neutral-600 mb-1">精确账单</div>
-          <div className="text-2xl font-semibold text-neutral-900">{model.exactCost}</div>
-          <div className="text-xs text-neutral-500 mt-1">来自 Portal 账本投影和本地对账摘要</div>
-        </Card>
       </div>
 
       {/* Workspace and Task Costs */}

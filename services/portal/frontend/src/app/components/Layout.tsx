@@ -61,7 +61,9 @@ export function Layout() {
       <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-neutral-200 bg-white flex flex-col md:flex-none">
         {/* Logo */}
         <div className="h-14 border-b border-neutral-200 flex items-center px-4">
-          <h1 className="font-semibold text-neutral-900">MedOPL Portal</h1>
+          <Link to="/overview" className="font-semibold text-neutral-900">
+            MedOPL Portal
+          </Link>
         </div>
 
         {/* Navigation */}
@@ -74,7 +76,7 @@ export function Layout() {
                   key={item.path}
                   to={item.path}
                   className={cn(
-                    "flex shrink-0 items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors md:shrink",
+                    "flex min-h-11 min-w-11 shrink-0 items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors md:shrink",
                     isActive
                       ? "bg-neutral-900 text-white"
                       : "text-neutral-700 hover:bg-neutral-100"
@@ -94,7 +96,7 @@ export function Layout() {
               <div className="space-y-1">
                 <button
                   onClick={() => setAdminExpanded(!adminExpanded)}
-                  className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-neutral-500 hover:text-neutral-700 transition-colors"
+                  className="flex min-h-11 w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold text-neutral-500 transition-colors hover:text-neutral-700"
                 >
                   <span>管理台</span>
                   {adminExpanded ? (
@@ -112,7 +114,7 @@ export function Layout() {
                           key={item.path}
                           to={item.path}
                           className={cn(
-                            "flex shrink-0 items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors md:shrink",
+                            "flex min-h-11 min-w-11 shrink-0 items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors md:shrink",
                             isActive
                               ? "bg-neutral-900 text-white"
                               : "text-neutral-700 hover:bg-neutral-100"
@@ -143,9 +145,9 @@ export function Layout() {
         {/* Top Bar */}
         <header className="h-14 border-b border-neutral-200 bg-white flex items-center justify-between gap-3 px-3 sm:px-6">
           <div className="min-w-0 flex items-center gap-4">
-            <h2 className="truncate text-lg font-semibold text-neutral-900">
+            <h1 className="truncate text-lg font-semibold text-neutral-900">
               {getPageTitle(location.pathname)}
-            </h2>
+            </h1>
           </div>
           <div className="flex shrink-0 items-center gap-1 sm:gap-2">
             <Button variant="ghost" size="sm" className="gap-2" disabled title="帮助中心暂未接入">

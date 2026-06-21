@@ -15,6 +15,8 @@ async function readJson(repoPath) {
 }
 
 const matrix = await readJson("contracts/medopl-portal-page-state-matrix.json");
+const interactionFlowContract = await readJson("contracts/medopl-portal-interaction-flow-contract.json");
+const uiQualityContract = await readJson("contracts/medopl-portal-ui-quality-contract.json");
 const productProfile = await readJson("contracts/medopl-product-profile.json");
 const routes = await readRepoFile("services/portal/frontend/src/app/routes.tsx");
 const layout = await readRepoFile("services/portal/frontend/src/app/components/Layout.tsx");
@@ -123,11 +125,19 @@ const consumedComponents = new Set([
   "BillingSummary",
   "ReadinessChecklist",
 ]);
+const mappingByComponent = new Map(grammar.figma_code_mapping.map((mapping) => [mapping.code_component, mapping]));
 for (const component of ["ResourceStatusCard", "PlanCard", "StorageInventoryPanel", "BillingSummary", "ReadinessChecklist", "ReleaseConfirmDialog", "OpsQueueTable"]) {
   const spec = grammar.component_grammar.find((item) => item.name === component);
   assert(spec, `portal_component_grammar_missing:${component}`);
   assert(spec.figma_component, `portal_component_figma_component_missing:${component}`);
   assert(spec.code_component, `portal_component_code_component_missing:${component}`);
+  assert(mappingByComponent.has(spec.code_component), `portal_figma_code_mapping_missing:${spec.code_component}`);
+  const mapping = mappingByComponent.get(spec.code_component);
+  assert.equal(mapping.figma_component, spec.figma_component, `portal_figma_code_mapping_figma_mismatch:${component}`);
+  assert.equal(mapping.variant_prop, "status", `portal_figma_code_mapping_variant_prop_mismatch:${component}`);
+  for (const state of requiredComponentStates) {
+    assert(mapping.allowed_values.includes(state), `portal_figma_code_mapping_state_missing:${component}:${state}`);
+  }
   if (consumedComponents.has(component)) {
     assert(
       resourceControlComponents.includes(`function ${spec.code_component}`) ||
@@ -157,6 +167,9 @@ assert.equal(
   false,
   "portal_runtime_release_dialog_must_wait_for_release_mutation_owner",
 );
+const releaseSpec = grammar.component_grammar.find((item) => item.name === "ReleaseConfirmDialog");
+assert.equal(releaseSpec?.implementation_state, "partial_fail_closed_pending_release_mutation", "release_dialog_contract_must_mark_partial_state");
+assert.equal(releaseSpec?.claimable, false, "release_dialog_must_not_be_claimable_before_mutation_owner");
 
 for (const visualRule of [
   "customer_pages_max_width",
@@ -167,6 +180,51 @@ for (const visualRule of [
 ]) {
   assert(grammar.visual_grammar[visualRule], `portal_visual_grammar_rule_missing:${visualRule}`);
 }
+assert.equal(grammar.visual_grammar.billing_first_view_layout, "billing_summary_status_band_then_ledger_details", "billing_first_view_layout_contract_missing");
+assert.equal(grammar.visual_grammar.billing_first_view_extra_kpi_cards_max, 0, "billing_first_view_extra_kpi_budget_must_be_zero");
+assert.equal(grammar.visual_grammar.required_h1_owner, "page_content", "portal_h1_owner_must_be_page_content");
+assert.equal(grammar.visual_grammar.logo_heading_allowed, false, "portal_logo_must_not_own_h1");
+assert.equal(grammar.visual_grammar.mobile_touch_target_min_px, 44, "portal_touch_target_min_must_be_44");
+assert.equal(grammar.visual_grammar.card_radius_max_px, 8, "portal_card_radius_max_must_be_8");
+
+for (const page of matrix.medopl_portal_page_state_matrix.pages) {
+  assert(page.first_view_card_budget, `portal_page_first_view_card_budget_missing:${page.id}`);
+  assert.equal(page.required_h1_owner, "page_content", `portal_page_h1_owner_mismatch:${page.id}`);
+  assert.equal(page.mobile_touch_target_min_px, 44, `portal_page_mobile_touch_target_mismatch:${page.id}`);
+}
+const billingPage = matrix.medopl_portal_page_state_matrix.pages.find((page) => page.id === "usage_billing");
+assert.equal(billingPage?.first_view_layout, "billing_summary_status_band_then_ledger_details", "billing_page_layout_contract_missing");
+assert.equal(billingPage?.first_view_card_budget?.extra_kpi_cards, 0, "billing_page_extra_kpi_budget_must_be_zero");
+
+assert.equal(uiQualityContract.medopl_portal_ui_quality_contract.touch_target.min_px, 44, "ui_quality_touch_target_min_mismatch");
+assert.equal(uiQualityContract.medopl_portal_ui_quality_contract.card.radius_max_px, 8, "ui_quality_card_radius_mismatch");
+assert.equal(uiQualityContract.medopl_portal_ui_quality_contract.semantic_heading.logo_h1_allowed, false, "ui_quality_logo_h1_mismatch");
+assert.equal(uiQualityContract.medopl_portal_ui_quality_contract.billing.first_view_extra_kpi_cards_max, 0, "ui_quality_billing_kpi_budget_mismatch");
+
+const flowById = new Map(interactionFlowContract.medopl_portal_interaction_flow_contract.flows.map((flow) => [flow.id, flow]));
+for (const flowId of [
+  "open_compute_resource",
+  "purchase_or_upgrade_plan",
+  "bind_provider_key",
+  "enter_opl",
+  "upload_workspace_file",
+  "download_workspace_file",
+  "export_billing",
+  "release_compute_resource",
+]) {
+  const flow = flowById.get(flowId);
+  assert(flow, `portal_interaction_flow_missing:${flowId}`);
+  assert(flow.entry_route, `portal_interaction_flow_entry_route_missing:${flowId}`);
+  assert(flow.primary_action, `portal_interaction_flow_primary_action_missing:${flowId}`);
+  assert(flow.backend_api, `portal_interaction_flow_backend_api_missing:${flowId}`);
+  assert(flow.states, `portal_interaction_flow_states_missing:${flowId}`);
+  for (const state of ["loading", "empty", "blocked", "failed", "success"]) {
+    assert(flow.states[state], `portal_interaction_flow_state_missing:${flowId}:${state}`);
+  }
+  assert(Array.isArray(flow.consumer_tests) && flow.consumer_tests.length > 0, `portal_interaction_flow_consumer_tests_missing:${flowId}`);
+}
+assert.equal(flowById.get("release_compute_resource")?.implementation_state, "partial_fail_closed_pending_release_mutation", "release_flow_partial_state_missing");
+assert.equal(flowById.get("release_compute_resource")?.claimable, false, "release_flow_must_not_be_claimable");
 
 for (const layer of ["contract", "component_state", "interaction", "visual"]) {
   assert(grammar.eval_layers.includes(layer), `portal_eval_layer_missing:${layer}`);
