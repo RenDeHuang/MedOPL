@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/v22-phase2-portal-ui-secondary-development`
-- latest landed commit: `951fd5a501642834927b3c7b64a15660c1652f5f`
+- latest landed branch: `feat/v22-phase3-cloud-deploy-shape`
+- latest landed commit: `pending until landed`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
@@ -33,6 +33,7 @@ History 只保留短索引：
 - cloud goal preflight gate: `feat/v22-cloud-goal-preflight` / `93771d950b9838302621010125d1487136c6feb2` adds `cloud:goal:preflight` as a safe Goal A-F readiness check for required env, path and external runner inputs. It does not read secrets, call cloud APIs, write `.runtime` evidence or satisfy production owner receipts.
 - Portal UI grammar and bias gates: `feat/v22-portal-ui-grammar-and-bias-gates` / `a783cc24d15ee15b502a64fa9ae2adc7083897d8` folds MedOPL resource-control UI grammar, semantic tokens, Figma-code mapping and user-surface bias guards into existing `DESIGN.md`, page-state contract, theme tokens and current frontend/regression lanes. It adds no docs files, top-level scripts, health tests, Storybook or Figma/raw evidence.
 - Portal resource-control UI secondary development: `feat/v22-phase2-portal-ui-secondary-development` / `951fd5a501642834927b3c7b64a15660c1652f5f` adds repo-native resource-control components to Portal pages for runtime, plans, storage and billing/audit projections, keeps release mutation as future/disabled, and folds verification into existing frontend/regression/run-plan/landing gates. It adds no docs files, top-level scripts, health tests, Figma dumps, screenshots or raw evidence.
+- Cloud deploy shape run verification: `feat/v22-phase3-cloud-deploy-shape` / `pending until landed` uses existing deploy manifest, GitHub rollout workflow, release image workflow, rollout helper and cloud shape gates to prove cloud-deployable shape only. It does not read secrets, call Tencent Cloud, run kubectl, build/push images, deploy, live-test or satisfy production owner receipts.
 
 ## Tombstone Map
 
