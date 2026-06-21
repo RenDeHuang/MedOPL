@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/v22-goal-c-storage-lifecycle-receipts`
-- latest landed commit: `a044b87b0034d11b704fed36925d614b69b59cf0`
+- latest landed branch: `feat/v22-goal-d-runtime-provisioning-receipt`
+- latest landed commit: `f3644aeb2c7e736da87297762d86639ca98779b5`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`

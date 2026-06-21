@@ -31,11 +31,13 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "feat/v22-goal-c-storage-lifecycle-receipts",
-    "landed_commit": "a044b87b0034d11b704fed36925d614b69b59cf0",
+    "branch": "feat/v22-goal-d-runtime-provisioning-receipt",
+    "landed_commit": "f3644aeb2c7e736da87297762d86639ca98779b5",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
-      "V22_TENCENT_STORAGE_USE_COS_SDK=1 V22_TENCENT_STORAGE_DELETE_PROBE=1 npm run cloud:goal -- --operation storage_lifecycle passed",
+      "npm run cloud:goal:preflight passed",
+      "node tests/support/cloud-prework/production-goal-command-runner.mjs --operation tenant_runtime_provisioning --check-config passed",
+      "V22_TENCENT_RUNTIME_USE_OFFICIAL_SDK=1 npm run cloud:goal -- --operation tenant_runtime_provisioning passed and wrote runtime_owner_receipt pointer",
       "npm run test:cloud passed",
       "npm run verify passed",
       "npm run test:contract passed",
@@ -43,7 +45,7 @@
       "npm run repo:bloat passed",
       "npm run line:budget passed",
       "npm run check:diff passed",
-      "npm run verify:cloud-release-candidate failed closed as expected because the complete receipt manifest is still missing runtime/billing/audit/OPL-Webui/deploy receipts and lifecycle sections"
+      "npm run verify:cloud-release-candidate failed closed as expected because complete production receipt manifest is still missing billing/audit/OPL-Webui/deploy receipts and lifecycle sections"
     ],
     "plan_completion_audit": {
       "functional": "done",
@@ -55,10 +57,10 @@
     },
     "cleanup_result": {
       "deleted": "none",
-      "folded": "Goal C storage lifecycle result into active/history/machine cursor with redacted .runtime pointer only",
-      "retained": "raw storage lifecycle phase evidence and owner receipt pointers remain ignored under .runtime",
-      "reason": "Goal C proves COS workspace storage lifecycle and storage/release owner receipts only, not production completion",
-      "next": "Goal D/E/F real runner receipts"
+      "folded": "Goal D runtime provisioning result into active/history/machine cursor with redacted .runtime pointer only",
+      "retained": "raw runtime provisioning phase evidence and runtime owner receipt pointer remain ignored under .runtime",
+      "reason": "Goal D proves TKE runtime foundation observation and runtime owner receipt only, not workload deploy or production completion",
+      "next": "Goal E/F real runner receipts"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "opl-webui-runtime-production-slice"
@@ -73,7 +75,7 @@
     "default_cloud_verification_is_limited_to_readonly_inventory_dry_run_plan_and_tke_bootstrap_preflight_before_production_receipts",
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth"
   ],
-  "current_problem": "MedOPL current truth is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is feat/v22-goal-c-storage-lifecycle-receipts at a044b87b0034d11b704fed36925d614b69b59cf0, which allows feature branch push and gated trunk merge/push after fresh landing evidence without weakening cloud, secret, deploy or receipt requirements. The active blocker remains the opl-webui-runtime-production-slice proof ladder: first proof may only claim real local product RC, cloud proof may only claim cloud-deployable RC, and production proof requires explicit authorization plus runtime/storage/billing/audit/release owner receipts. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims require the active machine authorization pack plus runner/report evidence. The authorization pack now maps Goal A-F operation classes through the single cloud:goal package script with --operation <operation_class>; cloud:goal:preflight remains the safe readiness-only entrypoint. Goal A readonly inventory has executed with a user-provided secret-file and redacted .runtime pointer evidence; Goal C storage lifecycle has executed with authorized COS PutObject/HeadObject/DeleteObject probe and accepted storage/release owner receipt pointers; Goal D tenant runtime provisioning has executed through the authorized TKE runner and accepted runtime_owner_receipt pointer after observing the configured cluster and node pool; Goal B dry-run plan can produce local no-cloud deployment pointers; Goal E-F fail closed until required env, runner path, accepted receipt status, redacted pointer evidence and owner receipt output exist. verify:cloud-release-candidate is active but fail-closed because Goal A/C/D single-operation receipt pointers do not replace the complete receipt manifest; the gate still requires all lifecycle sections and the remaining billing/audit/OPL-Webui/deploy owner receipts. Production complete is not claimed. Phase 3 reused existing deploy manifest, GitHub rollout workflow, release image workflow, rollout helper and cloud shape gate to verify cloud-deployable shape only. Phase 4 GitHub/TKE external preconditions are externally confirmed: GitHub workflows are active, the self-hosted Tencent runner is online with self-hosted/Linux/X64/tencent-cloud/medopl labels, the production environment exists, TKE node 10.66.0.42 is Ready with medopl.cn/workload=medopl and medopl.cn/webui=true labels, and namespace medopl is Active. The dry-run proof, external precondition proof and Goal D TKE observation do not call kubectl, deploy workloads, build/push images, live-test, write complete receipt manifests or satisfy production receipts; verify:cloud-release-candidate remains fail-closed until seven owner receipts and lifecycle sections exist. The latest landed closeout is feat/v22-goal-c-storage-lifecycle-receipts at a044b87b0034d11b704fed36925d614b69b59cf0.",
+  "current_problem": "MedOPL current truth is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is feat/v22-goal-d-runtime-provisioning-receipt at f3644aeb2c7e736da87297762d86639ca98779b5, which allows feature branch push and gated trunk merge/push after fresh landing evidence without weakening cloud, secret, deploy or receipt requirements. The active blocker remains the opl-webui-runtime-production-slice proof ladder: first proof may only claim real local product RC, cloud proof may only claim cloud-deployable RC, and production proof requires explicit authorization plus runtime/storage/billing/audit/release owner receipts. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims require the active machine authorization pack plus runner/report evidence. The authorization pack now maps Goal A-F operation classes through the single cloud:goal package script with --operation <operation_class>; cloud:goal:preflight remains the safe readiness-only entrypoint. Goal A readonly inventory has executed with a user-provided secret-file and redacted .runtime pointer evidence; Goal C storage lifecycle has executed with authorized COS PutObject/HeadObject/DeleteObject probe and accepted storage/release owner receipt pointers; Goal D tenant runtime provisioning has executed through the authorized TKE runner and accepted runtime_owner_receipt pointer after observing the configured cluster and node pool; Goal B dry-run plan can produce local no-cloud deployment pointers; Goal E-F fail closed until required env, runner path, accepted receipt status, redacted pointer evidence and owner receipt output exist. verify:cloud-release-candidate is active but fail-closed because Goal A/C/D single-operation receipt pointers do not replace the complete receipt manifest; the gate still requires all lifecycle sections and the remaining billing/audit/OPL-Webui/deploy owner receipts. Production complete is not claimed. Phase 3 reused existing deploy manifest, GitHub rollout workflow, release image workflow, rollout helper and cloud shape gate to verify cloud-deployable shape only. Phase 4 GitHub/TKE external preconditions are externally confirmed: GitHub workflows are active, the self-hosted Tencent runner is online with self-hosted/Linux/X64/tencent-cloud/medopl labels, the production environment exists, TKE node 10.66.0.42 is Ready with medopl.cn/workload=medopl and medopl.cn/webui=true labels, and namespace medopl is Active. The dry-run proof, external precondition proof and Goal D TKE observation do not call kubectl, deploy workloads, build/push images, live-test, write complete receipt manifests or satisfy production receipts; verify:cloud-release-candidate remains fail-closed until seven owner receipts and lifecycle sections exist. The latest landed closeout is feat/v22-goal-d-runtime-provisioning-receipt at f3644aeb2c7e736da87297762d86639ca98779b5.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -531,9 +533,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/v22-goal-c-storage-lifecycle-receipts",
+  "last_landed_branch": "feat/v22-goal-d-runtime-provisioning-receipt",
   "last_landed_at": "2026-06-21",
-  "history_latest_branch": "feat/v22-goal-c-storage-lifecycle-receipts",
+  "history_latest_branch": "feat/v22-goal-d-runtime-provisioning-receipt",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -825,6 +827,6 @@
       "consumer_canary"
     ]
   },
-  "base_trunk_head": "a044b87b0034d11b704fed36925d614b69b59cf0",
-  "last_landed_commit": "a044b87b0034d11b704fed36925d614b69b59cf0"
+  "base_trunk_head": "f3644aeb2c7e736da87297762d86639ca98779b5",
+  "last_landed_commit": "f3644aeb2c7e736da87297762d86639ca98779b5"
 }
