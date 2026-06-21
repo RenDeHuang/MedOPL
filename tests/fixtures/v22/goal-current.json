@@ -33,17 +33,15 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "chore/v22-goal-f-cloud-rc-closeout",
+    "branch": "chore/v22-goal-f-trunk-run-closeout",
     "landed_commit": "db25f3405ca3711e628dc19bbaed720a8e60941a",
     "landing_gate_result": "passed / ff-only landed / pushed after Goal F wiring and CI self-contained fixes",
     "post_push_verification": [
-      "Goal F runner wiring is on trunk via feat/v22-goal-f-production-receipt-manifest / 90a89b75b2a4613719ce9c424367fb35ed51495c.",
-      "GitHub Release Image run 27908370667 succeeded on Goal F head and built/pushed through the authorized build_push runner.",
-      "GitHub Cloud Rollout run 27908384471 succeeded on Goal F head with production apply, runtime/storage/billing-audit/kubectl/deploy/live-test receipt lanes, production receipt manifest, Cloud release candidate verify, and uploaded redacted receipt manifest artifact.",
-      "Current trunk db25f3405ca3711e628dc19bbaed720a8e60941a has v22 verify success in GitHub run 27909015808 after CI self-contained fixes.",
-      "Local npm run verify passed on trunk.",
-      "Local npm run verify:cloud-release-candidate fails closed when .runtime receipt-manifest.json is absent, as intended.",
-      "After downloading the redacted receipt-manifest artifact from run 27908384471 into .runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json, npm run verify:cloud-release-candidate passed locally.",
+      "Goal F runner wiring is on trunk via feat/v22-goal-f-production-receipt-manifest / 90a89b75b2a4613719ce9c424367fb35ed51495c and closeout docs are on trunk via chore/v22-goal-f-trunk-run-closeout / 037851cc0e101346e147c73e1bce90a388cdd896.",
+      "GitHub Release Image run 27910619863 succeeded on current trunk 037851cc0e101346e147c73e1bce90a388cdd896 and built/pushed image tag 037851c through the authorized build_push runner.",
+      "GitHub Cloud Rollout run 27910639805 succeeded on current trunk 037851cc0e101346e147c73e1bce90a388cdd896 with production apply, runtime/storage/billing-audit/kubectl/deploy/live-test receipt lanes, production receipt manifest, Cloud release candidate verify, and uploaded redacted receipt manifest artifact.",
+      "After downloading the redacted receipt-manifest artifact from run 27910639805 into .runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json, npm run verify:cloud-release-candidate passed locally.",
+      "npm run verify, npm run test:contract, npm run gate:review, npm run test:run-plan, npm run repo:bloat and npm run line:budget passed for the closeout changes.",
       "This closeout records cloud release candidate evidence only; it does not claim production complete, multi-region production, SLA, compliance, or full OPL-Webui login/runtime-required/upload/run/artifact/release E2E."
     ],
     "plan_completion_audit": {
@@ -56,7 +54,7 @@
     },
     "cleanup_result": {
       "deleted": "none",
-      "folded": "Goal F cloud release candidate wiring and remote redacted receipt-manifest evidence into active/history/machine cursor without committing raw evidence.",
+      "folded": "Current trunk Release Image and Cloud Rollout run ids plus redacted receipt-manifest artifact pointer into active/history/machine cursor without committing raw evidence.",
       "retained": "raw workflow evidence and receipt manifest remain outside git as GitHub Actions artifact / .runtime pointer evidence",
       "reason": "Goal F proves cloud release candidate gate can pass with the complete redacted receipt manifest, but does not prove production complete or the full product E2E user flow.",
       "next": "Goal G full OPL-Webui runtime-required product E2E canary"
@@ -74,7 +72,7 @@
     "default_cloud_verification_is_limited_to_readonly_inventory_dry_run_plan_and_tke_bootstrap_preflight_before_production_receipts",
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth"
   ],
-  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is chore/v22-goal-f-cloud-rc-closeout at db25f3405ca3711e628dc19bbaed720a8e60941a, after Goal F cloud release candidate wiring landed in feat/v22-goal-f-production-receipt-manifest at 90a89b75b2a4613719ce9c424367fb35ed51495c and CI self-contained fixes landed on trunk. Goal A readonly inventory, Goal C storage lifecycle, Goal D tenant runtime provisioning, Goal E OPL-Webui HTTPS consumer canary, and Goal F build_push / kubectl / deploy / billing_audit_writeback / live_test receipt lanes have remote authorized workflow evidence. GitHub Release Image run 27908370667 succeeded on Goal F head; GitHub Cloud Rollout run 27908384471 succeeded on Goal F head and uploaded a redacted receipt-manifest artifact with seven owner receipts and all lifecycle sections; GitHub v22 verify run 27909015808 succeeded on current trunk db25f3405ca3711e628dc19bbaed720a8e60941a. Local verify passes; local verify:cloud-release-candidate is intentionally evidence-dependent and passes only when the redacted receipt-manifest artifact is present under .runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json. This allows a cloud release candidate claim only, not production complete. The remaining vision gap is the full OPL-Webui product E2E canary: login/session -> runtime_required -> MedOPL runtime/storage open -> upload -> fileRef -> run -> artifact -> billing/audit -> release/stop billing -> optional storage destroy, with raw evidence kept outside git.",
+  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is chore/v22-goal-f-trunk-run-closeout at db25f3405ca3711e628dc19bbaed720a8e60941a, after Goal F cloud release candidate wiring landed in feat/v22-goal-f-production-receipt-manifest at 90a89b75b2a4613719ce9c424367fb35ed51495c and CI self-contained fixes landed on trunk. Goal A readonly inventory, Goal C storage lifecycle, Goal D tenant runtime provisioning, Goal E OPL-Webui HTTPS consumer canary, and Goal F build_push / kubectl / deploy / billing_audit_writeback / live_test receipt lanes have remote authorized workflow evidence. GitHub Release Image run 27910619863 succeeded on current trunk; GitHub Cloud Rollout run 27910639805 succeeded on current trunk and uploaded a redacted receipt-manifest artifact with seven owner receipts and all lifecycle sections; GitHub v22 verify run 27909015808 succeeded on current trunk db25f3405ca3711e628dc19bbaed720a8e60941a. Local verify passes; local verify:cloud-release-candidate is intentionally evidence-dependent and passes only when the redacted receipt-manifest artifact is present under .runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json. This allows a cloud release candidate claim only, not production complete. The remaining vision gap after current trunk cloud RC is the full OPL-Webui product E2E canary: login/session -> runtime_required -> MedOPL runtime/storage open -> upload -> fileRef -> run -> artifact -> billing/audit -> release/stop billing -> optional storage destroy, with raw evidence kept outside git.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -319,8 +317,8 @@
       "Then run canary / QA / status update with redacted evidence outside git"
     ],
     "readinessGaps": [
-      "Current trunk should be rerun through Release Image and Cloud Rollout so the latest cloud RC evidence is bound to db25f3405ca3711e628dc19bbaed720a8e60941a rather than only the Goal F feature head.",
-      "Full OPL-Webui runtime-required product E2E canary is not yet proven beyond public HTTPS availability and owner receipt manifest."
+      "Full OPL-Webui runtime-required product E2E canary is not yet proven beyond public HTTPS availability and owner receipt manifest.",
+      "Need canary credentials/session and test workspace/providerKeyRef to exercise login/session, runtime gate, upload, fileRef, run, artifact, billing/audit, release/stop billing and optional storage destroy."
     ],
     "external_preconditions": {
       "github": {
@@ -503,11 +501,11 @@
       ]
     },
     "goal_f_cloud_release_candidate": {
-      "status": "remote_workflow_succeeded_manifest_artifact_required_for_local_gate",
+      "status": "current_trunk_workflows_succeeded_manifest_artifact_required_for_local_gate",
       "feature_commit": "90a89b75b2a4613719ce9c424367fb35ed51495c",
-      "trunk_commit_with_ci_fixes": "db25f3405ca3711e628dc19bbaed720a8e60941a",
-      "release_image_run_id": "27908370667",
-      "cloud_rollout_run_id": "27908384471",
+      "trunk_commit_with_ci_fixes": "037851cc0e101346e147c73e1bce90a388cdd896",
+      "release_image_run_id": "27910619863",
+      "cloud_rollout_run_id": "27910639805",
       "v22_verify_run_id": "27909015808",
       "receipt_manifest_artifact": "medopl-production-receipt-manifest",
       "receipt_manifest_ref": ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json",
@@ -594,9 +592,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "chore/v22-goal-f-cloud-rc-closeout",
+  "last_landed_branch": "chore/v22-goal-f-trunk-run-closeout",
   "last_landed_at": "2026-06-21",
-  "history_latest_branch": "chore/v22-goal-f-cloud-rc-closeout",
+  "history_latest_branch": "chore/v22-goal-f-trunk-run-closeout",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -829,8 +827,8 @@
     "cannot_claim": "cloud online, production complete, production owner receipt, production runtime, real cloud, real billing, deploy, kubectl, build/push or live provider readiness"
   },
   "readinessGaps": [
-    "Rerun Release Image and Cloud Rollout from current trunk db25f3405ca3711e628dc19bbaed720a8e60941a and retain only redacted receipt-manifest pointer/artifact metadata.",
-    "Implement and run full OPL-Webui runtime-required product E2E canary with login/session, runtime gate, upload, fileRef, run, artifact, billing/audit, release/stop billing and optional storage destroy."
+    "Implement and run full OPL-Webui runtime-required product E2E canary with login/session, runtime gate, upload, fileRef, run, artifact, billing/audit, release/stop billing and optional storage destroy.",
+    "Keep canary credentials/session, uploaded files, runtime artifacts and raw evidence outside git; commit only contract/test/source changes and small redacted pointers."
   ],
   "nextAuthorizationPrompt": {
     "target": "cloud-codex",
@@ -839,7 +837,7 @@
   },
   "nextLocalCodexPrompt": {
     "target": "local-codex",
-    "prompt": "进入 Goal G：先在当前 trunk 重新触发 Release Image 和 Cloud Rollout，确认 redacted receipt manifest artifact 可使 verify:cloud-release-candidate 通过；随后实现完整 OPL-Webui runtime_required 产品 E2E canary。不得提交 raw evidence、secret、kubeconfig、cloud payload、runtime artifact 或用户上传文件。"
+    "prompt": "进入 Goal G：实现完整 OPL-Webui runtime_required 产品 E2E canary。需要 canary 账号/session 或测试 token、测试 workspace/providerKeyRef，并通过 MedOPL runtime gate 验证 upload/fileRef/run/artifact/billing-audit/release-stop-billing/optional storage destroy。不得提交 raw evidence、secret、kubeconfig、cloud payload、runtime artifact 或用户上传文件。"
   },
   "cloud_deploy_readiness_contract_ref": {
     "schema_version": 1,
