@@ -20,6 +20,11 @@ const routes = await readRepoFile("services/portal/frontend/src/app/routes.tsx")
 const layout = await readRepoFile("services/portal/frontend/src/app/components/Layout.tsx");
 const designSource = await readRepoFile("DESIGN.md");
 const themeSource = await readRepoFile("services/portal/frontend/src/styles/theme.css");
+const resourceControlComponents = await readRepoFile("services/portal/frontend/src/app/components/ResourceControlComponents.tsx");
+const runtimeEnvironmentPage = await readRepoFile("services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx");
+const packagesPurchasePage = await readRepoFile("services/portal/frontend/src/app/pages/PackagesPurchase.tsx");
+const workspacePage = await readRepoFile("services/portal/frontend/src/app/pages/Workspace.tsx");
+const billingAuditPage = await readRepoFile("services/portal/frontend/src/app/pages/BillingAudit.tsx");
 
 const routeMarkers = new Map([
   ["resource_overview", ["Overview", "/overview"]],
@@ -111,16 +116,47 @@ for (const token of ["resource.active", "resource.blocked", "billing.warning", "
 }
 
 const requiredComponentStates = ["loading", "empty", "ready", "blocked", "failed", "pending", "released", "protected"];
-for (const component of ["ResourceStatusCard", "PlanCard", "StorageInventoryPanel", "BillingSummary", "ReadinessChecklist"]) {
+const consumedComponents = new Set([
+  "ResourceStatusCard",
+  "PlanCard",
+  "StorageInventoryPanel",
+  "BillingSummary",
+  "ReadinessChecklist",
+]);
+for (const component of ["ResourceStatusCard", "PlanCard", "StorageInventoryPanel", "BillingSummary", "ReadinessChecklist", "ReleaseConfirmDialog", "OpsQueueTable"]) {
   const spec = grammar.component_grammar.find((item) => item.name === component);
   assert(spec, `portal_component_grammar_missing:${component}`);
   assert(spec.figma_component, `portal_component_figma_component_missing:${component}`);
   assert(spec.code_component, `portal_component_code_component_missing:${component}`);
+  if (consumedComponents.has(component)) {
+    assert(
+      resourceControlComponents.includes(`function ${spec.code_component}`) ||
+        resourceControlComponents.includes(`const ${spec.code_component}`),
+      `portal_code_component_export_missing:${spec.code_component}`,
+    );
+  }
   assert(Array.isArray(spec.props) && spec.props.length > 0, `portal_component_props_missing:${component}`);
   for (const state of requiredComponentStates) {
     assert(spec.states.includes(state), `portal_component_state_missing:${component}:${state}`);
   }
 }
+
+for (const [pageName, pageSource, components] of [
+  ["RuntimeEnvironment", runtimeEnvironmentPage, ["ResourceStatusCard", "PlanCard", "ReadinessChecklist"]],
+  ["PackagesPurchase", packagesPurchasePage, ["PlanCard", "BillingSummary"]],
+  ["Workspace", workspacePage, ["StorageInventoryPanel"]],
+  ["BillingAudit", billingAuditPage, ["BillingSummary"]],
+]) {
+  for (const component of components) {
+    assert(pageSource.includes(component), `portal_page_component_consumption_missing:${pageName}:${component}`);
+  }
+}
+
+assert.equal(
+  runtimeEnvironmentPage.includes("ReleaseConfirmDialog"),
+  false,
+  "portal_runtime_release_dialog_must_wait_for_release_mutation_owner",
+);
 
 for (const visualRule of [
   "customer_pages_max_width",

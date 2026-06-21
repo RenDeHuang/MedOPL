@@ -17,6 +17,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { useBillingAuditModel } from "../data/portalBillingAuditModel";
+import { BillingSummary } from "../components/ResourceControlComponents";
 
 type PageState = "ready" | "empty-ledger" | "no-current-cost";
 
@@ -208,6 +209,15 @@ export function BillingAudit() {
       {/* Financial Metrics */}
       <div className="mb-8">
         <h2 className="font-semibold text-neutral-900 mb-4">资金摘要</h2>
+        <div className="mb-4">
+          <BillingSummary
+            status={canStartPaidRun ? "ready" : "blocked"}
+            balance={model.balance}
+            freeze={model.frozenAmount}
+            usage={model.todayCost}
+            auditState={billingStateLabel}
+          />
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <Card className="p-4 border border-neutral-200">
             <div className="flex items-center justify-between mb-2">

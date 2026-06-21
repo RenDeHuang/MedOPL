@@ -3,6 +3,11 @@ import { Alert, AlertDescription, Badge, Button, Card, cn, Dialog, DialogContent
 import { Link } from "react-router";
 import { AlertCircle, Check, HardDrive, Server, Shield, Zap } from "lucide-react";
 import { activateRuntimeEnvironmentPlan, useRuntimeEnvironmentModel } from "../data/portalRuntimeEnvironmentModel";
+import {
+  PlanCard,
+  ReadinessChecklist,
+  ResourceStatusCard,
+} from "../components/ResourceControlComponents";
 
 type ServiceStatus = "not_activated" | "active";
 
@@ -50,32 +55,53 @@ export function RuntimeEnvironment() {
           <Badge variant="outline" className="bg-neutral-100 text-neutral-600 border-neutral-200 text-sm px-3 py-1">未开通</Badge>
           <p className="text-sm text-neutral-600 mt-3">套餐开通走 MedOPL plan catalog，不提供云资源调整动作。</p>
         </div>
+        <div className="mb-6">
+          <ResourceStatusCard
+            status="empty"
+            title="当前 workspace 尚未开通 Runtime"
+            spec="选择一个 MedOPL 套餐后，平台会为当前 OPL workspace 开通计算资源和存储空间。"
+            receiptState={model.subscription.status}
+            primaryAction={<Button onClick={() => setShowConfirmDialog(true)}>开通服务</Button>}
+            metrics={[
+              { label: "工作空间", value: model.workspaceId || "未返回" },
+              { label: "实验室权益", value: model.entitlement.entitlement.message || "未返回" },
+              { label: "价格状态", value: "待审批" },
+              { label: "存储策略", value: "随套餐开通" },
+            ]}
+          />
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {model.plans.map((plan) => (
-            <Card key={plan.id} className={cn("border-2 cursor-pointer transition-all", selectedPlan === plan.id ? "border-neutral-900 shadow-md" : "border-neutral-200 hover:border-neutral-300")} onClick={() => setSelectedPlan(plan.id)}>
-              {plan.recommended && <div className="px-5 py-2 bg-neutral-900 text-white text-xs font-medium">推荐套餐</div>}
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-neutral-900">{plan.name}</h3>
-                    <p className="text-sm text-neutral-600 mt-1">{plan.description}</p>
-                  </div>
-                  {selectedPlan === plan.id && <div className="w-5 h-5 rounded-full bg-neutral-900 flex items-center justify-center"><Check className="w-3 h-3 text-white" /></div>}
-                </div>
-                <div className="mb-4">
-                  <div className="text-xl font-semibold text-neutral-900">价格待审批</div>
-                  <div className="text-xs text-neutral-500 mt-1">{plan.priceLabel || "正式售价未定价"}</div>
-                </div>
-                <div className="space-y-2 text-sm text-neutral-700 mb-5">
-                  <div className="flex justify-between"><span className="text-neutral-600">计算资源</span><span className="font-medium">{plan.cpu} 核 {plan.memory} GB</span></div>
-                  <div className="flex justify-between"><span className="text-neutral-600">存储空间</span><span className="font-medium">{plan.storage} GB</span></div>
-                  <div className="flex justify-between"><span className="text-neutral-600">并发任务</span><span className="font-medium">最多 {plan.concurrent} 个</span></div>
-                </div>
-                <Button className="w-full" disabled={activationPending} onClick={(e) => { e.stopPropagation(); setShowConfirmDialog(true); }}>{activationPending ? "开通中..." : "开通服务"}</Button>
-              </div>
-            </Card>
+            <PlanCard
+              key={plan.id}
+              planId={plan.id}
+              title={plan.name}
+              description={plan.description}
+              selected={selectedPlan === plan.id}
+              recommended={plan.recommended}
+              priceState={plan.priceLabel || "正式售价未定价"}
+              computeSpec={`${plan.cpu} 核 / ${plan.memory} GB`}
+              storageSize={`${plan.storage} GB`}
+              taskConcurrency={`并发任务最多 ${plan.concurrent} 个`}
+              purchaseState={selectedPlan === plan.id ? "ready" : "empty"}
+              action={
+                <Button className="w-full" disabled={activationPending} onClick={() => { setSelectedPlan(plan.id); setShowConfirmDialog(true); }}>
+                  {activationPending ? "开通中..." : selectedPlan === plan.id ? "开通服务" : "选择并开通"}
+                </Button>
+              }
+            />
           ))}
         </div>
+        <ReadinessChecklist
+          status="pending"
+          items={[
+            { label: "工作空间归属", detail: model.workspaceId || "使用当前登录账户的 OPL workspace", state: model.workspaceId ? "ready" : "pending" },
+            { label: "套餐选择", detail: current.name, state: "ready" },
+            { label: "价格审批", detail: current.priceLabel || "正式售价未定价", state: current.pendingProductApproval ? "pending" : "ready" },
+            { label: "计费边界", detail: "开通后按已审批合同计费，真实扣费以后端账本为准。", state: "protected" },
+          ]}
+          primaryAction={<Button onClick={() => setShowConfirmDialog(true)} disabled={activationPending}>{activationPending ? "开通中..." : "确认开通所选套餐"}</Button>}
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <Card className="border border-neutral-200 p-4">
             <div className="text-xs text-neutral-600 mb-1">当前订阅状态</div>
@@ -109,7 +135,7 @@ export function RuntimeEnvironment() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto">
-      <div className="mb-8 pb-8 border-b border-neutral-200 flex items-start justify-between">
+      <div className="mb-8 flex flex-col gap-4 border-b border-neutral-200 pb-8 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-neutral-900 mb-3">计算资源</h1>
           <div className="flex items-center gap-3">
@@ -119,6 +145,21 @@ export function RuntimeEnvironment() {
           <p className="text-sm text-neutral-600 mt-3">套餐开通走 MedOPL plan catalog，不提供云资源调整动作。</p>
         </div>
         <Button asChild variant="outline"><Link to="/billing">查看计费</Link></Button>
+      </div>
+      <div className="mb-8">
+        <ResourceStatusCard
+          status="ready"
+          title={model.currentPlanName}
+          spec={model.computeSpec}
+          receiptState={model.billingStatus}
+          primaryAction={<Button variant="outline" disabled>释放接入中</Button>}
+          metrics={[
+            { label: "存储空间", value: model.storageTotal, hint: `${model.storageUsed} 已用` },
+            { label: "可用空间", value: model.storageAvailable },
+            { label: "停止计费", value: model.releaseLifecycle.stopBillingStatus, hint: model.releaseLifecycle.stopBillingWindow },
+            { label: "审计状态", value: model.releaseLifecycle.auditStatus, hint: model.releaseLifecycle.auditPolicy },
+          ]}
+        />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <Card className="border border-neutral-200 p-4">
@@ -143,9 +184,9 @@ export function RuntimeEnvironment() {
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
             <h2 className="font-semibold text-neutral-900">释放与停止计费</h2>
-            <p className="text-sm text-neutral-600 mt-1">停止计费核对在 120 分钟内完成，存储空间独立保留。</p>
+            <p className="text-sm text-neutral-600 mt-1">真实释放 mutation 在后续云 runner phase 接入；当前只展示停止计费与存储保留规则。</p>
           </div>
-          <Badge variant="outline" className="bg-white text-neutral-700 border-neutral-200">T+1 审计</Badge>
+          <Badge variant="outline" className="bg-white text-neutral-700 border-neutral-200">接入中 / T+1 审计</Badge>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
           <div><div className="text-xs text-neutral-600 mb-1">释放状态</div><div className="font-semibold text-neutral-900">{model.releaseLifecycle.releaseStatus}</div></div>

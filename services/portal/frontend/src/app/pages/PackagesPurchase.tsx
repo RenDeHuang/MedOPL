@@ -1,7 +1,8 @@
 import { Link } from "react-router";
-import { ArrowRight, CheckCircle2, Cpu, HardDrive, Layers3, Receipt } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Badge, Button, Card } from "../components/ui/core";
 import { usePackagesPurchaseModel } from "../data/portalPackagesPurchaseModel";
+import { BillingSummary, PlanCard } from "../components/ResourceControlComponents";
 
 export function PackagesPurchase() {
   const query = usePackagesPurchaseModel();
@@ -37,7 +38,7 @@ export function PackagesPurchase() {
               </Badge>
             </div>
             <p className="text-neutral-600 text-sm max-w-2xl">
-              选择给 OPL 使用的计算资源、存储空间和任务并发。这里不展示云控制台配置。
+              选择给 OPL 使用的计算资源、存储空间和并发任务。这里不展示云控制台配置。
             </p>
           </div>
           <Button asChild className="gap-2">
@@ -72,53 +73,42 @@ export function PackagesPurchase() {
         </Card>
       </div>
 
+      <div className="mb-8">
+        <BillingSummary
+          status={model.balance > model.frozenAmount ? "ready" : "blocked"}
+          balance={`¥ ${model.balance.toFixed(2)}`}
+          freeze={`¥ ${model.frozenAmount.toFixed(2)}`}
+          usage={model.currentPackageName}
+          usageLabel="当前套餐"
+          auditState={model.subscription.status}
+        />
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {filteredPlans.map((plan) => {
           const current = plan.id === model.currentPackageId;
           return (
-            <Card key={plan.id} className="border border-neutral-200 overflow-hidden">
-              {plan.recommended && (
-                <div className="px-5 py-2 bg-neutral-900 text-white text-xs font-medium">推荐套餐</div>
-              )}
-              <div className="p-6">
-                <div className="flex items-start justify-between gap-4 mb-5">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <h2 className="text-lg font-semibold text-neutral-900">{plan.name}</h2>
-                      {current && <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">当前</Badge>}
-                    </div>
-                    <p className="text-sm text-neutral-600">{plan.description}</p>
-                  </div>
-                  {current && <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" />}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5 text-sm">
-                  <div className="rounded-md border border-neutral-200 p-3">
-                    <div className="flex items-center gap-2 text-neutral-600 mb-1"><Cpu className="w-4 h-4" />计算资源</div>
-                    <div className="font-semibold text-neutral-900">{plan.cpu} 核 / {plan.memory} GB</div>
-                  </div>
-                  <div className="rounded-md border border-neutral-200 p-3">
-                    <div className="flex items-center gap-2 text-neutral-600 mb-1"><HardDrive className="w-4 h-4" />存储空间</div>
-                    <div className="font-semibold text-neutral-900">{plan.storage} GB</div>
-                  </div>
-                  <div className="rounded-md border border-neutral-200 p-3">
-                    <div className="flex items-center gap-2 text-neutral-600 mb-1"><Layers3 className="w-4 h-4" />任务并发</div>
-                    <div className="font-semibold text-neutral-900">最多 {plan.concurrent} 个</div>
-                  </div>
-                  <div className="rounded-md border border-neutral-200 p-3">
-                    <div className="flex items-center gap-2 text-neutral-600 mb-1"><Receipt className="w-4 h-4" />价格</div>
-                    <div className="font-semibold text-neutral-900">{plan.priceLabel}</div>
-                  </div>
-                </div>
-
+            <PlanCard
+              key={plan.id}
+              planId={plan.id}
+              title={plan.name}
+              description={plan.description}
+              recommended={plan.recommended}
+              selected={current}
+              priceState={plan.priceLabel}
+              computeSpec={`${plan.cpu} 核 / ${plan.memory} GB`}
+              storageSize={`${plan.storage} GB`}
+              taskConcurrency={`最多 ${plan.concurrent} 个`}
+              purchaseState={current ? "ready" : "empty"}
+              action={
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="text-xs text-neutral-500">{plan.openingWindow}</div>
                   <Button asChild variant={current ? "outline" : undefined}>
                     <Link to="/resources">{current ? "查看当前计算资源" : "购买或升级"}</Link>
                   </Button>
                 </div>
-              </div>
-            </Card>
+              }
+            />
           );
         })}
       </div>

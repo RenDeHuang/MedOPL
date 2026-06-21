@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { buildWorkspaceViewState, useWorkspaceModel, type FileItem } from "../data/portalWorkspaceModel";
 import { Link } from "react-router";
+import { StorageInventoryPanel } from "../components/ResourceControlComponents";
 
 type PageState = "ready" | "empty-inputs" | "empty-outputs" | "file-space-unavailable" | "archived";
 
@@ -402,6 +403,18 @@ export function Workspace() {
       {actionMessage && (
         <Card className="border border-blue-200 bg-blue-50 p-4 mb-6 text-sm text-blue-700">{actionMessage}</Card>
       )}
+
+      <div className="mb-6">
+        <StorageInventoryPanel
+          status="ready"
+          capacity={model.fileSpaceTotal}
+          used={model.fileSpaceUsed}
+          available={model.fileSpaceAvailable}
+          files={`${model.inputFiles.length + model.outputFiles.length} 个文件`}
+          retentionState={model.fileSpaceRetentionLabel}
+          percent={model.fileSpacePercent}
+        />
+      </div>
 
       {/* Workspace Info Card */}
       <Card className="border border-neutral-200 mb-6">
