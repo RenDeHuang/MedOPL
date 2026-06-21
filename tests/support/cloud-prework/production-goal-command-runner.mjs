@@ -231,6 +231,13 @@ function executeShell(command, operation) {
   };
 }
 
+function normalizeDeploymentTarget(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "deployment/medopl-control-plane";
+  if (raw.includes("/")) return raw;
+  return `deployment/${raw}`;
+}
+
 async function runRuntimeProvisioning(operation) {
   const env = parseEnvFile(process.env.V22_TENCENT_MUTATION_SECRET_FILE);
   const plan = readJsonFile(process.env.V22_TENCENT_RUNTIME_PLAN_FILE);
@@ -362,17 +369,19 @@ async function runKubectl(operation) {
 
 async function runDeploy(operation) {
   const plan = readJsonFile(process.env.V22_MEDOPL_DEPLOY_PLAN_FILE);
-  const namespace = process.env.V22_MEDOPL_KUBERNETES_NAMESPACE || plan.namespace || "np-6l4nkdto-2cdtm";
+  const namespace = process.env.V22_MEDOPL_KUBERNETES_NAMESPACE || plan.namespace || "medopl";
+  const deployment = normalizeDeploymentTarget(plan.deployment);
   const command = process.env.V22_MEDOPL_DEPLOY_SHELL
-    || `kubectl --kubeconfig ${JSON.stringify(process.env.TENCENT_DEPLOY_KUBECONFIG_REF)} -n ${JSON.stringify(namespace)} rollout status deploy --timeout=180s`;
+    || `kubectl --kubeconfig ${JSON.stringify(process.env.TENCENT_DEPLOY_KUBECONFIG_REF)} -n ${JSON.stringify(namespace)} rollout status ${JSON.stringify(deployment)} --timeout=180s`;
   const shell = executeShell(command, operation);
   const evidenceRef = safeWriteRuntimeEvidence(operation, {
     status: "accepted",
     deployPlanRef: process.env.V22_MEDOPL_DEPLOY_PLAN_FILE,
     namespace,
+    deployment,
     shell,
   });
-  return { evidenceRef, namespace, rolloutObserved: true, shellStatus: shell.status };
+  return { evidenceRef, namespace, deployment, rolloutObserved: true, shellStatus: shell.status };
 }
 
 async function runLiveTest(operation) {

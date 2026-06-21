@@ -27,8 +27,12 @@ jobs:
       V22_CONTAINER_BUILD_PUSH_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs
       V22_CONTAINER_BUILD_PUSH_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation build_push --execute --confirm-current-session-authorization
       V22_CONTAINER_BUILD_PUSH_SHELL: >-
-        printf '%s' "$TCR_SECRET" | docker login uswccr.ccs.tencentyun.com --username "$TCR_ID" --password-stdin
-        && docker buildx build --push -f services/medopl-go-backend/Dockerfile -t "$V22_CONTAINER_IMAGE_REF" "$V22_CONTAINER_BUILD_CONTEXT"
+        docker_cmd=docker;
+        if ! docker version >/dev/null 2>&1; then
+          if command -v sudo >/dev/null 2>&1 && sudo -n docker version >/dev/null 2>&1; then docker_cmd="sudo -n docker"; else docker version; fi;
+        fi;
+        printf '%s' "$TCR_SECRET" | $docker_cmd login uswccr.ccs.tencentyun.com --username "$TCR_ID" --password-stdin
+        && $docker_cmd buildx build --push -f services/medopl-go-backend/Dockerfile -t "$V22_CONTAINER_IMAGE_REF" "$V22_CONTAINER_BUILD_CONTEXT"
       TCR_ID: ${{ secrets.TCR_USERNAME }}
       TCR_SECRET: ${{ secrets.TCR_PASSWORD }}
     steps:
@@ -36,9 +40,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
-
-      - name: Cloud goal preflight
-        run: npm run cloud:goal:preflight
 
       - name: Image metadata
         id: meta
@@ -60,11 +61,8 @@ jobs:
           echo "image=${image}" >> "$GITHUB_OUTPUT"
           echo "V22_CONTAINER_IMAGE_REF=${image}" >> "$GITHUB_ENV"
 
-      - name: Build push receipt lane
-        run: npm run cloud:goal -- --operation build_push
-
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Build push preflight
+        run: npm run cloud:goal:preflight -- --operation build_push
 
       - name: Build and push cloud image through receipt runner
         run: npm run cloud:goal -- --operation build_push

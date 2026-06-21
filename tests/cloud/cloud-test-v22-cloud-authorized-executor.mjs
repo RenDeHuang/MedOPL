@@ -20,12 +20,22 @@ const expectedOperations = Object.freeze([
 ]);
 
 function runExecutor(args = [], env = {}) {
+  const inheritedEnv = Object.fromEntries(Object.entries(process.env).filter(([key]) => !(
+    key.startsWith("V22_")
+    || key.startsWith("TENCENT_")
+    || key.startsWith("RUN_TENCENT_")
+    || key.startsWith("MEDOPL_")
+    || key.startsWith("OPL_")
+    || key.startsWith("TCR_")
+    || key === "DATABASE_URL"
+    || key === "KUBECONFIG"
+  )));
   return spawnSync(process.execPath, ["scripts/v22-cloud-authorized-executor.mjs", ...args], {
     cwd: repoRoot,
     encoding: "utf8",
     stdio: "pipe",
     env: {
-      ...process.env,
+      ...inheritedEnv,
       ...env,
     },
   });
@@ -112,12 +122,15 @@ assert.equal(missingExecutorPayload.blocker.type, "cloud_command_executor_missin
 
 const tempDir = mkdtempSync(path.join(tmpdir(), "v22-cloud-executor-"));
 const commandLog = path.join(tempDir, "commands.log");
+const testRunId = `test-run-${process.pid}`;
+const testEvidenceSink = `.runtime/v22-cloud-authorization/${testRunId}`;
 const stubExecutor = path.join(tempDir, "cloud-stub.mjs");
 const receiptStubExecutor = path.join(tempDir, "cloud-receipt-stub.mjs");
 const unauthorizedReceiptExecutor = path.join(tempDir, "cloud-unauthorized-receipt-stub.mjs");
-const rejectedContextReceiptExecutor = path.join(tempDir, "cloud-rejected-context-receipt-stub.mjs");
-const rejectedReceiptStatusExecutor = path.join(tempDir, "cloud-rejected-receipt-status-stub.mjs");
-const rawReceiptSummaryExecutor = path.join(tempDir, "cloud-raw-receipt-summary-stub.mjs");
+  const rejectedContextReceiptExecutor = path.join(tempDir, "cloud-rejected-context-receipt-stub.mjs");
+  const rejectedReceiptStatusExecutor = path.join(tempDir, "cloud-rejected-receipt-status-stub.mjs");
+  const rawReceiptSummaryExecutor = path.join(tempDir, "cloud-raw-receipt-summary-stub.mjs");
+  const failingExternalRunner = path.join(tempDir, "failing-external-runner.mjs");
 try {
   writeFileSync(stubExecutor, `import { appendFileSync } from "node:fs";\nconst logPath = ${JSON.stringify(commandLog)};\nexport default async function runCommand(command, context) { appendFileSync(logPath, \`\${context.operationClass}:\${context.runnerId}:\${command}\\n\`); return { command, ok: true, status: 0, summary: { operationClass: context.operationClass, runnerId: context.runnerId, repoRoot: Boolean(context.repoRoot), redacted: true } }; }\n`);
   writeFileSync(receiptStubExecutor, `export default async function runCommand(command, context) { for (const type of context.receiptTypes) context.writeReceipt(type, { summary: \`\${type} accepted by \${context.runnerId}\` }); return { command, ok: true, status: 0, summary: { operationClass: context.operationClass, receiptTypes: context.receiptTypes } }; }\n`);
@@ -134,6 +147,12 @@ try {
     "const rawSecret = process.env.TENCENT_MUTATION_SECRET_KEY || process.env.TCR_SECRET || 'raw-secret-value';",
     "const receipts = receiptTypes.map((type) => ({ type, status: 'accepted', summary: `${type} accepted with ${rawSecret}` }));",
     "console.log(JSON.stringify({ ok: true, summary: { operationClass: process.env.V22_GOAL_OPERATION_CLASS, rawSecret }, receipts }));",
+    "",
+  ].join("\n"));
+  writeFileSync(failingExternalRunner, [
+    "console.log(JSON.stringify({ ok: false, summary: { blocker: 'docker_unavailable', detail: process.env.TCR_SECRET || 'raw-secret-value' } }));",
+    "console.error(`docker denied ${process.env.TCR_SECRET || 'raw-secret-value'}`);",
+    "process.exit(7);",
     "",
   ].join("\n"));
 
@@ -232,6 +251,40 @@ try {
   assert.equal(JSON.stringify(preflightReady).includes("tcr-secret-test"), false, "cloud_executor_preflight_must_redact_tcr_secret");
   assert.equal(JSON.stringify(preflightReady).includes("postgres://example.invalid"), false, "cloud_executor_preflight_must_redact_database_url");
 
+  const scopedPreflightMissing = runExecutor(["--preflight", "--operation", "build_push", "--json"], {
+    V22_CONTAINER_BUILD_CONTEXT: containerBuildContext,
+    V22_CONTAINER_BUILD_PUSH_RUNNER: receiptBackedRunner,
+    TCR_ID: "tcr-id-test",
+    TCR_SECRET: "tcr-secret-test",
+  });
+  assert.equal(scopedPreflightMissing.status, 1, "cloud_executor_scoped_preflight_missing_must_fail_closed");
+  const scopedPreflightMissingPayload = JSON.parse(scopedPreflightMissing.stdout);
+  assert.equal(scopedPreflightMissingPayload.ok, false, "cloud_executor_scoped_preflight_missing_payload");
+  assert.equal(scopedPreflightMissingPayload.blocker.type, "cloud_goal_preflight_not_ready", "cloud_executor_scoped_preflight_missing_blocker");
+  assert.deepEqual(
+    scopedPreflightMissingPayload.preflight.phases.map((phase) => phase.operationClass),
+    ["build_push"],
+    "cloud_executor_scoped_preflight_must_only_report_selected_operation",
+  );
+  assert(
+    scopedPreflightMissingPayload.preflight.phases[0].missingEnv.includes("V22_CONTAINER_IMAGE_REF"),
+    "cloud_executor_scoped_preflight_must_report_selected_missing_env",
+  );
+
+  const scopedPreflightReady = jsonFrom(runExecutor(["--preflight", "--operation", "build_push", "--json"], {
+    V22_CONTAINER_BUILD_CONTEXT: containerBuildContext,
+    V22_CONTAINER_IMAGE_REF: "registry.example.test/medopl/app:test",
+    V22_CONTAINER_BUILD_PUSH_RUNNER: receiptBackedRunner,
+    TCR_ID: "tcr-id-test",
+    TCR_SECRET: "tcr-secret-test",
+  }), "cloud_executor_scoped_preflight_ready");
+  assert.equal(scopedPreflightReady.preflight.productionReady, true, "cloud_executor_scoped_preflight_ready_must_pass");
+  assert.deepEqual(
+    scopedPreflightReady.preflight.phases.map((phase) => phase.operationClass),
+    ["build_push"],
+    "cloud_executor_scoped_preflight_ready_phase_scope",
+  );
+
   const single = jsonFrom(
     runExecutor(["--execute", "--operation", "readonly_inventory", "--json"], { V22_CLOUD_COMMAND_EXECUTOR: stubExecutor }),
     "cloud_executor_single_operation",
@@ -243,7 +296,10 @@ try {
   assert.equal(JSON.stringify(single).includes("SecretKey"), false, "cloud_executor_output_must_not_include_secret_key_marker");
   assert.equal(JSON.stringify(single).includes("provider_response"), false, "cloud_executor_output_must_not_include_provider_response_marker");
 
-  const fullWithoutReceipts = runExecutor(["--execute", "--json"], { V22_CLOUD_COMMAND_EXECUTOR: stubExecutor });
+  const fullWithoutReceipts = runExecutor(["--execute", "--json"], {
+    V22_CLOUD_COMMAND_EXECUTOR: stubExecutor,
+    V22_CLOUD_GOAL_RUN_ID: `${testRunId}-missing-receipts`,
+  });
   assert.equal(fullWithoutReceipts.status, 1, "cloud_executor_full_run_without_receipts_must_fail_closed");
   const fullWithoutReceiptsPayload = JSON.parse(fullWithoutReceipts.stdout);
   assert.equal(fullWithoutReceiptsPayload.ok, false, "cloud_executor_full_run_without_receipts_payload_must_fail");
@@ -276,12 +332,12 @@ try {
   );
 
   const full = jsonFrom(
-    runExecutor(["--execute", "--json"], { V22_CLOUD_COMMAND_EXECUTOR: receiptStubExecutor }),
+    runExecutor(["--execute", "--json"], { V22_CLOUD_COMMAND_EXECUTOR: receiptStubExecutor, V22_CLOUD_GOAL_RUN_ID: testRunId }),
     "cloud_executor_full_run_with_receipts",
   );
   assert.equal(full.ok, true, "cloud_executor_full_run_with_receipts_must_pass");
   assert.equal(full.receiptManifest.status, "complete", "cloud_executor_full_run_receipt_manifest_must_be_complete");
-  assert.equal(full.receiptManifest.path, ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json", "cloud_executor_receipt_manifest_path");
+  assert.equal(full.receiptManifest.path, `${testEvidenceSink}/receipt-manifest.json`, "cloud_executor_receipt_manifest_path");
   const manifest = JSON.parse(readFileSync(path.join(repoRoot, full.receiptManifest.path), "utf8"));
   assert.equal(manifest.kind, "medopl_production_receipt_manifest", "cloud_executor_manifest_kind");
   assert.equal(manifest.receipts.length, 7, "cloud_executor_manifest_must_have_7_receipts");
@@ -289,7 +345,10 @@ try {
   assert.equal(JSON.stringify(manifest).includes("provider_response"), false, "cloud_executor_manifest_must_not_embed_provider_response");
   assert.equal(JSON.stringify(manifest).includes("kubeconfig"), false, "cloud_executor_manifest_must_not_embed_kubeconfig");
 
-  const scopedResult = runExecutor(["--execute", "--json"], { V22_CLOUD_COMMAND_EXECUTOR: stubExecutor });
+  const scopedResult = runExecutor(["--execute", "--json"], {
+    V22_CLOUD_COMMAND_EXECUTOR: stubExecutor,
+    V22_CLOUD_GOAL_RUN_ID: `${testRunId}-replay-missing-receipts`,
+  });
   assert.equal(scopedResult.status, 1, "cloud_executor_replay_without_receipts_must_exit_one");
   const scoped = JSON.parse(scopedResult.stdout);
   assert.equal(scoped.ok, false, "cloud_executor_replay_without_receipts_must_still_fail");
@@ -306,6 +365,7 @@ try {
       V22_CLOUD_COMMAND_EXECUTOR: readonlyExecutor,
       V22_TENCENT_READONLY_SECRET_FILE: readonlyEnvFile,
       V22_TENCENT_READONLY_SDK_MODE: "fake-readonly",
+      V22_CLOUD_GOAL_RUN_ID: testRunId,
     }),
     "readonly_adapter_fake_readonly",
   );
@@ -315,7 +375,7 @@ try {
   assert.equal(JSON.stringify(readonlyFake).includes(readonlySecretValue), false, "readonly_adapter_output_must_redact_secret_value");
   assert.equal(JSON.stringify(readonlyFake).includes("rawResponse"), false, "readonly_adapter_output_must_not_embed_raw_response");
   assert(readonlyPhase.results[0].summary.reportPath, "readonly_adapter_summary_must_include_report_pointer");
-  const readonlyPhaseEvidence = JSON.parse(readFileSync(path.join(repoRoot, ".runtime/v22-cloud-authorization/run-v22-001/readonly_inventory.json"), "utf8"));
+  const readonlyPhaseEvidence = JSON.parse(readFileSync(path.join(repoRoot, `${testEvidenceSink}/readonly_inventory.json`), "utf8"));
   assert.equal(readonlyPhaseEvidence.kind, "v22_cloud_authorized_phase_evidence", "readonly_phase_evidence_kind");
   assert.equal(
     readonlyPhaseEvidence.resultSummaries[0].reportPath,
@@ -364,6 +424,7 @@ try {
       V22_TENCENT_MUTATION_SECRET_FILE: mutationSecretFile,
       V22_TENCENT_STORAGE_PLAN_FILE: storagePlanFile,
       V22_TENCENT_STORAGE_LIFECYCLE_RUNNER: receiptBackedRunner,
+      V22_CLOUD_GOAL_RUN_ID: testRunId,
     }),
     "production_goal_storage_receipt_backed_runner",
   );
@@ -377,21 +438,21 @@ try {
     "production_goal_storage_input_refs_mismatch",
   );
   assert.equal(
-    existsSync(path.join(repoRoot, ".runtime/v22-cloud-authorization/run-v22-001/storage_owner_receipt.json")),
+    existsSync(path.join(repoRoot, `${testEvidenceSink}/storage_owner_receipt.json`)),
     true,
     "production_goal_storage_owner_receipt_pointer_must_exist",
   );
   assert.equal(
-    existsSync(path.join(repoRoot, ".runtime/v22-cloud-authorization/run-v22-001/release_owner_receipt.json")),
+    existsSync(path.join(repoRoot, `${testEvidenceSink}/release_owner_receipt.json`)),
     true,
     "production_goal_release_owner_receipt_pointer_must_exist",
   );
-  const storagePhaseEvidence = JSON.parse(readFileSync(path.join(repoRoot, ".runtime/v22-cloud-authorization/run-v22-001/storage_lifecycle.json"), "utf8"));
+  const storagePhaseEvidence = JSON.parse(readFileSync(path.join(repoRoot, `${testEvidenceSink}/storage_lifecycle.json`), "utf8"));
   assert.deepEqual(
     storagePhaseEvidence.receiptPointerRefs,
     [
-      ".runtime/v22-cloud-authorization/run-v22-001/storage_owner_receipt.json",
-      ".runtime/v22-cloud-authorization/run-v22-001/release_owner_receipt.json",
+      `${testEvidenceSink}/storage_owner_receipt.json`,
+      `${testEvidenceSink}/release_owner_receipt.json`,
     ],
     "production_goal_storage_phase_evidence_must_include_receipt_pointer_refs",
   );
@@ -419,9 +480,10 @@ try {
     }),
     "production_goal_raw_receipt_summary_runner",
   );
-  const rawStorageReceiptPointer = readFileSync(path.join(repoRoot, ".runtime/v22-cloud-authorization/run-v22-001/storage_owner_receipt.json"), "utf8");
+  const rawStorageReceiptPointer = readFileSync(path.join(repoRoot, `${testEvidenceSink}/storage_owner_receipt.json`), "utf8");
   assert.equal(JSON.stringify(rawStorageReceipt).includes("mutation-secret-key"), false, "production_goal_raw_receipt_output_must_redact_secret_value");
   assert.equal(rawStorageReceiptPointer.includes("mutation-secret-key"), false, "production_goal_owner_receipt_pointer_must_redact_secret_value");
+  assert.equal(rawStorageReceiptPointer.includes("raw-secret-value"), false, "production_goal_owner_receipt_pointer_must_redact_generic_raw_secret_value");
 
   const runtimeLive = jsonFrom(
     runExecutor(["--execute", "--operation", "tenant_runtime_provisioning", "--json"], {
@@ -524,8 +586,39 @@ try {
     ["buildContext", "imageRef", "operationClass", "registryCredentialRef"],
     "production_goal_build_push_input_refs_mismatch",
   );
+
+  const failingBuildPush = runExecutor(["--execute", "--operation", "build_push", "--json"], {
+    V22_CLOUD_COMMAND_EXECUTOR: productionGoalExecutor,
+    V22_CONTAINER_BUILD_CONTEXT: containerBuildContext,
+    V22_CONTAINER_IMAGE_REF: "registry.example.test/medopl/app:test",
+    TCR_ID: "tcr-id-test",
+    TCR_SECRET: "tcr-secret-test",
+    V22_CONTAINER_BUILD_PUSH_RUNNER: failingExternalRunner,
+  });
+  assert.equal(failingBuildPush.status, 1, "production_goal_external_runner_failure_must_fail_closed");
+  const failingBuildPushPayload = JSON.parse(failingBuildPush.stdout);
+  const failingBuildPushSummary = failingBuildPushPayload.phases.find((phase) => phase.operationClass === "build_push").results[0].summary;
+  assert.equal(failingBuildPushSummary.blocker, "production_goal_external_runner_failed", "external_runner_failure_blocker");
+  assert.equal(failingBuildPushSummary.exitStatus, 7, "external_runner_failure_exit_status");
+  assert(
+    String(failingBuildPushSummary.stderrSummary || "").includes("docker denied"),
+    "external_runner_failure_must_include_redacted_stderr_summary",
+  );
+  assert.equal(JSON.stringify(failingBuildPushSummary).includes("tcr-secret-test"), false, "external_runner_failure_must_redact_secret");
+
+  const manifestOnly = jsonFrom(
+    runExecutor(["--manifest-only", "--json"], { V22_CLOUD_GOAL_RUN_ID: testRunId }),
+    "cloud_executor_manifest_only_from_existing_receipts",
+  );
+  assert.equal(manifestOnly.ok, true, "cloud_executor_manifest_only_must_pass_with_existing_receipts");
+  assert.equal(manifestOnly.receiptManifest.path, `${testEvidenceSink}/receipt-manifest.json`, "manifest_only_path");
+  assert.equal(manifestOnly.receiptManifest.status, "complete", "manifest_only_status");
+  const manifestOnlyPayload = JSON.parse(readFileSync(path.join(repoRoot, manifestOnly.receiptManifest.path), "utf8"));
+  assert.equal(JSON.stringify(manifestOnlyPayload).includes("raw-secret-value"), false, "manifest_only_must_not_copy_raw_secret_receipt_summary");
 } finally {
-  rmSync(path.join(repoRoot, ".runtime/v22-cloud-authorization/run-v22-001"), { recursive: true, force: true });
+  rmSync(path.join(repoRoot, testEvidenceSink), { recursive: true, force: true });
+  rmSync(path.join(repoRoot, ".runtime/v22-cloud-authorization", `${testRunId}-missing-receipts`), { recursive: true, force: true });
+  rmSync(path.join(repoRoot, ".runtime/v22-cloud-authorization", `${testRunId}-replay-missing-receipts`), { recursive: true, force: true });
   rmSync(tempDir, { recursive: true, force: true });
 }
 

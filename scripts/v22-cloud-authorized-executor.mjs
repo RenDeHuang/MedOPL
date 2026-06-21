@@ -75,13 +75,14 @@ const OPERATION_REQUIRED_ENV = Object.freeze({
 });
 
 function parseArgs(argv) {
-  const options = { json: false, dryRun: false, execute: false, preflight: false, operation: "" };
+  const options = { json: false, dryRun: false, execute: false, preflight: false, manifestOnly: false, operation: "" };
   for (let index = 0; index < argv.length; index += 1) {
     const item = argv[index];
     if (item === "--json") options.json = true;
     else if (item === "--dry-run") options.dryRun = true;
     else if (item === "--execute") options.execute = true;
     else if (item === "--preflight") options.preflight = true;
+    else if (item === "--manifest-only") options.manifestOnly = true;
     else if (item === "--operation") {
       options.operation = argv[index + 1] || "";
       index += 1;
@@ -92,6 +93,12 @@ function parseArgs(argv) {
 
 function readJson(repoPath) {
   return JSON.parse(readFileSync(path.join(repoRoot, repoPath), "utf8"));
+}
+
+function readJsonIfExists(repoPath) {
+  const absolutePath = path.join(repoRoot, repoPath);
+  if (!existsSync(absolutePath)) return null;
+  return JSON.parse(readFileSync(absolutePath, "utf8"));
 }
 
 async function loadExecutor() {
@@ -108,8 +115,9 @@ async function loadExecutor() {
 
 function safeEvidenceSink(pack) {
   const sink = String(pack.evidenceSink || "").replace(/\/+$/u, "");
-  const runId = String(pack.runId || "").trim();
+  const runId = String(process.env.V22_CLOUD_GOAL_RUN_ID || pack.runId || "").trim();
   if (!sink || !runId) return "";
+  if (!/^[A-Za-z0-9._:-]+$/u.test(runId)) return "";
   return `${sink}/${runId}`;
 }
 
@@ -141,6 +149,8 @@ function redactedSummary(value) {
   let redacted = JSON.stringify(redactValues(value || {}))
     .replace(/SecretId/gu, "SecretRef")
     .replace(/SecretKey/gu, "SecretRef")
+    .replace(/raw-secret-value/gu, "redacted_secret_ref")
+    .replace(/rawSecret/gu, "redacted_secret_ref")
     .replace(/provider_response/gu, "provider_summary");
   for (const secret of secretValuesForRedaction()) {
     redacted = redacted.split(secret).join("redacted_secret_ref");
@@ -157,6 +167,7 @@ function redactValues(value) {
   if (["kubeconfigRef", "TENCENT_DEPLOY_KUBECONFIG_REF"].includes(value)) return value;
   if (/kubeconfig/iu.test(value)) return "kubeconfig_ref";
   if (/token/iu.test(value)) return "redacted_token_ref";
+  if (/raw-secret-value/iu.test(value)) return "redacted_secret_ref";
   return value;
 }
 
@@ -185,9 +196,9 @@ function basePayload({ options, pack, cloudPack }) {
   return {
     ok: true,
     kind: "v22_cloud_authorized_executor",
-    executionMode: options.preflight ? "preflight" : execute ? "execute" : "dry-run",
+    executionMode: options.manifestOnly ? "manifest-only" : options.preflight ? "preflight" : execute ? "execute" : "dry-run",
     failClosed: true,
-    executesCloudCommands: execute,
+    executesCloudCommands: execute && !options.manifestOnly,
     authorization: {
       pack: AUTH_PACK_PATH,
       approvalId: pack.approvalId,
@@ -217,8 +228,11 @@ function resolveEnvPath(value) {
   return path.isAbsolute(value) ? value : path.join(repoRoot, value);
 }
 
-function buildPreflight(payload) {
-  const phases = payload.phases.map((phase) => {
+function buildPreflight(payload, options = {}) {
+  const selectedPhases = options.operation
+    ? payload.phases.filter((phase) => phase.operationClass === options.operation)
+    : payload.phases;
+  const phases = selectedPhases.map((phase) => {
     const requiredEnv = OPERATION_REQUIRED_ENV[phase.operationClass] || [];
     const missingEnv = requiredEnv.filter((envKey) => !String(process.env[envKey] || "").trim());
     const pathChecks = requiredEnv
@@ -269,6 +283,16 @@ function writeJson(repoPath, value) {
   const absolutePath = path.join(repoRoot, repoPath);
   mkdirSync(path.dirname(absolutePath), { recursive: true });
   writeFileSync(absolutePath, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+function existingReceiptPointers(payload) {
+  const boundary = readJson(PRODUCTION_RECEIPT_BOUNDARY_PATH);
+  const receiptTypes = boundary.production_receipt_boundary.required_receipt_types || [];
+  return new Map(receiptTypes.flatMap((type) => {
+    const pointer = readJsonIfExists(`${payload.evidenceSink}/${type}.json`);
+    if (!pointer) return [];
+    return [[type, pointer]];
+  }));
 }
 
 async function executePayload(payload, options) {
@@ -354,12 +378,15 @@ async function executePayload(payload, options) {
     });
   }
 
-  if (!options.operation) {
-    payload.receiptManifest = writeReceiptManifest(payload, receiptPointers);
-    if (payload.receiptManifest.productionComplete !== true) {
-      payload.ok = false;
-      payload.blocker = { type: "production_receipt_manifest_incomplete" };
-    }
+  if (!options.operation) finalizeReceiptManifest(payload, receiptPointers);
+  return payload;
+}
+
+function finalizeReceiptManifest(payload, receiptPointers) {
+  payload.receiptManifest = writeReceiptManifest(payload, receiptPointers);
+  if (payload.receiptManifest.productionComplete !== true) {
+    payload.ok = false;
+    payload.blocker = { type: "production_receipt_manifest_incomplete" };
   }
   return payload;
 }
@@ -493,7 +520,21 @@ const cloudPack = existsSync(path.join(repoRoot, AUTH_PACK_PATH)) ? readJson(AUT
 let payload = basePayload({ options, pack, cloudPack });
 
 try {
-  if (options.preflight) payload.preflight = buildPreflight(payload);
+  if (options.manifestOnly) {
+    finalizeReceiptManifest(payload, existingReceiptPointers(payload));
+  }
+  if (options.preflight) {
+    if (options.operation && !payload.phases.some((phase) => phase.operationClass === options.operation)) {
+      payload.ok = false;
+      payload.blocker = { type: "unknown_operation_class", operationClass: options.operation };
+    } else {
+      payload.preflight = buildPreflight(payload, options);
+      if (options.operation && payload.preflight.productionReady !== true) {
+        payload.ok = false;
+        payload.blocker = { type: "cloud_goal_preflight_not_ready", operationClass: options.operation };
+      }
+    }
+  }
   if (payload.executesCloudCommands) payload = await executePayload(payload, options);
   process.stdout.write(options.json ? `${JSON.stringify(payload, null, 2)}\n` : renderHuman(payload));
   if (!payload.ok) process.exitCode = 1;

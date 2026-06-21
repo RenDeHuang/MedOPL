@@ -10,12 +10,22 @@ const repoRoot = path.resolve(__dirname, "../..");
 const runner = "tests/support/cloud-prework/production-goal-runners.mjs";
 
 function run(args = [], env = {}) {
+  const inheritedEnv = Object.fromEntries(Object.entries(process.env).filter(([key]) => !(
+    key.startsWith("V22_")
+    || key.startsWith("TENCENT_")
+    || key.startsWith("RUN_TENCENT_")
+    || key.startsWith("MEDOPL_")
+    || key.startsWith("OPL_")
+    || key.startsWith("TCR_")
+    || key === "DATABASE_URL"
+    || key === "KUBECONFIG"
+  )));
   return spawnSync(process.execPath, [runner, ...args], {
     cwd: repoRoot,
     encoding: "utf8",
     stdio: "pipe",
     env: {
-      ...process.env,
+      ...inheritedEnv,
       ...env,
     },
   });

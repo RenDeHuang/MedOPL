@@ -49,13 +49,12 @@ jobs:
       V22_MEDOPL_DEPLOY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation deploy --execute --confirm-current-session-authorization
       V22_OPL_WEBUI_CONSUMER_CANARY_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs
       V22_OPL_WEBUI_CONSUMER_CANARY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation live_test --execute --confirm-current-session-authorization
-      V22_MEDOPL_DEPLOY_PLAN_FILE: ${{ runner.temp }}/medopl-deploy-plan.json
+      V22_MEDOPL_DEPLOY_PLAN_FILE: .runtime/v22-cloud-authorization/run-v22-001/medopl-deploy-plan.json
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Cloud goal preflight
-        run: npm run cloud:goal:preflight
+        with:
+          fetch-depth: 0
 
       - name: Validate image allowlist
         shell: bash
@@ -101,9 +100,41 @@ jobs:
       V22_KUBERNETES_MANIFEST_DIR: deploy/medopl-cloud
       V22_MEDOPL_PUBLIC_BASE_URL: https://portal.medopl.cn
       V22_OPL_WEBUI_CONSUMER_CANARY_URL: https://opl.medopl.cn
+      TENCENT_MUTATION_SECRET_ID: ${{ secrets.TENCENT_MUTATION_SECRET_ID }}
+      TENCENT_MUTATION_SECRET_KEY: ${{ secrets.TENCENT_MUTATION_SECRET_KEY }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      TENCENT_MUTATION_TKE_CLUSTER_ID: ${{ vars.TENCENT_MUTATION_TKE_CLUSTER_ID }}
+      TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID: ${{ vars.TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID }}
+      TENCENT_MUTATION_COS_BUCKET: ${{ vars.TENCENT_MUTATION_COS_BUCKET }}
+      TENCENT_MUTATION_COS_REGION: ${{ vars.TENCENT_MUTATION_COS_REGION }}
+      TENCENT_MUTATION_WORKSPACE_PREFIX_ROOT: ${{ vars.TENCENT_MUTATION_WORKSPACE_PREFIX_ROOT }}
+      TENCENT_MUTATION_REGIONS: ${{ vars.TENCENT_MUTATION_REGIONS }}
+      V22_TENCENT_RUNTIME_USE_OFFICIAL_SDK: "1"
+      V22_TENCENT_STORAGE_USE_COS_SDK: "1"
+      V22_TENCENT_STORAGE_DELETE_PROBE: "1"
+      V22_MEDOPL_BILLING_AUDIT_USE_POSTGRES: "1"
+      V22_TENCENT_RUNTIME_PROVISIONING_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs
+      V22_TENCENT_RUNTIME_PROVISIONING_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation tenant_runtime_provisioning --execute --confirm-current-session-authorization
+      V22_TENCENT_STORAGE_LIFECYCLE_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs
+      V22_TENCENT_STORAGE_LIFECYCLE_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation storage_lifecycle --execute --confirm-current-session-authorization
+      V22_MEDOPL_BILLING_AUDIT_WRITEBACK_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs
+      V22_MEDOPL_BILLING_AUDIT_WRITEBACK_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation billing_audit_writeback --execute --confirm-current-session-authorization
+      V22_TENCENT_MUTATION_SECRET_FILE: .runtime/v22-cloud-authorization/run-v22-001/mutation.env
+      V22_TENCENT_RUNTIME_PLAN_FILE: .runtime/v22-cloud-authorization/run-v22-001/runtime-plan.json
+      V22_TENCENT_STORAGE_PLAN_FILE: .runtime/v22-cloud-authorization/run-v22-001/storage-plan.json
+      V22_MEDOPL_BILLING_AUDIT_RECEIPT_FILE: .runtime/v22-cloud-authorization/run-v22-001/billing-audit-request.json
+      V22_KUBERNETES_APPLY_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs
+      V22_KUBERNETES_APPLY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation kubectl --execute --confirm-current-session-authorization
+      V22_MEDOPL_DEPLOY_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs
+      V22_MEDOPL_DEPLOY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation deploy --execute --confirm-current-session-authorization
+      V22_OPL_WEBUI_CONSUMER_CANARY_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs
+      V22_OPL_WEBUI_CONSUMER_CANARY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation live_test --execute --confirm-current-session-authorization
+      V22_MEDOPL_DEPLOY_PLAN_FILE: .runtime/v22-cloud-authorization/run-v22-001/medopl-deploy-plan.json
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Write kubeconfig file
         env:
@@ -114,9 +145,77 @@ jobs:
           chmod 600 "$RUNNER_TEMP/kubeconfig"
           echo "TENCENT_DEPLOY_KUBECONFIG_REF=$RUNNER_TEMP/kubeconfig" >> "$GITHUB_ENV"
 
+      - name: Install Goal F runner dependencies
+        run: npm ci
+
+      - name: Create Goal F receipt inputs
+        shell: bash
+        run: |
+          mkdir -p "$(dirname "$V22_TENCENT_MUTATION_SECRET_FILE")"
+          cat > "$V22_TENCENT_MUTATION_SECRET_FILE" <<EOF
+          RUN_TENCENT_CREATE_RELEASE_EXECUTION=1
+          TENCENT_MUTATION_SECRET_ID=${TENCENT_MUTATION_SECRET_ID}
+          TENCENT_MUTATION_SECRET_KEY=${TENCENT_MUTATION_SECRET_KEY}
+          TENCENT_MUTATION_REGIONS=${TENCENT_MUTATION_REGIONS:-$TENCENT_MUTATION_COS_REGION}
+          TENCENT_MUTATION_TKE_CLUSTER_ID=${TENCENT_MUTATION_TKE_CLUSTER_ID}
+          TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID=${TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID}
+          TENCENT_MUTATION_COS_BUCKET=${TENCENT_MUTATION_COS_BUCKET}
+          TENCENT_MUTATION_COS_REGION=${TENCENT_MUTATION_COS_REGION}
+          TENCENT_MUTATION_WORKSPACE_PREFIX_ROOT=${TENCENT_MUTATION_WORKSPACE_PREFIX_ROOT}
+          EOF
+          chmod 600 "$V22_TENCENT_MUTATION_SECRET_FILE"
+          cat > "$V22_TENCENT_RUNTIME_PLAN_FILE" <<'JSON'
+          {
+            "kind": "medopl_goal_f_runtime_plan",
+            "workspace_id": "goal-f-production-canary",
+            "runtime_plan": "starter",
+            "node_pool_ref": "TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID"
+          }
+          JSON
+          cat > "$V22_TENCENT_STORAGE_PLAN_FILE" <<'JSON'
+          {
+            "kind": "medopl_goal_f_storage_plan",
+            "workspace_id": "goal-f-production-canary",
+            "storage_plan": "workspace",
+            "retention": "release_runtime_keep_storage_until_destroy_intent"
+          }
+          JSON
+          cat > "$V22_MEDOPL_BILLING_AUDIT_RECEIPT_FILE" <<'JSON'
+          {
+            "kind": "medopl_goal_f_billing_audit_request",
+            "workspace_id": "goal-f-production-canary",
+            "events": [
+              "runtime_owner_receipt_accepted",
+              "storage_owner_receipt_accepted",
+              "release_owner_receipt_accepted",
+              "production_deploy_receipt_accepted",
+              "opl_webui_consumer_receipt_accepted"
+            ]
+          }
+          JSON
+
+      - name: Runtime receipt preflight
+        run: npm run cloud:goal:preflight -- --operation tenant_runtime_provisioning
+
+      - name: Runtime receipt lane
+        run: npm run cloud:goal -- --operation tenant_runtime_provisioning
+
+      - name: Storage receipt preflight
+        run: npm run cloud:goal:preflight -- --operation storage_lifecycle
+
+      - name: Storage receipt lane
+        run: npm run cloud:goal -- --operation storage_lifecycle
+
+      - name: Billing audit receipt preflight
+        run: npm run cloud:goal:preflight -- --operation billing_audit_writeback
+
+      - name: Billing audit receipt lane
+        run: npm run cloud:goal -- --operation billing_audit_writeback
+
       - name: Create deploy plan
         shell: bash
         run: |
+          mkdir -p "$(dirname "$V22_MEDOPL_DEPLOY_PLAN_FILE")"
           cat > "$V22_MEDOPL_DEPLOY_PLAN_FILE" <<'JSON'
           {
             "kind": "medopl_cloud_rollout_deploy_plan",
@@ -127,14 +226,24 @@ jobs:
           }
           JSON
 
+      - name: Kubernetes receipt preflight
+        run: npm run cloud:goal:preflight -- --operation kubectl
+
       - name: Kubernetes receipt lane
         run: npm run cloud:goal -- --operation kubectl
+
+      - name: Rollout apply
+        run: node scripts/cloud-rollout/medopl.mjs --apply
+
+      - name: Deploy receipt preflight
+        run: npm run cloud:goal:preflight -- --operation deploy
 
       - name: Deploy receipt lane
         run: npm run cloud:goal -- --operation deploy
 
-      - name: Rollout apply
-        run: node scripts/cloud-rollout/medopl.mjs --apply
+      - name: OPL-Webui consumer canary preflight
+        if: ${{ inputs.availability_probe }}
+        run: npm run cloud:goal:preflight -- --operation live_test
 
       - name: OPL-Webui consumer canary receipt lane
         if: ${{ inputs.availability_probe }}
@@ -143,6 +252,22 @@ jobs:
       - name: MedOPL availability probe
         if: ${{ inputs.availability_probe }}
         run: node scripts/cloud-rollout/medopl.mjs --availability-probe
+
+      - name: Production receipt manifest
+        if: ${{ inputs.availability_probe }}
+        run: npm run cloud:goal -- --manifest-only
+
+      - name: Cloud release candidate verify
+        if: ${{ inputs.availability_probe }}
+        run: npm run verify:cloud-release-candidate
+
+      - name: Upload redacted receipt manifest
+        if: ${{ inputs.availability_probe }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: medopl-production-receipt-manifest
+          path: .runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json
+          if-no-files-found: error
 
   production-rollback:
     name: Production Rollback
@@ -157,6 +282,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Write kubeconfig file
         env:
@@ -180,6 +307,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Run no-secret availability probe
         run: node scripts/cloud-rollout/medopl.mjs --availability-probe

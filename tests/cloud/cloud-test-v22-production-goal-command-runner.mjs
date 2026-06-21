@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -19,6 +19,17 @@ assert.equal(
   runnerSource.includes("DescribeClusterNodePools({ ClusterId: clusterId })"),
   true,
   "runtime_tke_node_pool_probe_must_use_cluster_only_request_shape",
+);
+assert.equal(
+  runnerSource.includes("normalizeDeploymentTarget(plan.deployment)")
+    && runnerSource.includes("return \"deployment/medopl-control-plane\""),
+  true,
+  "deploy_runner_must_default_to_medopl_control_plane_deployment",
+);
+assert.equal(
+  runnerSource.includes("rollout status deploy --timeout=180s"),
+  false,
+  "deploy_runner_must_not_use_invalid_rollout_status_deploy_target",
 );
 
 function run(args = [], env = {}) {
@@ -58,12 +69,23 @@ try {
   const storagePlan = path.join(tempDir, "storage-plan.json");
   const receiptFile = path.join(tempDir, "receipt.json");
   const deployPlan = path.join(tempDir, "deploy-plan.json");
+  const shortDeployPlan = path.join(tempDir, "deploy-plan-short-name.json");
   const manifestDir = path.join(tempDir, "manifests");
   const buildContext = path.join(tempDir, "build-context");
+  const binDir = path.join(tempDir, "bin");
+  const kubectlLog = path.join(tempDir, "kubectl.log");
   mkdirSync(manifestDir);
   mkdirSync(buildContext);
+  mkdirSync(binDir);
   writeFileSync(path.join(manifestDir, "deployment.yaml"), "apiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: medopl-test\n");
   writeFileSync(path.join(buildContext, "Dockerfile"), "FROM scratch\n");
+  writeFileSync(path.join(binDir, "kubectl"), [
+    "#!/usr/bin/env bash",
+    "printf '%s\\n' \"$*\" >> \"$TEST_KUBECTL_LOG\"",
+    "exit 0",
+    "",
+  ].join("\n"));
+  chmodSync(path.join(binDir, "kubectl"), 0o755);
   writeFileSync(mutationSecretFile, [
     "RUN_TENCENT_CREATE_RELEASE_EXECUTION=1",
     "TENCENT_MUTATION_SECRET_ID=mutation-secret-id",
@@ -81,6 +103,7 @@ try {
   writeFileSync(storagePlan, JSON.stringify({ storage_plan: "workspace", workspace_id: "workspace-test" }));
   writeFileSync(receiptFile, JSON.stringify({ events: ["runtime_owner_receipt_accepted"] }));
   writeFileSync(deployPlan, JSON.stringify({ namespace: "np-6l4nkdto-2cdtm", deployments: ["medopl"] }));
+  writeFileSync(shortDeployPlan, JSON.stringify({ namespace: "medopl", deployment: "medopl-control-plane" }));
 
   const baseEnv = {
     V22_TENCENT_MUTATION_SECRET_FILE: mutationSecretFile,
@@ -95,8 +118,10 @@ try {
     TCR_SECRET: "tcr-secret-test",
     DATABASE_URL: "postgres://ledger.example.invalid/db",
     TENCENT_DEPLOY_KUBECONFIG_REF: "kubeconfig-ref-test",
+    TEST_KUBECTL_LOG: kubectlLog,
     V22_OPL_WEBUI_CONSUMER_CANARY_URL: "https://opl.medopl.cn",
     V22_MEDOPL_PUBLIC_BASE_URL: "https://portal.medopl.cn",
+    PATH: `${binDir}${path.delimiter}${process.env.PATH || ""}`,
   };
 
   const missingExecute = run(["--operation", "storage_lifecycle"], baseEnv);
@@ -152,6 +177,17 @@ try {
   const emptyManifestPayload = JSON.parse(emptyManifest.stdout);
   assert.equal(emptyManifestPayload.ok, false, "empty_manifest_payload");
   assert.deepEqual(emptyManifestPayload.summary.requiredContentMissing, ["V22_KUBERNETES_MANIFEST_DIR:manifest"], "empty_manifest_reason");
+
+  const deployShortName = parseJson(run(["--operation", "deploy", "--execute", "--confirm-current-session-authorization"], {
+    ...baseEnv,
+    V22_MEDOPL_DEPLOY_PLAN_FILE: shortDeployPlan,
+  }), "deploy_short_name");
+  assert.equal(deployShortName.summary.deployment, "deployment/medopl-control-plane", "deploy_runner_must_normalize_short_deployment_name");
+  const kubectlArgs = readFileSync(kubectlLog, "utf8");
+  assert(
+    kubectlArgs.includes("rollout status deployment/medopl-control-plane --timeout=180s"),
+    `deploy_runner_must_call_rollout_status_with_resource_kind:${kubectlArgs}`,
+  );
 } finally {
   rmSync(tempDir, { recursive: true, force: true });
 }

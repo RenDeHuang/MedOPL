@@ -52,6 +52,18 @@ function assertNoRawSecretValues(source, label) {
   }
 }
 
+function sectionBetween(source, startMarker, endMarker) {
+  const start = source.indexOf(startMarker);
+  assert(start >= 0, `workflow_section_start_missing:${startMarker}`);
+  const end = source.indexOf(endMarker, start + startMarker.length);
+  assert(end > start, `workflow_section_end_missing:${endMarker}`);
+  return source.slice(start, end);
+}
+
+function countOccurrences(source, needle) {
+  return source.split(needle).length - 1;
+}
+
 const manifestSource = await readRepoFile("deploy/medopl-cloud/medopl.k8s.json");
 assertNoRawSecretValues(manifestSource, "medopl_k8s_manifest");
 const manifest = JSON.parse(manifestSource);
@@ -133,11 +145,26 @@ for (const expected of [
 
 const releaseImage = await readRepoFile(".github/workflows/release-image.yml");
 const cloudRollout = await readRepoFile(".github/workflows/cloud-rollout.yml");
+const productionApplyJob = sectionBetween(cloudRollout, "  production-apply:", "  production-rollback:");
 assertNoRawSecretValues(releaseImage, "release_image_workflow");
 assertNoRawSecretValues(cloudRollout, "cloud_rollout_workflow");
 assert.equal(cloudRollout.includes("medopl.medopl.cn"), false, "cloud_rollout_must_not_reference_retired_medopl_host");
 assert.equal(releaseImage.includes("workflow_run:"), false, "release_image_must_not_auto_push_after_verify");
 assert.equal(releaseImage.includes("docker/build-push-action"), false, "release_image_build_push_must_go_through_cloud_goal_runner");
+assert.equal(releaseImage.includes("docker/setup-buildx-action"), false, "release_image_must_not_bypass_goal_runner_with_buildx_action");
+assert.equal(
+  countOccurrences(releaseImage, "npm run cloud:goal -- --operation build_push"),
+  1,
+  "release_image_must_build_push_once_through_goal_runner",
+);
+assert(
+  releaseImage.indexOf("Image metadata") < releaseImage.indexOf("npm run cloud:goal:preflight -- --operation build_push"),
+  "release_image_must_set_image_ref_before_build_push_preflight",
+);
+assert(
+  releaseImage.indexOf("npm run cloud:goal:preflight -- --operation build_push") < releaseImage.indexOf("npm run cloud:goal -- --operation build_push"),
+  "release_image_must_preflight_build_push_before_receipt_runner_build_push",
+);
 for (const expected of [
   "runs-on: [self-hosted, tencent-cloud, medopl]",
   "workflow_dispatch:",
@@ -146,8 +173,9 @@ for (const expected of [
   "V22_CONTAINER_BUILD_PUSH_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation build_push --execute --confirm-current-session-authorization",
   "TCR_ID: ${{ secrets.TCR_USERNAME }}",
   "TCR_SECRET: ${{ secrets.TCR_PASSWORD }}",
-  "npm run cloud:goal:preflight",
+  "npm run cloud:goal:preflight -- --operation build_push",
   "npm run cloud:goal -- --operation build_push",
+  "sudo -n docker",
   "services/medopl-go-backend/Dockerfile",
   "uswccr.ccs.tencentyun.com/medopl/medopl-go-backend",
 ]) {
@@ -157,18 +185,55 @@ for (const expected of [
   "runs-on: [self-hosted, tencent-cloud, medopl]",
   "environment: production",
   "KUBECONFIG_CONTENT: ${{ secrets.KUBECONFIG }}",
+  "TENCENT_MUTATION_SECRET_ID: ${{ secrets.TENCENT_MUTATION_SECRET_ID }}",
+  "TENCENT_MUTATION_SECRET_KEY: ${{ secrets.TENCENT_MUTATION_SECRET_KEY }}",
+  "DATABASE_URL: ${{ secrets.DATABASE_URL }}",
+  "TENCENT_MUTATION_TKE_CLUSTER_ID: ${{ vars.TENCENT_MUTATION_TKE_CLUSTER_ID }}",
+  "TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID: ${{ vars.TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID }}",
+  "TENCENT_MUTATION_COS_BUCKET: ${{ vars.TENCENT_MUTATION_COS_BUCKET }}",
+  "TENCENT_MUTATION_COS_REGION: ${{ vars.TENCENT_MUTATION_COS_REGION }}",
+  "TENCENT_MUTATION_WORKSPACE_PREFIX_ROOT: ${{ vars.TENCENT_MUTATION_WORKSPACE_PREFIX_ROOT }}",
+  "TENCENT_MUTATION_REGIONS: ${{ vars.TENCENT_MUTATION_REGIONS }}",
+  "V22_TENCENT_RUNTIME_USE_OFFICIAL_SDK: \"1\"",
+  "V22_TENCENT_STORAGE_USE_COS_SDK: \"1\"",
+  "V22_TENCENT_STORAGE_DELETE_PROBE: \"1\"",
+  "V22_MEDOPL_BILLING_AUDIT_USE_POSTGRES: \"1\"",
+  "V22_TENCENT_RUNTIME_PROVISIONING_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs",
+  "V22_TENCENT_RUNTIME_PROVISIONING_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation tenant_runtime_provisioning --execute --confirm-current-session-authorization",
+  "V22_TENCENT_STORAGE_LIFECYCLE_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs",
+  "V22_TENCENT_STORAGE_LIFECYCLE_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation storage_lifecycle --execute --confirm-current-session-authorization",
+  "V22_MEDOPL_BILLING_AUDIT_WRITEBACK_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs",
+  "V22_MEDOPL_BILLING_AUDIT_WRITEBACK_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation billing_audit_writeback --execute --confirm-current-session-authorization",
+  "V22_TENCENT_MUTATION_SECRET_FILE: .runtime/v22-cloud-authorization/run-v22-001/mutation.env",
+  "V22_TENCENT_RUNTIME_PLAN_FILE: .runtime/v22-cloud-authorization/run-v22-001/runtime-plan.json",
+  "V22_TENCENT_STORAGE_PLAN_FILE: .runtime/v22-cloud-authorization/run-v22-001/storage-plan.json",
+  "V22_MEDOPL_BILLING_AUDIT_RECEIPT_FILE: .runtime/v22-cloud-authorization/run-v22-001/billing-audit-request.json",
+  "npm ci",
   "V22_KUBERNETES_APPLY_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs",
   "V22_KUBERNETES_APPLY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation kubectl --execute --confirm-current-session-authorization",
   "V22_MEDOPL_DEPLOY_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs",
   "V22_MEDOPL_DEPLOY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation deploy --execute --confirm-current-session-authorization",
   "V22_OPL_WEBUI_CONSUMER_CANARY_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs",
   "V22_OPL_WEBUI_CONSUMER_CANARY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation live_test --execute --confirm-current-session-authorization",
-  "V22_MEDOPL_DEPLOY_PLAN_FILE: ${{ runner.temp }}/medopl-deploy-plan.json",
+  "V22_MEDOPL_DEPLOY_PLAN_FILE: .runtime/v22-cloud-authorization/run-v22-001/medopl-deploy-plan.json",
+  "Create Goal F receipt inputs",
+  "npm run cloud:goal:preflight -- --operation tenant_runtime_provisioning",
+  "npm run cloud:goal:preflight -- --operation storage_lifecycle",
+  "npm run cloud:goal:preflight -- --operation billing_audit_writeback",
+  "npm run cloud:goal -- --operation tenant_runtime_provisioning",
+  "npm run cloud:goal -- --operation storage_lifecycle",
+  "npm run cloud:goal -- --operation billing_audit_writeback",
   "Create deploy plan",
-  "npm run cloud:goal:preflight",
+  "npm run cloud:goal:preflight -- --operation kubectl",
+  "npm run cloud:goal:preflight -- --operation deploy",
+  "npm run cloud:goal:preflight -- --operation live_test",
   "npm run cloud:goal -- --operation kubectl",
   "npm run cloud:goal -- --operation deploy",
   "npm run cloud:goal -- --operation live_test",
+  "npm run cloud:goal -- --manifest-only",
+  "npm run verify:cloud-release-candidate",
+  "actions/upload-artifact@v4",
+  ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json",
   "node scripts/cloud-rollout/medopl.mjs --apply",
   "MEDOPL_BASE_URL: https://portal.medopl.cn",
   "V22_MEDOPL_PUBLIC_BASE_URL: https://portal.medopl.cn",
@@ -176,6 +241,91 @@ for (const expected of [
 ]) {
   assert(cloudRollout.includes(expected), `cloud_rollout_workflow_missing:${expected}`);
 }
+for (const expected of [
+  "V22_TENCENT_RUNTIME_PROVISIONING_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs",
+  "V22_TENCENT_RUNTIME_PROVISIONING_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation tenant_runtime_provisioning --execute --confirm-current-session-authorization",
+  "V22_TENCENT_STORAGE_LIFECYCLE_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs",
+  "V22_TENCENT_STORAGE_LIFECYCLE_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation storage_lifecycle --execute --confirm-current-session-authorization",
+  "V22_MEDOPL_BILLING_AUDIT_WRITEBACK_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs",
+  "V22_MEDOPL_BILLING_AUDIT_WRITEBACK_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation billing_audit_writeback --execute --confirm-current-session-authorization",
+  "V22_TENCENT_MUTATION_SECRET_FILE: .runtime/v22-cloud-authorization/run-v22-001/mutation.env",
+  "V22_TENCENT_RUNTIME_PLAN_FILE: .runtime/v22-cloud-authorization/run-v22-001/runtime-plan.json",
+  "V22_TENCENT_STORAGE_PLAN_FILE: .runtime/v22-cloud-authorization/run-v22-001/storage-plan.json",
+  "V22_MEDOPL_BILLING_AUDIT_RECEIPT_FILE: .runtime/v22-cloud-authorization/run-v22-001/billing-audit-request.json",
+  "V22_TENCENT_RUNTIME_USE_OFFICIAL_SDK: \"1\"",
+  "V22_TENCENT_STORAGE_USE_COS_SDK: \"1\"",
+  "V22_TENCENT_STORAGE_DELETE_PROBE: \"1\"",
+  "V22_MEDOPL_BILLING_AUDIT_USE_POSTGRES: \"1\"",
+  "V22_KUBERNETES_APPLY_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs",
+  "V22_KUBERNETES_APPLY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation kubectl --execute --confirm-current-session-authorization",
+  "V22_MEDOPL_DEPLOY_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs",
+  "V22_MEDOPL_DEPLOY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation deploy --execute --confirm-current-session-authorization",
+  "V22_OPL_WEBUI_CONSUMER_CANARY_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs",
+  "V22_OPL_WEBUI_CONSUMER_CANARY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation live_test --execute --confirm-current-session-authorization",
+  "V22_MEDOPL_DEPLOY_PLAN_FILE: .runtime/v22-cloud-authorization/run-v22-001/medopl-deploy-plan.json",
+  "mkdir -p \"$(dirname \"$V22_TENCENT_MUTATION_SECRET_FILE\")\"",
+  "cat > \"$V22_TENCENT_RUNTIME_PLAN_FILE\" <<'JSON'",
+  "cat > \"$V22_TENCENT_STORAGE_PLAN_FILE\" <<'JSON'",
+  "cat > \"$V22_MEDOPL_BILLING_AUDIT_RECEIPT_FILE\" <<'JSON'",
+  "TENCENT_MUTATION_TKE_CLUSTER_ID=${TENCENT_MUTATION_TKE_CLUSTER_ID}",
+  "TENCENT_MUTATION_COS_BUCKET=${TENCENT_MUTATION_COS_BUCKET}",
+  "mkdir -p \"$(dirname \"$V22_MEDOPL_DEPLOY_PLAN_FILE\")\"",
+]) {
+  assert(productionApplyJob.includes(expected), `production_apply_workflow_missing:${expected}`);
+}
+assert.equal(cloudRollout.includes("${{ runner.temp }}"), false, "cloud_rollout_must_not_use_runner_context_in_job_env");
+assert(
+  countOccurrences(cloudRollout, "fetch-depth: 0") >= 4,
+  "cloud_rollout_checkout_must_fetch_full_history_for_cloud_rc_git_ancestor_gate",
+);
+assert(
+  productionApplyJob.includes("fetch-depth: 0"),
+  "production_apply_checkout_must_fetch_full_history_for_cloud_rc_gate",
+);
+assert(
+  productionApplyJob.indexOf("npm ci") < productionApplyJob.indexOf("Create Goal F receipt inputs"),
+  "production_apply_must_install_dependencies_before_goal_f_receipt_inputs",
+);
+assert(
+  productionApplyJob.indexOf("Create Goal F receipt inputs") < productionApplyJob.indexOf("npm run cloud:goal:preflight -- --operation tenant_runtime_provisioning"),
+  "production_apply_must_create_goal_f_receipt_inputs_before_runtime_preflight",
+);
+assert(
+  productionApplyJob.indexOf("npm run cloud:goal -- --operation tenant_runtime_provisioning") < productionApplyJob.indexOf("npm run cloud:goal -- --operation storage_lifecycle"),
+  "production_apply_must_write_runtime_receipt_before_storage_receipts",
+);
+assert(
+  productionApplyJob.indexOf("npm run cloud:goal -- --operation storage_lifecycle") < productionApplyJob.indexOf("npm run cloud:goal -- --operation billing_audit_writeback"),
+  "production_apply_must_write_storage_release_receipts_before_billing_audit_receipts",
+);
+assert(
+  productionApplyJob.indexOf("npm run cloud:goal -- --operation billing_audit_writeback") < productionApplyJob.indexOf("Create deploy plan"),
+  "production_apply_must_write_billing_audit_receipts_before_deploy_plan",
+);
+assert(
+  productionApplyJob.indexOf("Create deploy plan") < productionApplyJob.indexOf("npm run cloud:goal:preflight -- --operation kubectl"),
+  "production_apply_must_create_deploy_plan_before_kubectl_preflight",
+);
+assert(
+  productionApplyJob.indexOf("npm run cloud:goal -- --operation kubectl") < productionApplyJob.indexOf("node scripts/cloud-rollout/medopl.mjs --apply"),
+  "production_apply_must_apply_manifest_receipt_before_rollout_apply",
+);
+assert(
+  productionApplyJob.indexOf("node scripts/cloud-rollout/medopl.mjs --apply") < productionApplyJob.indexOf("npm run cloud:goal -- --operation deploy"),
+  "production_apply_must_write_deploy_receipt_after_rollout_apply",
+);
+assert(
+  productionApplyJob.indexOf("npm run cloud:goal -- --operation deploy") < productionApplyJob.indexOf("npm run cloud:goal -- --operation live_test"),
+  "production_apply_must_write_live_test_receipt_after_deploy_receipt",
+);
+assert(
+  productionApplyJob.indexOf("npm run cloud:goal -- --operation live_test") < productionApplyJob.indexOf("npm run cloud:goal -- --manifest-only"),
+  "production_apply_must_generate_manifest_after_live_test_receipt",
+);
+assert(
+  productionApplyJob.indexOf("npm run cloud:goal -- --manifest-only") < productionApplyJob.indexOf("npm run verify:cloud-release-candidate"),
+  "production_apply_must_verify_cloud_rc_after_manifest",
+);
 assert.equal(cloudRollout.includes("runs-on: ubuntu-latest\n    environment: production"), false, "production_mutation_must_not_run_on_github_hosted_runner");
 
 const packageJson = JSON.parse(await readRepoFile("package.json"));

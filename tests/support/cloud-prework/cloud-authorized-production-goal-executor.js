@@ -364,6 +364,9 @@ function runExternalRunner(command, context = {}) {
         operationClass: context.operationClass,
         runnerId: context.runnerId,
         exitStatus: result.status ?? 1,
+        stdoutSummary: String(result.stdout || "").slice(0, 3000),
+        stderrSummary: String(result.stderr || "").slice(0, 3000),
+        externalSummary: isObject(parsed.summary) ? parsed.summary : {},
       }),
     };
   }
