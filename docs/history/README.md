@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/v22-portal-ui-grammar-and-bias-gates`
-- latest landed commit: `a783cc24d15ee15b502a64fa9ae2adc7083897d8`
+- latest landed branch: `feat/v22-phase2-portal-ui-secondary-development`
+- latest landed commit: `951fd5a501642834927b3c7b64a15660c1652f5f`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
@@ -32,6 +32,7 @@ History 只保留短索引：
 - production goal runner receipt hardening: `feat/v22-goal-real-runner-receipts` / `a584d2ee07c866eb9a125c31674b69fb79c18fb7` keeps Goal A readonly inventory secret-file gated, adds Goal C/D/E/F external runner interfaces, writes owner receipt pointers only through the authorized executor, and requires receipt manifests to bind `operation_class`, `runner_id` and the current authorization run. This is runner/receipt infrastructure, not production completion.
 - cloud goal preflight gate: `feat/v22-cloud-goal-preflight` / `93771d950b9838302621010125d1487136c6feb2` adds `cloud:goal:preflight` as a safe Goal A-F readiness check for required env, path and external runner inputs. It does not read secrets, call cloud APIs, write `.runtime` evidence or satisfy production owner receipts.
 - Portal UI grammar and bias gates: `feat/v22-portal-ui-grammar-and-bias-gates` / `a783cc24d15ee15b502a64fa9ae2adc7083897d8` folds MedOPL resource-control UI grammar, semantic tokens, Figma-code mapping and user-surface bias guards into existing `DESIGN.md`, page-state contract, theme tokens and current frontend/regression lanes. It adds no docs files, top-level scripts, health tests, Storybook or Figma/raw evidence.
+- Portal resource-control UI secondary development: `feat/v22-phase2-portal-ui-secondary-development` / `951fd5a501642834927b3c7b64a15660c1652f5f` adds repo-native resource-control components to Portal pages for runtime, plans, storage and billing/audit projections, keeps release mutation as future/disabled, and folds verification into existing frontend/regression/run-plan/landing gates. It adds no docs files, top-level scripts, health tests, Figma dumps, screenshots or raw evidence.
 
 ## Tombstone Map
 

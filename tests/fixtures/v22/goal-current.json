@@ -24,55 +24,74 @@
   "last_updated_at": "2026-06-21",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "a783cc24d15ee15b502a64fa9ae2adc7083897d8",
+  "base_trunk_head": "951fd5a501642834927b3c7b64a15660c1652f5f",
   "current_branch": "opl-webui-runtime-production-slice",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "opl-webui-runtime-production-slice",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "a783cc24d15ee15b502a64fa9ae2adc7083897d8",
+  "last_landed_commit": "951fd5a501642834927b3c7b64a15660c1652f5f",
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "feat/v22-portal-ui-grammar-and-bias-gates",
-    "landed_commit": "a783cc24d15ee15b502a64fa9ae2adc7083897d8",
+    "phase": "Phase 2 Figma/UI secondary development",
+    "branch": "feat/v22-phase2-portal-ui-secondary-development",
+    "landed_commit": "951fd5a501642834927b3c7b64a15660c1652f5f",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
       "npm run test:frontend passed",
-      "npm run test:contract passed",
-      "npm run test:health passed",
-      "npm run test:smoke passed",
-      "npm run test:lanes passed",
-      "npm run test:regression passed",
       "npm --prefix services/portal run frontend:typecheck passed",
+      "npm run test:regression passed",
+      "npm run local:services:start && npm run local:services:check -- --json passed",
+      "npm run test:run-plan passed",
       "npm run verify passed",
       "npm run gate:review passed",
       "npm run repo:bloat passed",
-      "npm run line:budget passed"
+      "npm run line:budget passed",
+      "npm run check:diff passed",
+      "npm --prefix services/portal run check passed",
+      "npm run verify:golden-path passed"
     ],
     "plan_completion_audit": {
-      "functional": "done",
-      "code_cleanup": "done",
-      "docs_foldback": "done",
-      "verification": "done",
-      "retired_entrypoints": "done",
-      "cannot_claim": "done"
+      "current_truth": "done",
+      "vision_gap": "done",
+      "lane_owner_consumer": "done",
+      "worktree_branch": "done",
+      "implementation": "done",
+      "run_plan": "done",
+      "targeted_gates": "done",
+      "full_gate": "done",
+      "push_feature_branch": "done",
+      "ff_only_merge_trunk": "done",
+      "push_trunk": "done",
+      "post_push_verify": "done",
+      "tombstone_cleanup": "pending_after_closeout_commit"
     },
     "cleanup_result": {
       "changed_files": [
-        "DESIGN.md",
-        "contracts/medopl-portal-page-state-matrix.json",
-        "services/portal/frontend/src/styles/theme.css",
-        "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
-        "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs"
+        "services/portal/frontend/src/app/components/ResourceControlComponents.tsx",
+        "services/portal/frontend/src/app/pages/BillingAudit.tsx",
+        "services/portal/frontend/src/app/pages/PackagesPurchase.tsx",
+        "services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx",
+        "services/portal/frontend/src/app/pages/Workspace.tsx",
+        "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
       ],
-      "added_files": [],
-      "folded": "Portal UI grammar, semantic tokens, Figma-code mapping and user-surface bias guards folded into existing design source, page-state contract, theme tokens and current test lanes.",
-      "retained": "Figma remains design input only; repo-native source, contracts and tests remain implementation truth.",
-      "reason": "Phase 1 current truth and local RC should start from the latest landed UI grammar gate before Phase 2 Figma/UI absorption.",
-      "next": "enter Phase 2 Figma/UI absorption only after Phase 1 gates remain green"
+      "added_files": [
+        "services/portal/frontend/src/app/components/ResourceControlComponents.tsx"
+      ],
+      "folded": "Phase 2 Portal resource-control UI secondary development folded into repo-native React source and existing frontend contract gate.",
+      "retained": "Figma Make remains design input only; DESIGN.md, page-state contract, Portal frontend source and tests remain implementation truth.",
+      "reason": "Figma Make did not provide a complete UI source; Phase 2 therefore absorbed design intent through existing MedOPL UI grammar and resource-control pages without raw Figma evidence.",
+      "next": "phase-3-cloud-deploy-shape-run-verification"
     },
-    "post_merge_closeout": "completed",
-    "next_cursor": "opl-webui-runtime-production-slice"
+    "cannot_claim": [
+      "production complete",
+      "cloud deploy completed",
+      "kubectl success",
+      "live-test coverage",
+      "runtime/storage/billing/audit/release owner receipts completed"
+    ],
+    "post_merge_closeout": "completed_after_closeout_commit",
+    "next_cursor": "phase-3-cloud-deploy-shape-run-verification"
   },
   "current_cursor": "opl-webui-runtime-production-slice",
   "next_leaf": "opl-webui-runtime-production-slice",
@@ -84,7 +103,7 @@
     "default_cloud_verification_is_limited_to_readonly_inventory_dry_run_plan_and_tke_bootstrap_preflight_before_production_receipts",
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth"
   ],
-  "current_problem": "MedOPL current truth is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is feat/v22-portal-ui-grammar-and-bias-gates at a783cc24d15ee15b502a64fa9ae2adc7083897d8, which allows feature branch push and gated trunk merge/push after fresh landing evidence without weakening cloud, secret, deploy or receipt requirements. The active blocker remains the opl-webui-runtime-production-slice proof ladder: first proof may only claim real local product RC, cloud proof may only claim cloud-deployable RC, and production proof requires explicit authorization plus runtime/storage/billing/audit/release owner receipts. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims require the active machine authorization pack plus runner/report evidence. The authorization pack now maps Goal A-F operation classes through the single cloud:goal package script with --operation <operation_class>; cloud:goal:preflight remains the safe readiness-only entrypoint. Goal A readonly inventory remains secret-file authorized, Goal B dry-run plan can produce local no-cloud deployment pointers, and Goal C-F fail closed until required env, runner path, accepted receipt status, redacted pointer evidence and owner receipt output exist. verify:cloud-release-candidate is active but fail-closed until a complete small receipt manifest provides all required lifecycle sections and seven owner receipts. Production complete is not claimed. The latest landed closeout is feat/v22-portal-ui-grammar-and-bias-gates at a783cc24d15ee15b502a64fa9ae2adc7083897d8.",
+  "current_problem": "MedOPL current truth is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is feat/v22-phase2-portal-ui-secondary-development at 951fd5a501642834927b3c7b64a15660c1652f5f, which allows feature branch push and gated trunk merge/push after fresh landing evidence without weakening cloud, secret, deploy or receipt requirements. The active blocker remains the opl-webui-runtime-production-slice proof ladder: first proof may only claim real local product RC, cloud proof may only claim cloud-deployable RC, and production proof requires explicit authorization plus runtime/storage/billing/audit/release owner receipts. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims require the active machine authorization pack plus runner/report evidence. The authorization pack now maps Goal A-F operation classes through the single cloud:goal package script with --operation <operation_class>; cloud:goal:preflight remains the safe readiness-only entrypoint. Goal A readonly inventory remains secret-file authorized, Goal B dry-run plan can produce local no-cloud deployment pointers, and Goal C-F fail closed until required env, runner path, accepted receipt status, redacted pointer evidence and owner receipt output exist. verify:cloud-release-candidate is active but fail-closed until a complete small receipt manifest provides all required lifecycle sections and seven owner receipts. Production complete is not claimed. The latest landed closeout is feat/v22-phase2-portal-ui-secondary-development at 951fd5a501642834927b3c7b64a15660c1652f5f. Phase 2 added repo-native Portal resource-control UI components and page consumption for runtime, plans, storage and billing/audit projections; Figma Make remains design input only, release mutation remains future/disabled, and no docs files, top-level scripts, health tests, raw Figma evidence, screenshots or cloud payloads were added. Phase 3 is cloud deploy shape run verification and may only claim cloud-deployable shape unless the production receipt manifest and all owner receipts are accepted.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -293,7 +312,7 @@
     "latest_local_evidence": "cloud-taxonomy-and-consumer-first-contract-cleanup"
   },
   "release_readiness_state": {
-    "status": "authorization_required",
+    "status": "phase_3_cloud_deploy_shape_pending",
     "cursor_eligible": false,
     "blocked_before_risky_execution": true,
     "forbidden_until_executable": [
@@ -303,7 +322,7 @@
       "deploy",
       "live-test"
     ],
-    "next_cursor": "opl-webui-runtime-production-slice",
+    "next_cursor": "phase-3-cloud-deploy-shape-run-verification",
     "authorization_required_before": [
       "secret read",
       "true cloud call",
@@ -333,6 +352,7 @@
       "Then run canary / QA / status update with redacted evidence outside git"
     ],
     "readinessGaps": [
+      "Phase 3 cloud deploy shape run verification: prove deploy manifests, image names, TKE namespace/node selector shape and dry-run/live boundary without claiming production complete",
       "Goal A readonly inventory live proof with explicit secret-file and redacted evidence pointer",
       "Goal C real storage lifecycle runner and owner receipts",
       "Goal D real runtime provisioning runner and owner receipts",
@@ -402,9 +422,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/v22-portal-ui-grammar-and-bias-gates",
+  "last_landed_branch": "feat/v22-phase2-portal-ui-secondary-development",
   "last_landed_at": "2026-06-21",
-  "history_latest_branch": "feat/v22-portal-ui-grammar-and-bias-gates",
+  "history_latest_branch": "feat/v22-phase2-portal-ui-secondary-development",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -637,6 +657,7 @@
     "cannot_claim": "cloud online, production complete, production owner receipt, production runtime, real cloud, real billing, deploy, kubectl, build/push or live provider readiness"
   },
   "readinessGaps": [
+    "Phase 3 cloud deploy shape run verification still needs repo-native deploy shape gates and post-push evidence before Goal A/C/D/E/F real runner receipts can be claimed",
     "Goal A live readonly inventory still requires explicit V22_TENCENT_READONLY_SECRET_FILE and redacted .runtime evidence pointer",
     "Goal C storage lifecycle still requires real external runner, mutation secret-file, storage plan and storage/release owner receipts from authorized execution",
     "Goal D tenant runtime provisioning still requires real external runner, mutation secret-file, runtime plan and runtime owner receipt from authorized execution",
@@ -652,7 +673,7 @@
   },
   "nextLocalCodexPrompt": {
     "target": "local-codex",
-    "prompt": "继续推进 Goal A/C/D/E/F 的真实外部 runner 接入和 receipt 校验；不要新增 active plan/change package，不要把 .runtime evidence 或云 payload 放入 git。下一步优先 Goal A live readonly inventory secret-file proof，其次 Goal C storage lifecycle 和 Goal D runtime provisioning runner。"
+    "prompt": "进入 Phase 3 cloud deploy shape run verification：从 current truth 读取 MedOPL runtime/storage/billing/audit/release 控制面边界，验证 deploy manifest、image naming、TKE namespace/node selector、dry-run/live boundary 和 receipt expectations。不要新增 docs 文件、顶层脚本或 health test；不要读取 secret、kubectl、deploy、build/push 或 live-test，除非通过 authorization pack 和 receipt。"
   },
   "cloud_deploy_readiness_contract_ref": {
     "schema_version": 1,
