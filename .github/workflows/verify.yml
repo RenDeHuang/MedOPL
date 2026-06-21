@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
+      - run: git fetch --no-tags origin +refs/heads/recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
       - run: npm run verify:repo-hygiene
 
   health:
@@ -32,7 +32,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.x"
+      - run: git fetch --no-tags origin +refs/heads/recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
       - run: npm run verify:health
       - run: npm run test:health
       - run: npm run test:lanes
@@ -48,7 +51,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
+      - run: git fetch --no-tags origin +refs/heads/recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
       - run: npm run validate:active-platform
       - run: npm run test:product
       - run: npm run test:frontend
@@ -67,7 +70,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
+      - run: git fetch --no-tags origin +refs/heads/recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
       - run: npm run verify:golden-path
       - run: npm run verify:smoke
       - run: npm run test:smoke
@@ -81,7 +84,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.x"
+      - run: git fetch --no-tags origin +refs/heads/recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
       - run: npm run verify:contract
       - run: npm run test:contract
 
@@ -94,8 +100,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
-      - run: npm --prefix services/portal/frontend ci
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.x"
+      - run: git fetch --no-tags origin +refs/heads/recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
+      - run: npm run pretest:regression
       - run: npm run test:regression
 
   review-gate:
@@ -107,7 +116,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - run: git fetch --no-tags --prune origin recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
+      - run: git fetch --no-tags origin +refs/heads/recovery/platform-v22-trunk:refs/remotes/origin/recovery/platform-v22-trunk
       - run: npm run verify:review
       - run: npm run gate:review
       - run: npm run check:diff
