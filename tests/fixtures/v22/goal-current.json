@@ -33,19 +33,18 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "chore/v22-trunk-cloud-rc-current-closeout",
-    "landed_commit": "12358872adee43977ae26771703e5840c8f619a0",
-    "landing_gate_result": "passed / ff-only landed / pushed after current trunk Release Image and Cloud Rollout rerun",
+    "branch": "chore/v22-closeout-32b1502-rollout-dns-blocker",
+    "landed_commit": "1c97e75837a94360fc410954fdfc04331116375e",
+    "landing_gate_result": "passed / ff-only landed / pushed after latest trunk Release Image and Cloud Rollout rerun",
     "post_push_verification": [
-      "Goal F runner wiring is on trunk via feat/v22-goal-f-production-receipt-manifest / 90a89b75b2a4613719ce9c424367fb35ed51495c and current closeout is on chore/v22-trunk-cloud-rc-current-closeout / 12358872adee43977ae26771703e5840c8f619a0.",
-      "GitHub Release Image run 27911002260 succeeded on current trunk 12358872adee43977ae26771703e5840c8f619a0 and built/pushed image tag 1235887 through the authorized build_push runner.",
-      "GitHub Cloud Rollout run 27911028428 succeeded on current trunk 12358872adee43977ae26771703e5840c8f619a0 with production apply, runtime/storage/billing-audit/kubectl/deploy/live-test receipt lanes, production receipt manifest, Cloud release candidate verify, and uploaded redacted receipt manifest artifact.",
-      "After downloading the redacted receipt-manifest artifact from run 27911028428 into .runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json, npm run verify:cloud-release-candidate passed locally.",
-      "npm run verify, npm run test:contract, npm run gate:review, npm run test:run-plan, npm run repo:bloat and npm run line:budget passed for the closeout changes.",
-      "This closeout records cloud release candidate evidence only; it does not claim production complete, multi-region production, SLA, compliance, or full OPL-Webui login/runtime-required/upload/run/artifact/release E2E."
+      "GitHub v22 verify run 27913474525 succeeded for 32b1502cb128cca1979afb07e25dac075b6c7417.",
+      "Release Image run 27913590845 succeeded and pushed image tag 32b1502 through the authorized build_push runner.",
+      "Cloud Rollout run 27913603345 executed runtime/storage/billing-audit/kubectl receipt lanes and rolled medopl-control-plane to image tag 32b1502, then failed closed at Rollout apply because portal.medopl.cn still resolves to the old static nginx CLB instead of the active qcloud Ingress.",
+      "npm run verify passed after closeout, and node scripts/v22-landing-closeout.mjs check identified this machine closeout pointer sync requirement.",
+      "This closeout records a fail-closed public routing blocker only; it does not claim cloud release candidate, production complete, or full OPL-Webui product E2E."
     ],
     "plan_completion_audit": {
-      "functional": "done",
+      "functional": "blocked",
       "code_cleanup": "done",
       "docs_foldback": "done",
       "verification": "done",
@@ -54,10 +53,10 @@
     },
     "cleanup_result": {
       "deleted": "none",
-      "folded": "Current trunk Release Image and Cloud Rollout run ids plus redacted receipt-manifest artifact pointer into active/history/machine cursor without committing raw evidence.",
-      "retained": "raw workflow evidence and receipt manifest remain outside git as GitHub Actions artifact / .runtime pointer evidence",
-      "reason": "Goal F proves cloud release candidate gate can pass with the complete redacted receipt manifest, but does not prove production complete or the full product E2E user flow.",
-      "next": "Goal G full OPL-Webui runtime-required product E2E canary"
+      "folded": "latest trunk Release Image and Cloud Rollout rerun ids plus DNS blocker into active/history/machine cursor without committing raw evidence",
+      "retained": "raw workflow evidence remains in GitHub Actions logs and receipt artifacts outside git",
+      "reason": "rollout and Kubernetes deployment succeeded but public Go API routing still fails closed, so no cloud RC or product E2E claim is allowed",
+      "next": "fix portal.medopl.cn DNS/CNAME to active qcloud Ingress and rerun Cloud Rollout with availability probe"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "opl-webui-runtime-production-slice"
@@ -73,7 +72,7 @@
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth",
     "public_portal_medopl_api_routes_static_html_not_go_control_plane"
   ],
-  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is chore/v22-trunk-cloud-rc-current-closeout at 12358872adee43977ae26771703e5840c8f619a0; hardened cloud E2E work after that closeout landed on trunk and keeps public API canary gates fail-closed. Goal F cloud release candidate wiring landed in feat/v22-goal-f-production-receipt-manifest at 90a89b75b2a4613719ce9c424367fb35ed51495c and CI self-contained fixes landed on trunk. Goal A readonly inventory, Goal C storage lifecycle, Goal D tenant runtime provisioning, Goal E OPL-Webui HTTPS consumer canary, and Goal F build_push / kubectl / deploy / billing_audit_writeback / live_test receipt lanes have remote authorized workflow evidence. Current trunk 32b1502cb128cca1979afb07e25dac075b6c7417 has GitHub v22 verify run 27913474525 passed and Release Image run 27913590845 succeeded with image tag 32b1502; GitHub Cloud Rollout run 27913603345 rolled medopl-control-plane to image 32b1502 but failed closed in Rollout apply because the post-rollout health gate requires MedOPL Go backend JSON. Routing diagnostics showed qcloud Ingress medopl at lb-7trlq374-v40s3uxfnpb1dazj.clb.usw-tencentclb.com and service endpoint 10.66.0.133:8080, while GitHub runner DNS still resolves portal.medopl.cn to old static nginx CLB lb-pwv9zgky-yqsc8g20f1o6p3ir.clb.usw-tencentclb.com / 43.159.159.90. portal.medopl.cn therefore serves static HTML for /, /healthz, /readyz and /api/opl/runtime-gate instead of Go control-plane JSON. This state does not allow a new cloud release candidate claim, production complete claim, or full OPL-Webui product E2E claim. The next gap is public API routing plus full product E2E canary: login/session or canary token -> runtime_required -> MedOPL runtime/storage open -> upload -> fileRef -> run -> artifact -> billing/audit -> release/stop billing -> optional storage destroy, with raw evidence kept outside git.",
+  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is chore/v22-closeout-32b1502-rollout-dns-blocker at 1c97e75837a94360fc410954fdfc04331116375e; hardened cloud E2E work after that closeout landed on trunk and keeps public API canary gates fail-closed. Goal F cloud release candidate wiring landed in feat/v22-goal-f-production-receipt-manifest at 90a89b75b2a4613719ce9c424367fb35ed51495c and CI self-contained fixes landed on trunk. Goal A readonly inventory, Goal C storage lifecycle, Goal D tenant runtime provisioning, Goal E OPL-Webui HTTPS consumer canary, and Goal F build_push / kubectl / deploy / billing_audit_writeback / live_test receipt lanes have remote authorized workflow evidence. Current trunk 32b1502cb128cca1979afb07e25dac075b6c7417 has GitHub v22 verify run 27913474525 passed and Release Image run 27913590845 succeeded with image tag 32b1502; GitHub Cloud Rollout run 27913603345 rolled medopl-control-plane to image 32b1502 but failed closed in Rollout apply because the post-rollout health gate requires MedOPL Go backend JSON. Routing diagnostics showed qcloud Ingress medopl at lb-7trlq374-v40s3uxfnpb1dazj.clb.usw-tencentclb.com and service endpoint 10.66.0.133:8080, while GitHub runner DNS still resolves portal.medopl.cn to old static nginx CLB lb-pwv9zgky-yqsc8g20f1o6p3ir.clb.usw-tencentclb.com / 43.159.159.90. portal.medopl.cn therefore serves static HTML for /, /healthz, /readyz and /api/opl/runtime-gate instead of Go control-plane JSON. This state does not allow a new cloud release candidate claim, production complete claim, or full OPL-Webui product E2E claim. The next gap is public API routing plus full product E2E canary: login/session or canary token -> runtime_required -> MedOPL runtime/storage open -> upload -> fileRef -> run -> artifact -> billing/audit -> release/stop billing -> optional storage destroy, with raw evidence kept outside git.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -608,9 +607,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "chore/v22-trunk-cloud-rc-current-closeout",
-  "last_landed_at": "2026-06-21",
-  "history_latest_branch": "chore/v22-trunk-cloud-rc-current-closeout",
+  "last_landed_branch": "chore/v22-closeout-32b1502-rollout-dns-blocker",
+  "last_landed_at": "2026-06-22",
+  "history_latest_branch": "chore/v22-closeout-32b1502-rollout-dns-blocker",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -900,6 +899,6 @@
       "consumer_canary"
     ]
   },
-  "base_trunk_head": "cbd0d8962a5bf9ab34a1ff0973c2bb9ba5ca99dc",
-  "last_landed_commit": "12358872adee43977ae26771703e5840c8f619a0"
+  "base_trunk_head": "1c97e75837a94360fc410954fdfc04331116375e",
+  "last_landed_commit": "1c97e75837a94360fc410954fdfc04331116375e"
 }

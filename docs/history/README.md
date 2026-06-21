@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `chore/v22-trunk-cloud-rc-current-closeout`
-- latest landed commit: `12358872adee43977ae26771703e5840c8f619a0`
+- latest landed branch: `chore/v22-closeout-32b1502-rollout-dns-blocker`
+- latest landed commit: `1c97e75837a94360fc410954fdfc04331116375e`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
