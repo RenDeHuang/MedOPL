@@ -136,6 +136,7 @@ export function PlanCard({
   recommended,
   selected,
   action,
+  density = "default",
 }: {
   planId: string;
   priceState: string;
@@ -148,41 +149,72 @@ export function PlanCard({
   recommended?: boolean;
   selected?: boolean;
   action?: ReactNode;
+  density?: "default" | "compact";
 }) {
+  const isCompact = density === "compact";
   return (
     <Card
       data-ui-component="PlanCard"
       data-plan-id={planId}
+      data-density={density}
       className={cn(
         "border overflow-hidden transition-colors",
         selected ? "border-neutral-900 shadow-sm" : "border-neutral-200",
       )}
     >
-      {recommended && <div className="px-5 py-2 bg-neutral-900 text-white text-xs font-medium">推荐套餐</div>}
-      <div className="p-5">
-        <div className="mb-5 flex items-start justify-between gap-3">
+      {recommended && !isCompact && <div className="bg-neutral-900 px-5 py-2 text-xs font-medium text-white">推荐套餐</div>}
+      <div className={cn(isCompact ? "p-4" : "p-5")}>
+        <div className={cn("flex items-start justify-between gap-3", isCompact ? "mb-4" : "mb-5")}>
           <div className="min-w-0">
-            <h2 className="break-words text-lg font-semibold text-neutral-900">{title}</h2>
-            {description && <p className="mt-1 break-words text-sm text-neutral-600">{description}</p>}
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="break-words text-lg font-semibold text-neutral-900">{title}</h2>
+              {recommended && isCompact && (
+                <Badge variant="outline" className="bg-neutral-900 text-white border-neutral-900">
+                  推荐
+                </Badge>
+              )}
+            </div>
+            {description && !isCompact && <p className="mt-1 break-words text-sm text-neutral-600">{description}</p>}
           </div>
           <StateBadge status={purchaseState} />
         </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <SpecTile icon={<Server className="w-4 h-4" />} label="计算资源" value={computeSpec} />
-          <SpecTile icon={<HardDrive className="w-4 h-4" />} label="存储空间" value={storageSize} />
-          <SpecTile icon={<Clock className="w-4 h-4" />} label="并发任务" value={taskConcurrency} />
-          <SpecTile icon={<Receipt className="w-4 h-4" />} label="价格状态" value={priceState} />
-        </div>
-        {action && <div className="mt-5">{action}</div>}
+        {isCompact ? (
+          <div data-ui-pattern="plan-spec-rows" className="grid grid-cols-1 gap-x-5 gap-y-2 rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2.5 sm:grid-cols-2">
+            <SpecRow icon={<Server className="w-4 h-4" />} label="计算资源" value={computeSpec} />
+            <SpecRow icon={<HardDrive className="w-4 h-4" />} label="存储空间" value={storageSize} />
+            <SpecRow icon={<Clock className="w-4 h-4" />} label="并发任务" value={taskConcurrency} />
+            <SpecRow icon={<Receipt className="w-4 h-4" />} label="价格状态" value={priceState} />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <SpecTile icon={<Server className="w-4 h-4" />} label="计算资源" value={computeSpec} />
+            <SpecTile icon={<HardDrive className="w-4 h-4" />} label="存储空间" value={storageSize} />
+            <SpecTile icon={<Clock className="w-4 h-4" />} label="并发任务" value={taskConcurrency} />
+            <SpecTile icon={<Receipt className="w-4 h-4" />} label="价格状态" value={priceState} />
+          </div>
+        )}
+        {action && <div className={cn(isCompact ? "mt-4" : "mt-5")}>{action}</div>}
       </div>
     </Card>
   );
 }
 
-function SpecTile({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+function SpecRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
-    <div className="min-w-0 rounded-md border border-neutral-200 p-3">
-      <div className="mb-1 flex items-center gap-2 text-sm text-neutral-600">
+    <div data-ui-pattern="plan-spec-tile" className="min-w-0">
+      <div className="mb-0.5 flex items-center gap-2 text-xs text-neutral-500">
+        <span className="shrink-0">{icon}</span>
+        <span className="min-w-0 break-words">{label}</span>
+      </div>
+      <div className="break-words text-sm font-semibold text-neutral-900">{value}</div>
+    </div>
+  );
+}
+
+function SpecTile({ icon, label, value, compact = false }: { icon: ReactNode; label: string; value: string; compact?: boolean }) {
+  return (
+    <div data-ui-pattern="plan-spec-tile" className={cn("min-w-0 rounded-md border border-neutral-200", compact ? "p-2.5" : "p-3")}>
+      <div className={cn("flex items-center gap-2 text-neutral-600", compact ? "mb-0.5 text-xs" : "mb-1 text-sm")}>
         <span className="shrink-0">{icon}</span>
         <span className="min-w-0 break-words">{label}</span>
       </div>
@@ -249,6 +281,12 @@ export function BillingSummary({
   usageLabel?: string;
   auditState: string;
 }) {
+  const fields = [
+    { label: "余额", value: balance },
+    { label: "冻结", value: freeze },
+    { label: usageLabel, value: usage },
+    { label: "审计", value: auditState },
+  ];
   return (
     <Card className="border border-neutral-200 p-5" data-ui-component="BillingSummary">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -261,11 +299,13 @@ export function BillingSummary({
         </div>
         <StateBadge status={status} />
       </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <SpecTile icon={<Receipt className="w-4 h-4" />} label="余额" value={balance} />
-        <SpecTile icon={<AlertCircle className="w-4 h-4" />} label="冻结金额" value={freeze} />
-        <SpecTile icon={<Server className="w-4 h-4" />} label={usageLabel} value={usage} />
-        <SpecTile icon={<Shield className="w-4 h-4" />} label="审计状态" value={auditState} />
+      <div data-ui-pattern="billing-ledger-summary" className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-md border border-neutral-200 bg-neutral-50 px-4 py-3 md:grid-cols-4">
+        {fields.map((field) => (
+          <div key={field.label} data-ui-pattern="billing-ledger-field" className="min-w-0">
+            <div className="text-xs text-neutral-500">{field.label}</div>
+            <div className="mt-1 break-words text-base font-semibold text-neutral-900">{field.value}</div>
+          </div>
+        ))}
       </div>
     </Card>
   );

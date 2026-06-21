@@ -75,6 +75,7 @@ export function RuntimeEnvironment() {
             <PlanCard
               key={plan.id}
               planId={plan.id}
+              density="compact"
               title={plan.name}
               description={plan.description}
               selected={selectedPlan === plan.id}

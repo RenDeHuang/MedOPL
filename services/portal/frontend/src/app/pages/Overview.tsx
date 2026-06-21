@@ -50,8 +50,8 @@ export function Overview() {
       <div className="p-8 max-w-7xl mx-auto">
         {/* Hero - Service Status */}
         <div className="mb-8 pb-8 border-b border-neutral-200">
-          <div className="flex items-start justify-between">
-            <div>
+          <div data-ui-section="overview-primary-hero" className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
               <div className="flex items-center gap-2 mb-3">
                 <Badge variant="outline" className="bg-neutral-100 text-neutral-600 border-neutral-200">
                   资源总览
@@ -67,7 +67,7 @@ export function Overview() {
                 开通计算资源和存储空间后，即可回到 OPL 使用云端能力
               </p>
             </div>
-            <Button asChild className="gap-2">
+            <Button asChild className="w-full gap-2 sm:w-auto">
               <Link to="/packages">
                 选择套餐
                 <ArrowRight className="w-4 h-4" />
@@ -104,8 +104,8 @@ export function Overview() {
       <div className="p-8 max-w-7xl mx-auto">
         {/* Hero - Service Status */}
         <div className="mb-8 pb-8 border-b border-neutral-200">
-          <div className="flex items-start justify-between">
-            <div>
+          <div data-ui-section="overview-primary-hero" className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
               <div className="flex items-center gap-2 mb-3">
                 <Badge variant="outline" className="bg-neutral-100 text-neutral-600 border-neutral-200">
                   资源总览
@@ -122,7 +122,7 @@ export function Overview() {
                 当前余额不足或冻结金额异常，部分功能受限，处理后即可恢复正常使用
               </p>
             </div>
-            <Button asChild className="gap-2">
+            <Button asChild className="w-full gap-2 sm:w-auto">
               <Link to="/billing">
                 处理余额
                 <ArrowRight className="w-4 h-4" />
@@ -206,8 +206,8 @@ export function Overview() {
     <div className="p-8 max-w-7xl mx-auto">
       {/* Hero - Service Status and Main Action */}
       <div className="mb-8 pb-8 border-b border-neutral-200">
-        <div className="flex items-start justify-between">
-          <div>
+        <div data-ui-section="overview-primary-hero" className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
             <div className="flex items-center gap-2 mb-3">
               <Badge variant="outline" className="bg-neutral-100 text-neutral-600 border-neutral-200">
                 资源总览
@@ -224,7 +224,7 @@ export function Overview() {
               你的 OPL 云端计算资源和存储空间当前状态正常，可以进入 OPL 使用
             </p>
           </div>
-          <Button asChild className="gap-2">
+          <Button asChild className="w-full gap-2 sm:w-auto">
             <Link to="/opl-launch">
               进入 OPL
               <ArrowRight className="w-4 h-4" />

@@ -198,6 +198,78 @@ async function assertBillingFirstViewDensity(page, label) {
   assert(metrics.firstViewCardCount <= 1, `${label}_billing_first_view_card_budget_exceeded:${JSON.stringify(metrics)}`);
 }
 
+async function assertOverviewMobileHeroPolish(page, label) {
+  const metrics = await page.evaluate(() => {
+    const heading = [...document.querySelectorAll("h2")].find((node) => node.textContent?.includes("选择套餐开通计算资源"));
+    const cta = [...document.querySelectorAll("a,button")].find((node) => node.textContent?.includes("选择套餐"));
+    const hero = heading?.closest("[data-ui-section='overview-primary-hero']");
+    if (!heading || !cta || !hero) {
+      return { hasHeading: Boolean(heading), hasCta: Boolean(cta), hasHero: Boolean(hero) };
+    }
+    const headingRect = heading.getBoundingClientRect();
+    const ctaRect = cta.getBoundingClientRect();
+    const heroRect = hero.getBoundingClientRect();
+    return {
+      hasHeading: true,
+      hasCta: true,
+      hasHero: true,
+      heroWidth: Math.round(heroRect.width),
+      headingBottom: Math.round(headingRect.bottom),
+      ctaTop: Math.round(ctaRect.top),
+      ctaWidth: Math.round(ctaRect.width),
+      ctaLeft: Math.round(ctaRect.left),
+      heroLeft: Math.round(heroRect.left),
+    };
+  });
+  assert.equal(metrics.hasHero, true, `${label}_overview_primary_hero_marker_missing:${JSON.stringify(metrics)}`);
+  assert(metrics.ctaTop >= metrics.headingBottom + 12, `${label}_overview_mobile_cta_must_stack_below_heading:${JSON.stringify(metrics)}`);
+  assert(metrics.ctaWidth >= metrics.heroWidth - 2, `${label}_overview_mobile_cta_must_use_available_width:${JSON.stringify(metrics)}`);
+  assert(Math.abs(metrics.ctaLeft - metrics.heroLeft) <= 2, `${label}_overview_mobile_cta_must_align_to_hero_left:${JSON.stringify(metrics)}`);
+}
+
+async function assertRuntimePlanDensity(page, label) {
+  const metrics = await page.evaluate(() => {
+    const cards = [...document.querySelectorAll("[data-ui-component='PlanCard']")].map((node) => {
+      const rect = node.getBoundingClientRect();
+      return {
+        density: node.getAttribute("data-density"),
+        height: Math.round(rect.height),
+        specTiles: node.querySelectorAll("[data-ui-pattern='plan-spec-tile']").length,
+      };
+    });
+    return { cards };
+  });
+  assert(metrics.cards.length > 0, `${label}_plan_cards_missing`);
+  assert(
+    metrics.cards.every((card) => card.density === "compact"),
+    `${label}_plan_cards_must_use_compact_density:${JSON.stringify(metrics)}`,
+  );
+  assert(
+    metrics.cards.every((card) => card.height <= 300),
+    `${label}_plan_cards_too_tall:${JSON.stringify(metrics)}`,
+  );
+  assert(
+    metrics.cards.every((card) => card.specTiles <= 4),
+    `${label}_plan_cards_spec_tiles_unexpected:${JSON.stringify(metrics)}`,
+  );
+}
+
+async function assertBillingSummaryLedgerShape(page, label) {
+  const metrics = await page.evaluate(() => {
+    const summary = document.querySelector("[data-ui-section='billing-first-view'] [data-ui-component='BillingSummary']");
+    return {
+      hasSummary: Boolean(summary),
+      ledgerSummaryCount: summary?.querySelectorAll("[data-ui-pattern='billing-ledger-summary']").length || 0,
+      ledgerFieldCount: summary?.querySelectorAll("[data-ui-pattern='billing-ledger-field']").length || 0,
+      nestedMetricTileCount: summary?.querySelectorAll("[data-ui-pattern='plan-spec-tile']").length || 0,
+    };
+  });
+  assert.equal(metrics.hasSummary, true, `${label}_billing_summary_missing`);
+  assert.equal(metrics.ledgerSummaryCount, 1, `${label}_billing_summary_ledger_shape_missing:${JSON.stringify(metrics)}`);
+  assert.equal(metrics.ledgerFieldCount, 4, `${label}_billing_summary_ledger_field_count_mismatch:${JSON.stringify(metrics)}`);
+  assert.equal(metrics.nestedMetricTileCount, 0, `${label}_billing_summary_must_not_use_nested_metric_tiles:${JSON.stringify(metrics)}`);
+}
+
 const { chromium } = await loadPlaywright();
 const backendPort = await freePort();
 const vitePort = await freePort();
@@ -286,6 +358,7 @@ try {
     await page.setViewportSize({ width: 390, height: 844 });
     await assertNoGlobalHorizontalOverflow(page, "browser_overview_mobile");
     await assertPrimaryActionReachable(page, "browser_overview_mobile");
+    await assertOverviewMobileHeroPolish(page, "browser_overview_mobile");
     await page.setViewportSize({ width: 1440, height: 920 });
 
     await page.goto(`${frontendBaseUrl}/resources`, { waitUntil: "domcontentloaded" });
@@ -303,6 +376,7 @@ try {
     if (lastBodyText.includes("释放与停止计费")) {
       assert(lastBodyText.includes("释放交互接入中"), "browser_runtime_release_partial_state_missing");
     }
+    await assertRuntimePlanDensity(page, "browser_runtime_environment");
     await assertPrimaryActionReachable(page, "browser_runtime_environment");
     await assertNoGlobalHorizontalOverflow(page, "browser_runtime_environment");
 
@@ -313,6 +387,7 @@ try {
     assertResourceControlCopy(lastBodyText, "browser_billing", ["费用与用量", "账单"]);
     await assertFirstH1(page, "费用与用量", "browser_billing");
     await assertBillingFirstViewDensity(page, "browser_billing");
+    await assertBillingSummaryLedgerShape(page, "browser_billing");
     await assertNoGlobalHorizontalOverflow(page, "browser_billing");
 
     const userContext = await browser.newContext({
