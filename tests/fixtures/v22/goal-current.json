@@ -73,7 +73,7 @@
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth",
     "public_portal_medopl_api_routes_static_html_not_go_control_plane"
   ],
-  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is chore/v22-trunk-cloud-rc-current-closeout at 12358872adee43977ae26771703e5840c8f619a0, after Goal F cloud release candidate wiring landed in feat/v22-goal-f-production-receipt-manifest at 90a89b75b2a4613719ce9c424367fb35ed51495c and CI self-contained fixes landed on trunk. Goal A readonly inventory, Goal C storage lifecycle, Goal D tenant runtime provisioning, Goal E OPL-Webui HTTPS consumer canary, and Goal F build_push / kubectl / deploy / billing_audit_writeback / live_test receipt lanes have remote authorized workflow evidence. GitHub Release Image run 27911570626 succeeded on current trunk d0adf57751efacce4e9867fdcbe78b1420bab71d and built/pushed image tag d0adf57; GitHub Cloud Rollout run 27911590272 applied the deployment and uploaded receipt artifacts, but log and public probes show the current live-test/availability path was previously too shallow. portal.medopl.cn/healthz and /readyz currently return static nginx HTML, and /api/opl/runtime-gate is not publicly routed to the Go control-plane. This state allows only cloud release candidate evidence after fail-closed receipt manifest verification; it does not allow production complete or full OPL-Webui product E2E. The next gap is public API routing plus full product E2E canary: login/session or canary token -> runtime_required -> MedOPL runtime/storage open -> upload -> fileRef -> run -> artifact -> billing/audit -> release/stop billing -> optional storage destroy, with raw evidence kept outside git.",
+  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is chore/v22-trunk-cloud-rc-current-closeout at 12358872adee43977ae26771703e5840c8f619a0; hardened cloud E2E work after that closeout landed on trunk and keeps public API canary gates fail-closed. Goal F cloud release candidate wiring landed in feat/v22-goal-f-production-receipt-manifest at 90a89b75b2a4613719ce9c424367fb35ed51495c and CI self-contained fixes landed on trunk. Goal A readonly inventory, Goal C storage lifecycle, Goal D tenant runtime provisioning, Goal E OPL-Webui HTTPS consumer canary, and Goal F build_push / kubectl / deploy / billing_audit_writeback / live_test receipt lanes have remote authorized workflow evidence. Current trunk 80988091fcad2910d85b9704e6af4eaaf0cc692b has GitHub v22 verify run 27912722404 passed and Release Image run 27912776562 succeeded with image tag 8098809; GitHub Cloud Rollout run 27912789001 rolled medopl-control-plane to image 8098809 but failed closed in Rollout apply because the post-rollout health gate now requires MedOPL Go backend JSON. portal.medopl.cn currently serves static nginx HTML for /, /healthz, /readyz and /api/opl/runtime-gate instead of Go control-plane JSON. This state does not allow a new cloud release candidate claim, production complete claim, or full OPL-Webui product E2E claim. The next gap is public API routing plus full product E2E canary: login/session or canary token -> runtime_required -> MedOPL runtime/storage open -> upload -> fileRef -> run -> artifact -> billing/audit -> release/stop billing -> optional storage destroy, with raw evidence kept outside git.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -534,14 +534,14 @@
       "receipt_manifest_schema": "seven_owner_receipts_plus_required_lifecycle_sections"
     },
     "latest_trunk_cloud_runs": {
-      "trunk_commit": "d0adf57751efacce4e9867fdcbe78b1420bab71d",
-      "release_image_run_id": "27911570626",
-      "release_image_tag": "d0adf57",
-      "cloud_rollout_run_id": "27911590272",
-      "post_push_verify_run_id": "27911408134",
-      "cloud_rollout_workflow_conclusion": "success_with_previous_availability_false_positive_detected",
-      "public_api_blocker": "portal.medopl.cn serves static nginx HTML for /healthz and /readyz; /api/opl/runtime-gate is not routed to Go control-plane",
-      "fixed_by_this_slice": "availability probe and live_test fail closed unless MedOPL Go API JSON and runtime/storage/upload/run/artifact/billing/release/destroy API flow pass",
+      "trunk_commit": "80988091fcad2910d85b9704e6af4eaaf0cc692b",
+      "release_image_run_id": "27912776562",
+      "release_image_tag": "8098809",
+      "cloud_rollout_run_id": "27912789001",
+      "post_push_verify_run_id": "27912722404",
+      "cloud_rollout_workflow_conclusion": "failure_fail_closed_at_rollout_go_health_json",
+      "public_api_blocker": "portal.medopl.cn serves static nginx HTML for /, /healthz, /readyz and /api/opl/runtime-gate; it is not routed to Go control-plane JSON",
+      "fixed_by_this_slice": "rollout apply, availability probe and live_test fail closed unless MedOPL Go API JSON and runtime/storage/upload/run/artifact/billing/release/destroy API flow pass",
       "raw_evidence_committed": false
     }
   },
@@ -899,6 +899,6 @@
       "consumer_canary"
     ]
   },
-  "base_trunk_head": "d0adf57751efacce4e9867fdcbe78b1420bab71d",
+  "base_trunk_head": "80988091fcad2910d85b9704e6af4eaaf0cc692b",
   "last_landed_commit": "12358872adee43977ae26771703e5840c8f619a0"
 }
