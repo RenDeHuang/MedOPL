@@ -24,19 +24,16 @@
   "last_updated_at": "2026-06-21",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
-  "base_trunk_head": "pending until landed",
   "current_branch": "opl-webui-runtime-production-slice",
   "current_branch_role": "authorization_boundary_cursor",
   "authoring_branch": "opl-webui-runtime-production-slice",
   "target_branch": "recovery/platform-v22-trunk",
-  "last_landed_commit": "pending until landed",
   "latest_landed_closeout": {
     "schema_version": 1,
-    "status": "shape verified / pending landing commit",
+    "status": "landed / pushed / post-push verified",
     "phase": "Phase 3 Cloud deploy shape run verification",
     "branch": "feat/v22-phase3-cloud-deploy-shape",
-    "landed_commit": "pending until landed",
-    "landing_gate_result": "pending until commit/push",
+    "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
       "npm run cloud:rollout:dry-run passed",
       "node tests/cloud/cloud-test-v22-medopl-github-cloud-rollout-shape.mjs passed",
@@ -51,12 +48,12 @@
       "implementation": "not_needed_existing_shape_gate_reused",
       "run_plan": "done_for_phase_shape_gates",
       "targeted_gates": "done",
-      "full_gate": "pending_landing_gate",
-      "push_feature_branch": "pending",
-      "ff_only_merge_trunk": "pending",
-      "push_trunk": "pending",
-      "post_push_verify": "pending",
-      "tombstone_cleanup": "pending"
+      "full_gate": "done",
+      "push_feature_branch": "done",
+      "ff_only_merge_trunk": "done",
+      "push_trunk": "done",
+      "post_push_verify": "pending_after_sync_commit",
+      "tombstone_cleanup": "pending_after_sync_commit"
     },
     "cleanup_result": {
       "changed_files": [
@@ -86,8 +83,9 @@
       "live-test completed",
       "runtime/storage/billing/audit/release owner receipts completed"
     ],
-    "post_merge_closeout": "pending",
-    "next_cursor": "phase-4-github-tke-external-preconditions"
+    "post_merge_closeout": "completed_after_sync_commit",
+    "next_cursor": "phase-4-github-tke-external-preconditions",
+    "landed_commit": "12f6219322e74df7bfd87b35b553d9ec637aea26"
   },
   "current_cursor": "opl-webui-runtime-production-slice",
   "next_leaf": "opl-webui-runtime-production-slice",
@@ -99,7 +97,7 @@
     "default_cloud_verification_is_limited_to_readonly_inventory_dry_run_plan_and_tke_bootstrap_preflight_before_production_receipts",
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth"
   ],
-  "current_problem": "MedOPL current truth is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is feat/v22-phase2-portal-ui-secondary-development at 951fd5a501642834927b3c7b64a15660c1652f5f, which allows feature branch push and gated trunk merge/push after fresh landing evidence without weakening cloud, secret, deploy or receipt requirements. The active blocker remains the opl-webui-runtime-production-slice proof ladder: first proof may only claim real local product RC, cloud proof may only claim cloud-deployable RC, and production proof requires explicit authorization plus runtime/storage/billing/audit/release owner receipts. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims require the active machine authorization pack plus runner/report evidence. The authorization pack now maps Goal A-F operation classes through the single cloud:goal package script with --operation <operation_class>; cloud:goal:preflight remains the safe readiness-only entrypoint. Goal A readonly inventory remains secret-file authorized, Goal B dry-run plan can produce local no-cloud deployment pointers, and Goal C-F fail closed until required env, runner path, accepted receipt status, redacted pointer evidence and owner receipt output exist. verify:cloud-release-candidate is active but fail-closed until a complete small receipt manifest provides all required lifecycle sections and seven owner receipts. Production complete is not claimed. The latest landed closeout is feat/v22-phase3-cloud-deploy-shape at pending until landed. Phase 3 reused existing deploy manifest, GitHub rollout workflow, release image workflow, rollout helper and cloud shape gate to verify cloud-deployable shape only. The dry-run proof does not call kubectl, deploy workloads, read kubeconfig, build/push images, live-test, write receipt manifests or satisfy production receipts; verify:cloud-release-candidate remains fail-closed until seven owner receipts and lifecycle sections exist.",
+  "current_problem": "MedOPL current truth is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is feat/v22-phase2-portal-ui-secondary-development at 951fd5a501642834927b3c7b64a15660c1652f5f, which allows feature branch push and gated trunk merge/push after fresh landing evidence without weakening cloud, secret, deploy or receipt requirements. The active blocker remains the opl-webui-runtime-production-slice proof ladder: first proof may only claim real local product RC, cloud proof may only claim cloud-deployable RC, and production proof requires explicit authorization plus runtime/storage/billing/audit/release owner receipts. Secret reads, provider calls, Tencent mutation, kubectl, deploy, build/push, live-test, production ledger writes and public access claims require the active machine authorization pack plus runner/report evidence. The authorization pack now maps Goal A-F operation classes through the single cloud:goal package script with --operation <operation_class>; cloud:goal:preflight remains the safe readiness-only entrypoint. Goal A readonly inventory remains secret-file authorized, Goal B dry-run plan can produce local no-cloud deployment pointers, and Goal C-F fail closed until required env, runner path, accepted receipt status, redacted pointer evidence and owner receipt output exist. verify:cloud-release-candidate is active but fail-closed until a complete small receipt manifest provides all required lifecycle sections and seven owner receipts. Production complete is not claimed. The latest landed closeout is feat/v22-phase3-cloud-deploy-shape at 12f6219322e74df7bfd87b35b553d9ec637aea26. Phase 3 reused existing deploy manifest, GitHub rollout workflow, release image workflow, rollout helper and cloud shape gate to verify cloud-deployable shape only. The dry-run proof does not call kubectl, deploy workloads, read kubeconfig, build/push images, live-test, write receipt manifests or satisfy production receipts; verify:cloud-release-candidate remains fail-closed until seven owner receipts and lifecycle sections exist.",
   "gaps": [
     {
       "id": "precloud-product-slides-closure",
@@ -715,5 +713,7 @@
       "post_destroy_inventory",
       "consumer_canary"
     ]
-  }
+  },
+  "base_trunk_head": "12f6219322e74df7bfd87b35b553d9ec637aea26",
+  "last_landed_commit": "12f6219322e74df7bfd87b35b553d9ec637aea26"
 }
