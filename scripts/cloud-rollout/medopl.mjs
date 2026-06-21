@@ -131,6 +131,15 @@ function runHealthProbe(label, url) {
   });
   if (result.status !== 0) throw new Error(`${label}_probe_failed`);
   assertNoSecretText(result.stdout);
+  let body = {};
+  try {
+    body = JSON.parse(result.stdout);
+  } catch {
+    throw new Error(`${label}_health_probe_must_validate_go_backend_health_json`);
+  }
+  if (body.status !== "ok" || body.service !== "medopl-go-backend") {
+    throw new Error(`${label}_health_probe_must_validate_go_backend_health_json`);
+  }
 }
 
 async function runAvailabilityProbe() {

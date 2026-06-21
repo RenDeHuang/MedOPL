@@ -150,6 +150,10 @@ assert(
   rolloutSource.includes("body.status === \"ok\"") && rolloutSource.includes("body.service === \"medopl-go-backend\""),
   "availability_probe_must_validate_go_backend_health_json_not_static_html",
 );
+assert(
+  rolloutSource.includes("JSON.parse(result.stdout)") && rolloutSource.includes("health_probe_must_validate_go_backend_health_json"),
+  "post_rollout_health_probe_must_validate_go_backend_health_json_not_static_html",
+);
 
 const releaseImage = await readRepoFile(".github/workflows/release-image.yml");
 const cloudRollout = await readRepoFile(".github/workflows/cloud-rollout.yml");
