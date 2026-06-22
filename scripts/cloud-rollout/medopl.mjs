@@ -21,6 +21,8 @@ const imageRepository = "uswccr.ccs.tencentyun.com/medopl/medopl-go-backend";
 const allowedImagePattern = /^uswccr\.ccs\.tencentyun\.com\/medopl\/medopl-go-backend(?::[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}|@sha256:[0-9a-f]{64})$/u;
 const releaseShortTagPattern = /^[0-9a-f]{7,40}$/u;
 const rolloutTimeoutSeconds = boundedInt(process.env.MEDOPL_KUBECTL_ROLLOUT_TIMEOUT_SECONDS, 150, 10, 600);
+const healthProbeRetries = boundedInt(process.env.MEDOPL_HEALTH_PROBE_RETRIES, 8, 1, 30);
+const healthProbeDelayMs = boundedInt(process.env.MEDOPL_HEALTH_PROBE_DELAY_MS, 1500, 100, 10000);
 let image = normalizeImage(process.env.MEDOPL_IMAGE ?? `${imageRepository}:placeholder`);
 
 if (args.has("--help")) {
@@ -121,8 +123,8 @@ function runPostRolloutChecks() {
   capture("deployment image", "kubectl", kubectlArgs(["get", deployment, "-o", `jsonpath={.spec.template.spec.containers[?(@.name=="${container}")].image}`]));
   run("pod status", "kubectl", kubectlArgs(["get", "pod", "-l", podSelector, "-o", "wide"]));
   runRoutingDiagnostics();
-  runHealthProbe("healthz", `${baseUrl}/healthz`);
-  runHealthProbe("readyz", `${baseUrl}/readyz`);
+  runHealthProbeWithRetry("healthz", `${baseUrl}/healthz`);
+  runHealthProbeWithRetry("readyz", `${baseUrl}/readyz`);
 }
 
 function runRoutingDiagnostics() {
@@ -148,6 +150,28 @@ function runHealthProbe(label, url) {
   if (body.status !== "ok" || body.service !== "medopl-go-backend") {
     throw new Error(`${label}_health_probe_must_validate_go_backend_health_json`);
   }
+}
+
+function runHealthProbeWithRetry(label, url) {
+  let lastHealthProbeError = null;
+  for (let attempt = 1; attempt <= healthProbeRetries; attempt += 1) {
+    try {
+      runHealthProbe(label, url);
+      if (attempt > 1) console.log(`[medopl-cloud-rollout] ${label} probe passed after ${attempt} attempts`);
+      return;
+    } catch (error) {
+      lastHealthProbeError = error;
+      if (attempt < healthProbeRetries) {
+        console.log(`[medopl-cloud-rollout] ${label} probe retry ${attempt}/${healthProbeRetries}: ${redact(error.message)}`);
+        sleep(healthProbeDelayMs);
+      }
+    }
+  }
+  throw lastHealthProbeError || new Error(`${label}_probe_failed`);
+}
+
+function sleep(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
 async function runAvailabilityProbe() {

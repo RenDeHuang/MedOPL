@@ -169,6 +169,14 @@ assert(
   "post_rollout_health_probe_must_validate_go_backend_health_json_not_static_html",
 );
 assert(
+  rolloutSource.includes("MEDOPL_HEALTH_PROBE_RETRIES") && rolloutSource.includes("MEDOPL_HEALTH_PROBE_DELAY_MS"),
+  "post_rollout_health_probe_must_have_bounded_retry_controls",
+);
+assert(
+  rolloutSource.includes("runHealthProbeWithRetry") && rolloutSource.includes("lastHealthProbeError"),
+  "post_rollout_health_probe_must_retry_transient_public_ingress_convergence",
+);
+assert(
   rolloutSource.includes("runRoutingDiagnostics()"),
   "post_rollout_must_run_routing_diagnostics_before_public_health_probe",
 );
