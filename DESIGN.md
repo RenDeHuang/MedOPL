@@ -127,6 +127,7 @@ MedOPL 是资源购买与计算资源管理 Portal，不是 chat，不是科研�
 - motion 只允许颜色、背景、边框、阴影、transform 和 opacity 这类轻属性；不得使用 `transition-all`，并必须尊重 reduced motion。
 - A+/S 级 UI 冻结原则，不冻结像素；冻结组件状态一致性、状态反馈、响应式表格、管理台标题层级和空错态恢复底线。
 - 用户可见文案使用中文资源控制面叙事；不得泄漏 `workspace`、`Runtime`、`not_activated`、`funded`、`MedOPL plan catalog`、`mutation`、`runner phase`、`claim`、`future-authorized`、`ops_surface_disabled` 这类工程或后端状态词。
+- Production UI claim 不能只靠 UI 绿灯、合同绿灯、本地截图或 local RC；必须同时满足 root 默认生产依赖 high/critical 漏洞为 0、前端生产依赖 high 漏洞为 0、浏览器可访问性回归、release owner receipt、production deploy / observability receipt 和 staging 或 production-like canary。云授权 SDK 只允许作为 dev/tooling 依赖被授权 runner 消费，不能回到默认生产依赖。
 
 运维侧视觉语法：
 

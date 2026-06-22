@@ -295,7 +295,39 @@
           "release_owner_receipt",
           "security_dependency_gate",
           "observability_receipt"
-        ]
+        ],
+        "security_dependency_gate": {
+          "command": "npm --prefix services/portal/frontend audit --omit=dev --audit-level=high --json",
+          "consumer": "scripts/v22-repo-hygiene.mjs",
+          "max_prod_high_vulnerabilities": 0
+        },
+        "root_production_dependency_gate": {
+          "command": "npm audit --omit=dev --audit-level=high --json",
+          "consumer": "scripts/v22-repo-hygiene.mjs",
+          "max_prod_high_or_critical_vulnerabilities": 0,
+          "authorized_cloud_sdk_scope": "dev_dependency_tooling_only"
+        },
+        "accessibility_verification": {
+          "consumer": "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs",
+          "checks": [
+            "keyboard_focus_visible",
+            "touch_targets_44px",
+            "heading_hierarchy",
+            "role_boundary_mobile_nav",
+            "no_horizontal_overflow",
+            "disabled_reason_visible"
+          ]
+        },
+        "observability_receipt": {
+          "required_before_production_claim": true,
+          "receipt_type": "production_deploy_receipt",
+          "receipt_manifest": "contracts/medopl-production-receipt-boundary.json"
+        },
+        "release_owner_readiness": {
+          "receipt_type": "release_owner_receipt",
+          "current_ui_state": "partial_fail_closed_pending_release_mutation",
+          "claimable_before_owner_receipt": false
+        }
       },
       "semantic_tokens": [
         "resource.active",

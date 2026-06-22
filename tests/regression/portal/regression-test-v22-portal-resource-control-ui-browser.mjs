@@ -383,6 +383,32 @@ async function assertStateFeedbackPatterns(page, label) {
   }
 }
 
+async function assertDisabledReasonVisible(page, label) {
+  const missingReasons = await page.locator("button:disabled, [aria-disabled='true']").evaluateAll((nodes) =>
+    nodes.map((node) => {
+      const text = node.textContent?.trim() || "";
+      const title = node.getAttribute("title") || "";
+      const ariaDescription = node.getAttribute("aria-description") || "";
+      const describedBy = node.getAttribute("aria-describedby") || "";
+      const describedText = describedBy
+        .split(/\s+/u)
+        .map((id) => document.getElementById(id)?.textContent?.trim() || "")
+        .filter(Boolean)
+        .join(" ");
+      return {
+        text,
+        title,
+        ariaDescription,
+        describedText,
+      };
+    }).filter((item) => {
+      const reason = `${item.title} ${item.ariaDescription} ${item.describedText}`.trim();
+      return reason.length === 0;
+    }),
+  );
+  assert.deepEqual(missingReasons, [], `${label}_disabled_control_reason_missing:${JSON.stringify(missingReasons)}`);
+}
+
 const { chromium } = await loadPlaywright();
 const backendPort = await freePort();
 const vitePort = await freePort();
@@ -487,6 +513,7 @@ try {
     await assertTouchTargets(page, "nav a, nav button, header button", "browser_runtime_environment");
     await assertAgradeInteractionSystem(page, "browser_runtime_environment");
     await assertStateFeedbackPatterns(page, "browser_runtime_environment");
+    await assertDisabledReasonVisible(page, "browser_runtime_environment");
     assert(lastBodyText.includes("开通服务"), "browser_runtime_open_service_cta_missing");
     assert(lastBodyText.includes("当前订阅状态"), "browser_runtime_subscription_status_missing");
     assert(lastBodyText.includes("套餐价格尚待审批"), "browser_runtime_pricing_boundary_missing");

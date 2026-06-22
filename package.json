@@ -60,7 +60,7 @@
     "cloud:rollout:availability": "node scripts/cloud-rollout/medopl.mjs --availability-probe",
     "verify:cloud-release-candidate": "node scripts/v22-verify.mjs package cloud-release-candidate --base origin/recovery/platform-v22-trunk"
   },
-  "dependencies": {
+  "devDependencies": {
     "cos-nodejs-sdk-v5": "^2.15.4",
     "pg": "^8.21.0",
     "tencentcloud-sdk-nodejs": "^4.1.245"

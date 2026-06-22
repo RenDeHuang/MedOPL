@@ -8,7 +8,7 @@
     "default_real_cloud_mutation": "allowed_when_authorization_pack_is_active",
     "authorization_pack": "contracts/medopl-cloud-authorization-pack.json",
     "production_receipt_boundary": "contracts/medopl-production-receipt-boundary.json",
-    "release_claim_requires": "local_gate_and_owner_receipt"
+    "release_claim_requires": "local_gate_and_release_owner_receipt"
   },
   "consumers": [
     "validate:active-platform",
@@ -44,6 +44,11 @@
       "runtime_release_default": "retain_storage_until_explicit_user_intent",
       "destroy_requires": "explicit_user_storage_destroy_intent",
       "receipt_owner": "MedOPL Data Plane"
+    },
+    "release_owner_readiness": {
+      "receipt_type": "release_owner_receipt",
+      "current_ui_state": "partial_fail_closed_pending_release_mutation",
+      "claimable_before_owner_receipt": false
     },
     "must_not_claim_without": [
       "runtime_stop_receipt",

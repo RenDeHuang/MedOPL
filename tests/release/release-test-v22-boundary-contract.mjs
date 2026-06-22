@@ -20,6 +20,26 @@ const current = await readJson("tests/fixtures/v22/goal-current.json");
 assert.equal(release.authority_boundary.default_real_cloud_mutation, "allowed_when_authorization_pack_is_active", "release_must_use_machine_authorization_pack");
 assert.equal(release.authority_boundary.authorization_pack, "contracts/medopl-cloud-authorization-pack.json", "release_must_reference_cloud_authorization_pack");
 assert.equal(
+  release.authority_boundary.release_claim_requires,
+  "local_gate_and_release_owner_receipt",
+  "release_claim_must_require_release_owner_receipt",
+);
+assert.equal(
+  release.medopl_release_boundary.release_owner_readiness?.receipt_type,
+  "release_owner_receipt",
+  "release_owner_readiness_receipt_type_missing",
+);
+assert.equal(
+  release.medopl_release_boundary.release_owner_readiness?.current_ui_state,
+  "partial_fail_closed_pending_release_mutation",
+  "release_owner_readiness_must_match_fail_closed_ui_state",
+);
+assert.equal(
+  release.medopl_release_boundary.release_owner_readiness?.claimable_before_owner_receipt,
+  false,
+  "release_owner_readiness_must_block_claim_before_receipt",
+);
+assert.equal(
   release.medopl_release_boundary.storage_destroy_policy?.runtime_release_default,
   "retain_storage_until_explicit_user_intent",
   "release_must_retain_storage_by_default",

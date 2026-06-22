@@ -22,6 +22,7 @@ const routes = await readRepoFile("services/portal/frontend/src/app/routes.tsx")
 const layout = await readRepoFile("services/portal/frontend/src/app/components/Layout.tsx");
 const designSource = await readRepoFile("DESIGN.md");
 const themeSource = await readRepoFile("services/portal/frontend/src/styles/theme.css");
+const repoHygieneSource = await readRepoFile("scripts/v22-repo-hygiene.mjs");
 const coreUiSource = await readRepoFile("services/portal/frontend/src/app/components/ui/core.tsx");
 const tabsSource = await readRepoFile("services/portal/frontend/src/app/components/ui/tabs.tsx");
 const switchSource = await readRepoFile("services/portal/frontend/src/app/components/ui/switch.tsx");
@@ -228,6 +229,83 @@ for (const gate of ["staging_or_prod_like_canary", "role_boundary_browser_gate",
     `ui_quality_production_ready_gate_missing:${gate}`,
   );
 }
+const productionReadiness = uiQualityContract.medopl_portal_ui_quality_contract.production_readiness;
+assert.equal(
+  productionReadiness.security_dependency_gate?.command,
+  "npm --prefix services/portal/frontend audit --omit=dev --audit-level=high --json",
+  "ui_quality_security_dependency_gate_command_missing",
+);
+assert.equal(
+  productionReadiness.security_dependency_gate?.max_prod_high_vulnerabilities,
+  0,
+  "ui_quality_security_dependency_gate_must_block_high_prod_vulnerabilities",
+);
+assert.equal(
+  productionReadiness.security_dependency_gate?.consumer,
+  "scripts/v22-repo-hygiene.mjs",
+  "ui_quality_security_dependency_gate_consumer_missing",
+);
+assert.equal(
+  productionReadiness.root_production_dependency_gate?.command,
+  "npm audit --omit=dev --audit-level=high --json",
+  "ui_quality_root_production_dependency_gate_command_missing",
+);
+assert.equal(
+  productionReadiness.root_production_dependency_gate?.max_prod_high_or_critical_vulnerabilities,
+  0,
+  "ui_quality_root_production_dependency_gate_must_block_high_or_critical_prod_vulnerabilities",
+);
+assert.equal(
+  productionReadiness.root_production_dependency_gate?.authorized_cloud_sdk_scope,
+  "dev_dependency_tooling_only",
+  "ui_quality_cloud_sdk_scope_must_be_tooling_only",
+);
+assert.equal(
+  productionReadiness.accessibility_verification?.consumer,
+  "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs",
+  "ui_quality_accessibility_browser_consumer_missing",
+);
+for (const check of [
+  "keyboard_focus_visible",
+  "touch_targets_44px",
+  "heading_hierarchy",
+  "role_boundary_mobile_nav",
+  "no_horizontal_overflow",
+  "disabled_reason_visible",
+]) {
+  assert(
+    productionReadiness.accessibility_verification?.checks?.includes(check),
+    `ui_quality_accessibility_verification_check_missing:${check}`,
+  );
+}
+assert.equal(
+  productionReadiness.observability_receipt?.required_before_production_claim,
+  true,
+  "ui_quality_observability_receipt_must_block_production_claim",
+);
+assert.equal(
+  productionReadiness.observability_receipt?.receipt_type,
+  "production_deploy_receipt",
+  "ui_quality_observability_receipt_type_mismatch",
+);
+assert.equal(
+  productionReadiness.release_owner_readiness?.receipt_type,
+  "release_owner_receipt",
+  "ui_quality_release_owner_readiness_receipt_missing",
+);
+assert.equal(
+  productionReadiness.release_owner_readiness?.current_ui_state,
+  "partial_fail_closed_pending_release_mutation",
+  "ui_quality_release_owner_readiness_state_mismatch",
+);
+assert(
+  repoHygieneSource.includes("frontendProductionDependencyAudit"),
+  "ui_quality_security_dependency_gate_must_be_consumed_by_repo_hygiene",
+);
+assert(
+  repoHygieneSource.includes("rootProductionDependencyAudit"),
+  "ui_quality_root_security_dependency_gate_must_be_consumed_by_repo_hygiene",
+);
 assert.equal(uiQualityContract.medopl_portal_ui_quality_contract.a_plus_s_floor.freeze_scope, "principles_not_pixels", "ui_quality_must_not_freeze_pixels");
 for (const floor of ["component_state_consistency", "status_feedback", "responsive_data_tables", "admin_template_hierarchy", "empty_error_recovery"]) {
   assert(
