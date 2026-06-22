@@ -119,8 +119,10 @@ assert.match(lastLandedCommit, /^[0-9a-f]{40}$/u, "current_last_landed_commit_mu
 const trunkRef = current.branch_baseline || "origin/recovery/platform-v22-trunk";
 const trunkHead = runGit(["rev-parse", "--verify", `${trunkRef}^{commit}`]);
 assert.equal(trunkHead.status, 0, `current_branch_baseline_lookup_failed:${trunkHead.stderr || trunkHead.stdout}`);
+const trunkHeadCommit = trunkHead.stdout.trim();
 const landedOnTrunk = runGit(["merge-base", "--is-ancestor", lastLandedCommit, trunkHead.stdout.trim()]);
 assert.equal(landedOnTrunk.status, 0, `current_last_landed_commit_must_be_trunk_ancestor:${landedOnTrunk.stderr || landedOnTrunk.stdout}`);
+assert.equal(lastLandedCommit, trunkHeadCommit, "current_last_landed_commit_must_match_trunk_head");
 assert.equal(current.latest_landed_closeout?.landed_commit, lastLandedCommit, "latest_closeout_landed_commit_must_match_current");
 assert.equal(current.latest_landed_closeout?.branch, current.last_landed_branch, "latest_closeout_branch_must_match_current");
 assert.equal(current.latest_landed_closeout?.next_cursor, current.current_cursor, "latest_closeout_next_cursor_must_match_current_cursor");
