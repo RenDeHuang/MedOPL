@@ -155,6 +155,19 @@
           "owner": "MedOPL Operations",
           "required_gate": "observability_receipt",
           "evidence_source": "scripts/cloud-rollout/medopl.mjs",
+          "runbook_commands": [
+            "npm run cloud:goal -- --operation deploy",
+            "npm run cloud:rollout:availability"
+          ],
+          "required_observability_checks": [
+            "deployment_image",
+            "pod_status",
+            "routing_diagnostics",
+            "healthz_json",
+            "readyz_json"
+          ],
+          "receipt_source_policy": "cloud_rollout_summary_only",
+          "raw_log_policy": "forbidden",
           "evidence_ref_policy": "runtime_pointer_summary_only",
           "evidence_hash_policy": "sha256_pointer_hash_required",
           "raw_evidence_policy": "forbidden"
@@ -164,6 +177,16 @@
           "owner": "MedOPL Operations",
           "required_gate": "observability_receipt",
           "evidence_source": "scripts/cloud-rollout/medopl.mjs",
+          "runbook_commands": [
+            "npm run cloud:goal -- --operation deploy",
+            "node scripts/cloud-rollout/medopl.mjs --rollback"
+          ],
+          "rollback_commands": [
+            "npm run test:cloud",
+            "npm run test:real-cloud-readiness"
+          ],
+          "receipt_source_policy": "cloud_rollout_summary_only",
+          "raw_log_policy": "forbidden",
           "evidence_ref_policy": "runtime_pointer_summary_only",
           "evidence_hash_policy": "sha256_pointer_hash_required",
           "raw_evidence_policy": "forbidden"
@@ -173,6 +196,17 @@
           "owner": "MedOPL Operations",
           "required_gate": "observability_receipt",
           "evidence_source": "scripts/cloud-rollout/medopl.mjs",
+          "runbook_commands": [
+            "npm run cloud:rollout:availability"
+          ],
+          "required_monitoring_checks": [
+            "healthz_json",
+            "readyz_json",
+            "no_static_html",
+            "no_secret_text"
+          ],
+          "receipt_source_policy": "cloud_rollout_summary_only",
+          "raw_log_policy": "forbidden",
           "evidence_ref_policy": "runtime_pointer_summary_only",
           "evidence_hash_policy": "sha256_pointer_hash_required",
           "raw_evidence_policy": "forbidden"

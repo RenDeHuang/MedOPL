@@ -875,6 +875,7 @@
     "Release-owner readiness is now bound to the production-complete criterion contract: release_owner_readiness maps to release_owner_readiness_receipt, release_owner_receipt, runtime pointer/hash evidence policy and raw-evidence forbidden, and the production receipt runner cross-checks release and production receipt contracts.",
     "Production dependency/security receipt is now bound to root and Portal frontend production dependency audit gates from the UI quality contract, with repo-hygiene summary evidence only and raw audit payloads forbidden.",
     "Browser accessibility and S-level UI polish receipts are now bound to the Portal UI quality contract checks and existing browser regression consumer, with browser-regression summary evidence only and raw screenshots/runtime evidence forbidden.",
+    "Ops observability, rollback readiness and post-release monitoring receipts are now bound to the existing cloud rollout runner, active authorization rollback commands, availability probe and summary-only evidence policy.",
     "Keep multi-region, SLA, enterprise compliance, ongoing authorization and unobserved tenant/resource claims out of current truth until dedicated contracts and evidence exist.",
     "Keep canary credentials/session, uploaded files, runtime artifacts, cloud payloads and raw evidence outside git; commit only contract/test/source changes and small redacted pointers."
   ],
@@ -988,6 +989,31 @@
       "runner_cross_check": "scripts/v22-production-receipt-boundary.mjs#validateProductionReceiptBoundary",
       "can_claim": "browser accessibility and S-level UI polish receipt contracts and runner binding are consumer-tested locally against existing browser regression coverage",
       "cannot_claim": "raw screenshot evidence committed, deploy completed, live-test covered, browser receipt accepted, S-level receipt accepted, or production complete"
+    },
+    "ops_observability_rollback_monitoring_binding": {
+      "criteria": [
+        "observability_deploy_receipt",
+        "rollback_readiness_receipt",
+        "post_release_monitoring_receipt"
+      ],
+      "required_gate": "observability_receipt",
+      "evidence_source": "scripts/cloud-rollout/medopl.mjs",
+      "deploy_runbook": [
+        "npm run cloud:goal -- --operation deploy",
+        "npm run cloud:rollout:availability"
+      ],
+      "rollback_runbook": [
+        "npm run cloud:goal -- --operation deploy",
+        "node scripts/cloud-rollout/medopl.mjs --rollback"
+      ],
+      "monitoring_runbook": [
+        "npm run cloud:rollout:availability"
+      ],
+      "receipt_source_policy": "cloud_rollout_summary_only",
+      "raw_log_policy": "forbidden",
+      "runner_cross_check": "scripts/v22-production-receipt-boundary.mjs#validateProductionReceiptBoundary",
+      "can_claim": "Ops observability, rollback readiness and post-release monitoring receipt contracts and runner binding are consumer-tested locally",
+      "cannot_claim": "rollback executed, live-test covered, ongoing monitoring accepted, production deploy receipt accepted, or production complete"
     }
   },
   "base_trunk_head": "d1b1dbfa581450bb2fae807fe28532b53d926d53",

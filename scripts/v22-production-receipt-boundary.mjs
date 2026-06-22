@@ -407,6 +407,80 @@ export function validateProductionReceiptBoundary({ boundary, cloudAuthorization
         }
       }
     }
+    const observabilityContract = criteriaContractById.get("observability_deploy_receipt");
+    const rollbackContract = criteriaContractById.get("rollback_readiness_receipt");
+    const monitoringContract = criteriaContractById.get("post_release_monitoring_receipt");
+    const deployOperation = (cloudAuthorization?.active_pack?.operation_class_command_map || [])
+      .find((entry) => entry?.operation_class === "deploy");
+    const rollbackCommands = cloudAuthorization?.active_pack?.rollback_commands || [];
+    if (
+      !observabilityContract ||
+      observabilityContract.evidence_source !== "scripts/cloud-rollout/medopl.mjs" ||
+      !arraysMatch(observabilityContract.runbook_commands, [
+        "npm run cloud:goal -- --operation deploy",
+        "npm run cloud:rollout:availability",
+      ]) ||
+      !arraysMatch(observabilityContract.required_observability_checks, [
+        "deployment_image",
+        "pod_status",
+        "routing_diagnostics",
+        "healthz_json",
+        "readyz_json",
+      ])
+    ) {
+      blockers.push("production_receipt_boundary_observability_deploy_runbook_mismatch");
+    } else {
+      if (!deployOperation?.receipt_types?.includes("production_deploy_receipt")) {
+        blockers.push("production_receipt_boundary_observability_deploy_receipt_type_mismatch");
+      }
+      if (observabilityContract.receipt_source_policy !== "cloud_rollout_summary_only") {
+        blockers.push("production_receipt_boundary_observability_deploy_source_policy_mismatch");
+      }
+      if (observabilityContract.raw_log_policy !== "forbidden") {
+        blockers.push("production_receipt_boundary_observability_deploy_raw_log_policy_mismatch");
+      }
+    }
+    if (
+      !rollbackContract ||
+      rollbackContract.evidence_source !== "scripts/cloud-rollout/medopl.mjs" ||
+      !arraysMatch(rollbackContract.runbook_commands, [
+        "npm run cloud:goal -- --operation deploy",
+        "node scripts/cloud-rollout/medopl.mjs --rollback",
+      ]) ||
+      !arraysMatch(rollbackContract.rollback_commands, rollbackCommands)
+    ) {
+      blockers.push("production_receipt_boundary_rollback_readiness_commands_mismatch");
+    } else {
+      if (cloudAuthorization?.active_pack?.rollback_owner !== rollbackContract.owner) {
+        blockers.push("production_receipt_boundary_rollback_readiness_owner_mismatch");
+      }
+      if (rollbackContract.receipt_source_policy !== "cloud_rollout_summary_only") {
+        blockers.push("production_receipt_boundary_rollback_readiness_source_policy_mismatch");
+      }
+      if (rollbackContract.raw_log_policy !== "forbidden") {
+        blockers.push("production_receipt_boundary_rollback_readiness_raw_log_policy_mismatch");
+      }
+    }
+    if (
+      !monitoringContract ||
+      monitoringContract.evidence_source !== "scripts/cloud-rollout/medopl.mjs" ||
+      !arraysMatch(monitoringContract.runbook_commands, ["npm run cloud:rollout:availability"]) ||
+      !arraysMatch(monitoringContract.required_monitoring_checks, [
+        "healthz_json",
+        "readyz_json",
+        "no_static_html",
+        "no_secret_text",
+      ])
+    ) {
+      blockers.push("production_receipt_boundary_post_release_monitoring_checks_mismatch");
+    } else {
+      if (monitoringContract.receipt_source_policy !== "cloud_rollout_summary_only") {
+        blockers.push("production_receipt_boundary_post_release_monitoring_source_policy_mismatch");
+      }
+      if (monitoringContract.raw_log_policy !== "forbidden") {
+        blockers.push("production_receipt_boundary_post_release_monitoring_raw_log_policy_mismatch");
+      }
+    }
     const nonGoalSet = asStringSet(productionCompleteGate.explicit_non_goals_until_dedicated_contract);
     for (const nonGoal of [
       "multi_region_production",

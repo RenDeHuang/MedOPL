@@ -225,6 +225,54 @@ assert.equal(
   "browser_regression_summary_only",
   "s_level_ui_polish_receipt_source_policy_mismatch",
 );
+const observabilityContract = criteriaContractById.get("observability_deploy_receipt");
+const rollbackContract = criteriaContractById.get("rollback_readiness_receipt");
+const monitoringContract = criteriaContractById.get("post_release_monitoring_receipt");
+for (const [criterion, contract] of [
+  ["observability_deploy_receipt", observabilityContract],
+  ["rollback_readiness_receipt", rollbackContract],
+  ["post_release_monitoring_receipt", monitoringContract],
+]) {
+  assert.equal(contract?.evidence_source, "scripts/cloud-rollout/medopl.mjs", `${criterion}_must_bind_cloud_rollout_runner`);
+  assert.equal(contract?.receipt_source_policy, "cloud_rollout_summary_only", `${criterion}_source_policy_mismatch`);
+  assert.equal(contract?.raw_log_policy, "forbidden", `${criterion}_raw_log_policy_mismatch`);
+}
+assert.deepEqual(
+  observabilityContract?.runbook_commands,
+  [
+    "npm run cloud:goal -- --operation deploy",
+    "npm run cloud:rollout:availability",
+  ],
+  "observability_deploy_receipt_runbook_commands_mismatch",
+);
+assert.deepEqual(
+  observabilityContract?.required_observability_checks,
+  ["deployment_image", "pod_status", "routing_diagnostics", "healthz_json", "readyz_json"],
+  "observability_deploy_receipt_checks_mismatch",
+);
+assert.deepEqual(
+  rollbackContract?.runbook_commands,
+  [
+    "npm run cloud:goal -- --operation deploy",
+    "node scripts/cloud-rollout/medopl.mjs --rollback",
+  ],
+  "rollback_readiness_receipt_runbook_commands_mismatch",
+);
+assert.deepEqual(
+  rollbackContract?.rollback_commands,
+  cloudAuthorization.active_pack.rollback_commands,
+  "rollback_readiness_receipt_must_match_authorization_pack",
+);
+assert.deepEqual(
+  monitoringContract?.runbook_commands,
+  ["npm run cloud:rollout:availability"],
+  "post_release_monitoring_receipt_runbook_commands_mismatch",
+);
+assert.deepEqual(
+  monitoringContract?.required_monitoring_checks,
+  ["healthz_json", "readyz_json", "no_static_html", "no_secret_text"],
+  "post_release_monitoring_receipt_checks_mismatch",
+);
 for (const cannotClaim of [
   "multi_region_production",
   "sla_proven",
@@ -353,6 +401,56 @@ assert.equal(mismatchedSLevelChecksResult.ok, false, "s_level_ui_polish_checks_m
 assert(
   mismatchedSLevelChecksResult.blockers.includes("production_receipt_boundary_s_level_ui_polish_checks_mismatch"),
   "s_level_ui_polish_checks_mismatch_blocker_mismatch",
+);
+
+const missingObservabilityRunbookBoundary = structuredClone(boundary);
+delete missingObservabilityRunbookBoundary.production_receipt_boundary.production_complete_owner_receipt_gate
+  .operational_criteria_contract
+  .find((criterion) => criterion.id === "observability_deploy_receipt").runbook_commands;
+const missingObservabilityRunbookResult = validateProductionReceiptBoundary({
+  boundary: missingObservabilityRunbookBoundary,
+  cloudAuthorization,
+  releaseBoundary,
+  uiQualityContract,
+});
+assert.equal(missingObservabilityRunbookResult.ok, false, "observability_runbook_must_be_validated_by_runner");
+assert(
+  missingObservabilityRunbookResult.blockers.includes("production_receipt_boundary_observability_deploy_runbook_mismatch"),
+  "observability_runbook_missing_blocker_mismatch",
+);
+
+const mismatchedRollbackCommandsBoundary = structuredClone(boundary);
+mismatchedRollbackCommandsBoundary.production_receipt_boundary.production_complete_owner_receipt_gate
+  .operational_criteria_contract
+  .find((criterion) => criterion.id === "rollback_readiness_receipt")
+  .rollback_commands = ["npm run test:cloud"];
+const mismatchedRollbackCommandsResult = validateProductionReceiptBoundary({
+  boundary: mismatchedRollbackCommandsBoundary,
+  cloudAuthorization,
+  releaseBoundary,
+  uiQualityContract,
+});
+assert.equal(mismatchedRollbackCommandsResult.ok, false, "rollback_commands_must_match_authorization_pack");
+assert(
+  mismatchedRollbackCommandsResult.blockers.includes("production_receipt_boundary_rollback_readiness_commands_mismatch"),
+  "rollback_commands_mismatch_blocker_mismatch",
+);
+
+const mismatchedMonitoringChecksBoundary = structuredClone(boundary);
+mismatchedMonitoringChecksBoundary.production_receipt_boundary.production_complete_owner_receipt_gate
+  .operational_criteria_contract
+  .find((criterion) => criterion.id === "post_release_monitoring_receipt")
+  .required_monitoring_checks = ["healthz_json"];
+const mismatchedMonitoringChecksResult = validateProductionReceiptBoundary({
+  boundary: mismatchedMonitoringChecksBoundary,
+  cloudAuthorization,
+  releaseBoundary,
+  uiQualityContract,
+});
+assert.equal(mismatchedMonitoringChecksResult.ok, false, "monitoring_checks_must_be_validated_by_runner");
+assert(
+  mismatchedMonitoringChecksResult.blockers.includes("production_receipt_boundary_post_release_monitoring_checks_mismatch"),
+  "monitoring_checks_mismatch_blocker_mismatch",
 );
 
 const complete = evaluateProductionReceiptManifest({
