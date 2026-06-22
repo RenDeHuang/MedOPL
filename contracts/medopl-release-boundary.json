@@ -47,6 +47,11 @@
     },
     "release_owner_readiness": {
       "receipt_type": "release_owner_receipt",
+      "production_criterion": "release_owner_readiness_receipt",
+      "required_gate": "release_owner_receipt",
+      "evidence_ref_policy": "runtime_pointer_summary_only",
+      "evidence_hash_policy": "sha256_pointer_hash_required",
+      "raw_evidence_policy": "forbidden",
       "current_ui_state": "partial_fail_closed_pending_release_mutation",
       "claimable_before_owner_receipt": false
     },

@@ -445,6 +445,7 @@ async function validateActivePlatform({ manifest, current }) {
   const receiptBoundaryValidation = validateProductionReceiptBoundary({
     boundary: productionReceiptBoundary,
     cloudAuthorization: cloudAuthorizationPack,
+    releaseBoundary: releaseContract,
   });
   assert.equal(receiptBoundaryValidation.ok, true, `production_receipt_boundary_must_be_valid:${JSON.stringify(receiptBoundaryValidation)}`);
   const receiptManifestEvaluation = evaluateProductionReceiptManifest({

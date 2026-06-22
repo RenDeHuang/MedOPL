@@ -29,8 +29,9 @@ const [boundary, cloudAuthorization, exampleManifest] = await Promise.all([
   readJson("contracts/medopl-cloud-authorization-pack.json"),
   readJson("tests/fixtures/v22/production-receipt-manifest.example.json"),
 ]);
+const releaseBoundary = await readJson("contracts/medopl-release-boundary.json");
 
-const boundaryResult = validateProductionReceiptBoundary({ boundary, cloudAuthorization });
+const boundaryResult = validateProductionReceiptBoundary({ boundary, cloudAuthorization, releaseBoundary });
 assert.equal(boundaryResult.ok, true, `production_receipt_boundary_must_be_valid:${JSON.stringify(boundaryResult, null, 2)}`);
 assert.deepEqual(
   boundary.production_receipt_boundary.required_receipt_types,
@@ -197,6 +198,32 @@ assert(
 assert.equal(boundary.production_receipt_boundary.receipt_operation_binding_required, true, "receipt_operation_binding_must_be_required");
 assert.equal(boundary.production_receipt_boundary.receipt_authorization_ref_required, true, "receipt_authorization_ref_must_be_required");
 assert.equal(boundary.production_receipt_boundary.receipt_runner_id_required, true, "receipt_runner_id_must_be_required");
+
+const missingReleaseReadinessBoundary = structuredClone(releaseBoundary);
+delete missingReleaseReadinessBoundary.medopl_release_boundary.release_owner_readiness.production_criterion;
+const missingReleaseReadinessResult = validateProductionReceiptBoundary({
+  boundary,
+  cloudAuthorization,
+  releaseBoundary: missingReleaseReadinessBoundary,
+});
+assert.equal(missingReleaseReadinessResult.ok, false, "release_owner_readiness_contract_must_be_validated_by_runner");
+assert(
+  missingReleaseReadinessResult.blockers.includes("production_receipt_boundary_release_owner_readiness_criterion_mismatch"),
+  "release_owner_readiness_missing_criterion_blocker_mismatch",
+);
+
+const mismatchedReleaseReadinessBoundary = structuredClone(releaseBoundary);
+mismatchedReleaseReadinessBoundary.medopl_release_boundary.release_owner_readiness.evidence_hash_policy = "summary_only";
+const mismatchedReleaseReadinessResult = validateProductionReceiptBoundary({
+  boundary,
+  cloudAuthorization,
+  releaseBoundary: mismatchedReleaseReadinessBoundary,
+});
+assert.equal(mismatchedReleaseReadinessResult.ok, false, "release_owner_readiness_policy_must_be_validated_by_runner");
+assert(
+  mismatchedReleaseReadinessResult.blockers.includes("production_receipt_boundary_release_owner_readiness_hash_policy_mismatch"),
+  "release_owner_readiness_hash_policy_blocker_mismatch",
+);
 
 const complete = evaluateProductionReceiptManifest({
   boundary,

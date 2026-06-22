@@ -164,7 +164,7 @@ function collectUnexpectedFields(manifest) {
   return violations;
 }
 
-export function validateProductionReceiptBoundary({ boundary, cloudAuthorization }) {
+export function validateProductionReceiptBoundary({ boundary, cloudAuthorization, releaseBoundary }) {
   const blockers = [];
   const receiptBoundary = boundary?.production_receipt_boundary || {};
   const requiredTypes = Array.isArray(receiptBoundary.required_receipt_types)
@@ -173,6 +173,7 @@ export function validateProductionReceiptBoundary({ boundary, cloudAuthorization
   const cloudRequiredTypes = Array.isArray(cloudAuthorization?.required_receipts_before_production_complete)
     ? cloudAuthorization.required_receipts_before_production_complete
     : [];
+  const releaseOwnerReadiness = releaseBoundary?.medopl_release_boundary?.release_owner_readiness;
 
   if (boundary?.state !== "active") blockers.push("production_receipt_boundary_must_be_active");
   if (boundary?.authority_boundary?.surface !== "production_complete_owner_receipt_aggregation") {
@@ -287,6 +288,46 @@ export function validateProductionReceiptBoundary({ boundary, cloudAuthorization
         }
         if (contract.raw_evidence_policy !== "forbidden") {
           blockers.push(`production_receipt_boundary_production_complete_gate_operational_criteria_contract_raw_policy_mismatch:${criterion}`);
+        }
+      }
+    }
+    if (releaseBoundary) {
+      const releaseOwnerContract = criteriaContractById.get("release_owner_readiness_receipt");
+      if (!isObject(releaseOwnerReadiness)) {
+        blockers.push("production_receipt_boundary_release_owner_readiness_missing");
+      } else {
+        if (releaseOwnerReadiness.production_criterion !== "release_owner_readiness_receipt") {
+          blockers.push("production_receipt_boundary_release_owner_readiness_criterion_mismatch");
+        }
+        if (releaseOwnerReadiness.required_gate !== "release_owner_receipt") {
+          blockers.push("production_receipt_boundary_release_owner_readiness_gate_mismatch");
+        }
+        if (releaseOwnerReadiness.evidence_ref_policy !== "runtime_pointer_summary_only") {
+          blockers.push("production_receipt_boundary_release_owner_readiness_ref_policy_mismatch");
+        }
+        if (releaseOwnerReadiness.evidence_hash_policy !== "sha256_pointer_hash_required") {
+          blockers.push("production_receipt_boundary_release_owner_readiness_hash_policy_mismatch");
+        }
+        if (releaseOwnerReadiness.raw_evidence_policy !== "forbidden") {
+          blockers.push("production_receipt_boundary_release_owner_readiness_raw_policy_mismatch");
+        }
+        if (releaseOwnerReadiness.claimable_before_owner_receipt !== false) {
+          blockers.push("production_receipt_boundary_release_owner_readiness_claim_must_fail_closed");
+        }
+        if (releaseOwnerContract && releaseOwnerContract.owner !== releaseBoundary.owner) {
+          blockers.push("production_receipt_boundary_release_owner_readiness_owner_mismatch");
+        }
+        if (releaseOwnerContract && releaseOwnerContract.required_gate !== releaseOwnerReadiness.required_gate) {
+          blockers.push("production_receipt_boundary_release_owner_readiness_gate_contract_mismatch");
+        }
+        if (releaseOwnerContract && releaseOwnerContract.evidence_ref_policy !== releaseOwnerReadiness.evidence_ref_policy) {
+          blockers.push("production_receipt_boundary_release_owner_readiness_ref_policy_contract_mismatch");
+        }
+        if (releaseOwnerContract && releaseOwnerContract.evidence_hash_policy !== releaseOwnerReadiness.evidence_hash_policy) {
+          blockers.push("production_receipt_boundary_release_owner_readiness_hash_policy_contract_mismatch");
+        }
+        if (releaseOwnerContract && releaseOwnerContract.raw_evidence_policy !== releaseOwnerReadiness.raw_evidence_policy) {
+          blockers.push("production_receipt_boundary_release_owner_readiness_raw_policy_contract_mismatch");
         }
       }
     }

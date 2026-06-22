@@ -871,6 +871,7 @@
   },
   "readinessGaps": [
     "Production-complete owner receipt gate is now dedicated and fail-closed: cloud RC cannot be upgraded by prose, workflow success or a single canary, and any production_complete manifest must include production_complete_criteria.",
+    "Release-owner readiness is now bound to the production-complete criterion contract: release_owner_readiness maps to release_owner_readiness_receipt, release_owner_receipt, runtime pointer/hash evidence policy and raw-evidence forbidden, and the production receipt runner cross-checks release and production receipt contracts.",
     "Keep multi-region, SLA, enterprise compliance, ongoing authorization and unobserved tenant/resource claims out of current truth until dedicated contracts and evidence exist.",
     "Keep canary credentials/session, uploaded files, runtime artifacts, cloud payloads and raw evidence outside git; commit only contract/test/source changes and small redacted pointers."
   ],
@@ -941,7 +942,18 @@
     "receipt_manifest_hash": "sha256:43d6e9de0915190b552e3d0bcf5f9b6fd319953c986b4ad2e998c4c97f976ad2",
     "release_image_run_id": "27972408990",
     "cloud_rollout_run_id": "27972458642",
-    "v22_verify_run_id": "27972264680"
+    "v22_verify_run_id": "27972264680",
+    "release_owner_readiness_binding": {
+      "criterion": "release_owner_readiness_receipt",
+      "required_gate": "release_owner_receipt",
+      "release_contract": "contracts/medopl-release-boundary.json",
+      "evidence_ref_policy": "runtime_pointer_summary_only",
+      "evidence_hash_policy": "sha256_pointer_hash_required",
+      "raw_evidence_policy": "forbidden",
+      "runner_cross_check": "scripts/v22-production-receipt-boundary.mjs#validateProductionReceiptBoundary",
+      "can_claim": "release-owner readiness contract and runner binding are consumer-tested locally",
+      "cannot_claim": "release mutation executed, release owner production receipt accepted, or production complete"
+    }
   },
   "base_trunk_head": "b0117bb4e52d63183b92e0a1f51170c01540ab01",
   "last_landed_commit": "b0117bb4e52d63183b92e0a1f51170c01540ab01",
