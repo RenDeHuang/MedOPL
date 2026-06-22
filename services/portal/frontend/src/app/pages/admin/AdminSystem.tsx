@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription, Badge, Button, Card, CardContent, CardHeader, CardTitle, Input, Label, Separator, Switch } from "../../components/ui/core";
-import { Save, AlertCircle } from "lucide-react";
+import { Save, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router";
 import {
   normalizePortalAdminActionError,
@@ -195,10 +195,21 @@ export function AdminSystem() {
       </Card>
 
       {/* 服务状态摘要区 */}
-      <Card data-ui-pattern="state-feedback" role="status" aria-live="polite">
+      <Card
+        data-ui-pattern="state-feedback"
+        role="status"
+        aria-live="polite"
+        aria-label="服务状态摘要状态：已汇总"
+      >
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>服务状态摘要</CardTitle>
+            <div className="flex flex-wrap items-center gap-2">
+              <CardTitle>服务状态摘要</CardTitle>
+              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                <CheckCircle2 data-ui-signal="status-icon" aria-hidden="true" className="w-3 h-3" />
+                <span data-ui-signal="status-label">已汇总</span>
+              </Badge>
+            </div>
             <Button variant="ghost" size="sm" asChild>
               <Link to="/admin/ops">查看详细状态</Link>
             </Button>

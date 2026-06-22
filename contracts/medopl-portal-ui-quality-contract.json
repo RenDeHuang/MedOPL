@@ -112,7 +112,10 @@
       "no_horizontal_overflow": true,
       "dangerous_action_confirmation_required": true,
       "reduced_motion_respected": true,
-      "color_not_sole_status_signal": true
+      "color_not_sole_status_signal": true,
+      "status_feedback_requires_aria_label": true,
+      "status_feedback_requires_visible_label": true,
+      "status_feedback_requires_icon": true
     },
     "production_readiness": {
       "claim_requires_runtime_receipt": true,
@@ -150,7 +153,8 @@
           "role_boundary_mobile_nav",
           "labelled_navigation_landmark",
           "no_horizontal_overflow",
-          "disabled_reason_visible"
+          "disabled_reason_visible",
+          "status_feedback_non_color_signal"
         ]
       },
       "observability_receipt": {
@@ -169,6 +173,7 @@
         "checks": [
           "component_state_consistency",
           "status_feedback",
+          "status_feedback_non_color_signal",
           "responsive_data_tables",
           "admin_template_hierarchy",
           "empty_error_recovery"
@@ -180,6 +185,7 @@
       "required": [
         "component_state_consistency",
         "status_feedback",
+        "status_feedback_non_color_signal",
         "responsive_data_tables",
         "admin_template_hierarchy",
         "empty_error_recovery"

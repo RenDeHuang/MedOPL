@@ -418,9 +418,22 @@ async function assertStateFeedbackPatterns(page, label) {
     liveRegionCount: document.querySelectorAll("[data-ui-pattern='state-feedback'][role='status']").length,
     tableCount: document.querySelectorAll("[data-slot='table']").length,
     responsiveTableCount: document.querySelectorAll("[data-ui-pattern='responsive-data-table']").length,
+    incompleteFeedback: [...document.querySelectorAll("[data-ui-pattern='state-feedback']")]
+      .map((node) => {
+        const text = node.textContent?.replace(/\s+/gu, " ").trim() || "";
+        return {
+          component: node.getAttribute("data-ui-component") || node.tagName.toLowerCase(),
+          role: node.getAttribute("role") || "",
+          ariaLabel: node.getAttribute("aria-label") || "",
+          nonColorSignalCount: node.querySelectorAll("[data-ui-signal='status-icon'], [data-ui-signal='status-label']").length,
+          text,
+        };
+      })
+      .filter((item) => item.role !== "status" || item.ariaLabel.length === 0 || item.nonColorSignalCount < 2),
   }));
   assert(metrics.stateFeedbackCount > 0, `${label}_state_feedback_pattern_missing:${JSON.stringify(metrics)}`);
   assert(metrics.liveRegionCount > 0, `${label}_state_feedback_live_region_missing:${JSON.stringify(metrics)}`);
+  assert.deepEqual(metrics.incompleteFeedback, [], `${label}_state_feedback_non_color_signal_missing:${JSON.stringify(metrics.incompleteFeedback)}`);
   if (label.includes("billing")) {
     assert(metrics.tableCount > 0, `${label}_billing_table_missing:${JSON.stringify(metrics)}`);
   }

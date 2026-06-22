@@ -292,6 +292,7 @@ for (const check of [
   "labelled_navigation_landmark",
   "no_horizontal_overflow",
   "disabled_reason_visible",
+  "status_feedback_non_color_signal",
 ]) {
   assert(
     productionReadiness.accessibility_verification?.checks?.includes(check),
@@ -331,6 +332,7 @@ assert.equal(
 for (const check of [
   "component_state_consistency",
   "status_feedback",
+  "status_feedback_non_color_signal",
   "responsive_data_tables",
   "admin_template_hierarchy",
   "empty_error_recovery",
@@ -456,6 +458,10 @@ assert(tableSource.includes("data-ui-pattern=\"responsive-data-table\""), "porta
 assert.equal(coreUiSource.includes("<h4"), false, "portal_card_title_must_not_create_heading_skip");
 assert(resourceControlComponents.includes("data-ui-pattern=\"state-feedback\""), "portal_state_feedback_pattern_missing");
 assert(resourceControlComponents.includes("role=\"status\""), "portal_state_feedback_live_region_missing");
+assert(resourceControlComponents.includes("data-ui-signal=\"status-icon\""), "portal_state_feedback_status_icon_signal_missing");
+assert(resourceControlComponents.includes("data-ui-signal=\"status-label\""), "portal_state_feedback_status_label_signal_missing");
+assert(resourceControlComponents.includes("stateFeedbackLabel("), "portal_state_feedback_accessible_label_helper_missing");
+assert(resourceControlComponents.includes("aria-label={stateFeedbackLabel("), "portal_state_feedback_accessible_label_missing");
 assert(layout.includes("data-ui-pattern=\"mobile-nav-scroll-hint\""), "portal_mobile_nav_scroll_hint_missing");
 assert(layout.includes("aria-current={isActive ? \"page\" : undefined}"), "portal_nav_current_page_semantics_missing");
 assert(layout.includes("aria-label=\"主要资源导航\""), "portal_main_nav_accessible_label_missing");

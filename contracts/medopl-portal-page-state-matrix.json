@@ -317,7 +317,8 @@
             "role_boundary_mobile_nav",
             "labelled_navigation_landmark",
             "no_horizontal_overflow",
-            "disabled_reason_visible"
+            "disabled_reason_visible",
+            "status_feedback_non_color_signal"
           ]
         },
         "observability_receipt": {
@@ -336,6 +337,7 @@
           "checks": [
             "component_state_consistency",
             "status_feedback",
+            "status_feedback_non_color_signal",
             "responsive_data_tables",
             "admin_template_hierarchy",
             "empty_error_recovery"

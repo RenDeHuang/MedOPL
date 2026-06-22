@@ -61,12 +61,16 @@ const stateTone: Record<ResourceControlState, { badge: string; panel: string; la
 };
 
 function stateIcon(status: ResourceControlState) {
-  if (status === "ready") return <CheckCircle2 className="w-4 h-4" />;
-  if (status === "pending" || status === "loading") return <Clock className="w-4 h-4" />;
-  if (status === "failed") return <XCircle className="w-4 h-4" />;
-  if (status === "blocked") return <AlertCircle className="w-4 h-4" />;
-  if (status === "protected") return <Shield className="w-4 h-4" />;
-  return <Server className="w-4 h-4" />;
+  if (status === "ready") return <CheckCircle2 data-ui-signal="status-icon" aria-hidden="true" className="w-4 h-4" />;
+  if (status === "pending" || status === "loading") return <Clock data-ui-signal="status-icon" aria-hidden="true" className="w-4 h-4" />;
+  if (status === "failed") return <XCircle data-ui-signal="status-icon" aria-hidden="true" className="w-4 h-4" />;
+  if (status === "blocked") return <AlertCircle data-ui-signal="status-icon" aria-hidden="true" className="w-4 h-4" />;
+  if (status === "protected") return <Shield data-ui-signal="status-icon" aria-hidden="true" className="w-4 h-4" />;
+  return <Server data-ui-signal="status-icon" aria-hidden="true" className="w-4 h-4" />;
+}
+
+function stateFeedbackLabel(component: string, status: ResourceControlState, label?: string) {
+  return `${component}状态：${label || stateTone[status].label}`;
 }
 
 function StateBadge({ status, label }: { status: ResourceControlState; label?: string }) {
@@ -74,7 +78,7 @@ function StateBadge({ status, label }: { status: ResourceControlState; label?: s
   return (
     <Badge variant="outline" className={tone.badge}>
       {stateIcon(status)}
-      {label || tone.label}
+      <span data-ui-signal="status-label">{label || tone.label}</span>
     </Badge>
   );
 }
@@ -101,6 +105,7 @@ export function ResourceStatusCard({
       data-ui-pattern="state-feedback"
       role="status"
       aria-live="polite"
+      aria-label={stateFeedbackLabel(title, status)}
     >
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
@@ -164,8 +169,9 @@ export function PlanCard({
       data-ui-pattern="state-feedback"
       data-plan-id={planId}
       data-density={density}
-      role={purchaseState === "ready" || purchaseState === "pending" || purchaseState === "blocked" ? "status" : undefined}
-      aria-live={purchaseState === "ready" || purchaseState === "pending" || purchaseState === "blocked" ? "polite" : undefined}
+      role="status"
+      aria-live="polite"
+      aria-label={stateFeedbackLabel(`${title}套餐`, purchaseState)}
       className={cn(
         "border overflow-hidden transition-colors motion-reduce:transition-none",
         selected ? "border-neutral-900 shadow-sm" : "border-neutral-200",
@@ -256,6 +262,7 @@ export function StorageInventoryPanel({
       data-ui-pattern="state-feedback"
       role="status"
       aria-live="polite"
+      aria-label={stateFeedbackLabel("存储空间清单", status)}
     >
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
@@ -309,6 +316,7 @@ export function BillingSummary({
       data-ui-pattern="state-feedback"
       role="status"
       aria-live="polite"
+      aria-label={stateFeedbackLabel("费用与审计摘要", status)}
     >
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
@@ -348,6 +356,7 @@ export function ReadinessChecklist({
       data-ui-pattern="state-feedback"
       role="status"
       aria-live="polite"
+      aria-label={stateFeedbackLabel("开通就绪核对", status)}
     >
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
