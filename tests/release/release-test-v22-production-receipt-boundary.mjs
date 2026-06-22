@@ -67,6 +67,31 @@ assert.equal(
   "forbidden",
   "production_complete_owner_receipt_gate_must_forbid_cloud_rc_upgrade",
 );
+assert.equal(
+  boundary.production_receipt_boundary.production_complete_owner_receipt_gate?.production_complete_criteria_manifest_field,
+  "production_complete_criteria",
+  "production_complete_owner_receipt_gate_must_require_dedicated_criteria_manifest_field",
+);
+assert.equal(
+  boundary.production_receipt_boundary.production_complete_owner_receipt_gate?.criteria_evidence_ref_policy,
+  "runtime_pointer_summary_only",
+  "production_complete_owner_receipt_gate_criteria_evidence_must_stay_pointer_only",
+);
+assert.equal(
+  boundary.production_receipt_boundary.production_complete_owner_receipt_gate?.scope_policy?.default_claim_scope,
+  "current_authorized_canary_path_only",
+  "production_complete_owner_receipt_gate_default_scope_must_stay_narrow",
+);
+assert.equal(
+  boundary.production_receipt_boundary.production_complete_owner_receipt_gate?.scope_policy?.scope_expansion_requires,
+  "dedicated_contract_and_evidence",
+  "production_complete_owner_receipt_gate_scope_expansion_must_need_dedicated_contract",
+);
+assert.equal(
+  boundary.production_receipt_boundary.production_complete_owner_receipt_gate?.scope_policy?.single_canary_upgrade,
+  "forbidden",
+  "production_complete_owner_receipt_gate_single_canary_upgrade_must_be_forbidden",
+);
 for (const gate of [
   "release_owner_receipt",
   "security_dependency_gate",
@@ -78,6 +103,20 @@ for (const gate of [
   assert(
     boundary.production_receipt_boundary.production_complete_owner_receipt_gate?.required_gates?.includes(gate),
     `production_complete_owner_receipt_gate_required_gate_missing:${gate}`,
+  );
+}
+for (const criterion of [
+  "release_owner_readiness_receipt",
+  "production_dependency_security_receipt",
+  "browser_accessibility_verification_receipt",
+  "s_level_ui_polish_receipt",
+  "observability_deploy_receipt",
+  "rollback_readiness_receipt",
+  "post_release_monitoring_receipt",
+]) {
+  assert(
+    boundary.production_receipt_boundary.production_complete_owner_receipt_gate?.required_operational_criteria?.includes(criterion),
+    `production_complete_owner_receipt_gate_operational_criterion_missing:${criterion}`,
   );
 }
 for (const cannotClaim of [
@@ -102,6 +141,17 @@ assert.equal(missingProductionCompleteGateResult.ok, false, "production_complete
 assert(
   missingProductionCompleteGateResult.blockers.includes("production_receipt_boundary_production_complete_gate_missing"),
   "production_complete_owner_receipt_gate_missing_blocker_mismatch",
+);
+const missingProductionCriteriaBoundary = structuredClone(boundary);
+delete missingProductionCriteriaBoundary.production_receipt_boundary.production_complete_owner_receipt_gate.required_operational_criteria;
+const missingProductionCriteriaResult = validateProductionReceiptBoundary({
+  boundary: missingProductionCriteriaBoundary,
+  cloudAuthorization,
+});
+assert.equal(missingProductionCriteriaResult.ok, false, "production_complete_operational_criteria_must_be_validated_by_runner");
+assert(
+  missingProductionCriteriaResult.blockers.includes("production_receipt_boundary_production_complete_gate_operational_criteria_missing"),
+  "production_complete_operational_criteria_missing_blocker_mismatch",
 );
 assert.equal(boundary.production_receipt_boundary.receipt_operation_binding_required, true, "receipt_operation_binding_must_be_required");
 assert.equal(boundary.production_receipt_boundary.receipt_authorization_ref_required, true, "receipt_authorization_ref_must_be_required");
@@ -258,6 +308,57 @@ const fixtureManifestGatePayload = JSON.parse(fixtureManifestGate.stdout);
 assert.equal(fixtureManifestGatePayload.cloudReleaseCandidateComplete, true, "cloud_rc_gate_fixture_manifest_must_complete");
 assert.equal(fixtureManifestGatePayload.productionComplete, false, "cloud_rc_gate_must_not_claim_production_complete");
 assert.deepEqual(fixtureManifestGatePayload.rawEvidenceViolations, [], "cloud_rc_gate_fixture_must_not_embed_raw_evidence");
+
+const productionCompleteWithoutCriteria = evaluateProductionReceiptManifest({
+  boundary,
+  manifest: {
+    ...exampleManifest,
+    claim: "production_complete",
+    evidence_level: "production_canary",
+  },
+});
+assert.equal(productionCompleteWithoutCriteria.productionComplete, false, "production_complete_manifest_without_criteria_must_fail_closed");
+assert(
+  productionCompleteWithoutCriteria.blockers.includes("production_receipt_manifest_production_complete_criteria_missing"),
+  "production_complete_manifest_without_criteria_blocker_missing",
+);
+
+const productionCompleteCriteria = boundary.production_receipt_boundary.production_complete_owner_receipt_gate.required_operational_criteria.map((id) => ({
+  id,
+  owner: "MedOPL Operations",
+  status: "accepted",
+  issued_at: "2026-06-23T00:00:00Z",
+  evidence_ref: `.runtime/v22-cloud-authorization/run-v22-001/${id}.json`,
+  evidence_hash: `sha256:${"a".repeat(64)}`,
+  summary: `${id} accepted by owner receipt gate`,
+  cannotClaim: ["multi-region production", "SLA proven outside this claim scope"],
+}));
+const productionCompleteWithCriteria = evaluateProductionReceiptManifest({
+  boundary,
+  manifest: {
+    ...exampleManifest,
+    claim: "production_complete",
+    evidence_level: "production_canary",
+    production_complete_criteria: productionCompleteCriteria,
+  },
+});
+assert.equal(productionCompleteWithCriteria.productionComplete, true, "production_complete_manifest_with_all_criteria_must_pass_shape_gate");
+
+const productionCompleteMissingCriterion = evaluateProductionReceiptManifest({
+  boundary,
+  manifest: {
+    ...exampleManifest,
+    claim: "production_complete",
+    evidence_level: "production_canary",
+    production_complete_criteria: productionCompleteCriteria.filter((criterion) => criterion.id !== "rollback_readiness_receipt"),
+  },
+});
+assert.equal(productionCompleteMissingCriterion.productionComplete, false, "production_complete_manifest_missing_criterion_must_fail_closed");
+assert.deepEqual(
+  productionCompleteMissingCriterion.missingProductionCompleteCriteria,
+  ["rollback_readiness_receipt"],
+  "production_complete_missing_criterion_mismatch",
+);
 
 console.log(JSON.stringify({
   ok: true,

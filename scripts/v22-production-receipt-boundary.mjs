@@ -30,6 +30,7 @@ const ALLOWED_TOP_LEVEL_FIELDS = Object.freeze([
   "summary",
   "lifecycle_sections",
   "receipts",
+  "production_complete_criteria",
 ]);
 
 const ALLOWED_LIFECYCLE_SECTION_FIELDS = Object.freeze([
@@ -56,6 +57,17 @@ const ALLOWED_RECEIPT_FIELDS = Object.freeze([
   "authorization_ref",
   "operation_class",
   "runner_id",
+]);
+
+const ALLOWED_PRODUCTION_COMPLETE_CRITERIA_FIELDS = Object.freeze([
+  "id",
+  "owner",
+  "status",
+  "issued_at",
+  "evidence_ref",
+  "evidence_hash",
+  "summary",
+  "cannotClaim",
 ]);
 
 const RECEIPT_OPERATION_CLASSES = Object.freeze({
@@ -129,6 +141,13 @@ function collectUnexpectedFields(manifest) {
       if (!receiptAllowed.has(key)) violations.push(`receipts[${index}].${key}`);
     }
   }
+  const criteriaAllowed = new Set(ALLOWED_PRODUCTION_COMPLETE_CRITERIA_FIELDS);
+  for (const [index, criterion] of (manifest?.production_complete_criteria || []).entries()) {
+    if (!isObject(criterion)) continue;
+    for (const key of Object.keys(criterion)) {
+      if (!criteriaAllowed.has(key)) violations.push(`production_complete_criteria[${index}].${key}`);
+    }
+  }
   return violations;
 }
 
@@ -177,6 +196,25 @@ export function validateProductionReceiptBoundary({ boundary, cloudAuthorization
     if (productionCompleteGate.claim_upgrade_from_cloud_rc !== "forbidden") {
       blockers.push("production_receipt_boundary_production_complete_gate_cloud_rc_upgrade_must_be_forbidden");
     }
+    if (productionCompleteGate.production_complete_criteria_manifest_field !== "production_complete_criteria") {
+      blockers.push("production_receipt_boundary_production_complete_gate_criteria_manifest_field_mismatch");
+    }
+    if (productionCompleteGate.criteria_evidence_ref_policy !== "runtime_pointer_summary_only") {
+      blockers.push("production_receipt_boundary_production_complete_gate_criteria_pointer_policy_mismatch");
+    }
+    if (!isObject(productionCompleteGate.scope_policy)) {
+      blockers.push("production_receipt_boundary_production_complete_gate_scope_policy_missing");
+    } else {
+      if (productionCompleteGate.scope_policy.default_claim_scope !== "current_authorized_canary_path_only") {
+        blockers.push("production_receipt_boundary_production_complete_gate_default_scope_mismatch");
+      }
+      if (productionCompleteGate.scope_policy.scope_expansion_requires !== "dedicated_contract_and_evidence") {
+        blockers.push("production_receipt_boundary_production_complete_gate_scope_expansion_mismatch");
+      }
+      if (productionCompleteGate.scope_policy.single_canary_upgrade !== "forbidden") {
+        blockers.push("production_receipt_boundary_production_complete_gate_single_canary_upgrade_must_be_forbidden");
+      }
+    }
     const requiredGateSet = asStringSet(productionCompleteGate.required_gates);
     for (const gate of [
       "release_owner_receipt",
@@ -187,6 +225,24 @@ export function validateProductionReceiptBoundary({ boundary, cloudAuthorization
       "observability_receipt",
     ]) {
       if (!requiredGateSet.has(gate)) blockers.push(`production_receipt_boundary_production_complete_gate_required_gate_missing:${gate}`);
+    }
+    const criteria = Array.isArray(productionCompleteGate.required_operational_criteria)
+      ? productionCompleteGate.required_operational_criteria.map((criterion) => String(criterion || "").trim()).filter(Boolean)
+      : [];
+    if (criteria.length === 0) blockers.push("production_receipt_boundary_production_complete_gate_operational_criteria_missing");
+    const criteriaSet = new Set(criteria);
+    for (const criterion of [
+      "release_owner_readiness_receipt",
+      "production_dependency_security_receipt",
+      "browser_accessibility_verification_receipt",
+      "s_level_ui_polish_receipt",
+      "observability_deploy_receipt",
+      "rollback_readiness_receipt",
+      "post_release_monitoring_receipt",
+    ]) {
+      if (!criteriaSet.has(criterion)) {
+        blockers.push(`production_receipt_boundary_production_complete_gate_operational_criterion_missing:${criterion}`);
+      }
     }
     const nonGoalSet = asStringSet(productionCompleteGate.explicit_non_goals_until_dedicated_contract);
     for (const nonGoal of [
@@ -236,6 +292,10 @@ export function evaluateProductionReceiptManifest({ boundary, manifest }) {
   const allowedCompletionLevels = asStringSet(receiptBoundary.allowed_completion_evidence_levels);
   const forbiddenCompletionLevels = asStringSet(receiptBoundary.forbidden_completion_evidence_levels);
   const completionState = String(receiptBoundary.production_complete_state || "complete");
+  const productionCompleteGate = receiptBoundary.production_complete_owner_receipt_gate || {};
+  const requiredProductionCompleteCriteria = Array.isArray(productionCompleteGate.required_operational_criteria)
+    ? productionCompleteGate.required_operational_criteria.map(String)
+    : [];
   const blockers = [];
 
   if (!isObject(manifest)) {
@@ -245,6 +305,7 @@ export function evaluateProductionReceiptManifest({ boundary, manifest }) {
       blockers: Object.freeze(["production_receipt_manifest_missing_or_invalid"]),
       missingReceiptTypes: Object.freeze([...requiredTypes]),
       missingLifecycleSections: Object.freeze([...requiredLifecycleSections]),
+      missingProductionCompleteCriteria: Object.freeze([...requiredProductionCompleteCriteria]),
       rawEvidenceViolations: Object.freeze([]),
       unexpectedFieldViolations: Object.freeze([]),
     });
@@ -271,13 +332,25 @@ export function evaluateProductionReceiptManifest({ boundary, manifest }) {
 
   const receipts = Array.isArray(manifest.receipts) ? manifest.receipts : [];
   const lifecycleSections = Array.isArray(manifest.lifecycle_sections) ? manifest.lifecycle_sections : [];
+  const productionCompleteCriteria = Array.isArray(manifest.production_complete_criteria)
+    ? manifest.production_complete_criteria
+    : [];
   const receiptTypes = receipts.map((receipt) => String(receipt?.type || "").trim()).filter(Boolean);
   const lifecycleSectionIds = lifecycleSections.map((section) => String(section?.id || "").trim()).filter(Boolean);
+  const productionCompleteCriteriaIds = productionCompleteCriteria.map((criterion) => String(criterion?.id || "").trim()).filter(Boolean);
   const missingReceiptTypes = requiredTypes.filter((type) => !receiptTypes.includes(type));
   const missingLifecycleSections = requiredLifecycleSections.filter((section) => !lifecycleSectionIds.includes(section));
+  const missingProductionCompleteCriteria = manifest.claim === "production_complete"
+    ? requiredProductionCompleteCriteria.filter((criterion) => !productionCompleteCriteriaIds.includes(criterion))
+    : [];
   const duplicateReceiptTypes = receiptTypes.filter((type, index) => receiptTypes.indexOf(type) !== index);
   for (const duplicate of unique(duplicateReceiptTypes)) {
     blockers.push(`production_receipt_manifest_duplicate_receipt:${duplicate}`);
+  }
+  const duplicateProductionCriteria = productionCompleteCriteriaIds.filter((criterion, index) =>
+    productionCompleteCriteriaIds.indexOf(criterion) !== index);
+  for (const duplicate of unique(duplicateProductionCriteria)) {
+    blockers.push(`production_receipt_manifest_duplicate_production_complete_criterion:${duplicate}`);
   }
 
   for (const receipt of receipts) {
@@ -297,6 +370,24 @@ export function evaluateProductionReceiptManifest({ boundary, manifest }) {
     if (!String(section?.evidence_hash || "").trim()) blockers.push(`production_receipt_manifest_lifecycle_hash_missing:${id || "(missing)"}`);
     if (!String(section?.summary || "").trim()) blockers.push(`production_receipt_manifest_lifecycle_summary_missing:${id || "(missing)"}`);
     if (!Array.isArray(section?.cannotClaim)) blockers.push(`production_receipt_manifest_lifecycle_cannot_claim_missing:${id || "(missing)"}`);
+  }
+  if (manifest.claim === "production_complete") {
+    if (!Array.isArray(manifest.production_complete_criteria)) {
+      blockers.push("production_receipt_manifest_production_complete_criteria_missing");
+    }
+    for (const criterion of productionCompleteCriteria) {
+      const id = String(criterion?.id || "").trim();
+      if (!requiredProductionCompleteCriteria.includes(id)) {
+        blockers.push(`production_receipt_manifest_unknown_production_complete_criterion:${id || "(missing)"}`);
+      }
+      if (!String(criterion?.owner || "").trim()) blockers.push(`production_receipt_manifest_production_complete_criterion_owner_missing:${id || "(missing)"}`);
+      if (criterion?.status !== "accepted") blockers.push(`production_receipt_manifest_production_complete_criterion_not_accepted:${id || "(missing)"}`);
+      if (!String(criterion?.issued_at || "").trim()) blockers.push(`production_receipt_manifest_production_complete_criterion_issued_at_missing:${id || "(missing)"}`);
+      if (!isSafeRuntimePointer(criterion?.evidence_ref)) blockers.push(`production_receipt_manifest_production_complete_criterion_evidence_ref_invalid:${id || "(missing)"}`);
+      if (!String(criterion?.evidence_hash || "").trim()) blockers.push(`production_receipt_manifest_production_complete_criterion_hash_missing:${id || "(missing)"}`);
+      if (!String(criterion?.summary || "").trim()) blockers.push(`production_receipt_manifest_production_complete_criterion_summary_missing:${id || "(missing)"}`);
+      if (!Array.isArray(criterion?.cannotClaim)) blockers.push(`production_receipt_manifest_production_complete_criterion_cannot_claim_missing:${id || "(missing)"}`);
+    }
   }
 
   const rawEvidenceViolations = unique(findRawEvidenceFields(manifest).map((field) => field.split(".").at(-1) || field));
@@ -325,13 +416,17 @@ export function evaluateProductionReceiptManifest({ boundary, manifest }) {
   if (unexpectedFieldViolations.length > 0) blockers.push("production_receipt_manifest_unexpected_fields");
   if (receiptMappingViolations.length > 0) blockers.push("production_receipt_manifest_receipt_mapping_invalid");
 
-  const complete = blockers.length === 0 && missingReceiptTypes.length === 0 && missingLifecycleSections.length === 0;
+  const complete = blockers.length === 0 &&
+    missingReceiptTypes.length === 0 &&
+    missingLifecycleSections.length === 0 &&
+    missingProductionCompleteCriteria.length === 0;
   return Object.freeze({
     cloudReleaseCandidateComplete: complete,
     productionComplete: complete && manifest.claim === "production_complete",
     blockers: Object.freeze(unique(blockers)),
     missingReceiptTypes: Object.freeze(missingReceiptTypes),
     missingLifecycleSections: Object.freeze(missingLifecycleSections),
+    missingProductionCompleteCriteria: Object.freeze(missingProductionCompleteCriteria),
     rawEvidenceViolations: Object.freeze(rawEvidenceViolations),
     unexpectedFieldViolations: Object.freeze(unexpectedFieldViolations),
     receiptMappingViolations: Object.freeze(unique(receiptMappingViolations)),

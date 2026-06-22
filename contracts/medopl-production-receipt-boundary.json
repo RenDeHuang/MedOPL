@@ -54,6 +54,13 @@
       "state": "fail_closed_until_dedicated_production_complete_receipt",
       "current_claimable_state": "cloud_release_candidate_only",
       "claim_upgrade_from_cloud_rc": "forbidden",
+      "production_complete_criteria_manifest_field": "production_complete_criteria",
+      "criteria_evidence_ref_policy": "runtime_pointer_summary_only",
+      "scope_policy": {
+        "default_claim_scope": "current_authorized_canary_path_only",
+        "scope_expansion_requires": "dedicated_contract_and_evidence",
+        "single_canary_upgrade": "forbidden"
+      },
       "required_gates": [
         "release_owner_receipt",
         "security_dependency_gate",
@@ -61,6 +68,15 @@
         "role_boundary_browser_gate",
         "s_level_ui_polish_gate",
         "observability_receipt"
+      ],
+      "required_operational_criteria": [
+        "release_owner_readiness_receipt",
+        "production_dependency_security_receipt",
+        "browser_accessibility_verification_receipt",
+        "s_level_ui_polish_receipt",
+        "observability_deploy_receipt",
+        "rollback_readiness_receipt",
+        "post_release_monitoring_receipt"
       ],
       "explicit_non_goals_until_dedicated_contract": [
         "multi_region_production",

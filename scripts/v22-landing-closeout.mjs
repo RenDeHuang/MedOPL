@@ -367,8 +367,10 @@ function renderActiveTruth({ active, branch, landedCommit }) {
   );
   next = replaceRequired(
     next,
-    /最新 repo\/gate closeout 是 `[^`]+` \/ `[a-f0-9]{40}`，/u,
-    `最新 repo/gate closeout 是 \`${branch}\` / \`${landedCommit}\`，`,
+    /(?:最新 repo\/gate closeout 是 `[^`]+` \/ `[a-f0-9]{40}`，|The latest repo\/gate closeout is [^ ]+ at [a-f0-9]{40}\.)/u,
+    (match) => match.startsWith("The latest")
+      ? `The latest repo/gate closeout is ${branch} at ${landedCommit}.`
+      : `最新 repo/gate closeout 是 \`${branch}\` / \`${landedCommit}\`，`,
     "active_summary_latest_repo_closeout",
   );
   return next;
