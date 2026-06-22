@@ -439,6 +439,10 @@ for (const [label, source] of [
 ]) {
   assert.equal(source.includes("transition-all"), false, `portal_transition_all_must_not_be_used:${label}`);
 }
+assert(
+  resourceControlComponents.includes("motion-reduce:transition-none"),
+  "portal_resource_components_must_respect_reduced_motion",
+);
 assert(coreUiSource.includes("cursor-pointer"), "portal_button_cursor_pointer_missing");
 assert(coreUiSource.includes("active:translate-y-px"), "portal_button_active_state_missing");
 assert(coreUiSource.includes("disabled:cursor-not-allowed"), "portal_button_disabled_cursor_missing");

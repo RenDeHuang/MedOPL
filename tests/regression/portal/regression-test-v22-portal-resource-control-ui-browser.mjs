@@ -255,6 +255,29 @@ async function assertAgradeInteractionSystem(page, label) {
   );
 }
 
+async function assertReducedMotion(page, label) {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const metrics = await page.evaluate(() => {
+    const animatedNodes = [...document.querySelectorAll("[data-ui-component='PlanCard'], a, button, input, [role='button']")]
+      .filter((node) => {
+        const rect = node.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+      })
+      .map((node) => {
+        const styles = getComputedStyle(node);
+        return {
+          label: node.getAttribute("data-ui-component") || node.textContent?.trim() || node.tagName,
+          transitionProperty: styles.transitionProperty,
+          transitionDuration: styles.transitionDuration,
+        };
+      })
+      .filter((item) => item.transitionProperty !== "none" && item.transitionDuration !== "0s");
+    return { animatedNodes };
+  });
+  assert.deepEqual(metrics.animatedNodes, [], `${label}_reduced_motion_transition_still_enabled:${JSON.stringify(metrics.animatedNodes)}`);
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+}
+
 async function assertBillingFirstViewDensity(page, label) {
   const metrics = await page.evaluate(() => {
     const billingRoot = document.querySelector("[data-page-id='usage_billing']");
@@ -559,6 +582,7 @@ try {
     await assertHeadingHierarchy(page, "browser_overview");
     await assertTouchTargets(page, "nav a, nav button, header button", "browser_overview");
     await assertAgradeInteractionSystem(page, "browser_overview");
+    await assertReducedMotion(page, "browser_overview");
     await assertStateFeedbackPatterns(page, "browser_overview");
     assert(lastBodyText.includes("选择套餐开通计算资源"), "browser_overview_open_compute_resource_cta_missing");
     assert(lastBodyText.includes("前往套餐与购买"), "browser_overview_packages_entry_missing");

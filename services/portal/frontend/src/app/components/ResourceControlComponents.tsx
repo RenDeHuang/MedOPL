@@ -167,7 +167,7 @@ export function PlanCard({
       role={purchaseState === "ready" || purchaseState === "pending" || purchaseState === "blocked" ? "status" : undefined}
       aria-live={purchaseState === "ready" || purchaseState === "pending" || purchaseState === "blocked" ? "polite" : undefined}
       className={cn(
-        "border overflow-hidden transition-colors",
+        "border overflow-hidden transition-colors motion-reduce:transition-none",
         selected ? "border-neutral-900 shadow-sm" : "border-neutral-200",
       )}
     >
