@@ -9,9 +9,11 @@ import (
 )
 
 const (
-	defaultPort = 8789
-	defaultMode = "local"
-	serviceName = "medopl-go-backend"
+	defaultPort                         = 8789
+	defaultMode                         = "local"
+	serviceName                         = "medopl-go-backend"
+	defaultLocalProviderSecretRoot      = ".runtime/runtime-bridge/provider-secrets"
+	defaultProductionProviderSecretRoot = "/tmp/medopl-runtime/provider-secrets"
 )
 
 type Config struct {
@@ -26,11 +28,12 @@ type Config struct {
 }
 
 func Load() (Config, error) {
+	mode := valueOrDefault(os.Getenv("MEDOPL_BACKEND_MODE"), defaultMode)
 	cfg := Config{
 		Service:            serviceName,
-		Mode:               valueOrDefault(os.Getenv("MEDOPL_BACKEND_MODE"), defaultMode),
+		Mode:               mode,
 		Port:               defaultPort,
-		ProviderSecretRoot: valueOrDefault(os.Getenv("PORTAL_OPL_PROVIDER_SECRET_ROOT"), filepath.Join(".runtime", "runtime-bridge", "provider-secrets")),
+		ProviderSecretRoot: valueOrDefault(os.Getenv("PORTAL_OPL_PROVIDER_SECRET_ROOT"), defaultProviderSecretRoot(mode)),
 		PortalStateRoot:    valueOrDefault(os.Getenv("MEDOPL_PORTAL_STATE_ROOT"), filepath.Join(".runtime", "local-services", "portal-state")),
 		OPLGatewayURL:      strings.TrimRight(valueOrDefault(os.Getenv("OPL_WEB_GATEWAY_PUBLIC_URL"), "http://127.0.0.1:18789"), "/"),
 		RuntimeBridgeURL:   strings.TrimRight(valueOrDefault(os.Getenv("PORTAL_RUNTIME_BRIDGE_PUBLIC_URL"), "http://127.0.0.1:8788"), "/"),
@@ -69,4 +72,11 @@ func valueOrDefault(value string, fallback string) string {
 		return fallback
 	}
 	return value
+}
+
+func defaultProviderSecretRoot(mode string) string {
+	if strings.TrimSpace(mode) == "production" {
+		return defaultProductionProviderSecretRoot
+	}
+	return defaultLocalProviderSecretRoot
 }

@@ -106,10 +106,24 @@ for (const expected of [
   "MEDOPL_ENV",
   "MEDOPL_PUBLIC_BASE_URL",
   "OPL_WEBUI_PUBLIC_BASE_URL",
+  "PORTAL_OPL_PROVIDER_SECRET_ROOT",
   "DATABASE_URL",
 ]) {
   assert(envNames.has(expected), `container_env_missing:${expected}`);
 }
+const providerSecretRoot = (container.env || []).find((item) => item.name === "PORTAL_OPL_PROVIDER_SECRET_ROOT");
+assert.equal(
+  providerSecretRoot.value,
+  "/tmp/medopl-runtime/provider-secrets",
+  "provider_secret_root_must_use_explicit_writable_runtime_path",
+);
+const providerSecretMount = (container.volumeMounts || []).find((item) => item.name === "medopl-runtime-state");
+assert(providerSecretMount, "provider_secret_runtime_volume_mount_missing");
+assert.equal(providerSecretMount.mountPath, "/tmp/medopl-runtime", "provider_secret_runtime_mount_path_mismatch");
+assert.equal(providerSecretMount.readOnly, undefined, "provider_secret_runtime_mount_must_be_writable");
+const runtimeVolume = (deployment.spec.template.spec.volumes || []).find((item) => item.name === "medopl-runtime-state");
+assert(runtimeVolume, "provider_secret_runtime_volume_missing");
+assert.deepEqual(runtimeVolume.emptyDir, {}, "provider_secret_runtime_volume_must_be_empty_dir");
 const databaseUrl = (container.env || []).find((item) => item.name === "DATABASE_URL");
 assert.deepEqual(
   databaseUrl.valueFrom?.secretKeyRef,

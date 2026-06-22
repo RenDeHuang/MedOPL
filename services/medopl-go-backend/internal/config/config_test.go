@@ -33,6 +33,19 @@ func TestLoadUsesDeterministicLocalDefaults(t *testing.T) {
 	}
 }
 
+func TestLoadUsesWritableProductionProviderSecretDefault(t *testing.T) {
+	t.Setenv("MEDOPL_BACKEND_MODE", "production")
+	t.Setenv("PORTAL_OPL_PROVIDER_SECRET_ROOT", "")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.ProviderSecretRoot != "/tmp/medopl-runtime/provider-secrets" {
+		t.Fatalf("provider secret root = %q", cfg.ProviderSecretRoot)
+	}
+}
+
 func TestLoadRejectsInvalidPort(t *testing.T) {
 	t.Setenv("MEDOPL_BACKEND_PORT", "not-a-port")
 

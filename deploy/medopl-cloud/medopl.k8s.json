@@ -68,6 +68,10 @@
                     "value": "https://opl.medopl.cn"
                   },
                   {
+                    "name": "PORTAL_OPL_PROVIDER_SECRET_ROOT",
+                    "value": "/tmp/medopl-runtime/provider-secrets"
+                  },
+                  {
                     "name": "DATABASE_URL",
                     "valueFrom": {
                       "secretKeyRef": {
@@ -98,7 +102,19 @@
                     "cpu": "500m",
                     "memory": "512Mi"
                   }
-                }
+                },
+                "volumeMounts": [
+                  {
+                    "name": "medopl-runtime-state",
+                    "mountPath": "/tmp/medopl-runtime"
+                  }
+                ]
+              }
+            ],
+            "volumes": [
+              {
+                "name": "medopl-runtime-state",
+                "emptyDir": {}
               }
             ]
           }
