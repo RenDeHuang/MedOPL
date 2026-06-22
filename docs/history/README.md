@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `chore/v22-closeout-32b1502-rollout-dns-blocker`
-- latest landed commit: `1c97e75837a94360fc410954fdfc04331116375e`
+- latest landed branch: `recovery/platform-v22-trunk`
+- latest landed commit: `75fab6bfa8e0fa0ce095fdf58605b4c698a5cf41`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
@@ -46,6 +46,8 @@ History 只保留短索引：
 - Rollout health gate hardening: `fix/v22-rollout-health-json` / `80988091fcad2910d85b9704e6af4eaaf0cc692b` makes post-rollout health checks require MedOPL Go backend JSON instead of accepting static HTML. GitHub `v22 verify` run `27912722404` and Release Image run `27912776562` succeeded; Cloud Rollout run `27912789001` rolled out image tag `8098809` but failed closed at `Rollout apply` because `portal.medopl.cn/healthz` still returns static nginx HTML. No raw logs, cloud payloads, secrets, kubeconfig, runtime artifacts or receipt manifest were committed.
 - Rollout routing diagnostics: `fix/v22-rollout-routing-diagnostics` / `cbd0d8962a5bf9ab34a1ff0973c2bb9ba5ca99dc` adds redacted Service/Ingress/Endpoints/DNS diagnostics before the public Go JSON health gate. GitHub `v22 verify` run `27913303242` and Release Image run `27913362757` succeeded; Cloud Rollout run `27913371704` rolled out image tag `cbd0d89` but failed closed at `Rollout apply`. The diagnostic showed the active qcloud Ingress address `lb-7trlq374-v40s3uxfnpb1dazj.clb.usw-tencentclb.com`, while `portal.medopl.cn` still resolves to the old static nginx CLB `lb-pwv9zgky-yqsc8g20f1o6p3ir.clb.usw-tencentclb.com` / `43.159.159.90`. No raw logs, cloud payloads, secrets, kubeconfig, runtime artifacts or receipt manifest were committed.
 - Current trunk rollout DNS blocker closeout: `chore/v22-closeout-32b1502-rollout-dns-blocker` records the latest trunk rerun without changing the product claim. GitHub `v22 verify` run `27913474525` and Release Image run `27913590845` succeeded for `32b1502cb128cca1979afb07e25dac075b6c7417`, building image tag `32b1502`; Cloud Rollout run `27913603345` rolled `medopl-control-plane` to image tag `32b1502` but failed closed at `Rollout apply`. The active qcloud Ingress remains `lb-7trlq374-v40s3uxfnpb1dazj.clb.usw-tencentclb.com`, while runner DNS still resolves `portal.medopl.cn` to old static nginx CLB `lb-pwv9zgky-yqsc8g20f1o6p3ir.clb.usw-tencentclb.com` / `43.159.159.90`. No raw logs, cloud payloads, secrets, kubeconfig, runtime artifacts or receipt manifest were committed.
+
+- Public Go health/ready availability closeout: current machine cursor now records `npm run cloud:rollout:availability` observing MedOPL Go backend JSON 200 for `https://portal.medopl.cn/healthz` and `/readyz`, while keeping full OPL-Webui runtime-required E2E, cloud release candidate receipt manifest, release mutation and production complete unclaimed. Raw probe output is not committed; current machine truth is `tests/fixtures/v22/goal-current.json`.
 
 ## Tombstone Map
 

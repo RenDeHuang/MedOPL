@@ -143,6 +143,45 @@ assert.equal(
   false,
   "current_problem_must_not_regress_to_old_postgresql_closeout_text",
 );
+assert.equal(
+  current.current_blockers.includes("public_portal_medopl_api_routes_static_html_not_go_control_plane"),
+  false,
+  "current_blockers_must_not_keep_resolved_public_go_api_static_html_blocker",
+);
+assert.equal(
+  current.current_problem.includes("old static nginx CLB"),
+  false,
+  "current_problem_must_not_keep_resolved_public_go_api_static_html_blocker",
+);
+assert.equal(
+  current.public_api_availability?.status,
+  "go_health_ready_available",
+  "current_public_api_availability_status_must_record_go_health_ready_available",
+);
+assert.equal(
+  current.public_api_availability?.evidence_level,
+  "public_availability_probe",
+  "current_public_api_availability_evidence_level_must_be_public_probe",
+);
+assert.equal(
+  current.public_api_availability?.host,
+  "https://portal.medopl.cn",
+  "current_public_api_availability_host_mismatch",
+);
+assert.deepEqual(
+  current.public_api_availability?.endpoints,
+  ["healthz", "readyz"],
+  "current_public_api_availability_endpoints_mismatch",
+);
+assert.deepEqual(
+  current.public_api_availability?.cannot_claim,
+  [
+    "full OPL-Webui runtime-required product E2E canary completed",
+    "cloud release candidate receipt manifest completed",
+    "production complete",
+  ],
+  "current_public_api_availability_cannot_claim_mismatch",
+);
 
 const quick = runNode(["scripts/v22-verify.mjs", "active-platform", "--quick", "--json"]);
 assert.equal(quick.status, 0, `active_platform_quick_must_pass:${quick.stderr || quick.stdout}`);
