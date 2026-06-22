@@ -34,20 +34,19 @@
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
     "branch": "recovery/platform-v22-trunk",
-    "landed_commit": "5962040ffd1d8483deb2c4f3f4bb635336528902",
+    "landed_commit": "b0117bb4e52d63183b92e0a1f51170c01540ab01",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
-      "TDD red test failed first at portal_browser_regression_route_missing:/packages and browser_opl_entry_state_feedback_pattern_missing before customer IA browser coverage and OPL entry state feedback semantics were added",
-      "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs passed",
-      "node tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs passed",
+      "TDD red test failed first at production_complete_operational_criteria_contract_missing before production-complete operational criteria received owner/evidence-source contracts and runner owner validation",
+      "node tests/release/release-test-v22-production-receipt-boundary.mjs passed",
+      "node tests/health/health-check-v22-production-receipt-boundary.mjs passed",
+      "npm run test:release passed",
       "npm run test:run-plan -- --dry-run --json passed",
       "npm run test:run-plan passed",
       "npm run verify passed",
       "npm run gate:review passed",
       "npm run repo:bloat -- --diff passed",
       "npm run line:budget passed",
-      "npm --prefix services/portal/frontend run typecheck passed",
-      "npm --prefix services/portal run check passed",
       "git diff --check passed"
     ],
     "plan_completion_audit": {
@@ -60,10 +59,10 @@
     },
     "cleanup_result": {
       "deleted": "none",
-      "folded": "all-customer-page browser accessibility coverage into existing Portal UI quality contract, page-state contract, OPL entry state feedback source and browser/static consumers",
+      "folded": "production-complete operational criteria owner/evidence contracts into existing production receipt boundary contract, runner and release tests",
       "retained": "production-complete remains fail-closed and no raw .runtime evidence is committed",
-      "reason": "hardens accessibility verification without adding files or phase docs",
-      "next": "continue remaining release owner readiness, production receipt and security/dependency hardening through existing contracts/tests"
+      "reason": "hardens production readiness receipts without adding phase docs or new contract files",
+      "next": "continue remaining release owner readiness, deploy/observability, rollback and post-release monitoring proof through existing contracts/tests"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "opl-webui-runtime-production-slice"
@@ -78,7 +77,7 @@
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth",
     "ongoing_authorization_multi_region_sla_enterprise_compliance_and_unobserved_tenants_resources_remain_unclaimed"
   ],
-  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is recovery/platform-v22-trunk at 5962040ffd1d8483deb2c4f3f4bb635336528902. Current trunk keeps Portal UI/UX production gates hardened, requires the production-complete owner gate for production-ready claims, and closes the release auditEventId canary blocker. GitHub v22 verify run 27974444437 passed for Portal production UI gate hardening; Release Image run 27972408990 built image tag 485afcf; Cloud Rollout run 27972458642 passed rollout apply, deploy receipt, OPL-Webui consumer canary, availability probe, production receipt manifest and verify:cloud-release-candidate. The redacted manifest contains seven owner receipts, 12 lifecycle sections, claim=cloud_release_candidate, state=complete and sha256 43d6e9de0915190b552e3d0bcf5f9b6fd319953c986b4ad2e998c4c97f976ad2. This can claim cloud release candidate evidence for the current authorized canary path only. It does not claim production complete, multi-region/SLA, enterprise compliance, ongoing authorization, or unobserved tenants/resources. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is recovery/platform-v22-trunk at 5962040ffd1d8483deb2c4f3f4bb635336528902.",
+  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is recovery/platform-v22-trunk at b0117bb4e52d63183b92e0a1f51170c01540ab01. Current trunk keeps Portal UI/UX production gates hardened, requires the production-complete owner gate for production-ready claims, and closes the release auditEventId canary blocker. GitHub v22 verify run 27974444437 passed for Portal production UI gate hardening; Release Image run 27972408990 built image tag 485afcf; Cloud Rollout run 27972458642 passed rollout apply, deploy receipt, OPL-Webui consumer canary, availability probe, production receipt manifest and verify:cloud-release-candidate. The redacted manifest contains seven owner receipts, 12 lifecycle sections, claim=cloud_release_candidate, state=complete and sha256 43d6e9de0915190b552e3d0bcf5f9b6fd319953c986b4ad2e998c4c97f976ad2. This can claim cloud release candidate evidence for the current authorized canary path only. It does not claim production complete, multi-region/SLA, enterprise compliance, ongoing authorization, or unobserved tenants/resources. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is recovery/platform-v22-trunk at b0117bb4e52d63183b92e0a1f51170c01540ab01.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -944,8 +943,8 @@
     "cloud_rollout_run_id": "27972458642",
     "v22_verify_run_id": "27972264680"
   },
-  "base_trunk_head": "5962040ffd1d8483deb2c4f3f4bb635336528902",
-  "last_landed_commit": "5962040ffd1d8483deb2c4f3f4bb635336528902",
+  "base_trunk_head": "b0117bb4e52d63183b92e0a1f51170c01540ab01",
+  "last_landed_commit": "b0117bb4e52d63183b92e0a1f51170c01540ab01",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
