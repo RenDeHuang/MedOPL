@@ -81,13 +81,13 @@
   --resource-active: #34d399;
   --resource-blocked: #f87171;
   --billing-warning: #fbbf24;
-  --release-pending: #60a5fa;
-  --storage-protected: #a78bfa;
+  --release-pending: #5eead4;
+  --storage-protected: #cbd5e1;
   --resource-active-background: #064e3b;
   --resource-blocked-background: #7f1d1d;
   --billing-warning-background: #78350f;
-  --release-pending-background: #1e3a8a;
-  --storage-protected-background: #4c1d95;
+  --release-pending-background: #134e4a;
+  --storage-protected-background: #334155;
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);

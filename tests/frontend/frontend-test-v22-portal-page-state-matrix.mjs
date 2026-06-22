@@ -419,7 +419,15 @@ for (const forbiddenVisiblePhrase of [
   );
 }
 assert(themeSource.includes("--primary: #0F766E;"), "portal_theme_primary_must_use_frozen_teal");
-for (const forbiddenColor of ["--primary: #030213;", "--release-pending: #2563eb;", "--storage-protected: #6d28d9;"]) {
+for (const forbiddenColor of [
+  "--primary: #030213;",
+  "--release-pending: #2563eb;",
+  "--storage-protected: #6d28d9;",
+  "--release-pending: #60a5fa;",
+  "--storage-protected: #a78bfa;",
+  "--release-pending-background: #1e3a8a;",
+  "--storage-protected-background: #4c1d95;",
+]) {
   assert.equal(themeSource.includes(forbiddenColor), false, `portal_theme_default_blue_purple_or_black_primary_must_retire:${forbiddenColor}`);
 }
 for (const [label, source] of [
