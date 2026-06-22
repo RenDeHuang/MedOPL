@@ -9,11 +9,13 @@ import (
 )
 
 type BillingSummary struct {
-	Ok        bool   `json:"ok"`
-	Source    string `json:"source"`
-	Wallet    Wallet `json:"wallet"`
-	Totals    Costs  `json:"totals"`
-	Breakdown struct {
+	Ok          bool   `json:"ok"`
+	Source      string `json:"source"`
+	RunCount    int    `json:"runCount"`
+	LedgerCount int    `json:"ledgerCount"`
+	Wallet      Wallet `json:"wallet"`
+	Totals      Costs  `json:"totals"`
+	Breakdown   struct {
 		CPUCost        float64 `json:"cpuCost"`
 		GPUCost        float64 `json:"gpuCost"`
 		StorageCost    float64 `json:"storageCost"`
@@ -165,6 +167,8 @@ func (service *Service) BillingSummary(ctx context.Context, input WorkspaceInput
 	summary.Summary.RunCount = runCount
 	summary.Summary.WorkspaceCount = 1
 	summary.Summary.ExactCost = totalCost + 0.1
+	summary.RunCount = runCount
+	summary.LedgerCount = len(summary.Ledger)
 	summary.SupportBoundary.SupportStatus = "local_rc"
 	summary.SupportBoundary.FundingStatus = "funded"
 	summary.SupportBoundary.GraceStatus = "active"

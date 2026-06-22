@@ -130,6 +130,31 @@
         "kubeconfig"
       ]
     },
+    "billing_summary": {
+      "route": "GET /api/billing/summary",
+      "owner": "medopl",
+      "primary_consumer": "opl-webui",
+      "intent": "runtime_required_billing_summary_for_consumer_canary",
+      "must_return": [
+        "ok",
+        "source",
+        "runCount",
+        "ledgerCount",
+        "summary",
+        "ledger"
+      ],
+      "count_policy": "top_level_runCount_and_ledgerCount_must_match_summary_runCount_and_ledger_length",
+      "must_not_return": [
+        "rawObjectStoreSecret",
+        "signedUrl",
+        "objectKey",
+        "storageKey",
+        "localPath",
+        "bearerToken",
+        "runtimeToken",
+        "kubeconfig"
+      ]
+    },
     "storage_destroy": {
       "route": "POST /api/v22/storage/destroy",
       "owner": "medopl",

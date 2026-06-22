@@ -122,6 +122,38 @@ assert(
   "run_result_top_level_artifact_ref_not_populated_from_generated_artifact_ref",
 );
 
+const billingSummary = apiContract.medopl_api_contract.billing_summary;
+assert(billingSummary, "api_contract_billing_summary_missing");
+assert.equal(billingSummary.route, "GET /api/billing/summary", "billing_summary_route_contract_missing");
+assert.equal(billingSummary.primary_consumer, "opl-webui", "billing_summary_primary_consumer_must_be_opl_webui");
+assert.equal(
+  billingSummary.count_policy,
+  "top_level_runCount_and_ledgerCount_must_match_summary_runCount_and_ledger_length",
+  "billing_summary_count_policy_mismatch",
+);
+assert.deepEqual(
+  billingSummary.must_return,
+  ["ok", "source", "runCount", "ledgerCount", "summary", "ledger"],
+  "billing_summary_must_return_contract_mismatch",
+);
+const billingSummarySurface = serviceSurface.slice(
+  serviceSurface.indexOf("type BillingSummary struct"),
+  serviceSurface.indexOf("type BillingDetails struct"),
+);
+for (const field of billingSummary.must_return) {
+  assert(
+    billingSummarySurface.includes(`json:"${field}`),
+    `billing_summary_go_response_field_missing:${field}`,
+  );
+}
+for (const field of billingSummary.must_not_return) {
+  assert(!billingSummarySurface.includes(`json:"${field}`), `billing_summary_forbidden_response_field:${field}`);
+}
+assert(
+  serviceSurface.includes("summary.RunCount = runCount") && serviceSurface.includes("summary.LedgerCount = len(summary.Ledger)"),
+  "billing_summary_top_level_counts_not_populated_from_summary_and_ledger",
+);
+
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_medopl_api_contract",

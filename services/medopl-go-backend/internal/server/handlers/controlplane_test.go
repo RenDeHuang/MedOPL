@@ -88,7 +88,7 @@ func TestControlPlaneHandlersExposeProviderLaunchBillingResourceLocalRC(t *testi
 	}
 
 	billingResponse := getMap(t, router, "/api/billing/summary?workspaceId=workspace-v22")
-	if billingResponse["todayCost"] == nil || billingResponse["source"] != "go-control-plane" {
+	if billingResponse["todayCost"] == nil || billingResponse["source"] != "go-control-plane" || billingResponse["runCount"] != float64(1) || billingResponse["ledgerCount"] == nil {
 		t.Fatalf("billing response = %+v", billingResponse)
 	}
 

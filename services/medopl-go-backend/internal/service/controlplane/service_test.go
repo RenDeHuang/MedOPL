@@ -189,7 +189,7 @@ func TestServiceRecordsFileRunArtifactBillingAuditAndRelease(t *testing.T) {
 	if err != nil {
 		t.Fatalf("BillingSummary() error = %v", err)
 	}
-	if billing.Wallet.Balance <= 0 || billing.Summary.RunCount != 1 || len(billing.Ledger) == 0 {
+	if billing.Wallet.Balance <= 0 || billing.RunCount != 1 || billing.Summary.RunCount != 1 || billing.LedgerCount != len(billing.Ledger) || billing.LedgerCount == 0 {
 		t.Fatalf("billing = %+v", billing)
 	}
 
