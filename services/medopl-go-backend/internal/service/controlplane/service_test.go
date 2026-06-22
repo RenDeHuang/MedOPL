@@ -181,6 +181,9 @@ func TestServiceRecordsFileRunArtifactBillingAuditAndRelease(t *testing.T) {
 	if runResult.Run.Status != "succeeded" || len(runResult.Artifacts) != 1 {
 		t.Fatalf("run result = %+v", runResult)
 	}
+	if runResult.ArtifactRef == "" || runResult.ArtifactRef != runResult.Artifacts[0].ArtifactRef {
+		t.Fatalf("run result top-level artifactRef = %q artifacts = %+v", runResult.ArtifactRef, runResult.Artifacts)
+	}
 
 	billing, err := service.BillingSummary(ctx, WorkspaceInput{WorkspaceID: "workspace-v22"})
 	if err != nil {

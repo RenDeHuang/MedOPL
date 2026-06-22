@@ -35,11 +35,12 @@ type PublicArtifact struct {
 }
 
 type PublicRunResult struct {
-	Ok        bool             `json:"ok"`
-	Status    string           `json:"status"`
-	StatusURL string           `json:"statusUrl,omitempty"`
-	Run       PublicRun        `json:"run"`
-	Artifacts []PublicArtifact `json:"artifacts"`
+	Ok          bool             `json:"ok"`
+	Status      string           `json:"status"`
+	StatusURL   string           `json:"statusUrl,omitempty"`
+	Run         PublicRun        `json:"run"`
+	ArtifactRef string           `json:"artifactRef"`
+	Artifacts   []PublicArtifact `json:"artifacts"`
 }
 
 func (service *Service) StartRun(ctx context.Context, input StartRunInput) (PublicRunResult, error) {
@@ -69,10 +70,11 @@ func (service *Service) StartRun(ctx context.Context, input StartRunInput) (Publ
 	artifactRef := "artifact-" + shortID(runID+":result")
 	started := service.now().UTC()
 	result := PublicRunResult{
-		Ok:        true,
-		Status:    "succeeded",
-		StatusURL: "/api/opl/runs/" + runID + "/status",
-		Run:       PublicRun{RunRef: runID, Status: "succeeded"},
+		Ok:          true,
+		Status:      "succeeded",
+		StatusURL:   "/api/opl/runs/" + runID + "/status",
+		Run:         PublicRun{RunRef: runID, Status: "succeeded"},
+		ArtifactRef: artifactRef,
 		Artifacts: []PublicArtifact{{
 			ArtifactRef:    artifactRef,
 			WorkspaceID:    launch.WorkspaceID,

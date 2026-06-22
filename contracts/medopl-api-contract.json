@@ -10,10 +10,12 @@
   },
   "consumers": [
     "validate:active-platform",
+    "tests/backend/backend-test-v22-api-contract.mjs",
     "tests/contracts/contract-test-v22-go-backend-service-surface.mjs",
     "tests/contracts/contract-test-v22-validate-active-platform.mjs"
   ],
   "consumer_tests": [
+    "npm run test:backend",
     "node tests/contracts/contract-test-v22-go-backend-service-surface.mjs",
     "npm run validate:active-platform -- --quick --json"
   ],
@@ -101,6 +103,31 @@
         "medopl_owns_opl_research_quality",
         "runtime_required_without_medopl_runtime",
         "storage_destroy_without_user_intent"
+      ]
+    },
+    "run_result": {
+      "route": "POST /api/opl/runs",
+      "owner": "medopl",
+      "primary_consumer": "opl-webui",
+      "intent": "runtime_required_task_run_result_for_consumer_canary",
+      "must_return": [
+        "ok",
+        "status",
+        "statusUrl",
+        "run",
+        "artifactRef",
+        "artifacts"
+      ],
+      "artifact_ref_policy": "top_level_artifactRef_must_match_first_artifact_artifactRef",
+      "must_not_return": [
+        "rawObjectStoreSecret",
+        "signedUrl",
+        "objectKey",
+        "storageKey",
+        "localPath",
+        "bearerToken",
+        "runtimeToken",
+        "kubeconfig"
       ]
     },
     "storage_destroy": {

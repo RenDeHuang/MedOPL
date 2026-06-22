@@ -73,7 +73,7 @@
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth",
     "full_product_e2e_canary_and_receipt_manifest_pending_after_public_go_health_ready_available"
   ],
-  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is recovery/platform-v22-trunk at 75fab6bfa8e0fa0ce095fdf58605b4c698a5cf41; hardened cloud E2E work and Portal UI/UX production gates keep public API canary, release mutation and production claims fail-closed. Goal F cloud release candidate wiring landed in feat/v22-goal-f-production-receipt-manifest at 90a89b75b2a4613719ce9c424367fb35ed51495c and CI self-contained fixes landed on trunk. Goal A readonly inventory, Goal C storage lifecycle, Goal D tenant runtime provisioning, Goal E OPL-Webui HTTPS consumer canary, and Goal F build_push / kubectl / deploy / billing_audit_writeback / live_test receipt lanes have remote authorized workflow evidence. Current trunk 75fab6bfa8e0fa0ce095fdf58605b4c698a5cf41 keeps Portal UI/UX production gates hardened. Fresh public availability evidence from npm run cloud:rollout:availability now observes MedOPL Go backend JSON 200 for https://portal.medopl.cn/healthz and /readyz. This resolves the previous public Go health/ready routing blocker only. A later local deploy/config shape fix also makes the provider-key secret root explicit and writable for production Pods. These do not allow a new cloud release candidate claim, production complete claim, release mutation claim, or full OPL-Webui product E2E claim. The next gap is the full product E2E canary and receipt manifest: login/session or canary token -> runtime_required -> MedOPL runtime/storage open -> upload -> fileRef -> run -> artifact -> billing/audit -> release/stop billing -> optional storage destroy, with raw evidence kept outside git.",
+  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest product RC closeout remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279 and folds the single-flow gate into golden smoke. The latest repo/gate closeout is recovery/platform-v22-trunk at 75fab6bfa8e0fa0ce095fdf58605b4c698a5cf41; hardened cloud E2E work and Portal UI/UX production gates keep public API canary, release mutation and production claims fail-closed. Goal F cloud release candidate wiring landed in feat/v22-goal-f-production-receipt-manifest at 90a89b75b2a4613719ce9c424367fb35ed51495c and CI self-contained fixes landed on trunk. Goal A readonly inventory, Goal C storage lifecycle, Goal D tenant runtime provisioning, Goal E OPL-Webui HTTPS consumer canary, and Goal F build_push / kubectl / deploy / billing_audit_writeback / live_test receipt lanes have remote authorized workflow evidence. Current trunk 75fab6bfa8e0fa0ce095fdf58605b4c698a5cf41 keeps Portal UI/UX production gates hardened. Fresh public availability evidence from npm run cloud:rollout:availability now observes MedOPL Go backend JSON 200 for https://portal.medopl.cn/healthz and /readyz. This resolves the previous public Go health/ready routing blocker only. A later local deploy/config shape fix also makes the provider-key secret root explicit and writable for production Pods; Release Image run 27967587761 and Cloud Rollout run 27967647185 deployed that shape and live_test advanced past provider-key before failing at run_task missing top-level artifactRef. These do not allow a new cloud release candidate claim, production complete claim, release mutation claim, or full OPL-Webui product E2E claim. The next gap is the full product E2E canary and receipt manifest: login/session or canary token -> runtime_required -> MedOPL runtime/storage open -> upload -> fileRef -> run -> artifact -> billing/audit -> release/stop billing -> optional storage destroy, with raw evidence kept outside git.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -343,7 +343,8 @@
       "Full OPL-Webui runtime-required product E2E canary is not yet proven beyond public HTTPS availability and owner receipt manifest.",
       "Need canary credentials/session and test workspace/providerKeyRef to exercise login/session, runtime gate, upload, fileRef, run, artifact, billing/audit, release/stop billing and optional storage destroy.",
       "Public MedOPL Go health/ready JSON is reachable for /healthz and /readyz, but this only proves public availability for those probes.",
-      "Provider-key live_test blocker local closeout fixed production deploy/config shape for writable provider secret root; authorized live_test still has to rerun before full E2E claim.",
+      "Provider-key live_test blocker is cleared in production-canary after b839556 rollout; full E2E remains blocked at run_task artifactRef.",
+      "Live_test now passes provider-key after b839556 rollout and is blocked at run_task missing top-level artifactRef; local Go API fix exists but needs new build/rollout/live_test.",
       "portal.medopl.cn or an approved API host must still pass the full /api/opl/runtime-gate, provider-key, managed-environment, files, runs, artifacts, billing, release and storage destroy product E2E canary before a full E2E claim."
     ],
     "external_preconditions": {
@@ -557,14 +558,14 @@
       "receipt_manifest_schema": "seven_owner_receipts_plus_required_lifecycle_sections"
     },
     "latest_trunk_cloud_runs": {
-      "trunk_commit": "32b1502cb128cca1979afb07e25dac075b6c7417",
-      "release_image_run_id": "27913590845",
-      "release_image_tag": "32b1502",
-      "cloud_rollout_run_id": "27913603345",
+      "trunk_commit": "b83955671be794cb4d7223e5e206df71b03f6e53",
+      "release_image_run_id": "27967587761",
+      "release_image_tag": "b839556",
+      "cloud_rollout_run_id": "27967647185",
       "post_push_verify_run_id": "27913474525",
-      "cloud_rollout_workflow_conclusion": "historical_failure_fail_closed_at_rollout_go_health_json",
-      "public_api_blocker": "resolved_for_health_ready_only_by_fresh_availability_probe",
-      "fixed_by_this_slice": "latest rerun confirms Release Image and Kubernetes rollout work; fresh public availability probe now observes Go health/ready JSON; provider-key production secret-root deploy/config shape is locally fixed, while the runtime/storage/upload/run/artifact/billing/release/destroy API flow remains unproven until authorized live_test reruns",
+      "cloud_rollout_workflow_conclusion": "failure_fail_closed_at_live_test_run_task_artifact_ref",
+      "public_api_blocker": "provider_key_passed_run_task_artifact_ref_blocked",
+      "fixed_by_this_slice": "provider-key production secret-root deploy/config shape reached production-canary and live_test advanced to run_task; local Go API now exposes top-level artifactRef but still needs rebuild/rollout/live_test rerun",
       "public_api_availability": "go_health_ready_available",
       "raw_evidence_committed": false,
       "latest_service_endpoint": "10.66.0.133:8080"
@@ -867,6 +868,7 @@
     "cannot_claim": "cloud online, production complete, production owner receipt, production runtime, real cloud, real billing, deploy, kubectl, build/push or live provider readiness"
   },
   "readinessGaps": [
+    "Deploy b839556 successor with top-level artifactRef in /api/opl/runs, then rerun authorized live_test and receipt manifest gate.",
     "Rerun authorized live_test after provider-key writable secret-root deploy/config shape is rolled out; local config and deploy shape tests alone do not prove provider-key production mutation succeeds.",
     "Implement and run full OPL-Webui runtime-required product E2E canary with login/session, runtime gate, upload, fileRef, run, artifact, billing/audit, release/stop billing and optional storage destroy.",
     "Keep canary credentials/session, uploaded files, runtime artifacts and raw evidence outside git; commit only contract/test/source changes and small redacted pointers."
@@ -943,6 +945,39 @@
       "provider-key live_test has been rerun successfully",
       "kubectl applied",
       "deployment completed",
+      "cloud release candidate receipt manifest completed",
+      "production complete"
+    ]
+  },
+  "live_test_progress": {
+    "schema_version": 1,
+    "status": "provider_key_passed_run_task_artifact_ref_blocked",
+    "release_image_run_id": "27967587761",
+    "cloud_rollout_run_id": "27967647185",
+    "deployed_image_tag": "b839556",
+    "passed_steps_before_blocker": [
+      "opl_webui_public_entry",
+      "medopl_healthz",
+      "medopl_readyz",
+      "bind_provider_key",
+      "open_runtime",
+      "runtime_gate",
+      "upload_file"
+    ],
+    "blocker": "production_goal_live_test_run_task_failed",
+    "missing_fields": [
+      "artifactRef"
+    ],
+    "local_fix_status": "go_public_run_result_top_level_artifact_ref_added_not_yet_deployed",
+    "consumer_tests": [
+      "go test ./internal/server/handlers -run TestControlPlaneHandlersExposeProviderLaunchBillingResourceLocalRC -count=1",
+      "go test ./internal/service/controlplane -count=1",
+      "node tests/cloud/cloud-test-v22-production-goal-command-runner.mjs"
+    ],
+    "raw_evidence_committed": false,
+    "can_claim": "production-canary deploy reached live_test and advanced beyond provider-key to run_task",
+    "cannot_claim": [
+      "full OPL-Webui runtime-required product E2E completed",
       "cloud release candidate receipt manifest completed",
       "production complete"
     ]

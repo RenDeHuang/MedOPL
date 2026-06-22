@@ -90,6 +90,38 @@ for (const field of runtimeGate.forbidden_response_fields) {
   assert(!runtimeGateProjectionSurface.includes(`json:"${field}`), `runtime_gate_forbidden_response_field:${field}`);
 }
 
+const runResult = apiContract.medopl_api_contract.run_result;
+assert(runResult, "api_contract_run_result_missing");
+assert.equal(runResult.route, "POST /api/opl/runs", "run_result_route_contract_missing");
+assert.equal(runResult.primary_consumer, "opl-webui", "run_result_primary_consumer_must_be_opl_webui");
+assert.equal(
+  runResult.artifact_ref_policy,
+  "top_level_artifactRef_must_match_first_artifact_artifactRef",
+  "run_result_artifact_ref_policy_mismatch",
+);
+assert.deepEqual(
+  runResult.must_return,
+  ["ok", "status", "statusUrl", "run", "artifactRef", "artifacts"],
+  "run_result_must_return_contract_mismatch",
+);
+const publicRunResultSurface = serviceSurface.slice(
+  serviceSurface.indexOf("type PublicRunResult struct"),
+  serviceSurface.indexOf("func (service *Service) StartRun"),
+);
+for (const field of runResult.must_return) {
+  assert(
+    publicRunResultSurface.includes(`json:"${field}`),
+    `run_result_go_response_field_missing:${field}`,
+  );
+}
+for (const field of runResult.must_not_return) {
+  assert(!publicRunResultSurface.includes(`json:"${field}`), `run_result_forbidden_response_field:${field}`);
+}
+assert(
+  serviceSurface.includes("ArtifactRef: artifactRef"),
+  "run_result_top_level_artifact_ref_not_populated_from_generated_artifact_ref",
+);
+
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_medopl_api_contract",
