@@ -70,8 +70,8 @@ export function Layout() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-none md:flex-1 p-3 space-y-3 md:space-y-1 overflow-y-auto">
-          <div data-ui-pattern="mobile-nav-scroll-hint" className="relative -mx-1 px-1 after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-6 after:bg-gradient-to-l after:from-white after:to-transparent md:after:hidden">
+        <div className="flex-none md:flex-1 p-3 space-y-3 md:space-y-1 overflow-y-auto">
+          <nav aria-label="主要资源导航" data-ui-pattern="mobile-nav-scroll-hint" className="relative -mx-1 px-1 after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-6 after:bg-gradient-to-l after:from-white after:to-transparent md:after:hidden">
             <div className="flex gap-2 overflow-x-auto pb-1 pr-6 md:block md:space-y-1 md:overflow-visible md:pb-0 md:pr-0">
             {userNavigation.map((item) => {
               const isActive = location.pathname === item.path;
@@ -93,13 +93,13 @@ export function Layout() {
               );
             })}
             </div>
-          </div>
+          </nav>
 
           {/* RoleContext 不是安全边界；真实 admin 权限由 Go /api/admin/* 后端校验。 */}
           {isAdmin && (
             <>
               <Separator className="my-3" />
-              <div className="space-y-1">
+              <section className="space-y-1">
                 <button
                   onClick={() => setAdminExpanded(!adminExpanded)}
                   className="flex min-h-11 w-full cursor-pointer items-center justify-between rounded-md px-3 py-2 text-xs font-semibold text-neutral-500 transition-[color,background-color,box-shadow,transform] hover:bg-neutral-100 hover:text-neutral-700 active:translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 motion-reduce:transition-none motion-reduce:active:translate-y-0"
@@ -112,7 +112,7 @@ export function Layout() {
                   )}
                 </button>
                 {adminExpanded && (
-                  <div data-ui-pattern="mobile-nav-scroll-hint" className="relative -mx-1 px-1 after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-6 after:bg-gradient-to-l after:from-white after:to-transparent md:after:hidden">
+                  <nav aria-label="管理台导航" data-ui-pattern="mobile-nav-scroll-hint" className="relative -mx-1 px-1 after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:w-6 after:bg-gradient-to-l after:from-white after:to-transparent md:after:hidden">
                     <div className="flex gap-2 overflow-x-auto pb-1 pr-6 md:block md:space-y-1 md:overflow-visible md:pb-0 md:pr-0">
                     {adminNavigation.map((item) => {
                       const isActive = location.pathname === item.path;
@@ -134,12 +134,12 @@ export function Layout() {
                       );
                     })}
                     </div>
-                  </div>
+                  </nav>
                 )}
-              </div>
+              </section>
             </>
           )}
-        </nav>
+        </div>
 
         {/* Footer */}
         <div className="hidden md:block p-3 border-t border-neutral-200">

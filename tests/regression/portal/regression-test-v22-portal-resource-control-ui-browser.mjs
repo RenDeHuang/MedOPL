@@ -255,6 +255,29 @@ async function assertAgradeInteractionSystem(page, label) {
   );
 }
 
+async function assertNavigationLandmarks(page, label, { admin = false } = {}) {
+  const metrics = await page.evaluate(() => {
+    const mainNav = document.querySelector("nav[aria-label='主要资源导航']");
+    const adminNav = document.querySelector("nav[aria-label='管理台导航']");
+    return {
+      mainNavCount: document.querySelectorAll("nav[aria-label='主要资源导航']").length,
+      mainNavLinkCount: mainNav?.querySelectorAll("a[href]").length || 0,
+      currentPageCount: mainNav?.querySelectorAll("a[aria-current='page']").length || 0,
+      adminNavCount: document.querySelectorAll("nav[aria-label='管理台导航']").length,
+      adminNavLinkCount: adminNav?.querySelectorAll("a[href]").length || 0,
+    };
+  });
+  assert.equal(metrics.mainNavCount, 1, `${label}_main_nav_landmark_label_missing:${JSON.stringify(metrics)}`);
+  assert(metrics.mainNavLinkCount >= 6, `${label}_main_nav_links_missing:${JSON.stringify(metrics)}`);
+  assert.equal(metrics.currentPageCount, 1, `${label}_main_nav_current_page_count_mismatch:${JSON.stringify(metrics)}`);
+  if (admin) {
+    assert.equal(metrics.adminNavCount, 1, `${label}_admin_nav_landmark_label_missing:${JSON.stringify(metrics)}`);
+    assert(metrics.adminNavLinkCount >= 6, `${label}_admin_nav_links_missing:${JSON.stringify(metrics)}`);
+  } else {
+    assert.equal(metrics.adminNavCount, 0, `${label}_user_must_not_expose_admin_nav_landmark:${JSON.stringify(metrics)}`);
+  }
+}
+
 async function assertReducedMotion(page, label) {
   await page.emulateMedia({ reducedMotion: "reduce" });
   const metrics = await page.evaluate(() => {
@@ -582,6 +605,7 @@ try {
     await assertHeadingHierarchy(page, "browser_overview");
     await assertTouchTargets(page, "nav a, nav button, header button", "browser_overview");
     await assertAgradeInteractionSystem(page, "browser_overview");
+    await assertNavigationLandmarks(page, "browser_overview", { admin: true });
     await assertReducedMotion(page, "browser_overview");
     await assertStateFeedbackPatterns(page, "browser_overview");
     assert(lastBodyText.includes("选择套餐开通计算资源"), "browser_overview_open_compute_resource_cta_missing");
@@ -633,6 +657,7 @@ try {
     await assertHeadingHierarchy(page, "browser_runtime_environment");
     await assertTouchTargets(page, "nav a, nav button, header button", "browser_runtime_environment");
     await assertAgradeInteractionSystem(page, "browser_runtime_environment");
+    await assertNavigationLandmarks(page, "browser_runtime_environment", { admin: true });
     await assertStateFeedbackPatterns(page, "browser_runtime_environment");
     await assertDisabledReasonVisible(page, "browser_runtime_environment");
     assert(lastBodyText.includes("开通服务"), "browser_runtime_open_service_cta_missing");
@@ -679,6 +704,7 @@ try {
     await assertHeadingHierarchy(userPage, "browser_user_overview");
     await assertTouchTargets(userPage, "nav a, nav button, header button", "browser_user_overview");
     await assertAgradeInteractionSystem(userPage, "browser_user_overview");
+    await assertNavigationLandmarks(userPage, "browser_user_overview", { admin: false });
     await assertStateFeedbackPatterns(userPage, "browser_user_overview");
     await assertNoGlobalHorizontalOverflow(userPage, "browser_user_overview");
     await userContext.close();

@@ -289,6 +289,7 @@ for (const check of [
   "touch_targets_44px",
   "heading_hierarchy",
   "role_boundary_mobile_nav",
+  "labelled_navigation_landmark",
   "no_horizontal_overflow",
   "disabled_reason_visible",
 ]) {
@@ -457,6 +458,8 @@ assert(resourceControlComponents.includes("data-ui-pattern=\"state-feedback\""),
 assert(resourceControlComponents.includes("role=\"status\""), "portal_state_feedback_live_region_missing");
 assert(layout.includes("data-ui-pattern=\"mobile-nav-scroll-hint\""), "portal_mobile_nav_scroll_hint_missing");
 assert(layout.includes("aria-current={isActive ? \"page\" : undefined}"), "portal_nav_current_page_semantics_missing");
+assert(layout.includes("aria-label=\"主要资源导航\""), "portal_main_nav_accessible_label_missing");
+assert(layout.includes("aria-label=\"管理台导航\""), "portal_admin_nav_accessible_label_missing");
 
 const flowById = new Map(interactionFlowContract.medopl_portal_interaction_flow_contract.flows.map((flow) => [flow.id, flow]));
 assert.equal(interactionFlowContract.medopl_portal_interaction_flow_contract.interaction_states.min_touch_target_px, 44, "interaction_flow_touch_target_min_mismatch");

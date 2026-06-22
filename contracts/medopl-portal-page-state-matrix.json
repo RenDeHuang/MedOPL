@@ -315,6 +315,7 @@
             "touch_targets_44px",
             "heading_hierarchy",
             "role_boundary_mobile_nav",
+            "labelled_navigation_landmark",
             "no_horizontal_overflow",
             "disabled_reason_visible"
           ]
