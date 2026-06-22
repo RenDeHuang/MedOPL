@@ -110,6 +110,17 @@ function asStringSet(values) {
   return new Set(Array.isArray(values) ? values.map((value) => String(value || "").trim()).filter(Boolean) : []);
 }
 
+function normalizedStringArray(values) {
+  return Array.isArray(values) ? values.map((value) => String(value || "").trim()).filter(Boolean) : [];
+}
+
+function arraysMatch(left, right) {
+  const normalizedLeft = normalizedStringArray(left);
+  const normalizedRight = normalizedStringArray(right);
+  return normalizedLeft.length === normalizedRight.length &&
+    normalizedLeft.every((value, index) => value === normalizedRight[index]);
+}
+
 function operationalCriteriaContractById(productionCompleteGate) {
   const items = Array.isArray(productionCompleteGate?.operational_criteria_contract)
     ? productionCompleteGate.operational_criteria_contract
@@ -337,6 +348,8 @@ export function validateProductionReceiptBoundary({ boundary, cloudAuthorization
       const auditGates = dependencySecurityContract?.audit_gates;
       const rootGate = uiProductionReadiness?.root_production_dependency_gate;
       const frontendGate = uiProductionReadiness?.security_dependency_gate;
+      const browserAccessibilityContract = criteriaContractById.get("browser_accessibility_verification_receipt");
+      const sLevelUiPolishContract = criteriaContractById.get("s_level_ui_polish_receipt");
       if (!isObject(auditGates) || !isObject(auditGates.root) || !isObject(auditGates.frontend)) {
         blockers.push("production_receipt_boundary_dependency_security_audit_gates_missing");
       } else {
@@ -360,6 +373,37 @@ export function validateProductionReceiptBoundary({ boundary, cloudAuthorization
         }
         if (dependencySecurityContract.audit_payload_policy !== "summary_counts_only_no_raw_advisory_payload") {
           blockers.push("production_receipt_boundary_dependency_security_audit_payload_policy_mismatch");
+        }
+      }
+      if (
+        !browserAccessibilityContract ||
+        browserAccessibilityContract.evidence_source !== uiProductionReadiness?.accessibility_verification?.consumer ||
+        !arraysMatch(browserAccessibilityContract.checks, uiProductionReadiness?.accessibility_verification?.checks)
+      ) {
+        blockers.push("production_receipt_boundary_browser_accessibility_checks_mismatch");
+      } else {
+        if (browserAccessibilityContract.required_gate !== "browser_accessibility_regression") {
+          blockers.push("production_receipt_boundary_browser_accessibility_gate_mismatch");
+        }
+        if (browserAccessibilityContract.browser_role_boundary !== "admin_and_user_mobile_nav") {
+          blockers.push("production_receipt_boundary_browser_accessibility_role_boundary_mismatch");
+        }
+        if (browserAccessibilityContract.receipt_source_policy !== "browser_regression_summary_only") {
+          blockers.push("production_receipt_boundary_browser_accessibility_source_policy_mismatch");
+        }
+      }
+      if (
+        !sLevelUiPolishContract ||
+        sLevelUiPolishContract.evidence_source !== uiProductionReadiness?.s_level_ui_polish_gate?.consumer ||
+        !arraysMatch(sLevelUiPolishContract.checks, uiProductionReadiness?.s_level_ui_polish_gate?.checks)
+      ) {
+        blockers.push("production_receipt_boundary_s_level_ui_polish_checks_mismatch");
+      } else {
+        if (sLevelUiPolishContract.required_gate !== "s_level_ui_polish_gate") {
+          blockers.push("production_receipt_boundary_s_level_ui_polish_gate_mismatch");
+        }
+        if (sLevelUiPolishContract.receipt_source_policy !== "browser_regression_summary_only") {
+          blockers.push("production_receipt_boundary_s_level_ui_polish_source_policy_mismatch");
         }
       }
     }

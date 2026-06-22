@@ -115,6 +115,19 @@
           "owner": "MedOPL Portal",
           "required_gate": "browser_accessibility_regression",
           "evidence_source": "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs",
+          "checks": [
+            "keyboard_focus_visible",
+            "touch_targets_44px",
+            "heading_hierarchy",
+            "role_boundary_mobile_nav",
+            "labelled_navigation_landmark",
+            "no_horizontal_overflow",
+            "disabled_reason_visible",
+            "status_feedback_non_color_signal",
+            "all_customer_pages_browser_covered"
+          ],
+          "browser_role_boundary": "admin_and_user_mobile_nav",
+          "receipt_source_policy": "browser_regression_summary_only",
           "evidence_ref_policy": "runtime_pointer_summary_only",
           "evidence_hash_policy": "sha256_pointer_hash_required",
           "raw_evidence_policy": "forbidden"
@@ -124,6 +137,15 @@
           "owner": "MedOPL Portal",
           "required_gate": "s_level_ui_polish_gate",
           "evidence_source": "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs",
+          "checks": [
+            "component_state_consistency",
+            "status_feedback",
+            "status_feedback_non_color_signal",
+            "responsive_data_tables",
+            "admin_template_hierarchy",
+            "empty_error_recovery"
+          ],
+          "receipt_source_policy": "browser_regression_summary_only",
           "evidence_ref_policy": "runtime_pointer_summary_only",
           "evidence_hash_policy": "sha256_pointer_hash_required",
           "raw_evidence_policy": "forbidden"

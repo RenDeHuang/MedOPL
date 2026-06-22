@@ -874,6 +874,7 @@
     "Production-complete owner receipt gate is now dedicated and fail-closed: cloud RC cannot be upgraded by prose, workflow success or a single canary, and any production_complete manifest must include production_complete_criteria.",
     "Release-owner readiness is now bound to the production-complete criterion contract: release_owner_readiness maps to release_owner_readiness_receipt, release_owner_receipt, runtime pointer/hash evidence policy and raw-evidence forbidden, and the production receipt runner cross-checks release and production receipt contracts.",
     "Production dependency/security receipt is now bound to root and Portal frontend production dependency audit gates from the UI quality contract, with repo-hygiene summary evidence only and raw audit payloads forbidden.",
+    "Browser accessibility and S-level UI polish receipts are now bound to the Portal UI quality contract checks and existing browser regression consumer, with browser-regression summary evidence only and raw screenshots/runtime evidence forbidden.",
     "Keep multi-region, SLA, enterprise compliance, ongoing authorization and unobserved tenant/resource claims out of current truth until dedicated contracts and evidence exist.",
     "Keep canary credentials/session, uploaded files, runtime artifacts, cloud payloads and raw evidence outside git; commit only contract/test/source changes and small redacted pointers."
   ],
@@ -970,6 +971,23 @@
       "runner_cross_check": "scripts/v22-production-receipt-boundary.mjs#validateProductionReceiptBoundary",
       "can_claim": "production dependency/security receipt contract and runner binding are consumer-tested locally",
       "cannot_claim": "deploy completed, live-test covered, production dependency receipt accepted, or production complete"
+    },
+    "browser_accessibility_s_level_ui_binding": {
+      "criteria": [
+        "browser_accessibility_verification_receipt",
+        "s_level_ui_polish_receipt"
+      ],
+      "required_gates": [
+        "browser_accessibility_regression",
+        "s_level_ui_polish_gate"
+      ],
+      "ui_quality_contract": "contracts/medopl-portal-ui-quality-contract.json",
+      "evidence_source": "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs",
+      "receipt_source_policy": "browser_regression_summary_only",
+      "browser_role_boundary": "admin_and_user_mobile_nav",
+      "runner_cross_check": "scripts/v22-production-receipt-boundary.mjs#validateProductionReceiptBoundary",
+      "can_claim": "browser accessibility and S-level UI polish receipt contracts and runner binding are consumer-tested locally against existing browser regression coverage",
+      "cannot_claim": "raw screenshot evidence committed, deploy completed, live-test covered, browser receipt accepted, S-level receipt accepted, or production complete"
     }
   },
   "base_trunk_head": "cd4d1a62f5fa93d031422fb8dc58dab6738ee6a0",

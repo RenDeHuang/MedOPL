@@ -198,6 +198,33 @@ assert.equal(
   "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs",
   "s_level_ui_polish_receipt_must_bind_browser_regression",
 );
+const browserAccessibilityContract = criteriaContractById.get("browser_accessibility_verification_receipt");
+assert.deepEqual(
+  browserAccessibilityContract?.checks,
+  uiQualityContract.medopl_portal_ui_quality_contract.production_readiness.accessibility_verification.checks,
+  "browser_accessibility_receipt_checks_must_match_ui_quality_contract",
+);
+assert.equal(
+  browserAccessibilityContract?.browser_role_boundary,
+  "admin_and_user_mobile_nav",
+  "browser_accessibility_receipt_must_bind_role_boundary_browser_gate",
+);
+assert.equal(
+  browserAccessibilityContract?.receipt_source_policy,
+  "browser_regression_summary_only",
+  "browser_accessibility_receipt_source_policy_mismatch",
+);
+const sLevelContract = criteriaContractById.get("s_level_ui_polish_receipt");
+assert.deepEqual(
+  sLevelContract?.checks,
+  uiQualityContract.medopl_portal_ui_quality_contract.production_readiness.s_level_ui_polish_gate.checks,
+  "s_level_ui_polish_receipt_checks_must_match_ui_quality_contract",
+);
+assert.equal(
+  sLevelContract?.receipt_source_policy,
+  "browser_regression_summary_only",
+  "s_level_ui_polish_receipt_source_policy_mismatch",
+);
 for (const cannotClaim of [
   "multi_region_production",
   "sla_proven",
@@ -293,6 +320,39 @@ assert.equal(mismatchedSecurityAuditGateResult.ok, false, "dependency_security_a
 assert(
   mismatchedSecurityAuditGateResult.blockers.includes("production_receipt_boundary_dependency_security_frontend_threshold_mismatch"),
   "dependency_security_frontend_threshold_blocker_mismatch",
+);
+
+const missingBrowserChecksBoundary = structuredClone(boundary);
+delete missingBrowserChecksBoundary.production_receipt_boundary.production_complete_owner_receipt_gate
+  .operational_criteria_contract
+  .find((criterion) => criterion.id === "browser_accessibility_verification_receipt").checks;
+const missingBrowserChecksResult = validateProductionReceiptBoundary({
+  boundary: missingBrowserChecksBoundary,
+  cloudAuthorization,
+  releaseBoundary,
+  uiQualityContract,
+});
+assert.equal(missingBrowserChecksResult.ok, false, "browser_accessibility_checks_must_be_validated_by_runner");
+assert(
+  missingBrowserChecksResult.blockers.includes("production_receipt_boundary_browser_accessibility_checks_mismatch"),
+  "browser_accessibility_checks_missing_blocker_mismatch",
+);
+
+const mismatchedSLevelChecksBoundary = structuredClone(boundary);
+mismatchedSLevelChecksBoundary.production_receipt_boundary.production_complete_owner_receipt_gate
+  .operational_criteria_contract
+  .find((criterion) => criterion.id === "s_level_ui_polish_receipt")
+  .checks = ["component_state_consistency"];
+const mismatchedSLevelChecksResult = validateProductionReceiptBoundary({
+  boundary: mismatchedSLevelChecksBoundary,
+  cloudAuthorization,
+  releaseBoundary,
+  uiQualityContract,
+});
+assert.equal(mismatchedSLevelChecksResult.ok, false, "s_level_ui_polish_checks_must_match_ui_quality_contract");
+assert(
+  mismatchedSLevelChecksResult.blockers.includes("production_receipt_boundary_s_level_ui_polish_checks_mismatch"),
+  "s_level_ui_polish_checks_mismatch_blocker_mismatch",
 );
 
 const complete = evaluateProductionReceiptManifest({
