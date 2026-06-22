@@ -213,6 +213,9 @@ func TestServiceRecordsFileRunArtifactBillingAuditAndRelease(t *testing.T) {
 	if !release.BillingStopped || release.Resource.StopBilling.Status != cpd.BillingStatusStopped {
 		t.Fatalf("release = %+v", release)
 	}
+	if release.AuditEventID == "" || release.AuditEventID != release.AuditEvent.ID {
+		t.Fatalf("release must expose audit event id for production canary: %+v", release)
+	}
 }
 
 func TestServiceUploadRunArtifactBillingAuditUsesStoredMedOPLStorageRefs(t *testing.T) {

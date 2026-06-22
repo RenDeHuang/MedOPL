@@ -106,6 +106,13 @@ func TestControlPlaneHandlersExposeProviderLaunchBillingResourceLocalRC(t *testi
 	if releaseResponse["billingStopped"] != true || releaseResponse["status"] != "released" {
 		t.Fatalf("release response = %+v", releaseResponse)
 	}
+	if releaseResponse["auditEventId"] == "" {
+		t.Fatalf("release response must expose top-level auditEventId for production canary: %+v", releaseResponse)
+	}
+	releaseAuditEvent := releaseResponse["auditEvent"].(map[string]any)
+	if releaseResponse["auditEventId"] != releaseAuditEvent["id"] {
+		t.Fatalf("release auditEventId mismatch: %+v", releaseResponse)
+	}
 }
 
 func TestControlPlaneHandlersFailClosedForUnknownFileAndArtifactRefs(t *testing.T) {

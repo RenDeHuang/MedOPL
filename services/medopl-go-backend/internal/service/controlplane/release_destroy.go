@@ -20,6 +20,7 @@ type ReleaseResult struct {
 	Ok             bool                `json:"ok"`
 	Status         string              `json:"status"`
 	BillingStopped bool                `json:"billingStopped"`
+	AuditEventID   string              `json:"auditEventId"`
 	Resource       cpd.ManagedResource `json:"resource"`
 	AuditEvent     cpd.AuditEvent      `json:"auditEvent"`
 	Receipts       ReleaseReceipts     `json:"receipts"`
@@ -64,6 +65,7 @@ func (service *Service) Release(ctx context.Context, input ReleaseInput) (Releas
 		Ok:             true,
 		Status:         released.Status,
 		BillingStopped: released.StopBilling.Status == cpd.BillingStatusStopped,
+		AuditEventID:   audit.ID,
 		Resource:       released,
 		AuditEvent:     audit,
 		Receipts:       releaseReceipts(released, audit, false),

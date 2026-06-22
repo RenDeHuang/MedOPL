@@ -155,6 +155,31 @@
         "kubeconfig"
       ]
     },
+    "release_runtime": {
+      "route": "POST /api/v22/managed-environment/release",
+      "owner": "medopl",
+      "primary_consumer": "opl-webui",
+      "intent": "runtime_release_stop_billing_audit_for_consumer_canary",
+      "must_return": [
+        "ok",
+        "status",
+        "billingStopped",
+        "auditEventId",
+        "auditEvent",
+        "receipts"
+      ],
+      "audit_event_policy": "top_level_auditEventId_must_match_auditEvent_id",
+      "must_not_return": [
+        "rawObjectStoreSecret",
+        "signedUrl",
+        "objectKey",
+        "storageKey",
+        "localPath",
+        "bearerToken",
+        "runtimeToken",
+        "kubeconfig"
+      ]
+    },
     "storage_destroy": {
       "route": "POST /api/v22/storage/destroy",
       "owner": "medopl",

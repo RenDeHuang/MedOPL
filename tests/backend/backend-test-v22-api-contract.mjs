@@ -154,6 +154,38 @@ assert(
   "billing_summary_top_level_counts_not_populated_from_summary_and_ledger",
 );
 
+const releaseRuntime = apiContract.medopl_api_contract.release_runtime;
+assert(releaseRuntime, "api_contract_release_runtime_missing");
+assert.equal(releaseRuntime.route, "POST /api/v22/managed-environment/release", "release_runtime_route_contract_missing");
+assert.equal(releaseRuntime.primary_consumer, "opl-webui", "release_runtime_primary_consumer_must_be_opl_webui");
+assert.equal(
+  releaseRuntime.audit_event_policy,
+  "top_level_auditEventId_must_match_auditEvent_id",
+  "release_runtime_audit_event_policy_mismatch",
+);
+assert.deepEqual(
+  releaseRuntime.must_return,
+  ["ok", "status", "billingStopped", "auditEventId", "auditEvent", "receipts"],
+  "release_runtime_must_return_contract_mismatch",
+);
+const releaseResultSurface = serviceSurface.slice(
+  serviceSurface.indexOf("type ReleaseResult struct"),
+  serviceSurface.indexOf("type ReleaseReceipts struct"),
+);
+for (const field of releaseRuntime.must_return) {
+  assert(
+    releaseResultSurface.includes(`json:"${field}`),
+    `release_runtime_go_response_field_missing:${field}`,
+  );
+}
+for (const field of releaseRuntime.must_not_return) {
+  assert(!releaseResultSurface.includes(`json:"${field}`), `release_runtime_forbidden_response_field:${field}`);
+}
+assert(
+  /AuditEventID:\s*audit\.ID/u.test(serviceSurface),
+  "release_runtime_top_level_audit_event_id_not_populated_from_audit_event",
+);
+
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_medopl_api_contract",
