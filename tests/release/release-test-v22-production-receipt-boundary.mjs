@@ -129,6 +129,37 @@ for (const criterion of [
     `production_complete_owner_receipt_gate_operational_criterion_missing:${criterion}`,
   );
 }
+const criteriaContract = boundary.production_receipt_boundary.production_complete_owner_receipt_gate?.operational_criteria_contract;
+assert(Array.isArray(criteriaContract), "production_complete_operational_criteria_contract_missing");
+const criteriaContractById = new Map(criteriaContract.map((criterion) => [criterion.id, criterion]));
+for (const criterion of boundary.production_receipt_boundary.production_complete_owner_receipt_gate.required_operational_criteria) {
+  const contract = criteriaContractById.get(criterion);
+  assert(contract, `production_complete_operational_criteria_contract_item_missing:${criterion}`);
+  assert(String(contract.owner || "").trim(), `production_complete_operational_criteria_contract_owner_missing:${criterion}`);
+  assert(String(contract.evidence_source || "").trim(), `production_complete_operational_criteria_contract_evidence_source_missing:${criterion}`);
+  assert(
+    boundary.production_receipt_boundary.production_complete_owner_receipt_gate.required_gates.includes(contract.required_gate),
+    `production_complete_operational_criteria_contract_gate_mismatch:${criterion}`,
+  );
+  assert.equal(contract.evidence_ref_policy, "runtime_pointer_summary_only", `production_complete_operational_criteria_contract_ref_policy_mismatch:${criterion}`);
+  assert.equal(contract.evidence_hash_policy, "sha256_pointer_hash_required", `production_complete_operational_criteria_contract_hash_policy_mismatch:${criterion}`);
+  assert.equal(contract.raw_evidence_policy, "forbidden", `production_complete_operational_criteria_contract_raw_policy_mismatch:${criterion}`);
+}
+assert.equal(
+  criteriaContractById.get("production_dependency_security_receipt")?.evidence_source,
+  "scripts/v22-repo-hygiene.mjs",
+  "production_dependency_security_receipt_must_bind_repo_hygiene",
+);
+assert.equal(
+  criteriaContractById.get("browser_accessibility_verification_receipt")?.evidence_source,
+  "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs",
+  "browser_accessibility_receipt_must_bind_browser_regression",
+);
+assert.equal(
+  criteriaContractById.get("s_level_ui_polish_receipt")?.evidence_source,
+  "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs",
+  "s_level_ui_polish_receipt_must_bind_browser_regression",
+);
 for (const cannotClaim of [
   "multi_region_production",
   "sla_proven",
@@ -335,7 +366,7 @@ assert(
 
 const productionCompleteCriteria = boundary.production_receipt_boundary.production_complete_owner_receipt_gate.required_operational_criteria.map((id) => ({
   id,
-  owner: "MedOPL Operations",
+  owner: criteriaContractById.get(id)?.owner,
   status: "accepted",
   issued_at: "2026-06-23T00:00:00Z",
   evidence_ref: `.runtime/v22-cloud-authorization/run-v22-001/${id}.json`,
@@ -391,6 +422,29 @@ assert(
     "production_receipt_manifest_production_complete_criterion_evidence_hash_invalid:post_release_monitoring_receipt",
   ),
   "production_complete_criterion_invalid_hash_blocker_mismatch",
+);
+
+const productionCompleteCriterionWrongOwner = evaluateProductionReceiptManifest({
+  boundary,
+  manifest: {
+    ...exampleManifest,
+    claim: "production_complete",
+    evidence_level: "production_canary",
+    production_complete_criteria: productionCompleteCriteria.map((criterion) => criterion.id === "production_dependency_security_receipt"
+      ? { ...criterion, owner: "MedOPL Operations" }
+      : criterion),
+  },
+});
+assert.equal(
+  productionCompleteCriterionWrongOwner.productionComplete,
+  false,
+  "production_complete_criterion_with_wrong_owner_must_fail_closed",
+);
+assert(
+  productionCompleteCriterionWrongOwner.blockers.includes(
+    "production_receipt_manifest_production_complete_criterion_owner_mismatch:production_dependency_security_receipt",
+  ),
+  "production_complete_criterion_wrong_owner_blocker_mismatch",
 );
 
 console.log(JSON.stringify({

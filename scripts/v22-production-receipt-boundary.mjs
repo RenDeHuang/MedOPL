@@ -110,6 +110,15 @@ function asStringSet(values) {
   return new Set(Array.isArray(values) ? values.map((value) => String(value || "").trim()).filter(Boolean) : []);
 }
 
+function operationalCriteriaContractById(productionCompleteGate) {
+  const items = Array.isArray(productionCompleteGate?.operational_criteria_contract)
+    ? productionCompleteGate.operational_criteria_contract
+    : [];
+  return new Map(items
+    .filter((item) => isObject(item) && String(item.id || "").trim())
+    .map((item) => [String(item.id).trim(), item]));
+}
+
 function findRawEvidenceFields(value, prefix = "") {
   if (Array.isArray(value)) {
     return value.flatMap((item, index) => findRawEvidenceFields(item, `${prefix}[${index}]`));
@@ -238,6 +247,13 @@ export function validateProductionReceiptBoundary({ boundary, cloudAuthorization
       : [];
     if (criteria.length === 0) blockers.push("production_receipt_boundary_production_complete_gate_operational_criteria_missing");
     const criteriaSet = new Set(criteria);
+    const criteriaContract = Array.isArray(productionCompleteGate.operational_criteria_contract)
+      ? productionCompleteGate.operational_criteria_contract
+      : [];
+    if (criteriaContract.length === 0) {
+      blockers.push("production_receipt_boundary_production_complete_gate_operational_criteria_contract_missing");
+    }
+    const criteriaContractById = operationalCriteriaContractById(productionCompleteGate);
     for (const criterion of [
       "release_owner_readiness_receipt",
       "production_dependency_security_receipt",
@@ -249,6 +265,29 @@ export function validateProductionReceiptBoundary({ boundary, cloudAuthorization
     ]) {
       if (!criteriaSet.has(criterion)) {
         blockers.push(`production_receipt_boundary_production_complete_gate_operational_criterion_missing:${criterion}`);
+      }
+      const contract = criteriaContractById.get(criterion);
+      if (!contract) {
+        blockers.push(`production_receipt_boundary_production_complete_gate_operational_criteria_contract_item_missing:${criterion}`);
+      } else {
+        if (!String(contract.owner || "").trim()) {
+          blockers.push(`production_receipt_boundary_production_complete_gate_operational_criteria_contract_owner_missing:${criterion}`);
+        }
+        if (!requiredGateSet.has(String(contract.required_gate || "").trim())) {
+          blockers.push(`production_receipt_boundary_production_complete_gate_operational_criteria_contract_gate_mismatch:${criterion}`);
+        }
+        if (!String(contract.evidence_source || "").trim()) {
+          blockers.push(`production_receipt_boundary_production_complete_gate_operational_criteria_contract_evidence_source_missing:${criterion}`);
+        }
+        if (contract.evidence_ref_policy !== "runtime_pointer_summary_only") {
+          blockers.push(`production_receipt_boundary_production_complete_gate_operational_criteria_contract_ref_policy_mismatch:${criterion}`);
+        }
+        if (contract.evidence_hash_policy !== "sha256_pointer_hash_required") {
+          blockers.push(`production_receipt_boundary_production_complete_gate_operational_criteria_contract_hash_policy_mismatch:${criterion}`);
+        }
+        if (contract.raw_evidence_policy !== "forbidden") {
+          blockers.push(`production_receipt_boundary_production_complete_gate_operational_criteria_contract_raw_policy_mismatch:${criterion}`);
+        }
       }
     }
     const nonGoalSet = asStringSet(productionCompleteGate.explicit_non_goals_until_dedicated_contract);
@@ -303,6 +342,7 @@ export function evaluateProductionReceiptManifest({ boundary, manifest }) {
   const forbiddenCompletionLevels = asStringSet(receiptBoundary.forbidden_completion_evidence_levels);
   const completionState = String(receiptBoundary.production_complete_state || "complete");
   const productionCompleteGate = receiptBoundary.production_complete_owner_receipt_gate || {};
+  const criteriaContractById = operationalCriteriaContractById(productionCompleteGate);
   const requiredProductionCompleteCriteria = Array.isArray(productionCompleteGate.required_operational_criteria)
     ? productionCompleteGate.required_operational_criteria.map(String)
     : [];
@@ -391,6 +431,10 @@ export function evaluateProductionReceiptManifest({ boundary, manifest }) {
         blockers.push(`production_receipt_manifest_unknown_production_complete_criterion:${id || "(missing)"}`);
       }
       if (!String(criterion?.owner || "").trim()) blockers.push(`production_receipt_manifest_production_complete_criterion_owner_missing:${id || "(missing)"}`);
+      const criterionContract = criteriaContractById.get(id);
+      if (criterionContract && criterion?.owner !== criterionContract.owner) {
+        blockers.push(`production_receipt_manifest_production_complete_criterion_owner_mismatch:${id || "(missing)"}`);
+      }
       if (criterion?.status !== "accepted") blockers.push(`production_receipt_manifest_production_complete_criterion_not_accepted:${id || "(missing)"}`);
       if (!String(criterion?.issued_at || "").trim()) blockers.push(`production_receipt_manifest_production_complete_criterion_issued_at_missing:${id || "(missing)"}`);
       if (!isSafeRuntimePointer(criterion?.evidence_ref)) blockers.push(`production_receipt_manifest_production_complete_criterion_evidence_ref_invalid:${id || "(missing)"}`);

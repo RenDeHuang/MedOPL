@@ -79,6 +79,71 @@
         "rollback_readiness_receipt",
         "post_release_monitoring_receipt"
       ],
+      "operational_criteria_contract": [
+        {
+          "id": "release_owner_readiness_receipt",
+          "owner": "MedOPL Release",
+          "required_gate": "release_owner_receipt",
+          "evidence_source": "contracts/medopl-release-boundary.json",
+          "evidence_ref_policy": "runtime_pointer_summary_only",
+          "evidence_hash_policy": "sha256_pointer_hash_required",
+          "raw_evidence_policy": "forbidden"
+        },
+        {
+          "id": "production_dependency_security_receipt",
+          "owner": "MedOPL Platform",
+          "required_gate": "security_dependency_gate",
+          "evidence_source": "scripts/v22-repo-hygiene.mjs",
+          "evidence_ref_policy": "runtime_pointer_summary_only",
+          "evidence_hash_policy": "sha256_pointer_hash_required",
+          "raw_evidence_policy": "forbidden"
+        },
+        {
+          "id": "browser_accessibility_verification_receipt",
+          "owner": "MedOPL Portal",
+          "required_gate": "browser_accessibility_regression",
+          "evidence_source": "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs",
+          "evidence_ref_policy": "runtime_pointer_summary_only",
+          "evidence_hash_policy": "sha256_pointer_hash_required",
+          "raw_evidence_policy": "forbidden"
+        },
+        {
+          "id": "s_level_ui_polish_receipt",
+          "owner": "MedOPL Portal",
+          "required_gate": "s_level_ui_polish_gate",
+          "evidence_source": "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs",
+          "evidence_ref_policy": "runtime_pointer_summary_only",
+          "evidence_hash_policy": "sha256_pointer_hash_required",
+          "raw_evidence_policy": "forbidden"
+        },
+        {
+          "id": "observability_deploy_receipt",
+          "owner": "MedOPL Operations",
+          "required_gate": "observability_receipt",
+          "evidence_source": "scripts/cloud-rollout/medopl.mjs",
+          "evidence_ref_policy": "runtime_pointer_summary_only",
+          "evidence_hash_policy": "sha256_pointer_hash_required",
+          "raw_evidence_policy": "forbidden"
+        },
+        {
+          "id": "rollback_readiness_receipt",
+          "owner": "MedOPL Operations",
+          "required_gate": "observability_receipt",
+          "evidence_source": "scripts/cloud-rollout/medopl.mjs",
+          "evidence_ref_policy": "runtime_pointer_summary_only",
+          "evidence_hash_policy": "sha256_pointer_hash_required",
+          "raw_evidence_policy": "forbidden"
+        },
+        {
+          "id": "post_release_monitoring_receipt",
+          "owner": "MedOPL Operations",
+          "required_gate": "observability_receipt",
+          "evidence_source": "scripts/cloud-rollout/medopl.mjs",
+          "evidence_ref_policy": "runtime_pointer_summary_only",
+          "evidence_hash_policy": "sha256_pointer_hash_required",
+          "raw_evidence_policy": "forbidden"
+        }
+      ],
       "explicit_non_goals_until_dedicated_contract": [
         "multi_region_production",
         "sla_proven",
