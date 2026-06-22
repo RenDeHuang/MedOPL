@@ -24,14 +24,20 @@ function runVerifyCloudReleaseCandidate(args = []) {
   });
 }
 
-const [boundary, cloudAuthorization, exampleManifest] = await Promise.all([
+const [boundary, cloudAuthorization, exampleManifest, uiQualityContract] = await Promise.all([
   readJson("contracts/medopl-production-receipt-boundary.json"),
   readJson("contracts/medopl-cloud-authorization-pack.json"),
   readJson("tests/fixtures/v22/production-receipt-manifest.example.json"),
+  readJson("contracts/medopl-portal-ui-quality-contract.json"),
 ]);
 const releaseBoundary = await readJson("contracts/medopl-release-boundary.json");
 
-const boundaryResult = validateProductionReceiptBoundary({ boundary, cloudAuthorization, releaseBoundary });
+const boundaryResult = validateProductionReceiptBoundary({
+  boundary,
+  cloudAuthorization,
+  releaseBoundary,
+  uiQualityContract,
+});
 assert.equal(boundaryResult.ok, true, `production_receipt_boundary_must_be_valid:${JSON.stringify(boundaryResult, null, 2)}`);
 assert.deepEqual(
   boundary.production_receipt_boundary.required_receipt_types,
@@ -151,6 +157,37 @@ assert.equal(
   "scripts/v22-repo-hygiene.mjs",
   "production_dependency_security_receipt_must_bind_repo_hygiene",
 );
+const securityContract = criteriaContractById.get("production_dependency_security_receipt");
+assert.equal(
+  securityContract?.audit_gates?.root?.command,
+  uiQualityContract.medopl_portal_ui_quality_contract.production_readiness.root_production_dependency_gate.command,
+  "production_dependency_security_receipt_root_audit_command_mismatch",
+);
+assert.equal(
+  securityContract?.audit_gates?.root?.max_high_or_critical_vulnerabilities,
+  uiQualityContract.medopl_portal_ui_quality_contract.production_readiness.root_production_dependency_gate.max_prod_high_or_critical_vulnerabilities,
+  "production_dependency_security_receipt_root_audit_threshold_mismatch",
+);
+assert.equal(
+  securityContract?.audit_gates?.frontend?.command,
+  uiQualityContract.medopl_portal_ui_quality_contract.production_readiness.security_dependency_gate.command,
+  "production_dependency_security_receipt_frontend_audit_command_mismatch",
+);
+assert.equal(
+  securityContract?.audit_gates?.frontend?.max_high_vulnerabilities,
+  uiQualityContract.medopl_portal_ui_quality_contract.production_readiness.security_dependency_gate.max_prod_high_vulnerabilities,
+  "production_dependency_security_receipt_frontend_audit_threshold_mismatch",
+);
+assert.equal(
+  securityContract?.receipt_source_policy,
+  "repo_hygiene_audit_summary_only",
+  "production_dependency_security_receipt_source_policy_mismatch",
+);
+assert.equal(
+  securityContract?.audit_payload_policy,
+  "summary_counts_only_no_raw_advisory_payload",
+  "production_dependency_security_receipt_audit_payload_policy_mismatch",
+);
 assert.equal(
   criteriaContractById.get("browser_accessibility_verification_receipt")?.evidence_source,
   "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs",
@@ -223,6 +260,39 @@ assert.equal(mismatchedReleaseReadinessResult.ok, false, "release_owner_readines
 assert(
   mismatchedReleaseReadinessResult.blockers.includes("production_receipt_boundary_release_owner_readiness_hash_policy_mismatch"),
   "release_owner_readiness_hash_policy_blocker_mismatch",
+);
+
+const missingSecurityAuditGateBoundary = structuredClone(boundary);
+delete missingSecurityAuditGateBoundary.production_receipt_boundary.production_complete_owner_receipt_gate
+  .operational_criteria_contract
+  .find((criterion) => criterion.id === "production_dependency_security_receipt").audit_gates;
+const missingSecurityAuditGateResult = validateProductionReceiptBoundary({
+  boundary: missingSecurityAuditGateBoundary,
+  cloudAuthorization,
+  releaseBoundary,
+  uiQualityContract,
+});
+assert.equal(missingSecurityAuditGateResult.ok, false, "dependency_security_audit_gates_must_be_validated_by_runner");
+assert(
+  missingSecurityAuditGateResult.blockers.includes("production_receipt_boundary_dependency_security_audit_gates_missing"),
+  "dependency_security_audit_gates_missing_blocker_mismatch",
+);
+
+const mismatchedSecurityAuditGateBoundary = structuredClone(boundary);
+mismatchedSecurityAuditGateBoundary.production_receipt_boundary.production_complete_owner_receipt_gate
+  .operational_criteria_contract
+  .find((criterion) => criterion.id === "production_dependency_security_receipt")
+  .audit_gates.frontend.max_high_vulnerabilities = 1;
+const mismatchedSecurityAuditGateResult = validateProductionReceiptBoundary({
+  boundary: mismatchedSecurityAuditGateBoundary,
+  cloudAuthorization,
+  releaseBoundary,
+  uiQualityContract,
+});
+assert.equal(mismatchedSecurityAuditGateResult.ok, false, "dependency_security_audit_threshold_must_match_ui_quality_contract");
+assert(
+  mismatchedSecurityAuditGateResult.blockers.includes("production_receipt_boundary_dependency_security_frontend_threshold_mismatch"),
+  "dependency_security_frontend_threshold_blocker_mismatch",
 );
 
 const complete = evaluateProductionReceiptManifest({

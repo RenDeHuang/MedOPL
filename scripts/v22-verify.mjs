@@ -436,6 +436,7 @@ async function validateActivePlatform({ manifest, current }) {
   assert(runtimeRetiredRoutes.includes("billing ledger owner 是 Portal/Go control plane"), "runtime_bridge_must_not_own_billing_truth");
 
   const releaseContract = readRepoJsonSync("contracts/medopl-release-boundary.json");
+  const uiQualityContract = readRepoJsonSync("contracts/medopl-portal-ui-quality-contract.json");
   const cloudAuthorizationPack = readRepoJsonSync("contracts/medopl-cloud-authorization-pack.json");
   const productionReceiptBoundary = readRepoJsonSync(PRODUCTION_RECEIPT_BOUNDARY_PATH);
   const productionReceiptManifestExample = readRepoJsonSync("tests/fixtures/v22/production-receipt-manifest.example.json");
@@ -446,6 +447,7 @@ async function validateActivePlatform({ manifest, current }) {
     boundary: productionReceiptBoundary,
     cloudAuthorization: cloudAuthorizationPack,
     releaseBoundary: releaseContract,
+    uiQualityContract,
   });
   assert.equal(receiptBoundaryValidation.ok, true, `production_receipt_boundary_must_be_valid:${JSON.stringify(receiptBoundaryValidation)}`);
   const receiptManifestEvaluation = evaluateProductionReceiptManifest({

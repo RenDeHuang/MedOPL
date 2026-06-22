@@ -164,7 +164,7 @@ function collectUnexpectedFields(manifest) {
   return violations;
 }
 
-export function validateProductionReceiptBoundary({ boundary, cloudAuthorization, releaseBoundary }) {
+export function validateProductionReceiptBoundary({ boundary, cloudAuthorization, releaseBoundary, uiQualityContract }) {
   const blockers = [];
   const receiptBoundary = boundary?.production_receipt_boundary || {};
   const requiredTypes = Array.isArray(receiptBoundary.required_receipt_types)
@@ -174,6 +174,7 @@ export function validateProductionReceiptBoundary({ boundary, cloudAuthorization
     ? cloudAuthorization.required_receipts_before_production_complete
     : [];
   const releaseOwnerReadiness = releaseBoundary?.medopl_release_boundary?.release_owner_readiness;
+  const uiProductionReadiness = uiQualityContract?.medopl_portal_ui_quality_contract?.production_readiness;
 
   if (boundary?.state !== "active") blockers.push("production_receipt_boundary_must_be_active");
   if (boundary?.authority_boundary?.surface !== "production_complete_owner_receipt_aggregation") {
@@ -328,6 +329,37 @@ export function validateProductionReceiptBoundary({ boundary, cloudAuthorization
         }
         if (releaseOwnerContract && releaseOwnerContract.raw_evidence_policy !== releaseOwnerReadiness.raw_evidence_policy) {
           blockers.push("production_receipt_boundary_release_owner_readiness_raw_policy_contract_mismatch");
+        }
+      }
+    }
+    if (uiQualityContract) {
+      const dependencySecurityContract = criteriaContractById.get("production_dependency_security_receipt");
+      const auditGates = dependencySecurityContract?.audit_gates;
+      const rootGate = uiProductionReadiness?.root_production_dependency_gate;
+      const frontendGate = uiProductionReadiness?.security_dependency_gate;
+      if (!isObject(auditGates) || !isObject(auditGates.root) || !isObject(auditGates.frontend)) {
+        blockers.push("production_receipt_boundary_dependency_security_audit_gates_missing");
+      } else {
+        if (dependencySecurityContract.evidence_source !== "scripts/v22-repo-hygiene.mjs") {
+          blockers.push("production_receipt_boundary_dependency_security_evidence_source_mismatch");
+        }
+        if (auditGates.root.command !== rootGate?.command) {
+          blockers.push("production_receipt_boundary_dependency_security_root_command_mismatch");
+        }
+        if (auditGates.root.max_high_or_critical_vulnerabilities !== rootGate?.max_prod_high_or_critical_vulnerabilities) {
+          blockers.push("production_receipt_boundary_dependency_security_root_threshold_mismatch");
+        }
+        if (auditGates.frontend.command !== frontendGate?.command) {
+          blockers.push("production_receipt_boundary_dependency_security_frontend_command_mismatch");
+        }
+        if (auditGates.frontend.max_high_vulnerabilities !== frontendGate?.max_prod_high_vulnerabilities) {
+          blockers.push("production_receipt_boundary_dependency_security_frontend_threshold_mismatch");
+        }
+        if (dependencySecurityContract.receipt_source_policy !== "repo_hygiene_audit_summary_only") {
+          blockers.push("production_receipt_boundary_dependency_security_source_policy_mismatch");
+        }
+        if (dependencySecurityContract.audit_payload_policy !== "summary_counts_only_no_raw_advisory_payload") {
+          blockers.push("production_receipt_boundary_dependency_security_audit_payload_policy_mismatch");
         }
       }
     }

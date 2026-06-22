@@ -871,6 +871,7 @@
   "readinessGaps": [
     "Production-complete owner receipt gate is now dedicated and fail-closed: cloud RC cannot be upgraded by prose, workflow success or a single canary, and any production_complete manifest must include production_complete_criteria.",
     "Release-owner readiness is now bound to the production-complete criterion contract: release_owner_readiness maps to release_owner_readiness_receipt, release_owner_receipt, runtime pointer/hash evidence policy and raw-evidence forbidden, and the production receipt runner cross-checks release and production receipt contracts.",
+    "Production dependency/security receipt is now bound to root and Portal frontend production dependency audit gates from the UI quality contract, with repo-hygiene summary evidence only and raw audit payloads forbidden.",
     "Keep multi-region, SLA, enterprise compliance, ongoing authorization and unobserved tenant/resource claims out of current truth until dedicated contracts and evidence exist.",
     "Keep canary credentials/session, uploaded files, runtime artifacts, cloud payloads and raw evidence outside git; commit only contract/test/source changes and small redacted pointers."
   ],
@@ -952,6 +953,21 @@
       "runner_cross_check": "scripts/v22-production-receipt-boundary.mjs#validateProductionReceiptBoundary",
       "can_claim": "release-owner readiness contract and runner binding are consumer-tested locally",
       "cannot_claim": "release mutation executed, release owner production receipt accepted, or production complete"
+    },
+    "production_dependency_security_binding": {
+      "criterion": "production_dependency_security_receipt",
+      "required_gate": "security_dependency_gate",
+      "ui_quality_contract": "contracts/medopl-portal-ui-quality-contract.json",
+      "evidence_source": "scripts/v22-repo-hygiene.mjs",
+      "root_audit_command": "npm audit --omit=dev --audit-level=high --json",
+      "root_max_high_or_critical_vulnerabilities": 0,
+      "frontend_audit_command": "npm --prefix services/portal/frontend audit --omit=dev --audit-level=high --json",
+      "frontend_max_high_vulnerabilities": 0,
+      "receipt_source_policy": "repo_hygiene_audit_summary_only",
+      "audit_payload_policy": "summary_counts_only_no_raw_advisory_payload",
+      "runner_cross_check": "scripts/v22-production-receipt-boundary.mjs#validateProductionReceiptBoundary",
+      "can_claim": "production dependency/security receipt contract and runner binding are consumer-tested locally",
+      "cannot_claim": "deploy completed, live-test covered, production dependency receipt accepted, or production complete"
     }
   },
   "base_trunk_head": "221a7691761f70686512ed04c5dd1b113c51e6b9",

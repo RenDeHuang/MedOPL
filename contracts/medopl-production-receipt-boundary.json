@@ -94,6 +94,18 @@
           "owner": "MedOPL Platform",
           "required_gate": "security_dependency_gate",
           "evidence_source": "scripts/v22-repo-hygiene.mjs",
+          "audit_gates": {
+            "root": {
+              "command": "npm audit --omit=dev --audit-level=high --json",
+              "max_high_or_critical_vulnerabilities": 0
+            },
+            "frontend": {
+              "command": "npm --prefix services/portal/frontend audit --omit=dev --audit-level=high --json",
+              "max_high_vulnerabilities": 0
+            }
+          },
+          "receipt_source_policy": "repo_hygiene_audit_summary_only",
+          "audit_payload_policy": "summary_counts_only_no_raw_advisory_payload",
           "evidence_ref_policy": "runtime_pointer_summary_only",
           "evidence_hash_policy": "sha256_pointer_hash_required",
           "raw_evidence_policy": "forbidden"

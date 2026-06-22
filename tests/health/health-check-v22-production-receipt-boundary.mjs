@@ -45,6 +45,8 @@ for (const marker of [
   contractPath,
   "validateProductionReceiptBoundary",
   "evaluateProductionReceiptManifest",
+  "contracts/medopl-portal-ui-quality-contract.json",
+  "uiQualityContract",
 ]) {
   assert(activePlatformSource.includes(marker), `active_platform_must_consume_production_receipt_boundary:${marker}`);
 }
