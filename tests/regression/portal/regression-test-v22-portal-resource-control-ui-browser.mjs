@@ -409,6 +409,34 @@ async function assertDisabledReasonVisible(page, label) {
   assert.deepEqual(missingReasons, [], `${label}_disabled_control_reason_missing:${JSON.stringify(missingReasons)}`);
 }
 
+async function assertEmptyErrorRecovery(page, label) {
+  const metrics = await page.evaluate(() => {
+    const recovery = document.querySelector("[data-ui-pattern='empty-error-recovery']");
+    const alert = recovery?.getAttribute("role") === "alert" ? recovery : recovery?.querySelector("[role='alert']");
+    const retry = [...document.querySelectorAll("button, a")]
+      .find((node) => node.textContent?.includes("重试"));
+    return {
+      hasRecovery: Boolean(recovery),
+      hasAlert: Boolean(alert),
+      hasRetry: Boolean(retry),
+      recoveryText: recovery?.textContent?.trim() || "",
+      retryWidth: retry ? Math.round(retry.getBoundingClientRect().width) : 0,
+      retryHeight: retry ? Math.round(retry.getBoundingClientRect().height) : 0,
+    };
+  });
+  assert.equal(metrics.hasRecovery, true, `${label}_empty_error_recovery_marker_missing:${JSON.stringify(metrics)}`);
+  assert.equal(metrics.hasAlert, true, `${label}_empty_error_recovery_alert_missing:${JSON.stringify(metrics)}`);
+  assert.equal(metrics.hasRetry, true, `${label}_empty_error_recovery_retry_missing:${JSON.stringify(metrics)}`);
+  assert(metrics.retryWidth >= 44 && metrics.retryHeight >= 44, `${label}_empty_error_recovery_retry_touch_target:${JSON.stringify(metrics)}`);
+  assert(
+    metrics.recoveryText.includes("Portal 数据暂时不可用，请稍后重试。"),
+    `${label}_empty_error_recovery_user_copy_missing:${JSON.stringify(metrics)}`,
+  );
+  for (const leaked of ["Request failed", "status code", "Axios", "fixture_backend_failure", "HTTP 500", "stack"]) {
+    assert.equal(metrics.recoveryText.includes(leaked), false, `${label}_empty_error_recovery_technical_copy_leaked:${leaked}`);
+  }
+}
+
 const { chromium } = await loadPlaywright();
 const backendPort = await freePort();
 const vitePort = await freePort();
@@ -502,6 +530,34 @@ try {
     await assertPrimaryActionReachable(page, "browser_overview_mobile");
     await assertOverviewMobileHeroPolish(page, "browser_overview_mobile");
     await page.setViewportSize({ width: 1440, height: 920 });
+
+    const overviewErrorConsoleStart = consoleMessages.length;
+    await page.route("**/api/overview*", async (route) => {
+      await route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ error: "fixture_backend_failure" }),
+      });
+    });
+    await page.goto(`${frontendBaseUrl}/overview`, { waitUntil: "domcontentloaded" });
+    await waitReady(page, "正在读取 Portal 总览数据");
+    lastBodyText = await page.locator("body").innerText();
+    await assertEmptyErrorRecovery(page, "browser_overview_error_recovery");
+    assertResourceControlCopy(lastBodyText, "browser_overview_error_recovery", ["资源总览"]);
+    await assertHeadingHierarchy(page, "browser_overview_error_recovery");
+    await assertAgradeInteractionSystem(page, "browser_overview_error_recovery");
+    await assertNoGlobalHorizontalOverflow(page, "browser_overview_error_recovery");
+    await page.unroute("**/api/overview*");
+    const expectedOverviewFetchError = "error:Failed to load resource: the server responded with a status of 500 (Internal Server Error)";
+    const overviewErrorConsoleMessages = consoleMessages.slice(overviewErrorConsoleStart);
+    assert(
+      overviewErrorConsoleMessages.includes(expectedOverviewFetchError),
+      `browser_overview_error_recovery_expected_fetch_error_missing:${JSON.stringify(overviewErrorConsoleMessages)}`,
+    );
+    consoleMessages = [
+      ...consoleMessages.slice(0, overviewErrorConsoleStart),
+      ...overviewErrorConsoleMessages.filter((message) => message !== expectedOverviewFetchError),
+    ];
 
     await page.goto(`${frontendBaseUrl}/resources`, { waitUntil: "domcontentloaded" });
     await waitReady(page, "正在读取计算资源数据");

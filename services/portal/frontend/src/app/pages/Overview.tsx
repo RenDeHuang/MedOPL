@@ -20,6 +20,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import { ResourceStatusCard } from "../components/ResourceControlComponents";
+import { Error } from "./system/Error";
 
 type ServiceStatus = "ready" | "restricted" | "unprovisioned" | "degraded";
 
@@ -37,7 +38,7 @@ export function Overview() {
   if (query.status === "error") {
     return (
       <div className="p-8 max-w-7xl mx-auto">
-        <Card className="border border-red-200 bg-red-50 p-6 text-sm text-red-700">{query.error}</Card>
+        <Error description={query.error} onRetry={() => window.location.reload()} />
       </div>
     );
   }
