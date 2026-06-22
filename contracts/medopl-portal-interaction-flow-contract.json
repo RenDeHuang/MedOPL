@@ -168,6 +168,7 @@
         "primary_action": "release_compute_resource",
         "backend_api": "POST /api/v22/managed-environment/release",
         "implementation_state": "partial_fail_closed_pending_release_mutation",
+        "ui_state_marker": "partial_fail_closed_pending_owner_receipt",
         "claimable": false,
         "disabled_reason_required": true,
         "dangerous_action_confirmation_required": true,

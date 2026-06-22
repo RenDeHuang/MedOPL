@@ -184,6 +184,18 @@ assert.equal(
   false,
   "portal_runtime_release_dialog_must_wait_for_release_mutation_owner",
 );
+assert(
+  runtimeEnvironmentPage.includes('data-release-owner-readiness="partial_fail_closed_pending_owner_receipt"'),
+  "portal_runtime_release_partial_state_marker_missing",
+);
+assert(
+  runtimeEnvironmentPage.includes('aria-describedby="release-owner-readiness-reason"'),
+  "portal_runtime_release_disabled_reason_must_be_programmatically_associated",
+);
+assert(
+  runtimeEnvironmentPage.includes('id="release-owner-readiness-reason"'),
+  "portal_runtime_release_disabled_reason_visible_copy_missing",
+);
 const releaseSpec = grammar.component_grammar.find((item) => item.name === "ReleaseConfirmDialog");
 assert.equal(releaseSpec?.implementation_state, "partial_fail_closed_pending_release_mutation", "release_dialog_contract_must_mark_partial_state");
 assert.equal(releaseSpec?.claimable, false, "release_dialog_must_not_be_claimable_before_mutation_owner");
@@ -306,6 +318,11 @@ assert.equal(
   "ui_quality_release_owner_readiness_state_mismatch",
 );
 assert.equal(
+  productionReadiness.release_owner_readiness?.ui_state_marker,
+  "partial_fail_closed_pending_owner_receipt",
+  "ui_quality_release_owner_readiness_ui_marker_mismatch",
+);
+assert.equal(
   productionReadiness.s_level_ui_polish_gate?.consumer,
   "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs",
   "ui_quality_s_level_ui_polish_gate_consumer_missing",
@@ -325,6 +342,11 @@ for (const check of [
 assert(
   grammar.production_readiness.required_gates.includes("s_level_ui_polish_gate"),
   "portal_page_matrix_production_readiness_must_include_s_level_ui_polish_gate",
+);
+assert.equal(
+  grammar.production_readiness.release_owner_readiness?.ui_state_marker,
+  productionReadiness.release_owner_readiness?.ui_state_marker,
+  "portal_page_matrix_release_owner_ui_marker_must_match_ui_quality_contract",
 );
 assert.deepEqual(
   grammar.production_readiness.s_level_ui_polish_gate?.checks,
@@ -457,6 +479,7 @@ for (const flowId of [
   assert(Array.isArray(flow.consumer_tests) && flow.consumer_tests.length > 0, `portal_interaction_flow_consumer_tests_missing:${flowId}`);
 }
 assert.equal(flowById.get("release_compute_resource")?.implementation_state, "partial_fail_closed_pending_release_mutation", "release_flow_partial_state_missing");
+assert.equal(flowById.get("release_compute_resource")?.ui_state_marker, "partial_fail_closed_pending_owner_receipt", "release_flow_ui_marker_missing");
 assert.equal(flowById.get("release_compute_resource")?.claimable, false, "release_flow_must_not_be_claimable");
 
 for (const layer of ["contract", "component_state", "interaction", "visual"]) {

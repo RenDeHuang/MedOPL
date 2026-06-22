@@ -134,6 +134,8 @@ export function RuntimeEnvironment() {
     );
   }
 
+  const releaseOwnerReadinessReason = "释放能力仍在平台接入中。当前只展示停止计费与存储保留规则，不能声明释放确认交互已完成，存储空间会继续保留。";
+
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="mb-8 flex flex-col gap-4 border-b border-neutral-200 pb-8 sm:flex-row sm:items-start sm:justify-between">
@@ -153,7 +155,16 @@ export function RuntimeEnvironment() {
           title={model.currentPlanName}
           spec={model.computeSpec}
           receiptState={model.billingStatus}
-          primaryAction={<Button variant="outline" disabled title="释放能力仍在平台接入中；当前只展示停止计费和审计状态">释放交互接入中</Button>}
+          primaryAction={
+            <Button
+              variant="outline"
+              disabled
+              aria-describedby="release-owner-readiness-reason"
+              title={releaseOwnerReadinessReason}
+            >
+              释放交互接入中
+            </Button>
+          }
           metrics={[
             { label: "存储空间", value: model.storageTotal, hint: `${model.storageUsed} 已用` },
             { label: "可用空间", value: model.storageAvailable },
@@ -181,11 +192,14 @@ export function RuntimeEnvironment() {
           <div className="flex items-center gap-3"><Shield className="w-5 h-5 text-neutral-400" /><div><div className="text-xs text-neutral-600">审计模式</div><div className="font-semibold text-neutral-900">标准审计</div></div></div>
         </div>
       </div>
-      <Card className="border border-neutral-200 p-5 mb-8">
+      <Card
+        className="border border-neutral-200 p-5 mb-8"
+        data-release-owner-readiness="partial_fail_closed_pending_owner_receipt"
+      >
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
             <h2 className="font-semibold text-neutral-900">释放与停止计费</h2>
-            <p className="text-sm text-neutral-600 mt-1">释放能力仍在平台接入中。当前只展示停止计费与存储保留规则，不能声明释放确认交互已完成。</p>
+            <p id="release-owner-readiness-reason" className="text-sm text-neutral-600 mt-1">{releaseOwnerReadinessReason}</p>
           </div>
           <Badge variant="outline" className="bg-white text-neutral-700 border-neutral-200">接入中 / T+1 审计</Badge>
         </div>

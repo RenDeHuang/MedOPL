@@ -327,6 +327,7 @@
         "release_owner_readiness": {
           "receipt_type": "release_owner_receipt",
           "current_ui_state": "partial_fail_closed_pending_release_mutation",
+          "ui_state_marker": "partial_fail_closed_pending_owner_receipt",
           "claimable_before_owner_receipt": false
         },
         "s_level_ui_polish_gate": {

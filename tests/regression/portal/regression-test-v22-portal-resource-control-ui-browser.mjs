@@ -437,6 +437,47 @@ async function assertEmptyErrorRecovery(page, label) {
   }
 }
 
+async function assertReleaseOwnerReadinessBoundary(page, label) {
+  const metrics = await page.evaluate(() => {
+    const section = document.querySelector("[data-release-owner-readiness='partial_fail_closed_pending_owner_receipt']");
+    const button = [...document.querySelectorAll("button")]
+      .find((node) => node.textContent?.includes("释放交互接入中"));
+    const reason = document.getElementById("release-owner-readiness-reason");
+    const describedBy = button?.getAttribute("aria-describedby") || "";
+    const buttonRect = button?.getBoundingClientRect();
+    return {
+      hasSection: Boolean(section),
+      hasButton: Boolean(button),
+      buttonDisabled: Boolean(button?.hasAttribute("disabled")),
+      buttonDescribedBy: describedBy,
+      hasReason: Boolean(reason),
+      reasonText: reason?.textContent?.trim() || "",
+      buttonWidth: buttonRect ? Math.round(buttonRect.width) : 0,
+      buttonHeight: buttonRect ? Math.round(buttonRect.height) : 0,
+      confirmDialogCount: document.querySelectorAll("[role='dialog']").length,
+    };
+  });
+  assert.equal(metrics.hasSection, true, `${label}_release_owner_readiness_marker_missing:${JSON.stringify(metrics)}`);
+  assert.equal(metrics.hasButton, true, `${label}_release_pending_button_missing:${JSON.stringify(metrics)}`);
+  assert.equal(metrics.buttonDisabled, true, `${label}_release_pending_button_must_be_disabled:${JSON.stringify(metrics)}`);
+  assert.equal(metrics.hasReason, true, `${label}_release_disabled_reason_missing:${JSON.stringify(metrics)}`);
+  assert(
+    metrics.buttonDescribedBy.split(/\s+/u).includes("release-owner-readiness-reason"),
+    `${label}_release_button_must_reference_disabled_reason:${JSON.stringify(metrics)}`,
+  );
+  assert(
+    metrics.reasonText.includes("释放能力仍在平台接入中") &&
+      metrics.reasonText.includes("不能声明释放确认交互已完成") &&
+      metrics.reasonText.includes("存储空间会继续保留"),
+    `${label}_release_disabled_reason_copy_mismatch:${JSON.stringify(metrics)}`,
+  );
+  assert(
+    metrics.buttonWidth >= 44 && metrics.buttonHeight >= 44,
+    `${label}_release_pending_button_touch_target:${JSON.stringify(metrics)}`,
+  );
+  assert.equal(metrics.confirmDialogCount, 0, `${label}_release_confirm_dialog_must_not_render_before_owner_receipt:${JSON.stringify(metrics)}`);
+}
+
 const { chromium } = await loadPlaywright();
 const backendPort = await freePort();
 const vitePort = await freePort();
@@ -580,6 +621,7 @@ try {
       assert.equal(lastBodyText.includes("mutation"), false, "browser_runtime_release_must_not_expose_mutation_copy");
       assert.equal(lastBodyText.includes("claim"), false, "browser_runtime_release_must_not_expose_claim_copy");
       assert.equal(lastBodyText.includes("runner phase"), false, "browser_runtime_release_must_not_expose_phase_copy");
+      await assertReleaseOwnerReadinessBoundary(page, "browser_runtime_environment");
     }
     await assertRuntimePlanDensity(page, "browser_runtime_environment");
     await assertPrimaryActionReachable(page, "browser_runtime_environment");
