@@ -78,6 +78,16 @@ assert.equal(
   "production_complete_owner_receipt_gate_criteria_evidence_must_stay_pointer_only",
 );
 assert.equal(
+  boundary.production_receipt_boundary.lifecycle_section_evidence_hash_policy,
+  "sha256_pointer_hash_required",
+  "production_receipt_boundary_lifecycle_evidence_hash_policy_missing",
+);
+assert.equal(
+  boundary.production_receipt_boundary.production_complete_owner_receipt_gate?.criteria_evidence_hash_policy,
+  "sha256_pointer_hash_required",
+  "production_complete_owner_receipt_gate_criteria_evidence_hash_policy_missing",
+);
+assert.equal(
   boundary.production_receipt_boundary.production_complete_owner_receipt_gate?.scope_policy?.default_claim_scope,
   "current_authorized_canary_path_only",
   "production_complete_owner_receipt_gate_default_scope_must_stay_narrow",
@@ -358,6 +368,29 @@ assert.deepEqual(
   productionCompleteMissingCriterion.missingProductionCompleteCriteria,
   ["rollback_readiness_receipt"],
   "production_complete_missing_criterion_mismatch",
+);
+
+const productionCompleteCriterionInvalidEvidenceHash = evaluateProductionReceiptManifest({
+  boundary,
+  manifest: {
+    ...exampleManifest,
+    claim: "production_complete",
+    evidence_level: "production_canary",
+    production_complete_criteria: productionCompleteCriteria.map((criterion) => criterion.id === "post_release_monitoring_receipt"
+      ? { ...criterion, evidence_hash: "not-a-sha256-hash" }
+      : criterion),
+  },
+});
+assert.equal(
+  productionCompleteCriterionInvalidEvidenceHash.productionComplete,
+  false,
+  "production_complete_criterion_with_invalid_evidence_hash_must_fail_closed",
+);
+assert(
+  productionCompleteCriterionInvalidEvidenceHash.blockers.includes(
+    "production_receipt_manifest_production_complete_criterion_evidence_hash_invalid:post_release_monitoring_receipt",
+  ),
+  "production_complete_criterion_invalid_hash_blocker_mismatch",
 );
 
 console.log(JSON.stringify({

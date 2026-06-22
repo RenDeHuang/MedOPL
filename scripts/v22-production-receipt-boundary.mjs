@@ -98,6 +98,10 @@ function isSafeRunnerId(value) {
   return /^[A-Za-z0-9_.:-]+$/u.test(String(value || "").trim());
 }
 
+function isSafeSha256Hash(value) {
+  return /^sha256:[A-Za-z0-9._:-]{16,}$/u.test(String(value || "").trim());
+}
+
 function unique(items) {
   return [...new Set(items.filter(Boolean))];
 }
@@ -202,6 +206,9 @@ export function validateProductionReceiptBoundary({ boundary, cloudAuthorization
     if (productionCompleteGate.criteria_evidence_ref_policy !== "runtime_pointer_summary_only") {
       blockers.push("production_receipt_boundary_production_complete_gate_criteria_pointer_policy_mismatch");
     }
+    if (productionCompleteGate.criteria_evidence_hash_policy !== "sha256_pointer_hash_required") {
+      blockers.push("production_receipt_boundary_production_complete_gate_criteria_hash_policy_mismatch");
+    }
     if (!isObject(productionCompleteGate.scope_policy)) {
       blockers.push("production_receipt_boundary_production_complete_gate_scope_policy_missing");
     } else {
@@ -268,6 +275,9 @@ export function validateProductionReceiptBoundary({ boundary, cloudAuthorization
   }
   const allowedLevels = asStringSet(receiptBoundary.allowed_completion_evidence_levels);
   if (allowedLevels.size === 0) blockers.push("production_receipt_boundary_allowed_completion_levels_missing");
+  if (receiptBoundary.lifecycle_section_evidence_hash_policy !== "sha256_pointer_hash_required") {
+    blockers.push("production_receipt_boundary_lifecycle_hash_policy_mismatch");
+  }
 
   const rawFields = asStringSet(receiptBoundary.forbidden_raw_manifest_fields);
   for (const field of FORBIDDEN_RAW_MANIFEST_FIELDS) {
@@ -367,7 +377,7 @@ export function evaluateProductionReceiptManifest({ boundary, manifest }) {
     if (section?.status !== "done") blockers.push(`production_receipt_manifest_lifecycle_not_done:${id || "(missing)"}`);
     if (!String(section?.run_id || "").trim()) blockers.push(`production_receipt_manifest_lifecycle_run_id_missing:${id || "(missing)"}`);
     if (!isSafeRuntimePointer(section?.evidence_ref)) blockers.push(`production_receipt_manifest_lifecycle_evidence_ref_invalid:${id || "(missing)"}`);
-    if (!String(section?.evidence_hash || "").trim()) blockers.push(`production_receipt_manifest_lifecycle_hash_missing:${id || "(missing)"}`);
+    if (!isSafeSha256Hash(section?.evidence_hash)) blockers.push(`production_receipt_manifest_lifecycle_evidence_hash_invalid:${id || "(missing)"}`);
     if (!String(section?.summary || "").trim()) blockers.push(`production_receipt_manifest_lifecycle_summary_missing:${id || "(missing)"}`);
     if (!Array.isArray(section?.cannotClaim)) blockers.push(`production_receipt_manifest_lifecycle_cannot_claim_missing:${id || "(missing)"}`);
   }
@@ -384,7 +394,7 @@ export function evaluateProductionReceiptManifest({ boundary, manifest }) {
       if (criterion?.status !== "accepted") blockers.push(`production_receipt_manifest_production_complete_criterion_not_accepted:${id || "(missing)"}`);
       if (!String(criterion?.issued_at || "").trim()) blockers.push(`production_receipt_manifest_production_complete_criterion_issued_at_missing:${id || "(missing)"}`);
       if (!isSafeRuntimePointer(criterion?.evidence_ref)) blockers.push(`production_receipt_manifest_production_complete_criterion_evidence_ref_invalid:${id || "(missing)"}`);
-      if (!String(criterion?.evidence_hash || "").trim()) blockers.push(`production_receipt_manifest_production_complete_criterion_hash_missing:${id || "(missing)"}`);
+      if (!isSafeSha256Hash(criterion?.evidence_hash)) blockers.push(`production_receipt_manifest_production_complete_criterion_evidence_hash_invalid:${id || "(missing)"}`);
       if (!String(criterion?.summary || "").trim()) blockers.push(`production_receipt_manifest_production_complete_criterion_summary_missing:${id || "(missing)"}`);
       if (!Array.isArray(criterion?.cannotClaim)) blockers.push(`production_receipt_manifest_production_complete_criterion_cannot_claim_missing:${id || "(missing)"}`);
     }

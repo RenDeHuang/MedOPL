@@ -56,6 +56,7 @@
       "claim_upgrade_from_cloud_rc": "forbidden",
       "production_complete_criteria_manifest_field": "production_complete_criteria",
       "criteria_evidence_ref_policy": "runtime_pointer_summary_only",
+      "criteria_evidence_hash_policy": "sha256_pointer_hash_required",
       "scope_policy": {
         "default_claim_scope": "current_authorized_canary_path_only",
         "scope_expansion_requires": "dedicated_contract_and_evidence",
@@ -86,6 +87,7 @@
         "unobserved_tenants_or_resources"
       ]
     },
+    "lifecycle_section_evidence_hash_policy": "sha256_pointer_hash_required",
     "forbidden_raw_manifest_fields": [
       "raw_cloud_payload",
       "raw_payload",
