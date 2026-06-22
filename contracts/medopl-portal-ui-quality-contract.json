@@ -127,7 +127,8 @@
         "role_boundary_browser_gate",
         "release_owner_receipt",
         "security_dependency_gate",
-        "observability_receipt"
+        "observability_receipt",
+        "s_level_ui_polish_gate"
       ],
       "security_dependency_gate": {
         "command": "npm --prefix services/portal/frontend audit --omit=dev --audit-level=high --json",
@@ -160,6 +161,16 @@
         "receipt_type": "release_owner_receipt",
         "current_ui_state": "partial_fail_closed_pending_release_mutation",
         "claimable_before_owner_receipt": false
+      },
+      "s_level_ui_polish_gate": {
+        "consumer": "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs",
+        "checks": [
+          "component_state_consistency",
+          "status_feedback",
+          "responsive_data_tables",
+          "admin_template_hierarchy",
+          "empty_error_recovery"
+        ]
       }
     },
     "a_plus_s_floor": {

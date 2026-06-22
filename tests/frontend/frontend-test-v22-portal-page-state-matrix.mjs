@@ -223,7 +223,14 @@ assert.deepEqual(
   ["ui_green", "contract_green", "local_browser_screenshot", "local_rc"],
   "ui_quality_production_claim_forbidden_evidence_mismatch",
 );
-for (const gate of ["staging_or_prod_like_canary", "role_boundary_browser_gate", "release_owner_receipt", "security_dependency_gate", "observability_receipt"]) {
+for (const gate of [
+  "staging_or_prod_like_canary",
+  "role_boundary_browser_gate",
+  "release_owner_receipt",
+  "security_dependency_gate",
+  "observability_receipt",
+  "s_level_ui_polish_gate",
+]) {
   assert(
     uiQualityContract.medopl_portal_ui_quality_contract.production_readiness.required_gates.includes(gate),
     `ui_quality_production_ready_gate_missing:${gate}`,
@@ -297,6 +304,32 @@ assert.equal(
   productionReadiness.release_owner_readiness?.current_ui_state,
   "partial_fail_closed_pending_release_mutation",
   "ui_quality_release_owner_readiness_state_mismatch",
+);
+assert.equal(
+  productionReadiness.s_level_ui_polish_gate?.consumer,
+  "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs",
+  "ui_quality_s_level_ui_polish_gate_consumer_missing",
+);
+for (const check of [
+  "component_state_consistency",
+  "status_feedback",
+  "responsive_data_tables",
+  "admin_template_hierarchy",
+  "empty_error_recovery",
+]) {
+  assert(
+    productionReadiness.s_level_ui_polish_gate?.checks?.includes(check),
+    `ui_quality_s_level_ui_polish_gate_check_missing:${check}`,
+  );
+}
+assert(
+  grammar.production_readiness.required_gates.includes("s_level_ui_polish_gate"),
+  "portal_page_matrix_production_readiness_must_include_s_level_ui_polish_gate",
+);
+assert.deepEqual(
+  grammar.production_readiness.s_level_ui_polish_gate?.checks,
+  productionReadiness.s_level_ui_polish_gate?.checks,
+  "portal_page_matrix_s_level_ui_polish_gate_must_match_ui_quality_contract",
 );
 assert(
   repoHygieneSource.includes("frontendProductionDependencyAudit"),

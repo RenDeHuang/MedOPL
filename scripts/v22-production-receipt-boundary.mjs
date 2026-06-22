@@ -164,6 +164,41 @@ export function validateProductionReceiptBoundary({ boundary, cloudAuthorization
   if (receiptBoundary.receipt_runner_id_required !== true) {
     blockers.push("production_receipt_boundary_runner_id_required");
   }
+  const productionCompleteGate = receiptBoundary.production_complete_owner_receipt_gate;
+  if (!isObject(productionCompleteGate)) {
+    blockers.push("production_receipt_boundary_production_complete_gate_missing");
+  } else {
+    if (productionCompleteGate.state !== "fail_closed_until_dedicated_production_complete_receipt") {
+      blockers.push("production_receipt_boundary_production_complete_gate_state_mismatch");
+    }
+    if (productionCompleteGate.current_claimable_state !== "cloud_release_candidate_only") {
+      blockers.push("production_receipt_boundary_production_complete_gate_claimable_state_mismatch");
+    }
+    if (productionCompleteGate.claim_upgrade_from_cloud_rc !== "forbidden") {
+      blockers.push("production_receipt_boundary_production_complete_gate_cloud_rc_upgrade_must_be_forbidden");
+    }
+    const requiredGateSet = asStringSet(productionCompleteGate.required_gates);
+    for (const gate of [
+      "release_owner_receipt",
+      "security_dependency_gate",
+      "browser_accessibility_regression",
+      "role_boundary_browser_gate",
+      "s_level_ui_polish_gate",
+      "observability_receipt",
+    ]) {
+      if (!requiredGateSet.has(gate)) blockers.push(`production_receipt_boundary_production_complete_gate_required_gate_missing:${gate}`);
+    }
+    const nonGoalSet = asStringSet(productionCompleteGate.explicit_non_goals_until_dedicated_contract);
+    for (const nonGoal of [
+      "multi_region_production",
+      "sla_proven",
+      "enterprise_compliance",
+      "ongoing_authorization",
+      "unobserved_tenants_or_resources",
+    ]) {
+      if (!nonGoalSet.has(nonGoal)) blockers.push(`production_receipt_boundary_production_complete_gate_non_goal_missing:${nonGoal}`);
+    }
+  }
   if (requiredTypes.length !== 7) blockers.push("production_receipt_boundary_must_require_7_receipts");
   if (requiredTypes.join("\u0000") !== cloudRequiredTypes.join("\u0000")) {
     blockers.push("production_receipt_boundary_must_match_cloud_authorization_required_receipts");

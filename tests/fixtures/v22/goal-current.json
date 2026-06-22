@@ -23,7 +23,7 @@
       "contracts/medopl-production-receipt-boundary.json"
     ]
   },
-  "last_updated_at": "2026-06-22",
+  "last_updated_at": "2026-06-23",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
   "current_branch": "opl-webui-runtime-production-slice",
@@ -34,10 +34,11 @@
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
     "branch": "recovery/platform-v22-trunk",
-    "landed_commit": "485afcf06632cb253ea2bcd9247a39fa1b36759f",
-    "landing_gate_result": "passed / pushed / post-push verified for release auditEventId canary and cloud RC receipt manifest",
+    "landed_commit": "00cff56a8116257ab52f4b4c7a1f3cfe11ccc936",
+    "landing_gate_result": "passed / pushed / post-push verified for cloud RC evidence foldback and production claim boundary",
     "post_push_verification": [
-      "GitHub v22 verify run 27972264680 passed on recovery/platform-v22-trunk.",
+      "GitHub v22 verify run 27973264032 passed on recovery/platform-v22-trunk at 00cff56a8116257ab52f4b4c7a1f3cfe11ccc936.",
+      "GitHub v22 verify run 27972264680 passed on recovery/platform-v22-trunk at 485afcf06632cb253ea2bcd9247a39fa1b36759f.",
       "Release Image run 27972408990 built image tag 485afcf through the authorized workflow.",
       "Cloud Rollout run 27972458642 passed rollout apply, deploy receipt, OPL-Webui consumer canary, availability probe, production receipt manifest and verify:cloud-release-candidate.",
       "The redacted receipt manifest has seven owner receipts, 12 lifecycle sections, claim=cloud_release_candidate, state=complete and sha256 43d6e9de0915190b552e3d0bcf5f9b6fd319953c986b4ad2e998c4c97f976ad2.",
@@ -53,7 +54,7 @@
     },
     "cleanup_result": {
       "deleted": "none",
-      "folded": "Release auditEventId contract/source/tests and cloud RC receipt manifest result into active/history/delivery/machine cursor without raw evidence",
+      "folded": "Release auditEventId contract/source/tests, cloud RC receipt manifest result and repo closeout pointer into active/history/delivery/machine cursor without raw evidence",
       "retained": "redacted receipt manifest remains in GitHub Actions artifact and .runtime pointer; raw workflow logs, cloud payloads, secrets, kubeconfig, runtime artifacts and uploaded files stay outside git",
       "reason": "cloud RC evidence is complete for the current authorized canary path, but production complete has a separate stronger gate",
       "next": "keep production complete fail-closed; only claim broader production readiness after a separate production-complete owner receipt gate and ongoing operations criteria exist"
@@ -71,7 +72,7 @@
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth",
     "ongoing_authorization_multi_region_sla_enterprise_compliance_and_unobserved_tenants_resources_remain_unclaimed"
   ],
-  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is recovery/platform-v22-trunk at 485afcf06632cb253ea2bcd9247a39fa1b36759f. Current trunk keeps Portal UI/UX production gates hardened and closes the release auditEventId canary blocker. GitHub v22 verify run 27972264680 passed; Release Image run 27972408990 built image tag 485afcf; Cloud Rollout run 27972458642 passed rollout apply, deploy receipt, OPL-Webui consumer canary, availability probe, production receipt manifest and verify:cloud-release-candidate. The redacted manifest contains seven owner receipts, 12 lifecycle sections, claim=cloud_release_candidate, state=complete and sha256 43d6e9de0915190b552e3d0bcf5f9b6fd319953c986b4ad2e998c4c97f976ad2. This can claim cloud release candidate evidence for the current authorized canary path only. It does not claim production complete, multi-region/SLA, enterprise compliance, ongoing authorization, or unobserved tenants/resources. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git.",
+  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is recovery/platform-v22-trunk at 00cff56a8116257ab52f4b4c7a1f3cfe11ccc936. Current trunk keeps Portal UI/UX production gates hardened and closes the release auditEventId canary blocker. GitHub v22 verify run 27973264032 passed after cloud RC evidence foldback; Release Image run 27972408990 built image tag 485afcf; Cloud Rollout run 27972458642 passed rollout apply, deploy receipt, OPL-Webui consumer canary, availability probe, production receipt manifest and verify:cloud-release-candidate. The redacted manifest contains seven owner receipts, 12 lifecycle sections, claim=cloud_release_candidate, state=complete and sha256 43d6e9de0915190b552e3d0bcf5f9b6fd319953c986b4ad2e998c4c97f976ad2. This can claim cloud release candidate evidence for the current authorized canary path only. It does not claim production complete, multi-region/SLA, enterprise compliance, ongoing authorization, or unobserved tenants/resources. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -927,8 +928,8 @@
     "cloud_rollout_run_id": "27972458642",
     "v22_verify_run_id": "27972264680"
   },
-  "base_trunk_head": "485afcf06632cb253ea2bcd9247a39fa1b36759f",
-  "last_landed_commit": "485afcf06632cb253ea2bcd9247a39fa1b36759f",
+  "base_trunk_head": "00cff56a8116257ab52f4b4c7a1f3cfe11ccc936",
+  "last_landed_commit": "00cff56a8116257ab52f4b4c7a1f3cfe11ccc936",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",

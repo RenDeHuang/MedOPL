@@ -52,6 +52,57 @@ assert.equal(
   true,
   "authorized_cloud_command_must_write_receipt_manifest",
 );
+assert.equal(
+  boundary.production_receipt_boundary.production_complete_owner_receipt_gate?.state,
+  "fail_closed_until_dedicated_production_complete_receipt",
+  "production_complete_owner_receipt_gate_must_fail_closed",
+);
+assert.equal(
+  boundary.production_receipt_boundary.production_complete_owner_receipt_gate?.current_claimable_state,
+  "cloud_release_candidate_only",
+  "production_complete_owner_receipt_gate_must_not_upgrade_cloud_rc",
+);
+assert.equal(
+  boundary.production_receipt_boundary.production_complete_owner_receipt_gate?.claim_upgrade_from_cloud_rc,
+  "forbidden",
+  "production_complete_owner_receipt_gate_must_forbid_cloud_rc_upgrade",
+);
+for (const gate of [
+  "release_owner_receipt",
+  "security_dependency_gate",
+  "browser_accessibility_regression",
+  "role_boundary_browser_gate",
+  "s_level_ui_polish_gate",
+  "observability_receipt",
+]) {
+  assert(
+    boundary.production_receipt_boundary.production_complete_owner_receipt_gate?.required_gates?.includes(gate),
+    `production_complete_owner_receipt_gate_required_gate_missing:${gate}`,
+  );
+}
+for (const cannotClaim of [
+  "multi_region_production",
+  "sla_proven",
+  "enterprise_compliance",
+  "ongoing_authorization",
+  "unobserved_tenants_or_resources",
+]) {
+  assert(
+    boundary.production_receipt_boundary.production_complete_owner_receipt_gate?.explicit_non_goals_until_dedicated_contract?.includes(cannotClaim),
+    `production_complete_owner_receipt_gate_non_goal_missing:${cannotClaim}`,
+  );
+}
+const missingProductionCompleteGateBoundary = structuredClone(boundary);
+delete missingProductionCompleteGateBoundary.production_receipt_boundary.production_complete_owner_receipt_gate;
+const missingProductionCompleteGateResult = validateProductionReceiptBoundary({
+  boundary: missingProductionCompleteGateBoundary,
+  cloudAuthorization,
+});
+assert.equal(missingProductionCompleteGateResult.ok, false, "production_complete_owner_receipt_gate_must_be_validated_by_runner");
+assert(
+  missingProductionCompleteGateResult.blockers.includes("production_receipt_boundary_production_complete_gate_missing"),
+  "production_complete_owner_receipt_gate_missing_blocker_mismatch",
+);
 assert.equal(boundary.production_receipt_boundary.receipt_operation_binding_required, true, "receipt_operation_binding_must_be_required");
 assert.equal(boundary.production_receipt_boundary.receipt_authorization_ref_required, true, "receipt_authorization_ref_must_be_required");
 assert.equal(boundary.production_receipt_boundary.receipt_runner_id_required, true, "receipt_runner_id_must_be_required");
