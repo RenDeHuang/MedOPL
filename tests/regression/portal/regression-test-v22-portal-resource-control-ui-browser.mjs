@@ -537,6 +537,20 @@ async function assertReleaseOwnerReadinessBoundary(page, label) {
   assert.equal(metrics.confirmDialogCount, 0, `${label}_release_confirm_dialog_must_not_render_before_owner_receipt:${JSON.stringify(metrics)}`);
 }
 
+async function assertCustomerPageBaseline(page, path, expectedH1, label, copyMarkers) {
+  await page.goto(`${frontendBaseUrl}${path}`, { waitUntil: "domcontentloaded" });
+  await waitReady(page);
+  await page.waitForSelector(`text=${expectedH1}`, { timeout: 30000 });
+  lastBodyText = await page.locator("body").innerText();
+  assertResourceControlCopy(lastBodyText, label, copyMarkers);
+  await assertFirstH1(page, expectedH1, label);
+  await assertHeadingHierarchy(page, label);
+  await assertAgradeInteractionSystem(page, label);
+  await assertStateFeedbackPatterns(page, label);
+  await assertPrimaryActionReachable(page, label);
+  await assertNoGlobalHorizontalOverflow(page, label);
+}
+
 const { chromium } = await loadPlaywright();
 const backendPort = await freePort();
 const vitePort = await freePort();
@@ -633,6 +647,14 @@ try {
     await assertOverviewMobileHeroPolish(page, "browser_overview_mobile");
     await page.setViewportSize({ width: 1440, height: 920 });
 
+    await assertCustomerPageBaseline(
+      page,
+      "/packages",
+      "套餐与购买",
+      "browser_packages",
+      ["套餐与购买", "计算资源", "存储空间", "费用"],
+    );
+
     const overviewErrorConsoleStart = consoleMessages.length;
     await page.route("**/api/overview*", async (route) => {
       await route.fulfill({
@@ -689,6 +711,14 @@ try {
     await assertPrimaryActionReachable(page, "browser_runtime_environment");
     await assertNoGlobalHorizontalOverflow(page, "browser_runtime_environment");
 
+    await assertCustomerPageBaseline(
+      page,
+      "/workspace",
+      "存储空间",
+      "browser_workspace",
+      ["存储空间", "输入文件", "输出文件"],
+    );
+
     await page.goto(`${frontendBaseUrl}/billing`, { waitUntil: "domcontentloaded" });
     await waitReady(page, "正在读取费用与用量数据");
     await page.waitForSelector("text=费用与用量", { timeout: 30000 });
@@ -701,6 +731,14 @@ try {
     await assertBillingFirstViewDensity(page, "browser_billing");
     await assertBillingSummaryLedgerShape(page, "browser_billing");
     await assertNoGlobalHorizontalOverflow(page, "browser_billing");
+
+    await assertCustomerPageBaseline(
+      page,
+      "/opl-launch",
+      "进入 OPL",
+      "browser_opl_entry",
+      ["进入 OPL", "启动阶段"],
+    );
 
     const userContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
@@ -747,8 +785,11 @@ try {
     checked: [
       "go_backend_vite_frontend_runtime",
       "overview_resource_control_copy",
+      "packages_accessibility_coverage",
       "runtime_open_service_entry",
+      "workspace_accessibility_coverage",
       "billing_first_view_density",
+      "opl_entry_accessibility_coverage",
       "customer_user_nav_visual_gate",
       "admin_system_authorization_boundary",
     ],

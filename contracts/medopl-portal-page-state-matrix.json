@@ -318,7 +318,8 @@
             "labelled_navigation_landmark",
             "no_horizontal_overflow",
             "disabled_reason_visible",
-            "status_feedback_non_color_signal"
+            "status_feedback_non_color_signal",
+            "all_customer_pages_browser_covered"
           ]
         },
         "observability_receipt": {

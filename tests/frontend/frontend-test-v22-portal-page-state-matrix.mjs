@@ -28,6 +28,7 @@ const tabsSource = await readRepoFile("services/portal/frontend/src/app/componen
 const switchSource = await readRepoFile("services/portal/frontend/src/app/components/ui/switch.tsx");
 const tableSource = await readRepoFile("services/portal/frontend/src/app/components/ui/table.tsx");
 const resourceControlComponents = await readRepoFile("services/portal/frontend/src/app/components/ResourceControlComponents.tsx");
+const resourceControlBrowserRegression = await readRepoFile("tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs");
 const runtimeEnvironmentPage = await readRepoFile("services/portal/frontend/src/app/pages/RuntimeEnvironment.tsx");
 const packagesPurchasePage = await readRepoFile("services/portal/frontend/src/app/pages/PackagesPurchase.tsx");
 const workspacePage = await readRepoFile("services/portal/frontend/src/app/pages/Workspace.tsx");
@@ -293,6 +294,7 @@ for (const check of [
   "no_horizontal_overflow",
   "disabled_reason_visible",
   "status_feedback_non_color_signal",
+  "all_customer_pages_browser_covered",
 ]) {
   assert(
     productionReadiness.accessibility_verification?.checks?.includes(check),
@@ -466,6 +468,21 @@ assert(layout.includes("data-ui-pattern=\"mobile-nav-scroll-hint\""), "portal_mo
 assert(layout.includes("aria-current={isActive ? \"page\" : undefined}"), "portal_nav_current_page_semantics_missing");
 assert(layout.includes("aria-label=\"主要资源导航\""), "portal_main_nav_accessible_label_missing");
 assert(layout.includes("aria-label=\"管理台导航\""), "portal_admin_nav_accessible_label_missing");
+for (const [route, label] of [
+  ["/overview", "browser_overview"],
+  ["/packages", "browser_packages"],
+  ["/resources", "browser_runtime_environment"],
+  ["/workspace", "browser_workspace"],
+  ["/billing", "browser_billing"],
+  ["/opl-launch", "browser_opl_entry"],
+]) {
+  assert(
+    resourceControlBrowserRegression.includes(`\${frontendBaseUrl}${route}`) ||
+      resourceControlBrowserRegression.includes(`"${route}"`),
+    `portal_browser_regression_route_missing:${route}`,
+  );
+  assert(resourceControlBrowserRegression.includes(label), `portal_browser_regression_label_missing:${label}`);
+}
 
 const flowById = new Map(interactionFlowContract.medopl_portal_interaction_flow_contract.flows.map((flow) => [flow.id, flow]));
 assert.equal(interactionFlowContract.medopl_portal_interaction_flow_contract.interaction_states.min_touch_target_px, 44, "interaction_flow_touch_target_min_mismatch");

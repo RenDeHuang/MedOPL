@@ -16,6 +16,36 @@ import { bindOplEntryProviderKey, buildOplEntryViewState, useOplEntryModel } fro
 
 const OPL_GATEWAY_UNAVAILABLE_MESSAGE = "OPL 网关暂不可用，请稍后重试；如持续失败，请联系管理员。";
 
+function statusBadgeClass(status: string) {
+  if (status === "failed") return "bg-red-50 text-red-700 border-red-200";
+  if (status === "ready" || status === "completed") return "bg-green-50 text-green-700 border-green-200";
+  if (status === "preparing" || status === "retrying" || status === "in_progress") return "bg-teal-50 text-teal-700 border-teal-200";
+  return "bg-orange-50 text-orange-700 border-orange-200";
+}
+
+function statusIcon(status: string) {
+  if (status === "ready" || status === "completed") return <CheckCircle2 data-ui-signal="status-icon" aria-hidden="true" className="w-3 h-3" />;
+  if (status === "failed") return <AlertCircle data-ui-signal="status-icon" aria-hidden="true" className="w-3 h-3" />;
+  if (status === "preparing" || status === "retrying" || status === "in_progress") return <Loader2 data-ui-signal="status-icon" aria-hidden="true" className="w-3 h-3 animate-spin" />;
+  return <AlertCircle data-ui-signal="status-icon" aria-hidden="true" className="w-3 h-3" />;
+}
+
+function StatusBadge({ status, label }: { status: string; label: string }) {
+  return (
+    <Badge variant="outline" className={statusBadgeClass(status)}>
+      {statusIcon(status)}
+      <span data-ui-signal="status-label">{label}</span>
+    </Badge>
+  );
+}
+
+function launchStateLabel(status: string) {
+  if (status === "completed") return "已完成";
+  if (status === "in_progress") return "进行中";
+  if (status === "failed") return "失败";
+  return "等待中";
+}
+
 export function OPLEntry() {
   const query = useOplEntryModel();
   const [countdown, setCountdown] = useState(3);
@@ -63,9 +93,9 @@ export function OPLEntry() {
   const renderStatusHero = () => {
     if (query.status === "loading") {
       return (
-        <div className="mb-8">
+        <div className="mb-8" data-ui-pattern="state-feedback" role="status" aria-live="polite" aria-label="进入 OPL 状态：准备中">
           <div className="flex items-center gap-3 mb-3">
-            <Badge className="bg-teal-50 text-teal-700 border-teal-200">准备中</Badge>
+            <StatusBadge status="preparing" label="准备中" />
             <h2 className="text-2xl font-semibold text-neutral-900">进入 OPL</h2>
           </div>
           <p className="text-neutral-600 mb-4">正在读取 OPL 启动状态和 Portal bootstrap。</p>
@@ -75,9 +105,9 @@ export function OPLEntry() {
 
     if (query.status === "error") {
       return (
-        <div className="mb-8">
+        <div className="mb-8" data-ui-pattern="state-feedback" role="status" aria-live="polite" aria-label="进入 OPL 状态：启动失败">
           <div className="flex items-center gap-3 mb-3">
-            <Badge className="bg-red-50 text-red-700 border-red-200">启动失败</Badge>
+            <StatusBadge status="failed" label="启动失败" />
             <h2 className="text-2xl font-semibold text-neutral-900">进入 OPL</h2>
           </div>
           <p className="text-neutral-600 mb-4">{query.error || OPL_GATEWAY_UNAVAILABLE_MESSAGE}</p>
@@ -101,11 +131,9 @@ export function OPLEntry() {
 
     if (pageState === "ready") {
       return (
-        <div className="mb-8">
+        <div className="mb-8" data-ui-pattern="state-feedback" role="status" aria-live="polite" aria-label="进入 OPL 状态：即将进入">
           <div className="flex items-center gap-3 mb-3">
-            <Badge className="bg-green-50 text-green-700 border-green-200">
-              即将进入
-            </Badge>
+            <StatusBadge status="ready" label="即将进入" />
             <h2 className="text-2xl font-semibold text-neutral-900">
               进入 OPL
             </h2>
@@ -133,11 +161,9 @@ export function OPLEntry() {
 
     if (pageState === "preparing") {
       return (
-        <div className="mb-8">
+        <div className="mb-8" data-ui-pattern="state-feedback" role="status" aria-live="polite" aria-label="进入 OPL 状态：准备中">
           <div className="flex items-center gap-3 mb-3">
-            <Badge className="bg-teal-50 text-teal-700 border-teal-200">
-              准备中
-            </Badge>
+            <StatusBadge status="preparing" label="准备中" />
             <h2 className="text-2xl font-semibold text-neutral-900">
               进入 OPL
             </h2>
@@ -157,11 +183,9 @@ export function OPLEntry() {
 
     if (pageState === "retrying") {
       return (
-        <div className="mb-8">
+        <div className="mb-8" data-ui-pattern="state-feedback" role="status" aria-live="polite" aria-label="进入 OPL 状态：重试中">
           <div className="flex items-center gap-3 mb-3">
-            <Badge className="bg-teal-50 text-teal-700 border-teal-200">
-              重试中
-            </Badge>
+            <StatusBadge status="retrying" label="重试中" />
             <h2 className="text-2xl font-semibold text-neutral-900">
               进入 OPL
             </h2>
@@ -181,11 +205,9 @@ export function OPLEntry() {
 
     if (pageState === "blocked_by_provider_key") {
       return (
-        <div className="mb-8">
+        <div className="mb-8" data-ui-pattern="state-feedback" role="status" aria-live="polite" aria-label="进入 OPL 状态：启动受限">
           <div className="flex items-center gap-3 mb-3">
-            <Badge className="bg-orange-50 text-orange-700 border-orange-200">
-              启动受限
-            </Badge>
+            <StatusBadge status="blocked" label="启动受限" />
             <h2 className="text-2xl font-semibold text-neutral-900">
               进入 OPL
             </h2>
@@ -231,11 +253,9 @@ export function OPLEntry() {
 
     if (pageState === "blocked_by_runtime") {
       return (
-        <div className="mb-8">
+        <div className="mb-8" data-ui-pattern="state-feedback" role="status" aria-live="polite" aria-label="进入 OPL 状态：启动受限">
           <div className="flex items-center gap-3 mb-3">
-            <Badge className="bg-orange-50 text-orange-700 border-orange-200">
-              启动受限
-            </Badge>
+            <StatusBadge status="blocked" label="启动受限" />
             <h2 className="text-2xl font-semibold text-neutral-900">
               进入 OPL
             </h2>
@@ -263,11 +283,9 @@ export function OPLEntry() {
 
     if (pageState === "workspace_required") {
       return (
-        <div className="mb-8">
+        <div className="mb-8" data-ui-pattern="state-feedback" role="status" aria-live="polite" aria-label="进入 OPL 状态：启动受限">
           <div className="flex items-center gap-3 mb-3">
-            <Badge className="bg-orange-50 text-orange-700 border-orange-200">
-              启动受限
-            </Badge>
+            <StatusBadge status="blocked" label="启动受限" />
             <h2 className="text-2xl font-semibold text-neutral-900">
               进入 OPL
             </h2>
@@ -295,11 +313,9 @@ export function OPLEntry() {
 
     if (pageState === "balance_insufficient") {
       return (
-        <div className="mb-8">
+        <div className="mb-8" data-ui-pattern="state-feedback" role="status" aria-live="polite" aria-label="进入 OPL 状态：启动受限">
           <div className="flex items-center gap-3 mb-3">
-            <Badge className="bg-orange-50 text-orange-700 border-orange-200">
-              启动受限
-            </Badge>
+            <StatusBadge status="blocked" label="启动受限" />
             <h2 className="text-2xl font-semibold text-neutral-900">
               进入 OPL
             </h2>
@@ -327,11 +343,9 @@ export function OPLEntry() {
 
     if (pageState === "service_unavailable") {
       return (
-        <div className="mb-8">
+        <div className="mb-8" data-ui-pattern="state-feedback" role="status" aria-live="polite" aria-label="进入 OPL 状态：启动失败">
           <div className="flex items-center gap-3 mb-3">
-            <Badge className="bg-red-50 text-red-700 border-red-200">
-              启动失败
-            </Badge>
+            <StatusBadge status="failed" label="启动失败" />
             <h2 className="text-2xl font-semibold text-neutral-900">
               进入 OPL
             </h2>
@@ -359,11 +373,9 @@ export function OPLEntry() {
 
     // failed 和其他失败状态
     return (
-      <div className="mb-8">
+      <div className="mb-8" data-ui-pattern="state-feedback" role="status" aria-live="polite" aria-label="进入 OPL 状态：启动失败">
         <div className="flex items-center gap-3 mb-3">
-          <Badge className="bg-red-50 text-red-700 border-red-200">
-            启动失败
-          </Badge>
+          <StatusBadge status="failed" label="启动失败" />
           <h2 className="text-2xl font-semibold text-neutral-900">
             进入 OPL
           </h2>
@@ -392,7 +404,13 @@ export function OPLEntry() {
   // 区块 2: 阶段进度区
   const renderLaunchSteps = () => {
     return (
-      <Card className="border border-neutral-200 mb-6">
+      <Card
+        className="border border-neutral-200 mb-6"
+        data-ui-pattern="state-feedback"
+        role="status"
+        aria-live="polite"
+        aria-label={`启动阶段状态：${steps.map((step) => `${step.label}${launchStateLabel(step.status)}`).join("，")}`}
+      >
         <div className="p-5 border-b border-neutral-200">
           <h2 className="font-semibold text-neutral-900">启动阶段</h2>
         </div>
@@ -403,16 +421,16 @@ export function OPLEntry() {
                 {/* Step Icon */}
                 <div className="flex-shrink-0 mt-0.5 relative z-10">
                   {step.status === "completed" && (
-                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    <CheckCircle2 data-ui-signal="status-icon" aria-hidden="true" className="w-5 h-5 text-green-600" />
                   )}
                   {step.status === "in_progress" && (
-                    <Loader2 className="w-5 h-5 text-teal-700 animate-spin" />
+                    <Loader2 data-ui-signal="status-icon" aria-hidden="true" className="w-5 h-5 text-teal-700 animate-spin" />
                   )}
                   {step.status === "failed" && (
-                    <AlertCircle className="w-5 h-5 text-red-600" />
+                    <AlertCircle data-ui-signal="status-icon" aria-hidden="true" className="w-5 h-5 text-red-600" />
                   )}
                   {step.status === "waiting" && (
-                    <div className="w-5 h-5 rounded-full border-2 border-neutral-300" />
+                    <div data-ui-signal="status-icon" aria-hidden="true" className="w-5 h-5 rounded-full border-2 border-neutral-300" />
                   )}
                 </div>
 
@@ -441,17 +459,22 @@ export function OPLEntry() {
                     </span>
                     {step.status === "completed" && (
                       <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 text-xs">
-                        已完成
+                        <span data-ui-signal="status-label">已完成</span>
                       </Badge>
                     )}
                     {step.status === "in_progress" && (
                       <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200 text-xs">
-                        进行中
+                        <span data-ui-signal="status-label">进行中</span>
                       </Badge>
                     )}
                     {step.status === "failed" && (
                       <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-xs">
-                        失败
+                        <span data-ui-signal="status-label">失败</span>
+                      </Badge>
+                    )}
+                    {step.status === "waiting" && (
+                      <Badge variant="outline" className="bg-neutral-50 text-neutral-600 border-neutral-200 text-xs">
+                        <span data-ui-signal="status-label">等待中</span>
                       </Badge>
                     )}
                   </div>
