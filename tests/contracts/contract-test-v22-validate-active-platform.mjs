@@ -122,7 +122,18 @@ assert.equal(trunkHead.status, 0, `current_branch_baseline_lookup_failed:${trunk
 const trunkHeadCommit = trunkHead.stdout.trim();
 const landedOnTrunk = runGit(["merge-base", "--is-ancestor", lastLandedCommit, trunkHead.stdout.trim()]);
 assert.equal(landedOnTrunk.status, 0, `current_last_landed_commit_must_be_trunk_ancestor:${landedOnTrunk.stderr || landedOnTrunk.stdout}`);
-assert.equal(lastLandedCommit, trunkHeadCommit, "current_last_landed_commit_must_match_trunk_head");
+const landingCloseoutCheck = runNode([
+  "scripts/v22-landing-closeout.mjs",
+  "check",
+  "--trunk-ref",
+  trunkRef,
+  "--json",
+]);
+assert.equal(landingCloseoutCheck.status, 0, `current_landing_closeout_check_must_pass:${landingCloseoutCheck.stderr || landingCloseoutCheck.stdout}`);
+const landingCloseoutPayload = JSON.parse(landingCloseoutCheck.stdout);
+assert.equal(landingCloseoutPayload.ok, true, "current_landing_closeout_payload_must_be_ok");
+assert.equal(landingCloseoutPayload.trunkHead, trunkHeadCommit, "current_landing_closeout_trunk_head_must_match_baseline");
+assert.equal(landingCloseoutPayload.lastLandedCommit, lastLandedCommit, "current_landing_closeout_last_landed_must_match_current");
 assert.equal(current.latest_landed_closeout?.landed_commit, lastLandedCommit, "latest_closeout_landed_commit_must_match_current");
 assert.equal(current.latest_landed_closeout?.branch, current.last_landed_branch, "latest_closeout_branch_must_match_current");
 assert.equal(current.latest_landed_closeout?.next_cursor, current.current_cursor, "latest_closeout_next_cursor_must_match_current_cursor");
