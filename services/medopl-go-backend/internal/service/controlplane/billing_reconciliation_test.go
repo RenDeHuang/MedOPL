@@ -100,6 +100,62 @@ func TestServiceBillingLedgerEntriesCarryBusinessReconciliationRefs(t *testing.T
 	assertLedgerReconciliationRef(t, ledger, cpd.AuditKindResourceRelease, "resourceBindingId", release.Resource.ResourceBindingID)
 }
 
+func TestServicePersistsBillingEventsForBusinessReceipts(t *testing.T) {
+	ctx := context.Background()
+	service := NewService(memory.NewControlPlaneStore())
+	launch := bindAndOpen(t, ctx, service)
+
+	fileRef, err := service.RecordFile(ctx, RecordFileInput{
+		LaunchID:     launch.LaunchID,
+		FileName:     "billing-events.csv",
+		RelativePath: "inputs/billing-events.csv",
+		ContentType:  "text/csv",
+		SizeBytes:    128,
+	})
+	if err != nil {
+		t.Fatalf("RecordFile() error = %v", err)
+	}
+	runResult, err := service.StartRun(ctx, StartRunInput{
+		LaunchID:  launch.LaunchID,
+		Message:   "persist billing events",
+		FileRefs:  []string{fileRef.FileRef},
+		ToolName:  "opl-webui-runtime",
+		RequestID: "run-billing-events-rc",
+	})
+	if err != nil {
+		t.Fatalf("StartRun() error = %v", err)
+	}
+	release, err := service.Release(ctx, ReleaseInput{
+		WorkspaceID:       launch.WorkspaceID,
+		ResourceBindingID: launch.ResourceBindingID,
+		StopBilling:       true,
+		IdempotencyKey:    "release-billing-events-rc",
+	})
+	if err != nil {
+		t.Fatalf("Release() error = %v", err)
+	}
+
+	events, err := service.store.ListBillingEvents(ctx, launch.WorkspaceID)
+	if err != nil {
+		t.Fatalf("ListBillingEvents() error = %v", err)
+	}
+	if len(events) != 4 {
+		t.Fatalf("expected file/run/artifact/release billing events, got %d: %+v", len(events), events)
+	}
+	assertBillingEvent(t, events, cpd.AuditKindFileUpload, "hold", fileRef.FileRef, "", "", launch.ResourceBindingID)
+	assertBillingEvent(t, events, cpd.AuditKindRunSucceeded, "debit", "", runResult.Run.RunRef, "", launch.ResourceBindingID)
+	assertBillingEvent(t, events, cpd.AuditKindArtifactAvailable, "debit", "", "", runResult.ArtifactRef, launch.ResourceBindingID)
+	assertBillingEvent(t, events, cpd.AuditKindResourceRelease, "release", "", "", "", release.Resource.ResourceBindingID)
+
+	summary, err := service.BillingSummary(ctx, WorkspaceInput{WorkspaceID: launch.WorkspaceID})
+	if err != nil {
+		t.Fatalf("BillingSummary() error = %v", err)
+	}
+	if summary.LedgerCount != len(events) {
+		t.Fatalf("summary must read persisted billing event ledger count: got=%d want=%d ledger=%+v events=%+v", summary.LedgerCount, len(events), summary.Ledger, events)
+	}
+}
+
 func ledgerAsMaps(t *testing.T, items []LedgerItem) []map[string]any {
 	t.Helper()
 	payload, err := json.Marshal(items)
@@ -111,6 +167,20 @@ func ledgerAsMaps(t *testing.T, items []LedgerItem) []map[string]any {
 		t.Fatalf("unmarshal ledger items error = %v", err)
 	}
 	return decoded
+}
+
+func assertBillingEvent(t *testing.T, events []cpd.BillingEvent, sourceType string, eventType string, fileRef string, runRef string, artifactRef string, resourceBindingID string) {
+	t.Helper()
+	for _, event := range events {
+		if event.SourceEventType != sourceType {
+			continue
+		}
+		if event.Type != eventType || event.FileRef != fileRef || event.RunRef != runRef || event.ArtifactRef != artifactRef || event.ResourceBindingID != resourceBindingID {
+			t.Fatalf("billing event mismatch for %s: %+v", sourceType, event)
+		}
+		return
+	}
+	t.Fatalf("billing event missing source type %q: %+v", sourceType, events)
 }
 
 func assertLedgerReconciliationRef(t *testing.T, ledger []map[string]any, eventType string, field string, want string) {

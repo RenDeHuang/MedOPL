@@ -17,6 +17,8 @@ type Store interface {
 	SaveCreditEvent(ctx context.Context, event cpd.CreditEvent) error
 	ApplyCreditEvent(ctx context.Context, event cpd.CreditEvent) (cpd.BusinessAccount, error)
 	ListCreditEvents(ctx context.Context, workspaceID string) ([]cpd.CreditEvent, error)
+	SaveBillingEvent(ctx context.Context, event cpd.BillingEvent) error
+	ListBillingEvents(ctx context.Context, workspaceID string) ([]cpd.BillingEvent, error)
 	SaveProviderBinding(ctx context.Context, binding cpd.ProviderBinding) error
 	ProviderBindingByWorkspace(ctx context.Context, workspaceID string) (cpd.ProviderBinding, error)
 	SaveLaunch(ctx context.Context, launch cpd.LaunchProjection) error

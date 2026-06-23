@@ -85,11 +85,13 @@ CREATE TABLE IF NOT EXISTS billing_events (
   idempotency_key TEXT NOT NULL UNIQUE,
   amount DOUBLE PRECISION NOT NULL DEFAULT 0,
   currency TEXT NOT NULL DEFAULT 'CNY',
+  payload JSONB NOT NULL,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_billing_events_tenant_id ON billing_events(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_billing_events_workspace_id ON billing_events(workspace_id);
+ALTER TABLE billing_events ADD COLUMN IF NOT EXISTS payload JSONB NOT NULL DEFAULT '{}'::jsonb;
 
 CREATE TABLE IF NOT EXISTS workflow_executions (
   id TEXT PRIMARY KEY,

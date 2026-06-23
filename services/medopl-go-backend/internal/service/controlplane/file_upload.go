@@ -86,7 +86,7 @@ func (service *Service) RecordFile(ctx context.Context, input RecordFileInput) (
 	}); err != nil {
 		return PublicFileRef{}, err
 	}
-	if err := service.store.SaveAuditEvent(ctx, cpd.AuditEvent{
+	audit := cpd.AuditEvent{
 		ID:                "audit-" + shortID(refID+":file-upload"),
 		Kind:              cpd.AuditKindFileUpload,
 		WorkspaceID:       launch.WorkspaceID,
@@ -94,7 +94,11 @@ func (service *Service) RecordFile(ctx context.Context, input RecordFileInput) (
 		Status:            "recorded",
 		IdempotencyKey:    refID,
 		CreatedAt:         recordedAt,
-	}); err != nil {
+	}
+	if err := service.store.SaveAuditEvent(ctx, audit); err != nil {
+		return PublicFileRef{}, err
+	}
+	if err := service.saveBillingEventForAudit(ctx, audit, billingEventRefs{FileRef: refID}); err != nil {
 		return PublicFileRef{}, err
 	}
 	return result, nil

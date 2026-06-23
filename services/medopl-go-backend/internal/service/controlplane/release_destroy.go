@@ -82,6 +82,9 @@ func (service *Service) Release(ctx context.Context, input ReleaseInput) (Releas
 	if err := service.store.SaveAuditEvent(ctx, audit); err != nil {
 		return ReleaseResult{}, err
 	}
+	if err := service.saveBillingEventForAudit(ctx, audit, billingEventRefs{}); err != nil {
+		return ReleaseResult{}, err
+	}
 	return ReleaseResult{
 		Ok:             true,
 		Status:         released.Status,

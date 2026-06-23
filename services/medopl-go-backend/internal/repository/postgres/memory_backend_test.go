@@ -217,6 +217,83 @@ func (db *typedRunFileArtifactTestDB) ListFileRecords(ctx context.Context, works
 	return items, nil
 }
 
+type typedBillingAuditTestDB struct {
+	*memoryTestDB
+	audits            map[string]cpd.AuditEvent
+	billingEvents     map[string]cpd.BillingEvent
+	genericWriteCount int
+}
+
+func newTypedBillingAuditTestDB(t *testing.T) *typedBillingAuditTestDB {
+	t.Helper()
+	return &typedBillingAuditTestDB{
+		memoryTestDB:  NewMemoryTestDB(t),
+		audits:        make(map[string]cpd.AuditEvent),
+		billingEvents: make(map[string]cpd.BillingEvent),
+	}
+}
+
+func (db *typedBillingAuditTestDB) UpsertRecord(ctx context.Context, record Record) error {
+	db.genericWriteCount++
+	return db.memoryTestDB.UpsertRecord(ctx, record)
+}
+
+func (db *typedBillingAuditTestDB) UpsertAuditEvent(ctx context.Context, event cpd.AuditEvent) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	db.mu.Lock()
+	defer db.mu.Unlock()
+	db.audits[event.ID] = event
+	return nil
+}
+
+func (db *typedBillingAuditTestDB) ListAuditEventRecords(ctx context.Context, workspaceID string) ([]cpd.AuditEvent, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	db.mu.Lock()
+	defer db.mu.Unlock()
+	items := []cpd.AuditEvent{}
+	for _, event := range db.audits {
+		if workspaceID == "" || event.WorkspaceID == workspaceID {
+			items = append(items, event)
+		}
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].ID < items[j].ID
+	})
+	return items, nil
+}
+
+func (db *typedBillingAuditTestDB) UpsertBillingEvent(ctx context.Context, event cpd.BillingEvent) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	db.mu.Lock()
+	defer db.mu.Unlock()
+	db.billingEvents[event.ID] = event
+	return nil
+}
+
+func (db *typedBillingAuditTestDB) ListBillingEventRecords(ctx context.Context, workspaceID string) ([]cpd.BillingEvent, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	db.mu.Lock()
+	defer db.mu.Unlock()
+	items := []cpd.BillingEvent{}
+	for _, event := range db.billingEvents {
+		if workspaceID == "" || event.WorkspaceID == workspaceID {
+			items = append(items, event)
+		}
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].ID < items[j].ID
+	})
+	return items, nil
+}
+
 func (db *typedRunFileArtifactTestDB) UpsertRunRecord(ctx context.Context, run cpd.RunRecord) error {
 	if err := ctx.Err(); err != nil {
 		return err

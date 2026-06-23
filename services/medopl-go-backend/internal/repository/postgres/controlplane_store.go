@@ -61,6 +61,13 @@ type runFileArtifactBackend interface {
 	ListArtifactRecords(ctx context.Context, workspaceID string) ([]cpd.ArtifactRecord, error)
 }
 
+type billingAuditBackend interface {
+	UpsertBillingEvent(ctx context.Context, event cpd.BillingEvent) error
+	ListBillingEventRecords(ctx context.Context, workspaceID string) ([]cpd.BillingEvent, error)
+	UpsertAuditEvent(ctx context.Context, event cpd.AuditEvent) error
+	ListAuditEventRecords(ctx context.Context, workspaceID string) ([]cpd.AuditEvent, error)
+}
+
 type ControlPlaneStore struct {
 	backend Backend
 	kind    string
@@ -163,6 +170,35 @@ func (store *ControlPlaneStore) ListCreditEvents(ctx context.Context, workspaceI
 	items := make([]cpd.CreditEvent, 0, len(records))
 	for _, record := range records {
 		var item cpd.CreditEvent
+		if err := json.Unmarshal(record.Payload, &item); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].ID < items[j].ID
+	})
+	return items, nil
+}
+
+func (store *ControlPlaneStore) SaveBillingEvent(ctx context.Context, event cpd.BillingEvent) error {
+	if backend, ok := store.backend.(billingAuditBackend); ok {
+		return backend.UpsertBillingEvent(ctx, event)
+	}
+	return store.save(ctx, "billing_event", event.ID, event.WorkspaceID, event)
+}
+
+func (store *ControlPlaneStore) ListBillingEvents(ctx context.Context, workspaceID string) ([]cpd.BillingEvent, error) {
+	if backend, ok := store.backend.(billingAuditBackend); ok {
+		return backend.ListBillingEventRecords(ctx, workspaceID)
+	}
+	records, err := store.backend.ListRecords(ctx, "billing_event", workspaceID)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]cpd.BillingEvent, 0, len(records))
+	for _, record := range records {
+		var item cpd.BillingEvent
 		if err := json.Unmarshal(record.Payload, &item); err != nil {
 			return nil, err
 		}
@@ -463,10 +499,16 @@ func (store *ControlPlaneStore) CloudOperationByID(ctx context.Context, operatio
 }
 
 func (store *ControlPlaneStore) SaveAuditEvent(ctx context.Context, event cpd.AuditEvent) error {
+	if backend, ok := store.backend.(billingAuditBackend); ok {
+		return backend.UpsertAuditEvent(ctx, event)
+	}
 	return store.save(ctx, recordKindAuditEvent, event.ID, event.WorkspaceID, event)
 }
 
 func (store *ControlPlaneStore) ListAuditEvents(ctx context.Context, workspaceID string) ([]cpd.AuditEvent, error) {
+	if backend, ok := store.backend.(billingAuditBackend); ok {
+		return backend.ListAuditEventRecords(ctx, workspaceID)
+	}
 	records, err := store.backend.ListRecords(ctx, recordKindAuditEvent, workspaceID)
 	if err != nil {
 		return nil, err

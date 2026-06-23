@@ -15,6 +15,7 @@ type ControlPlaneStore struct {
 	mu                  sync.Mutex
 	accountsByWorkspace map[string]cpd.BusinessAccount
 	creditsByID         map[string]cpd.CreditEvent
+	billingEventsByID   map[string]cpd.BillingEvent
 	bindingsByWorkspace map[string]cpd.ProviderBinding
 	launchesByID        map[string]cpd.LaunchProjection
 	filesByRef          map[string]cpd.FileRecord
@@ -31,6 +32,7 @@ func NewControlPlaneStore() *ControlPlaneStore {
 		bindingsByWorkspace: make(map[string]cpd.ProviderBinding),
 		accountsByWorkspace: make(map[string]cpd.BusinessAccount),
 		creditsByID:         make(map[string]cpd.CreditEvent),
+		billingEventsByID:   make(map[string]cpd.BillingEvent),
 		launchesByID:        make(map[string]cpd.LaunchProjection),
 		filesByRef:          make(map[string]cpd.FileRecord),
 		runsByID:            make(map[string]cpd.RunRecord),
@@ -136,6 +138,37 @@ func (store *ControlPlaneStore) ListCreditEvents(ctx context.Context, workspaceI
 	defer store.mu.Unlock()
 	items := make([]cpd.CreditEvent, 0)
 	for _, item := range store.creditsByID {
+		if workspaceID == "" || item.WorkspaceID == workspaceID {
+			items = append(items, item)
+		}
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].ID < items[j].ID
+	})
+	return items, nil
+}
+
+func (store *ControlPlaneStore) SaveBillingEvent(ctx context.Context, event cpd.BillingEvent) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	if _, exists := store.billingEventsByID[event.ID]; exists {
+		return nil
+	}
+	store.billingEventsByID[event.ID] = event
+	return nil
+}
+
+func (store *ControlPlaneStore) ListBillingEvents(ctx context.Context, workspaceID string) ([]cpd.BillingEvent, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	items := make([]cpd.BillingEvent, 0)
+	for _, item := range store.billingEventsByID {
 		if workspaceID == "" || item.WorkspaceID == workspaceID {
 			items = append(items, item)
 		}

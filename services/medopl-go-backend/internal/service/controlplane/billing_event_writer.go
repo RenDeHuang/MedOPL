@@ -1,0 +1,67 @@
+package controlplane
+
+import (
+	"context"
+
+	cpd "github.com/rendehuang/medopl/services/medopl-go-backend/internal/domain/controlplane"
+)
+
+func (service *Service) saveBillingEventForAudit(ctx context.Context, audit cpd.AuditEvent, refs billingEventRefs) error {
+	tenantID := refs.TenantID
+	billingAttributionID := refs.BillingAttributionID
+	ledgers, err := service.store.ListResourceBindingLedgers(ctx, audit.WorkspaceID)
+	if err != nil {
+		return err
+	}
+	for _, ledger := range ledgers {
+		if ledger.ResourceBindingID == audit.ResourceBindingID {
+			tenantID = firstNonEmpty(tenantID, ledger.TenantID)
+			billingAttributionID = firstNonEmpty(billingAttributionID, ledger.BillingAttributionID)
+			break
+		}
+	}
+	if tenantID == "" {
+		return cpd.ErrResourceNotFound
+	}
+	amount := 1.25
+	eventType := "debit"
+	reason := audit.Kind
+	switch audit.Kind {
+	case cpd.AuditKindFileUpload:
+		eventType = "hold"
+		amount = 0.1
+	case cpd.AuditKindArtifactAvailable:
+		amount = 0
+	case cpd.AuditKindResourceRelease, cpd.AuditKindStorageDestroy:
+		eventType = "release"
+		amount = 0
+	}
+	return service.store.SaveBillingEvent(ctx, cpd.BillingEvent{
+		ID:                   "billing-" + shortID(audit.ID+":"+audit.Kind),
+		TenantID:             tenantID,
+		WorkspaceID:          audit.WorkspaceID,
+		Type:                 eventType,
+		Status:               "recorded",
+		IdempotencyKey:       audit.ID,
+		Amount:               amount,
+		Currency:             "CNY",
+		Reason:               reason,
+		OwnerScope:           "go-control-plane",
+		ResourceBindingID:    audit.ResourceBindingID,
+		BillingAttributionID: billingAttributionID,
+		FileRef:              refs.FileRef,
+		RunRef:               refs.RunRef,
+		ArtifactRef:          refs.ArtifactRef,
+		SourceEventID:        audit.ID,
+		SourceEventType:      audit.Kind,
+		CreatedAt:            audit.CreatedAt,
+	})
+}
+
+type billingEventRefs struct {
+	TenantID             string
+	BillingAttributionID string
+	FileRef              string
+	RunRef               string
+	ArtifactRef          string
+}

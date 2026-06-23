@@ -166,6 +166,10 @@ func (service *Service) BillingSummary(ctx context.Context, input WorkspaceInput
 	if err != nil {
 		return BillingSummary{}, err
 	}
+	billingEvents, err := service.store.ListBillingEvents(ctx, workspaceID)
+	if err != nil {
+		return BillingSummary{}, err
+	}
 	runCount := 0
 	for _, event := range events {
 		if event.Kind == cpd.AuditKindRunSucceeded {
@@ -180,7 +184,10 @@ func (service *Service) BillingSummary(ctx context.Context, input WorkspaceInput
 		Totals:    Costs{CPUCost: totalCost, GPUCost: 0, PVCost: 0.1, TotalCost: totalCost + 0.1},
 		Filter:    BillingFilter{Range: "local-rc", From: "", To: ""},
 		TodayCost: totalCost + 0.1,
-		Ledger:    ledgerFromEvents(events, reconciliationIndex{files: files, runs: runs, artifacts: artifacts, ledgers: ledgers}),
+		Ledger:    ledgerFromBillingEvents(billingEvents),
+	}
+	if len(summary.Ledger) == 0 {
+		summary.Ledger = ledgerFromEvents(events, reconciliationIndex{files: files, runs: runs, artifacts: artifacts, ledgers: ledgers})
 	}
 	summary.Breakdown.CPUCost = totalCost
 	summary.Breakdown.StorageCost = 0.1
@@ -273,6 +280,30 @@ func ledgerFromEvents(events []cpd.AuditEvent, index reconciliationIndex) []Ledg
 			ArtifactRef:          artifactRefForEvent(index.artifacts, event),
 			SourceEventID:        event.ID,
 			SourceEventType:      event.Kind,
+			CreatedAt:            event.CreatedAt,
+		})
+	}
+	return items
+}
+
+func ledgerFromBillingEvents(events []cpd.BillingEvent) []LedgerItem {
+	items := make([]LedgerItem, 0, len(events))
+	for _, event := range events {
+		items = append(items, LedgerItem{
+			ID:                   event.ID,
+			Type:                 event.Type,
+			Amount:               event.Amount,
+			Currency:             event.Currency,
+			Reason:               event.Reason,
+			OwnerScope:           event.OwnerScope,
+			WorkspaceID:          event.WorkspaceID,
+			ResourceBindingID:    event.ResourceBindingID,
+			BillingAttributionID: event.BillingAttributionID,
+			FileRef:              event.FileRef,
+			RunRef:               event.RunRef,
+			ArtifactRef:          event.ArtifactRef,
+			SourceEventID:        event.SourceEventID,
+			SourceEventType:      event.SourceEventType,
 			CreatedAt:            event.CreatedAt,
 		})
 	}

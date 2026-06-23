@@ -169,6 +169,16 @@ func (service *Service) StartRun(ctx context.Context, input StartRunInput) (Publ
 		if err := service.store.SaveAuditEvent(ctx, event); err != nil {
 			return PublicRunResult{}, err
 		}
+		refs := billingEventRefs{}
+		if event.Kind == cpd.AuditKindRunSucceeded {
+			refs.RunRef = result.Run.RunRef
+		}
+		if event.Kind == cpd.AuditKindArtifactAvailable {
+			refs.ArtifactRef = artifactRef
+		}
+		if err := service.saveBillingEventForAudit(ctx, event, refs); err != nil {
+			return PublicRunResult{}, err
+		}
 	}
 	return result, nil
 }

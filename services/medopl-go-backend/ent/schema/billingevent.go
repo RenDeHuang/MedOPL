@@ -23,6 +23,7 @@ func (BillingEvent) Fields() []ent.Field {
 		field.String("idempotency_key").NotEmpty().Unique(),
 		field.Float("amount").Default(0),
 		field.String("currency").Default("CNY"),
+		field.JSON("payload", map[string]any{}),
 		field.Time("created_at").Default(time.Now).Immutable(),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
 	}

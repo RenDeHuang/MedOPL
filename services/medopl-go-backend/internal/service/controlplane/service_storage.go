@@ -94,6 +94,9 @@ func (service *Service) DestroyStorage(ctx context.Context, input DestroyStorage
 	if err := service.store.SaveAuditEvent(ctx, audit); err != nil {
 		return StorageDestroyReceipt{}, err
 	}
+	if err := service.saveBillingEventForAudit(ctx, audit, billingEventRefs{}); err != nil {
+		return StorageDestroyReceipt{}, err
+	}
 	return StorageDestroyReceipt{
 		Ok:                true,
 		StorageDestroyed:  true,

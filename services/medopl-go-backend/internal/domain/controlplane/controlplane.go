@@ -83,6 +83,27 @@ type CreditEvent struct {
 	CreatedAt      string  `json:"createdAt,omitempty"`
 }
 
+type BillingEvent struct {
+	ID                   string  `json:"id"`
+	TenantID             string  `json:"tenantId"`
+	WorkspaceID          string  `json:"workspaceId"`
+	Type                 string  `json:"type"`
+	Status               string  `json:"status"`
+	IdempotencyKey       string  `json:"idempotencyKey"`
+	Amount               float64 `json:"amount"`
+	Currency             string  `json:"currency"`
+	Reason               string  `json:"reason,omitempty"`
+	OwnerScope           string  `json:"ownerScope,omitempty"`
+	ResourceBindingID    string  `json:"resourceBindingId,omitempty"`
+	BillingAttributionID string  `json:"billingAttributionId,omitempty"`
+	FileRef              string  `json:"fileRef,omitempty"`
+	RunRef               string  `json:"runRef,omitempty"`
+	ArtifactRef          string  `json:"artifactRef,omitempty"`
+	SourceEventID        string  `json:"sourceEventId,omitempty"`
+	SourceEventType      string  `json:"sourceEventType,omitempty"`
+	CreatedAt            string  `json:"createdAt"`
+}
+
 type PrepareBusinessAccountInput struct {
 	TenantID     string
 	PortalUserID string
