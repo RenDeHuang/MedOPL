@@ -149,6 +149,39 @@ jobs:
           chmod 600 "$RUNNER_TEMP/kubeconfig"
           echo "TENCENT_DEPLOY_KUBECONFIG_REF=$RUNNER_TEMP/kubeconfig" >> "$GITHUB_ENV"
 
+      - name: Validate in-cluster database secret shape
+        shell: bash
+        run: |
+          encoded="$(kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl get secret medopl-postgres -o 'jsonpath={.data.DATABASE_URL}')"
+          DATABASE_URL_B64="$encoded" node <<'NODE'
+          const encoded = String(process.env.DATABASE_URL_B64 || "");
+          const raw = Buffer.from(encoded.trim(), "base64").toString("utf8").trim();
+          function fail(message) {
+            console.error(message);
+            process.exit(1);
+          }
+          if (!raw) fail("DATABASE_URL required for in-cluster production secret");
+          let parsed;
+          try {
+            parsed = new URL(raw);
+          } catch {
+            fail("DATABASE_URL must be a valid postgres URL");
+          }
+          if (!["postgres:", "postgresql:"].includes(parsed.protocol)) {
+            fail("DATABASE_URL must use postgres protocol");
+          }
+          if (!parsed.hostname) fail("DATABASE_URL hostname required");
+          if (parsed.hostname.includes(":") && !parsed.host.includes("[")) {
+            fail("DATABASE_URL hostname must not include a port segment");
+          }
+          if (parsed.port) {
+            const port = Number.parseInt(parsed.port, 10);
+            if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+              fail("DATABASE_URL port out of range");
+            }
+          }
+          NODE
+
       - name: Install Goal F runner dependencies
         run: npm ci
 

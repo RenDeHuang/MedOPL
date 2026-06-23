@@ -482,6 +482,21 @@ assert(
   "production_apply_must_validate_database_url_shape_before_goal_f_receipt_inputs",
 );
 assert(
+  productionApplyJob.includes("Validate in-cluster database secret shape") &&
+    productionApplyJob.includes("kubectl --kubeconfig") &&
+    productionApplyJob.includes("get secret medopl-postgres") &&
+    productionApplyJob.includes("jsonpath={.data.DATABASE_URL}") &&
+    productionApplyJob.includes("Buffer.from(encoded.trim(), \"base64\")") &&
+    productionApplyJob.includes("DATABASE_URL must be a valid postgres URL") &&
+    productionApplyJob.includes("DATABASE_URL hostname must not include a port segment"),
+  "production_apply_must_validate_incluster_database_secret_shape_before_rollout",
+);
+assert(
+  productionApplyJob.indexOf("Write kubeconfig file") < productionApplyJob.indexOf("Validate in-cluster database secret shape") &&
+    productionApplyJob.indexOf("Validate in-cluster database secret shape") < productionApplyJob.indexOf("Runtime receipt preflight"),
+  "production_apply_must_validate_incluster_database_secret_after_kubeconfig_before_receipts",
+);
+assert(
   productionApplyJob.indexOf("npm ci") < productionApplyJob.indexOf("Create Goal F receipt inputs"),
   "production_apply_must_install_dependencies_before_goal_f_receipt_inputs",
 );
