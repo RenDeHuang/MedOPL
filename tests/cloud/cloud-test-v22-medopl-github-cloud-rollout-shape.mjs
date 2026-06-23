@@ -482,6 +482,24 @@ assert(
   "production_apply_must_validate_database_url_shape_before_goal_f_receipt_inputs",
 );
 assert(
+  productionApplyJob.includes("Validate production database authentication source") &&
+    productionApplyJob.includes("const pg = require(\"pg\")") &&
+    productionApplyJob.includes("production postgres authentication source ok") &&
+    productionApplyJob.includes("DATABASE_URL_REF") &&
+    !productionApplyJob.includes("console.log(raw)"),
+  "production_apply_must_validate_github_database_url_auth_before_syncing_incluster_secret",
+);
+assert(
+  productionApplyJob.includes("Sync in-cluster database secret from production source") &&
+    productionApplyJob.includes("kubectl --kubeconfig \"$TENCENT_DEPLOY_KUBECONFIG_REF\" --namespace medopl create secret generic medopl-postgres") &&
+    productionApplyJob.includes("printf 'DATABASE_URL=%s\\n' \"$DATABASE_URL\" > \"$RUNNER_TEMP/medopl-postgres.env\"") &&
+    productionApplyJob.includes("--from-env-file=\"$RUNNER_TEMP/medopl-postgres.env\"") &&
+    productionApplyJob.includes("--dry-run=client -o yaml") &&
+    productionApplyJob.includes("kubectl --kubeconfig \"$TENCENT_DEPLOY_KUBECONFIG_REF\" --namespace medopl apply -f -") &&
+    !productionApplyJob.includes("echo \"$DATABASE_URL\""),
+  "production_apply_must_sync_incluster_database_secret_from_github_production_source_without_printing_secret",
+);
+assert(
   productionApplyJob.includes("Validate in-cluster database secret shape") &&
     productionApplyJob.includes("kubectl --kubeconfig") &&
     productionApplyJob.includes("get secret medopl-postgres") &&
@@ -490,6 +508,12 @@ assert(
     productionApplyJob.includes("DATABASE_URL must be a valid postgres URL") &&
     productionApplyJob.includes("DATABASE_URL hostname must not include a port segment"),
   "production_apply_must_validate_incluster_database_secret_shape_before_rollout",
+);
+assert(
+  productionApplyJob.indexOf("Validate production database secret shape") < productionApplyJob.indexOf("Validate production database authentication source") &&
+    productionApplyJob.indexOf("Validate production database authentication source") < productionApplyJob.indexOf("Sync in-cluster database secret from production source") &&
+    productionApplyJob.indexOf("Sync in-cluster database secret from production source") < productionApplyJob.indexOf("Validate in-cluster database secret shape"),
+  "production_apply_must_validate_source_then_sync_secret_then_validate_incluster_shape",
 );
 assert(
   productionApplyJob.indexOf("Write kubeconfig file") < productionApplyJob.indexOf("Validate in-cluster database secret shape") &&
@@ -507,7 +531,7 @@ assert(
 );
 assert(
   productionApplyJob.indexOf("Install Goal F runner dependencies") < productionApplyJob.indexOf("Validate in-cluster database secret authentication") &&
-    productionApplyJob.indexOf("Validate in-cluster database secret authentication") < productionApplyJob.indexOf("Validate production database secret shape"),
+    productionApplyJob.indexOf("Validate in-cluster database secret authentication") < productionApplyJob.indexOf("Create Goal F receipt inputs"),
   "production_apply_must_validate_incluster_database_auth_after_dependencies_before_goal_f_receipts",
 );
 assert(

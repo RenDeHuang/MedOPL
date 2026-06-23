@@ -149,6 +149,93 @@ jobs:
           chmod 600 "$RUNNER_TEMP/kubeconfig"
           echo "TENCENT_DEPLOY_KUBECONFIG_REF=$RUNNER_TEMP/kubeconfig" >> "$GITHUB_ENV"
 
+      - name: Install Goal F runner dependencies
+        run: npm ci
+
+      - name: Validate production database secret shape
+        shell: bash
+        run: |
+          node <<'NODE'
+          const raw = String(process.env.DATABASE_URL || "").trim();
+          function fail(message) {
+            console.error(message);
+            process.exit(1);
+          }
+          if (!raw) fail("DATABASE_URL required for production rollout");
+          let parsed;
+          try {
+            parsed = new URL(raw);
+          } catch {
+            fail("DATABASE_URL must be a valid postgres URL");
+          }
+          if (!["postgres:", "postgresql:"].includes(parsed.protocol)) {
+            fail("DATABASE_URL must use postgres protocol");
+          }
+          if (!parsed.hostname) fail("DATABASE_URL hostname required");
+          if (parsed.port) {
+            const port = Number.parseInt(parsed.port, 10);
+            if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+              fail("DATABASE_URL port out of range");
+            }
+          }
+          NODE
+
+      - name: Validate production database authentication source
+        shell: bash
+        run: |
+          node --input-type=commonjs <<'NODE'
+          const pg = require("pg");
+          const raw = String(process.env.DATABASE_URL || "").trim();
+          function fail(message) {
+            console.error(message);
+            process.exit(1);
+          }
+          if (!raw) fail("DATABASE_URL required for production database authentication source");
+          let parsed;
+          try {
+            parsed = new URL(raw);
+          } catch {
+            fail("DATABASE_URL must be a valid postgres URL");
+          }
+          if (!["postgres:", "postgresql:"].includes(parsed.protocol)) {
+            fail("DATABASE_URL must use postgres protocol");
+          }
+          const client = new pg.Client({ connectionString: raw, connectionTimeoutMillis: 5000 });
+          (async () => {
+            try {
+              await client.connect();
+              await client.query("select 1 as ok");
+              console.log(JSON.stringify({
+                ok: true,
+                message: "production postgres authentication source ok",
+                databaseUrlRef: "DATABASE_URL_REF",
+                host: parsed.hostname,
+                port: parsed.port || "default",
+                database: parsed.pathname.replace(/^\//u, "") || "default",
+                user: parsed.username || "default"
+              }));
+            } catch (error) {
+              fail(`production postgres authentication source failed for DATABASE_URL_REF: ${String(error.message || "unknown").replace(raw, "DATABASE_URL_REF")}`);
+            } finally {
+              await client.end().catch(() => {});
+            }
+          })();
+          NODE
+
+      - name: Sync in-cluster database secret from production source
+        shell: bash
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "DATABASE_URL required for in-cluster production secret sync" >&2
+            exit 1
+          fi
+          printf 'DATABASE_URL=%s\n' "$DATABASE_URL" > "$RUNNER_TEMP/medopl-postgres.env"
+          chmod 600 "$RUNNER_TEMP/medopl-postgres.env"
+          kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl create secret generic medopl-postgres \
+            --from-env-file="$RUNNER_TEMP/medopl-postgres.env" \
+            --dry-run=client -o yaml \
+            | kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl apply -f -
+
       - name: Validate in-cluster database secret shape
         shell: bash
         run: |
@@ -181,9 +268,6 @@ jobs:
             }
           }
           NODE
-
-      - name: Install Goal F runner dependencies
-        run: npm ci
 
       - name: Validate in-cluster database secret authentication
         shell: bash
@@ -227,34 +311,6 @@ jobs:
               await client.end().catch(() => {});
             }
           })();
-          NODE
-
-      - name: Validate production database secret shape
-        shell: bash
-        run: |
-          node <<'NODE'
-          const raw = String(process.env.DATABASE_URL || "").trim();
-          function fail(message) {
-            console.error(message);
-            process.exit(1);
-          }
-          if (!raw) fail("DATABASE_URL required for production rollout");
-          let parsed;
-          try {
-            parsed = new URL(raw);
-          } catch {
-            fail("DATABASE_URL must be a valid postgres URL");
-          }
-          if (!["postgres:", "postgresql:"].includes(parsed.protocol)) {
-            fail("DATABASE_URL must use postgres protocol");
-          }
-          if (!parsed.hostname) fail("DATABASE_URL hostname required");
-          if (parsed.port) {
-            const port = Number.parseInt(parsed.port, 10);
-            if (!Number.isInteger(port) || port <= 0 || port > 65535) {
-              fail("DATABASE_URL port out of range");
-            }
-          }
           NODE
 
       - name: Create Goal F receipt inputs
