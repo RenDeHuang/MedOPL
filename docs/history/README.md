@@ -17,7 +17,7 @@ History 只保留短索引：
 ## Latest Machine Cursor
 
 - latest landed branch: `recovery/platform-v22-trunk`
-- latest landed commit: `874bd20fc6fef9f9268ad2b058489d7dd7cc37de`
+- latest landed commit: `ef7dbf94ae16cad6010aa3146037ab7c2e87a67f`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
@@ -61,6 +61,7 @@ History 只保留短索引：
 - Production dependency/security receipt binding: the existing production receipt boundary now binds `production_dependency_security_receipt` to root and Portal frontend production dependency audit gates from the Portal UI quality contract, with repo-hygiene summary evidence only and raw audit payloads forbidden. This is local contract/runner hardening only; it does not claim deploy, live-test or production complete.
 - Browser accessibility / S-level UI receipt binding: the existing production receipt boundary now binds `browser_accessibility_verification_receipt` and `s_level_ui_polish_receipt` to the Portal UI quality contract checks and the existing browser regression consumer, with browser-regression summary evidence only and raw screenshots/runtime evidence forbidden. This is local contract/runner hardening only; it does not claim deploy, live-test or production complete.
 - Ops observability / rollback / monitoring receipt binding: the existing production receipt boundary now binds `observability_deploy_receipt`, `rollback_readiness_receipt` and `post_release_monitoring_receipt` to the existing cloud rollout runner, active authorization rollback commands, availability probe and summary-only evidence policy. This is local contract/runner hardening only; it does not claim rollback execution, live-test, ongoing monitoring or production complete.
+- PostgreSQL business persistence RC: `feat/v22-postgres-business-persistence` / `ef7dbf94ae16cad6010aa3146037ab7c2e87a67f` makes production Go backend fail closed without `DATABASE_URL`, selects Postgres in production, keeps local/test on memory, persists control-plane metadata through the store, and uses typed account/credit tables for idempotent atomic credit updates. This is Phase A source/local gate evidence only; live DB rollout, full typed-table normalization, billing reconciliation, stability/concurrency soak and production complete remain unclaimed.
 
 ## Tombstone Map
 
