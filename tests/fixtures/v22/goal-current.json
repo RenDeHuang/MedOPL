@@ -33,16 +33,21 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "feat/v22-incluster-db-secret-preflight",
-    "landed_commit": "a45beaa5ad4f159bf26f336224d2dc58a0d7070b",
+    "branch": "feat/v22-incluster-db-auth-preflight",
+    "landed_commit": "c38783f41798784608d8f77acf0d881ccfb5c420",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
       "node tests/cloud/cloud-test-v22-medopl-github-cloud-rollout-shape.mjs PASS",
-      "npm run test:run-plan PASS",
+      "npm run test:cloud PASS",
+      "npm run test:contract PASS",
       "npm run verify PASS",
       "npm run gate:review PASS",
       "npm run repo:bloat PASS",
-      "npm run line:budget PASS"
+      "npm run line:budget PASS",
+      "npm run cloud:rollout:availability PASS",
+      "Release Image 28041688616 PASS",
+      "Cloud Rollout 28041744367 failed closed at rollout apply with PostgreSQL authentication failure",
+      "rollback 28042319047 PASS"
     ],
     "plan_completion_audit": {
       "functional": "done",
@@ -54,10 +59,10 @@
     },
     "cleanup_result": {
       "deleted": "none",
-      "folded": "In-cluster medopl-postgres DATABASE_URL shape preflight into existing Cloud Rollout workflow and cloud shape gate",
-      "retained": "business capability RC and rollout remain blocked until the TKE medopl-postgres secret is corrected and Cloud Rollout passes",
-      "reason": "production pod reads DATABASE_URL from Kubernetes secret medopl-postgres, not only GitHub workflow environment",
-      "next": "update medopl-postgres secret DATABASE_URL to a single-port postgres URL, then rerun Release Image and Cloud Rollout"
+      "folded": "In-cluster medopl-postgres DATABASE_URL authentication preflight folded into existing Cloud Rollout workflow and cloud shape gate",
+      "retained": "business capability RC and rollout remain blocked until the TKE medopl-postgres secret authenticates against the production PostgreSQL server",
+      "reason": "f03fe35 rollout failed because the in-cluster secret used medopl credentials rejected by PostgreSQL, while rollback kept the prior cloud RC image available",
+      "next": "update medopl-postgres secret with a DATABASE_URL that passes in-cluster authentication, then rerun Release Image and Cloud Rollout"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "opl-webui-runtime-production-slice"
@@ -72,7 +77,7 @@
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth",
     "ongoing_authorization_multi_region_sla_enterprise_compliance_and_unobserved_tenants_resources_remain_unclaimed"
   ],
-  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is feat/v22-incluster-db-secret-preflight at a45beaa5ad4f159bf26f336224d2dc58a0d7070b. Current trunk keeps Portal UI/UX production gates hardened, requires the production-complete owner gate for production-ready claims, and closes the release auditEventId canary blocker. GitHub v22 verify run 27974444437 passed for Portal production UI gate hardening; Release Image run 28012858200 built image tag 8753e2b; Cloud Rollout run 28013437604 passed rollout apply, Portal public entry, HTTP redirect, Go health/ready availability, OPL-Webui consumer canary, production receipt manifest and verify:cloud-release-candidate. The redacted manifest contains seven owner receipts, 12 lifecycle sections, claim=cloud_release_candidate, state=complete and sha256 3d2b6e8ffe3601ccc3f0489e59079657af0fe2f9972cf9f34713d170903cd85b. This can claim cloud release candidate evidence for the current authorized canary path only, including Portal public entry and HTTP redirect availability. It does not claim production complete, multi-region/SLA, enterprise compliance, ongoing authorization, unobserved tenants/resources, or long-running stability. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is feat/v22-incluster-db-secret-preflight at a45beaa5ad4f159bf26f336224d2dc58a0d7070b.",
+  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is feat/v22-incluster-db-auth-preflight at c38783f41798784608d8f77acf0d881ccfb5c420. Current trunk keeps Portal UI/UX production gates hardened, requires the production-complete owner gate for production-ready claims, and closes the release auditEventId canary blocker. GitHub v22 verify run 27974444437 passed for Portal production UI gate hardening; Release Image run 28012858200 built image tag 8753e2b; Cloud Rollout run 28013437604 passed rollout apply, Portal public entry, HTTP redirect, Go health/ready availability, OPL-Webui consumer canary, production receipt manifest and verify:cloud-release-candidate. The redacted manifest contains seven owner receipts, 12 lifecycle sections, claim=cloud_release_candidate, state=complete and sha256 3d2b6e8ffe3601ccc3f0489e59079657af0fe2f9972cf9f34713d170903cd85b. This can claim cloud release candidate evidence for the current authorized canary path only, including Portal public entry and HTTP redirect availability. It does not claim production complete, multi-region/SLA, enterprise compliance, ongoing authorization, unobserved tenants/resources, or long-running stability. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is feat/v22-incluster-db-auth-preflight at c38783f41798784608d8f77acf0d881ccfb5c420.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -631,9 +636,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/v22-incluster-db-secret-preflight",
+  "last_landed_branch": "feat/v22-incluster-db-auth-preflight",
   "last_landed_at": "2026-06-23",
-  "history_latest_branch": "feat/v22-incluster-db-secret-preflight",
+  "history_latest_branch": "feat/v22-incluster-db-auth-preflight",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -1011,8 +1016,8 @@
       "cannot_claim": "rollback executed, live-test covered, ongoing monitoring accepted, production deploy receipt accepted, or production complete"
     }
   },
-  "base_trunk_head": "a45beaa5ad4f159bf26f336224d2dc58a0d7070b",
-  "last_landed_commit": "a45beaa5ad4f159bf26f336224d2dc58a0d7070b",
+  "base_trunk_head": "c38783f41798784608d8f77acf0d881ccfb5c420",
+  "last_landed_commit": "c38783f41798784608d8f77acf0d881ccfb5c420",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
