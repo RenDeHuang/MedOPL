@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/v22-rollout-safe-rollback`
-- latest landed commit: `f86b0358fb0cb4a3b30995f0e622d55092fdb71a`
+- latest landed branch: `feat/v22-business-capability-preflight`
+- latest landed commit: `5f4af776ea7b22bceadaf13166fcd93cfa129e01`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
