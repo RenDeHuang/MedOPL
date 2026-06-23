@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/v22-billing-audit-reconciliation-rc`
-- latest landed commit: `8e0caa03e3c3ceaeb291e51ac6230dab601c2272`
+- latest landed branch: `feat/v22-stability-concurrency-idempotency-rc`
+- latest landed commit: `0417c38fa99e817fd2b762717da889e6b94f9297`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
