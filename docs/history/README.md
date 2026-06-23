@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/v22-incluster-db-auth-preflight`
-- latest landed commit: `c38783f41798784608d8f77acf0d881ccfb5c420`
+- latest landed branch: `feat/v22-sync-prod-db-secret-before-rollout`
+- latest landed commit: `47738ead2e54f9d968f8526baa836c013e8a7e13`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
