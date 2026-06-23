@@ -1,43 +1,104 @@
-import { useOverviewModel } from "../data/portalOverviewModel";
-import { Badge, Button, Card, Progress } from "../components/ui/core";
 import { Link } from "react-router";
+import { ArrowRight, FileText } from "lucide-react";
+import { useOverviewModel } from "../data/portalOverviewModel";
 import {
-  CheckCircle2,
-  ArrowRight,
-  Server,
-  HardDrive,
-  Clock,
-  Zap,
-  FileText,
-  AlertCircle,
-  DollarSign,
-  PlayCircle,
-  CheckCircle,
-  XCircle,
-  FolderOpen,
-  TrendingUp,
-  Shield,
-  ExternalLink,
-} from "lucide-react";
-import { ResourceStatusCard } from "../components/ResourceControlComponents";
+  BillingSummary,
+  ReadinessChecklist,
+  ResourceStatusCard,
+  StorageInventoryPanel,
+  type ResourceControlState,
+} from "../components/ResourceControlComponents";
+import { Badge, Button, Card } from "../components/ui/core";
 import { Error } from "./system/Error";
 
 type ServiceStatus = "ready" | "restricted" | "unprovisioned" | "degraded";
+
+function resourceState(status: ServiceStatus): ResourceControlState {
+  if (status === "ready") return "ready";
+  if (status === "restricted") return "blocked";
+  if (status === "degraded") return "failed";
+  return "empty";
+}
+
+function statusLabel(status: ServiceStatus) {
+  if (status === "ready") return "可用";
+  if (status === "restricted") return "受限";
+  if (status === "degraded") return "异常";
+  return "待开通";
+}
+
+function overviewHeadline(status: ServiceStatus) {
+  if (status === "ready") return "计算资源和存储空间可用";
+  if (status === "restricted") return "资源受限，请先处理费用";
+  if (status === "degraded") return "资源状态异常，需要查看详情";
+  return "选择套餐开通计算资源";
+}
+
+function overviewCopy(status: ServiceStatus) {
+  if (status === "ready") return "你的 OPL 云端计算资源和存储空间当前状态正常，可以进入 OPL 使用。";
+  if (status === "restricted") return "当前余额或冻结金额需要处理。处理后再继续使用计算资源和存储空间。";
+  if (status === "degraded") return "资源状态需要排查。先查看计算资源和费用状态，再决定是否进入 OPL。";
+  return "开通计算资源和存储空间后，即可回到 OPL 使用云端能力。";
+}
+
+function PrimaryOverviewAction({ status }: { status: ServiceStatus }) {
+  if (status === "ready") {
+    return (
+      <Button asChild className="w-full gap-2 sm:w-auto">
+        <Link to="/opl-launch">
+          进入 OPL
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </Button>
+    );
+  }
+
+  if (status === "restricted") {
+    return (
+      <Button asChild className="w-full gap-2 sm:w-auto">
+        <Link to="/billing">
+          处理费用
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </Button>
+    );
+  }
+
+  if (status === "degraded") {
+    return (
+      <Button asChild className="w-full gap-2 sm:w-auto">
+        <Link to="/resources">
+          查看计算资源
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </Button>
+    );
+  }
+
+  return (
+    <Button asChild className="w-full gap-2 sm:w-auto">
+      <Link to="/packages">
+        选择套餐
+        <ArrowRight className="h-4 w-4" />
+      </Link>
+    </Button>
+  );
+}
 
 export function Overview() {
   const query = useOverviewModel();
 
   if (query.status === "loading") {
     return (
-      <div className="p-8 max-w-7xl mx-auto">
-        <Card className="border border-neutral-200 p-6 text-sm text-neutral-600">正在读取 Portal 总览数据...</Card>
+      <div className="mx-auto max-w-7xl p-8">
+        <Card className="border border-neutral-200 p-6 text-sm text-neutral-600">正在读取资源总览数据...</Card>
       </div>
     );
   }
 
   if (query.status === "error") {
     return (
-      <div className="p-8 max-w-7xl mx-auto">
+      <div className="mx-auto max-w-7xl p-8">
         <Error description={query.error} onRetry={() => window.location.reload()} />
       </div>
     );
@@ -45,480 +106,132 @@ export function Overview() {
 
   const model = query.data;
   const serviceStatus: ServiceStatus = model.serviceStatus;
+  const state = resourceState(serviceStatus);
+  const computeTitle = serviceStatus === "unprovisioned" ? "计算资源未开通" : model.planName;
+  const computeSpec = serviceStatus === "unprovisioned"
+    ? "前往套餐与购买页面选择配置，开通后即可进入 OPL。"
+    : model.planSpec;
+  const storageState: ResourceControlState = serviceStatus === "unprovisioned" ? "empty" : state;
+  const billingState: ResourceControlState = serviceStatus === "restricted" ? "blocked" : state;
 
-  // Unprovisioned State
-  if (serviceStatus === "unprovisioned") {
-    return (
-      <div className="p-8 max-w-7xl mx-auto">
-        {/* Hero - Service Status */}
-        <div className="mb-8 pb-8 border-b border-neutral-200">
-          <div data-ui-section="overview-primary-hero" className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 mb-3">
-                <Badge variant="outline" className="bg-neutral-100 text-neutral-600 border-neutral-200">
-                  资源总览
-                </Badge>
-                <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                  待开通
-                </Badge>
-              </div>
-              <h2 className="text-2xl font-semibold text-neutral-900 mb-3">
-                选择套餐开通计算资源
-              </h2>
-              <p className="text-neutral-600 text-sm max-w-2xl">
-                开通计算资源和存储空间后，即可回到 OPL 使用云端能力
-              </p>
-            </div>
-            <Button asChild className="w-full gap-2 sm:w-auto">
-              <Link to="/packages">
-                选择套餐
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-
-        <ResourceStatusCard
-          status="empty"
-          title="计算资源未开通"
-          spec="前往套餐与购买页面选择适合的配置，开通后即可进入 OPL。"
-          receiptState="待开通"
-          primaryAction={
-            <Button asChild>
-              <Link to="/packages">前往套餐与购买</Link>
-            </Button>
-          }
-        />
-      </div>
-    );
-  }
-
-  // Restricted State
-  if (serviceStatus === "restricted") {
-    return (
-      <div className="p-8 max-w-7xl mx-auto">
-        {/* Hero - Service Status */}
-        <div className="mb-8 pb-8 border-b border-neutral-200">
-          <div data-ui-section="overview-primary-hero" className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 mb-3">
-                <Badge variant="outline" className="bg-neutral-100 text-neutral-600 border-neutral-200">
-                  资源总览
-                </Badge>
-                <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
-                  <AlertCircle className="w-3 h-3 mr-1" />
-                  受限
-                </Badge>
-              </div>
-              <h2 className="text-2xl font-semibold text-neutral-900 mb-3">
-                资源受限，请处理余额
-              </h2>
-              <p className="text-neutral-600 text-sm max-w-2xl">
-                当前余额不足或冻结金额异常，部分功能受限，处理后即可恢复正常使用
-              </p>
-            </div>
-            <Button asChild className="w-full gap-2 sm:w-auto">
-              <Link to="/billing">
-                处理余额
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </Button>
-          </div>
-        </div>
-
-        {/* Financial Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 mb-8">
-          <Card className="p-4 border border-neutral-200">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-neutral-600">余额</span>
-              <DollarSign className="w-4 h-4 text-neutral-400" />
-            </div>
-            <div className="text-2xl font-semibold text-neutral-900">{model.balance}</div>
-            <div className="text-xs text-neutral-500 mt-1">总余额</div>
-          </Card>
-
-          <Card className="p-4 border border-orange-200 bg-orange-50">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-orange-700">可用余额</span>
-              <AlertCircle className="w-4 h-4 text-orange-600" />
-            </div>
-            <div className="text-2xl font-semibold text-orange-700">{model.availableBalance}</div>
-            <div className="text-xs text-orange-600 mt-1">余额偏低</div>
-          </Card>
-
-          <Card className="p-4 border border-neutral-200">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-neutral-600">冻结金额</span>
-              <Zap className="w-4 h-4 text-neutral-400" />
-            </div>
-            <div className="text-2xl font-semibold text-orange-600">{model.frozenAmount}</div>
-            <div className="text-xs text-neutral-500 mt-1">预扣计费</div>
-          </Card>
-
-          <Card className="p-4 border border-neutral-200">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-neutral-600">今日消费</span>
-              <TrendingUp className="w-4 h-4 text-neutral-400" />
-            </div>
-            <div className="text-2xl font-semibold text-neutral-900">{model.todayCost}</div>
-            <div className="text-xs text-neutral-500 mt-1">费用估算</div>
-          </Card>
-
-          <Card className="p-4 border border-neutral-200">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-neutral-600">累计消费</span>
-              <TrendingUp className="w-4 h-4 text-neutral-400" />
-            </div>
-            <div className="text-2xl font-semibold text-neutral-900">{model.historicalCost}</div>
-            <div className="text-xs text-neutral-500 mt-1">本月</div>
-          </Card>
-        </div>
-
-        <Card className="border border-orange-200 bg-orange-50">
-          <div className="p-6">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center flex-shrink-0">
-                <AlertCircle className="w-6 h-6 text-orange-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-orange-900 mb-2">余额不足预警</h3>
-                <p className="text-sm text-orange-800 mb-4">
-                  当前可用余额不足，可能影响任务执行和资源使用。建议尽快充值以确保服务正常运行。
-                </p>
-                <Button asChild>
-                  <Link to="/billing">前往费用与用量</Link>
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
-  // Ready State
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      {/* Hero - Service Status and Main Action */}
-      <div className="mb-8 pb-8 border-b border-neutral-200">
+    <div className="mx-auto max-w-7xl p-8" data-ui-template="resource-console-overview">
+      <div className="mb-8 border-b border-neutral-200 pb-8">
         <div data-ui-section="overview-primary-hero" className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <div className="flex items-center gap-2 mb-3">
-              <Badge variant="outline" className="bg-neutral-100 text-neutral-600 border-neutral-200">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <Badge variant="outline" className="border-neutral-200 bg-neutral-100 text-neutral-700">
                 资源总览
               </Badge>
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                <CheckCircle2 className="w-3 h-3 mr-1" />
-                可用
+              <Badge variant="outline" className="border-teal-200 bg-teal-50 text-teal-700">
+                {statusLabel(serviceStatus)}
               </Badge>
             </div>
-            <h2 className="text-2xl font-semibold text-neutral-900 mb-3">
-              计算资源和存储空间可用
-            </h2>
-            <p className="text-neutral-600 text-sm max-w-2xl">
-              你的 OPL 云端计算资源和存储空间当前状态正常，可以进入 OPL 使用
-            </p>
+            <h2 className="mb-3 text-2xl font-semibold text-neutral-900">{overviewHeadline(serviceStatus)}</h2>
+            <p className="max-w-2xl text-sm text-neutral-600">{overviewCopy(serviceStatus)}</p>
           </div>
-          <Button asChild className="w-full gap-2 sm:w-auto">
-            <Link to="/opl-launch">
-              进入 OPL
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </Button>
+          <PrimaryOverviewAction status={serviceStatus} />
         </div>
       </div>
 
-      {/* Current Status Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
-        <Card className="p-4 border border-neutral-200">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-neutral-600">套餐</span>
-            <Server className="w-4 h-4 text-neutral-400" />
-          </div>
-          <div className="text-2xl font-semibold text-neutral-900">{model.planName}</div>
-          <div className="text-xs text-neutral-500 mt-1">{model.planSpec}</div>
-        </Card>
+      <div data-ui-section="overview-core-resources" className="mb-8 grid grid-cols-1 gap-5 xl:grid-cols-3">
+        <ResourceStatusCard
+          status={state}
+          title={computeTitle}
+          spec={computeSpec}
+          receiptState={serviceStatus === "unprovisioned" ? "待开通" : model.pricingStatus}
+          primaryAction={
+            <Button asChild variant={serviceStatus === "ready" ? "outline" : "default"}>
+              <Link to={serviceStatus === "unprovisioned" ? "/packages" : "/resources"}>
+                {serviceStatus === "unprovisioned" ? "购买计算资源" : "查看计算资源"}
+              </Link>
+            </Button>
+          }
+          metrics={[
+            { label: "套餐", value: model.planName },
+            { label: "并发任务", value: `${model.concurrent} 个` },
+            { label: "状态", value: statusLabel(serviceStatus) },
+          ]}
+        />
 
-        <Card className="p-4 border border-neutral-200">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-neutral-600">存储空间</span>
-            <HardDrive className="w-4 h-4 text-neutral-400" />
-          </div>
-          <div className="text-2xl font-semibold text-neutral-900">{model.storageUsed}</div>
-          <div className="text-xs text-neutral-500 mt-1">/ {model.storageTotal} ({model.storagePercent}%)</div>
-        </Card>
+        <StorageInventoryPanel
+          status={storageState}
+          capacity={model.storageTotal}
+          used={model.storageUsed}
+          available={model.storageAvailable}
+          percent={model.storagePercent}
+          files={`${model.inputFiles + model.outputFiles} 个文件`}
+          retentionState={serviceStatus === "unprovisioned" ? "开通存储空间后显示输入文件、输出文件和保留期。" : "输入文件和输出文件按存储空间保留策略管理。"}
+        />
 
-        <Card className="p-4 border border-neutral-200">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-neutral-600">可用余额</span>
-            <DollarSign className="w-4 h-4 text-neutral-400" />
-          </div>
-          <div className="text-2xl font-semibold text-neutral-900">{model.availableBalance}</div>
-          <div className="text-xs text-neutral-500 mt-1">冻结 {model.frozenAmount}</div>
-        </Card>
-
-        <Card className="p-4 border border-neutral-200">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm text-neutral-600">运行状态</span>
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-              正常
-            </Badge>
-          </div>
-          <div className="text-2xl font-semibold text-neutral-900">{model.runtimeDays}</div>
-          <div className="text-xs text-neutral-500 mt-1">已运行时长</div>
-        </Card>
+        <BillingSummary
+          status={billingState}
+          balance={model.availableBalance}
+          freeze={model.frozenAmount}
+          usage={model.todayCost}
+          usageLabel="费用估算"
+          auditState={serviceStatus === "restricted" ? "待处理" : "标准审计"}
+        />
       </div>
 
-      {/* Financial and Task Summary */}
-      <div className="mb-8">
-        <h2 className="font-semibold text-neutral-900 mb-4">资金与任务摘要</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 gap-4">
-          <Card className="p-4 border border-neutral-200">
-            <div className="text-sm text-neutral-600 mb-1">余额</div>
-            <div className="text-xl font-semibold text-neutral-900">{model.balance}</div>
-          </Card>
+      <div className="mb-8 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
+        <ReadinessChecklist
+          status={state}
+          items={[
+            {
+              label: "计算资源",
+              detail: serviceStatus === "unprovisioned" ? "尚未购买套餐和计算资源。" : `${model.planName} / ${model.planSpec}`,
+              state: serviceStatus === "unprovisioned" ? "empty" : state,
+            },
+            {
+              label: "存储空间",
+              detail: `${model.storageUsed} / ${model.storageTotal}`,
+              state: storageState,
+            },
+            {
+              label: "费用与用量",
+              detail: `可用余额 ${model.availableBalance}，冻结金额 ${model.frozenAmount}`,
+              state: billingState,
+            },
+            {
+              label: "进入 OPL",
+              detail: serviceStatus === "ready" ? "资源条件满足，可以进入 OPL。" : "按缺失步骤处理后再进入 OPL。",
+              state: serviceStatus === "ready" ? "ready" : "blocked",
+            },
+          ]}
+          primaryAction={
+            <PrimaryOverviewAction status={serviceStatus} />
+          }
+        />
 
-          <Card className="p-4 border border-neutral-200">
-            <div className="text-sm text-neutral-600 mb-1">可用余额</div>
-            <div className="text-xl font-semibold text-neutral-900">{model.availableBalance}</div>
-          </Card>
-
-          <Card className="p-4 border border-neutral-200">
-            <div className="text-sm text-neutral-600 mb-1">冻结金额</div>
-            <div className="text-xl font-semibold text-orange-600">{model.frozenAmount}</div>
-          </Card>
-
-          <Card className="p-4 border border-neutral-200">
-            <div className="text-sm text-neutral-600 mb-1">今日消费</div>
-            <div className="text-xl font-semibold text-neutral-900">{model.todayCost}</div>
-          </Card>
-
-          <Card className="p-4 border border-neutral-200">
-            <div className="text-sm text-neutral-600 mb-1">累计消费</div>
-            <div className="text-xl font-semibold text-neutral-900">{model.historicalCost}</div>
-          </Card>
-
-          <Card className="p-4 border border-neutral-200">
-            <div className="text-sm text-neutral-600 mb-1">会话数</div>
-            <div className="text-xl font-semibold text-neutral-900">{model.workspaceCount}</div>
-          </Card>
-
-          <Card className="p-4 border border-neutral-200">
-            <div className="text-sm text-neutral-600 mb-1">任务数</div>
-            <div className="text-xl font-semibold text-neutral-900">{model.runCount}</div>
-          </Card>
-        </div>
-      </div>
-
-      {/* Runtime Environment and Recent Tasks */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Runtime Environment Summary */}
-        <Card className="border border-neutral-200">
-          <div className="p-5 border-b border-neutral-200">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-neutral-900">计算资源</h2>
-              <Button asChild variant="ghost" size="sm" className="gap-1 text-neutral-600 hover:text-neutral-900">
-                <Link to="/resources">
-                  查看详情
-                  <ExternalLink className="w-3 h-3" />
-                </Link>
-              </Button>
+        <Card className="border border-neutral-200 p-5">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h2 className="font-semibold text-neutral-900">存储文件摘要</h2>
+              <p className="mt-1 text-sm text-neutral-600">这里只展示资源视角的输入文件和输出文件。</p>
+            </div>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/workspace">查看存储空间</Link>
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="rounded-md border border-neutral-200 p-3">
+              <div className="mb-1 flex items-center gap-2 text-xs text-neutral-600">
+                <FileText className="h-3.5 w-3.5" />
+                输入文件
+              </div>
+              <div className="text-lg font-semibold text-neutral-900">{model.inputFiles} 个</div>
+            </div>
+            <div className="rounded-md border border-neutral-200 p-3">
+              <div className="mb-1 flex items-center gap-2 text-xs text-neutral-600">
+                <FileText className="h-3.5 w-3.5" />
+                输出文件
+              </div>
+              <div className="text-lg font-semibold text-neutral-900">{model.outputFiles} 个</div>
             </div>
           </div>
-          <div className="p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Server className="w-4 h-4 text-neutral-400" />
-                <span className="text-sm text-neutral-600">当前套餐</span>
-              </div>
-              <div className="text-right">
-                <div className="font-semibold text-neutral-900">{model.planName}</div>
-                <div className="text-xs text-neutral-500">{model.planSpec}</div>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <HardDrive className="w-4 h-4 text-neutral-400" />
-                <span className="text-sm text-neutral-600">存储空间</span>
-              </div>
-              <div className="text-right">
-                <div className="font-semibold text-neutral-900">{model.storageUsed} / {model.storageTotal}</div>
-                <Progress value={model.storagePercent} className="h-1 w-24 mt-1" />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-neutral-400" />
-                <span className="text-sm text-neutral-600">计费状态</span>
-              </div>
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                正常
-              </Badge>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-neutral-400" />
-                <span className="text-sm text-neutral-600">审计状态</span>
-              </div>
-              <span className="text-sm font-medium text-neutral-900">标准审计</span>
-            </div>
-
-            <div className="pt-3 border-t border-neutral-200">
-              <div className="flex items-center gap-2 text-xs text-neutral-600">
-                <Clock className="w-3.5 h-3.5" />
-                <span>{model.runtimeDays} · {model.pricingStatus}</span>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Recent Tasks */}
-        <Card className="border border-neutral-200">
-          <div className="p-5 border-b border-neutral-200">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-neutral-900">最近任务</h2>
-              <Button asChild variant="ghost" size="sm" className="gap-1 text-neutral-600 hover:text-neutral-900">
-                <Link to="/billing">
-                  查看全部
-                  <ExternalLink className="w-3 h-3" />
-                </Link>
-              </Button>
-            </div>
-          </div>
-          <div className="p-5 space-y-3">
-            {model.recentTasks.map((task, i) => (
-              <div key={i} className="flex items-center justify-between py-2 hover:bg-neutral-50 rounded px-2 -mx-2 transition-colors">
-                <div className="flex items-center gap-3 flex-1">
-                  {task.status === "running" && (
-                    <PlayCircle className="w-4 h-4 text-teal-700 flex-shrink-0" />
-                  )}
-                  {task.status === "completed" && (
-                    <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
-                  )}
-                  {task.status === "failed" && (
-                    <XCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm text-neutral-900 truncate">{task.name}</div>
-                    <div className="text-xs text-neutral-500">
-                      {task.time}
-                      {task.files > 0 && ` · ${task.files} 个输出文件`}
-                    </div>
-                  </div>
-                </div>
-                {task.files > 0 && (
-                  <Button asChild variant="ghost" size="sm" className="text-xs text-teal-700 hover:bg-teal-50 hover:text-teal-800">
-                    <Link to="/workspace">查看结果</Link>
-                  </Button>
-                )}
-              </div>
-            ))}
-          </div>
-        </Card>
-      </div>
-
-      {/* Package and Workspace Summary */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Package Summary */}
-        <Card className="border border-neutral-200">
-          <div className="p-5 border-b border-neutral-200">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-neutral-900">套餐摘要</h2>
-              <Button asChild variant="ghost" size="sm" className="gap-1 text-neutral-600 hover:text-neutral-900">
-                <Link to="/resources">
-                  更改套餐
-                  <ExternalLink className="w-3 h-3" />
-                </Link>
-              </Button>
-            </div>
-          </div>
-          <div className="p-5">
-            <div className="mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-neutral-600">当前套餐</span>
-                <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200">
-                  {model.planName}
-                </Badge>
-              </div>
-              <div className="text-2xl font-semibold text-neutral-900 mb-1">
-                {model.priceLabel}
-              </div>
-              <div className="text-xs text-neutral-500">{model.pricingStatus}</div>
-            </div>
-
-            <div className="space-y-3 pt-4 border-t border-neutral-200">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-neutral-600">计算资源</span>
-                <span className="font-medium text-neutral-900">{model.planSpec}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-neutral-600">存储空间</span>
-                <span className="font-medium text-neutral-900">{model.storageTotal}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-neutral-600">并发能力</span>
-                <span className="font-medium text-neutral-900">{model.concurrent} 个任务</span>
-              </div>
-            </div>
-
-            <div className="mt-4 pt-4 border-t border-neutral-200 text-xs text-neutral-600">
-              支持增加计算资源和扩容存储空间
-            </div>
-          </div>
-        </Card>
-
-        {/* Workspace Summary */}
-        <Card className="border border-neutral-200">
-          <div className="p-5 border-b border-neutral-200">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-neutral-900">存储空间摘要</h2>
-              <Button asChild variant="ghost" size="sm" className="gap-1 text-neutral-600 hover:text-neutral-900">
-                <Link to="/workspace">
-                  查看详情
-                  <ExternalLink className="w-3 h-3" />
-                </Link>
-              </Button>
-            </div>
-          </div>
-          <div className="p-5">
-            <div className="mb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <FolderOpen className="w-4 h-4 text-neutral-600" />
-                <span className="text-sm text-neutral-600">当前工作空间</span>
-              </div>
-              <div className="font-semibold text-neutral-900 mb-1">{model.workspaceTitle}</div>
-              <div className="text-xs text-neutral-500">创建于 2024-04-15</div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-neutral-200">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <FileText className="w-3.5 h-3.5 text-neutral-400" />
-                  <span className="text-xs text-neutral-600">输入文件</span>
-                </div>
-                <div className="font-semibold text-neutral-900">{model.inputFiles} 个</div>
-                <div className="text-xs text-neutral-500 mt-0.5">18.2 GB</div>
-              </div>
-
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <FileText className="w-3.5 h-3.5 text-neutral-400" />
-                  <span className="text-xs text-neutral-600">输出文件</span>
-                </div>
-                <div className="font-semibold text-neutral-900">{model.outputFiles} 个</div>
-                <div className="text-xs text-neutral-500 mt-0.5">10.3 GB</div>
-              </div>
-            </div>
-
-            <div className="mt-4 pt-4 border-t border-neutral-200">
-              <div className="flex items-center gap-2 text-xs text-neutral-600">
-                <Clock className="w-3.5 h-3.5" />
-                <span>最近回流 2 小时前 · 自动同步中</span>
-              </div>
-            </div>
+          <div className="mt-4 border-t border-neutral-200 pt-4 text-xs text-neutral-600">
+            科研对话、项目、session 和 skill 上传仍在 OPL；MedOPL 只显示资源、存储和费用。
           </div>
         </Card>
       </div>

@@ -11,6 +11,7 @@ export async function loadOverviewModel() {
   const fileSpace = firstFileSpace(resources);
   const storageCapacityGb = numberValue(fileSpace?.storageCapacityGb);
   const usedGb = Math.min(storageCapacityGb, numberValue(overview.kpis.runCount) * 1.2);
+  const availableGb = Math.max(0, storageCapacityGb - usedGb);
   const latestRuns = overview.latestRuns.slice(0, 4);
   const serviceStatus = activeBinding
     ? numberValue(overview.kpis.availableBalance, overview.kpis.balance) <= 0 ? "restricted" : "ready"
@@ -22,6 +23,7 @@ export async function loadOverviewModel() {
     planSpec: planSpec(overview.selectedServerPlan) || activeBinding?.computeResource?.instanceType || "未返回",
     storageUsed: gb(usedGb),
     storageTotal: gb(storageCapacityGb),
+    storageAvailable: gb(availableGb),
     storagePercent: storageCapacityGb > 0 ? Math.min(100, Math.round((usedGb / storageCapacityGb) * 100)) : 0,
     balance: money(overview.kpis.balance),
     availableBalance: money(overview.kpis.availableBalance ?? overview.kpis.balance),

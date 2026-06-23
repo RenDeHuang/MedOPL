@@ -170,6 +170,7 @@ for (const component of ["ResourceStatusCard", "PlanCard", "StorageInventoryPane
 }
 
 for (const [pageName, pageSource, components] of [
+  ["Overview", overviewPage, ["ResourceStatusCard", "StorageInventoryPanel", "BillingSummary", "ReadinessChecklist"]],
   ["RuntimeEnvironment", runtimeEnvironmentPage, ["ResourceStatusCard", "PlanCard", "ReadinessChecklist"]],
   ["PackagesPurchase", packagesPurchasePage, ["PlanCard", "BillingSummary"]],
   ["Workspace", workspacePage, ["StorageInventoryPanel"]],
@@ -179,6 +180,25 @@ for (const [pageName, pageSource, components] of [
     assert(pageSource.includes(component), `portal_page_component_consumption_missing:${pageName}:${component}`);
   }
 }
+
+assert(
+  overviewPage.includes('data-ui-template="resource-console-overview"'),
+  "portal_overview_must_declare_resource_console_template",
+);
+assert(
+  overviewPage.includes('data-ui-section="overview-core-resources"'),
+  "portal_overview_must_group_core_resource_components",
+);
+assert.equal(
+  overviewPage.includes("xl:grid-cols-7"),
+  false,
+  "portal_overview_must_retire_financial_task_kpi_wall",
+);
+assert.equal(
+  overviewPage.includes("资金与任务摘要"),
+  false,
+  "portal_overview_must_not_center_task_kpi_summary",
+);
 
 assert.equal(
   runtimeEnvironmentPage.includes("ReleaseConfirmDialog"),
