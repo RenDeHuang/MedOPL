@@ -56,7 +56,6 @@ for (const retiredRoute of ["/advanced/servers", "/runtime", "/tasks", "/trace"]
   assert.equal(routesSource.includes(retiredRoute), false, `retired_package_route_must_not_be_active:${retiredRoute}`);
   assert.equal(layoutSource.includes(retiredRoute), false, `retired_package_nav_must_not_be_active:${retiredRoute}`);
 }
-assert.equal(routesSource.includes('path: "opl"'), false, "retired_opl_short_route_must_not_be_active");
 assert.equal(roleContextSource.includes("../../api/portal/"), false, "role_context_must_not_import_portal_api");
 assert(roleContextSource.includes("loadCurrentUser"), "role_context_must_receive_current_user_loader");
 assert(appSource.includes("fetchCurrentUser"), "app_composition_root_must_bind_current_user_loader");
@@ -133,7 +132,7 @@ for (const retiredUiComponent of [
   );
 }
 
-for (const route of ["/overview", "/packages", "/resources", "/workspace", "/billing", "/opl-launch"]) {
+for (const route of ["/overview", "/packages", "/compute", "/storage", "/usage", "/opl"]) {
   assert(routesSource.includes(`path: "${route.slice(1)}"`), `zip_user_route_missing:${route}`);
 }
 
@@ -157,8 +156,11 @@ assert(sourceSpec.includes("/packages"), "source_spec_must_require_packages_purc
 assert(sourceSpec.includes("/advanced/servers"), "source_spec_must_retire_advanced_servers_route");
 assert(sourceSpec.includes("/runtime"), "source_spec_must_retire_runtime_route");
 assert(sourceSpec.includes("/tasks"), "source_spec_must_retire_tasks_route");
-assert(sourceSpec.includes("/opl"), "source_spec_must_retire_opl_short_route");
 assert(sourceSpec.includes("/trace"), "source_spec_must_retire_trace_route");
+for (const retiredUserRoute of ["/resources", "/workspace", "/billing", "/opl-launch", "/portal/opl"]) {
+  assert(sourceSpec.includes(retiredUserRoute), `source_spec_must_retire_old_user_route:${retiredUserRoute}`);
+  assert.equal(routesSource.includes(`path: "${retiredUserRoute.slice(1)}"`), false, `old_user_route_must_not_be_registered:${retiredUserRoute}`);
+}
 
 console.log(JSON.stringify({
   ok: true,

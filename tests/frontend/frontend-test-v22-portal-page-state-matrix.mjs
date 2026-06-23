@@ -49,11 +49,11 @@ const userVisibleSource = [
 const routeMarkers = new Map([
   ["resource_overview", ["Overview", "/overview"]],
   ["packages_purchase", ["PackagesPurchase", "/packages"]],
-  ["compute_resource", ["RuntimeEnvironment", "/resources"]],
-  ["storage_space", ["Workspace", "/workspace"]],
-  ["usage_billing", ["BillingAudit", "/billing"]],
-  ["opl_entry", ["OPLEntry", "/opl-launch"]],
-  ["release", ["Workspace", "/workspace"]],
+  ["compute_resource", ["RuntimeEnvironment", "/compute"]],
+  ["storage_space", ["Workspace", "/storage"]],
+  ["usage_billing", ["BillingAudit", "/usage"]],
+  ["opl_entry", ["OPLEntry", "/opl"]],
+  ["release", ["Workspace", "/storage"]],
 ]);
 
 for (const page of matrix.medopl_portal_page_state_matrix.pages) {
@@ -577,10 +577,10 @@ assert(layout.includes("aria-label=\"管理台导航\""), "portal_admin_nav_acce
 for (const [route, label] of [
   ["/overview", "browser_overview"],
   ["/packages", "browser_packages"],
-  ["/resources", "browser_runtime_environment"],
-  ["/workspace", "browser_workspace"],
-  ["/billing", "browser_billing"],
-  ["/opl-launch", "browser_opl_entry"],
+  ["/compute", "browser_runtime_environment"],
+  ["/storage", "browser_workspace"],
+  ["/usage", "browser_billing"],
+  ["/opl", "browser_opl_entry"],
 ]) {
   assert(
     resourceControlBrowserRegression.includes(`\${frontendBaseUrl}${route}`) ||

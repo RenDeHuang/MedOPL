@@ -30,10 +30,10 @@ import {
 const userNavigation = [
   { name: "资源总览", path: "/overview", icon: LayoutDashboard },
   { name: "套餐与购买", path: "/packages", icon: ShoppingCart },
-  { name: "计算资源", path: "/resources", icon: Server },
-  { name: "存储空间", path: "/workspace", icon: FolderOpen },
-  { name: "费用与用量", path: "/billing", icon: Receipt },
-  { name: "进入 OPL", path: "/opl-launch", icon: Play },
+  { name: "计算资源", path: "/compute", icon: Server },
+  { name: "存储空间", path: "/storage", icon: FolderOpen },
+  { name: "费用与用量", path: "/usage", icon: Receipt },
+  { name: "进入 OPL", path: "/opl", icon: Play },
 ];
 
 // 管理台导航
@@ -182,11 +182,11 @@ export function Layout() {
 function getPageTitle(pathname: string): string {
   const routes: Record<string, string> = {
     "/overview": "总览",
-    "/resources": "计算资源",
-    "/workspace": "存储空间",
-    "/billing": "费用与用量",
+    "/compute": "计算资源",
+    "/storage": "存储空间",
+    "/usage": "费用与用量",
     "/packages": "套餐与购买",
-    "/opl-launch": "进入 OPL",
+    "/opl": "进入 OPL",
     "/admin/dashboard": "管理总览",
     "/admin/users": "用户管理",
     "/admin/alerts": "公告与待处理事项",

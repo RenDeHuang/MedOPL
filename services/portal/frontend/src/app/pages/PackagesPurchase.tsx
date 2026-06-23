@@ -42,7 +42,7 @@ export function PackagesPurchase() {
             </p>
           </div>
           <Button asChild className="gap-2">
-            <Link to="/resources">
+            <Link to="/compute">
               查看计算资源
               <ArrowRight className="w-4 h-4" />
             </Link>
@@ -104,7 +104,7 @@ export function PackagesPurchase() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="text-xs text-neutral-500">{plan.openingWindow}</div>
                   <Button asChild variant={current ? "outline" : undefined}>
-                    <Link to="/resources">{current ? "查看当前计算资源" : "购买或升级"}</Link>
+                    <Link to="/compute">{current ? "查看当前计算资源" : "购买或升级"}</Link>
                   </Button>
                 </div>
               }

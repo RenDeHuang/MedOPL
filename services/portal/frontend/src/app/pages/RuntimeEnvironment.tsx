@@ -147,7 +147,7 @@ export function RuntimeEnvironment() {
           </div>
           <p className="text-sm text-neutral-600 mt-3">套餐目录由平台维护，不提供云资源调整动作。</p>
         </div>
-        <Button asChild variant="outline"><Link to="/billing">查看计费</Link></Button>
+        <Button asChild variant="outline"><Link to="/usage">查看计费</Link></Button>
       </div>
       <div className="mb-8">
         <ResourceStatusCard

@@ -237,7 +237,7 @@ async function assertAgradeInteractionSystem(page, label) {
   assert.deepEqual(system.defaultCursorControls, [], `${label}_enabled_controls_must_not_use_default_cursor:${JSON.stringify(system.defaultCursorControls)}`);
   assert.deepEqual(system.transitionAllControls, [], `${label}_controls_must_not_transition_all:${JSON.stringify(system.transitionAllControls)}`);
 
-  const focusCandidate = page.locator("nav a[href='/overview'], nav a[href='/resources'], button:enabled, a[href]").first();
+  const focusCandidate = page.locator("nav a[href='/overview'], nav a[href='/compute'], button:enabled, a[href]").first();
   await focusCandidate.focus();
   const focusState = await focusCandidate.evaluate((node) => {
     const styles = getComputedStyle(node);
@@ -683,7 +683,7 @@ try {
       ...overviewErrorConsoleMessages.filter((message) => message !== expectedOverviewFetchError),
     ];
 
-    await page.goto(`${frontendBaseUrl}/resources`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${frontendBaseUrl}/compute`, { waitUntil: "domcontentloaded" });
     await waitReady(page, "正在读取计算资源数据");
     await page.waitForSelector("text=计算资源", { timeout: 30000 });
     lastBodyText = await page.locator("body").innerText();
@@ -713,13 +713,13 @@ try {
 
     await assertCustomerPageBaseline(
       page,
-      "/workspace",
+      "/storage",
       "存储空间",
       "browser_workspace",
       ["存储空间", "输入文件", "输出文件"],
     );
 
-    await page.goto(`${frontendBaseUrl}/billing`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${frontendBaseUrl}/usage`, { waitUntil: "domcontentloaded" });
     await waitReady(page, "正在读取费用与用量数据");
     await page.waitForSelector("text=费用与用量", { timeout: 30000 });
     lastBodyText = await page.locator("body").innerText();
@@ -734,7 +734,7 @@ try {
 
     await assertCustomerPageBaseline(
       page,
-      "/opl-launch",
+      "/opl",
       "进入 OPL",
       "browser_opl_entry",
       ["进入 OPL", "启动阶段"],

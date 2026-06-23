@@ -113,7 +113,7 @@ export function OPLEntry() {
           <p className="text-neutral-600 mb-4">{query.error || OPL_GATEWAY_UNAVAILABLE_MESSAGE}</p>
           <div className="flex gap-3">
             <Button asChild variant="outline" className="gap-2">
-              <Link to="/opl-launch" reloadDocument>
+              <Link to="/opl" reloadDocument>
                 <RotateCw className="w-4 h-4" />
                 重试进入 OPL
               </Link>
@@ -149,7 +149,7 @@ export function OPLEntry() {
               </a>
             </Button>
             <Button asChild variant="outline" className="gap-2">
-              <Link to="/workspace">
+              <Link to="/storage">
                 <ArrowLeft className="w-4 h-4" />
                 返回存储空间
               </Link>
@@ -172,7 +172,7 @@ export function OPLEntry() {
             {query.data.userVisibleState || "正在准备存储空间和 OPL 会话，准备完成后将自动进入"}
           </p>
           <Button asChild variant="outline" className="gap-2">
-            <Link to="/workspace">
+            <Link to="/storage">
               <ArrowLeft className="w-4 h-4" />
               返回存储空间
             </Link>
@@ -194,7 +194,7 @@ export function OPLEntry() {
             正在重新尝试连接 OPL 网关，请稍候
           </p>
           <Button asChild variant="outline" className="gap-2">
-            <Link to="/workspace">
+            <Link to="/storage">
               <ArrowLeft className="w-4 h-4" />
               返回存储空间
             </Link>
@@ -265,7 +265,7 @@ export function OPLEntry() {
           </p>
           <div className="flex gap-3">
             <Button asChild className="gap-2">
-              <Link to="/resources">
+              <Link to="/compute">
                 <Server className="w-4 h-4" />
                 去计算资源页
               </Link>
@@ -295,7 +295,7 @@ export function OPLEntry() {
           </p>
           <div className="flex gap-3">
             <Button asChild className="gap-2">
-              <Link to="/workspace">
+              <Link to="/storage">
                 <FolderOpen className="w-4 h-4" />
                 去存储空间页
               </Link>
@@ -325,7 +325,7 @@ export function OPLEntry() {
           </p>
           <div className="flex gap-3">
             <Button asChild className="gap-2">
-              <Link to="/billing">
+              <Link to="/usage">
                 <CreditCard className="w-4 h-4" />
                 去账单页
               </Link>
@@ -355,7 +355,7 @@ export function OPLEntry() {
           </p>
           <div className="flex gap-3">
             <Button asChild variant="outline" className="gap-2">
-              <Link to="/opl-launch" reloadDocument>
+              <Link to="/opl" reloadDocument>
                 <RotateCw className="w-4 h-4" />
                 重试进入 OPL
               </Link>
@@ -385,7 +385,7 @@ export function OPLEntry() {
         </p>
         <div className="flex gap-3">
           <Button asChild variant="outline" className="gap-2">
-            <Link to="/opl-launch" reloadDocument>
+            <Link to="/opl" reloadDocument>
               <RotateCw className="w-4 h-4" />
               重试进入 OPL
             </Link>

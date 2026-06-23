@@ -136,7 +136,7 @@ export function Workspace() {
   function renderOplEntryButton({ variant, className, showArrow = false }: { variant?: "outline"; className?: string; showArrow?: boolean } = {}) {
     return (
       <Button asChild variant={variant} className={className} title={model.runStartMessage || "进入 OPL"}>
-        <Link to="/opl-launch">
+        <Link to="/opl">
           进入 OPL
           {showArrow && <ArrowRight className="w-4 h-4" />}
         </Link>
@@ -259,7 +259,7 @@ export function Workspace() {
             </div>
             <div className="flex gap-3">
               <Button asChild variant="outline">
-                <Link to="/billing">查看费用与用量</Link>
+                <Link to="/usage">查看费用与用量</Link>
               </Button>
               {renderOplEntryButton({ className: "gap-2", showArrow: true })}
             </div>
@@ -318,7 +318,7 @@ export function Workspace() {
           </p>
           <div className="flex gap-3">
             <Button asChild variant="outline">
-              <Link to="/billing">查看费用与用量</Link>
+              <Link to="/usage">查看费用与用量</Link>
             </Button>
             {renderOplEntryButton()}
           </div>
@@ -341,7 +341,7 @@ export function Workspace() {
               </p>
             </div>
             <Button asChild variant="outline">
-              <Link to="/resources">前往计算资源</Link>
+              <Link to="/compute">前往计算资源</Link>
             </Button>
           </div>
         </div>
@@ -608,7 +608,7 @@ export function Workspace() {
                       </Button>
                       {file.taskId && (
                         <Button asChild size="sm" variant="ghost" className="text-teal-700 hover:bg-teal-50 hover:text-teal-800">
-                          <Link to="/billing" aria-label={`查看 ${file.taskName || file.name} 的用量明细`}>
+                          <Link to="/usage" aria-label={`查看 ${file.taskName || file.name} 的用量明细`}>
                             <ExternalLink className="w-4 h-4" />
                           </Link>
                         </Button>

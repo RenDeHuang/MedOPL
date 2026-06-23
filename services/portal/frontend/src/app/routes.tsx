@@ -51,11 +51,10 @@ export const router = createBrowserRouter([
       // 普通用户路由
       { path: "overview", lazy: overviewRoute },
       { path: "packages", lazy: packagesPurchaseRoute },
-      { path: "resources", lazy: runtimeEnvironmentRoute },
-      { path: "workspace", lazy: workspaceRoute },
-      { path: "billing", lazy: billingAuditRoute },
-      { path: "opl-launch", lazy: oplEntryRoute },
-      { path: "portal/opl", element: <Navigate to="/opl-launch" replace /> },
+      { path: "compute", lazy: runtimeEnvironmentRoute },
+      { path: "storage", lazy: workspaceRoute },
+      { path: "usage", lazy: billingAuditRoute },
+      { path: "opl", lazy: oplEntryRoute },
 
       // 管理台路由
       { path: "admin/dashboard", lazy: adminDashboardRoute },

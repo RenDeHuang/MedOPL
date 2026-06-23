@@ -104,7 +104,7 @@ assertNotIncludes(pageStateMatrix, "actor_trace", "page_state_matrix_must_not_ow
 const userNavigation = extractArray(layout, "userNavigation");
 const adminNavigation = extractArray(layout, "adminNavigation");
 
-for (const route of ["/overview", "/packages", "/resources", "/workspace", "/billing", "/opl-launch"]) {
+for (const route of ["/overview", "/packages", "/compute", "/storage", "/usage", "/opl"]) {
   assertIncludes(userNavigation, route, `user_navigation_route:${route}`);
 }
 assertNotIncludes(userNavigation, "/trace", "user_navigation_must_retire_trace_route");
@@ -125,8 +125,11 @@ assertNotIncludes(roleContext, "../../api/portal/", "role_context_must_not_impor
 for (const route of ["admin/dashboard", "admin/users", "admin/alerts", "admin/billing-ops", "admin/audit", "admin/system", "admin/ops"]) {
   assertIncludes(routes, `path: "${route}"`, `admin_route_registered:${route}`);
 }
-for (const route of ["overview", "packages", "resources", "workspace", "billing", "opl-launch"]) {
+for (const route of ["overview", "packages", "compute", "storage", "usage", "opl"]) {
   assertIncludes(routes, `path: "${route}"`, `user_route_registered:${route}`);
+}
+for (const retiredUserRoute of ["resources", "workspace", "billing", "opl-launch", "portal/opl"]) {
+  assertNotIncludes(routes, `path: "${retiredUserRoute}"`, `old_user_route_must_not_be_registered:${retiredUserRoute}`);
 }
 assertNotIncludes(routes, 'path: "trace"', "trace_user_route_must_be_retired");
 assertNotIncludes(routes, 'path: "tasks"', "retired_tasks_route_must_stay_retired");

@@ -296,7 +296,7 @@ try {
     await page.getByText("¥90.00").waitFor({ timeout: 30000 });
     await assertUserBalance(backendBaseUrl, actionUserEmail, 90);
 
-    await page.goto(`${frontendBaseUrl}/billing`, { waitUntil: "domcontentloaded" });
+    await page.goto(`${frontendBaseUrl}/usage`, { waitUntil: "domcontentloaded" });
     await waitReady(page, "正在读取账单与审计数据");
     await page.getByText("资金摘要").waitFor({ timeout: 30000 });
     const [download] = await Promise.all([
@@ -340,8 +340,7 @@ try {
 
     for (const [urlPath, label] of [
       ["/overview", "desktop_overview"],
-      ["/billing", "desktop_billing"],
-      ["/portal/opl", "desktop_portal_opl_entry_alias"],
+      ["/usage", "desktop_billing"],
       ["/admin/users", "desktop_admin_users"],
       ["/admin/alerts", "desktop_admin_alerts"],
     ]) {

@@ -45,7 +45,7 @@ function PrimaryOverviewAction({ status }: { status: ServiceStatus }) {
   if (status === "ready") {
     return (
       <Button asChild className="w-full gap-2 sm:w-auto">
-        <Link to="/opl-launch">
+        <Link to="/opl">
           进入 OPL
           <ArrowRight className="h-4 w-4" />
         </Link>
@@ -56,7 +56,7 @@ function PrimaryOverviewAction({ status }: { status: ServiceStatus }) {
   if (status === "restricted") {
     return (
       <Button asChild className="w-full gap-2 sm:w-auto">
-        <Link to="/billing">
+        <Link to="/usage">
           处理费用
           <ArrowRight className="h-4 w-4" />
         </Link>
@@ -67,7 +67,7 @@ function PrimaryOverviewAction({ status }: { status: ServiceStatus }) {
   if (status === "degraded") {
     return (
       <Button asChild className="w-full gap-2 sm:w-auto">
-        <Link to="/resources">
+        <Link to="/compute">
           查看计算资源
           <ArrowRight className="h-4 w-4" />
         </Link>
@@ -142,7 +142,7 @@ export function Overview() {
           receiptState={serviceStatus === "unprovisioned" ? "待开通" : model.pricingStatus}
           primaryAction={
             <Button asChild variant={serviceStatus === "ready" ? "outline" : "default"}>
-              <Link to={serviceStatus === "unprovisioned" ? "/packages" : "/resources"}>
+              <Link to={serviceStatus === "unprovisioned" ? "/packages" : "/compute"}>
                 {serviceStatus === "unprovisioned" ? "购买计算资源" : "查看计算资源"}
               </Link>
             </Button>
@@ -211,7 +211,7 @@ export function Overview() {
               <p className="mt-1 text-sm text-neutral-600">这里只展示资源视角的输入文件和输出文件。</p>
             </div>
             <Button asChild variant="ghost" size="sm">
-              <Link to="/workspace">查看存储空间</Link>
+              <Link to="/storage">查看存储空间</Link>
             </Button>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

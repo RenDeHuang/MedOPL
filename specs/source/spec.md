@@ -35,7 +35,11 @@ Retired frontend routes:
 - `/runtime`
 - `/tasks`
 - `/trace`
-- `/opl`
+- `/resources`
+- `/workspace`
+- `/billing`
+- `/opl-launch`
+- `/portal/opl`
 
 Retired frontend stack:
 
@@ -46,10 +50,10 @@ Required user routes:
 
 - `/overview`
 - `/packages`
-- `/resources`
-- `/workspace`
-- `/billing`
-- `/opl-launch`
+- `/compute`
+- `/storage`
+- `/usage`
+- `/opl`
 
 Required admin routes:
 

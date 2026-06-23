@@ -43,7 +43,7 @@
     "flows": [
       {
         "id": "open_compute_resource",
-        "entry_route": "/resources",
+        "entry_route": "/compute",
         "primary_action": "open_service",
         "backend_api": "POST /api/v22/managed-environment/open",
         "disabled_reason_required": true,
@@ -78,7 +78,7 @@
       },
       {
         "id": "bind_provider_key",
-        "entry_route": "/opl-launch",
+        "entry_route": "/opl",
         "primary_action": "bind_provider_key",
         "backend_api": "POST /api/provider/bind",
         "disabled_reason_required": true,
@@ -95,7 +95,7 @@
       },
       {
         "id": "enter_opl",
-        "entry_route": "/opl-launch",
+        "entry_route": "/opl",
         "primary_action": "enter_opl",
         "backend_api": "POST /api/opl/launch",
         "disabled_reason_required": true,
@@ -112,7 +112,7 @@
       },
       {
         "id": "upload_workspace_file",
-        "entry_route": "/workspace",
+        "entry_route": "/storage",
         "primary_action": "upload_file",
         "backend_api": "POST /api/workspace/files/local-transfer",
         "disabled_reason_required": true,
@@ -129,7 +129,7 @@
       },
       {
         "id": "download_workspace_file",
-        "entry_route": "/workspace",
+        "entry_route": "/storage",
         "primary_action": "download_file",
         "backend_api": "GET /api/workspace/files/local-transfer",
         "disabled_reason_required": true,
@@ -146,7 +146,7 @@
       },
       {
         "id": "export_billing",
-        "entry_route": "/billing",
+        "entry_route": "/usage",
         "primary_action": "export_billing",
         "backend_api": "GET /api/billing/export.csv",
         "disabled_reason_required": true,
@@ -164,7 +164,7 @@
       },
       {
         "id": "release_compute_resource",
-        "entry_route": "/resources",
+        "entry_route": "/compute",
         "primary_action": "release_compute_resource",
         "backend_api": "POST /api/v22/managed-environment/release",
         "implementation_state": "partial_fail_closed_pending_release_mutation",

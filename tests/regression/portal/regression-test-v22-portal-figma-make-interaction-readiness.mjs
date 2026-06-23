@@ -111,11 +111,11 @@ for (const componentName of [
 }
 
 for (const [label, pageSource, routes] of [
-  ["overview", overviewSource, ["/packages", "/billing", "/opl-launch"]],
-  ["packages_purchase", packagesSource, ["/resources"]],
-  ["workspace", workspaceSource, ["/opl-launch", "/billing", "/packages"]],
-  ["runtime_environment", runtimeSource, ["/billing"]],
-  ["opl_entry", oplEntrySource, ["/overview", "/workspace", "/resources", "/billing"]],
+  ["overview", overviewSource, ["/packages", "/usage", "/opl"]],
+  ["packages_purchase", packagesSource, ["/compute"]],
+  ["workspace", workspaceSource, ["/opl", "/usage", "/packages"]],
+  ["runtime_environment", runtimeSource, ["/usage"]],
+  ["opl_entry", oplEntrySource, ["/overview", "/storage", "/compute", "/usage"]],
 ]) {
   assertIncludes(pageSource, 'from "react-router"', `${label}_must_use_react_router_links`);
   for (const route of routes) {

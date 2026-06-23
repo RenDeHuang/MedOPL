@@ -108,15 +108,27 @@ assertIncludesAll(sourceSpec, [
   "`source:portal-resource-control-ui-composition`",
   "/overview",
   "/packages",
-  "/resources",
-  "/workspace",
-  "/billing",
-  "/opl-launch",
+  "/compute",
+  "/storage",
+  "/usage",
+  "/opl",
   "/advanced/servers",
 ], "source_spec_ui_composition_owner");
 assertExcludesAll(sourceSpec, [
-  "Required user routes:\n\n- `/overview`\n- `/resources`\n- `/workspace`\n- `/trace`",
+  "Required user routes:\n\n- `/overview`\n- `/packages`\n- `/resources`",
+  "Required user routes:\n\n- `/overview`\n- `/packages`\n- `/compute`\n- `/storage`\n- `/trace`",
 ], "source_spec_must_not_require_trace_user_route");
+assertIncludesAll(sourceSpec, [
+  "- `/compute`",
+  "- `/storage`",
+  "- `/usage`",
+  "- `/opl`",
+  "- `/resources`",
+  "- `/workspace`",
+  "- `/billing`",
+  "- `/opl-launch`",
+  "- `/portal/opl`",
+], "source_spec_canonical_and_retired_route_truth");
 
 assertIncludesAll(visibleSurface, [
   "资源总览",
