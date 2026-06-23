@@ -558,23 +558,28 @@ async function queryLiveDatabasePersistenceProof(operation, workspaceId, refs = 
         operation,
       ),
       files: assertPositiveCount(
-        await queryCount(client, "SELECT count(*)::int AS count FROM control_plane_records WHERE kind = 'file' AND workspace_id = $1", [workspaceId]),
+        await queryCount(client, "SELECT count(*)::int AS count FROM files WHERE workspace_id = $1", [workspaceId]),
         "file_records",
         operation,
       ),
       runs: assertPositiveCount(
-        await queryCount(client, "SELECT count(*)::int AS count FROM control_plane_records WHERE kind = 'run' AND workspace_id = $1", [workspaceId]),
+        await queryCount(client, "SELECT count(*)::int AS count FROM runs WHERE workspace_id = $1", [workspaceId]),
         "run_records",
         operation,
       ),
       artifacts: assertPositiveCount(
-        await queryCount(client, "SELECT count(*)::int AS count FROM control_plane_records WHERE kind = 'artifact' AND workspace_id = $1", [workspaceId]),
+        await queryCount(client, "SELECT count(*)::int AS count FROM artifacts WHERE workspace_id = $1", [workspaceId]),
         "artifact_records",
         operation,
       ),
       auditEvents: assertPositiveCount(
-        await queryCount(client, "SELECT count(*)::int AS count FROM control_plane_records WHERE kind = 'audit_event' AND workspace_id = $1", [workspaceId]),
+        await queryCount(client, "SELECT count(*)::int AS count FROM control_plane_audit_events WHERE workspace_id = $1", [workspaceId]),
         "audit_event_records",
+        operation,
+      ),
+      billingEvents: assertPositiveCount(
+        await queryCount(client, "SELECT count(*)::int AS count FROM billing_events WHERE workspace_id = $1", [workspaceId]),
+        "billing_event_records",
         operation,
       ),
     };

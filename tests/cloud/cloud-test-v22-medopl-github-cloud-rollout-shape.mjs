@@ -586,7 +586,11 @@ assert(
     commandRunnerSource.includes("workspaceRefHash") &&
     commandRunnerSource.includes("SELECT count(*)::int AS count FROM business_accounts WHERE workspace_id = $1") &&
     commandRunnerSource.includes("SELECT count(*)::int AS count FROM credit_events WHERE workspace_id = $1") &&
-    commandRunnerSource.includes("control_plane_records WHERE kind = 'artifact'"),
+    commandRunnerSource.includes("SELECT count(*)::int AS count FROM files WHERE workspace_id = $1") &&
+    commandRunnerSource.includes("SELECT count(*)::int AS count FROM runs WHERE workspace_id = $1") &&
+    commandRunnerSource.includes("SELECT count(*)::int AS count FROM artifacts WHERE workspace_id = $1") &&
+    commandRunnerSource.includes("SELECT count(*)::int AS count FROM control_plane_audit_events WHERE workspace_id = $1") &&
+    commandRunnerSource.includes("SELECT count(*)::int AS count FROM billing_events WHERE workspace_id = $1"),
   "production_apply_live_test_must_prove_postgres_business_metadata_without_raw_workspace_payload",
 );
 assert(

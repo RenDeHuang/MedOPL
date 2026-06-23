@@ -31,6 +31,31 @@ assert.equal(
   false,
   "deploy_runner_must_not_use_invalid_rollout_status_deploy_target",
 );
+assert(
+  runnerSource.includes("SELECT count(*)::int AS count FROM files WHERE workspace_id = $1"),
+  "live_db_persistence_proof_must_read_typed_file_records",
+);
+assert(
+  runnerSource.includes("SELECT count(*)::int AS count FROM runs WHERE workspace_id = $1"),
+  "live_db_persistence_proof_must_read_typed_run_records",
+);
+assert(
+  runnerSource.includes("SELECT count(*)::int AS count FROM artifacts WHERE workspace_id = $1"),
+  "live_db_persistence_proof_must_read_typed_artifact_records",
+);
+assert(
+  runnerSource.includes("SELECT count(*)::int AS count FROM control_plane_audit_events WHERE workspace_id = $1"),
+  "live_db_persistence_proof_must_read_typed_audit_events",
+);
+assert(
+  runnerSource.includes("SELECT count(*)::int AS count FROM billing_events WHERE workspace_id = $1"),
+  "live_db_persistence_proof_must_read_typed_billing_events",
+);
+assert.equal(
+  runnerSource.includes("control_plane_records WHERE kind = 'file'"),
+  false,
+  "live_db_persistence_proof_must_not_check_retired_generic_file_records",
+);
 
 function run(args = [], env = {}) {
   return spawnSync(process.execPath, [runner, ...args], {
