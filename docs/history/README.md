@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/v22-production-complete-candidate-gate-rc`
-- latest landed commit: `5a8089d288118330a482209c5ec69676a635faf1`
+- latest landed branch: `feat/v22-rollout-status-gate-hardening`
+- latest landed commit: `fd9dcde55f66fabc822c80d3f0e03d3d74b21bda`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
