@@ -221,6 +221,31 @@ async function assertServiceSurface() {
   for (const marker of ["type ControlPlaneStore struct", "SaveBusinessAccount", "BusinessAccountByWorkspace", "ApplyCreditEvent", "SaveCreditEvent", "ListCreditEvents"]) {
     assertIncludes(postgresControlPlaneSource, marker, `postgres_control_plane_store_marker:${marker}`);
   }
+  const postgresRuntimeLifecycleSource = await readRepoFile(`${serviceRoot}/internal/repository/postgres/runtime_lifecycle_backend.go`);
+  for (const marker of [
+    "UpsertResourceBindingLedger",
+    "ResourceBindingLedger",
+    "ListResourceBindingLedgers",
+    "UpsertCloudOperation",
+    "CloudOperation",
+    "ensureRuntimeIdentityRows",
+    "INSERT INTO resource_bindings",
+    "INSERT INTO cloud_operations",
+    "ON CONFLICT (resource_binding_id)",
+    "ON CONFLICT (operation_id)",
+  ]) {
+    assertIncludes(postgresRuntimeLifecycleSource, marker, `postgres_runtime_lifecycle_marker:${marker}`);
+  }
+  for (const marker of [
+    "type runtimeLifecycleBackend interface",
+    "backend.UpsertResourceBindingLedger",
+    "backend.ResourceBindingLedger",
+    "backend.ListResourceBindingLedgers",
+    "backend.UpsertCloudOperation",
+    "backend.CloudOperation",
+  ]) {
+    assertIncludes(postgresControlPlaneSource, marker, `postgres_runtime_lifecycle_control_plane_marker:${marker}`);
+  }
   const healthSource = await readRepoFile(`${serviceRoot}/internal/server/handlers/health.go`);
   for (const marker of ["medopl-go-backend", "status", "ok", "checks", "config"]) assertIncludes(healthSource, marker, `health_marker:${marker}`);
   assertNotMatches(healthSource, /time\.Now|Hostname|os\.Getpid|uuid|rand/u, "health_handler_must_be_deterministic");
@@ -252,7 +277,7 @@ async function assertEntPostgresBoundary() {
     assertIncludes(migration, `CREATE TABLE IF NOT EXISTS ${table}`, `migration_must_create_table:${table}`);
     assertIncludes(migration, `CREATE INDEX IF NOT EXISTS idx_${table}`, `migration_must_have_repeatable_index:${table}`);
   }
-  for (const marker of ["tenant_id", "workspace_id", "run_id", "idempotency_key", "REFERENCES tenants(id)", "REFERENCES workspaces(id)", "REFERENCES runs(id)", "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_tenant_email", "CREATE UNIQUE INDEX IF NOT EXISTS idx_workspaces_tenant_slug", "CREATE UNIQUE INDEX IF NOT EXISTS idx_runs_workspace_idempotency", "CREATE UNIQUE INDEX IF NOT EXISTS idx_files_workspace_name", "workflow_executions", "billing_events"]) {
+  for (const marker of ["tenant_id", "workspace_id", "run_id", "idempotency_key", "REFERENCES tenants(id)", "REFERENCES workspaces(id)", "REFERENCES runs(id)", "REFERENCES resource_bindings(resource_binding_id)", "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_tenant_email", "CREATE UNIQUE INDEX IF NOT EXISTS idx_workspaces_tenant_slug", "CREATE UNIQUE INDEX IF NOT EXISTS idx_runs_workspace_idempotency", "CREATE UNIQUE INDEX IF NOT EXISTS idx_files_workspace_name", "CREATE UNIQUE INDEX IF NOT EXISTS idx_resource_bindings_resource_binding_id", "CREATE UNIQUE INDEX IF NOT EXISTS idx_cloud_operations_operation_id", "workflow_executions", "billing_events", "resource_bindings", "cloud_operations"]) {
     assertIncludes(migration, marker, `migration_marker:${marker}`);
   }
   assertNotMatches(migration, /DEFAULT ''|NOT NULL DEFAULT ''/u, "migration_must_not_encode_absence_as_empty_string");
@@ -429,6 +454,16 @@ async function assertLocalRCControlPlaneParity() {
     "./internal/domain/controlplane",
     "TestReleaseStopsBillingAndKeepsHistoryAuditable",
     "go_resource_release_local_rc_parity",
+  );
+  runGoPackageTest(
+    "./internal/repository/postgres",
+    "TestControlPlaneStoreUsesTypedRuntimeLifecycleBackend",
+    "go_typed_runtime_lifecycle_postgres_parity",
+  );
+  runGoPackageTest(
+    "./internal/repository/postgres",
+    "TestRuntimeOpenReleaseStateMachineSurvivesPostgresStoreRestart",
+    "go_runtime_state_machine_postgres_restart_parity",
   );
 }
 

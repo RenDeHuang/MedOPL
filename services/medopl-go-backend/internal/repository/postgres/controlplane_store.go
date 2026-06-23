@@ -41,6 +41,14 @@ type businessBackend interface {
 	ListCreditEvents(ctx context.Context, workspaceID string) ([]cpd.CreditEvent, error)
 }
 
+type runtimeLifecycleBackend interface {
+	UpsertResourceBindingLedger(ctx context.Context, ledger cpd.ResourceBindingLedger) error
+	ResourceBindingLedger(ctx context.Context, resourceBindingID string) (cpd.ResourceBindingLedger, error)
+	ListResourceBindingLedgers(ctx context.Context, workspaceID string) ([]cpd.ResourceBindingLedger, error)
+	UpsertCloudOperation(ctx context.Context, operation cpd.CloudOperation) error
+	CloudOperation(ctx context.Context, operationID string) (cpd.CloudOperation, error)
+}
+
 type ControlPlaneStore struct {
 	backend Backend
 	kind    string
@@ -317,6 +325,9 @@ func (store *ControlPlaneStore) ListResources(ctx context.Context, workspaceID s
 }
 
 func (store *ControlPlaneStore) SaveResourceBindingLedger(ctx context.Context, ledger cpd.ResourceBindingLedger) error {
+	if backend, ok := store.backend.(runtimeLifecycleBackend); ok {
+		return backend.UpsertResourceBindingLedger(ctx, ledger)
+	}
 	return store.save(ctx, recordKindResourceBindingLedger, ledger.ResourceBindingID, ledger.WorkspaceID, ledger)
 }
 
@@ -325,12 +336,18 @@ func (store *ControlPlaneStore) CreateResourceBindingLedger(ctx context.Context,
 }
 
 func (store *ControlPlaneStore) ResourceBindingLedgerByID(ctx context.Context, resourceBindingID string) (cpd.ResourceBindingLedger, error) {
+	if backend, ok := store.backend.(runtimeLifecycleBackend); ok {
+		return backend.ResourceBindingLedger(ctx, resourceBindingID)
+	}
 	var ledger cpd.ResourceBindingLedger
 	err := store.load(ctx, recordKindResourceBindingLedger, resourceBindingID, &ledger)
 	return ledger, err
 }
 
 func (store *ControlPlaneStore) ListResourceBindingLedgers(ctx context.Context, workspaceID string) ([]cpd.ResourceBindingLedger, error) {
+	if backend, ok := store.backend.(runtimeLifecycleBackend); ok {
+		return backend.ListResourceBindingLedgers(ctx, workspaceID)
+	}
 	records, err := store.backend.ListRecords(ctx, recordKindResourceBindingLedger, workspaceID)
 	if err != nil {
 		return nil, err
@@ -350,6 +367,9 @@ func (store *ControlPlaneStore) ListResourceBindingLedgers(ctx context.Context, 
 }
 
 func (store *ControlPlaneStore) SaveCloudOperation(ctx context.Context, operation cpd.CloudOperation) error {
+	if backend, ok := store.backend.(runtimeLifecycleBackend); ok {
+		return backend.UpsertCloudOperation(ctx, operation)
+	}
 	return store.save(ctx, recordKindCloudOperation, operation.OperationID, operation.WorkspaceID, operation)
 }
 
@@ -395,6 +415,9 @@ func (store *ControlPlaneStore) MarkResourceBindingCleanupRequired(ctx context.C
 }
 
 func (store *ControlPlaneStore) CloudOperationByID(ctx context.Context, operationID string) (cpd.CloudOperation, error) {
+	if backend, ok := store.backend.(runtimeLifecycleBackend); ok {
+		return backend.CloudOperation(ctx, operationID)
+	}
 	var operation cpd.CloudOperation
 	err := store.load(ctx, recordKindCloudOperation, operationID, &operation)
 	return operation, err

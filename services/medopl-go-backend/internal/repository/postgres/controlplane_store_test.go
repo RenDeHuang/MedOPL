@@ -389,3 +389,91 @@ func TestControlPlaneStorePersistsResourceBindingLifecycle(t *testing.T) {
 		t.Fatalf("ledger lifecycle was not persisted: %#v", got)
 	}
 }
+
+func TestControlPlaneStoreUsesTypedRuntimeLifecycleBackend(t *testing.T) {
+	db := newTypedRuntimeLifecycleTestDB(t)
+	ctx := context.Background()
+	store := NewControlPlaneStore(db)
+	createdAt := time.Date(2026, 6, 24, 1, 2, 3, 0, time.UTC)
+	releasedAt := createdAt.Add(1 * time.Hour)
+	ledger, err := cpd.NewResourceBindingLedger(cpd.ResourceBindingLedgerInput{
+		TenantID:             "tenant-runtime-rc",
+		AccountID:            "account-runtime-rc",
+		WorkspaceID:          "workspace-runtime-rc",
+		ResourceBindingID:    "binding-runtime-rc",
+		BillingAttributionID: "billing-runtime-rc",
+		ServerPlanID:         "starter_2c4g_10gb",
+		WorkspaceStorageGB:   10,
+		CloudProvider:        "tencent",
+		Region:               "usw",
+		ClusterID:            "cls-runtime-rc",
+		NodePoolID:           "np-requested-rc",
+		NodePoolName:         "np-runtime-rc",
+		Status:               cpd.ResourceBindingStatusRequested,
+		CreatedAt:            createdAt,
+		OperationID:          "op-runtime-rc",
+	})
+	if err != nil {
+		t.Fatalf("NewResourceBindingLedger() error = %v", err)
+	}
+	operation, err := cpd.NewCloudOperation(cpd.CloudOperationInput{
+		OperationID:          ledger.OperationID,
+		ResourceBindingID:    ledger.ResourceBindingID,
+		TenantID:             ledger.TenantID,
+		AccountID:            ledger.AccountID,
+		WorkspaceID:          ledger.WorkspaceID,
+		BillingAttributionID: ledger.BillingAttributionID,
+		OperationType:        "runtime_open_rc",
+		ServerPlanID:         ledger.ServerPlanID,
+		WorkspaceStorageGB:   ledger.WorkspaceStorageGB,
+		Status:               ledger.Status,
+		CloudProvider:        ledger.CloudProvider,
+		Region:               ledger.Region,
+		ClusterID:            ledger.ClusterID,
+		NodePoolID:           ledger.NodePoolID,
+		NodePoolName:         ledger.NodePoolName,
+		CloudTagSupport:      ledger.CloudTagSupport,
+		CreatedAt:            createdAt,
+	})
+	if err != nil {
+		t.Fatalf("NewCloudOperation() error = %v", err)
+	}
+
+	if err := store.CreateResourceBindingLedger(ctx, ledger); err != nil {
+		t.Fatalf("CreateResourceBindingLedger() error = %v", err)
+	}
+	if err := store.SaveCloudOperation(ctx, operation); err != nil {
+		t.Fatalf("SaveCloudOperation() error = %v", err)
+	}
+	if err := store.UpdateResourceBindingNodePool(ctx, ledger.ResourceBindingID, "np-ready-rc", cpd.ResourceBindingStatusReady); err != nil {
+		t.Fatalf("UpdateResourceBindingNodePool() error = %v", err)
+	}
+	if err := store.MarkResourceBindingReleased(ctx, ledger.ResourceBindingID, releasedAt); err != nil {
+		t.Fatalf("MarkResourceBindingReleased() error = %v", err)
+	}
+
+	if db.genericWriteCount != 0 {
+		t.Fatalf("typed runtime lifecycle must not fall back to generic control_plane_records writes, got %d", db.genericWriteCount)
+	}
+	gotLedger, err := store.ResourceBindingLedgerByID(ctx, ledger.ResourceBindingID)
+	if err != nil {
+		t.Fatalf("ResourceBindingLedgerByID() error = %v", err)
+	}
+	if gotLedger.Status != cpd.ResourceBindingStatusReleased || gotLedger.NodePoolID != "np-ready-rc" || gotLedger.ReleasedAt == "" {
+		t.Fatalf("typed runtime lifecycle ledger mismatch: %#v", gotLedger)
+	}
+	gotOperation, err := store.CloudOperationByID(ctx, operation.OperationID)
+	if err != nil {
+		t.Fatalf("CloudOperationByID() error = %v", err)
+	}
+	if gotOperation.Status != cpd.ResourceBindingStatusReleased || gotOperation.NodePoolID != "np-ready-rc" || gotOperation.CompletedAt == "" {
+		t.Fatalf("typed cloud operation mismatch: %#v", gotOperation)
+	}
+	gotLedgers, err := store.ListResourceBindingLedgers(ctx, ledger.WorkspaceID)
+	if err != nil {
+		t.Fatalf("ListResourceBindingLedgers() error = %v", err)
+	}
+	if len(gotLedgers) != 1 || gotLedgers[0].ResourceBindingID != ledger.ResourceBindingID {
+		t.Fatalf("typed runtime lifecycle list mismatch: %#v", gotLedgers)
+	}
+}
