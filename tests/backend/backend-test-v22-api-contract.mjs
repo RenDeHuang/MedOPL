@@ -118,7 +118,7 @@ for (const field of runResult.must_not_return) {
   assert(!publicRunResultSurface.includes(`json:"${field}`), `run_result_forbidden_response_field:${field}`);
 }
 assert(
-  serviceSurface.includes("ArtifactRef: artifactRef"),
+  /ArtifactRef:\s*artifactRef/u.test(serviceSurface),
   "run_result_top_level_artifact_ref_not_populated_from_generated_artifact_ref",
 );
 

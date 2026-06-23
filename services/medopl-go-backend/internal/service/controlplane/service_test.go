@@ -521,6 +521,81 @@ func TestServiceUploadRunArtifactBillingAuditUsesStoredMedOPLStorageRefs(t *test
 	assertLedgerAmount(t, billing.Ledger, "artifact.available", 0)
 }
 
+func TestServiceStorageFileArtifactMetadataRoundTripsThroughPostgresOwnedRefs(t *testing.T) {
+	ctx := context.Background()
+	service := NewService(memory.NewControlPlaneStore())
+	launch := bindAndOpen(t, ctx, service)
+	gate, err := service.RuntimeGate(ctx, RuntimeGateInput{WorkspaceID: launch.WorkspaceID, InvocationMode: "runtime_required"})
+	if err != nil {
+		t.Fatalf("RuntimeGate() error = %v", err)
+	}
+	if gate.StorageBindingID == "" {
+		t.Fatalf("runtime gate must expose storage binding id: %+v", gate)
+	}
+
+	fileRef, err := service.RecordFile(ctx, RecordFileInput{
+		LaunchID:     launch.LaunchID,
+		FileName:     "metadata.csv",
+		RelativePath: "inputs/metadata.csv",
+		ContentType:  "text/csv",
+		SizeBytes:    512,
+	})
+	if err != nil {
+		t.Fatalf("RecordFile() error = %v", err)
+	}
+	if fileRef.StorageBindingID != gate.StorageBindingID || fileRef.ObjectRef == "" {
+		t.Fatalf("file ref must expose MedOPL storage metadata: %+v gate=%+v", fileRef, gate)
+	}
+	storedFile, err := service.store.FileByRef(ctx, fileRef.FileRef)
+	if err != nil {
+		t.Fatalf("FileByRef() error = %v", err)
+	}
+	if storedFile.StorageBindingID != gate.StorageBindingID || storedFile.ObjectRef != fileRef.ObjectRef {
+		t.Fatalf("file metadata must persist storageBindingId/objectRef: stored=%+v public=%+v", storedFile, fileRef)
+	}
+
+	runResult, err := service.StartRun(ctx, StartRunInput{
+		LaunchID:  launch.LaunchID,
+		Message:   "analyze stored metadata object",
+		FileRefs:  []string{fileRef.FileRef},
+		ToolName:  "opl-webui-runtime",
+		RequestID: "run-storage-metadata-rc",
+	})
+	if err != nil {
+		t.Fatalf("StartRun() error = %v", err)
+	}
+	storedRun, err := service.store.RunByID(ctx, runResult.Run.RunRef)
+	if err != nil {
+		t.Fatalf("RunByID() error = %v", err)
+	}
+	if storedRun.StorageBindingID != gate.StorageBindingID || len(storedRun.InputObjectRefs) != 1 || storedRun.InputObjectRefs[0] != fileRef.ObjectRef {
+		t.Fatalf("run metadata must persist storage input object lineage: %+v file=%+v", storedRun, fileRef)
+	}
+	artifact := runResult.Artifacts[0]
+	if artifact.StorageBindingID != gate.StorageBindingID || artifact.ObjectRef == "" {
+		t.Fatalf("public artifact must expose MedOPL storage metadata: %+v", artifact)
+	}
+	storedArtifact, err := service.store.ArtifactByRef(ctx, artifact.ArtifactRef)
+	if err != nil {
+		t.Fatalf("ArtifactByRef() error = %v", err)
+	}
+	if storedArtifact.StorageBindingID != gate.StorageBindingID || storedArtifact.ObjectRef != artifact.ObjectRef || storedArtifact.SourceFileRefs[0] != fileRef.FileRef {
+		t.Fatalf("artifact metadata must persist storage output lineage: stored=%+v public=%+v file=%+v", storedArtifact, artifact, fileRef)
+	}
+
+	artifactPayload, err := service.Artifact(ctx, launch.LaunchID, artifact.ArtifactRef)
+	if err != nil {
+		t.Fatalf("Artifact() error = %v", err)
+	}
+	publicArtifact, ok := artifactPayload["artifact"].(PublicArtifact)
+	if !ok {
+		t.Fatalf("artifact payload type = %T %+v", artifactPayload["artifact"], artifactPayload["artifact"])
+	}
+	if publicArtifact.StorageBindingID != gate.StorageBindingID || publicArtifact.ObjectRef != artifact.ObjectRef {
+		t.Fatalf("artifact projection must round-trip storage metadata: %+v", publicArtifact)
+	}
+}
+
 func TestServiceBillingDoesNotCountUploadedFileAsCompletedRun(t *testing.T) {
 	ctx := context.Background()
 	service := NewService(memory.NewControlPlaneStore())

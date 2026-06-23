@@ -222,6 +222,7 @@ func (store *ControlPlaneStore) SaveRun(ctx context.Context, run cpd.RunRecord) 
 	store.mu.Lock()
 	defer store.mu.Unlock()
 	run.FileRefs = append([]string(nil), run.FileRefs...)
+	run.InputObjectRefs = append([]string(nil), run.InputObjectRefs...)
 	store.runsByID[run.RunID] = run
 	return nil
 }
@@ -237,6 +238,7 @@ func (store *ControlPlaneStore) RunByID(ctx context.Context, runID string) (cpd.
 		return cpd.RunRecord{}, cprepo.ErrNotFound
 	}
 	run.FileRefs = append([]string(nil), run.FileRefs...)
+	run.InputObjectRefs = append([]string(nil), run.InputObjectRefs...)
 	return run, nil
 }
 
@@ -246,6 +248,7 @@ func (store *ControlPlaneStore) SaveArtifact(ctx context.Context, artifact cpd.A
 	}
 	store.mu.Lock()
 	defer store.mu.Unlock()
+	artifact.SourceFileRefs = append([]string(nil), artifact.SourceFileRefs...)
 	store.artifactsByRef[artifact.ArtifactRef] = artifact
 	return nil
 }
@@ -260,6 +263,7 @@ func (store *ControlPlaneStore) ArtifactByRef(ctx context.Context, artifactRef s
 	if !ok {
 		return cpd.ArtifactRecord{}, cprepo.ErrNotFound
 	}
+	artifact.SourceFileRefs = append([]string(nil), artifact.SourceFileRefs...)
 	return artifact, nil
 }
 

@@ -203,6 +203,7 @@ func (store *ControlPlaneStore) FileByRef(ctx context.Context, fileRef string) (
 
 func (store *ControlPlaneStore) SaveRun(ctx context.Context, run cpd.RunRecord) error {
 	run.FileRefs = append([]string(nil), run.FileRefs...)
+	run.InputObjectRefs = append([]string(nil), run.InputObjectRefs...)
 	return store.save(ctx, recordKindRun, run.RunID, run.WorkspaceID, run)
 }
 
@@ -210,16 +211,19 @@ func (store *ControlPlaneStore) RunByID(ctx context.Context, runID string) (cpd.
 	var run cpd.RunRecord
 	err := store.load(ctx, recordKindRun, runID, &run)
 	run.FileRefs = append([]string(nil), run.FileRefs...)
+	run.InputObjectRefs = append([]string(nil), run.InputObjectRefs...)
 	return run, err
 }
 
 func (store *ControlPlaneStore) SaveArtifact(ctx context.Context, artifact cpd.ArtifactRecord) error {
+	artifact.SourceFileRefs = append([]string(nil), artifact.SourceFileRefs...)
 	return store.save(ctx, recordKindArtifact, artifact.ArtifactRef, artifact.WorkspaceID, artifact)
 }
 
 func (store *ControlPlaneStore) ArtifactByRef(ctx context.Context, artifactRef string) (cpd.ArtifactRecord, error) {
 	var artifact cpd.ArtifactRecord
 	err := store.load(ctx, recordKindArtifact, artifactRef, &artifact)
+	artifact.SourceFileRefs = append([]string(nil), artifact.SourceFileRefs...)
 	return artifact, err
 }
 

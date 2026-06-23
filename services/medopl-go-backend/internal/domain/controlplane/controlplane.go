@@ -224,43 +224,50 @@ type AuditEvent struct {
 }
 
 type FileRecord struct {
-	FileRef        string
-	LaunchID       string
-	WorkspaceID    string
-	ProviderKeyRef string
-	Name           string
-	RelativePath   string
-	SizeBytes      int64
-	ContentType    string
-	Status         string
-	CreatedAt      string
+	FileRef          string
+	LaunchID         string
+	WorkspaceID      string
+	ProviderKeyRef   string
+	StorageBindingID string
+	ObjectRef        string
+	Name             string
+	RelativePath     string
+	SizeBytes        int64
+	ContentType      string
+	Status           string
+	CreatedAt        string
 }
 
 type RunRecord struct {
-	RunID          string
-	LaunchID       string
-	WorkspaceID    string
-	ProviderKeyRef string
-	RunRef         string
-	Status         string
-	ToolName       string
-	Message        string
-	FileRefs       []string
-	CreatedAt      string
+	RunID            string
+	LaunchID         string
+	WorkspaceID      string
+	ProviderKeyRef   string
+	StorageBindingID string
+	RunRef           string
+	Status           string
+	ToolName         string
+	Message          string
+	FileRefs         []string
+	InputObjectRefs  []string
+	CreatedAt        string
 }
 
 type ArtifactRecord struct {
-	ArtifactRef    string
-	RunID          string
-	LaunchID       string
-	WorkspaceID    string
-	ProviderKeyRef string
-	Kind           string
-	Name           string
-	RelativePath   string
-	SizeBytes      int64
-	ContentType    string
-	CreatedAt      string
+	ArtifactRef      string
+	RunID            string
+	LaunchID         string
+	WorkspaceID      string
+	ProviderKeyRef   string
+	StorageBindingID string
+	ObjectRef        string
+	SourceFileRefs   []string
+	Kind             string
+	Name             string
+	RelativePath     string
+	SizeBytes        int64
+	ContentType      string
+	CreatedAt        string
 }
 
 func NewProviderBinding(input BindProviderKeyInput) (ProviderBinding, error) {

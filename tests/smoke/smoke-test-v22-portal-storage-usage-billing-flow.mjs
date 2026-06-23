@@ -19,10 +19,11 @@ function runGoTest(packagePath, testName) {
 }
 
 runGoTest("./internal/service/controlplane", "TestServiceLocalProductRCUploadFileRunArtifactBillingAuditReleaseAndStorageDestroy");
+runGoTest("./internal/service/controlplane", "TestServiceStorageFileArtifactMetadataRoundTripsThroughPostgresOwnedRefs");
 
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_portal_storage_usage_billing_flow",
   owner: "services/medopl-go-backend",
-  evidence: "go_single_flow_local_product_rc",
+  evidence: "go_single_flow_local_product_rc_with_storage_file_artifact_metadata",
 }, null, 2));

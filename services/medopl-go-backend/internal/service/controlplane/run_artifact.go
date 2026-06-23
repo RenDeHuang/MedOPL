@@ -24,23 +24,27 @@ type PublicRun struct {
 }
 
 type PublicArtifact struct {
-	ArtifactRef    string `json:"artifactRef"`
-	WorkspaceID    string `json:"workspaceId,omitempty"`
-	ProviderKeyRef string `json:"providerKeyRef,omitempty"`
-	Kind           string `json:"kind,omitempty"`
-	Name           string `json:"name"`
-	RelativePath   string `json:"relativePath"`
-	SizeBytes      int64  `json:"sizeBytes"`
-	ContentType    string `json:"contentType"`
+	ArtifactRef      string   `json:"artifactRef"`
+	WorkspaceID      string   `json:"workspaceId,omitempty"`
+	ProviderKeyRef   string   `json:"providerKeyRef,omitempty"`
+	StorageBindingID string   `json:"storageBindingId,omitempty"`
+	ObjectRef        string   `json:"objectRef,omitempty"`
+	SourceFileRefs   []string `json:"sourceFileRefs,omitempty"`
+	Kind             string   `json:"kind,omitempty"`
+	Name             string   `json:"name"`
+	RelativePath     string   `json:"relativePath"`
+	SizeBytes        int64    `json:"sizeBytes"`
+	ContentType      string   `json:"contentType"`
 }
 
 type PublicRunResult struct {
-	Ok          bool             `json:"ok"`
-	Status      string           `json:"status"`
-	StatusURL   string           `json:"statusUrl,omitempty"`
-	Run         PublicRun        `json:"run"`
-	ArtifactRef string           `json:"artifactRef"`
-	Artifacts   []PublicArtifact `json:"artifacts"`
+	Ok               bool             `json:"ok"`
+	Status           string           `json:"status"`
+	StatusURL        string           `json:"statusUrl,omitempty"`
+	StorageBindingID string           `json:"storageBindingId,omitempty"`
+	Run              PublicRun        `json:"run"`
+	ArtifactRef      string           `json:"artifactRef"`
+	Artifacts        []PublicArtifact `json:"artifacts"`
 }
 
 func (service *Service) StartRun(ctx context.Context, input StartRunInput) (PublicRunResult, error) {
@@ -51,8 +55,12 @@ func (service *Service) StartRun(ctx context.Context, input StartRunInput) (Publ
 	if len(input.FileRefs) == 0 {
 		return PublicRunResult{}, cpd.ErrFileRefRequired
 	}
+	fileRefs := make([]string, 0, len(input.FileRefs))
+	inputObjectRefs := make([]string, 0, len(input.FileRefs))
+	storageBindingID := ""
 	for _, fileRef := range input.FileRefs {
-		file, err := service.store.FileByRef(ctx, strings.TrimSpace(fileRef))
+		cleanFileRef := strings.TrimSpace(fileRef)
+		file, err := service.store.FileByRef(ctx, cleanFileRef)
 		if errors.Is(err, cprepo.ErrNotFound) {
 			return PublicRunResult{}, cpd.ErrFileRefRequired
 		}
@@ -62,57 +70,79 @@ func (service *Service) StartRun(ctx context.Context, input StartRunInput) (Publ
 		if file.LaunchID != launch.LaunchID || file.WorkspaceID != launch.WorkspaceID {
 			return PublicRunResult{}, cpd.ErrFileRefRequired
 		}
+		if file.StorageBindingID == "" || file.ObjectRef == "" {
+			return PublicRunResult{}, cpd.ErrFileRefRequired
+		}
+		if storageBindingID == "" {
+			storageBindingID = file.StorageBindingID
+		}
+		if file.StorageBindingID != storageBindingID {
+			return PublicRunResult{}, cpd.ErrFileRefRequired
+		}
+		fileRefs = append(fileRefs, cleanFileRef)
+		inputObjectRefs = append(inputObjectRefs, file.ObjectRef)
 	}
 	runID := strings.TrimSpace(input.RequestID)
 	if runID == "" {
-		runID = "run-" + shortID(launch.LaunchID+":"+strings.Join(input.FileRefs, ","))
+		runID = "run-" + shortID(launch.LaunchID+":"+strings.Join(fileRefs, ","))
 	}
 	artifactRef := "artifact-" + shortID(runID+":result")
+	artifactRelativePath := "outputs/" + runID + "/result.md"
+	artifactObjectRef := objectRefForWorkspacePath(launch.WorkspaceID, storageBindingID, artifactRelativePath)
 	started := service.now().UTC()
 	result := PublicRunResult{
-		Ok:          true,
-		Status:      "succeeded",
-		StatusURL:   "/api/opl/runs/" + runID + "/status",
-		Run:         PublicRun{RunRef: runID, Status: "succeeded"},
-		ArtifactRef: artifactRef,
+		Ok:               true,
+		Status:           "succeeded",
+		StatusURL:        "/api/opl/runs/" + runID + "/status",
+		StorageBindingID: storageBindingID,
+		Run:              PublicRun{RunRef: runID, Status: "succeeded"},
+		ArtifactRef:      artifactRef,
 		Artifacts: []PublicArtifact{{
-			ArtifactRef:    artifactRef,
-			WorkspaceID:    launch.WorkspaceID,
-			ProviderKeyRef: launch.ProviderKeyRef,
-			Kind:           "outputs",
-			Name:           "result.md",
-			RelativePath:   "outputs/result.md",
-			SizeBytes:      256,
-			ContentType:    "text/markdown",
+			ArtifactRef:      artifactRef,
+			WorkspaceID:      launch.WorkspaceID,
+			ProviderKeyRef:   launch.ProviderKeyRef,
+			StorageBindingID: storageBindingID,
+			ObjectRef:        artifactObjectRef,
+			SourceFileRefs:   append([]string(nil), fileRefs...),
+			Kind:             "outputs",
+			Name:             "result.md",
+			RelativePath:     artifactRelativePath,
+			SizeBytes:        256,
+			ContentType:      "text/markdown",
 		}},
 	}
 	if err := service.store.SaveRun(ctx, cpd.RunRecord{
-		RunID:          runID,
-		LaunchID:       launch.LaunchID,
-		WorkspaceID:    launch.WorkspaceID,
-		ProviderKeyRef: launch.ProviderKeyRef,
-		RunRef:         result.Run.RunRef,
-		Status:         result.Run.Status,
-		ToolName:       strings.TrimSpace(input.ToolName),
-		Message:        strings.TrimSpace(input.Message),
-		FileRefs:       input.FileRefs,
-		CreatedAt:      started.Format(time.RFC3339),
+		RunID:            runID,
+		LaunchID:         launch.LaunchID,
+		WorkspaceID:      launch.WorkspaceID,
+		ProviderKeyRef:   launch.ProviderKeyRef,
+		StorageBindingID: storageBindingID,
+		RunRef:           result.Run.RunRef,
+		Status:           result.Run.Status,
+		ToolName:         strings.TrimSpace(input.ToolName),
+		Message:          strings.TrimSpace(input.Message),
+		FileRefs:         fileRefs,
+		InputObjectRefs:  inputObjectRefs,
+		CreatedAt:        started.Format(time.RFC3339),
 	}); err != nil {
 		return PublicRunResult{}, err
 	}
 	artifact := result.Artifacts[0]
 	if err := service.store.SaveArtifact(ctx, cpd.ArtifactRecord{
-		ArtifactRef:    artifact.ArtifactRef,
-		RunID:          runID,
-		LaunchID:       launch.LaunchID,
-		WorkspaceID:    artifact.WorkspaceID,
-		ProviderKeyRef: artifact.ProviderKeyRef,
-		Kind:           artifact.Kind,
-		Name:           artifact.Name,
-		RelativePath:   artifact.RelativePath,
-		SizeBytes:      artifact.SizeBytes,
-		ContentType:    artifact.ContentType,
-		CreatedAt:      started.Format(time.RFC3339),
+		ArtifactRef:      artifact.ArtifactRef,
+		RunID:            runID,
+		LaunchID:         launch.LaunchID,
+		WorkspaceID:      artifact.WorkspaceID,
+		ProviderKeyRef:   artifact.ProviderKeyRef,
+		StorageBindingID: artifact.StorageBindingID,
+		ObjectRef:        artifact.ObjectRef,
+		SourceFileRefs:   artifact.SourceFileRefs,
+		Kind:             artifact.Kind,
+		Name:             artifact.Name,
+		RelativePath:     artifact.RelativePath,
+		SizeBytes:        artifact.SizeBytes,
+		ContentType:      artifact.ContentType,
+		CreatedAt:        started.Format(time.RFC3339),
 	}); err != nil {
 		return PublicRunResult{}, err
 	}
@@ -167,14 +197,17 @@ func (service *Service) Artifact(ctx context.Context, launchID string, artifactR
 		return nil, err
 	}
 	artifact := PublicArtifact{
-		ArtifactRef:    record.ArtifactRef,
-		WorkspaceID:    record.WorkspaceID,
-		ProviderKeyRef: record.ProviderKeyRef,
-		Kind:           record.Kind,
-		Name:           record.Name,
-		RelativePath:   record.RelativePath,
-		SizeBytes:      record.SizeBytes,
-		ContentType:    record.ContentType,
+		ArtifactRef:      record.ArtifactRef,
+		WorkspaceID:      record.WorkspaceID,
+		ProviderKeyRef:   record.ProviderKeyRef,
+		StorageBindingID: record.StorageBindingID,
+		ObjectRef:        record.ObjectRef,
+		SourceFileRefs:   append([]string(nil), record.SourceFileRefs...),
+		Kind:             record.Kind,
+		Name:             record.Name,
+		RelativePath:     record.RelativePath,
+		SizeBytes:        record.SizeBytes,
+		ContentType:      record.ContentType,
 	}
 	return map[string]any{"ok": true, "artifactRef": artifact.ArtifactRef, "artifact": artifact}, nil
 }
