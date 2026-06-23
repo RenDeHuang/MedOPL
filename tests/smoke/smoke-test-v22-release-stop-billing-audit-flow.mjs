@@ -18,6 +18,10 @@ function runGoTest(packagePath, testName) {
 }
 
 runGoTest("./internal/domain/controlplane", "TestReleaseStopsBillingAndKeepsHistoryAuditable");
+runGoTest("./internal/service/controlplane", "TestServiceOpenManagedEnvironmentCreatesCanonicalRuntimeLifecycleLedger");
+runGoTest("./internal/service/controlplane", "TestServiceRuntimeGateProjectsRuntimeLifecycleLedgerState");
+runGoTest("./internal/service/controlplane", "TestServiceReleaseIsIdempotentAndClosesRuntimeLifecycleLedger");
+runGoTest("./internal/service/controlplane", "TestServiceOpenAfterReleaseReactivatesRuntimeLifecycleWithoutStaleReleaseTime");
 runGoTest("./internal/service/controlplane", "TestServiceResourcesAreWorkspaceScopedAndReleaseFailsClosedWhenMissing");
 runGoTest("./internal/service/controlplane", "TestServiceReleaseRetainsStorageUntilExplicitDestroyReceipt");
 
@@ -25,5 +29,5 @@ console.log(JSON.stringify({
   ok: true,
   contract: "v22_release_stop_billing_audit_flow",
   owner: "services/medopl-go-backend",
-  evidence: "go_release_stop_billing_audit_boundary",
+  evidence: "go_runtime_lifecycle_release_stop_billing_audit_boundary",
 }, null, 2));

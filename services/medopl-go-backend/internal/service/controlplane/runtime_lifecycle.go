@@ -177,6 +177,9 @@ func (service *Service) OpenManagedEnvironment(ctx context.Context, input OpenMa
 	if err := service.store.SaveResource(ctx, resource); err != nil {
 		return cpd.LaunchProjection{}, err
 	}
+	if err := service.ensureRuntimeLifecycleLedger(ctx, launch, input); err != nil {
+		return cpd.LaunchProjection{}, err
+	}
 	return launch, nil
 }
 
@@ -256,14 +259,24 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 		return projection, nil
 	}
 	resource := newestResource(resources)
+	runtimeState := runtimeGateResourceState(resource.Status)
+	nodePoolRef := "nodepool-" + shortID(resource.WorkspaceID+":"+resource.ResourceBindingID)
+	if ledger, err := service.store.ResourceBindingLedgerByID(ctx, resource.ResourceBindingID); err == nil {
+		runtimeState = runtimeGateLedgerState(ledger.Status)
+		if ledger.NodePoolID != "" {
+			nodePoolRef = ledger.NodePoolID
+		}
+	} else if !errors.Is(err, cprepo.ErrNotFound) {
+		return RuntimeGateProjection{}, err
+	}
 	projection.RuntimeBindingID = resource.ResourceBindingID
 	projection.StorageBindingID = "storage-" + shortID(resource.WorkspaceID+":"+resource.ResourceBindingID)
 	projection.NodePoolProjection = NodePoolProjection{
-		NodePoolRef:     "nodepool-" + shortID(resource.WorkspaceID+":"+resource.ResourceBindingID),
-		State:           runtimeGateResourceState(resource.Status),
+		NodePoolRef:     nodePoolRef,
+		State:           runtimeState,
 		CustomerVisible: false,
 	}
-	projection.RuntimeState = runtimeGateResourceState(resource.Status)
+	projection.RuntimeState = runtimeState
 	projection.StorageState = runtimeGateStorageState(resource.StorageState)
 	projection.Billing.FreezeStatus = resource.StopBilling.Status
 	if resource.StopBilling.Status == cpd.BillingStatusActive {
@@ -274,17 +287,96 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 		destroyStorage = "completed"
 	}
 	projection.Release = RuntimeGateRelease{
-		CanReleaseRuntime: resource.Status == cpd.ResourceStatusActive,
+		CanReleaseRuntime: resource.Status == cpd.ResourceStatusActive && runtimeState == "ready",
 		DestroyStorage:    destroyStorage,
 		StopBilling:       resource.StopBilling.Status,
 	}
 	projection.ConsumerProjection = runtimeGateConsumerProjection(projection.RuntimeState, projection.StorageState, projection.Release)
-	if resource.Status == cpd.ResourceStatusActive {
+	if runtimeState == "ready" {
 		projection.NextAction = "run_in_opl_webui_with_medopl_runtime"
+	} else if runtimeState == "provisioning" || runtimeState == "releasing" {
+		projection.NextAction = "wait_for_medopl_runtime"
 	} else {
 		projection.NextAction = "open_medopl_runtime"
 	}
 	return projection, nil
+}
+
+func (service *Service) ensureRuntimeLifecycleLedger(ctx context.Context, launch cpd.LaunchProjection, input OpenManagedEnvironmentInput) error {
+	existing, err := service.store.ResourceBindingLedgerByID(ctx, launch.ResourceBindingID)
+	if err == nil {
+		if existing.Status == cpd.ResourceBindingStatusReleased || existing.Status == cpd.ResourceBindingStatusFailed || existing.Status == cpd.ResourceBindingStatusCleanupRequired {
+			return service.reactivateRuntimeLifecycleLedger(ctx, existing)
+		}
+		return nil
+	}
+	if !errors.Is(err, cprepo.ErrNotFound) {
+		return err
+	}
+	createdAt := service.now()
+	operationID := "operation-" + shortID(launch.WorkspaceID+":"+launch.ResourceBindingID)
+	ledger, err := cpd.NewResourceBindingLedger(cpd.ResourceBindingLedgerInput{
+		TenantID:             input.TenantID,
+		AccountID:            input.PortalUserID,
+		WorkspaceID:          launch.WorkspaceID,
+		ResourceBindingID:    launch.ResourceBindingID,
+		BillingAttributionID: "billing-" + shortID(launch.WorkspaceID),
+		ServerPlanID:         "starter_2c4g_10gb",
+		WorkspaceStorageGB:   10,
+		CloudProvider:        "medopl-local-rc",
+		Region:               "local",
+		ClusterID:            "local-control-plane",
+		NodePoolName:         "nodepool-" + shortID(launch.WorkspaceID+":"+launch.ResourceBindingID),
+		Status:               cpd.ResourceBindingStatusReady,
+		CreatedAt:            createdAt,
+		OperationID:          operationID,
+	})
+	if err != nil {
+		return err
+	}
+	operation, err := cpd.NewCloudOperation(cpd.CloudOperationInput{
+		OperationID:          operationID,
+		ResourceBindingID:    launch.ResourceBindingID,
+		TenantID:             ledger.TenantID,
+		AccountID:            ledger.AccountID,
+		WorkspaceID:          launch.WorkspaceID,
+		BillingAttributionID: ledger.BillingAttributionID,
+		OperationType:        "runtime_open_local_rc",
+		ServerPlanID:         ledger.ServerPlanID,
+		WorkspaceStorageGB:   ledger.WorkspaceStorageGB,
+		Status:               cpd.ResourceBindingStatusReady,
+		CloudProvider:        ledger.CloudProvider,
+		Region:               ledger.Region,
+		ClusterID:            ledger.ClusterID,
+		NodePoolName:         ledger.NodePoolName,
+		CloudTagSupport:      ledger.CloudTagSupport,
+		CreatedAt:            createdAt,
+	})
+	if err != nil {
+		return err
+	}
+	if err := service.store.CreateResourceBindingLedger(ctx, ledger); err != nil {
+		return err
+	}
+	return service.store.SaveCloudOperation(ctx, operation)
+}
+
+func (service *Service) reactivateRuntimeLifecycleLedger(ctx context.Context, existing cpd.ResourceBindingLedger) error {
+	existing.Status = cpd.ResourceBindingStatusReady
+	existing.ReleasedAt = ""
+	if err := service.store.SaveResourceBindingLedger(ctx, existing); err != nil {
+		return err
+	}
+	operation, err := service.store.CloudOperationByID(ctx, existing.OperationID)
+	if errors.Is(err, cprepo.ErrNotFound) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	operation.Status = cpd.ResourceBindingStatusReady
+	operation.CompletedAt = ""
+	return service.store.SaveCloudOperation(ctx, operation)
 }
 
 func runtimeGateConsumerProjection(runtimeState string, storageState string, release RuntimeGateRelease) RuntimeGateConsumerProjection {
@@ -377,6 +469,29 @@ func runtimeGateResourceState(status string) string {
 		return "ready"
 	}
 	return firstNonEmpty(status, "unknown")
+}
+
+func runtimeGateLedgerState(status string) string {
+	switch status {
+	case cpd.ResourceBindingStatusRequested,
+		cpd.ResourceBindingStatusCreating,
+		cpd.ResourceBindingStatusCreated,
+		cpd.ResourceBindingStatusScaling:
+		return "provisioning"
+	case cpd.ResourceBindingStatusReady:
+		return "ready"
+	case cpd.ResourceBindingStatusReleaseRequested,
+		cpd.ResourceBindingStatusDeleting:
+		return "releasing"
+	case cpd.ResourceBindingStatusReleased:
+		return "released"
+	case cpd.ResourceBindingStatusFailed:
+		return "failed"
+	case cpd.ResourceBindingStatusCleanupRequired:
+		return "cleanup_required"
+	default:
+		return runtimeGateResourceState(status)
+	}
 }
 
 func runtimeGateStorageState(status string) string {

@@ -127,6 +127,181 @@ func TestServiceRuntimeGateProjectsMedOPLRuntimeBindingForOPLWebui(t *testing.T)
 	}
 }
 
+func TestServiceOpenManagedEnvironmentCreatesCanonicalRuntimeLifecycleLedger(t *testing.T) {
+	ctx := context.Background()
+	service := NewService(memory.NewControlPlaneStore())
+	launch := bindAndOpen(t, ctx, service)
+
+	ledger, err := service.store.ResourceBindingLedgerByID(ctx, launch.ResourceBindingID)
+	if err != nil {
+		t.Fatalf("ResourceBindingLedgerByID() error = %v", err)
+	}
+	if ledger.WorkspaceID != launch.WorkspaceID || ledger.Status != cpd.ResourceBindingStatusReady {
+		t.Fatalf("runtime lifecycle ledger = %+v launch=%+v", ledger, launch)
+	}
+	if ledger.ServerPlanID != "starter_2c4g_10gb" || ledger.WorkspaceStorageGB != 10 {
+		t.Fatalf("runtime lifecycle plan/storage = %+v", ledger)
+	}
+
+	secondLaunch, err := service.OpenManagedEnvironment(ctx, OpenManagedEnvironmentInput{
+		TenantID:       "tenant-v22",
+		PortalUserID:   "user-v22",
+		WorkspaceID:    "workspace-v22",
+		IdempotencyKey: "open-again-with-active-runtime",
+	})
+	if err != nil {
+		t.Fatalf("OpenManagedEnvironment(active runtime) error = %v", err)
+	}
+	if secondLaunch.ResourceBindingID != launch.ResourceBindingID {
+		t.Fatalf("active runtime must be single binding: first=%s second=%s", launch.ResourceBindingID, secondLaunch.ResourceBindingID)
+	}
+	ledgers, err := service.store.ListResourceBindingLedgers(ctx, launch.WorkspaceID)
+	if err != nil {
+		t.Fatalf("ListResourceBindingLedgers() error = %v", err)
+	}
+	if len(ledgers) != 1 {
+		t.Fatalf("open active runtime must not create duplicate lifecycle ledgers: %+v", ledgers)
+	}
+	resources, err := service.Resources(ctx, WorkspaceInput{WorkspaceID: launch.WorkspaceID})
+	if err != nil {
+		t.Fatalf("Resources() error = %v", err)
+	}
+	if resources.Summary.ActiveEnvironments != 1 || len(resources.Items) != 1 {
+		t.Fatalf("open active runtime must keep one active resource: %+v", resources)
+	}
+}
+
+func TestServiceRuntimeGateProjectsRuntimeLifecycleLedgerState(t *testing.T) {
+	ctx := context.Background()
+	service := NewService(memory.NewControlPlaneStore())
+	launch := bindAndOpen(t, ctx, service)
+
+	if err := service.store.UpdateResourceBindingStatus(ctx, launch.ResourceBindingID, cpd.ResourceBindingStatusCreating); err != nil {
+		t.Fatalf("UpdateResourceBindingStatus(creating) error = %v", err)
+	}
+	provisioning, err := service.RuntimeGate(ctx, RuntimeGateInput{WorkspaceID: launch.WorkspaceID, InvocationMode: "runtime_required"})
+	if err != nil {
+		t.Fatalf("RuntimeGate(provisioning) error = %v", err)
+	}
+	if provisioning.RuntimeState != "provisioning" || provisioning.NodePoolProjection.State != "provisioning" {
+		t.Fatalf("runtime gate must project provisioning state from ledger: %+v", provisioning)
+	}
+	if provisioning.ConsumerProjection.UploadEnabled || provisioning.ConsumerProjection.RunEnabled || provisioning.Release.CanReleaseRuntime {
+		t.Fatalf("provisioning runtime must not enable upload/run/release actions: %+v", provisioning)
+	}
+
+	if err := service.store.UpdateResourceBindingStatus(ctx, launch.ResourceBindingID, cpd.ResourceBindingStatusFailed); err != nil {
+		t.Fatalf("UpdateResourceBindingStatus(failed) error = %v", err)
+	}
+	failed, err := service.RuntimeGate(ctx, RuntimeGateInput{WorkspaceID: launch.WorkspaceID, InvocationMode: "runtime_required"})
+	if err != nil {
+		t.Fatalf("RuntimeGate(failed) error = %v", err)
+	}
+	if failed.RuntimeState != "failed" || failed.NextAction != "open_medopl_runtime" {
+		t.Fatalf("runtime gate must project failed state and reopen action from ledger: %+v", failed)
+	}
+
+	if err := service.store.UpdateResourceBindingStatus(ctx, launch.ResourceBindingID, cpd.ResourceBindingStatusReady); err != nil {
+		t.Fatalf("UpdateResourceBindingStatus(ready) error = %v", err)
+	}
+	ready, err := service.RuntimeGate(ctx, RuntimeGateInput{WorkspaceID: launch.WorkspaceID, InvocationMode: "runtime_required"})
+	if err != nil {
+		t.Fatalf("RuntimeGate(ready) error = %v", err)
+	}
+	if ready.RuntimeState != "ready" || !ready.ConsumerProjection.UploadEnabled || !ready.Release.CanReleaseRuntime {
+		t.Fatalf("ready runtime must re-enable OPL-Webui upload/run/release projection: %+v", ready)
+	}
+}
+
+func TestServiceReleaseIsIdempotentAndClosesRuntimeLifecycleLedger(t *testing.T) {
+	ctx := context.Background()
+	service := NewService(memory.NewControlPlaneStore())
+	launch := bindAndOpen(t, ctx, service)
+
+	first, err := service.Release(ctx, ReleaseInput{
+		WorkspaceID:       launch.WorkspaceID,
+		ResourceBindingID: launch.ResourceBindingID,
+		StopBilling:       true,
+		IdempotencyKey:    "release-runtime-once",
+	})
+	if err != nil {
+		t.Fatalf("Release(first) error = %v", err)
+	}
+	second, err := service.Release(ctx, ReleaseInput{
+		WorkspaceID:       launch.WorkspaceID,
+		ResourceBindingID: launch.ResourceBindingID,
+		StopBilling:       true,
+		IdempotencyKey:    "release-runtime-retry-different-key",
+	})
+	if err != nil {
+		t.Fatalf("Release(second) error = %v", err)
+	}
+	if second.AuditEventID != first.AuditEventID || second.Resource.Status != cpd.ResourceStatusReleased {
+		t.Fatalf("repeated release must return the existing release receipt: first=%+v second=%+v", first, second)
+	}
+	ledger, err := service.store.ResourceBindingLedgerByID(ctx, launch.ResourceBindingID)
+	if err != nil {
+		t.Fatalf("ResourceBindingLedgerByID(after release) error = %v", err)
+	}
+	if ledger.Status != cpd.ResourceBindingStatusReleased || ledger.ReleasedAt == "" {
+		t.Fatalf("release must close runtime lifecycle ledger: %+v", ledger)
+	}
+	audits, err := service.store.ListAuditEvents(ctx, launch.WorkspaceID)
+	if err != nil {
+		t.Fatalf("ListAuditEvents() error = %v", err)
+	}
+	releaseAudits := 0
+	for _, audit := range audits {
+		if audit.Kind == cpd.AuditKindResourceRelease {
+			releaseAudits++
+		}
+	}
+	if releaseAudits != 1 {
+		t.Fatalf("release retry must not write duplicate release audit events: %+v", audits)
+	}
+}
+
+func TestServiceOpenAfterReleaseReactivatesRuntimeLifecycleWithoutStaleReleaseTime(t *testing.T) {
+	ctx := context.Background()
+	service := NewService(memory.NewControlPlaneStore())
+	launch := bindAndOpen(t, ctx, service)
+	if _, err := service.Release(ctx, ReleaseInput{
+		WorkspaceID:       launch.WorkspaceID,
+		ResourceBindingID: launch.ResourceBindingID,
+		StopBilling:       true,
+		IdempotencyKey:    "release-before-reopen",
+	}); err != nil {
+		t.Fatalf("Release() error = %v", err)
+	}
+
+	reopened, err := service.OpenManagedEnvironment(ctx, OpenManagedEnvironmentInput{
+		TenantID:       "tenant-v22",
+		PortalUserID:   "user-v22",
+		WorkspaceID:    launch.WorkspaceID,
+		IdempotencyKey: "open-after-release",
+	})
+	if err != nil {
+		t.Fatalf("OpenManagedEnvironment(after release) error = %v", err)
+	}
+	if reopened.ResourceBindingID != launch.ResourceBindingID {
+		t.Fatalf("reopen must keep workspace runtime binding stable: first=%s reopened=%s", launch.ResourceBindingID, reopened.ResourceBindingID)
+	}
+	ledger, err := service.store.ResourceBindingLedgerByID(ctx, launch.ResourceBindingID)
+	if err != nil {
+		t.Fatalf("ResourceBindingLedgerByID(after reopen) error = %v", err)
+	}
+	if ledger.Status != cpd.ResourceBindingStatusReady || ledger.ReleasedAt != "" {
+		t.Fatalf("reopen must project ready lifecycle without stale release timestamp: %+v", ledger)
+	}
+	gate, err := service.RuntimeGate(ctx, RuntimeGateInput{WorkspaceID: launch.WorkspaceID, InvocationMode: "runtime_required"})
+	if err != nil {
+		t.Fatalf("RuntimeGate(after reopen) error = %v", err)
+	}
+	if gate.RuntimeState != "ready" || gate.Release.StopBilling != cpd.BillingStatusActive || !gate.ConsumerProjection.RunEnabled {
+		t.Fatalf("reopen must restore runnable runtime projection: %+v", gate)
+	}
+}
+
 func TestServiceFailsClosedWithoutProviderKey(t *testing.T) {
 	ctx := context.Background()
 	service := NewService(memory.NewControlPlaneStore())
