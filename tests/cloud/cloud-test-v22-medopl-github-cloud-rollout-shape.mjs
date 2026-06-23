@@ -230,6 +230,10 @@ assert(
     backendDockerfile.includes("/app/portal"),
   "backend_image_must_bundle_repo_native_portal_frontend_static_assets",
 );
+assert(
+  backendDockerfile.includes("COPY --from=build /src/services/medopl-go-backend/migrations /app/migrations"),
+  "backend_runtime_image_must_bundle_postgres_migrations_for_production_store_startup",
+);
 for (const expected of [
   "portal.medopl.cn",
   "uswccr.ccs.tencentyun.com/medopl/medopl-go-backend",

@@ -24,6 +24,7 @@ ENV MEDOPL_BACKEND_PORT=8080
 ENV MEDOPL_PORTAL_STATIC_ROOT=/app/portal
 WORKDIR /app
 COPY --from=build /out/medopl-go-backend /usr/local/bin/medopl-go-backend
+COPY --from=build /src/services/medopl-go-backend/migrations /app/migrations
 COPY --from=portal-build /src/services/portal/frontend/dist /app/portal
 EXPOSE 8080
 
