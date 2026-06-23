@@ -75,6 +75,16 @@ func TestProductionModeRequiresDatabaseURL(t *testing.T) {
 	}
 }
 
+func TestProductionModeRejectsDatabaseURLWithDuplicatedPort(t *testing.T) {
+	t.Setenv("MEDOPL_BACKEND_MODE", "production")
+	t.Setenv("MEDOPL_ENV", "")
+	t.Setenv("DATABASE_URL", "postgres://medopl:test@10.66.0.21:5432:5432/medopl?sslmode=disable")
+
+	if _, err := Load(); err == nil {
+		t.Fatal("expected malformed production DATABASE_URL to fail closed")
+	}
+}
+
 func TestLoadRejectsInvalidPort(t *testing.T) {
 	t.Setenv("MEDOPL_BACKEND_PORT", "not-a-port")
 

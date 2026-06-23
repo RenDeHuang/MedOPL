@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -68,8 +69,36 @@ func (cfg Config) Validate() error {
 	if cfg.ProviderSecretRoot = strings.TrimSpace(cfg.ProviderSecretRoot); cfg.ProviderSecretRoot == "" {
 		return fmt.Errorf("PORTAL_OPL_PROVIDER_SECRET_ROOT required")
 	}
-	if strings.TrimSpace(cfg.Mode) == "production" && strings.TrimSpace(cfg.DatabaseURL) == "" {
-		return fmt.Errorf("DATABASE_URL required for production mode")
+	if strings.TrimSpace(cfg.Mode) == "production" {
+		if strings.TrimSpace(cfg.DatabaseURL) == "" {
+			return fmt.Errorf("DATABASE_URL required for production mode")
+		}
+		if err := validateProductionDatabaseURL(cfg.DatabaseURL); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func validateProductionDatabaseURL(raw string) error {
+	parsed, err := url.Parse(strings.TrimSpace(raw))
+	if err != nil {
+		return fmt.Errorf("DATABASE_URL must be a valid postgres URL")
+	}
+	if parsed.Scheme != "postgres" && parsed.Scheme != "postgresql" {
+		return fmt.Errorf("DATABASE_URL must use postgres protocol")
+	}
+	if strings.TrimSpace(parsed.Hostname()) == "" {
+		return fmt.Errorf("DATABASE_URL hostname required")
+	}
+	if strings.Contains(parsed.Hostname(), ":") && !strings.Contains(parsed.Host, "[") {
+		return fmt.Errorf("DATABASE_URL hostname must not include a port segment")
+	}
+	if strings.TrimSpace(parsed.Port()) != "" {
+		port, err := strconv.Atoi(parsed.Port())
+		if err != nil || port <= 0 || port > 65535 {
+			return fmt.Errorf("DATABASE_URL port out of range")
+		}
 	}
 	return nil
 }

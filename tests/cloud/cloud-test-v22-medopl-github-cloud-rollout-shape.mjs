@@ -463,6 +463,25 @@ assert(
   "production_rollback_must_keep_http_redirect_probe_context",
 );
 assert(
+  rolloutSource.includes("deploymentConvergedAfterRolloutStatusFailure") &&
+    rolloutSource.includes("rollout_status_failed_but_deployment_converged") &&
+    rolloutSource.includes("availableReplicas") &&
+    rolloutSource.includes("updatedReplicas"),
+  "rollout_helper_must_not_fail_rollback_when_deployment_already_converged",
+);
+assert(
+  productionApplyJob.includes("Validate production database secret shape") &&
+    productionApplyJob.includes("new URL(raw)") &&
+    productionApplyJob.includes("DATABASE_URL must be a valid postgres URL") &&
+    productionApplyJob.includes("hostname") &&
+    productionApplyJob.includes("port"),
+  "production_apply_must_validate_database_url_shape_before_rollout",
+);
+assert(
+  productionApplyJob.indexOf("Validate production database secret shape") < productionApplyJob.indexOf("Create Goal F receipt inputs"),
+  "production_apply_must_validate_database_url_shape_before_goal_f_receipt_inputs",
+);
+assert(
   productionApplyJob.indexOf("npm ci") < productionApplyJob.indexOf("Create Goal F receipt inputs"),
   "production_apply_must_install_dependencies_before_goal_f_receipt_inputs",
 );

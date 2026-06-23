@@ -122,8 +122,33 @@ function runRolloutStatus() {
   try {
     run("kubectl rollout status", "kubectl", kubectlArgs(["rollout", "status", deployment, `--timeout=${rolloutTimeoutSeconds}s`]));
   } catch (error) {
+    if (deploymentConvergedAfterRolloutStatusFailure()) {
+      console.log("[medopl-cloud-rollout] rollout_status_failed_but_deployment_converged");
+      return;
+    }
     runRolloutFailureDiagnostics();
     throw error;
+  }
+}
+
+function deploymentConvergedAfterRolloutStatusFailure() {
+  try {
+    const raw = execFileSync("kubectl", kubectlArgs(["get", deployment, "-o", "json"]), { encoding: "utf8", env: process.env });
+    const doc = JSON.parse(raw);
+    const specReplicas = Number(doc.spec?.replicas ?? 1);
+    const status = doc.status || {};
+    const containerImage = doc.spec?.template?.spec?.containers?.find((item) => item.name === container)?.image || "";
+    const observedGeneration = Number(status.observedGeneration || 0);
+    const generation = Number(doc.metadata?.generation || 0);
+    return containerImage === image &&
+      observedGeneration >= generation &&
+      Number(status.updatedReplicas || 0) >= specReplicas &&
+      Number(status.readyReplicas || 0) >= specReplicas &&
+      Number(status.availableReplicas || 0) >= specReplicas &&
+      Number(status.unavailableReplicas || 0) === 0;
+  } catch (error) {
+    console.log(`[medopl-cloud-rollout] deployment convergence check failed: ${redact(error.message)}`);
+    return false;
   }
 }
 

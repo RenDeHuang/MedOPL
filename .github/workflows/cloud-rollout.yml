@@ -152,6 +152,34 @@ jobs:
       - name: Install Goal F runner dependencies
         run: npm ci
 
+      - name: Validate production database secret shape
+        shell: bash
+        run: |
+          node <<'NODE'
+          const raw = String(process.env.DATABASE_URL || "").trim();
+          function fail(message) {
+            console.error(message);
+            process.exit(1);
+          }
+          if (!raw) fail("DATABASE_URL required for production rollout");
+          let parsed;
+          try {
+            parsed = new URL(raw);
+          } catch {
+            fail("DATABASE_URL must be a valid postgres URL");
+          }
+          if (!["postgres:", "postgresql:"].includes(parsed.protocol)) {
+            fail("DATABASE_URL must use postgres protocol");
+          }
+          if (!parsed.hostname) fail("DATABASE_URL hostname required");
+          if (parsed.port) {
+            const port = Number.parseInt(parsed.port, 10);
+            if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+              fail("DATABASE_URL port out of range");
+            }
+          }
+          NODE
+
       - name: Create Goal F receipt inputs
         shell: bash
         run: |
