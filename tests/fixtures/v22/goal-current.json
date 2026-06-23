@@ -34,28 +34,29 @@
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
     "branch": "recovery/platform-v22-trunk",
-    "landed_commit": "59165614f864b95b6658c2b96766f48b41cf307d",
+    "landed_commit": "2d1f643b2b9fc3acef05ed6b352517c79eff5c43",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
       "npm run verify PASS",
-      "npm run verify:review PASS",
       "npm run test:contract PASS",
-      "inherited V22_MEDOPL_LIVE_DB_PERSISTENCE_PROOF regression PASS"
+      "npm run verify:review PASS",
+      "npm run gate:review PASS",
+      "targeted cloud/release tests PASS"
     ],
     "plan_completion_audit": {
       "functional": "done",
       "code_cleanup": "done",
       "docs_foldback": "done",
-      "verification": "partial",
+      "verification": "done",
       "retired_entrypoints": "done",
       "cannot_claim": "partial"
     },
     "cleanup_result": {
       "deleted": "none",
-      "folded": "live DB proof test env isolation folded into existing cloud test",
-      "retained": "fresh GitHub verify and Cloud Rollout still pending",
-      "reason": "post-merge closeout required after trunk fix commit",
-      "next": "rerun v22 verify, Release Image and Cloud Rollout with DB proof"
+      "folded": "live DB proof manifest gate into production receipt boundary/current truth/history",
+      "retained": "runtime evidence outside git and fresh rollout still pending",
+      "reason": "post-merge closeout required by landing gate after live DB proof manifest hardening",
+      "next": "rerun v22 verify then release image/cloud rollout for closeout HEAD"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "opl-webui-runtime-production-slice"
@@ -70,7 +71,7 @@
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth",
     "ongoing_authorization_multi_region_sla_enterprise_compliance_and_unobserved_tenants_resources_remain_unclaimed"
   ],
-  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is recovery/platform-v22-trunk at 59165614f864b95b6658c2b96766f48b41cf307d. Current trunk keeps Portal UI/UX production gates hardened, requires the production-complete owner gate for production-ready claims, and closes the release auditEventId canary blocker. GitHub v22 verify run 27974444437 passed for Portal production UI gate hardening; Release Image run 28012858200 built image tag 8753e2b; Cloud Rollout run 28013437604 passed rollout apply, Portal public entry, HTTP redirect, Go health/ready availability, OPL-Webui consumer canary, production receipt manifest and verify:cloud-release-candidate. The redacted manifest contains seven owner receipts, 12 lifecycle sections, claim=cloud_release_candidate, state=complete and sha256 3d2b6e8ffe3601ccc3f0489e59079657af0fe2f9972cf9f34713d170903cd85b. This can claim cloud release candidate evidence for the current authorized canary path only, including Portal public entry and HTTP redirect availability. It does not claim production complete, multi-region/SLA, enterprise compliance, ongoing authorization, unobserved tenants/resources, or long-running stability. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is recovery/platform-v22-trunk at 59165614f864b95b6658c2b96766f48b41cf307d.",
+  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is recovery/platform-v22-trunk at 2d1f643b2b9fc3acef05ed6b352517c79eff5c43. Current trunk keeps Portal UI/UX production gates hardened, requires the production-complete owner gate for production-ready claims, and closes the release auditEventId canary blocker. GitHub v22 verify run 27974444437 passed for Portal production UI gate hardening; Release Image run 28012858200 built image tag 8753e2b; Cloud Rollout run 28013437604 passed rollout apply, Portal public entry, HTTP redirect, Go health/ready availability, OPL-Webui consumer canary, production receipt manifest and verify:cloud-release-candidate. The redacted manifest contains seven owner receipts, 12 lifecycle sections, claim=cloud_release_candidate, state=complete and sha256 3d2b6e8ffe3601ccc3f0489e59079657af0fe2f9972cf9f34713d170903cd85b. This can claim cloud release candidate evidence for the current authorized canary path only, including Portal public entry and HTTP redirect availability. It does not claim production complete, multi-region/SLA, enterprise compliance, ongoing authorization, unobserved tenants/resources, or long-running stability. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is recovery/platform-v22-trunk at 2d1f643b2b9fc3acef05ed6b352517c79eff5c43.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -1009,8 +1010,8 @@
       "cannot_claim": "rollback executed, live-test covered, ongoing monitoring accepted, production deploy receipt accepted, or production complete"
     }
   },
-  "base_trunk_head": "59165614f864b95b6658c2b96766f48b41cf307d",
-  "last_landed_commit": "59165614f864b95b6658c2b96766f48b41cf307d",
+  "base_trunk_head": "2d1f643b2b9fc3acef05ed6b352517c79eff5c43",
+  "last_landed_commit": "2d1f643b2b9fc3acef05ed6b352517c79eff5c43",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
