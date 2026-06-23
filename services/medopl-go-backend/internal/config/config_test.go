@@ -35,6 +35,8 @@ func TestLoadUsesDeterministicLocalDefaults(t *testing.T) {
 
 func TestLoadUsesWritableProductionProviderSecretDefault(t *testing.T) {
 	t.Setenv("MEDOPL_BACKEND_MODE", "production")
+	t.Setenv("MEDOPL_ENV", "")
+	t.Setenv("DATABASE_URL", "postgres://medopl:test@postgres.medopl.local:5432/medopl?sslmode=require")
 	t.Setenv("PORTAL_OPL_PROVIDER_SECRET_ROOT", "")
 
 	cfg, err := Load()
@@ -43,6 +45,33 @@ func TestLoadUsesWritableProductionProviderSecretDefault(t *testing.T) {
 	}
 	if cfg.ProviderSecretRoot != "/tmp/medopl-runtime/provider-secrets" {
 		t.Fatalf("provider secret root = %q", cfg.ProviderSecretRoot)
+	}
+	if cfg.DatabaseURL != "postgres://medopl:test@postgres.medopl.local:5432/medopl?sslmode=require" {
+		t.Fatalf("database url = %q", cfg.DatabaseURL)
+	}
+}
+
+func TestLoadAcceptsProductionModeFromDeployEnvironment(t *testing.T) {
+	t.Setenv("MEDOPL_BACKEND_MODE", "")
+	t.Setenv("MEDOPL_ENV", "production")
+	t.Setenv("DATABASE_URL", "postgres://medopl:test@postgres.medopl.local:5432/medopl?sslmode=require")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	if cfg.Mode != "production" {
+		t.Fatalf("mode = %q", cfg.Mode)
+	}
+}
+
+func TestProductionModeRequiresDatabaseURL(t *testing.T) {
+	t.Setenv("MEDOPL_BACKEND_MODE", "production")
+	t.Setenv("MEDOPL_ENV", "")
+	t.Setenv("DATABASE_URL", "")
+
+	if _, err := Load(); err == nil {
+		t.Fatal("expected production without DATABASE_URL to fail closed")
 	}
 }
 

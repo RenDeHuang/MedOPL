@@ -11,6 +11,14 @@ import (
 )
 
 func Router(cfg config.Config) *gin.Engine {
+	router, err := RouterWithError(cfg)
+	if err != nil {
+		panic(err)
+	}
+	return router
+}
+
+func RouterWithError(cfg config.Config) (*gin.Engine, error) {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 	portalState, err := handlers.NewLocalPortalProjectionStateChecked(cfg.PortalStateRoot)
@@ -65,12 +73,16 @@ func Router(cfg config.Config) *gin.Engine {
 	router.GET("/api/logout", handlers.Logout())
 	router.GET("/api/cloud/connector/status", handlers.CloudConnectorStatus())
 	router.POST("/api/cloud/connector/plan", handlers.CloudConnectorPlan())
+	controlPlaneStore, err := newControlPlaneStore(cfg)
+	if err != nil {
+		return nil, err
+	}
 	controlPlane := controlplaneservice.NewService(
-		memory.NewControlPlaneStore(),
+		controlPlaneStore,
 		controlplaneservice.WithProviderSecretStore(providersecret.NewFileStore(cfg.ProviderSecretRoot)),
 		controlplaneservice.WithGatewayURLs(cfg.OPLGatewayURL, cfg.RuntimeBridgeURL),
 	)
 	handlers.RegisterControlPlaneRoutes(api, controlPlane)
 	registerPortalStaticRoutes(router, cfg.PortalStaticRoot)
-	return router
+	return router, nil
 }

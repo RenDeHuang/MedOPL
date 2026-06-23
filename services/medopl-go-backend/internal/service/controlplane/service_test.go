@@ -218,6 +218,47 @@ func TestServiceRecordsFileRunArtifactBillingAuditAndRelease(t *testing.T) {
 	}
 }
 
+func TestServiceBusinessAccountCreditIsIdempotentAndPreparePreservesBalance(t *testing.T) {
+	ctx := context.Background()
+	service := NewService(memory.NewControlPlaneStore())
+	prepare, err := service.PrepareBusinessAccount(ctx, PrepareBusinessAccountInput{
+		TenantID:     "tenant-business-rc",
+		PortalUserID: "user-business-rc",
+		WorkspaceID:  "workspace-business-rc",
+	})
+	if err != nil {
+		t.Fatalf("PrepareBusinessAccount() error = %v", err)
+	}
+	if prepare.Balance != 0 || prepare.Currency != "CNY" {
+		t.Fatalf("prepare = %+v", prepare)
+	}
+	for attempt := 0; attempt < 2; attempt++ {
+		credit, err := service.CreditBusinessAccount(ctx, CreditBusinessAccountInput{
+			PortalUserID:   "user-business-rc",
+			Amount:         100,
+			Currency:       "CNY",
+			IdempotencyKey: "credit-once",
+		})
+		if err != nil {
+			t.Fatalf("CreditBusinessAccount() attempt %d error = %v", attempt, err)
+		}
+		if credit.Balance != 100 {
+			t.Fatalf("CreditBusinessAccount() attempt %d balance = %v, want 100", attempt, credit.Balance)
+		}
+	}
+	preparedAgain, err := service.PrepareBusinessAccount(ctx, PrepareBusinessAccountInput{
+		TenantID:     "tenant-business-rc",
+		PortalUserID: "user-business-rc",
+		WorkspaceID:  "workspace-business-rc",
+	})
+	if err != nil {
+		t.Fatalf("PrepareBusinessAccount(again) error = %v", err)
+	}
+	if preparedAgain.Balance != 100 {
+		t.Fatalf("PrepareBusinessAccount(again) balance = %v, want 100", preparedAgain.Balance)
+	}
+}
+
 func TestServiceUploadRunArtifactBillingAuditUsesStoredMedOPLStorageRefs(t *testing.T) {
 	ctx := context.Background()
 	service := NewService(memory.NewControlPlaneStore())

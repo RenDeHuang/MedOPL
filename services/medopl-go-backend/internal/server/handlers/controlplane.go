@@ -9,6 +9,8 @@ import (
 )
 
 type ControlPlaneService interface {
+	PrepareBusinessAccount(ctx context.Context, input cps.PrepareBusinessAccountInput) (cps.BusinessAccountProjection, error)
+	CreditBusinessAccount(ctx context.Context, input cps.CreditBusinessAccountInput) (cps.BusinessAccountProjection, error)
 	BindProviderKey(ctx context.Context, input cps.BindProviderKeyInput) (cpd.ProviderBinding, error)
 	ProviderBinding(ctx context.Context, input cps.WorkspaceInput) (cpd.ProviderBinding, error)
 	Preflight(ctx context.Context, input cps.WorkspaceInput) (cpd.PreflightResult, error)
@@ -35,6 +37,23 @@ type bindProviderKeyRequest struct {
 	WorkspaceID    string `json:"workspaceId"`
 	APIKey         string `json:"apiKey"`
 	IdempotencyKey string `json:"idempotencyKey"`
+}
+
+type prepareBusinessAccountRequest struct {
+	TenantID     string `json:"tenantId"`
+	PortalUserID string `json:"portalUserId"`
+	UserID       string `json:"userId"`
+	WorkspaceID  string `json:"workspaceId"`
+}
+
+type creditBusinessAccountRequest struct {
+	TenantID       string  `json:"tenantId"`
+	PortalUserID   string  `json:"portalUserId"`
+	UserID         string  `json:"userId"`
+	WorkspaceID    string  `json:"workspaceId"`
+	Amount         float64 `json:"amount"`
+	Currency       string  `json:"currency"`
+	IdempotencyKey string  `json:"idempotencyKey"`
 }
 
 type workspaceRequest struct {
@@ -107,8 +126,8 @@ func RegisterControlPlaneRoutes(api *gin.RouterGroup, service ControlPlaneServic
 	api.POST("/v22/production/canary/commit", productionCanaryContractCommit())
 	api.POST("/v22/production/external-access-strategy/plan", productionExternalAccessStrategyContractPlan())
 	api.POST("/v22/production/external-access-strategy/commit", productionExternalAccessStrategyContractCommit())
-	api.POST("/v22/users/prepare", prepareUser())
-	api.POST("/v22/users/credit", creditUser())
+	api.POST("/v22/users/prepare", prepareUser(service))
+	api.POST("/v22/users/credit", creditUser(service))
 	api.POST("/v22/provider-key", bindProviderKey(service))
 	api.POST("/v22/managed-environment/readiness", managedEnvironmentReadiness(service))
 	api.POST("/v22/managed-environment/open", openManagedEnvironment(service))

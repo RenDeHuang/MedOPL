@@ -7,15 +7,46 @@ import (
 	cps "github.com/rendehuang/medopl/services/medopl-go-backend/internal/service/controlplane"
 )
 
-func prepareUser() gin.HandlerFunc {
+func prepareUser(service ControlPlaneService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, gin.H{"ok": true, "source": "go-control-plane", "status": "prepared"})
+		var request prepareBusinessAccountRequest
+		if err := ctx.ShouldBindJSON(&request); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "invalid_json"})
+			return
+		}
+		payload, err := service.PrepareBusinessAccount(ctx.Request.Context(), cps.PrepareBusinessAccountInput{
+			TenantID:     defaultString(request.TenantID, "tenant-local-rc"),
+			PortalUserID: defaultString(request.PortalUserID, request.UserID, "user-local-rc"),
+			WorkspaceID:  defaultString(request.WorkspaceID, "workspace-local-rc"),
+		})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, payload)
 	}
 }
 
-func creditUser() gin.HandlerFunc {
+func creditUser(service ControlPlaneService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		ctx.JSON(http.StatusOK, gin.H{"ok": true, "source": "go-control-plane", "balance": 100, "currency": "CNY"})
+		var request creditBusinessAccountRequest
+		if err := ctx.ShouldBindJSON(&request); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "invalid_json"})
+			return
+		}
+		payload, err := service.CreditBusinessAccount(ctx.Request.Context(), cps.CreditBusinessAccountInput{
+			TenantID:       defaultString(request.TenantID, "tenant-local-rc"),
+			PortalUserID:   defaultString(request.PortalUserID, request.UserID, "user-local-rc"),
+			WorkspaceID:    defaultString(request.WorkspaceID, ctx.Query("workspaceId"), ctx.Query("workspace_id")),
+			Amount:         request.Amount,
+			Currency:       defaultString(request.Currency, "CNY"),
+			IdempotencyKey: defaultString(request.IdempotencyKey, "credit-local-rc"),
+		})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, payload)
 	}
 }
 

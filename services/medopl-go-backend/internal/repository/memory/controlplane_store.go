@@ -2,6 +2,7 @@ package memory
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"sync"
 	"time"
@@ -12,6 +13,8 @@ import (
 
 type ControlPlaneStore struct {
 	mu                  sync.Mutex
+	accountsByWorkspace map[string]cpd.BusinessAccount
+	creditsByID         map[string]cpd.CreditEvent
 	bindingsByWorkspace map[string]cpd.ProviderBinding
 	launchesByID        map[string]cpd.LaunchProjection
 	filesByRef          map[string]cpd.FileRecord
@@ -26,6 +29,8 @@ type ControlPlaneStore struct {
 func NewControlPlaneStore() *ControlPlaneStore {
 	return &ControlPlaneStore{
 		bindingsByWorkspace: make(map[string]cpd.ProviderBinding),
+		accountsByWorkspace: make(map[string]cpd.BusinessAccount),
+		creditsByID:         make(map[string]cpd.CreditEvent),
 		launchesByID:        make(map[string]cpd.LaunchProjection),
 		filesByRef:          make(map[string]cpd.FileRecord),
 		runsByID:            make(map[string]cpd.RunRecord),
@@ -35,6 +40,110 @@ func NewControlPlaneStore() *ControlPlaneStore {
 		operationsByID:      make(map[string]cpd.CloudOperation),
 		auditEventsByID:     make(map[string]cpd.AuditEvent),
 	}
+}
+
+func (store *ControlPlaneStore) SaveBusinessAccount(ctx context.Context, account cpd.BusinessAccount) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	if existing, ok := store.accountsByWorkspace[account.WorkspaceID]; ok {
+		if account.Balance == 0 {
+			account.Balance = existing.Balance
+		}
+		if account.Currency == "" {
+			account.Currency = existing.Currency
+		}
+		if account.CreatedAt == "" {
+			account.CreatedAt = existing.CreatedAt
+		}
+	}
+	store.accountsByWorkspace[account.WorkspaceID] = account
+	return nil
+}
+
+func (store *ControlPlaneStore) BusinessAccountByWorkspace(ctx context.Context, workspaceID string) (cpd.BusinessAccount, error) {
+	if err := ctx.Err(); err != nil {
+		return cpd.BusinessAccount{}, err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	account, ok := store.accountsByWorkspace[workspaceID]
+	if !ok {
+		return cpd.BusinessAccount{}, cprepo.ErrNotFound
+	}
+	return account, nil
+}
+
+func (store *ControlPlaneStore) BusinessAccountByUser(ctx context.Context, portalUserID string) (cpd.BusinessAccount, error) {
+	if err := ctx.Err(); err != nil {
+		return cpd.BusinessAccount{}, err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	for _, account := range store.accountsByWorkspace {
+		if account.PortalUserID == portalUserID {
+			return account, nil
+		}
+	}
+	return cpd.BusinessAccount{}, cprepo.ErrNotFound
+}
+
+func (store *ControlPlaneStore) SaveCreditEvent(ctx context.Context, event cpd.CreditEvent) error {
+	_, err := store.ApplyCreditEvent(ctx, event)
+	if errors.Is(err, cprepo.ErrNotFound) {
+		store.mu.Lock()
+		defer store.mu.Unlock()
+		if _, exists := store.creditsByID[event.ID]; exists {
+			return nil
+		}
+		store.creditsByID[event.ID] = event
+		return nil
+	}
+	return err
+}
+
+func (store *ControlPlaneStore) ApplyCreditEvent(ctx context.Context, event cpd.CreditEvent) (cpd.BusinessAccount, error) {
+	if err := ctx.Err(); err != nil {
+		return cpd.BusinessAccount{}, err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	if _, exists := store.creditsByID[event.ID]; exists {
+		account, ok := store.accountsByWorkspace[event.WorkspaceID]
+		if !ok {
+			return cpd.BusinessAccount{}, cprepo.ErrNotFound
+		}
+		return account, nil
+	}
+	account, ok := store.accountsByWorkspace[event.WorkspaceID]
+	if !ok {
+		return cpd.BusinessAccount{}, cprepo.ErrNotFound
+	}
+	store.creditsByID[event.ID] = event
+	account.Balance += event.Amount
+	account.Currency = event.Currency
+	store.accountsByWorkspace[event.WorkspaceID] = account
+	return account, nil
+}
+
+func (store *ControlPlaneStore) ListCreditEvents(ctx context.Context, workspaceID string) ([]cpd.CreditEvent, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	items := make([]cpd.CreditEvent, 0)
+	for _, item := range store.creditsByID {
+		if workspaceID == "" || item.WorkspaceID == workspaceID {
+			items = append(items, item)
+		}
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].ID < items[j].ID
+	})
+	return items, nil
 }
 
 func (store *ControlPlaneStore) SaveProviderBinding(ctx context.Context, binding cpd.ProviderBinding) error {

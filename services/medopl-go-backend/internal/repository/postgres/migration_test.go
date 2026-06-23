@@ -26,8 +26,13 @@ func TestBaselineMigrationIsRepeatableAndCanonical(t *testing.T) {
 		"CREATE TABLE IF NOT EXISTS files",
 		"CREATE TABLE IF NOT EXISTS billing_events",
 		"CREATE TABLE IF NOT EXISTS workflow_executions",
+		"CREATE TABLE IF NOT EXISTS business_accounts",
+		"CREATE TABLE IF NOT EXISTS credit_events",
+		"CREATE TABLE IF NOT EXISTS provider_bindings",
+		"CREATE TABLE IF NOT EXISTS launch_projections",
 		"CREATE TABLE IF NOT EXISTS resource_bindings",
 		"CREATE TABLE IF NOT EXISTS cloud_operations",
+		"CREATE TABLE IF NOT EXISTS control_plane_audit_events",
 		"CREATE INDEX IF NOT EXISTS",
 		"idempotency_key",
 		"workspace_id",
@@ -45,8 +50,13 @@ func TestBaselineMigrationIsRepeatableAndCanonical(t *testing.T) {
 		"CREATE UNIQUE INDEX IF NOT EXISTS idx_workspaces_tenant_slug",
 		"CREATE UNIQUE INDEX IF NOT EXISTS idx_runs_workspace_idempotency",
 		"CREATE UNIQUE INDEX IF NOT EXISTS idx_files_workspace_name",
+		"CREATE UNIQUE INDEX IF NOT EXISTS idx_business_accounts_workspace_id",
+		"CREATE UNIQUE INDEX IF NOT EXISTS idx_credit_events_event_id",
+		"CREATE UNIQUE INDEX IF NOT EXISTS idx_provider_bindings_workspace_id",
+		"CREATE UNIQUE INDEX IF NOT EXISTS idx_launch_projections_launch_id",
 		"CREATE UNIQUE INDEX IF NOT EXISTS idx_resource_bindings_resource_binding_id",
 		"CREATE UNIQUE INDEX IF NOT EXISTS idx_cloud_operations_operation_id",
+		"CREATE UNIQUE INDEX IF NOT EXISTS idx_control_plane_audit_events_event_id",
 	} {
 		if !strings.Contains(migration, marker) {
 			t.Fatalf("migration missing marker %q", marker)

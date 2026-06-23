@@ -20,6 +20,7 @@ type Config struct {
 	Service            string
 	Mode               string
 	Port               int
+	DatabaseURL        string
 	ProviderSecretRoot string
 	PortalStaticRoot   string
 	PortalStateRoot    string
@@ -29,11 +30,12 @@ type Config struct {
 }
 
 func Load() (Config, error) {
-	mode := valueOrDefault(os.Getenv("MEDOPL_BACKEND_MODE"), defaultMode)
+	mode := valueOrDefault(os.Getenv("MEDOPL_BACKEND_MODE"), valueOrDefault(os.Getenv("MEDOPL_ENV"), defaultMode))
 	cfg := Config{
 		Service:            serviceName,
 		Mode:               mode,
 		Port:               defaultPort,
+		DatabaseURL:        strings.TrimSpace(os.Getenv("DATABASE_URL")),
 		ProviderSecretRoot: valueOrDefault(os.Getenv("PORTAL_OPL_PROVIDER_SECRET_ROOT"), defaultProviderSecretRoot(mode)),
 		PortalStaticRoot:   strings.TrimSpace(os.Getenv("MEDOPL_PORTAL_STATIC_ROOT")),
 		PortalStateRoot:    valueOrDefault(os.Getenv("MEDOPL_PORTAL_STATE_ROOT"), filepath.Join(".runtime", "local-services", "portal-state")),
@@ -65,6 +67,9 @@ func (cfg Config) Validate() error {
 	}
 	if cfg.ProviderSecretRoot = strings.TrimSpace(cfg.ProviderSecretRoot); cfg.ProviderSecretRoot == "" {
 		return fmt.Errorf("PORTAL_OPL_PROVIDER_SECRET_ROOT required")
+	}
+	if strings.TrimSpace(cfg.Mode) == "production" && strings.TrimSpace(cfg.DatabaseURL) == "" {
+		return fmt.Errorf("DATABASE_URL required for production mode")
 	}
 	return nil
 }

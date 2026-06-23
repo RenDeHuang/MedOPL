@@ -11,6 +11,12 @@ import (
 var ErrNotFound = errors.New("not_found")
 
 type Store interface {
+	SaveBusinessAccount(ctx context.Context, account cpd.BusinessAccount) error
+	BusinessAccountByWorkspace(ctx context.Context, workspaceID string) (cpd.BusinessAccount, error)
+	BusinessAccountByUser(ctx context.Context, portalUserID string) (cpd.BusinessAccount, error)
+	SaveCreditEvent(ctx context.Context, event cpd.CreditEvent) error
+	ApplyCreditEvent(ctx context.Context, event cpd.CreditEvent) (cpd.BusinessAccount, error)
+	ListCreditEvents(ctx context.Context, workspaceID string) ([]cpd.CreditEvent, error)
 	SaveProviderBinding(ctx context.Context, binding cpd.ProviderBinding) error
 	ProviderBindingByWorkspace(ctx context.Context, workspaceID string) (cpd.ProviderBinding, error)
 	SaveLaunch(ctx context.Context, launch cpd.LaunchProjection) error

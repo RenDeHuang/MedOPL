@@ -99,6 +99,88 @@ CREATE TABLE IF NOT EXISTS workflow_executions (
 CREATE INDEX IF NOT EXISTS idx_workflow_executions_workspace_id ON workflow_executions(workspace_id);
 CREATE INDEX IF NOT EXISTS idx_workflow_executions_run_id ON workflow_executions(run_id);
 
+CREATE TABLE IF NOT EXISTS business_accounts (
+  workspace_id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL,
+  portal_user_id TEXT NOT NULL,
+  status TEXT NOT NULL,
+  balance DOUBLE PRECISION NOT NULL DEFAULT 0,
+  currency TEXT NOT NULL DEFAULT 'CNY',
+  payload JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_business_accounts_workspace_id ON business_accounts(workspace_id);
+CREATE INDEX IF NOT EXISTS idx_business_accounts_tenant_id ON business_accounts(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_business_accounts_portal_user_id ON business_accounts(portal_user_id);
+
+CREATE TABLE IF NOT EXISTS credit_events (
+  event_id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL,
+  portal_user_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
+  amount DOUBLE PRECISION NOT NULL,
+  currency TEXT NOT NULL DEFAULT 'CNY',
+  idempotency_key TEXT NOT NULL,
+  payload JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_credit_events_event_id ON credit_events(event_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_credit_events_idempotency_key ON credit_events(idempotency_key);
+CREATE INDEX IF NOT EXISTS idx_credit_events_workspace_id ON credit_events(workspace_id);
+
+CREATE TABLE IF NOT EXISTS provider_bindings (
+  workspace_id TEXT PRIMARY KEY,
+  tenant_id TEXT NOT NULL,
+  portal_user_id TEXT NOT NULL,
+  provider_key_ref TEXT NOT NULL,
+  bound_status TEXT NOT NULL,
+  idempotency_key TEXT NOT NULL,
+  payload JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_provider_bindings_workspace_id ON provider_bindings(workspace_id);
+CREATE INDEX IF NOT EXISTS idx_provider_bindings_tenant_id ON provider_bindings(tenant_id);
+
+CREATE TABLE IF NOT EXISTS launch_projections (
+  launch_id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  resource_binding_id TEXT NOT NULL,
+  provider_key_ref TEXT NOT NULL,
+  status TEXT NOT NULL,
+  payload JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_launch_projections_launch_id ON launch_projections(launch_id);
+CREATE INDEX IF NOT EXISTS idx_launch_projections_workspace_id ON launch_projections(workspace_id);
+
+CREATE TABLE IF NOT EXISTS managed_resources (
+  resource_binding_id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  status TEXT NOT NULL,
+  storage_state TEXT NOT NULL,
+  payload JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_managed_resources_resource_binding_id ON managed_resources(resource_binding_id);
+CREATE INDEX IF NOT EXISTS idx_managed_resources_workspace_id ON managed_resources(workspace_id);
+
+CREATE TABLE IF NOT EXISTS control_plane_records (
+  kind TEXT NOT NULL,
+  record_id TEXT NOT NULL,
+  workspace_id TEXT NOT NULL,
+  payload JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL,
+  PRIMARY KEY (kind, record_id)
+);
+CREATE INDEX IF NOT EXISTS idx_control_plane_records_workspace_id ON control_plane_records(workspace_id);
+CREATE INDEX IF NOT EXISTS idx_control_plane_records_kind_workspace_id ON control_plane_records(kind, workspace_id);
+
 CREATE TABLE IF NOT EXISTS resource_bindings (
   id TEXT PRIMARY KEY,
   tenant_id TEXT NOT NULL REFERENCES tenants(id),
@@ -152,3 +234,18 @@ CREATE TABLE IF NOT EXISTS cloud_operations (
 CREATE UNIQUE INDEX IF NOT EXISTS idx_cloud_operations_operation_id ON cloud_operations(operation_id);
 CREATE INDEX IF NOT EXISTS idx_cloud_operations_resource_binding_id ON cloud_operations(resource_binding_id);
 CREATE INDEX IF NOT EXISTS idx_cloud_operations_workspace_id ON cloud_operations(workspace_id);
+
+CREATE TABLE IF NOT EXISTS control_plane_audit_events (
+  event_id TEXT PRIMARY KEY,
+  workspace_id TEXT NOT NULL,
+  resource_binding_id TEXT NOT NULL,
+  kind TEXT NOT NULL,
+  status TEXT NOT NULL,
+  idempotency_key TEXT NOT NULL,
+  payload JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_control_plane_audit_events_event_id ON control_plane_audit_events(event_id);
+CREATE INDEX IF NOT EXISTS idx_control_plane_audit_events_workspace_id ON control_plane_audit_events(workspace_id);
+CREATE INDEX IF NOT EXISTS idx_control_plane_audit_events_resource_binding_id ON control_plane_audit_events(resource_binding_id);

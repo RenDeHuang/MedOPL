@@ -62,6 +62,44 @@ type ProviderBinding struct {
 	CreatedAt      string `json:"createdAt,omitempty"`
 }
 
+type BusinessAccount struct {
+	TenantID     string  `json:"tenantId"`
+	PortalUserID string  `json:"portalUserId"`
+	WorkspaceID  string  `json:"workspaceId"`
+	Status       string  `json:"status"`
+	Balance      float64 `json:"balance"`
+	Currency     string  `json:"currency"`
+	CreatedAt    string  `json:"createdAt,omitempty"`
+}
+
+type CreditEvent struct {
+	ID             string  `json:"id"`
+	TenantID       string  `json:"tenantId"`
+	PortalUserID   string  `json:"portalUserId"`
+	WorkspaceID    string  `json:"workspaceId"`
+	Amount         float64 `json:"amount"`
+	Currency       string  `json:"currency"`
+	IdempotencyKey string  `json:"idempotencyKey"`
+	CreatedAt      string  `json:"createdAt,omitempty"`
+}
+
+type PrepareBusinessAccountInput struct {
+	TenantID     string
+	PortalUserID string
+	WorkspaceID  string
+	CreatedAt    time.Time
+}
+
+type CreditBusinessAccountInput struct {
+	TenantID       string
+	PortalUserID   string
+	WorkspaceID    string
+	Amount         float64
+	Currency       string
+	IdempotencyKey string
+	CreatedAt      time.Time
+}
+
 type PreflightInput struct {
 	WorkspaceID string
 	Binding     ProviderBinding

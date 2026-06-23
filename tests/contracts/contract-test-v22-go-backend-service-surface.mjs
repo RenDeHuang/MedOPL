@@ -184,7 +184,8 @@ async function assertServiceSurface() {
   assertIncludes(goMod, "module github.com/rendehuang/medopl/services/medopl-go-backend", "go_mod_module");
   assertIncludes(goMod, "go 1.22", "go_mod_version");
   assertIncludes(goMod, "github.com/gin-gonic/gin", "go_mod_gin_dependency");
-  assertNotMatches(goMod, /github\.com\/redis\/go-redis|github\.com\/lib\/pq|pgx|postgres/u, "go_backend_service_surface_must_not_introduce_real_db_client");
+  assertIncludes(goMod, "github.com/lib/pq", "go_mod_postgres_driver_dependency");
+  assertNotMatches(goMod, /github\.com\/redis\/go-redis|pgx/u, "go_backend_service_surface_must_not_introduce_unapproved_db_client");
 
   const mainSource = await readRepoFile(`${serviceRoot}/cmd/server/main.go`);
   assertIncludes(mainSource, "internal/config", "server_main_must_use_config");
@@ -194,6 +195,31 @@ async function assertServiceSurface() {
   const routerSource = await readRepoFile(`${serviceRoot}/internal/server/router.go`);
   for (const marker of ["gin.New", "GET(\"/health\"", "GET(\"/version\"", "GET(\"/config/check\""]) {
     assertIncludes(routerSource, marker, `router_marker:${marker}`);
+  }
+  const configSource = await readRepoFile(`${serviceRoot}/internal/config/config.go`);
+  for (const marker of ["DatabaseURL", "DATABASE_URL", "MEDOPL_ENV", "production"]) {
+    assertIncludes(configSource, marker, `production_database_config_marker:${marker}`);
+  }
+  const storeSelectorSource = await readRepoFile(`${serviceRoot}/internal/server/store_selector.go`);
+  for (const marker of ["newControlPlaneStore", "openProductionSQLBackend", "DATABASE_URL required for production control-plane store", "postgres.NewControlPlaneStore"]) {
+    assertIncludes(storeSelectorSource, marker, `production_store_selector_marker:${marker}`);
+  }
+  const postgresSQLBackendSource = await readRepoFile(`${serviceRoot}/internal/repository/postgres/sql_backend.go`);
+  assertIncludes(postgresSQLBackendSource, `sql.Open("postgres"`, "postgres_sql_backend_must_open_postgres_driver");
+  for (const marker of [
+    "INSERT INTO business_accounts",
+    "FROM business_accounts",
+    "INSERT INTO credit_events",
+    "FROM credit_events",
+    "FOR UPDATE",
+    "ON CONFLICT (event_id) DO NOTHING",
+    "SET balance = balance + $1",
+  ]) {
+    assertIncludes(postgresSQLBackendSource, marker, `postgres_business_persistence_marker:${marker}`);
+  }
+  const postgresControlPlaneSource = await readRepoFile(`${serviceRoot}/internal/repository/postgres/controlplane_store.go`);
+  for (const marker of ["type ControlPlaneStore struct", "SaveBusinessAccount", "BusinessAccountByWorkspace", "ApplyCreditEvent", "SaveCreditEvent", "ListCreditEvents"]) {
+    assertIncludes(postgresControlPlaneSource, marker, `postgres_control_plane_store_marker:${marker}`);
   }
   const healthSource = await readRepoFile(`${serviceRoot}/internal/server/handlers/health.go`);
   for (const marker of ["medopl-go-backend", "status", "ok", "checks", "config"]) assertIncludes(healthSource, marker, `health_marker:${marker}`);
