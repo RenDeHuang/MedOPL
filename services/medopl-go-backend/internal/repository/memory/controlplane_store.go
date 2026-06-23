@@ -215,6 +215,24 @@ func (store *ControlPlaneStore) FileByRef(ctx context.Context, fileRef string) (
 	return file, nil
 }
 
+func (store *ControlPlaneStore) ListFiles(ctx context.Context, workspaceID string) ([]cpd.FileRecord, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	items := make([]cpd.FileRecord, 0)
+	for _, item := range store.filesByRef {
+		if workspaceID == "" || item.WorkspaceID == workspaceID {
+			items = append(items, item)
+		}
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].FileRef < items[j].FileRef
+	})
+	return items, nil
+}
+
 func (store *ControlPlaneStore) SaveRun(ctx context.Context, run cpd.RunRecord) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -242,6 +260,26 @@ func (store *ControlPlaneStore) RunByID(ctx context.Context, runID string) (cpd.
 	return run, nil
 }
 
+func (store *ControlPlaneStore) ListRuns(ctx context.Context, workspaceID string) ([]cpd.RunRecord, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	items := make([]cpd.RunRecord, 0)
+	for _, item := range store.runsByID {
+		if workspaceID == "" || item.WorkspaceID == workspaceID {
+			item.FileRefs = append([]string(nil), item.FileRefs...)
+			item.InputObjectRefs = append([]string(nil), item.InputObjectRefs...)
+			items = append(items, item)
+		}
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].RunID < items[j].RunID
+	})
+	return items, nil
+}
+
 func (store *ControlPlaneStore) SaveArtifact(ctx context.Context, artifact cpd.ArtifactRecord) error {
 	if err := ctx.Err(); err != nil {
 		return err
@@ -265,6 +303,25 @@ func (store *ControlPlaneStore) ArtifactByRef(ctx context.Context, artifactRef s
 	}
 	artifact.SourceFileRefs = append([]string(nil), artifact.SourceFileRefs...)
 	return artifact, nil
+}
+
+func (store *ControlPlaneStore) ListArtifacts(ctx context.Context, workspaceID string) ([]cpd.ArtifactRecord, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	items := make([]cpd.ArtifactRecord, 0)
+	for _, item := range store.artifactsByRef {
+		if workspaceID == "" || item.WorkspaceID == workspaceID {
+			item.SourceFileRefs = append([]string(nil), item.SourceFileRefs...)
+			items = append(items, item)
+		}
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].ArtifactRef < items[j].ArtifactRef
+	})
+	return items, nil
 }
 
 func (store *ControlPlaneStore) SaveResource(ctx context.Context, resource cpd.ManagedResource) error {

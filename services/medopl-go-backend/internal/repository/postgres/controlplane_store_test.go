@@ -101,6 +101,13 @@ func TestControlPlaneStorePersistsBusinessMetadataAcrossInstances(t *testing.T) 
 	if gotFile.RelativePath != file.RelativePath || gotFile.ProviderKeyRef != file.ProviderKeyRef {
 		t.Fatalf("file metadata was not persisted: %#v", gotFile)
 	}
+	gotFiles, err := second.ListFiles(ctx, binding.WorkspaceID)
+	if err != nil {
+		t.Fatalf("ListFiles() error = %v", err)
+	}
+	if len(gotFiles) != 1 || gotFiles[0].FileRef != file.FileRef {
+		t.Fatalf("file metadata list was not persisted: %#v", gotFiles)
+	}
 
 	run := cpd.RunRecord{
 		RunID:          "run-business-rc",
@@ -123,6 +130,13 @@ func TestControlPlaneStorePersistsBusinessMetadataAcrossInstances(t *testing.T) 
 	}
 	if len(gotRun.FileRefs) != 1 || gotRun.FileRefs[0] != file.FileRef || gotRun.Message != run.Message {
 		t.Fatalf("run metadata was not persisted: %#v", gotRun)
+	}
+	gotRuns, err := second.ListRuns(ctx, binding.WorkspaceID)
+	if err != nil {
+		t.Fatalf("ListRuns() error = %v", err)
+	}
+	if len(gotRuns) != 1 || gotRuns[0].RunID != run.RunID || gotRuns[0].FileRefs[0] != file.FileRef {
+		t.Fatalf("run metadata list was not persisted: %#v", gotRuns)
 	}
 
 	artifact := cpd.ArtifactRecord{
@@ -147,6 +161,13 @@ func TestControlPlaneStorePersistsBusinessMetadataAcrossInstances(t *testing.T) 
 	}
 	if gotArtifact.RunID != run.RunID || gotArtifact.RelativePath != artifact.RelativePath {
 		t.Fatalf("artifact metadata was not persisted: %#v", gotArtifact)
+	}
+	gotArtifacts, err := second.ListArtifacts(ctx, binding.WorkspaceID)
+	if err != nil {
+		t.Fatalf("ListArtifacts() error = %v", err)
+	}
+	if len(gotArtifacts) != 1 || gotArtifacts[0].ArtifactRef != artifact.ArtifactRef {
+		t.Fatalf("artifact metadata list was not persisted: %#v", gotArtifacts)
 	}
 
 	event := cpd.AuditEvent{

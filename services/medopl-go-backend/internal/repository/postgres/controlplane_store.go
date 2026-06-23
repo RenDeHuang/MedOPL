@@ -201,6 +201,25 @@ func (store *ControlPlaneStore) FileByRef(ctx context.Context, fileRef string) (
 	return file, err
 }
 
+func (store *ControlPlaneStore) ListFiles(ctx context.Context, workspaceID string) ([]cpd.FileRecord, error) {
+	records, err := store.backend.ListRecords(ctx, recordKindFile, workspaceID)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]cpd.FileRecord, 0, len(records))
+	for _, record := range records {
+		var item cpd.FileRecord
+		if err := json.Unmarshal(record.Payload, &item); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].FileRef < items[j].FileRef
+	})
+	return items, nil
+}
+
 func (store *ControlPlaneStore) SaveRun(ctx context.Context, run cpd.RunRecord) error {
 	run.FileRefs = append([]string(nil), run.FileRefs...)
 	run.InputObjectRefs = append([]string(nil), run.InputObjectRefs...)
@@ -215,6 +234,27 @@ func (store *ControlPlaneStore) RunByID(ctx context.Context, runID string) (cpd.
 	return run, err
 }
 
+func (store *ControlPlaneStore) ListRuns(ctx context.Context, workspaceID string) ([]cpd.RunRecord, error) {
+	records, err := store.backend.ListRecords(ctx, recordKindRun, workspaceID)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]cpd.RunRecord, 0, len(records))
+	for _, record := range records {
+		var item cpd.RunRecord
+		if err := json.Unmarshal(record.Payload, &item); err != nil {
+			return nil, err
+		}
+		item.FileRefs = append([]string(nil), item.FileRefs...)
+		item.InputObjectRefs = append([]string(nil), item.InputObjectRefs...)
+		items = append(items, item)
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].RunID < items[j].RunID
+	})
+	return items, nil
+}
+
 func (store *ControlPlaneStore) SaveArtifact(ctx context.Context, artifact cpd.ArtifactRecord) error {
 	artifact.SourceFileRefs = append([]string(nil), artifact.SourceFileRefs...)
 	return store.save(ctx, recordKindArtifact, artifact.ArtifactRef, artifact.WorkspaceID, artifact)
@@ -225,6 +265,26 @@ func (store *ControlPlaneStore) ArtifactByRef(ctx context.Context, artifactRef s
 	err := store.load(ctx, recordKindArtifact, artifactRef, &artifact)
 	artifact.SourceFileRefs = append([]string(nil), artifact.SourceFileRefs...)
 	return artifact, err
+}
+
+func (store *ControlPlaneStore) ListArtifacts(ctx context.Context, workspaceID string) ([]cpd.ArtifactRecord, error) {
+	records, err := store.backend.ListRecords(ctx, recordKindArtifact, workspaceID)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]cpd.ArtifactRecord, 0, len(records))
+	for _, record := range records {
+		var item cpd.ArtifactRecord
+		if err := json.Unmarshal(record.Payload, &item); err != nil {
+			return nil, err
+		}
+		item.SourceFileRefs = append([]string(nil), item.SourceFileRefs...)
+		items = append(items, item)
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].ArtifactRef < items[j].ArtifactRef
+	})
+	return items, nil
 }
 
 func (store *ControlPlaneStore) SaveResource(ctx context.Context, resource cpd.ManagedResource) error {

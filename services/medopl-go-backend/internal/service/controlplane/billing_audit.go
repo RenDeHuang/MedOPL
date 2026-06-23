@@ -113,14 +113,21 @@ type RunCost struct {
 }
 
 type LedgerItem struct {
-	ID              string  `json:"id,omitempty"`
-	Type            string  `json:"type"`
-	Amount          float64 `json:"amount"`
-	Reason          string  `json:"reason,omitempty"`
-	OwnerScope      string  `json:"ownerScope,omitempty"`
-	SourceEventID   string  `json:"sourceEventId,omitempty"`
-	SourceEventType string  `json:"sourceEventType,omitempty"`
-	CreatedAt       string  `json:"createdAt"`
+	ID                   string  `json:"id,omitempty"`
+	Type                 string  `json:"type"`
+	Amount               float64 `json:"amount"`
+	Currency             string  `json:"currency"`
+	Reason               string  `json:"reason,omitempty"`
+	OwnerScope           string  `json:"ownerScope,omitempty"`
+	WorkspaceID          string  `json:"workspaceId,omitempty"`
+	ResourceBindingID    string  `json:"resourceBindingId,omitempty"`
+	BillingAttributionID string  `json:"billingAttributionId,omitempty"`
+	FileRef              string  `json:"fileRef,omitempty"`
+	RunRef               string  `json:"runRef,omitempty"`
+	ArtifactRef          string  `json:"artifactRef,omitempty"`
+	SourceEventID        string  `json:"sourceEventId,omitempty"`
+	SourceEventType      string  `json:"sourceEventType,omitempty"`
+	CreatedAt            string  `json:"createdAt"`
 }
 
 type Pagination struct {
@@ -143,6 +150,22 @@ func (service *Service) BillingSummary(ctx context.Context, input WorkspaceInput
 	if err != nil {
 		return BillingSummary{}, err
 	}
+	runs, err := service.store.ListRuns(ctx, workspaceID)
+	if err != nil {
+		return BillingSummary{}, err
+	}
+	files, err := service.store.ListFiles(ctx, workspaceID)
+	if err != nil {
+		return BillingSummary{}, err
+	}
+	artifacts, err := service.store.ListArtifacts(ctx, workspaceID)
+	if err != nil {
+		return BillingSummary{}, err
+	}
+	ledgers, err := service.store.ListResourceBindingLedgers(ctx, workspaceID)
+	if err != nil {
+		return BillingSummary{}, err
+	}
 	runCount := 0
 	for _, event := range events {
 		if event.Kind == cpd.AuditKindRunSucceeded {
@@ -157,7 +180,7 @@ func (service *Service) BillingSummary(ctx context.Context, input WorkspaceInput
 		Totals:    Costs{CPUCost: totalCost, GPUCost: 0, PVCost: 0.1, TotalCost: totalCost + 0.1},
 		Filter:    BillingFilter{Range: "local-rc", From: "", To: ""},
 		TodayCost: totalCost + 0.1,
-		Ledger:    ledgerFromEvents(events),
+		Ledger:    ledgerFromEvents(events, reconciliationIndex{files: files, runs: runs, artifacts: artifacts, ledgers: ledgers}),
 	}
 	summary.Breakdown.CPUCost = totalCost
 	summary.Breakdown.StorageCost = 0.1
@@ -191,23 +214,34 @@ func (service *Service) BillingDetails(ctx context.Context, input WorkspaceInput
 	if err != nil {
 		return BillingDetails{}, err
 	}
-	now := service.now().UTC().Format(time.RFC3339)
+	runs, err := service.store.ListRuns(ctx, strings.TrimSpace(input.WorkspaceID))
+	if err != nil {
+		return BillingDetails{}, err
+	}
+	runCosts := runCostsFromRecords(runs, summary.Breakdown.StorageCost)
 	return BillingDetails{
 		Ok:               true,
 		Source:           "go-control-plane",
 		TaskCosts:        []TaskCost{{Slug: firstNonEmpty(input.WorkspaceID, "workspace-local-rc"), Title: "Go local RC workspace", TotalCost: summary.Totals.TotalCost, CPUCost: summary.Totals.CPUCost, StorageCost: summary.Breakdown.StorageCost, RunCount: summary.Summary.RunCount}},
 		TaskPagination:   Pagination{Page: 1, PageSize: 20, Total: 1},
-		RunCosts:         []RunCost{{TaskRef: "run-local-rc", WorkspaceID: firstNonEmpty(input.WorkspaceID, "workspace-local-rc"), CPUCost: summary.Totals.CPUCost, StorageCost: summary.Breakdown.StorageCost, TotalCost: summary.Totals.TotalCost, StartedAt: now, EndedAt: now, PricingSource: "local-rc-deterministic", RunStatus: "succeeded"}},
-		RunPagination:    Pagination{Page: 1, PageSize: 20, Total: 1},
+		RunCosts:         runCosts,
+		RunPagination:    Pagination{Page: 1, PageSize: 20, Total: len(runCosts)},
 		Ledger:           summary.Ledger,
 		LedgerPagination: Pagination{Page: 1, PageSize: 20, Total: len(summary.Ledger)},
 		Trend:            Trend{Labels: []string{"local-rc"}, Total: []float64{summary.Totals.TotalCost}, CPU: []float64{summary.Totals.CPUCost}, GPU: []float64{0}, Storage: []float64{summary.Breakdown.StorageCost}},
 	}, nil
 }
 
-func ledgerFromEvents(events []cpd.AuditEvent) []LedgerItem {
+type reconciliationIndex struct {
+	files     []cpd.FileRecord
+	runs      []cpd.RunRecord
+	artifacts []cpd.ArtifactRecord
+	ledgers   []cpd.ResourceBindingLedger
+}
+
+func ledgerFromEvents(events []cpd.AuditEvent, index reconciliationIndex) []LedgerItem {
 	if len(events) == 0 {
-		return []LedgerItem{{ID: "ledger-local-rc-open", Type: "hold", Amount: 10, Reason: "local_rc_environment_open", OwnerScope: "go-control-plane", CreatedAt: time.Time{}.Format(time.RFC3339)}}
+		return []LedgerItem{{ID: "ledger-local-rc-open", Type: "hold", Amount: 10, Currency: "CNY", Reason: "local_rc_environment_open", OwnerScope: "go-control-plane", CreatedAt: time.Time{}.Format(time.RFC3339)}}
 	}
 	items := make([]LedgerItem, 0, len(events))
 	for _, event := range events {
@@ -225,15 +259,90 @@ func ledgerFromEvents(events []cpd.AuditEvent) []LedgerItem {
 			amount = 0
 		}
 		items = append(items, LedgerItem{
-			ID:              event.ID,
-			Type:            entryType,
-			Amount:          amount,
-			Reason:          event.Status,
-			OwnerScope:      "go-control-plane",
-			SourceEventID:   event.ID,
-			SourceEventType: event.Kind,
-			CreatedAt:       event.CreatedAt,
+			ID:                   event.ID,
+			Type:                 entryType,
+			Amount:               amount,
+			Currency:             "CNY",
+			Reason:               event.Status,
+			OwnerScope:           "go-control-plane",
+			WorkspaceID:          event.WorkspaceID,
+			ResourceBindingID:    event.ResourceBindingID,
+			BillingAttributionID: billingAttributionID(index.ledgers, event.ResourceBindingID),
+			FileRef:              fileRefForEvent(index.files, event),
+			RunRef:               runRefForEvent(index.runs, event),
+			ArtifactRef:          artifactRefForEvent(index.artifacts, event),
+			SourceEventID:        event.ID,
+			SourceEventType:      event.Kind,
+			CreatedAt:            event.CreatedAt,
 		})
 	}
 	return items
+}
+
+func runCostsFromRecords(runs []cpd.RunRecord, storageCost float64) []RunCost {
+	items := make([]RunCost, 0, len(runs))
+	for _, run := range runs {
+		cpuCost := 0.0
+		if run.Status == "succeeded" {
+			cpuCost = 1.25
+		}
+		items = append(items, RunCost{
+			TaskRef:       firstNonEmpty(run.RunRef, run.RunID),
+			WorkspaceID:   run.WorkspaceID,
+			CPUCost:       cpuCost,
+			GPUCost:       0,
+			StorageCost:   storageCost,
+			TotalCost:     cpuCost + storageCost,
+			StartedAt:     run.CreatedAt,
+			EndedAt:       run.CreatedAt,
+			PricingSource: "local-rc-deterministic",
+			RunStatus:     run.Status,
+		})
+	}
+	return items
+}
+
+func billingAttributionID(ledgers []cpd.ResourceBindingLedger, resourceBindingID string) string {
+	for _, ledger := range ledgers {
+		if ledger.ResourceBindingID == resourceBindingID {
+			return ledger.BillingAttributionID
+		}
+	}
+	return ""
+}
+
+func fileRefForEvent(files []cpd.FileRecord, event cpd.AuditEvent) string {
+	if event.Kind != cpd.AuditKindFileUpload {
+		return ""
+	}
+	for _, file := range files {
+		if file.FileRef == event.IdempotencyKey {
+			return file.FileRef
+		}
+	}
+	return event.IdempotencyKey
+}
+
+func runRefForEvent(runs []cpd.RunRecord, event cpd.AuditEvent) string {
+	if event.Kind != cpd.AuditKindRunSucceeded {
+		return ""
+	}
+	for _, run := range runs {
+		if run.RunID == event.IdempotencyKey || run.RunRef == event.IdempotencyKey {
+			return firstNonEmpty(run.RunRef, run.RunID)
+		}
+	}
+	return event.IdempotencyKey
+}
+
+func artifactRefForEvent(artifacts []cpd.ArtifactRecord, event cpd.AuditEvent) string {
+	if event.Kind != cpd.AuditKindArtifactAvailable {
+		return ""
+	}
+	for _, artifact := range artifacts {
+		if artifact.ArtifactRef == event.IdempotencyKey {
+			return artifact.ArtifactRef
+		}
+	}
+	return event.IdempotencyKey
 }
