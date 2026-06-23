@@ -3,6 +3,7 @@ package controlplane
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	cprepo "github.com/rendehuang/medopl/services/medopl-go-backend/internal/repository/controlplane"
@@ -11,6 +12,7 @@ import (
 
 type Service struct {
 	store              cprepo.Store
+	mu                 sync.Mutex
 	now                func() time.Time
 	providerSecretSink ProviderSecretSink
 	oplGatewayURL      string

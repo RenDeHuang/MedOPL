@@ -30,6 +30,9 @@ type StorageDestroyReceipt struct {
 }
 
 func (service *Service) DestroyStorage(ctx context.Context, input DestroyStorageInput) (StorageDestroyReceipt, error) {
+	service.mu.Lock()
+	defer service.mu.Unlock()
+
 	workspaceID := strings.TrimSpace(input.WorkspaceID)
 	resourceBindingID := strings.TrimSpace(input.ResourceBindingID)
 	storageBindingID := strings.TrimSpace(input.StorageBindingID)
@@ -56,6 +59,23 @@ func (service *Service) DestroyStorage(ctx context.Context, input DestroyStorage
 	}
 	if resource.Status != cpd.ResourceStatusReleased || resource.StopBilling.Status != cpd.BillingStatusStopped {
 		return StorageDestroyReceipt{}, cpd.ErrRuntimeReleaseRequired
+	}
+	if resource.StorageState == cpd.StorageStatusDestroyed {
+		audit, err := service.storageDestroyAuditEvent(ctx, workspaceID, resourceBindingID)
+		if err != nil {
+			return StorageDestroyReceipt{}, err
+		}
+		return StorageDestroyReceipt{
+			Ok:                true,
+			StorageDestroyed:  true,
+			BillingStopped:    true,
+			WorkspaceID:       workspaceID,
+			ResourceBindingID: resourceBindingID,
+			StorageBindingID:  storageBindingID,
+			StorageState:      cpd.StorageStatusDestroyed,
+			AuditEvent:        audit,
+			ReleaseReceipts:   releaseReceipts(resource, audit, true),
+		}, nil
 	}
 	audit := cpd.AuditEvent{
 		ID:                "audit-" + shortID(resourceBindingID+":"+storageBindingID+":"+input.IdempotencyKey),
@@ -85,4 +105,17 @@ func (service *Service) DestroyStorage(ctx context.Context, input DestroyStorage
 		AuditEvent:        audit,
 		ReleaseReceipts:   releaseReceipts(resource, audit, true),
 	}, nil
+}
+
+func (service *Service) storageDestroyAuditEvent(ctx context.Context, workspaceID string, resourceBindingID string) (cpd.AuditEvent, error) {
+	audits, err := service.store.ListAuditEvents(ctx, workspaceID)
+	if err != nil {
+		return cpd.AuditEvent{}, err
+	}
+	for _, audit := range audits {
+		if audit.Kind == cpd.AuditKindStorageDestroy && audit.ResourceBindingID == resourceBindingID {
+			return audit, nil
+		}
+	}
+	return cpd.AuditEvent{}, cprepo.ErrNotFound
 }

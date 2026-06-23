@@ -140,6 +140,9 @@ func (service *Service) Preflight(ctx context.Context, input WorkspaceInput) (cp
 }
 
 func (service *Service) OpenManagedEnvironment(ctx context.Context, input OpenManagedEnvironmentInput) (cpd.LaunchProjection, error) {
+	service.mu.Lock()
+	defer service.mu.Unlock()
+
 	binding, err := service.store.ProviderBindingByWorkspace(ctx, strings.TrimSpace(input.WorkspaceID))
 	if errors.Is(err, cprepo.ErrNotFound) {
 		return cpd.LaunchProjection{}, cpd.ErrProviderKeyRequired

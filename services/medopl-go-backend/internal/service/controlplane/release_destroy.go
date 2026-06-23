@@ -36,6 +36,9 @@ type ReleaseReceipts struct {
 }
 
 func (service *Service) Release(ctx context.Context, input ReleaseInput) (ReleaseResult, error) {
+	service.mu.Lock()
+	defer service.mu.Unlock()
+
 	resource, err := service.store.ResourceByBinding(ctx, strings.TrimSpace(input.ResourceBindingID))
 	if errors.Is(err, cprepo.ErrNotFound) {
 		return ReleaseResult{}, cpd.ErrResourceNotFound
