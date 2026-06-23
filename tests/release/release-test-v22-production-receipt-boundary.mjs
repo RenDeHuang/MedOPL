@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { readFile } from "node:fs/promises";
@@ -11,6 +12,9 @@ import {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
+const testRunId = `test-production-complete-candidate-${process.pid}`;
+const testEvidenceDir = `.runtime/v22-production-complete-candidate/${testRunId}`;
+const testManifestPath = `${testEvidenceDir}/receipt-manifest.json`;
 
 async function readJson(repoPath) {
   return JSON.parse(await readFile(path.join(repoRoot, repoPath), "utf8"));
@@ -18,6 +22,14 @@ async function readJson(repoPath) {
 
 function runVerifyCloudReleaseCandidate(args = []) {
   return spawnSync(process.execPath, ["scripts/v22-verify.mjs", "cloud-release-candidate", "--json", ...args], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+  });
+}
+
+function runVerifyProductionCompleteCandidate(args = []) {
+  return spawnSync(process.execPath, ["scripts/v22-verify.mjs", "production-complete-candidate", "--json", ...args], {
     cwd: repoRoot,
     encoding: "utf8",
     stdio: "pipe",
@@ -605,6 +617,23 @@ assert.equal(fixtureManifestGatePayload.cloudReleaseCandidateComplete, true, "cl
 assert.equal(fixtureManifestGatePayload.productionComplete, false, "cloud_rc_gate_must_not_claim_production_complete");
 assert.deepEqual(fixtureManifestGatePayload.rawEvidenceViolations, [], "cloud_rc_gate_fixture_must_not_embed_raw_evidence");
 
+const cloudRcAsProductionCompleteCandidate = runVerifyProductionCompleteCandidate([
+  "--receipt-manifest",
+  "tests/fixtures/v22/production-receipt-manifest.example.json",
+]);
+assert.equal(cloudRcAsProductionCompleteCandidate.status, 1, "production_complete_candidate_gate_cloud_rc_manifest_must_fail_closed");
+const cloudRcAsProductionCompleteCandidatePayload = JSON.parse(cloudRcAsProductionCompleteCandidate.stdout);
+assert.equal(
+  cloudRcAsProductionCompleteCandidatePayload.productionCompleteCandidateComplete,
+  false,
+  "production_complete_candidate_gate_cloud_rc_payload_must_not_complete",
+);
+assert(
+  cloudRcAsProductionCompleteCandidatePayload.blockers.includes("production_receipt_manifest_production_complete_criteria_missing")
+    || cloudRcAsProductionCompleteCandidatePayload.missingProductionCompleteCriteria.length > 0,
+  "production_complete_candidate_gate_cloud_rc_must_report_missing_criteria",
+);
+
 const productionCompleteWithoutCriteria = evaluateProductionReceiptManifest({
   boundary,
   manifest: {
@@ -629,6 +658,13 @@ const productionCompleteCriteria = boundary.production_receipt_boundary.producti
   summary: `${id} accepted by owner receipt gate`,
   cannotClaim: ["multi-region production", "SLA proven outside this claim scope"],
 }));
+mkdirSync(path.join(repoRoot, testEvidenceDir), { recursive: true });
+writeFileSync(path.join(repoRoot, testManifestPath), `${JSON.stringify({
+  ...exampleManifest,
+  claim: "production_complete",
+  evidence_level: "production_canary",
+  production_complete_criteria: productionCompleteCriteria,
+}, null, 2)}\n`);
 const productionCompleteWithCriteria = evaluateProductionReceiptManifest({
   boundary,
   manifest: {
@@ -639,6 +675,27 @@ const productionCompleteWithCriteria = evaluateProductionReceiptManifest({
   },
 });
 assert.equal(productionCompleteWithCriteria.productionComplete, true, "production_complete_manifest_with_all_criteria_must_pass_shape_gate");
+
+const productionCompleteCandidateFixtureGate = runVerifyProductionCompleteCandidate([
+  "--receipt-manifest",
+  testManifestPath,
+]);
+assert.equal(
+  productionCompleteCandidateFixtureGate.status,
+  0,
+  `production_complete_candidate_fixture_gate_must_pass:${productionCompleteCandidateFixtureGate.stderr || productionCompleteCandidateFixtureGate.stdout}`,
+);
+const productionCompleteCandidateFixtureGatePayload = JSON.parse(productionCompleteCandidateFixtureGate.stdout);
+assert.equal(
+  productionCompleteCandidateFixtureGatePayload.productionCompleteCandidateComplete,
+  true,
+  "production_complete_candidate_fixture_gate_must_complete",
+);
+assert.equal(
+  productionCompleteCandidateFixtureGatePayload.productionComplete,
+  false,
+  "production_complete_candidate_gate_must_not_emit_production_complete_claim",
+);
 
 const productionCompleteMissingCriterion = evaluateProductionReceiptManifest({
   boundary,
@@ -701,6 +758,8 @@ assert(
   ),
   "production_complete_criterion_wrong_owner_blocker_mismatch",
 );
+
+rmSync(path.join(repoRoot, testEvidenceDir), { recursive: true, force: true });
 
 console.log(JSON.stringify({
   ok: true,

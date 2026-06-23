@@ -499,6 +499,13 @@
         "node tests/release/release-test-v22-production-receipt-boundary.mjs",
         "node scripts/v22-verify.mjs cloud-release-candidate --base origin/recovery/platform-v22-trunk --json"
       ]
+    },
+    {
+      "id": "production-complete-candidate",
+      "commands": [
+        "node tests/release/release-test-v22-production-receipt-boundary.mjs",
+        "node scripts/v22-verify.mjs production-complete-candidate --base origin/recovery/platform-v22-trunk --json"
+      ]
     }
   ],
   "branch_override_suites": []

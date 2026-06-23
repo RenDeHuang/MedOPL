@@ -308,6 +308,54 @@ async function verifyCloudReleaseCandidate({ base, receiptManifestPath = ".runti
   };
 }
 
+async function verifyProductionCompleteCandidate({ base, receiptManifestPath = ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json" }) {
+  const [boundary, receiptManifest] = await Promise.all([
+    readJson(PRODUCTION_RECEIPT_BOUNDARY_PATH),
+    readJson(receiptManifestPath).catch(() => null),
+  ]);
+  const receiptResult = evaluateProductionReceiptManifest({ boundary, manifest: receiptManifest });
+  const requiredProductionCompleteCriteria = Array.isArray(
+    boundary?.production_receipt_boundary?.production_complete_owner_receipt_gate?.required_operational_criteria,
+  )
+    ? boundary.production_receipt_boundary.production_complete_owner_receipt_gate.required_operational_criteria.map(String)
+    : [];
+  const manifestCriteria = Array.isArray(receiptManifest?.production_complete_criteria)
+    ? receiptManifest.production_complete_criteria.map((criterion) => String(criterion?.id || "").trim()).filter(Boolean)
+    : [];
+  const missingProductionCompleteCriteria = receiptManifest?.claim === "production_complete"
+    ? receiptResult.missingProductionCompleteCriteria
+    : requiredProductionCompleteCriteria.filter((criterion) => !manifestCriteria.includes(criterion));
+  const blockers = [...receiptResult.blockers];
+  if (receiptManifest?.claim !== "production_complete") {
+    blockers.push("production_complete_candidate_manifest_claim_must_be_production_complete");
+    if (!Array.isArray(receiptManifest?.production_complete_criteria)) {
+      blockers.push("production_receipt_manifest_production_complete_criteria_missing");
+    }
+  }
+  return {
+    ok: receiptResult.productionComplete === true,
+    mode: "production-complete-candidate",
+    base,
+    receiptManifestRef: receiptManifestPath,
+    productionCompleteCandidateComplete: receiptResult.productionComplete,
+    productionComplete: false,
+    cloudReleaseCandidateComplete: receiptResult.cloudReleaseCandidateComplete,
+    missingReceiptTypes: receiptResult.missingReceiptTypes,
+    missingLifecycleSections: receiptResult.missingLifecycleSections,
+    missingProductionCompleteCriteria,
+    blockers,
+    rawEvidenceViolations: receiptResult.rawEvidenceViolations,
+    unexpectedFieldViolations: receiptResult.unexpectedFieldViolations,
+    receiptMappingViolations: receiptResult.receiptMappingViolations,
+    cannotClaim: [
+      "production complete without explicit release decision",
+      "multi-region production",
+      "SLA proven",
+      "enterprise compliance",
+    ],
+  };
+}
+
 async function validateActivePlatform({ manifest, current }) {
   const packageJson = await readJson("package.json");
 
@@ -466,6 +514,11 @@ async function validateActivePlatform({ manifest, current }) {
     "node scripts/v22-verify.mjs package cloud-release-candidate --base origin/recovery/platform-v22-trunk",
     "cloud_release_candidate_gate_script_mismatch",
   );
+  assert.equal(
+    packageJson.scripts["verify:production-complete-candidate"],
+    "node scripts/v22-verify.mjs package production-complete-candidate --base origin/recovery/platform-v22-trunk",
+    "production_complete_candidate_gate_script_mismatch",
+  );
 
   return {
     ok: true,
@@ -487,6 +540,7 @@ function printUsage() {
     "  node scripts/v22-verify.mjs plan [--base origin/recovery/platform-v22-trunk] [--files a,b] [--profile changed-surface|full-local] [--json]",
     "  node scripts/v22-verify.mjs run-plan [--base origin/recovery/platform-v22-trunk] [--files a,b] [--profile changed-surface|full-local] [--dry-run] [--include-authorized] [--json]",
     "  node scripts/v22-verify.mjs cloud-release-candidate [--base origin/recovery/platform-v22-trunk] [--receipt-manifest .runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json] [--json]",
+    "  node scripts/v22-verify.mjs production-complete-candidate [--base origin/recovery/platform-v22-trunk] [--receipt-manifest .runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json] [--json]",
     "  node scripts/v22-verify.mjs current [--base origin/recovery/platform-v22-trunk] [--dry-run] [--json]",
     "  node scripts/v22-verify.mjs suite <id> [--base origin/recovery/platform-v22-trunk] [--dry-run] [--json]",
     "  node scripts/v22-verify.mjs package <id> [--base origin/recovery/platform-v22-trunk] [--dry-run] [--json]",
@@ -630,6 +684,30 @@ function renderHuman(payload) {
     for (const claim of payload.cannotClaim || []) lines.push(`- ${claim}`);
     return `${lines.join("\n")}\n`;
   }
+  if (payload.mode === "production-complete-candidate") {
+    lines.push(`receipt manifest: ${payload.receiptManifestRef}`);
+    lines.push(`production complete candidate complete: ${payload.productionCompleteCandidateComplete}`);
+    lines.push(`production complete: ${payload.productionComplete}`);
+    if ((payload.missingReceiptTypes || []).length > 0) {
+      lines.push("missing receipt types:");
+      for (const type of payload.missingReceiptTypes) lines.push(`- ${type}`);
+    }
+    if ((payload.missingLifecycleSections || []).length > 0) {
+      lines.push("missing lifecycle sections:");
+      for (const section of payload.missingLifecycleSections) lines.push(`- ${section}`);
+    }
+    if ((payload.missingProductionCompleteCriteria || []).length > 0) {
+      lines.push("missing production complete criteria:");
+      for (const criterion of payload.missingProductionCompleteCriteria) lines.push(`- ${criterion}`);
+    }
+    if ((payload.blockers || []).length > 0) {
+      lines.push("blockers:");
+      for (const blocker of payload.blockers) lines.push(`- ${blocker}`);
+    }
+    lines.push("cannot claim:");
+    for (const claim of payload.cannotClaim || []) lines.push(`- ${claim}`);
+    return `${lines.join("\n")}\n`;
+  }
   if (payload.leafId) lines.push(`leaf: ${payload.leafId}`);
   if (payload.suiteId) lines.push(`suite: ${payload.suiteId}`);
   if (payload.packageId) lines.push(`package: ${payload.packageId}`);
@@ -694,6 +772,16 @@ async function main() {
 
   if (mode === "cloud-release-candidate") {
     const payload = await verifyCloudReleaseCandidate({
+      base: options.base || "origin/recovery/platform-v22-trunk",
+      receiptManifestPath: options["receipt-manifest"] || ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json",
+    });
+    process.stdout.write(options.json ? `${JSON.stringify(payload, null, 2)}\n` : renderHuman(payload));
+    if (!payload.ok) process.exitCode = 1;
+    return;
+  }
+
+  if (mode === "production-complete-candidate") {
+    const payload = await verifyProductionCompleteCandidate({
       base: options.base || "origin/recovery/platform-v22-trunk",
       receiptManifestPath: options["receipt-manifest"] || ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json",
     });

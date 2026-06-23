@@ -263,6 +263,10 @@ jobs:
         if: ${{ inputs.availability_probe }}
         run: npm run verify:cloud-release-candidate
 
+      - name: Production complete candidate verify
+        if: ${{ inputs.availability_probe }}
+        run: npm run verify:production-complete-candidate
+
       - name: Upload redacted receipt manifest
         if: ${{ inputs.availability_probe }}
         uses: actions/upload-artifact@v4

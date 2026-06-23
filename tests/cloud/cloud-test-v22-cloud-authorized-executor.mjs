@@ -615,6 +615,17 @@ try {
   assert.equal(manifestOnly.receiptManifest.status, "complete", "manifest_only_status");
   const manifestOnlyPayload = JSON.parse(readFileSync(path.join(repoRoot, manifestOnly.receiptManifest.path), "utf8"));
   assert.equal(JSON.stringify(manifestOnlyPayload).includes("raw-secret-value"), false, "manifest_only_must_not_copy_raw_secret_receipt_summary");
+  assert.equal(manifestOnlyPayload.claim, "production_complete", "manifest_only_must_emit_production_complete_candidate_manifest");
+  assert.equal(
+    manifestOnlyPayload.production_complete_criteria.length,
+    7,
+    "manifest_only_must_emit_7_production_complete_criteria",
+  );
+  assert.equal(
+    manifestOnly.receiptManifest.productionCompleteCandidateComplete,
+    true,
+    "manifest_only_must_pass_production_complete_candidate_shape_gate",
+  );
 } finally {
   rmSync(path.join(repoRoot, testEvidenceSink), { recursive: true, force: true });
   rmSync(path.join(repoRoot, ".runtime/v22-cloud-authorization", `${testRunId}-missing-receipts`), { recursive: true, force: true });

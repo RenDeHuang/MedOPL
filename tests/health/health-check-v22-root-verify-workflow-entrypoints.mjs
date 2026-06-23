@@ -75,6 +75,7 @@ const expectedScripts = {
   "local:product:e2e:execute": "node scripts/v22-local-product-e2e.mjs --execute --json",
   "cloud:rollout:dry-run": "node scripts/cloud-rollout/medopl.mjs",
   "cloud:rollout:availability": "node scripts/cloud-rollout/medopl.mjs --availability-probe",
+  "verify:production-complete-candidate": "node scripts/v22-verify.mjs package production-complete-candidate --base origin/recovery/platform-v22-trunk",
 };
 
 assert.equal(packageJson.private, true, "root_package_must_be_private");
@@ -274,6 +275,13 @@ assert.deepEqual(cloudReleaseCandidateSuite.commands, [
   "node tests/release/release-test-v22-production-receipt-boundary.mjs",
   "node scripts/v22-verify.mjs cloud-release-candidate --base origin/recovery/platform-v22-trunk --json",
 ], "cloud_release_candidate_package_suite_commands_mismatch");
+
+const productionCompleteCandidateSuite = manifest.package_suites.find((suite) => suite.id === "production-complete-candidate");
+assert(productionCompleteCandidateSuite, "production_complete_candidate_package_suite_missing");
+assert.deepEqual(productionCompleteCandidateSuite.commands, [
+  "node tests/release/release-test-v22-production-receipt-boundary.mjs",
+  "node scripts/v22-verify.mjs production-complete-candidate --base origin/recovery/platform-v22-trunk --json",
+], "production_complete_candidate_package_suite_commands_mismatch");
 
 const reviewSuite = manifest.suites.find((suite) => suite.id === "review");
 assert(reviewSuite?.commands.includes("node tests/health/health-check-v22-verify-plan-mode.mjs"), "review_suite_must_check_verify_plan_mode");

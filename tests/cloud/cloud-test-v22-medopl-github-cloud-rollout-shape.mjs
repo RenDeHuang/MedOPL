@@ -377,6 +377,7 @@ for (const expected of [
   "npm run cloud:goal -- --operation live_test",
   "npm run cloud:goal -- --manifest-only",
   "npm run verify:cloud-release-candidate",
+  "npm run verify:production-complete-candidate",
   "actions/upload-artifact@v4",
   ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json",
   "node scripts/cloud-rollout/medopl.mjs --apply",
@@ -472,11 +473,24 @@ assert(
   productionApplyJob.indexOf("npm run cloud:goal -- --manifest-only") < productionApplyJob.indexOf("npm run verify:cloud-release-candidate"),
   "production_apply_must_verify_cloud_rc_after_manifest",
 );
+assert(
+  productionApplyJob.indexOf("npm run verify:cloud-release-candidate") < productionApplyJob.indexOf("npm run verify:production-complete-candidate"),
+  "production_apply_must_verify_production_complete_candidate_after_cloud_rc",
+);
+assert(
+  productionApplyJob.indexOf("npm run verify:production-complete-candidate") < productionApplyJob.indexOf("actions/upload-artifact@v4"),
+  "production_apply_must_upload_manifest_after_production_candidate_verify",
+);
 assert.equal(cloudRollout.includes("runs-on: ubuntu-latest\n    environment: production"), false, "production_mutation_must_not_run_on_github_hosted_runner");
 
 const packageJson = JSON.parse(await readRepoFile("package.json"));
 assert.equal(packageJson.scripts["cloud:rollout:dry-run"], "node scripts/cloud-rollout/medopl.mjs", "cloud_rollout_dry_run_script_missing");
 assert.equal(packageJson.scripts["cloud:rollout:availability"], "node scripts/cloud-rollout/medopl.mjs --availability-probe", "cloud_rollout_availability_script_missing");
+assert.equal(
+  packageJson.scripts["verify:production-complete-candidate"],
+  "node scripts/v22-verify.mjs package production-complete-candidate --base origin/recovery/platform-v22-trunk",
+  "production_complete_candidate_script_missing",
+);
 
 const availabilityServer = await startAvailabilityProbeServer();
 try {

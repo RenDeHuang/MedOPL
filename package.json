@@ -58,7 +58,8 @@
     "cloud:goal": "V22_CLOUD_COMMAND_EXECUTOR=tests/support/cloud-prework/cloud-authorized-production-goal-executor.js node scripts/v22-cloud-authorized-executor.mjs --execute --json",
     "cloud:rollout:dry-run": "node scripts/cloud-rollout/medopl.mjs",
     "cloud:rollout:availability": "node scripts/cloud-rollout/medopl.mjs --availability-probe",
-    "verify:cloud-release-candidate": "node scripts/v22-verify.mjs package cloud-release-candidate --base origin/recovery/platform-v22-trunk"
+    "verify:cloud-release-candidate": "node scripts/v22-verify.mjs package cloud-release-candidate --base origin/recovery/platform-v22-trunk",
+    "verify:production-complete-candidate": "node scripts/v22-verify.mjs package production-complete-candidate --base origin/recovery/platform-v22-trunk"
   },
   "devDependencies": {
     "cos-nodejs-sdk-v5": "^2.15.4",

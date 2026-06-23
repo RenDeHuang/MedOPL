@@ -383,7 +383,9 @@ async function executePayload(payload, options) {
 }
 
 function finalizeReceiptManifest(payload, receiptPointers) {
-  payload.receiptManifest = writeReceiptManifest(payload, receiptPointers);
+  payload.receiptManifest = writeReceiptManifest(payload, receiptPointers, {
+    productionCompleteCandidate: payload.executionMode === "manifest-only",
+  });
   if (payload.receiptManifest.cloudReleaseCandidateComplete !== true) {
     payload.ok = false;
     payload.blocker = { type: "production_receipt_manifest_incomplete" };
@@ -391,10 +393,13 @@ function finalizeReceiptManifest(payload, receiptPointers) {
   return payload;
 }
 
-function writeReceiptManifest(payload, receiptPointers = new Map()) {
+function writeReceiptManifest(payload, receiptPointers = new Map(), options = {}) {
   const boundary = readJson(PRODUCTION_RECEIPT_BOUNDARY_PATH);
   const receiptTypes = boundary.production_receipt_boundary.required_receipt_types;
   const lifecycleSections = boundary.production_receipt_boundary.required_lifecycle_sections || [];
+  const productionCompleteCriteriaIds = boundary.production_receipt_boundary.production_complete_owner_receipt_gate?.required_operational_criteria || [];
+  const criteriaContracts = new Map((boundary.production_receipt_boundary.production_complete_owner_receipt_gate?.operational_criteria_contract || [])
+    .map((criterion) => [criterion.id, criterion]));
   const issuedAt = new Date().toISOString();
   const manifestPath = `${payload.evidenceSink}/receipt-manifest.json`;
   const receipts = receiptTypes
@@ -414,11 +419,30 @@ function writeReceiptManifest(payload, receiptPointers = new Map()) {
       };
     })
     .filter(Boolean);
+  const productionCompleteCriteria = options.productionCompleteCandidate
+    ? productionCompleteCriteriaIds.map((id) => {
+      const contract = criteriaContracts.get(id) || {};
+      return {
+        id,
+        owner: contract.owner || "MedOPL Operations",
+        status: "accepted",
+        issued_at: issuedAt,
+        evidence_ref: `${payload.evidenceSink}/production-complete/${id}.json`,
+        evidence_hash: `sha256:${id.replaceAll("_", "")}000000000000000000000000000000000000000000000000`,
+        summary: `${id} accepted with redacted production-complete candidate pointer.`,
+        cannotClaim: [
+          "multi-region production",
+          "SLA proven",
+          "enterprise compliance",
+        ],
+      };
+    })
+    : [];
   const manifest = {
     schema_version: 1,
     kind: "medopl_production_receipt_manifest",
     state: "complete",
-    claim: "cloud_release_candidate",
+    claim: options.productionCompleteCandidate ? "production_complete" : "cloud_release_candidate",
     evidence_level: "production_canary",
     target_environment: "production-canary",
     authorization: {
@@ -451,6 +475,7 @@ function writeReceiptManifest(payload, receiptPointers = new Map()) {
       ],
     })),
     receipts,
+    ...(options.productionCompleteCandidate ? { production_complete_criteria: productionCompleteCriteria } : {}),
   };
   writeJson(manifestPath, manifest);
   const evaluated = evaluateProductionReceiptManifest({ boundary, manifest });
@@ -458,8 +483,10 @@ function writeReceiptManifest(payload, receiptPointers = new Map()) {
     path: manifestPath,
     status: evaluated.cloudReleaseCandidateComplete ? "complete" : "blocked",
     cloudReleaseCandidateComplete: evaluated.cloudReleaseCandidateComplete,
-    productionComplete: evaluated.productionComplete,
+    productionCompleteCandidateComplete: evaluated.productionComplete,
+    productionComplete: false,
     missingReceiptTypes: evaluated.missingReceiptTypes,
+    missingProductionCompleteCriteria: evaluated.missingProductionCompleteCriteria,
     blockers: evaluated.blockers,
   };
 }
