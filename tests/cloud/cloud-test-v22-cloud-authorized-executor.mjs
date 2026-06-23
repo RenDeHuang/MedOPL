@@ -195,7 +195,8 @@ try {
     "const operationClass = process.env.V22_GOAL_OPERATION_CLASS || '';",
     "const inputs = JSON.parse(process.env.V22_GOAL_INPUTS || '{}');",
     "const receipts = receiptTypes.map((type) => ({ type, status: 'accepted', summary: `${type} accepted by external runner for ${operationClass}` }));",
-    "console.log(JSON.stringify({ ok: true, summary: { operationClass, externalRunner: true, evidenceRefObserved: Boolean(process.env.V22_GOAL_EVIDENCE_REF), inputsObserved: Object.keys(inputs).length > 0, inputKeys: Object.keys(inputs).sort() }, receipts }));",
+    "const databaseProof = operationClass === 'live_test' ? { databasePersistenceProof: true, databaseUrlRef: 'DATABASE_URL', workspaceRefHash: 'workspacehash1234', objectRefHashes: { artifactRef: 'artifacthash1234', fileRef: 'filehash1234', resourceBindingId: 'resourcehash1234', runRef: 'runhash1234' }, recordCounts: { businessAccounts: 1, creditEvents: 1, providerBindings: 1, launchProjections: 1, managedResources: 1, files: 1, runs: 1, artifacts: 1, auditEvents: 1 } } : undefined;",
+    "console.log(JSON.stringify({ ok: true, summary: { operationClass, externalRunner: true, evidenceRefObserved: Boolean(process.env.V22_GOAL_EVIDENCE_REF), inputsObserved: Object.keys(inputs).length > 0, inputKeys: Object.keys(inputs).sort(), ...(databaseProof ? { databaseProof } : {}) }, receipts }));",
     "",
   ].join("\n"));
 
@@ -511,6 +512,7 @@ try {
       V22_OPL_WEBUI_CONSUMER_CANARY_URL: "https://opl.example.test/canary",
       V22_MEDOPL_PUBLIC_BASE_URL: "https://medopl.example.test",
       V22_OPL_WEBUI_CONSUMER_CANARY_RUNNER: receiptBackedRunner,
+      V22_CLOUD_GOAL_RUN_ID: testRunId,
     }),
     "production_goal_opl_webui_consumer_receipt_runner",
   );
@@ -618,18 +620,72 @@ try {
   assert.equal(manifestOnlyPayload.claim, "production_complete", "manifest_only_must_emit_production_complete_candidate_manifest");
   assert.equal(
     manifestOnlyPayload.production_complete_criteria.length,
-    7,
-    "manifest_only_must_emit_7_production_complete_criteria",
+    8,
+    "manifest_only_must_emit_8_production_complete_criteria",
+  );
+  const businessDbCriterion = manifestOnlyPayload.production_complete_criteria.find((criterion) => criterion.id === "business_db_persistence_receipt");
+  assert(businessDbCriterion, "manifest_only_must_emit_business_db_persistence_criterion");
+  assert.equal(businessDbCriterion.owner, "MedOPL Platform", "business_db_persistence_criterion_owner");
+  assert.equal(
+    businessDbCriterion.evidence_ref,
+    `${testEvidenceSink}/live_test.json`,
+    "business_db_persistence_criterion_must_point_to_live_test_evidence",
+  );
+  assert.equal(
+    /^sha256:[a-f0-9]{64}$/u.test(businessDbCriterion.evidence_hash),
+    true,
+    "business_db_persistence_criterion_must_use_sha256_pointer_hash",
+  );
+  assert(
+    businessDbCriterion.summary.includes("PostgreSQL business metadata persistence"),
+    "business_db_persistence_criterion_summary_must_name_business_persistence",
+  );
+  assert.equal(
+    JSON.stringify(businessDbCriterion).includes("workspaceId"),
+    false,
+    "business_db_persistence_criterion_must_not_embed_workspace_payload",
   );
   assert.equal(
     manifestOnly.receiptManifest.productionCompleteCandidateComplete,
     true,
     "manifest_only_must_pass_production_complete_candidate_shape_gate",
   );
+
+  const missingDbProofRunId = `${testRunId}-missing-db-proof`;
+  mkdirSync(path.join(repoRoot, ".runtime/v22-cloud-authorization", missingDbProofRunId), { recursive: true });
+  for (const receipt of manifestOnlyPayload.receipts) {
+    writeFileSync(
+      path.join(repoRoot, ".runtime/v22-cloud-authorization", missingDbProofRunId, `${receipt.type}.json`),
+      `${JSON.stringify({
+        ...receipt,
+        kind: "v22_owner_receipt_pointer",
+        path: `.runtime/v22-cloud-authorization/${missingDbProofRunId}/${receipt.type}.json`,
+      }, null, 2)}\n`,
+    );
+  }
+  writeFileSync(
+    path.join(repoRoot, ".runtime/v22-cloud-authorization", missingDbProofRunId, "live_test.json"),
+    `${JSON.stringify({
+      kind: "v22_cloud_authorized_phase_evidence",
+      operationClass: "live_test",
+      status: "executed",
+      resultSummaries: [{ ok: true, databaseProof: { databasePersistenceProof: false } }],
+    }, null, 2)}\n`,
+  );
+  const manifestWithoutDbProof = runExecutor(["--manifest-only", "--json"], { V22_CLOUD_GOAL_RUN_ID: missingDbProofRunId });
+  assert.equal(manifestWithoutDbProof.status, 1, "manifest_only_must_fail_closed_without_live_db_proof");
+  const manifestWithoutDbProofPayload = JSON.parse(manifestWithoutDbProof.stdout);
+  assert(
+    manifestWithoutDbProofPayload.receiptManifest.blockers.includes(
+      "production_receipt_manifest_production_complete_criterion_not_accepted:business_db_persistence_receipt",
+    ),
+    "manifest_only_missing_db_proof_blocker_mismatch",
+  );
 } finally {
   rmSync(path.join(repoRoot, testEvidenceSink), { recursive: true, force: true });
   rmSync(path.join(repoRoot, ".runtime/v22-cloud-authorization", `${testRunId}-missing-receipts`), { recursive: true, force: true });
   rmSync(path.join(repoRoot, ".runtime/v22-cloud-authorization", `${testRunId}-replay-missing-receipts`), { recursive: true, force: true });
+  rmSync(path.join(repoRoot, ".runtime/v22-cloud-authorization", `${testRunId}-missing-db-proof`), { recursive: true, force: true });
   rmSync(tempDir, { recursive: true, force: true });
 }
 

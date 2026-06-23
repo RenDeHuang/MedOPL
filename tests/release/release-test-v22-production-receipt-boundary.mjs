@@ -136,6 +136,7 @@ for (const gate of [
 }
 for (const criterion of [
   "release_owner_readiness_receipt",
+  "business_db_persistence_receipt",
   "production_dependency_security_receipt",
   "browser_accessibility_verification_receipt",
   "s_level_ui_polish_receipt",
@@ -168,6 +169,26 @@ assert.equal(
   criteriaContractById.get("production_dependency_security_receipt")?.evidence_source,
   "scripts/v22-repo-hygiene.mjs",
   "production_dependency_security_receipt_must_bind_repo_hygiene",
+);
+assert.equal(
+  criteriaContractById.get("business_db_persistence_receipt")?.evidence_source,
+  "tests/support/cloud-prework/production-goal-command-runner.mjs live_test",
+  "business_db_persistence_receipt_must_bind_live_test_runner",
+);
+assert.deepEqual(
+  criteriaContractById.get("business_db_persistence_receipt")?.required_metadata,
+  [
+    "business_accounts",
+    "credit_events",
+    "provider_binding",
+    "launch_projection",
+    "managed_resource",
+    "file",
+    "run",
+    "artifact",
+    "audit_event"
+  ],
+  "business_db_persistence_receipt_metadata_contract_mismatch",
 );
 const securityContract = criteriaContractById.get("production_dependency_security_receipt");
 assert.equal(

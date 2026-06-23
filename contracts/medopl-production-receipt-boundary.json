@@ -64,6 +64,7 @@
       },
       "required_gates": [
         "release_owner_receipt",
+        "business_db_persistence_receipt",
         "security_dependency_gate",
         "browser_accessibility_regression",
         "role_boundary_browser_gate",
@@ -72,6 +73,7 @@
       ],
       "required_operational_criteria": [
         "release_owner_readiness_receipt",
+        "business_db_persistence_receipt",
         "production_dependency_security_receipt",
         "browser_accessibility_verification_receipt",
         "s_level_ui_polish_receipt",
@@ -85,6 +87,28 @@
           "owner": "MedOPL Release",
           "required_gate": "release_owner_receipt",
           "evidence_source": "contracts/medopl-release-boundary.json",
+          "evidence_ref_policy": "runtime_pointer_summary_only",
+          "evidence_hash_policy": "sha256_pointer_hash_required",
+          "raw_evidence_policy": "forbidden"
+        },
+        {
+          "id": "business_db_persistence_receipt",
+          "owner": "MedOPL Platform",
+          "required_gate": "business_db_persistence_receipt",
+          "evidence_source": "tests/support/cloud-prework/production-goal-command-runner.mjs live_test",
+          "required_metadata": [
+            "business_accounts",
+            "credit_events",
+            "provider_binding",
+            "launch_projection",
+            "managed_resource",
+            "file",
+            "run",
+            "artifact",
+            "audit_event"
+          ],
+          "receipt_source_policy": "live_test_database_proof_summary_only",
+          "raw_database_payload_policy": "forbidden",
           "evidence_ref_policy": "runtime_pointer_summary_only",
           "evidence_hash_policy": "sha256_pointer_hash_required",
           "raw_evidence_policy": "forbidden"

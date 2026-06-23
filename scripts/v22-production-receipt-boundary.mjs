@@ -247,6 +247,7 @@ export function validateProductionReceiptBoundary({ boundary, cloudAuthorization
     const requiredGateSet = asStringSet(productionCompleteGate.required_gates);
     for (const gate of [
       "release_owner_receipt",
+      "business_db_persistence_receipt",
       "security_dependency_gate",
       "browser_accessibility_regression",
       "role_boundary_browser_gate",
@@ -269,6 +270,7 @@ export function validateProductionReceiptBoundary({ boundary, cloudAuthorization
     const criteriaContractById = operationalCriteriaContractById(productionCompleteGate);
     for (const criterion of [
       "release_owner_readiness_receipt",
+      "business_db_persistence_receipt",
       "production_dependency_security_receipt",
       "browser_accessibility_verification_receipt",
       "s_level_ui_polish_receipt",

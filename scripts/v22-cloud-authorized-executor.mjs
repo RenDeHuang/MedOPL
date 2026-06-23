@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { pathToFileURL, fileURLToPath } from "node:url";
@@ -285,6 +286,12 @@ function writeJson(repoPath, value) {
   writeFileSync(absolutePath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
+function sha256RuntimePointer(repoPath) {
+  const absolutePath = path.join(repoRoot, repoPath);
+  if (!existsSync(absolutePath)) return "";
+  return `sha256:${createHash("sha256").update(readFileSync(absolutePath)).digest("hex")}`;
+}
+
 function existingReceiptPointers(payload) {
   const boundary = readJson(PRODUCTION_RECEIPT_BOUNDARY_PATH);
   const receiptTypes = boundary.production_receipt_boundary.required_receipt_types || [];
@@ -393,6 +400,82 @@ function finalizeReceiptManifest(payload, receiptPointers) {
   return payload;
 }
 
+function liveDatabaseProofSummary(evidence) {
+  const resultSummaries = Array.isArray(evidence?.resultSummaries) ? evidence.resultSummaries : [];
+  const summary = resultSummaries.find((item) => item?.databaseProof?.databasePersistenceProof === true);
+  const databaseProof = summary?.databaseProof;
+  if (!databaseProof) return null;
+  const recordCounts = databaseProof.recordCounts && typeof databaseProof.recordCounts === "object"
+    ? databaseProof.recordCounts
+    : {};
+  const requiredCounts = [
+    "businessAccounts",
+    "creditEvents",
+    "providerBindings",
+    "launchProjections",
+    "managedResources",
+    "files",
+    "runs",
+    "artifacts",
+    "auditEvents",
+  ];
+  if (!requiredCounts.every((key) => Number.isInteger(Number(recordCounts[key])) && Number(recordCounts[key]) > 0)) {
+    return null;
+  }
+  return {
+    recordKinds: requiredCounts.length,
+    workspaceRefHashPresent: Boolean(databaseProof.workspaceRefHash),
+    objectRefHashKeys: Object.keys(databaseProof.objectRefHashes || {}).sort(),
+  };
+}
+
+function productionCompleteCriterion(payload, id, contract = {}, issuedAt) {
+  const defaultCriterion = {
+    id,
+    owner: contract.owner || "MedOPL Operations",
+    status: "accepted",
+    issued_at: issuedAt,
+    evidence_ref: `${payload.evidenceSink}/production-complete/${id}.json`,
+    evidence_hash: `sha256:${id.replaceAll("_", "")}000000000000000000000000000000000000000000000000`,
+    summary: `${id} accepted with redacted production-complete candidate pointer.`,
+    cannotClaim: [
+      "multi-region production",
+      "SLA proven",
+      "enterprise compliance",
+    ],
+  };
+  if (id !== "business_db_persistence_receipt") return defaultCriterion;
+
+  const evidenceRef = `${payload.evidenceSink}/live_test.json`;
+  const evidence = readJsonIfExists(evidenceRef);
+  const proof = liveDatabaseProofSummary(evidence);
+  const evidenceHash = sha256RuntimePointer(evidenceRef);
+  if (!proof || !evidenceHash) {
+    return {
+      ...defaultCriterion,
+      status: "missing",
+      evidence_ref: evidenceRef,
+      evidence_hash: evidenceHash || "sha256:missing-business-db-persistence-proof",
+      summary: "PostgreSQL business metadata persistence proof missing from live_test evidence.",
+      cannotClaim: [
+        "business DB persistence proven",
+        "production complete",
+      ],
+    };
+  }
+  return {
+    ...defaultCriterion,
+    evidence_ref: evidenceRef,
+    evidence_hash: evidenceHash,
+    summary: [
+      "PostgreSQL business metadata persistence accepted from live_test redacted proof.",
+      `Record kind count: ${proof.recordKinds}.`,
+      `Object ref hash keys: ${proof.objectRefHashKeys.join(",") || "none"}.`,
+      "Raw workspace IDs, database URL and row payloads remain outside manifest.",
+    ].join(" "),
+  };
+}
+
 function writeReceiptManifest(payload, receiptPointers = new Map(), options = {}) {
   const boundary = readJson(PRODUCTION_RECEIPT_BOUNDARY_PATH);
   const receiptTypes = boundary.production_receipt_boundary.required_receipt_types;
@@ -420,23 +503,7 @@ function writeReceiptManifest(payload, receiptPointers = new Map(), options = {}
     })
     .filter(Boolean);
   const productionCompleteCriteria = options.productionCompleteCandidate
-    ? productionCompleteCriteriaIds.map((id) => {
-      const contract = criteriaContracts.get(id) || {};
-      return {
-        id,
-        owner: contract.owner || "MedOPL Operations",
-        status: "accepted",
-        issued_at: issuedAt,
-        evidence_ref: `${payload.evidenceSink}/production-complete/${id}.json`,
-        evidence_hash: `sha256:${id.replaceAll("_", "")}000000000000000000000000000000000000000000000000`,
-        summary: `${id} accepted with redacted production-complete candidate pointer.`,
-        cannotClaim: [
-          "multi-region production",
-          "SLA proven",
-          "enterprise compliance",
-        ],
-      };
-    })
+    ? productionCompleteCriteriaIds.map((id) => productionCompleteCriterion(payload, id, criteriaContracts.get(id) || {}, issuedAt))
     : [];
   const manifest = {
     schema_version: 1,
