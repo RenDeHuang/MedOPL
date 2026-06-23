@@ -285,6 +285,65 @@
           "ops_surface_disabled"
         ]
       },
+      "design_review_rubric": {
+        "dimensions": [
+          "product_truth",
+          "user_task_fit",
+          "information_hierarchy",
+          "visual_bias",
+          "component_grammar",
+          "state_coverage",
+          "interaction_feedback",
+          "accessibility",
+          "responsive_behavior",
+          "copy_language"
+        ],
+        "pass_requires_all_dimensions": true,
+        "production_claim_allowed": false
+      },
+      "allowed_flexibility": {
+        "frozen": [
+          "product_boundary",
+          "allowed_user_objects",
+          "forbidden_user_objects",
+          "state_matrix",
+          "accessibility_floor",
+          "claim_boundary"
+        ],
+        "flexible_with_review": [
+          "page_layout",
+          "component_composition",
+          "copy_length",
+          "visual_density",
+          "page_level_override"
+        ],
+        "page_level_override_requires_reason": true
+      },
+      "co_design_loop": {
+        "steps": [
+          "product_task_flow",
+          "information_architecture",
+          "semantic_tokens",
+          "component_grammar",
+          "state_variant_matrix",
+          "page_template",
+          "high_fidelity",
+          "browser_accessibility_visual_review"
+        ],
+        "raw_figma_or_screenshot_in_git": false,
+        "generates_new_top_level_script": false
+      },
+      "visual_regression_requirements": {
+        "coverage": [
+          "customer_desktop",
+          "customer_mobile",
+          "ops_desktop",
+          "no_horizontal_overflow",
+          "primary_cta_visible"
+        ],
+        "baseline_source": "repo_regression_tests_not_raw_figma_export",
+        "accepts_unreviewed_visual_diff": false
+      },
       "production_readiness": {
         "claim_requires_runtime_receipt": true,
         "release_partial_state_blocks_production_claim": true,

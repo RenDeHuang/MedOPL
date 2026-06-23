@@ -217,6 +217,92 @@ assert.equal(grammar.visual_grammar.logo_heading_allowed, false, "portal_logo_mu
 assert.equal(grammar.visual_grammar.mobile_touch_target_min_px, 44, "portal_touch_target_min_must_be_44");
 assert.equal(grammar.visual_grammar.card_radius_max_px, 8, "portal_card_radius_max_must_be_8");
 
+const requiredReviewDimensions = [
+  "product_truth",
+  "user_task_fit",
+  "information_hierarchy",
+  "visual_bias",
+  "component_grammar",
+  "state_coverage",
+  "interaction_feedback",
+  "accessibility",
+  "responsive_behavior",
+  "copy_language",
+];
+assert(grammar.design_review_rubric, "portal_design_review_rubric_missing");
+for (const dimension of requiredReviewDimensions) {
+  assert(
+    grammar.design_review_rubric.dimensions.includes(dimension),
+    `portal_design_review_rubric_dimension_missing:${dimension}`,
+  );
+}
+assert.equal(
+  grammar.design_review_rubric.pass_requires_all_dimensions,
+  true,
+  "portal_design_review_rubric_must_require_all_dimensions",
+);
+assert.equal(
+  grammar.design_review_rubric.production_claim_allowed,
+  false,
+  "portal_design_review_must_not_allow_production_claim",
+);
+
+assert(grammar.allowed_flexibility, "portal_allowed_flexibility_missing");
+for (const frozen of ["product_boundary", "allowed_user_objects", "forbidden_user_objects", "state_matrix", "accessibility_floor", "claim_boundary"]) {
+  assert(
+    grammar.allowed_flexibility.frozen.includes(frozen),
+    `portal_allowed_flexibility_frozen_missing:${frozen}`,
+  );
+}
+for (const flexible of ["page_layout", "component_composition", "copy_length", "visual_density", "page_level_override"]) {
+  assert(
+    grammar.allowed_flexibility.flexible_with_review.includes(flexible),
+    `portal_allowed_flexibility_review_missing:${flexible}`,
+  );
+}
+assert.equal(
+  grammar.allowed_flexibility.page_level_override_requires_reason,
+  true,
+  "portal_page_override_must_require_reason",
+);
+
+const requiredCoDesignSteps = [
+  "product_task_flow",
+  "information_architecture",
+  "semantic_tokens",
+  "component_grammar",
+  "state_variant_matrix",
+  "page_template",
+  "high_fidelity",
+  "browser_accessibility_visual_review",
+];
+assert(grammar.co_design_loop, "portal_co_design_loop_missing");
+assert.deepEqual(
+  grammar.co_design_loop.steps,
+  requiredCoDesignSteps,
+  "portal_co_design_loop_steps_mismatch",
+);
+assert.equal(grammar.co_design_loop.raw_figma_or_screenshot_in_git, false, "portal_co_design_raw_visual_assets_must_not_enter_git");
+assert.equal(grammar.co_design_loop.generates_new_top_level_script, false, "portal_co_design_must_not_add_top_level_script");
+
+assert(grammar.visual_regression_requirements, "portal_visual_regression_requirements_missing");
+for (const requiredCoverage of ["customer_desktop", "customer_mobile", "ops_desktop", "no_horizontal_overflow", "primary_cta_visible"]) {
+  assert(
+    grammar.visual_regression_requirements.coverage.includes(requiredCoverage),
+    `portal_visual_regression_coverage_missing:${requiredCoverage}`,
+  );
+}
+assert.equal(
+  grammar.visual_regression_requirements.baseline_source,
+  "repo_regression_tests_not_raw_figma_export",
+  "portal_visual_regression_baseline_source_mismatch",
+);
+assert.equal(
+  grammar.visual_regression_requirements.accepts_unreviewed_visual_diff,
+  false,
+  "portal_visual_regression_must_reject_unreviewed_diff",
+);
+
 for (const page of matrix.medopl_portal_page_state_matrix.pages) {
   assert(page.first_view_card_budget, `portal_page_first_view_card_budget_missing:${page.id}`);
   assert.equal(page.required_h1_owner, "page_content", `portal_page_h1_owner_mismatch:${page.id}`);

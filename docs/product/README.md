@@ -165,6 +165,8 @@ Go backend 是 MedOPL control-plane business truth 的本地 MVP takeover 承载
 
 用户侧没有观测性或调试主导航。用量明细归 `billing`，资源文件归 `workspace`，审计事件只作为账单 / 释放 / 存储生命周期 receipt 支撑。`api_only` 复用入口和上下文状态；`full_runtime` 复用计算资源、存储空间、套餐、账单和用量 surface；`customer_dedicated` 对客户可见前必须另开 UI implementation leaf，补专属隔离、审批窗口、客户级审计标签和变更窗口状态。
 
+Portal UI 设计判断归根层 `DESIGN.md`；机器约束归 `contracts/medopl-portal-page-state-matrix.json` 和 frontend/regression tests。产品 README 只保产品语言和 owner 指针，不承载 Figma 截图、页面长稿、raw 视觉 evidence 或 UI 评审流水。
+
 ## Product Contract Groups
 
 | Product question | Spec anchors |
