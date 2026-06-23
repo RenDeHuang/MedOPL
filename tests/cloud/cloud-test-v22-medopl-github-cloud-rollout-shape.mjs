@@ -497,6 +497,20 @@ assert(
   "production_apply_must_validate_incluster_database_secret_after_kubeconfig_before_receipts",
 );
 assert(
+  productionApplyJob.includes("Validate in-cluster database secret authentication") &&
+    productionApplyJob.includes("const pg = require(\"pg\")") &&
+    productionApplyJob.includes("select 1 as ok") &&
+    productionApplyJob.includes("in-cluster postgres authentication ok") &&
+    productionApplyJob.includes("DATABASE_URL_REF") &&
+    !productionApplyJob.includes("console.log(raw)"),
+  "production_apply_must_validate_incluster_database_secret_auth_before_rollout",
+);
+assert(
+  productionApplyJob.indexOf("Install Goal F runner dependencies") < productionApplyJob.indexOf("Validate in-cluster database secret authentication") &&
+    productionApplyJob.indexOf("Validate in-cluster database secret authentication") < productionApplyJob.indexOf("Validate production database secret shape"),
+  "production_apply_must_validate_incluster_database_auth_after_dependencies_before_goal_f_receipts",
+);
+assert(
   productionApplyJob.indexOf("npm ci") < productionApplyJob.indexOf("Create Goal F receipt inputs"),
   "production_apply_must_install_dependencies_before_goal_f_receipt_inputs",
 );

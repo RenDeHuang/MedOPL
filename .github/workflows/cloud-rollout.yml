@@ -185,6 +185,50 @@ jobs:
       - name: Install Goal F runner dependencies
         run: npm ci
 
+      - name: Validate in-cluster database secret authentication
+        shell: bash
+        run: |
+          encoded="$(kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl get secret medopl-postgres -o 'jsonpath={.data.DATABASE_URL}')"
+          DATABASE_URL_B64="$encoded" node --input-type=commonjs <<'NODE'
+          const pg = require("pg");
+          const encoded = String(process.env.DATABASE_URL_B64 || "");
+          const raw = Buffer.from(encoded.trim(), "base64").toString("utf8").trim();
+          function fail(message) {
+            console.error(message);
+            process.exit(1);
+          }
+          if (!raw) fail("DATABASE_URL required for in-cluster production secret authentication");
+          let parsed;
+          try {
+            parsed = new URL(raw);
+          } catch {
+            fail("DATABASE_URL must be a valid postgres URL");
+          }
+          if (!["postgres:", "postgresql:"].includes(parsed.protocol)) {
+            fail("DATABASE_URL must use postgres protocol");
+          }
+          const client = new pg.Client({ connectionString: raw, connectionTimeoutMillis: 5000 });
+          (async () => {
+            try {
+              await client.connect();
+              await client.query("select 1 as ok");
+              console.log(JSON.stringify({
+                ok: true,
+                message: "in-cluster postgres authentication ok",
+                databaseUrlRef: "DATABASE_URL_REF",
+                host: parsed.hostname,
+                port: parsed.port || "default",
+                database: parsed.pathname.replace(/^\//u, "") || "default",
+                user: parsed.username || "default"
+              }));
+            } catch (error) {
+              fail(`in-cluster postgres authentication failed for DATABASE_URL_REF: ${String(error.message || "unknown").replace(raw, "DATABASE_URL_REF")}`);
+            } finally {
+              await client.end().catch(() => {});
+            }
+          })();
+          NODE
+
       - name: Validate production database secret shape
         shell: bash
         run: |
