@@ -33,22 +33,19 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "feat/v22-storage-file-artifact-metadata-rc",
-    "landed_commit": "ccf573cfdf7164480830bd50fe5c5ba0e7126066",
+    "branch": "feat/v22-billing-audit-reconciliation-rc",
+    "landed_commit": "8e0caa03e3c3ceaeb291e51ac6230dab601c2272",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
-      "npm run test:run-plan PASS",
-      "services/medopl-go-backend go test ./... PASS",
+      "npm run verify PASS",
+      "npm run test:run-plan PASS before closeout",
+      "go test ./... PASS",
       "npm run test:backend PASS",
       "npm run test:contract PASS",
       "npm run test:smoke PASS",
-      "npm run verify PASS",
       "npm run gate:review PASS",
       "npm run repo:bloat PASS",
-      "npm run line:budget PASS",
-      "npm run test:health PASS",
-      "npm run test:fast PASS",
-      "npm run test:lanes PASS"
+      "npm run line:budget PASS"
     ],
     "plan_completion_audit": {
       "functional": "done",
@@ -56,14 +53,14 @@
       "docs_foldback": "done",
       "verification": "done",
       "retired_entrypoints": "done",
-      "cannot_claim": "done"
+      "cannot_claim": "partial"
     },
     "cleanup_result": {
       "deleted": "none",
-      "folded": "Phase C storage file artifact metadata RC into Go backend source tests and registered smoke eval",
+      "folded": "Phase D billing audit reconciliation RC into Go backend source tests and registered smoke eval",
       "retained": "cloud RC and production-complete fail-closed boundaries",
-      "reason": "Phase C makes fileRef objectRef storageBindingId run input lineage and artifact output lineage persist as metadata without storing file contents in Postgres",
-      "next": "Phase D billing audit reconciliation RC"
+      "reason": "Phase D makes billing details and ledger entries reconcile against stored run file artifact resource and audit metadata",
+      "next": "Phase E stability concurrency idempotency RC"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "opl-webui-runtime-production-slice"
@@ -78,7 +75,7 @@
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth",
     "ongoing_authorization_multi_region_sla_enterprise_compliance_and_unobserved_tenants_resources_remain_unclaimed"
   ],
-  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is feat/v22-storage-file-artifact-metadata-rc at ccf573cfdf7164480830bd50fe5c5ba0e7126066. Current trunk keeps Portal UI/UX production gates hardened, requires the production-complete owner gate for production-ready claims, and closes the release auditEventId canary blocker. GitHub v22 verify run 27974444437 passed for Portal production UI gate hardening; Release Image run 28012858200 built image tag 8753e2b; Cloud Rollout run 28013437604 passed rollout apply, Portal public entry, HTTP redirect, Go health/ready availability, OPL-Webui consumer canary, production receipt manifest and verify:cloud-release-candidate. The redacted manifest contains seven owner receipts, 12 lifecycle sections, claim=cloud_release_candidate, state=complete and sha256 3d2b6e8ffe3601ccc3f0489e59079657af0fe2f9972cf9f34713d170903cd85b. This can claim cloud release candidate evidence for the current authorized canary path only, including Portal public entry and HTTP redirect availability. It does not claim production complete, multi-region/SLA, enterprise compliance, ongoing authorization, unobserved tenants/resources, or long-running stability. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is feat/v22-storage-file-artifact-metadata-rc at ccf573cfdf7164480830bd50fe5c5ba0e7126066.",
+  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is feat/v22-billing-audit-reconciliation-rc at 8e0caa03e3c3ceaeb291e51ac6230dab601c2272. Current trunk keeps Portal UI/UX production gates hardened, requires the production-complete owner gate for production-ready claims, and closes the release auditEventId canary blocker. GitHub v22 verify run 27974444437 passed for Portal production UI gate hardening; Release Image run 28012858200 built image tag 8753e2b; Cloud Rollout run 28013437604 passed rollout apply, Portal public entry, HTTP redirect, Go health/ready availability, OPL-Webui consumer canary, production receipt manifest and verify:cloud-release-candidate. The redacted manifest contains seven owner receipts, 12 lifecycle sections, claim=cloud_release_candidate, state=complete and sha256 3d2b6e8ffe3601ccc3f0489e59079657af0fe2f9972cf9f34713d170903cd85b. This can claim cloud release candidate evidence for the current authorized canary path only, including Portal public entry and HTTP redirect availability. It does not claim production complete, multi-region/SLA, enterprise compliance, ongoing authorization, unobserved tenants/resources, or long-running stability. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is feat/v22-billing-audit-reconciliation-rc at 8e0caa03e3c3ceaeb291e51ac6230dab601c2272.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -637,9 +634,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/v22-storage-file-artifact-metadata-rc",
+  "last_landed_branch": "feat/v22-billing-audit-reconciliation-rc",
   "last_landed_at": "2026-06-23",
-  "history_latest_branch": "feat/v22-storage-file-artifact-metadata-rc",
+  "history_latest_branch": "feat/v22-billing-audit-reconciliation-rc",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -1017,8 +1014,8 @@
       "cannot_claim": "rollback executed, live-test covered, ongoing monitoring accepted, production deploy receipt accepted, or production complete"
     }
   },
-  "base_trunk_head": "ccf573cfdf7164480830bd50fe5c5ba0e7126066",
-  "last_landed_commit": "ccf573cfdf7164480830bd50fe5c5ba0e7126066",
+  "base_trunk_head": "8e0caa03e3c3ceaeb291e51ac6230dab601c2272",
+  "last_landed_commit": "8e0caa03e3c3ceaeb291e51ac6230dab601c2272",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
