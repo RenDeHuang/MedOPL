@@ -251,6 +251,7 @@ try {
     TEST_KUBECTL_LOG: kubectlLog,
     V22_OPL_WEBUI_CONSUMER_CANARY_URL: "https://opl.medopl.cn",
     V22_MEDOPL_PUBLIC_BASE_URL: "https://portal.medopl.cn",
+    V22_MEDOPL_LIVE_DB_PERSISTENCE_PROOF: "",
     PATH: `${binDir}${path.delimiter}${process.env.PATH || ""}`,
   };
 
