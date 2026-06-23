@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/v22-stability-concurrency-idempotency-rc`
-- latest landed commit: `0417c38fa99e817fd2b762717da889e6b94f9297`
+- latest landed branch: `feat/v22-production-complete-candidate-gate-rc`
+- latest landed commit: `5a8089d288118330a482209c5ec69676a635faf1`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`

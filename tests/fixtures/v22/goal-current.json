@@ -33,13 +33,15 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "feat/v22-stability-concurrency-idempotency-rc",
-    "landed_commit": "0417c38fa99e817fd2b762717da889e6b94f9297",
+    "branch": "feat/v22-production-complete-candidate-gate-rc",
+    "landed_commit": "5a8089d288118330a482209c5ec69676a635faf1",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
-      "go test -race ./internal/service/controlplane -run TestServiceConcurrent PASS",
-      "npm run test:run-plan PASS before merge",
       "npm run verify PASS post-push",
+      "npm run test:run-plan PASS before merge",
+      "npm run test:release PASS",
+      "npm run test:cloud PASS",
+      "npm run test:health PASS",
       "npm run gate:review PASS post-push",
       "npm run repo:bloat PASS post-push",
       "npm run line:budget PASS post-push"
@@ -54,10 +56,10 @@
     },
     "cleanup_result": {
       "deleted": "none",
-      "folded": "Phase E stability concurrency idempotency RC into Go backend source tests and registered smoke eval",
-      "retained": "cloud RC production-complete and multi-replica distributed idempotency fail-closed boundaries",
-      "reason": "Phase E prevents duplicate runtime resource ledgers duplicate release or storage destroy receipts and duplicate same-request run billing under local service concurrency",
-      "next": "Phase F rollout monitoring production complete candidate"
+      "folded": "Phase F production complete candidate gate into existing cloud rollout release runner manifest and package gates",
+      "retained": "production complete final release decision multi-region SLA enterprise compliance and ongoing authorization fail-closed boundaries",
+      "reason": "Phase F makes Cloud Rollout generate and verify production-complete candidate criteria after cloud release candidate without upgrading cloud RC to production complete",
+      "next": "authorized rollout through Release Image and Cloud Rollout with production-complete-candidate gate"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "opl-webui-runtime-production-slice"
@@ -72,7 +74,7 @@
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth",
     "ongoing_authorization_multi_region_sla_enterprise_compliance_and_unobserved_tenants_resources_remain_unclaimed"
   ],
-  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is feat/v22-stability-concurrency-idempotency-rc at 0417c38fa99e817fd2b762717da889e6b94f9297. Current trunk keeps Portal UI/UX production gates hardened, requires the production-complete owner gate for production-ready claims, and closes the release auditEventId canary blocker. GitHub v22 verify run 27974444437 passed for Portal production UI gate hardening; Release Image run 28012858200 built image tag 8753e2b; Cloud Rollout run 28013437604 passed rollout apply, Portal public entry, HTTP redirect, Go health/ready availability, OPL-Webui consumer canary, production receipt manifest and verify:cloud-release-candidate. The redacted manifest contains seven owner receipts, 12 lifecycle sections, claim=cloud_release_candidate, state=complete and sha256 3d2b6e8ffe3601ccc3f0489e59079657af0fe2f9972cf9f34713d170903cd85b. This can claim cloud release candidate evidence for the current authorized canary path only, including Portal public entry and HTTP redirect availability. It does not claim production complete, multi-region/SLA, enterprise compliance, ongoing authorization, unobserved tenants/resources, or long-running stability. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is feat/v22-stability-concurrency-idempotency-rc at 0417c38fa99e817fd2b762717da889e6b94f9297.",
+  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is feat/v22-production-complete-candidate-gate-rc at 5a8089d288118330a482209c5ec69676a635faf1. Current trunk keeps Portal UI/UX production gates hardened, requires the production-complete owner gate for production-ready claims, and closes the release auditEventId canary blocker. GitHub v22 verify run 27974444437 passed for Portal production UI gate hardening; Release Image run 28012858200 built image tag 8753e2b; Cloud Rollout run 28013437604 passed rollout apply, Portal public entry, HTTP redirect, Go health/ready availability, OPL-Webui consumer canary, production receipt manifest and verify:cloud-release-candidate. The redacted manifest contains seven owner receipts, 12 lifecycle sections, claim=cloud_release_candidate, state=complete and sha256 3d2b6e8ffe3601ccc3f0489e59079657af0fe2f9972cf9f34713d170903cd85b. This can claim cloud release candidate evidence for the current authorized canary path only, including Portal public entry and HTTP redirect availability. It does not claim production complete, multi-region/SLA, enterprise compliance, ongoing authorization, unobserved tenants/resources, or long-running stability. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is feat/v22-production-complete-candidate-gate-rc at 5a8089d288118330a482209c5ec69676a635faf1.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -631,9 +633,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/v22-stability-concurrency-idempotency-rc",
+  "last_landed_branch": "feat/v22-production-complete-candidate-gate-rc",
   "last_landed_at": "2026-06-23",
-  "history_latest_branch": "feat/v22-stability-concurrency-idempotency-rc",
+  "history_latest_branch": "feat/v22-production-complete-candidate-gate-rc",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -1011,8 +1013,8 @@
       "cannot_claim": "rollback executed, live-test covered, ongoing monitoring accepted, production deploy receipt accepted, or production complete"
     }
   },
-  "base_trunk_head": "0417c38fa99e817fd2b762717da889e6b94f9297",
-  "last_landed_commit": "0417c38fa99e817fd2b762717da889e6b94f9297",
+  "base_trunk_head": "5a8089d288118330a482209c5ec69676a635faf1",
+  "last_landed_commit": "5a8089d288118330a482209c5ec69676a635faf1",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
