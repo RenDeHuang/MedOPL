@@ -15,6 +15,7 @@ const deployment = process.env.MEDOPL_DEPLOYMENT ?? "deployment/medopl-control-p
 const container = process.env.MEDOPL_CONTAINER ?? "control-plane";
 const podSelector = process.env.MEDOPL_POD_SELECTOR ?? "app.kubernetes.io/name=medopl";
 const baseUrl = (process.env.MEDOPL_BASE_URL || "https://portal.medopl.cn").replace(/\/$/u, "");
+const httpBaseUrl = (process.env.MEDOPL_HTTP_BASE_URL || baseUrl.replace(/^https:/u, "http:")).replace(/\/$/u, "");
 const manifestFile = process.env.MEDOPL_KUBERNETES_MANIFEST ?? "deploy/medopl-cloud/medopl.k8s.json";
 const kubeconfigPath = process.env.TENCENT_DEPLOY_KUBECONFIG_REF || process.env.KUBECONFIG || "";
 const imageRepository = "uswccr.ccs.tencentyun.com/medopl/medopl-go-backend";
@@ -176,6 +177,8 @@ function sleep(ms) {
 
 async function runAvailabilityProbe() {
   const checks = [];
+  checks.push(await runPortalEntryProbe());
+  checks.push(await runHttpRedirectProbe());
   for (const endpoint of ["healthz", "readyz"]) {
     const url = `${baseUrl}/${endpoint}`;
     const started = Date.now();
@@ -214,6 +217,59 @@ async function runAvailabilityProbe() {
   };
   console.log(JSON.stringify(summary));
   process.exitCode = summary.ok ? 0 : 1;
+}
+
+async function runPortalEntryProbe() {
+  const url = `${baseUrl}/`;
+  const started = Date.now();
+  try {
+    const response = await fetch(url, { headers: { connection: "close" } });
+    const text = await response.text();
+    assertNoSecretText(text);
+    const contentType = response.headers.get("content-type") || "";
+    return {
+      endpoint: "portal-entry",
+      status: response.status,
+      durationMs: Date.now() - started,
+      ok: response.status === 200 && contentType.includes("text/html") && /MedOPL Portal|id="root"|\/assets\//u.test(text),
+      contract: "portal_entry_probe_must_validate_portal_html",
+    };
+  } catch (error) {
+    return {
+      endpoint: "portal-entry",
+      status: 0,
+      durationMs: Date.now() - started,
+      ok: false,
+      errorCode: error.name || "FetchError",
+      contract: "portal_entry_probe_must_validate_portal_html",
+    };
+  }
+}
+
+async function runHttpRedirectProbe() {
+  const url = `${httpBaseUrl}/`;
+  const started = Date.now();
+  try {
+    const response = await fetch(url, { redirect: "manual", headers: { connection: "close" } });
+    const location = response.headers.get("location") || "";
+    assertNoSecretText(location);
+    return {
+      endpoint: "http-redirect",
+      status: response.status,
+      durationMs: Date.now() - started,
+      ok: [301, 302, 307, 308].includes(response.status) && location.startsWith(`${baseUrl}/`),
+      contract: "http_redirect_probe_must_validate_https_redirect",
+    };
+  } catch (error) {
+    return {
+      endpoint: "http-redirect",
+      status: 0,
+      durationMs: Date.now() - started,
+      ok: false,
+      errorCode: error.name || "FetchError",
+      contract: "http_redirect_probe_must_validate_https_redirect",
+    };
+  }
 }
 
 function printDryRun() {

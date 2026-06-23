@@ -446,6 +446,32 @@ async function requestText({ url, operation, stepId }) {
   return { status: response.status, contentType: response.headers.get("content-type") || "", textLength: text.length };
 }
 
+async function requestPortalHtml({ url, operation, stepId }) {
+  let response;
+  try {
+    response = await fetchWithTimeout(url);
+  } catch (error) {
+    fail(`production_goal_live_test_${stepId}_failed`, {
+      operationClass: operation,
+      url,
+      errorCode: error?.name || "FetchError",
+    }, 1);
+  }
+  const text = await response.text();
+  assertPublicPayload({ text }, operation);
+  const contentType = response.headers.get("content-type") || "";
+  if (response.status !== 200 || !contentType.includes("text/html") || !(/MedOPL Portal|id="root"|\/assets\//u.test(text))) {
+    fail(`production_goal_live_test_${stepId}_failed`, {
+      operationClass: operation,
+      url,
+      status: response.status,
+      contentType,
+      bodyShape: "portal_html_required",
+    }, 1);
+  }
+  return { status: response.status, contentType, textLength: text.length };
+}
+
 function requireFields(payload, fields, blocker, operation) {
   const missing = fields.filter((field) => {
     const value = field.split(".").reduce((node, key) => node?.[key], payload);
@@ -505,6 +531,8 @@ async function runLiveTest(operation) {
 
   const oplEntry = await requestText({ url: oplBaseUrl, operation, stepId: "opl_webui_public_entry" });
   observed.push({ step: "opl_webui_public_entry", url: oplBaseUrl, status: oplEntry.status });
+  const portalEntry = await requestPortalHtml({ url: medoplBaseUrl, operation, stepId: "medopl_portal_public_entry" });
+  observed.push({ step: "medopl_portal_public_entry", url: medoplBaseUrl, status: portalEntry.status });
 
   const health = await requestJson({ baseUrl: medoplBaseUrl, path: "/healthz", operation, stepId: "medopl_healthz" });
   assertGoHealth(health, "medopl_healthz", operation);

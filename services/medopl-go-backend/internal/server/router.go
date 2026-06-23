@@ -71,5 +71,6 @@ func Router(cfg config.Config) *gin.Engine {
 		controlplaneservice.WithGatewayURLs(cfg.OPLGatewayURL, cfg.RuntimeBridgeURL),
 	)
 	handlers.RegisterControlPlaneRoutes(api, controlPlane)
+	registerPortalStaticRoutes(router, cfg.PortalStaticRoot)
 	return router
 }

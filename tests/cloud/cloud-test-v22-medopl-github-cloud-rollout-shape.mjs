@@ -100,6 +100,12 @@ assert.equal(container.readinessProbe?.httpGet?.path, "/readyz", "readiness_prob
 assert.equal(container.readinessProbe?.httpGet?.port, 8080, "readiness_probe_must_use_8080");
 assert.equal(container.livenessProbe?.httpGet?.path, "/healthz", "liveness_probe_must_use_healthz");
 assert.equal(container.livenessProbe?.httpGet?.port, 8080, "liveness_probe_must_use_8080");
+const portalStaticRoot = (container.env || []).find((item) => item.name === "MEDOPL_PORTAL_STATIC_ROOT");
+assert.equal(
+  portalStaticRoot?.value,
+  "/app/portal",
+  "portal_public_entry_must_serve_repo_native_frontend_from_backend_image",
+);
 
 const envNames = new Set((container.env || []).map((item) => item.name));
 for (const expected of [
@@ -107,6 +113,7 @@ for (const expected of [
   "MEDOPL_PUBLIC_BASE_URL",
   "OPL_WEBUI_PUBLIC_BASE_URL",
   "PORTAL_OPL_PROVIDER_SECRET_ROOT",
+  "MEDOPL_PORTAL_STATIC_ROOT",
   "DATABASE_URL",
 ]) {
   assert(envNames.has(expected), `container_env_missing:${expected}`);
@@ -141,11 +148,35 @@ const ingress = findItem(items, "Ingress", "medopl");
 assert(ingress, "medopl_ingress_missing");
 assert.equal(ingress.metadata.namespace, "medopl", "ingress_namespace_mismatch");
 assert.equal(ingress.spec.ingressClassName, "qcloud", "ingress_must_use_qcloud_class");
+assert.equal(
+  ingress.metadata.annotations?.["ingress.cloud.tencent.com/listen-ports"],
+  "[{\"HTTP\":80},{\"HTTPS\":443}]",
+  "ingress_must_enable_http_and_https_listeners_for_redirect_probe",
+);
+assert.equal(
+  ingress.metadata.annotations?.["ingress.cloud.tencent.com/auto-rewrite"],
+  "true",
+  "ingress_must_enable_qcloud_http_to_https_rewrite",
+);
+assert.equal(
+  ingress.metadata.annotations?.["ingress.cloud.tencent.com/rewrite-support"],
+  "true",
+  "ingress_must_enable_qcloud_rewrite_support",
+);
 assert(ingress.spec.tls?.some((entry) => entry.hosts?.includes("portal.medopl.cn")), "ingress_tls_must_include_medopl_host");
 assert(ingress.spec.rules?.some((rule) => rule.host === "portal.medopl.cn"), "ingress_rule_must_include_medopl_host");
 
 const rolloutSource = await readRepoFile("scripts/cloud-rollout/medopl.mjs");
+const backendDockerfile = await readRepoFile("services/medopl-go-backend/Dockerfile");
 assertNoRawSecretValues(rolloutSource, "medopl_rollout_helper");
+assert(
+  backendDockerfile.includes("FROM node:22-bookworm-slim AS portal-build") &&
+    backendDockerfile.includes("services/portal/frontend") &&
+    backendDockerfile.includes("npm run build") &&
+    backendDockerfile.includes("COPY --from=portal-build") &&
+    backendDockerfile.includes("/app/portal"),
+  "backend_image_must_bundle_repo_native_portal_frontend_static_assets",
+);
 for (const expected of [
   "portal.medopl.cn",
   "uswccr.ccs.tencentyun.com/medopl/medopl-go-backend",
@@ -163,6 +194,17 @@ assert(
 assert(
   rolloutSource.includes("body.status === \"ok\"") && rolloutSource.includes("body.service === \"medopl-go-backend\""),
   "availability_probe_must_validate_go_backend_health_json_not_static_html",
+);
+assert(
+  rolloutSource.includes("runPortalEntryProbe") &&
+    rolloutSource.includes("portal_entry_probe_must_validate_portal_html") &&
+    rolloutSource.includes("MedOPL Portal"),
+  "availability_probe_must_validate_portal_html_entry_not_only_backend_health",
+);
+assert(
+  rolloutSource.includes("runHttpRedirectProbe") &&
+    rolloutSource.includes("http_redirect_probe_must_validate_https_redirect"),
+  "availability_probe_must_validate_http_to_https_redirect",
 );
 assert(
   rolloutSource.includes("JSON.parse(result.stdout)") && rolloutSource.includes("health_probe_must_validate_go_backend_health_json"),
@@ -223,6 +265,7 @@ for (const expected of [
   "npm run cloud:goal -- --operation build_push",
   "sudo -n docker",
   "services/medopl-go-backend/Dockerfile",
+  "V22_CONTAINER_BUILD_CONTEXT: .",
   "uswccr.ccs.tencentyun.com/medopl/medopl-go-backend",
 ]) {
   assert(releaseImage.includes(expected), `release_image_workflow_missing:${expected}`);
@@ -283,6 +326,7 @@ for (const expected of [
   "node scripts/cloud-rollout/medopl.mjs --apply",
   "MEDOPL_BASE_URL: https://portal.medopl.cn",
   "V22_MEDOPL_PUBLIC_BASE_URL: https://portal.medopl.cn",
+  "MEDOPL_HTTP_BASE_URL: http://portal.medopl.cn",
   "\"publicBaseUrl\": \"https://portal.medopl.cn\"",
 ]) {
   assert(cloudRollout.includes(expected), `cloud_rollout_workflow_missing:${expected}`);

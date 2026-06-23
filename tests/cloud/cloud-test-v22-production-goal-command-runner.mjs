@@ -85,7 +85,7 @@ const server = createServer(async (request, response) => {
   }
   if (url.pathname === "/") {
     response.writeHead(200, { "content-type": "text/html", connection: "close" });
-    response.end("<!doctype html><title>OPL WebUI</title>");
+    response.end("<!doctype html><title>MedOPL Portal</title><div id=\\"root\\">MedOPL Portal</div><script type=\\"module\\" src=\\"/assets/app.js\\"></script>");
     return;
   }
   if (url.pathname === "/healthz" || url.pathname === "/readyz") {
@@ -299,6 +299,7 @@ try {
   assert.equal(liveExecute.summary.flowCompleteness, "medopl_public_api_product_e2e", "live_test_must_execute_product_api_canary");
   assert.deepEqual(liveExecute.summary.steps, [
     "opl_webui_public_entry",
+    "medopl_portal_public_entry",
     "medopl_healthz",
     "medopl_readyz",
     "bind_provider_key",

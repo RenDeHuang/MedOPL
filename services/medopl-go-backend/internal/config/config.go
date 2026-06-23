@@ -21,6 +21,7 @@ type Config struct {
 	Mode               string
 	Port               int
 	ProviderSecretRoot string
+	PortalStaticRoot   string
 	PortalStateRoot    string
 	PortalStateStatus  string
 	OPLGatewayURL      string
@@ -34,6 +35,7 @@ func Load() (Config, error) {
 		Mode:               mode,
 		Port:               defaultPort,
 		ProviderSecretRoot: valueOrDefault(os.Getenv("PORTAL_OPL_PROVIDER_SECRET_ROOT"), defaultProviderSecretRoot(mode)),
+		PortalStaticRoot:   strings.TrimSpace(os.Getenv("MEDOPL_PORTAL_STATIC_ROOT")),
 		PortalStateRoot:    valueOrDefault(os.Getenv("MEDOPL_PORTAL_STATE_ROOT"), filepath.Join(".runtime", "local-services", "portal-state")),
 		OPLGatewayURL:      strings.TrimRight(valueOrDefault(os.Getenv("OPL_WEB_GATEWAY_PUBLIC_URL"), "http://127.0.0.1:18789"), "/"),
 		RuntimeBridgeURL:   strings.TrimRight(valueOrDefault(os.Getenv("PORTAL_RUNTIME_BRIDGE_PUBLIC_URL"), "http://127.0.0.1:8788"), "/"),

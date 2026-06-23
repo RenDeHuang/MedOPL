@@ -4,13 +4,53 @@ import (
 	"bytes"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/rendehuang/medopl/services/medopl-go-backend/internal/config"
 )
 
+func writePortalStaticFixture(t *testing.T) string {
+	t.Helper()
+	root := t.TempDir()
+	index := `<!doctype html><html><head><title>MedOPL Portal</title></head><body><div id="root">MedOPL Portal</div><script type="module" src="/assets/app.js"></script></body></html>`
+	if err := os.WriteFile(filepath.Join(root, "index.html"), []byte(index), 0o644); err != nil {
+		t.Fatalf("write portal static index: %v", err)
+	}
+	if err := os.Mkdir(filepath.Join(root, "assets"), 0o755); err != nil {
+		t.Fatalf("mkdir assets: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "assets", "app.js"), []byte("console.log('medopl portal')\n"), 0o644); err != nil {
+		t.Fatalf("write portal static asset: %v", err)
+	}
+	return root
+}
+
 func TestRouterServesExpectedEndpoints(t *testing.T) {
-	router := Router(config.Config{Service: "medopl-go-backend", Mode: "local", Port: 8789, ProviderSecretRoot: t.TempDir()})
+	router := Router(config.Config{Service: "medopl-go-backend", Mode: "local", Port: 8789, ProviderSecretRoot: t.TempDir(), PortalStaticRoot: writePortalStaticFixture(t)})
+	for _, path := range []string{"/", "/compute", "/storage", "/usage", "/opl"} {
+		req := httptest.NewRequest(http.MethodGet, path, nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%s portal entry status = %d body = %s", path, rec.Code, rec.Body.String())
+		}
+		contentType := rec.Header().Get("Content-Type")
+		if !strings.Contains(contentType, "text/html") {
+			t.Fatalf("%s portal entry content-type = %q", path, contentType)
+		}
+		if !strings.Contains(rec.Body.String(), "MedOPL Portal") {
+			t.Fatalf("%s portal entry did not serve portal html: %s", path, rec.Body.String())
+		}
+	}
+	assetReq := httptest.NewRequest(http.MethodGet, "/assets/app.js", nil)
+	assetRec := httptest.NewRecorder()
+	router.ServeHTTP(assetRec, assetReq)
+	if assetRec.Code != http.StatusOK || !strings.Contains(assetRec.Body.String(), "medopl portal") {
+		t.Fatalf("portal asset status = %d body = %s", assetRec.Code, assetRec.Body.String())
+	}
 	for _, path := range []string{"/health", "/healthz", "/readyz", "/version", "/config/check"} {
 		req := httptest.NewRequest(http.MethodGet, path, nil)
 		rec := httptest.NewRecorder()

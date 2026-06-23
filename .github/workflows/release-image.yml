@@ -22,7 +22,7 @@ jobs:
     runs-on: [self-hosted, tencent-cloud, medopl]
     environment: production
     env:
-      V22_CONTAINER_BUILD_CONTEXT: services/medopl-go-backend
+      V22_CONTAINER_BUILD_CONTEXT: .
       V22_CONTAINER_IMAGE_REPOSITORY: uswccr.ccs.tencentyun.com/medopl/medopl-go-backend
       V22_CONTAINER_BUILD_PUSH_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs
       V22_CONTAINER_BUILD_PUSH_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation build_push --execute --confirm-current-session-authorization
