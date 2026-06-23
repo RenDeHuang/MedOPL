@@ -117,6 +117,7 @@ jobs:
       V22_TENCENT_STORAGE_USE_COS_SDK: "1"
       V22_TENCENT_STORAGE_DELETE_PROBE: "1"
       V22_MEDOPL_BILLING_AUDIT_USE_POSTGRES: "1"
+      V22_MEDOPL_LIVE_DB_PERSISTENCE_PROOF: "1"
       V22_TENCENT_RUNTIME_PROVISIONING_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs
       V22_TENCENT_RUNTIME_PROVISIONING_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation tenant_runtime_provisioning --execute --confirm-current-session-authorization
       V22_TENCENT_STORAGE_LIFECYCLE_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs

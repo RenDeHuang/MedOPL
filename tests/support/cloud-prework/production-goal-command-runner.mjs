@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 
@@ -497,6 +498,98 @@ function assertGoHealth(payload, stepId, operation) {
   }
 }
 
+function hashPublicRef(value = "") {
+  return createHash("sha256").update(String(value || "")).digest("hex").slice(0, 16);
+}
+
+function assertPositiveCount(value, label, operation) {
+  const count = Number(value || 0);
+  if (!Number.isInteger(count) || count < 1) {
+    fail("production_goal_live_db_persistence_metadata_missing", {
+      operationClass: operation,
+      label,
+      observedCount: count,
+    }, 1);
+  }
+  return count;
+}
+
+async function queryCount(client, query, values) {
+  const result = await client.query(query, values);
+  return Number(result.rows?.[0]?.count || 0);
+}
+
+async function queryLiveDatabasePersistenceProof(operation, workspaceId, refs = {}) {
+  if (process.env.V22_MEDOPL_LIVE_DB_PERSISTENCE_PROOF !== "1") {
+    return { databasePersistenceProof: false };
+  }
+  if (!String(process.env.DATABASE_URL || "").trim()) {
+    fail("production_goal_live_db_persistence_database_url_missing", { operationClass: operation }, 65);
+  }
+
+  const pg = await import("pg");
+  const client = new pg.Client({ connectionString: process.env.DATABASE_URL, connectionTimeoutMillis: 5000 });
+  await client.connect();
+  try {
+    const counts = {
+      businessAccounts: assertPositiveCount(
+        await queryCount(client, "SELECT count(*)::int AS count FROM business_accounts WHERE workspace_id = $1", [workspaceId]),
+        "business_accounts",
+        operation,
+      ),
+      creditEvents: assertPositiveCount(
+        await queryCount(client, "SELECT count(*)::int AS count FROM credit_events WHERE workspace_id = $1", [workspaceId]),
+        "credit_events",
+        operation,
+      ),
+      providerBindings: assertPositiveCount(
+        await queryCount(client, "SELECT count(*)::int AS count FROM control_plane_records WHERE kind = 'provider_binding' AND workspace_id = $1", [workspaceId]),
+        "provider_binding_records",
+        operation,
+      ),
+      launchProjections: assertPositiveCount(
+        await queryCount(client, "SELECT count(*)::int AS count FROM control_plane_records WHERE kind = 'launch_projection' AND workspace_id = $1", [workspaceId]),
+        "launch_projection_records",
+        operation,
+      ),
+      managedResources: assertPositiveCount(
+        await queryCount(client, "SELECT count(*)::int AS count FROM control_plane_records WHERE kind = 'managed_resource' AND workspace_id = $1", [workspaceId]),
+        "managed_resource_records",
+        operation,
+      ),
+      files: assertPositiveCount(
+        await queryCount(client, "SELECT count(*)::int AS count FROM control_plane_records WHERE kind = 'file' AND workspace_id = $1", [workspaceId]),
+        "file_records",
+        operation,
+      ),
+      runs: assertPositiveCount(
+        await queryCount(client, "SELECT count(*)::int AS count FROM control_plane_records WHERE kind = 'run' AND workspace_id = $1", [workspaceId]),
+        "run_records",
+        operation,
+      ),
+      artifacts: assertPositiveCount(
+        await queryCount(client, "SELECT count(*)::int AS count FROM control_plane_records WHERE kind = 'artifact' AND workspace_id = $1", [workspaceId]),
+        "artifact_records",
+        operation,
+      ),
+      auditEvents: assertPositiveCount(
+        await queryCount(client, "SELECT count(*)::int AS count FROM control_plane_records WHERE kind = 'audit_event' AND workspace_id = $1", [workspaceId]),
+        "audit_event_records",
+        operation,
+      ),
+    };
+    return {
+      databasePersistenceProof: true,
+      databaseUrlRef: "DATABASE_URL",
+      workspaceRefHash: hashPublicRef(workspaceId),
+      objectRefHashes: Object.fromEntries(Object.entries(refs).map(([key, value]) => [key, hashPublicRef(value)])),
+      recordCounts: counts,
+    };
+  } finally {
+    await client.end();
+  }
+}
+
 async function runKubectl(operation) {
   const command = process.env.V22_KUBERNETES_APPLY_SHELL
     || `kubectl --kubeconfig ${JSON.stringify(process.env.TENCENT_DEPLOY_KUBECONFIG_REF)} apply -f ${JSON.stringify(process.env.V22_KUBERNETES_MANIFEST_DIR)}`;
@@ -531,6 +624,8 @@ async function runLiveTest(operation) {
   const oplBaseUrl = String(process.env.V22_OPL_WEBUI_CONSUMER_CANARY_URL || "").replace(/\/$/u, "");
   const medoplBaseUrl = String(process.env.V22_MEDOPL_PUBLIC_BASE_URL || "").replace(/\/$/u, "");
   const workspaceId = `goal-f-production-canary-${Date.now()}`;
+  const tenantId = "tenant-goal-f-canary";
+  const portalUserId = "user-goal-f-canary";
   const observed = [];
 
   const oplEntry = await requestText({ url: oplBaseUrl, operation, stepId: "opl_webui_public_entry" });
@@ -545,13 +640,46 @@ async function runLiveTest(operation) {
   assertGoHealth(ready, "medopl_readyz", operation);
   observed.push({ step: "medopl_readyz", status: 200 });
 
+  const account = await requestJson({
+    baseUrl: medoplBaseUrl,
+    path: "/api/v22/users/prepare",
+    method: "POST",
+    body: {
+      tenantId,
+      portalUserId,
+      workspaceId,
+    },
+    operation,
+    stepId: "prepare_business_account",
+  });
+  requireFields(account, ["workspaceId"], "production_goal_live_test_prepare_business_account_failed", operation);
+  observed.push({ step: "prepare_business_account", accountStatus: account.accountStatus || account.status || "active" });
+
+  const credit = await requestJson({
+    baseUrl: medoplBaseUrl,
+    path: "/api/v22/users/credit",
+    method: "POST",
+    body: {
+      tenantId,
+      portalUserId,
+      workspaceId,
+      amount: 1,
+      currency: "CNY",
+      idempotencyKey: `${workspaceId}-credit`,
+    },
+    operation,
+    stepId: "credit_business_account",
+  });
+  requireFields(credit, ["workspaceId"], "production_goal_live_test_credit_business_account_failed", operation);
+  observed.push({ step: "credit_business_account", credited: true });
+
   const provider = await requestJson({
     baseUrl: medoplBaseUrl,
     path: "/api/v22/provider-key",
     method: "POST",
     body: {
-      tenantId: "tenant-goal-f-canary",
-      portalUserId: "user-goal-f-canary",
+      tenantId,
+      portalUserId,
       workspaceId,
       apiKey: "goal-f-canary-provider-key-redacted",
       idempotencyKey: `${workspaceId}-provider`,
@@ -567,8 +695,8 @@ async function runLiveTest(operation) {
     path: "/api/v22/managed-environment/open",
     method: "POST",
     body: {
-      tenantId: "tenant-goal-f-canary",
-      portalUserId: "user-goal-f-canary",
+      tenantId,
+      portalUserId,
       workspaceId,
       idempotencyKey: `${workspaceId}-open-runtime`,
     },
@@ -673,11 +801,18 @@ async function runLiveTest(operation) {
   requireFields(storage, ["storageDestroyed", "storageState"], "production_goal_live_test_destroy_storage_failed", operation);
   observed.push({ step: "destroy_storage", storageState: storage.storageState });
 
+  const databaseProof = await queryLiveDatabasePersistenceProof(operation, workspaceId, {
+    fileRef: file.fileRef,
+    runRef: run.runRef || run.runId || `${workspaceId}-run`,
+    artifactRef: run.artifactRef,
+    resourceBindingId: launch.resourceBindingId,
+  });
   const steps = observed.map((item) => item.step);
   const evidenceRef = safeWriteRuntimeEvidence(operation, {
     status: "accepted",
     flowCompleteness: "medopl_public_api_product_e2e",
     observed,
+    databaseProof,
   });
   return {
     evidenceRef,
@@ -685,6 +820,7 @@ async function runLiveTest(operation) {
     flowCompleteness: "medopl_public_api_product_e2e",
     steps,
     observed,
+    databaseProof,
   };
 }
 

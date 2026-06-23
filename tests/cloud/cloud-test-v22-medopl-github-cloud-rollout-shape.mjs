@@ -221,6 +221,7 @@ assert(ingress.spec.rules?.some((rule) => rule.host === "portal.medopl.cn"), "in
 
 const rolloutSource = await readRepoFile("scripts/cloud-rollout/medopl.mjs");
 const backendDockerfile = await readRepoFile("services/medopl-go-backend/Dockerfile");
+const commandRunnerSource = await readRepoFile("tests/support/cloud-prework/production-goal-command-runner.mjs");
 assertNoRawSecretValues(rolloutSource, "medopl_rollout_helper");
 assert(
   backendDockerfile.includes("FROM node:22-bookworm-slim AS portal-build") &&
@@ -367,6 +368,7 @@ for (const expected of [
   "V22_TENCENT_STORAGE_USE_COS_SDK: \"1\"",
   "V22_TENCENT_STORAGE_DELETE_PROBE: \"1\"",
   "V22_MEDOPL_BILLING_AUDIT_USE_POSTGRES: \"1\"",
+  "V22_MEDOPL_LIVE_DB_PERSISTENCE_PROOF: \"1\"",
   "V22_TENCENT_RUNTIME_PROVISIONING_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs",
   "V22_TENCENT_RUNTIME_PROVISIONING_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation tenant_runtime_provisioning --execute --confirm-current-session-authorization",
   "V22_TENCENT_STORAGE_LIFECYCLE_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs",
@@ -428,6 +430,7 @@ for (const expected of [
   "V22_TENCENT_STORAGE_USE_COS_SDK: \"1\"",
   "V22_TENCENT_STORAGE_DELETE_PROBE: \"1\"",
   "V22_MEDOPL_BILLING_AUDIT_USE_POSTGRES: \"1\"",
+  "V22_MEDOPL_LIVE_DB_PERSISTENCE_PROOF: \"1\"",
   "V22_KUBERNETES_APPLY_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs",
   "V22_KUBERNETES_APPLY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation kubectl --execute --confirm-current-session-authorization",
   "V22_MEDOPL_DEPLOY_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs",
@@ -573,6 +576,18 @@ assert(
 assert(
   productionApplyJob.indexOf("npm run cloud:goal -- --operation deploy") < productionApplyJob.indexOf("npm run cloud:goal -- --operation live_test"),
   "production_apply_must_write_live_test_receipt_after_deploy_receipt",
+);
+assert(
+  productionApplyJob.includes("V22_MEDOPL_LIVE_DB_PERSISTENCE_PROOF: \"1\"") &&
+    commandRunnerSource.includes("/api/v22/users/prepare") &&
+    commandRunnerSource.includes("/api/v22/users/credit") &&
+    commandRunnerSource.includes("queryLiveDatabasePersistenceProof") &&
+    commandRunnerSource.includes("databasePersistenceProof: true") &&
+    commandRunnerSource.includes("workspaceRefHash") &&
+    commandRunnerSource.includes("SELECT count(*)::int AS count FROM business_accounts WHERE workspace_id = $1") &&
+    commandRunnerSource.includes("SELECT count(*)::int AS count FROM credit_events WHERE workspace_id = $1") &&
+    commandRunnerSource.includes("control_plane_records WHERE kind = 'artifact'"),
+  "production_apply_live_test_must_prove_postgres_business_metadata_without_raw_workspace_payload",
 );
 assert(
   productionApplyJob.indexOf("npm run cloud:goal -- --operation live_test") < productionApplyJob.indexOf("npm run cloud:goal -- --manifest-only"),

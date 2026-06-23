@@ -97,6 +97,16 @@ const server = createServer(async (request, response) => {
     sendJson(200, { ok: true, workspaceId: body.workspaceId, providerKeyRef: "pkref_canary", boundStatus: "bound" });
     return;
   }
+  if (url.pathname === "/api/v22/users/prepare" && request.method === "POST") {
+    const body = await readRequestJson(request);
+    sendJson(200, { ok: true, workspaceId: body.workspaceId, accountStatus: "active", balance: 0, currency: "CNY" });
+    return;
+  }
+  if (url.pathname === "/api/v22/users/credit" && request.method === "POST") {
+    const body = await readRequestJson(request);
+    sendJson(200, { ok: true, workspaceId: body.workspaceId, accountStatus: "active", balance: body.amount || 0, currency: body.currency || "CNY" });
+    return;
+  }
   if (url.pathname === "/api/v22/managed-environment/open" && request.method === "POST") {
     const body = await readRequestJson(request);
     sendJson(200, { launchId: "launch_canary", resourceBindingId: "rb_canary", workspaceId: body.workspaceId });
@@ -303,6 +313,8 @@ try {
     "medopl_portal_public_entry",
     "medopl_healthz",
     "medopl_readyz",
+    "prepare_business_account",
+    "credit_business_account",
     "bind_provider_key",
     "open_runtime",
     "runtime_gate",
@@ -315,6 +327,20 @@ try {
   ], "live_test_product_api_steps");
   assert.equal(liveExecute.summary.productionComplete, false, "live_test_must_not_claim_production_complete");
   assertNoSensitiveText(JSON.stringify(liveExecute), "live_test_execute");
+
+  const dbProofMissing = run(["--operation", "live_test", "--execute", "--confirm-current-session-authorization"], {
+    ...baseEnv,
+    V22_OPL_WEBUI_CONSUMER_CANARY_URL: goodCanary.baseUrl,
+    V22_MEDOPL_PUBLIC_BASE_URL: goodCanary.baseUrl,
+    V22_MEDOPL_LIVE_DB_PERSISTENCE_PROOF: "1",
+    DATABASE_URL: "",
+  });
+  assert.notEqual(dbProofMissing.status, 0, "live_db_persistence_proof_must_fail_closed_without_database_url");
+  assert(
+    (dbProofMissing.stdout + dbProofMissing.stderr).includes("production_goal_live_db_persistence_database_url_missing"),
+    "live_db_persistence_missing_database_url_reason",
+  );
+  assertNoSensitiveText(dbProofMissing.stdout + dbProofMissing.stderr, "live_db_persistence_missing_database_url");
 
   const emptyBuildDir = path.join(tempDir, "empty-build");
   const emptyManifestDir = path.join(tempDir, "empty-manifest");
