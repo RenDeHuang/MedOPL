@@ -38,11 +38,13 @@ CREATE TABLE IF NOT EXISTS runs (
   status TEXT NOT NULL DEFAULT 'pending',
   external_ref TEXT,
   idempotency_key TEXT NOT NULL,
+  payload JSONB NOT NULL,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_runs_workspace_id ON runs(workspace_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_runs_workspace_idempotency ON runs(workspace_id, idempotency_key);
+ALTER TABLE runs ADD COLUMN IF NOT EXISTS payload JSONB NOT NULL DEFAULT '{}'::jsonb;
 
 CREATE TABLE IF NOT EXISTS artifacts (
   id TEXT PRIMARY KEY,
@@ -51,11 +53,13 @@ CREATE TABLE IF NOT EXISTS artifacts (
   kind TEXT NOT NULL DEFAULT 'output',
   status TEXT NOT NULL DEFAULT 'available',
   external_ref TEXT,
+  payload JSONB NOT NULL,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_artifacts_run_id ON artifacts(run_id);
 CREATE INDEX IF NOT EXISTS idx_artifacts_workspace_id ON artifacts(workspace_id);
+ALTER TABLE artifacts ADD COLUMN IF NOT EXISTS payload JSONB NOT NULL DEFAULT '{}'::jsonb;
 
 CREATE TABLE IF NOT EXISTS files (
   id TEXT PRIMARY KEY,
@@ -64,11 +68,13 @@ CREATE TABLE IF NOT EXISTS files (
   kind TEXT NOT NULL DEFAULT 'input',
   status TEXT NOT NULL DEFAULT 'available',
   external_ref TEXT,
+  payload JSONB NOT NULL,
   created_at TIMESTAMPTZ NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_files_workspace_id ON files(workspace_id);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_files_workspace_name ON files(workspace_id, name);
+ALTER TABLE files ADD COLUMN IF NOT EXISTS payload JSONB NOT NULL DEFAULT '{}'::jsonb;
 
 CREATE TABLE IF NOT EXISTS billing_events (
   id TEXT PRIMARY KEY,

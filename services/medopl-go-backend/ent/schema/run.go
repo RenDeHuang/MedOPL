@@ -20,6 +20,7 @@ func (Run) Fields() []ent.Field {
 		field.String("status").Default("pending"),
 		field.String("external_ref").Optional().Nillable(),
 		field.String("idempotency_key").NotEmpty(),
+		field.JSON("payload", map[string]any{}),
 		field.Time("created_at").Default(time.Now).Immutable(),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
 	}

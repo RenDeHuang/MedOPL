@@ -49,6 +49,18 @@ type runtimeLifecycleBackend interface {
 	CloudOperation(ctx context.Context, operationID string) (cpd.CloudOperation, error)
 }
 
+type runFileArtifactBackend interface {
+	UpsertFileRecord(ctx context.Context, file cpd.FileRecord) error
+	FileRecord(ctx context.Context, fileRef string) (cpd.FileRecord, error)
+	ListFileRecords(ctx context.Context, workspaceID string) ([]cpd.FileRecord, error)
+	UpsertRunRecord(ctx context.Context, run cpd.RunRecord) error
+	RunRecord(ctx context.Context, runID string) (cpd.RunRecord, error)
+	ListRunRecords(ctx context.Context, workspaceID string) ([]cpd.RunRecord, error)
+	UpsertArtifactRecord(ctx context.Context, artifact cpd.ArtifactRecord) error
+	ArtifactRecord(ctx context.Context, artifactRef string) (cpd.ArtifactRecord, error)
+	ListArtifactRecords(ctx context.Context, workspaceID string) ([]cpd.ArtifactRecord, error)
+}
+
 type ControlPlaneStore struct {
 	backend Backend
 	kind    string
@@ -200,16 +212,25 @@ func (store *ControlPlaneStore) LaunchByID(ctx context.Context, launchID string)
 }
 
 func (store *ControlPlaneStore) SaveFile(ctx context.Context, file cpd.FileRecord) error {
+	if backend, ok := store.backend.(runFileArtifactBackend); ok {
+		return backend.UpsertFileRecord(ctx, file)
+	}
 	return store.save(ctx, recordKindFile, file.FileRef, file.WorkspaceID, file)
 }
 
 func (store *ControlPlaneStore) FileByRef(ctx context.Context, fileRef string) (cpd.FileRecord, error) {
+	if backend, ok := store.backend.(runFileArtifactBackend); ok {
+		return backend.FileRecord(ctx, fileRef)
+	}
 	var file cpd.FileRecord
 	err := store.load(ctx, recordKindFile, fileRef, &file)
 	return file, err
 }
 
 func (store *ControlPlaneStore) ListFiles(ctx context.Context, workspaceID string) ([]cpd.FileRecord, error) {
+	if backend, ok := store.backend.(runFileArtifactBackend); ok {
+		return backend.ListFileRecords(ctx, workspaceID)
+	}
 	records, err := store.backend.ListRecords(ctx, recordKindFile, workspaceID)
 	if err != nil {
 		return nil, err
@@ -231,10 +252,16 @@ func (store *ControlPlaneStore) ListFiles(ctx context.Context, workspaceID strin
 func (store *ControlPlaneStore) SaveRun(ctx context.Context, run cpd.RunRecord) error {
 	run.FileRefs = append([]string(nil), run.FileRefs...)
 	run.InputObjectRefs = append([]string(nil), run.InputObjectRefs...)
+	if backend, ok := store.backend.(runFileArtifactBackend); ok {
+		return backend.UpsertRunRecord(ctx, run)
+	}
 	return store.save(ctx, recordKindRun, run.RunID, run.WorkspaceID, run)
 }
 
 func (store *ControlPlaneStore) RunByID(ctx context.Context, runID string) (cpd.RunRecord, error) {
+	if backend, ok := store.backend.(runFileArtifactBackend); ok {
+		return backend.RunRecord(ctx, runID)
+	}
 	var run cpd.RunRecord
 	err := store.load(ctx, recordKindRun, runID, &run)
 	run.FileRefs = append([]string(nil), run.FileRefs...)
@@ -243,6 +270,9 @@ func (store *ControlPlaneStore) RunByID(ctx context.Context, runID string) (cpd.
 }
 
 func (store *ControlPlaneStore) ListRuns(ctx context.Context, workspaceID string) ([]cpd.RunRecord, error) {
+	if backend, ok := store.backend.(runFileArtifactBackend); ok {
+		return backend.ListRunRecords(ctx, workspaceID)
+	}
 	records, err := store.backend.ListRecords(ctx, recordKindRun, workspaceID)
 	if err != nil {
 		return nil, err
@@ -265,10 +295,16 @@ func (store *ControlPlaneStore) ListRuns(ctx context.Context, workspaceID string
 
 func (store *ControlPlaneStore) SaveArtifact(ctx context.Context, artifact cpd.ArtifactRecord) error {
 	artifact.SourceFileRefs = append([]string(nil), artifact.SourceFileRefs...)
+	if backend, ok := store.backend.(runFileArtifactBackend); ok {
+		return backend.UpsertArtifactRecord(ctx, artifact)
+	}
 	return store.save(ctx, recordKindArtifact, artifact.ArtifactRef, artifact.WorkspaceID, artifact)
 }
 
 func (store *ControlPlaneStore) ArtifactByRef(ctx context.Context, artifactRef string) (cpd.ArtifactRecord, error) {
+	if backend, ok := store.backend.(runFileArtifactBackend); ok {
+		return backend.ArtifactRecord(ctx, artifactRef)
+	}
 	var artifact cpd.ArtifactRecord
 	err := store.load(ctx, recordKindArtifact, artifactRef, &artifact)
 	artifact.SourceFileRefs = append([]string(nil), artifact.SourceFileRefs...)
@@ -276,6 +312,9 @@ func (store *ControlPlaneStore) ArtifactByRef(ctx context.Context, artifactRef s
 }
 
 func (store *ControlPlaneStore) ListArtifacts(ctx context.Context, workspaceID string) ([]cpd.ArtifactRecord, error) {
+	if backend, ok := store.backend.(runFileArtifactBackend); ok {
+		return backend.ListArtifactRecords(ctx, workspaceID)
+	}
 	records, err := store.backend.ListRecords(ctx, recordKindArtifact, workspaceID)
 	if err != nil {
 		return nil, err

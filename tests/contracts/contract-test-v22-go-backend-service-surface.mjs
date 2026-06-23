@@ -246,6 +246,39 @@ async function assertServiceSurface() {
   ]) {
     assertIncludes(postgresControlPlaneSource, marker, `postgres_runtime_lifecycle_control_plane_marker:${marker}`);
   }
+  const postgresRunFileArtifactSource = await readRepoFile(`${serviceRoot}/internal/repository/postgres/run_file_artifact_backend.go`);
+  for (const marker of [
+    "UpsertFileRecord",
+    "FileRecord",
+    "ListFileRecords",
+    "UpsertRunRecord",
+    "RunRecord",
+    "ListRunRecords",
+    "UpsertArtifactRecord",
+    "ArtifactRecord",
+    "ListArtifactRecords",
+    "INSERT INTO files",
+    "INSERT INTO runs",
+    "INSERT INTO artifacts",
+    "requireExistingWorkspace",
+  ]) {
+    assertIncludes(postgresRunFileArtifactSource, marker, `postgres_run_file_artifact_marker:${marker}`);
+  }
+  assertNotMatches(postgresRunFileArtifactSource, /INSERT INTO workspaces|INSERT INTO tenants|INSERT INTO users/u, "postgres_run_file_artifact_must_not_create_identity_rows");
+  for (const marker of [
+    "type runFileArtifactBackend interface",
+    "backend.UpsertFileRecord",
+    "backend.FileRecord",
+    "backend.ListFileRecords",
+    "backend.UpsertRunRecord",
+    "backend.RunRecord",
+    "backend.ListRunRecords",
+    "backend.UpsertArtifactRecord",
+    "backend.ArtifactRecord",
+    "backend.ListArtifactRecords",
+  ]) {
+    assertIncludes(postgresControlPlaneSource, marker, `postgres_run_file_artifact_control_plane_marker:${marker}`);
+  }
   const healthSource = await readRepoFile(`${serviceRoot}/internal/server/handlers/health.go`);
   for (const marker of ["medopl-go-backend", "status", "ok", "checks", "config"]) assertIncludes(healthSource, marker, `health_marker:${marker}`);
   assertNotMatches(healthSource, /time\.Now|Hostname|os\.Getpid|uuid|rand/u, "health_handler_must_be_deterministic");
@@ -277,7 +310,7 @@ async function assertEntPostgresBoundary() {
     assertIncludes(migration, `CREATE TABLE IF NOT EXISTS ${table}`, `migration_must_create_table:${table}`);
     assertIncludes(migration, `CREATE INDEX IF NOT EXISTS idx_${table}`, `migration_must_have_repeatable_index:${table}`);
   }
-  for (const marker of ["tenant_id", "workspace_id", "run_id", "idempotency_key", "REFERENCES tenants(id)", "REFERENCES workspaces(id)", "REFERENCES runs(id)", "REFERENCES resource_bindings(resource_binding_id)", "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_tenant_email", "CREATE UNIQUE INDEX IF NOT EXISTS idx_workspaces_tenant_slug", "CREATE UNIQUE INDEX IF NOT EXISTS idx_runs_workspace_idempotency", "CREATE UNIQUE INDEX IF NOT EXISTS idx_files_workspace_name", "CREATE UNIQUE INDEX IF NOT EXISTS idx_resource_bindings_resource_binding_id", "CREATE UNIQUE INDEX IF NOT EXISTS idx_cloud_operations_operation_id", "workflow_executions", "billing_events", "resource_bindings", "cloud_operations"]) {
+  for (const marker of ["tenant_id", "workspace_id", "run_id", "idempotency_key", "payload JSONB NOT NULL", "ALTER TABLE runs ADD COLUMN IF NOT EXISTS payload JSONB", "ALTER TABLE files ADD COLUMN IF NOT EXISTS payload JSONB", "ALTER TABLE artifacts ADD COLUMN IF NOT EXISTS payload JSONB", "REFERENCES tenants(id)", "REFERENCES workspaces(id)", "REFERENCES runs(id)", "REFERENCES resource_bindings(resource_binding_id)", "CREATE UNIQUE INDEX IF NOT EXISTS idx_users_tenant_email", "CREATE UNIQUE INDEX IF NOT EXISTS idx_workspaces_tenant_slug", "CREATE UNIQUE INDEX IF NOT EXISTS idx_runs_workspace_idempotency", "CREATE UNIQUE INDEX IF NOT EXISTS idx_files_workspace_name", "CREATE UNIQUE INDEX IF NOT EXISTS idx_resource_bindings_resource_binding_id", "CREATE UNIQUE INDEX IF NOT EXISTS idx_cloud_operations_operation_id", "workflow_executions", "billing_events", "resource_bindings", "cloud_operations"]) {
     assertIncludes(migration, marker, `migration_marker:${marker}`);
   }
   assertNotMatches(migration, /DEFAULT ''|NOT NULL DEFAULT ''/u, "migration_must_not_encode_absence_as_empty_string");

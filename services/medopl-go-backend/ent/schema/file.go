@@ -21,6 +21,7 @@ func (File) Fields() []ent.Field {
 		field.String("kind").Default("input"),
 		field.String("status").Default("available"),
 		field.String("external_ref").Optional().Nillable(),
+		field.JSON("payload", map[string]any{}),
 		field.Time("created_at").Default(time.Now).Immutable(),
 		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
 	}
