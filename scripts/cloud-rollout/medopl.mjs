@@ -38,10 +38,12 @@ if (availabilityProbe) {
 
 if (rollback) {
   requireKubeconfigRef();
-  run("kubectl rollout undo", "kubectl", kubectlArgs(["rollout", "undo", deployment]));
+  requireEnv("MEDOPL_IMAGE");
+  setValidatedImage(process.env.MEDOPL_IMAGE);
+  run("kubectl set rollback image", "kubectl", kubectlArgs(["set", "image", deployment, `${container}=${image}`]));
   runRolloutStatus();
   runPostRolloutChecks();
-  printReceiptSummary("manual_environment_approved_rollback");
+  printReceiptSummary("manual_environment_approved_explicit_image_rollback");
   process.exit(0);
 }
 
@@ -65,7 +67,7 @@ function printUsage() {
     "Usage:",
     "  node scripts/v22-medopl-cloud-rollout.mjs",
     "  MEDOPL_IMAGE=<image> KUBECONFIG=<path> node scripts/v22-medopl-cloud-rollout.mjs --apply",
-    "  KUBECONFIG=<path> node scripts/v22-medopl-cloud-rollout.mjs --rollback",
+    "  MEDOPL_IMAGE=<image> KUBECONFIG=<path> node scripts/v22-medopl-cloud-rollout.mjs --rollback",
     "  node scripts/v22-medopl-cloud-rollout.mjs --availability-probe",
   ].join("\n"));
 }
@@ -148,6 +150,8 @@ function runRolloutFailureDiagnostics() {
     ["kubectl get replicaset", "kubectl", kubectlArgs(["get", "replicaset", "-l", podSelector, "-o", "wide"])],
     ["kubectl get pod", "kubectl", kubectlArgs(["get", "pod", "-l", podSelector, "-o", "wide"])],
     ["kubectl describe pod", "kubectl", kubectlArgs(["describe", "pod", "-l", podSelector])],
+    ["kubectl logs current", "kubectl", kubectlArgs(["logs", "-l", podSelector, "--all-containers", "--tail=120"])],
+    ["kubectl logs previous", "kubectl", kubectlArgs(["logs", "-l", podSelector, "--all-containers", "--previous", "--tail=120"])],
     ["kubectl get events", "kubectl", kubectlArgs(["get", "events", "--sort-by=.lastTimestamp"])],
   ]) {
     try {

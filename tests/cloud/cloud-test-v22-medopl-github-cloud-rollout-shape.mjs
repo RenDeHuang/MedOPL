@@ -282,8 +282,19 @@ assert(
     rolloutSource.includes("kubectl get deployment") &&
     rolloutSource.includes("kubectl get replicaset") &&
     rolloutSource.includes("kubectl describe pod") &&
+    rolloutSource.includes("kubectl logs current") &&
+    rolloutSource.includes("kubectl logs previous") &&
+    rolloutSource.includes("--previous") &&
     rolloutSource.includes("kubectl get events"),
   "rollout_failure_must_capture_deployment_replicaset_pod_and_event_diagnostics",
+);
+assert.equal(rolloutSource.includes("kubectl rollout undo"), false, "rollback_must_not_use_implicit_revision_undo");
+assert(
+  rolloutSource.includes("manual_environment_approved_explicit_image_rollback") &&
+    rolloutSource.includes("requireEnv(\"MEDOPL_IMAGE\")") &&
+    rolloutSource.includes("setValidatedImage(process.env.MEDOPL_IMAGE)") &&
+    rolloutSource.includes("kubectl set rollback image"),
+  "rollback_must_use_explicit_allowed_image_target",
 );
 assert(
   rolloutSource.includes("kubectl get service") && rolloutSource.includes("kubectl get ingress") && rolloutSource.includes("kubectl get endpoints"),
@@ -297,6 +308,7 @@ assert(
 const releaseImage = await readRepoFile(".github/workflows/release-image.yml");
 const cloudRollout = await readRepoFile(".github/workflows/cloud-rollout.yml");
 const productionApplyJob = sectionBetween(cloudRollout, "  production-apply:", "  production-rollback:");
+const productionRollbackJob = sectionBetween(cloudRollout, "  production-rollback:", "  production-availability-probe-current:");
 assertNoRawSecretValues(releaseImage, "release_image_workflow");
 assertNoRawSecretValues(cloudRollout, "cloud_rollout_workflow");
 assert.equal(cloudRollout.includes("medopl.medopl.cn"), false, "cloud_rollout_must_not_reference_retired_medopl_host");
@@ -437,6 +449,18 @@ assert(
 assert(
   productionApplyJob.includes("fetch-depth: 0"),
   "production_apply_checkout_must_fetch_full_history_for_cloud_rc_gate",
+);
+assert(
+  productionApplyJob.includes("MEDOPL_KUBECTL_ROLLOUT_TIMEOUT_SECONDS: \"420\""),
+  "production_apply_must_use_extended_rollout_timeout",
+);
+assert(
+  productionRollbackJob.includes("MEDOPL_KUBECTL_ROLLOUT_TIMEOUT_SECONDS: \"420\""),
+  "production_rollback_must_use_extended_rollout_timeout",
+);
+assert(
+  productionRollbackJob.includes("MEDOPL_HTTP_BASE_URL: http://portal.medopl.cn"),
+  "production_rollback_must_keep_http_redirect_probe_context",
 );
 assert(
   productionApplyJob.indexOf("npm ci") < productionApplyJob.indexOf("Create Goal F receipt inputs"),
