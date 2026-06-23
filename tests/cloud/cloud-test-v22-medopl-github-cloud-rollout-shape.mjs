@@ -278,6 +278,14 @@ assert(
   "post_rollout_must_run_routing_diagnostics_before_public_health_probe",
 );
 assert(
+  rolloutSource.includes("runRolloutFailureDiagnostics()") &&
+    rolloutSource.includes("kubectl get deployment") &&
+    rolloutSource.includes("kubectl get replicaset") &&
+    rolloutSource.includes("kubectl describe pod") &&
+    rolloutSource.includes("kubectl get events"),
+  "rollout_failure_must_capture_deployment_replicaset_pod_and_event_diagnostics",
+);
+assert(
   rolloutSource.includes("kubectl get service") && rolloutSource.includes("kubectl get ingress") && rolloutSource.includes("kubectl get endpoints"),
   "rollout_diagnostics_must_capture_service_ingress_endpoints",
 );
@@ -384,6 +392,7 @@ for (const expected of [
   "MEDOPL_BASE_URL: https://portal.medopl.cn",
   "V22_MEDOPL_PUBLIC_BASE_URL: https://portal.medopl.cn",
   "MEDOPL_HTTP_BASE_URL: http://portal.medopl.cn",
+  "MEDOPL_KUBECTL_ROLLOUT_TIMEOUT_SECONDS: \"420\"",
   "\"publicBaseUrl\": \"https://portal.medopl.cn\"",
 ]) {
   assert(cloudRollout.includes(expected), `cloud_rollout_workflow_missing:${expected}`);

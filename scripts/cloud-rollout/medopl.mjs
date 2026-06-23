@@ -117,7 +117,12 @@ function capture(label, command, commandArgs) {
 }
 
 function runRolloutStatus() {
-  run("kubectl rollout status", "kubectl", kubectlArgs(["rollout", "status", deployment, `--timeout=${rolloutTimeoutSeconds}s`]));
+  try {
+    run("kubectl rollout status", "kubectl", kubectlArgs(["rollout", "status", deployment, `--timeout=${rolloutTimeoutSeconds}s`]));
+  } catch (error) {
+    runRolloutFailureDiagnostics();
+    throw error;
+  }
 }
 
 function runPostRolloutChecks() {
@@ -133,6 +138,25 @@ function runRoutingDiagnostics() {
   capture("kubectl get ingress", "kubectl", kubectlArgs(["get", "ingress", "medopl", "-o", "wide"]));
   capture("kubectl get endpoints", "kubectl", kubectlArgs(["get", "endpoints", "medopl-control-plane", "-o", "wide"]));
   capture("dns resolution", "getent", ["hosts", new URL(baseUrl).hostname]);
+}
+
+function runRolloutFailureDiagnostics() {
+  console.log("[medopl-cloud-rollout] rollout failure diagnostics begin");
+  for (const [label, command, commandArgs] of [
+    ["kubectl get deployment", "kubectl", kubectlArgs(["get", deployment, "-o", "wide"])],
+    ["kubectl describe deployment", "kubectl", kubectlArgs(["describe", deployment])],
+    ["kubectl get replicaset", "kubectl", kubectlArgs(["get", "replicaset", "-l", podSelector, "-o", "wide"])],
+    ["kubectl get pod", "kubectl", kubectlArgs(["get", "pod", "-l", podSelector, "-o", "wide"])],
+    ["kubectl describe pod", "kubectl", kubectlArgs(["describe", "pod", "-l", podSelector])],
+    ["kubectl get events", "kubectl", kubectlArgs(["get", "events", "--sort-by=.lastTimestamp"])],
+  ]) {
+    try {
+      capture(label, command, commandArgs);
+    } catch (error) {
+      console.log(`[medopl-cloud-rollout] ${label} diagnostic failed: ${redact(error.message)}`);
+    }
+  }
+  console.log("[medopl-cloud-rollout] rollout failure diagnostics end");
 }
 
 function runHealthProbe(label, url) {

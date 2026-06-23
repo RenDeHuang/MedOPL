@@ -41,6 +41,7 @@ jobs:
       MEDOPL_NAMESPACE: medopl
       MEDOPL_BASE_URL: https://portal.medopl.cn
       MEDOPL_HTTP_BASE_URL: http://portal.medopl.cn
+      MEDOPL_KUBECTL_ROLLOUT_TIMEOUT_SECONDS: "420"
       V22_KUBERNETES_MANIFEST_DIR: deploy/medopl-cloud
       V22_MEDOPL_PUBLIC_BASE_URL: https://portal.medopl.cn
       V22_OPL_WEBUI_CONSUMER_CANARY_URL: https://opl.medopl.cn
