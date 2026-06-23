@@ -18,8 +18,8 @@ const OPERATION_CONFIG = Object.freeze({
     requiredPaths: ["V22_MEDOPL_BILLING_AUDIT_RECEIPT_FILE"],
   },
   build_push: {
-    requiredEnv: ["V22_CONTAINER_BUILD_CONTEXT", "V22_CONTAINER_IMAGE_REF", "TCR_ID", "TCR_SECRET"],
-    requiredPaths: ["V22_CONTAINER_BUILD_CONTEXT"],
+    requiredEnv: ["V22_CONTAINER_BUILD_CONTEXT", "V22_CONTAINER_DOCKERFILE", "V22_CONTAINER_IMAGE_REF", "TCR_ID", "TCR_SECRET"],
+    requiredPaths: ["V22_CONTAINER_BUILD_CONTEXT", "V22_CONTAINER_DOCKERFILE"],
   },
   kubectl: {
     requiredEnv: ["TENCENT_DEPLOY_KUBECONFIG_REF", "V22_KUBERNETES_MANIFEST_DIR"],
@@ -170,8 +170,11 @@ function directoryHasFile(dir, predicate = () => true) {
 
 function semanticConfigMissing(operation) {
   const missing = [];
-  if (operation === "build_push" && !directoryHasFile(path.resolve(process.env.V22_CONTAINER_BUILD_CONTEXT || ""), (name) => name === "Dockerfile")) {
-    missing.push("V22_CONTAINER_BUILD_CONTEXT:Dockerfile");
+  if (operation === "build_push") {
+    const dockerfile = path.resolve(process.env.V22_CONTAINER_DOCKERFILE || "");
+    if (!existsSync(dockerfile) || !statSync(dockerfile).isFile()) {
+      missing.push("V22_CONTAINER_DOCKERFILE:Dockerfile");
+    }
   }
   if (operation === "kubectl" && !directoryHasFile(path.resolve(process.env.V22_KUBERNETES_MANIFEST_DIR || ""), (name) => /\.(?:ya?ml|json)$/u.test(name))) {
     missing.push("V22_KUBERNETES_MANIFEST_DIR:manifest");
@@ -349,6 +352,7 @@ async function runBuildPush(operation) {
     status: "accepted",
     imageRef: process.env.V22_CONTAINER_IMAGE_REF,
     buildContextRef: process.env.V22_CONTAINER_BUILD_CONTEXT,
+    dockerfileRef: process.env.V22_CONTAINER_DOCKERFILE,
     shell,
   });
   return { evidenceRef, imageRef: process.env.V22_CONTAINER_IMAGE_REF, shellStatus: shell.status };

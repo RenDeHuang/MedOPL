@@ -232,6 +232,7 @@ try {
     V22_MEDOPL_DEPLOY_PLAN_FILE: deployPlan,
     V22_KUBERNETES_MANIFEST_DIR: manifestDir,
     V22_CONTAINER_BUILD_CONTEXT: buildContext,
+    V22_CONTAINER_DOCKERFILE: path.join(buildContext, "Dockerfile"),
     V22_CONTAINER_IMAGE_REF: "registry.example.test/medopl/app:test",
     TCR_ID: "tcr-id-test",
     TCR_SECRET: "tcr-secret-test",
@@ -321,12 +322,12 @@ try {
   mkdirSync(emptyManifestDir);
   const emptyBuild = run(["--operation", "build_push", "--check-config"], {
     ...baseEnv,
-    V22_CONTAINER_BUILD_CONTEXT: emptyBuildDir,
+    V22_CONTAINER_DOCKERFILE: path.join(emptyBuildDir, "Dockerfile"),
   });
   assert.notEqual(emptyBuild.status, 0, "build_check_config_must_reject_empty_context");
   const emptyBuildPayload = JSON.parse(emptyBuild.stdout);
   assert.equal(emptyBuildPayload.ok, false, "empty_build_payload");
-  assert.deepEqual(emptyBuildPayload.summary.requiredContentMissing, ["V22_CONTAINER_BUILD_CONTEXT:Dockerfile"], "empty_build_reason");
+  assert.deepEqual(emptyBuildPayload.summary.requiredPathMissing, ["V22_CONTAINER_DOCKERFILE"], "empty_build_reason");
 
   const emptyManifest = run(["--operation", "kubectl", "--check-config"], {
     ...baseEnv,

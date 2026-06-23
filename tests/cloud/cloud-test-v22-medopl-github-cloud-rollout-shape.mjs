@@ -266,6 +266,7 @@ for (const expected of [
   "sudo -n docker",
   "services/medopl-go-backend/Dockerfile",
   "V22_CONTAINER_BUILD_CONTEXT: .",
+  "V22_CONTAINER_DOCKERFILE: services/medopl-go-backend/Dockerfile",
   "uswccr.ccs.tencentyun.com/medopl/medopl-go-backend",
 ]) {
   assert(releaseImage.includes(expected), `release_image_workflow_missing:${expected}`);
