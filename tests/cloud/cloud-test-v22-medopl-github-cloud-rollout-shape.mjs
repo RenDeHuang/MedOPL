@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -62,6 +62,59 @@ function sectionBetween(source, startMarker, endMarker) {
 
 function countOccurrences(source, needle) {
   return source.split(needle).length - 1;
+}
+
+async function startAvailabilityProbeServer() {
+  const child = spawn(process.execPath, ["-e", `
+const { createServer } = require("node:http");
+const server = createServer((request, response) => {
+  const url = new URL(request.url || "/", "http://127.0.0.1");
+  if (url.pathname === "/redirect/") {
+    response.writeHead(302, { location: "HTTPS://127.0.0.1:" + request.socket.localPort + "/", connection: "close" });
+    response.end("redirect");
+    return;
+  }
+  if (url.pathname === "/") {
+    response.writeHead(200, { "content-type": "text/html", connection: "close" });
+    response.end('<!doctype html><title>MedOPL Portal</title><div id="root">MedOPL Portal</div><script src="/assets/app.js"></script>');
+    return;
+  }
+  if (url.pathname === "/healthz" || url.pathname === "/readyz") {
+    response.writeHead(200, { "content-type": "application/json", connection: "close" });
+    response.end(JSON.stringify({ service: "medopl-go-backend", status: "ok" }));
+    return;
+  }
+  response.writeHead(404, { connection: "close" });
+  response.end("not found");
+});
+server.listen(0, "127.0.0.1", () => {
+  process.stdout.write("READY " + server.address().port + "\\n");
+});
+process.on("SIGTERM", () => server.close(() => process.exit(0)));
+`], { stdio: ["ignore", "pipe", "pipe"] });
+  const port = await new Promise((resolve, reject) => {
+    let output = "";
+    const timer = setTimeout(() => reject(new Error("availability_probe_server_start_timeout")), 5000);
+    child.stdout.on("data", (chunk) => {
+      output += String(chunk);
+      const match = output.match(/READY (\d+)/u);
+      if (match) {
+        clearTimeout(timer);
+        resolve(Number(match[1]));
+      }
+    });
+    child.on("exit", (code) => {
+      clearTimeout(timer);
+      reject(new Error(`availability_probe_server_exited:${code}`));
+    });
+  });
+  return {
+    port,
+    close: () => new Promise((resolve) => {
+      child.once("exit", resolve);
+      child.kill("SIGTERM");
+    }),
+  };
 }
 
 const manifestSource = await readRepoFile("deploy/medopl-cloud/medopl.k8s.json");
@@ -203,7 +256,9 @@ assert(
 );
 assert(
   rolloutSource.includes("runHttpRedirectProbe") &&
-    rolloutSource.includes("http_redirect_probe_must_validate_https_redirect"),
+    rolloutSource.includes("http_redirect_probe_must_validate_https_redirect") &&
+    rolloutSource.includes("parseURL(location)") &&
+    rolloutSource.includes("redirectTarget?.protocol === \"https:\""),
   "availability_probe_must_validate_http_to_https_redirect",
 );
 assert(
@@ -422,6 +477,24 @@ assert.equal(cloudRollout.includes("runs-on: ubuntu-latest\n    environment: pro
 const packageJson = JSON.parse(await readRepoFile("package.json"));
 assert.equal(packageJson.scripts["cloud:rollout:dry-run"], "node scripts/cloud-rollout/medopl.mjs", "cloud_rollout_dry_run_script_missing");
 assert.equal(packageJson.scripts["cloud:rollout:availability"], "node scripts/cloud-rollout/medopl.mjs --availability-probe", "cloud_rollout_availability_script_missing");
+
+const availabilityServer = await startAvailabilityProbeServer();
+try {
+  const { port } = availabilityServer;
+  const availability = spawnSync(process.execPath, ["scripts/cloud-rollout/medopl.mjs", "--availability-probe"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+    env: {
+      ...process.env,
+      MEDOPL_BASE_URL: `http://127.0.0.1:${port}`,
+      MEDOPL_HTTP_BASE_URL: `http://127.0.0.1:${port}/redirect`,
+    },
+  });
+  assert.equal(availability.status, 0, `availability_probe_must_accept_case_insensitive_https_redirect:${availability.stderr || availability.stdout}`);
+} finally {
+  await availabilityServer.close();
+}
 
 const goalCurrent = await readRepoJson("tests/fixtures/v22/goal-current.json");
 assert.equal(

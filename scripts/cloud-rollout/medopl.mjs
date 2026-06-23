@@ -251,13 +251,18 @@ async function runHttpRedirectProbe() {
   const started = Date.now();
   try {
     const response = await fetch(url, { redirect: "manual", headers: { connection: "close" } });
+    await response.arrayBuffer();
     const location = response.headers.get("location") || "";
     assertNoSecretText(location);
+    const redirectTarget = parseURL(location);
+    const expectedTarget = parseURL(`${baseUrl}/`);
     return {
       endpoint: "http-redirect",
       status: response.status,
       durationMs: Date.now() - started,
-      ok: [301, 302, 307, 308].includes(response.status) && location.startsWith(`${baseUrl}/`),
+      ok: [301, 302, 307, 308].includes(response.status) &&
+        redirectTarget?.protocol === "https:" &&
+        redirectTarget?.host === expectedTarget?.host,
       contract: "http_redirect_probe_must_validate_https_redirect",
     };
   } catch (error) {
@@ -269,6 +274,14 @@ async function runHttpRedirectProbe() {
       errorCode: error.name || "FetchError",
       contract: "http_redirect_probe_must_validate_https_redirect",
     };
+  }
+}
+
+function parseURL(value = "") {
+  try {
+    return new URL(value);
+  } catch {
+    return null;
   }
 }
 
