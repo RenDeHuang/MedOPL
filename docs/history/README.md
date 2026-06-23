@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/v22-live-db-persistence-proof`
-- latest landed commit: `0413e4b8af0dd4869e8f444007cf0b964f60b85a`
+- latest landed branch: `recovery/platform-v22-trunk`
+- latest landed commit: `59165614f864b95b6658c2b96766f48b41cf307d`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
