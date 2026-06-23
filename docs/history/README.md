@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/v22-sync-prod-db-secret-before-rollout`
-- latest landed commit: `47738ead2e54f9d968f8526baa836c013e8a7e13`
+- latest landed branch: `feat/v22-package-backend-migrations-for-rollout`
+- latest landed commit: `fc258012a862234d153057594b263281b46c1152`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`

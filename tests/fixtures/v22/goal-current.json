@@ -33,8 +33,8 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "feat/v22-sync-prod-db-secret-before-rollout",
-    "landed_commit": "47738ead2e54f9d968f8526baa836c013e8a7e13",
+    "branch": "feat/v22-package-backend-migrations-for-rollout",
+    "landed_commit": "fc258012a862234d153057594b263281b46c1152",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
       "node tests/cloud/cloud-test-v22-medopl-github-cloud-rollout-shape.mjs PASS",
@@ -44,7 +44,8 @@
       "npm run gate:review PASS",
       "npm run repo:bloat PASS",
       "npm run line:budget PASS",
-      "trunk v22 verify run 28044237163 failed closed before closeout with non_closeout_commits_after_latest_landed"
+      "npm run verify:review PASS before merge",
+      "post-push verify failed closed before closeout with non_closeout_commits_after_latest_landed"
     ],
     "plan_completion_audit": {
       "functional": "done",
@@ -56,10 +57,10 @@
     },
     "cleanup_result": {
       "deleted": "none",
-      "folded": "Cloud Rollout now validates GitHub production DATABASE_URL authentication, syncs it into medopl-postgres, then validates in-cluster secret authentication before any receipt or rollout mutation",
-      "retained": "production rollout and Phase A live DB proof still require a fresh authorized Cloud Rollout run after this closeout",
-      "reason": "previous rollout failed because in-cluster medopl-postgres credentials drifted from the production database source",
-      "next": "rerun GitHub v22 verify, Release Image if needed, Cloud Rollout apply with availability probe, then verify cloud release candidate and Phase A live DB persistence"
+      "folded": "Release image now packages Postgres migrations into the final runtime image and cloud rollout shape gate prevents missing migrations from reaching production rollout",
+      "retained": "production rollout and Phase A live DB persistence proof still require fresh Release Image and Cloud Rollout after this closeout",
+      "reason": "Cloud Rollout run 28044682435 failed because image f03fe35 crashed on missing migrations/0001_baseline.sql in runtime image",
+      "next": "rerun GitHub v22 verify, Release Image for fc25801 or closeout trunk, Cloud Rollout apply, verify cloud release candidate, then Phase A live DB persistence proof"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "opl-webui-runtime-production-slice"
@@ -74,7 +75,7 @@
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth",
     "ongoing_authorization_multi_region_sla_enterprise_compliance_and_unobserved_tenants_resources_remain_unclaimed"
   ],
-  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is feat/v22-sync-prod-db-secret-before-rollout at 47738ead2e54f9d968f8526baa836c013e8a7e13. Current trunk keeps Portal UI/UX production gates hardened, requires the production-complete owner gate for production-ready claims, and closes the release auditEventId canary blocker. GitHub v22 verify run 27974444437 passed for Portal production UI gate hardening; Release Image run 28012858200 built image tag 8753e2b; Cloud Rollout run 28013437604 passed rollout apply, Portal public entry, HTTP redirect, Go health/ready availability, OPL-Webui consumer canary, production receipt manifest and verify:cloud-release-candidate. The redacted manifest contains seven owner receipts, 12 lifecycle sections, claim=cloud_release_candidate, state=complete and sha256 3d2b6e8ffe3601ccc3f0489e59079657af0fe2f9972cf9f34713d170903cd85b. This can claim cloud release candidate evidence for the current authorized canary path only, including Portal public entry and HTTP redirect availability. It does not claim production complete, multi-region/SLA, enterprise compliance, ongoing authorization, unobserved tenants/resources, or long-running stability. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is feat/v22-sync-prod-db-secret-before-rollout at 47738ead2e54f9d968f8526baa836c013e8a7e13.",
+  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is feat/v22-package-backend-migrations-for-rollout at fc258012a862234d153057594b263281b46c1152. Current trunk keeps Portal UI/UX production gates hardened, requires the production-complete owner gate for production-ready claims, and closes the release auditEventId canary blocker. GitHub v22 verify run 27974444437 passed for Portal production UI gate hardening; Release Image run 28012858200 built image tag 8753e2b; Cloud Rollout run 28013437604 passed rollout apply, Portal public entry, HTTP redirect, Go health/ready availability, OPL-Webui consumer canary, production receipt manifest and verify:cloud-release-candidate. The redacted manifest contains seven owner receipts, 12 lifecycle sections, claim=cloud_release_candidate, state=complete and sha256 3d2b6e8ffe3601ccc3f0489e59079657af0fe2f9972cf9f34713d170903cd85b. This can claim cloud release candidate evidence for the current authorized canary path only, including Portal public entry and HTTP redirect availability. It does not claim production complete, multi-region/SLA, enterprise compliance, ongoing authorization, unobserved tenants/resources, or long-running stability. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is feat/v22-package-backend-migrations-for-rollout at fc258012a862234d153057594b263281b46c1152.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -633,9 +634,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/v22-sync-prod-db-secret-before-rollout",
+  "last_landed_branch": "feat/v22-package-backend-migrations-for-rollout",
   "last_landed_at": "2026-06-23",
-  "history_latest_branch": "feat/v22-sync-prod-db-secret-before-rollout",
+  "history_latest_branch": "feat/v22-package-backend-migrations-for-rollout",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -1013,8 +1014,8 @@
       "cannot_claim": "rollback executed, live-test covered, ongoing monitoring accepted, production deploy receipt accepted, or production complete"
     }
   },
-  "base_trunk_head": "47738ead2e54f9d968f8526baa836c013e8a7e13",
-  "last_landed_commit": "47738ead2e54f9d968f8526baa836c013e8a7e13",
+  "base_trunk_head": "fc258012a862234d153057594b263281b46c1152",
+  "last_landed_commit": "fc258012a862234d153057594b263281b46c1152",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
