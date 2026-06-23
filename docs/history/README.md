@@ -17,7 +17,7 @@ History 只保留短索引：
 ## Latest Machine Cursor
 
 - latest landed branch: `recovery/platform-v22-trunk`
-- latest landed commit: `2d1f643b2b9fc3acef05ed6b352517c79eff5c43`
+- latest landed commit: `44941cf93cb3ee9b85a2ae5069d65333e07162f6`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
@@ -62,6 +62,7 @@ History 只保留短索引：
 - Browser accessibility / S-level UI receipt binding: the existing production receipt boundary now binds `browser_accessibility_verification_receipt` and `s_level_ui_polish_receipt` to the Portal UI quality contract checks and the existing browser regression consumer, with browser-regression summary evidence only and raw screenshots/runtime evidence forbidden. This is local contract/runner hardening only; it does not claim deploy, live-test or production complete.
 - Ops observability / rollback / monitoring receipt binding: the existing production receipt boundary now binds `observability_deploy_receipt`, `rollback_readiness_receipt` and `post_release_monitoring_receipt` to the existing cloud rollout runner, active authorization rollback commands, availability probe and summary-only evidence policy. This is local contract/runner hardening only; it does not claim rollback execution, live-test, ongoing monitoring or production complete.
 - PostgreSQL business persistence RC: `feat/v22-postgres-business-persistence` / `ef7dbf94ae16cad6010aa3146037ab7c2e87a67f` makes production Go backend fail closed without `DATABASE_URL`, selects Postgres in production, keeps local/test on memory, persists control-plane metadata through the store, and uses typed account/credit tables for idempotent atomic credit updates. This is Phase A source/local gate evidence only; live DB rollout, full typed-table normalization, billing reconciliation, stability/concurrency soak and production complete remain unclaimed.
+- Phase A live DB rollout / production-complete candidate closeout: current trunk `44941cf93cb3ee9b85a2ae5069d65333e07162f6` passed GitHub `v22 verify` run `28049039042`; Release Image run `28049187862` built tag `44941cf`; Cloud Rollout run `28049216178` passed production DB auth/secret sync, runtime/storage/billing-audit owner receipt lanes, kubectl rollout, deploy receipt, Portal public entry, HTTP redirect, Go health/ready availability, OPL-Webui consumer canary, production receipt manifest, `verify:cloud-release-candidate` and `verify:production-complete-candidate`. The redacted manifest artifact has sha256 `a8630806f231643e0c95ec113ae6c1c2b371a20f2ed4ed80873f81de2f0b1976`, seven owner receipts, 12 lifecycle sections and eight production-complete criteria including `business_db_persistence_receipt` with live DB proof hash `sha256:fc631b8381c5b5c3200cd0ccd8574c455ccee613aa8375867f1615a08f604258`. This is current authorized canary path / production-complete candidate evidence only; final production complete release decision, long-running stability, multi-region/SLA, enterprise compliance and ongoing authorization remain unclaimed.
 
 ## Tombstone Map
 
