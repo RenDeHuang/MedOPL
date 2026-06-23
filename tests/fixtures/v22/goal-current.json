@@ -34,19 +34,19 @@
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
     "branch": "recovery/platform-v22-trunk",
-    "landed_commit": "f400340cf6f27a14471f47739520e8caba6b9222",
+    "landed_commit": "eeab7fcf5927c522d79e05a7d28360dc6e3d5560",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
+      "npm --prefix services/portal run check PASS",
+      "npm --prefix services/portal run frontend:typecheck PASS",
+      "npm --prefix services/portal/frontend run typecheck PASS",
       "npm run test:frontend PASS",
-      "npm run test:contract PASS before push",
-      "npm run verify PASS",
-      "npm run test:health PASS",
-      "npm run gate:review PASS",
-      "npm run repo:bloat PASS",
-      "npm run line:budget PASS",
       "npm run test:regression PASS",
       "npm run test:run-plan PASS",
-      "post-push npm run verify PASS"
+      "npm run verify PASS",
+      "npm run gate:review PASS",
+      "npm run repo:bloat PASS",
+      "npm run line:budget PASS"
     ],
     "plan_completion_audit": {
       "functional": "done",
@@ -57,11 +57,11 @@
       "cannot_claim": "done"
     },
     "cleanup_result": {
-      "deleted": "feature worktree and merged feature branch refs",
-      "folded": "Portal UI design gates into DESIGN.md and page-state contract",
+      "deleted": "old Overview KPI wall and duplicated task summary",
+      "folded": "resource overview into existing ResourceStatusCard, StorageInventoryPanel, BillingSummary and ReadinessChecklist",
       "retained": "no compatibility layer, no new files, no new scripts",
-      "reason": "closeout cursor must absorb latest landed UI design gate commit",
-      "next": "implement UI pages against the fixed design rubric and contract"
+      "reason": "code must follow the fixed resource-console UI truth",
+      "next": "continue aligning remaining user pages only where tests expose drift"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "opl-webui-runtime-production-slice"
@@ -76,7 +76,7 @@
     "old_package_d_production_launch_clb_and_live_canary_runners_are_history_not_active_truth",
     "ongoing_authorization_multi_region_sla_enterprise_compliance_and_unobserved_tenants_resources_remain_unclaimed"
   ],
-  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is recovery/platform-v22-trunk at f400340cf6f27a14471f47739520e8caba6b9222. Current trunk keeps Portal UI/UX production gates hardened, requires the production-complete owner gate for production-ready claims, and closes the release auditEventId canary blocker. GitHub v22 verify run 27974444437 passed for Portal production UI gate hardening; Release Image run 27972408990 built image tag 485afcf; Cloud Rollout run 27972458642 passed rollout apply, deploy receipt, OPL-Webui consumer canary, availability probe, production receipt manifest and verify:cloud-release-candidate. The redacted manifest contains seven owner receipts, 12 lifecycle sections, claim=cloud_release_candidate, state=complete and sha256 43d6e9de0915190b552e3d0bcf5f9b6fd319953c986b4ad2e998c4c97f976ad2. This can claim cloud release candidate evidence for the current authorized canary path only. It does not claim production complete, multi-region/SLA, enterprise compliance, ongoing authorization, or unobserved tenants/resources. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is recovery/platform-v22-trunk at f400340cf6f27a14471f47739520e8caba6b9222.",
+  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is recovery/platform-v22-trunk at eeab7fcf5927c522d79e05a7d28360dc6e3d5560. Current trunk keeps Portal UI/UX production gates hardened, requires the production-complete owner gate for production-ready claims, and closes the release auditEventId canary blocker. GitHub v22 verify run 27974444437 passed for Portal production UI gate hardening; Release Image run 27972408990 built image tag 485afcf; Cloud Rollout run 27972458642 passed rollout apply, deploy receipt, OPL-Webui consumer canary, availability probe, production receipt manifest and verify:cloud-release-candidate. The redacted manifest contains seven owner receipts, 12 lifecycle sections, claim=cloud_release_candidate, state=complete and sha256 43d6e9de0915190b552e3d0bcf5f9b6fd319953c986b4ad2e998c4c97f976ad2. This can claim cloud release candidate evidence for the current authorized canary path only. It does not claim production complete, multi-region/SLA, enterprise compliance, ongoing authorization, or unobserved tenants/resources. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is recovery/platform-v22-trunk at eeab7fcf5927c522d79e05a7d28360dc6e3d5560.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -1014,8 +1014,8 @@
       "cannot_claim": "rollback executed, live-test covered, ongoing monitoring accepted, production deploy receipt accepted, or production complete"
     }
   },
-  "base_trunk_head": "f400340cf6f27a14471f47739520e8caba6b9222",
-  "last_landed_commit": "f400340cf6f27a14471f47739520e8caba6b9222",
+  "base_trunk_head": "eeab7fcf5927c522d79e05a7d28360dc6e3d5560",
+  "last_landed_commit": "eeab7fcf5927c522d79e05a7d28360dc6e3d5560",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
