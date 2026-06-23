@@ -77,6 +77,9 @@ func (backend *SQLBackend) UpsertBillingEvent(ctx context.Context, event cpd.Bil
 	if err := ctx.Err(); err != nil {
 		return err
 	}
+	if strings.TrimSpace(event.IdempotencyKey) == "" {
+		return cpd.ErrIdempotencyKeyRequired
+	}
 	if strings.TrimSpace(event.WorkspaceID) != "" {
 		if err := backend.requireExistingWorkspace(ctx, event.WorkspaceID); err != nil {
 			return err
@@ -93,17 +96,7 @@ INSERT INTO billing_events (
   id, tenant_id, workspace_id, event_type, status, idempotency_key, amount, currency, payload, created_at, updated_at
 )
 VALUES ($1, $2, NULLIF($3, ''), $4, $5, $6, $7, $8, $9::jsonb, $10, $11)
-ON CONFLICT (id)
-DO UPDATE SET
-  tenant_id = EXCLUDED.tenant_id,
-  workspace_id = EXCLUDED.workspace_id,
-  event_type = EXCLUDED.event_type,
-  status = EXCLUDED.status,
-  idempotency_key = EXCLUDED.idempotency_key,
-  amount = EXCLUDED.amount,
-  currency = EXCLUDED.currency,
-  payload = EXCLUDED.payload,
-  updated_at = EXCLUDED.updated_at
+ON CONFLICT (idempotency_key) DO NOTHING
 `, event.ID, event.TenantID, event.WorkspaceID, firstNonEmpty(event.Type, "debit"), firstNonEmpty(event.Status, "recorded"), event.IdempotencyKey, event.Amount, firstNonEmpty(event.Currency, "CNY"), string(payload), createdAt, now)
 	return err
 }

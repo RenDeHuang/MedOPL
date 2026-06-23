@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -152,10 +153,15 @@ func (store *ControlPlaneStore) SaveBillingEvent(ctx context.Context, event cpd.
 	if err := ctx.Err(); err != nil {
 		return err
 	}
+	if strings.TrimSpace(event.IdempotencyKey) == "" {
+		return cpd.ErrIdempotencyKeyRequired
+	}
 	store.mu.Lock()
 	defer store.mu.Unlock()
-	if _, exists := store.billingEventsByID[event.ID]; exists {
-		return nil
+	for _, existing := range store.billingEventsByID {
+		if existing.IdempotencyKey == event.IdempotencyKey {
+			return nil
+		}
 	}
 	store.billingEventsByID[event.ID] = event
 	return nil

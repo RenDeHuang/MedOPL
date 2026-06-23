@@ -288,7 +288,7 @@ async function assertServiceSurface() {
     "INSERT INTO control_plane_audit_events",
     "INSERT INTO billing_events",
     "ON CONFLICT (event_id)",
-    "ON CONFLICT (id)",
+    "ON CONFLICT (idempotency_key)",
   ]) {
     assertIncludes(postgresBillingAuditSource, marker, `postgres_billing_audit_marker:${marker}`);
   }

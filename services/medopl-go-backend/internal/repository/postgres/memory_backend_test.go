@@ -272,6 +272,11 @@ func (db *typedBillingAuditTestDB) UpsertBillingEvent(ctx context.Context, event
 	}
 	db.mu.Lock()
 	defer db.mu.Unlock()
+	for _, existing := range db.billingEvents {
+		if existing.IdempotencyKey == event.IdempotencyKey {
+			return nil
+		}
+	}
 	db.billingEvents[event.ID] = event
 	return nil
 }

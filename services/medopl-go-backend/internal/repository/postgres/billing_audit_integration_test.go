@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	cpd "github.com/rendehuang/medopl/services/medopl-go-backend/internal/domain/controlplane"
@@ -65,5 +66,68 @@ func TestBillingAuditUsesTypedPostgresBackend(t *testing.T) {
 	}
 	if len(billingEvents) != 1 || billingEvents[0].SourceEventID != audit.ID || billingEvents[0].RunRef != audit.IdempotencyKey {
 		t.Fatalf("typed billing event did not retain audit/run reconciliation refs: %+v", billingEvents)
+	}
+}
+
+func TestBillingEventRequiresIdempotencyKey(t *testing.T) {
+	ctx := context.Background()
+	db := newTypedBillingAuditTestDB(t)
+	store := NewControlPlaneStore(db)
+	event := cpd.BillingEvent{
+		ID:          "billing-missing-idempotency-key",
+		TenantID:    "tenant-billing-idempotency-required",
+		WorkspaceID: "workspace-billing-idempotency-required",
+		Type:        "debit",
+		Status:      "recorded",
+		Amount:      1.25,
+		Currency:    "CNY",
+		CreatedAt:   "2026-06-24T02:03:04Z",
+	}
+
+	if err := store.SaveBillingEvent(ctx, event); !errors.Is(err, cpd.ErrIdempotencyKeyRequired) {
+		t.Fatalf("SaveBillingEvent() error = %v, want %v", err, cpd.ErrIdempotencyKeyRequired)
+	}
+}
+
+func TestBillingEventUpsertIsIdempotentBySourceEventKey(t *testing.T) {
+	ctx := context.Background()
+	db := newTypedBillingAuditTestDB(t)
+	store := NewControlPlaneStore(db)
+	first := cpd.BillingEvent{
+		ID:                   "billing-source-event-first",
+		TenantID:             "tenant-billing-idempotency-rc",
+		WorkspaceID:          "workspace-billing-idempotency-rc",
+		Type:                 "debit",
+		Status:               "recorded",
+		IdempotencyKey:       "audit-source-event-once",
+		Amount:               1.25,
+		Currency:             "CNY",
+		Reason:               "run_succeeded",
+		OwnerScope:           "go-control-plane",
+		ResourceBindingID:    "binding-billing-idempotency-rc",
+		BillingAttributionID: "billing-attr-idempotency-rc",
+		RunRef:               "run-billing-idempotency-rc",
+		SourceEventID:        "audit-source-event-once",
+		SourceEventType:      cpd.AuditKindRunSucceeded,
+		CreatedAt:            "2026-06-24T02:03:04Z",
+	}
+	second := first
+	second.ID = "billing-source-event-retry-different-id"
+
+	if err := store.SaveBillingEvent(ctx, first); err != nil {
+		t.Fatalf("SaveBillingEvent(first) error = %v", err)
+	}
+	if err := store.SaveBillingEvent(ctx, second); err != nil {
+		t.Fatalf("SaveBillingEvent(retry) error = %v", err)
+	}
+	events, err := store.ListBillingEvents(ctx, first.WorkspaceID)
+	if err != nil {
+		t.Fatalf("ListBillingEvents() error = %v", err)
+	}
+	if len(events) != 1 {
+		t.Fatalf("billing idempotency key retry must keep one event, got %d: %+v", len(events), events)
+	}
+	if events[0].IdempotencyKey != first.IdempotencyKey || events[0].SourceEventID != first.SourceEventID {
+		t.Fatalf("billing event must retain source event idempotency refs: %+v", events[0])
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -182,6 +183,9 @@ func (store *ControlPlaneStore) ListCreditEvents(ctx context.Context, workspaceI
 }
 
 func (store *ControlPlaneStore) SaveBillingEvent(ctx context.Context, event cpd.BillingEvent) error {
+	if strings.TrimSpace(event.IdempotencyKey) == "" {
+		return cpd.ErrIdempotencyKeyRequired
+	}
 	if backend, ok := store.backend.(billingAuditBackend); ok {
 		return backend.UpsertBillingEvent(ctx, event)
 	}
