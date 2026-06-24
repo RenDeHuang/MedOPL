@@ -1,6 +1,8 @@
 package controlplane
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"strings"
 	"sync"
@@ -58,6 +60,11 @@ func shortID(value string) string {
 		sum += int(r)
 	}
 	return fmt.Sprintf("%x", sum)
+}
+
+func stableID(value string) string {
+	sum := sha256.Sum256([]byte(value))
+	return hex.EncodeToString(sum[:])[:16]
 }
 
 func firstNonEmpty(values ...string) string {

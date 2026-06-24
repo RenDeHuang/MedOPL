@@ -217,6 +217,9 @@ async function assertServiceSurface() {
   ]) {
     assertIncludes(postgresSQLBackendSource, marker, `postgres_business_persistence_marker:${marker}`);
   }
+  const businessAccountSource = await readRepoFile(`${serviceRoot}/internal/service/controlplane/business_account.go`);
+  assertIncludes(businessAccountSource, '"credit-" + stableID(', "business_account_credit_event_must_use_stable_id");
+  assertNotMatches(businessAccountSource, /"credit-"\s*\+\s*shortID\(/u, "business_account_credit_event_must_not_use_legacy_short_id");
   const postgresControlPlaneSource = await readRepoFile(`${serviceRoot}/internal/repository/postgres/controlplane_store.go`);
   for (const marker of ["type ControlPlaneStore struct", "SaveBusinessAccount", "BusinessAccountByWorkspace", "ApplyCreditEvent", "SaveCreditEvent", "ListCreditEvents"]) {
     assertIncludes(postgresControlPlaneSource, marker, `postgres_control_plane_store_marker:${marker}`);
@@ -529,6 +532,17 @@ async function assertLocalRCControlPlaneParity() {
     "./internal/service/controlplane",
     "TestServicePersistsBillingEventsForBusinessReceipts",
     "go_billing_event_receipt_persistence_parity",
+  );
+  const creditEventRegressionSource = await readRepoFile(`${serviceRoot}/internal/service/controlplane/business_account_credit_test.go`);
+  assertIncludes(
+    creditEventRegressionSource,
+    "TestServiceBusinessAccountCreditEventIDsDoNotCollideAcrossWorkspaces",
+    "go_business_account_credit_event_collision_regression",
+  );
+  runGoPackageTest(
+    "./internal/service/controlplane",
+    "TestServiceBusinessAccountCreditEventIDsDoNotCollideAcrossWorkspaces",
+    "go_business_account_credit_event_collision_regression",
   );
 }
 

@@ -136,7 +136,7 @@ func (service *Service) CreditBusinessAccount(ctx context.Context, input CreditB
 		return BusinessAccountProjection{}, cpd.ErrWorkspaceRequired
 	}
 	currency := firstNonEmpty(input.Currency, "CNY")
-	eventID := "credit-" + shortID(workspaceID+":"+firstNonEmpty(input.IdempotencyKey, fmt.Sprintf("%.2f", input.Amount)))
+	eventID := "credit-" + stableID(workspaceID+":"+firstNonEmpty(input.IdempotencyKey, fmt.Sprintf("%.2f", input.Amount)))
 	account, err := service.store.ApplyCreditEvent(ctx, cpd.CreditEvent{
 		ID:             eventID,
 		TenantID:       tenantID,
