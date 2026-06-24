@@ -139,20 +139,26 @@ func TestServicePersistsBillingEventsForBusinessReceipts(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListBillingEvents() error = %v", err)
 	}
-	if len(events) != 4 {
-		t.Fatalf("expected file/run/artifact/release billing events, got %d: %+v", len(events), events)
+	if len(events) != 6 {
+		t.Fatalf("expected commercial hold/file/run/artifact/release/settlement billing events, got %d: %+v", len(events), events)
 	}
+	assertBillingEvent(t, events, "resource.open", "hold", "", "", "", launch.ResourceBindingID)
 	assertBillingEvent(t, events, cpd.AuditKindFileUpload, "hold", fileRef.FileRef, "", "", launch.ResourceBindingID)
 	assertBillingEvent(t, events, cpd.AuditKindRunSucceeded, "debit", "", runResult.Run.RunRef, "", launch.ResourceBindingID)
 	assertBillingEvent(t, events, cpd.AuditKindArtifactAvailable, "debit", "", "", runResult.ArtifactRef, launch.ResourceBindingID)
 	assertBillingEvent(t, events, cpd.AuditKindResourceRelease, "release", "", "", "", release.Resource.ResourceBindingID)
+	assertCommercialBillingEvent(t, events, "release", 28.65, "subscription_freeze_release", launch.ResourceBindingID)
 
 	summary, err := service.BillingSummary(ctx, WorkspaceInput{WorkspaceID: launch.WorkspaceID})
 	if err != nil {
 		t.Fatalf("BillingSummary() error = %v", err)
 	}
-	if summary.LedgerCount != len(events) {
-		t.Fatalf("summary must read persisted billing event ledger count: got=%d want=%d ledger=%+v events=%+v", summary.LedgerCount, len(events), summary.Ledger, events)
+	credits, err := service.store.ListCreditEvents(ctx, launch.WorkspaceID)
+	if err != nil {
+		t.Fatalf("ListCreditEvents() error = %v", err)
+	}
+	if summary.LedgerCount != len(events)+len(credits) {
+		t.Fatalf("summary must read persisted billing and credit ledger count: got=%d want=%d ledger=%+v events=%+v credits=%+v", summary.LedgerCount, len(events)+len(credits), summary.Ledger, events, credits)
 	}
 }
 
@@ -181,6 +187,16 @@ func assertBillingEvent(t *testing.T, events []cpd.BillingEvent, sourceType stri
 		return
 	}
 	t.Fatalf("billing event missing source type %q: %+v", sourceType, events)
+}
+
+func assertCommercialBillingEvent(t *testing.T, events []cpd.BillingEvent, eventType string, amount float64, reason string, resourceBindingID string) {
+	t.Helper()
+	for _, event := range events {
+		if event.Type == eventType && event.Amount == amount && event.Reason == reason && event.ResourceBindingID == resourceBindingID {
+			return
+		}
+	}
+	t.Fatalf("commercial billing event missing type=%s amount=%v reason=%s resource=%s events=%+v", eventType, amount, reason, resourceBindingID, events)
 }
 
 func assertLedgerReconciliationRef(t *testing.T, ledger []map[string]any, eventType string, field string, want string) {

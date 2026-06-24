@@ -11,6 +11,12 @@ import (
 type ControlPlaneService interface {
 	PrepareBusinessAccount(ctx context.Context, input cps.PrepareBusinessAccountInput) (cps.BusinessAccountProjection, error)
 	CreditBusinessAccount(ctx context.Context, input cps.CreditBusinessAccountInput) (cps.BusinessAccountProjection, error)
+	CreatePaymentOrder(ctx context.Context, input cps.CreatePaymentOrderInput) (cps.PaymentOrderProjection, error)
+	MarkPaymentPaid(ctx context.Context, input cps.MarkPaymentPaidInput) (cps.BusinessAccountProjection, error)
+	RefundBusinessAccount(ctx context.Context, input cps.RefundBusinessAccountInput) (cps.BusinessAccountProjection, error)
+	AdjustBusinessAccount(ctx context.Context, input cps.AdjustBusinessAccountInput) (cps.BusinessAccountProjection, error)
+	BillingStatement(ctx context.Context, input cps.WorkspaceInput) (cps.BillingStatement, error)
+	RuntimeFreeze(ctx context.Context, input cps.WorkspaceInput) (cps.RuntimeFreezeProjection, error)
 	BindProviderKey(ctx context.Context, input cps.BindProviderKeyInput) (cpd.ProviderBinding, error)
 	ProviderBinding(ctx context.Context, input cps.WorkspaceInput) (cpd.ProviderBinding, error)
 	Preflight(ctx context.Context, input cps.WorkspaceInput) (cpd.PreflightResult, error)
@@ -54,6 +60,40 @@ type creditBusinessAccountRequest struct {
 	Amount         float64 `json:"amount"`
 	Currency       string  `json:"currency"`
 	IdempotencyKey string  `json:"idempotencyKey"`
+}
+
+type paymentOrderRequest struct {
+	TenantID       string  `json:"tenantId"`
+	PortalUserID   string  `json:"portalUserId"`
+	UserID         string  `json:"userId"`
+	WorkspaceID    string  `json:"workspaceId"`
+	Amount         float64 `json:"amount"`
+	Currency       string  `json:"currency"`
+	IdempotencyKey string  `json:"idempotencyKey"`
+	ProviderRef    string  `json:"providerRef"`
+}
+
+type paymentPaidRequest struct {
+	TenantID       string  `json:"tenantId"`
+	PortalUserID   string  `json:"portalUserId"`
+	UserID         string  `json:"userId"`
+	WorkspaceID    string  `json:"workspaceId"`
+	OrderID        string  `json:"orderId"`
+	Amount         float64 `json:"amount"`
+	Currency       string  `json:"currency"`
+	IdempotencyKey string  `json:"idempotencyKey"`
+	ProviderRef    string  `json:"providerRef"`
+}
+
+type billingMutationRequest struct {
+	TenantID       string  `json:"tenantId"`
+	PortalUserID   string  `json:"portalUserId"`
+	UserID         string  `json:"userId"`
+	WorkspaceID    string  `json:"workspaceId"`
+	Amount         float64 `json:"amount"`
+	Currency       string  `json:"currency"`
+	IdempotencyKey string  `json:"idempotencyKey"`
+	Reason         string  `json:"reason"`
 }
 
 type workspaceRequest struct {
@@ -128,6 +168,12 @@ func RegisterControlPlaneRoutes(api *gin.RouterGroup, service ControlPlaneServic
 	api.POST("/v22/production/external-access-strategy/commit", productionExternalAccessStrategyContractCommit())
 	api.POST("/v22/users/prepare", prepareUser(service))
 	api.POST("/v22/users/credit", creditUser(service))
+	api.POST("/v22/billing/payment-orders", createPaymentOrder(service))
+	api.POST("/v22/billing/payment-paid", markPaymentPaid(service))
+	api.POST("/v22/billing/refund", refundBusinessAccount(service))
+	api.POST("/v22/billing/adjustment", adjustBusinessAccount(service))
+	api.GET("/v22/billing/statement", billingStatement(service))
+	api.GET("/v22/runtime/freeze", runtimeFreeze(service))
 	api.POST("/v22/provider-key", bindProviderKey(service))
 	api.POST("/v22/managed-environment/readiness", managedEnvironmentReadiness(service))
 	api.POST("/v22/managed-environment/open", openManagedEnvironment(service))

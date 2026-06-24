@@ -85,6 +85,9 @@ func (service *Service) Release(ctx context.Context, input ReleaseInput) (Releas
 	if err := service.saveBillingEventForAudit(ctx, audit, billingEventRefs{}); err != nil {
 		return ReleaseResult{}, err
 	}
+	if err := service.releaseCommercialRuntimeHold(ctx, released, audit); err != nil {
+		return ReleaseResult{}, err
+	}
 	return ReleaseResult{
 		Ok:             true,
 		Status:         released.Status,
@@ -94,6 +97,38 @@ func (service *Service) Release(ctx context.Context, input ReleaseInput) (Releas
 		AuditEvent:     audit,
 		Receipts:       releaseReceipts(released, audit, false),
 	}, nil
+}
+
+func (service *Service) releaseCommercialRuntimeHold(ctx context.Context, resource cpd.ManagedResource, audit cpd.AuditEvent) error {
+	events, err := service.store.ListBillingEvents(ctx, resource.WorkspaceID)
+	if err != nil {
+		return err
+	}
+	remaining := commercialSettlementForRelease(ledgerFromBillingEvents(events))
+	if remaining <= 0 {
+		return nil
+	}
+	account, err := service.store.BusinessAccountByWorkspace(ctx, resource.WorkspaceID)
+	if err != nil {
+		return nil
+	}
+	return service.store.SaveBillingEvent(ctx, cpd.BillingEvent{
+		ID:                   "billing-release-" + stableID(audit.ID+":"+resource.ResourceBindingID),
+		TenantID:             account.TenantID,
+		WorkspaceID:          resource.WorkspaceID,
+		Type:                 "release",
+		Status:               "recorded",
+		IdempotencyKey:       "commercial-runtime-hold-release:" + resource.ResourceBindingID,
+		Amount:               remaining,
+		Currency:             firstNonEmpty(account.Currency, "CNY"),
+		Reason:               "subscription_freeze_release",
+		OwnerScope:           "go-control-plane",
+		ResourceBindingID:    resource.ResourceBindingID,
+		BillingAttributionID: "billing-" + shortID(resource.WorkspaceID),
+		SourceEventID:        audit.ID,
+		SourceEventType:      audit.Kind,
+		CreatedAt:            audit.CreatedAt,
+	})
 }
 
 func (service *Service) releaseAuditEvent(ctx context.Context, workspaceID string, resourceBindingID string) (cpd.AuditEvent, error) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	cpd "github.com/rendehuang/medopl/services/medopl-go-backend/internal/domain/controlplane"
 	cprepo "github.com/rendehuang/medopl/services/medopl-go-backend/internal/repository/controlplane"
@@ -150,6 +151,14 @@ func (service *Service) OpenManagedEnvironment(ctx context.Context, input OpenMa
 	if err != nil {
 		return cpd.LaunchProjection{}, err
 	}
+	if launch, ok, err := service.activeLaunchForWorkspace(ctx, strings.TrimSpace(input.WorkspaceID)); err != nil {
+		return cpd.LaunchProjection{}, err
+	} else if ok {
+		return launch, nil
+	}
+	if _, err := service.ensureCommercialAccountCanOpen(ctx, strings.TrimSpace(input.WorkspaceID)); err != nil {
+		return cpd.LaunchProjection{}, err
+	}
 	launch, err := cpd.NewLaunch(cpd.LaunchInput{
 		TenantID:       input.TenantID,
 		PortalUserID:   input.PortalUserID,
@@ -181,6 +190,9 @@ func (service *Service) OpenManagedEnvironment(ctx context.Context, input OpenMa
 		return cpd.LaunchProjection{}, err
 	}
 	if err := service.ensureRuntimeLifecycleLedger(ctx, launch, input); err != nil {
+		return cpd.LaunchProjection{}, err
+	}
+	if err := service.ensureCommercialRuntimeHold(ctx, launch, input); err != nil {
 		return cpd.LaunchProjection{}, err
 	}
 	return launch, nil
@@ -283,7 +295,7 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 	projection.StorageState = runtimeGateStorageState(resource.StorageState)
 	projection.Billing.FreezeStatus = resource.StopBilling.Status
 	if resource.StopBilling.Status == cpd.BillingStatusActive {
-		projection.Billing.FrozenAmount = 10
+		projection.Billing.FrozenAmount = service.activeCommercialHoldAmount(ctx, resource.WorkspaceID)
 	}
 	destroyStorage := "requires_explicit_user_intent"
 	if projection.StorageState == "destroyed" {
@@ -303,6 +315,83 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 		projection.NextAction = "open_medopl_runtime"
 	}
 	return projection, nil
+}
+
+func (service *Service) activeLaunchForWorkspace(ctx context.Context, workspaceID string) (cpd.LaunchProjection, bool, error) {
+	resources, err := service.store.ListResources(ctx, workspaceID)
+	if err != nil {
+		return cpd.LaunchProjection{}, false, err
+	}
+	activeBindingIDs := make(map[string]struct{})
+	for _, resource := range resources {
+		if resource.WorkspaceID != workspaceID || resource.Status != cpd.ResourceStatusActive {
+			continue
+		}
+		ledger, err := service.store.ResourceBindingLedgerByID(ctx, resource.ResourceBindingID)
+		if err != nil && !errors.Is(err, cprepo.ErrNotFound) {
+			return cpd.LaunchProjection{}, false, err
+		}
+		if err == nil && (ledger.Status == cpd.ResourceBindingStatusReleased || ledger.Status == cpd.ResourceBindingStatusFailed || ledger.Status == cpd.ResourceBindingStatusCleanupRequired) {
+			continue
+		}
+		activeBindingIDs[resource.ResourceBindingID] = struct{}{}
+	}
+	if len(activeBindingIDs) == 0 {
+		return cpd.LaunchProjection{}, false, nil
+	}
+	launches, err := service.store.ListLaunches(ctx, workspaceID)
+	if err != nil {
+		return cpd.LaunchProjection{}, false, err
+	}
+	for _, launch := range launches {
+		if launch.WorkspaceID == workspaceID && launch.LaunchStatus == cpd.LaunchStatusReady {
+			if _, ok := activeBindingIDs[launch.ResourceBindingID]; ok {
+				return launch, true, nil
+			}
+		}
+	}
+	return cpd.LaunchProjection{}, false, nil
+}
+
+func (service *Service) ensureCommercialRuntimeHold(ctx context.Context, launch cpd.LaunchProjection, input OpenManagedEnvironmentInput) error {
+	account, err := service.store.BusinessAccountByWorkspace(ctx, launch.WorkspaceID)
+	if err != nil {
+		return err
+	}
+	return service.store.SaveBillingEvent(ctx, cpd.BillingEvent{
+		ID:                   "billing-hold-" + stableID(launch.WorkspaceID+":"+launch.ResourceBindingID+":"+launch.LaunchID),
+		TenantID:             firstNonEmpty(account.TenantID, input.TenantID),
+		WorkspaceID:          launch.WorkspaceID,
+		Type:                 "hold",
+		Status:               "active",
+		IdempotencyKey:       "commercial-runtime-hold:" + launch.ResourceBindingID + ":" + launch.LaunchID,
+		Amount:               commercialRuntimeHoldAmount,
+		Currency:             firstNonEmpty(account.Currency, "CNY"),
+		Reason:               "resource_preauth_freeze",
+		OwnerScope:           "go-control-plane",
+		ResourceBindingID:    launch.ResourceBindingID,
+		BillingAttributionID: "billing-" + shortID(launch.WorkspaceID),
+		SourceEventID:        launch.LaunchID,
+		SourceEventType:      "resource.open",
+		CreatedAt:            service.now().UTC().Format(time.RFC3339),
+	})
+}
+
+func (service *Service) activeCommercialHoldAmount(ctx context.Context, workspaceID string) float64 {
+	events, err := service.store.ListBillingEvents(ctx, workspaceID)
+	if err != nil {
+		return 0
+	}
+	wallet := walletFromCommercialLedger(ledgerFromBillingEvents(events))
+	if wallet.ActiveFreeze > 0 {
+		return wallet.ActiveFreeze
+	}
+	for _, event := range events {
+		if event.Type == "hold" && event.Reason == "resource_preauth_freeze" {
+			return 0
+		}
+	}
+	return 0
 }
 
 func (service *Service) ensureRuntimeLifecycleLedger(ctx context.Context, launch cpd.LaunchProjection, input OpenManagedEnvironmentInput) error {

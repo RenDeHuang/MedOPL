@@ -251,6 +251,25 @@ func (store *ControlPlaneStore) LaunchByID(ctx context.Context, launchID string)
 	return launch, err
 }
 
+func (store *ControlPlaneStore) ListLaunches(ctx context.Context, workspaceID string) ([]cpd.LaunchProjection, error) {
+	records, err := store.backend.ListRecords(ctx, recordKindLaunchProjection, workspaceID)
+	if err != nil {
+		return nil, err
+	}
+	items := make([]cpd.LaunchProjection, 0, len(records))
+	for _, record := range records {
+		var item cpd.LaunchProjection
+		if err := json.Unmarshal(record.Payload, &item); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].LaunchID < items[j].LaunchID
+	})
+	return items, nil
+}
+
 func (store *ControlPlaneStore) SaveFile(ctx context.Context, file cpd.FileRecord) error {
 	if backend, ok := store.backend.(runFileArtifactBackend); ok {
 		return backend.UpsertFileRecord(ctx, file)

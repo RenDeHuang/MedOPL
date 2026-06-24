@@ -12,6 +12,23 @@ func TestRuntimeOpenReleaseStateMachineSurvivesPostgresStoreRestart(t *testing.T
 	ctx := context.Background()
 	db := NewMemoryTestDB(t)
 	first := cps.NewService(NewControlPlaneStore(db))
+	if _, err := first.PrepareBusinessAccount(ctx, cps.PrepareBusinessAccountInput{
+		TenantID:     "tenant-runtime-state-rc",
+		PortalUserID: "user-runtime-state-rc",
+		WorkspaceID:  "workspace-runtime-state-rc",
+	}); err != nil {
+		t.Fatalf("PrepareBusinessAccount() error = %v", err)
+	}
+	if _, err := first.CreditBusinessAccount(ctx, cps.CreditBusinessAccountInput{
+		TenantID:       "tenant-runtime-state-rc",
+		PortalUserID:   "user-runtime-state-rc",
+		WorkspaceID:    "workspace-runtime-state-rc",
+		Amount:         200,
+		Currency:       "CNY",
+		IdempotencyKey: "credit-runtime-state-rc",
+	}); err != nil {
+		t.Fatalf("CreditBusinessAccount() error = %v", err)
+	}
 	if _, err := first.BindProviderKey(ctx, cps.BindProviderKeyInput{
 		TenantID:       "tenant-runtime-state-rc",
 		PortalUserID:   "user-runtime-state-rc",
@@ -111,6 +128,9 @@ func TestRuntimeOpenReleaseStateMachineSurvivesPostgresStoreRestart(t *testing.T
 	}
 	if reopenedGate.RuntimeState != "ready" || reopenedGate.Billing.FreezeStatus != cpd.BillingStatusActive || !reopenedGate.ConsumerProjection.RunEnabled {
 		t.Fatalf("reopen must restore ready runtime projection from Postgres state: %+v", reopenedGate)
+	}
+	if reopenedGate.Billing.FrozenAmount != 30 {
+		t.Fatalf("reopen must create a fresh commercial hold after previous settlement: %+v", reopenedGate.Billing)
 	}
 	reactivated, err := store.ResourceBindingLedgerByID(ctx, launch.ResourceBindingID)
 	if err != nil {

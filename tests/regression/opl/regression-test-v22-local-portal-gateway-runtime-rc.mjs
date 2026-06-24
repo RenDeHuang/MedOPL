@@ -236,6 +236,24 @@ try {
   ]);
 
   const workspaceId = "workspace-local-portal-gateway-runtime-rc";
+  const prepared = await postJson(`${backendUrl}/api/v22/users/prepare`, {
+    tenantId: "tenant-local-rc",
+    userId: "user-local-rc",
+    workspaceId,
+  });
+  assert.equal(prepared.response.status, 200, "prepare_user_status_mismatch");
+  assert.equal(prepared.json.source, "go-control-plane", "prepare_user_source_mismatch");
+  assertNoSecretLeak(prepared.json, "prepare_user");
+
+  const credited = await postJson(`${backendUrl}/api/v22/users/credit`, {
+    userId: "user-local-rc",
+    amount: 200,
+    idempotencyKey: "local-portal-gateway-runtime-credit",
+  });
+  assert.equal(credited.response.status, 200, "credit_user_status_mismatch");
+  assert.equal(credited.json.source, "go-control-plane", "credit_user_source_mismatch");
+  assertNoSecretLeak(credited.json, "credit_user");
+
   const bound = await postJson(`${backendUrl}/api/v22/provider-key`, {
     tenantId: "tenant-local-rc",
     portalUserId: "user-local-rc",

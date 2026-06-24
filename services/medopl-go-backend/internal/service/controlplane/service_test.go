@@ -13,6 +13,7 @@ func TestServiceBindsProviderKeyThenOpensLaunchAndBootstrap(t *testing.T) {
 	ctx := context.Background()
 	service := NewService(memory.NewControlPlaneStore())
 
+	prepareFundedWorkspace(t, ctx, service, "tenant-v22", "user-v22", "workspace-v22", 200, "credit-bootstrap-once")
 	binding, err := service.BindProviderKey(ctx, BindProviderKeyInput{
 		TenantID:       "tenant-v22",
 		PortalUserID:   "user-v22",
@@ -494,14 +495,40 @@ func TestServiceUploadRunArtifactBillingAuditUsesStoredMedOPLStorageRefs(t *test
 		t.Fatalf("Artifact(missing) error = %v", err)
 	}
 
+	if _, err := service.PrepareBusinessAccount(ctx, PrepareBusinessAccountInput{
+		TenantID:     "tenant-v22",
+		PortalUserID: "user-v22",
+		WorkspaceID:  "workspace-other-v22",
+	}); err != nil {
+		t.Fatalf("PrepareBusinessAccount(other) error = %v", err)
+	}
+	if _, err := service.CreditBusinessAccount(ctx, CreditBusinessAccountInput{
+		TenantID:       "tenant-v22",
+		PortalUserID:   "user-v22",
+		WorkspaceID:    "workspace-other-v22",
+		Amount:         200,
+		Currency:       "CNY",
+		IdempotencyKey: "credit-other-workspace",
+	}); err != nil {
+		t.Fatalf("CreditBusinessAccount(other) error = %v", err)
+	}
+	if _, err := service.BindProviderKey(ctx, BindProviderKeyInput{
+		TenantID:       "tenant-v22",
+		PortalUserID:   "user-v22",
+		WorkspaceID:    "workspace-other-v22",
+		RawProviderKey: "local-rc-provider-key-material-that-must-stay-private",
+		IdempotencyKey: "bind-provider-other-workspace",
+	}); err != nil {
+		t.Fatalf("BindProviderKey(other) error = %v", err)
+	}
 	otherLaunch, err := service.OpenManagedEnvironment(ctx, OpenManagedEnvironmentInput{
 		TenantID:       "tenant-v22",
 		PortalUserID:   "user-v22",
-		WorkspaceID:    "workspace-v22",
-		IdempotencyKey: "open-second-launch",
+		WorkspaceID:    "workspace-other-v22",
+		IdempotencyKey: "open-other-workspace",
 	})
 	if err != nil {
-		t.Fatalf("OpenManagedEnvironment(second launch) error = %v", err)
+		t.Fatalf("OpenManagedEnvironment(other workspace) error = %v", err)
 	}
 	if _, err := service.Artifact(ctx, otherLaunch.LaunchID, artifactRef); !errors.Is(err, cpd.ErrArtifactRefRequired) {
 		t.Fatalf("Artifact(wrong launch) error = %v", err)
@@ -856,6 +883,7 @@ func TestServiceResourcesAreWorkspaceScopedAndReleaseFailsClosedWhenMissing(t *t
 	ctx := context.Background()
 	service := NewService(memory.NewControlPlaneStore())
 	workspaceLaunch := bindAndOpen(t, ctx, service)
+	prepareFundedWorkspace(t, ctx, service, "tenant-v22", "user-v22", "workspace-other", 200, "credit-workspace-other-once")
 	if _, err := service.BindProviderKey(ctx, BindProviderKeyInput{
 		TenantID:       "tenant-v22",
 		PortalUserID:   "user-v22",
@@ -915,55 +943,4 @@ func TestServiceResourcesAreWorkspaceScopedAndReleaseFailsClosedWhenMissing(t *t
 	}); !errors.Is(err, cpd.ErrResourceNotFound) {
 		t.Fatalf("DestroyStorage(wrong workspace) error = %v", err)
 	}
-}
-
-func assertLedgerHasSourceEvent(t *testing.T, ledger []LedgerItem, eventType string) {
-	t.Helper()
-	for _, item := range ledger {
-		if item.SourceEventType == eventType {
-			switch item.Type {
-			case "credit", "debit", "hold", "release", "refund", "adjustment":
-			default:
-				t.Fatalf("ledger entry type must follow billing contract: %+v", item)
-			}
-			return
-		}
-	}
-	t.Fatalf("ledger missing source event %q: %+v", eventType, ledger)
-}
-
-func assertLedgerAmount(t *testing.T, ledger []LedgerItem, eventType string, amount float64) {
-	t.Helper()
-	for _, item := range ledger {
-		if item.SourceEventType == eventType {
-			if item.Amount != amount {
-				t.Fatalf("ledger amount mismatch for %q: got %v want %v item=%+v", eventType, item.Amount, amount, item)
-			}
-			return
-		}
-	}
-	t.Fatalf("ledger missing source event %q: %+v", eventType, ledger)
-}
-
-func bindAndOpen(t *testing.T, ctx context.Context, service *Service) cpd.LaunchProjection {
-	t.Helper()
-	if _, err := service.BindProviderKey(ctx, BindProviderKeyInput{
-		TenantID:       "tenant-v22",
-		PortalUserID:   "user-v22",
-		WorkspaceID:    "workspace-v22",
-		RawProviderKey: "local-rc-provider-key-material-that-must-stay-private",
-		IdempotencyKey: "bind-provider-once",
-	}); err != nil {
-		t.Fatalf("BindProviderKey() error = %v", err)
-	}
-	launch, err := service.OpenManagedEnvironment(ctx, OpenManagedEnvironmentInput{
-		TenantID:       "tenant-v22",
-		PortalUserID:   "user-v22",
-		WorkspaceID:    "workspace-v22",
-		IdempotencyKey: "open-once",
-	})
-	if err != nil {
-		t.Fatalf("OpenManagedEnvironment() error = %v", err)
-	}
-	return launch
 }

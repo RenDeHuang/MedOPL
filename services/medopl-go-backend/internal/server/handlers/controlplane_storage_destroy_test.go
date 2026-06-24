@@ -9,6 +9,7 @@ import (
 func TestControlPlaneHandlersRejectStorageDestroyBeforeRuntimeRelease(t *testing.T) {
 	router := controlPlaneHandlerTestRouter()
 
+	prepareCreditUser(t, router, "workspace-v22", 200)
 	postMap(t, router, "/api/v22/provider-key", map[string]any{
 		"tenantId":       "tenant-v22",
 		"portalUserId":   "user-v22",
@@ -40,6 +41,7 @@ func TestControlPlaneHandlersExposeExplicitStorageDestroyReceipt(t *testing.T) {
 	router := controlPlaneHandlerTestRouter()
 	rawProviderKey := "storage-destroy-provider-key-material-that-must-stay-private"
 
+	prepareCreditUser(t, router, "workspace-v22", 200)
 	postMap(t, router, "/api/v22/provider-key", map[string]any{
 		"tenantId":       "tenant-v22",
 		"portalUserId":   "user-v22",

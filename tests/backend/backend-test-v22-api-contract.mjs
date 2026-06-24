@@ -29,6 +29,7 @@ assert.equal(controlplaneServiceSurface.includes("t.Fatalf"), false, "api_contra
 const goRouteSurface = [
   await readRepoFile("services/medopl-go-backend/internal/server/router.go"),
   await readRepoFile("services/medopl-go-backend/internal/server/handlers/controlplane.go"),
+  await readRepoFile("services/medopl-go-backend/internal/server/handlers/controlplane_helpers.go"),
   controlplaneServiceSurface,
 ].join("\n");
 const serviceSurface = controlplaneServiceSurface;
@@ -40,6 +41,12 @@ const requiredRouteMarkers = [
   "/runtime-gate",
   "/opl/runs",
   "/billing/summary",
+  "/v22/billing/payment-orders",
+  "/v22/billing/payment-paid",
+  "/v22/billing/refund",
+  "/v22/billing/adjustment",
+  "/v22/billing/statement",
+  "/v22/runtime/freeze",
   "/api/admin/audit",
   "/v22/managed-environment/release",
   "/v22/storage/destroy",
@@ -153,6 +160,31 @@ assert(
   serviceSurface.includes("summary.RunCount = runCount") && serviceSurface.includes("summary.LedgerCount = len(summary.Ledger)"),
   "billing_summary_top_level_counts_not_populated_from_summary_and_ledger",
 );
+for (const marker of [
+  "func (service *Service) CreatePaymentOrder",
+  "func (service *Service) MarkPaymentPaid",
+  "func (service *Service) RefundBusinessAccount",
+  "func (service *Service) AdjustBusinessAccount",
+  "func (service *Service) BillingStatement",
+  "func (service *Service) RuntimeFreeze",
+  "walletFromCommercialLedger",
+  "commercialRuntimeHoldAmount",
+  "commercialFreezeDays",
+]) {
+  assert(serviceSurface.includes(marker), `commercial_billing_service_marker_missing:${marker}`);
+}
+for (const marker of [
+  "ErrAccountRequired",
+  "ErrInsufficientBalance",
+]) {
+  assert(serviceSurface.includes(marker) || goRouteSurface.includes(marker), `commercial_billing_error_boundary_missing:${marker}`);
+}
+for (const marker of [
+  "account_required",
+  "insufficient_balance",
+]) {
+  assert(goRouteSurface.includes(marker), `commercial_billing_http_error_mapping_missing:${marker}`);
+}
 
 const releaseRuntime = apiContract.medopl_api_contract.release_runtime;
 assert(releaseRuntime, "api_contract_release_runtime_missing");

@@ -15,6 +15,10 @@ func writeControlPlaneError(ctx *gin.Context, err error) {
 		ctx.JSON(http.StatusPreconditionRequired, gin.H{"ok": false, "error": "provider_key_required"})
 	case errors.Is(err, cpd.ErrRuntimeReleaseRequired):
 		ctx.JSON(http.StatusPreconditionRequired, gin.H{"ok": false, "error": "runtime_release_required_before_storage_destroy"})
+	case errors.Is(err, cpd.ErrAccountRequired):
+		ctx.JSON(http.StatusPreconditionRequired, gin.H{"ok": false, "error": "account_required"})
+	case errors.Is(err, cpd.ErrInsufficientBalance):
+		ctx.JSON(http.StatusPaymentRequired, gin.H{"ok": false, "error": "insufficient_balance"})
 	case errors.Is(err, cpd.ErrLaunchNotFound):
 		ctx.JSON(http.StatusNotFound, gin.H{"ok": false, "error": "launch_not_found"})
 	case errors.Is(err, cpd.ErrResourceNotFound):

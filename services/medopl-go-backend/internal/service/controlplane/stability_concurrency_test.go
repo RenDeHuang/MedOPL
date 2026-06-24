@@ -116,6 +116,23 @@ func TestServiceConcurrentStorageDestroyWritesSingleReceipt(t *testing.T) {
 func TestServiceConcurrentOpenAndRunKeepSingleRuntimeAndRunLedger(t *testing.T) {
 	ctx := context.Background()
 	service := NewService(memory.NewControlPlaneStore())
+	if _, err := service.PrepareBusinessAccount(ctx, PrepareBusinessAccountInput{
+		TenantID:     "tenant-v22",
+		PortalUserID: "user-v22",
+		WorkspaceID:  "workspace-v22",
+	}); err != nil {
+		t.Fatalf("PrepareBusinessAccount() error = %v", err)
+	}
+	if _, err := service.CreditBusinessAccount(ctx, CreditBusinessAccountInput{
+		TenantID:       "tenant-v22",
+		PortalUserID:   "user-v22",
+		WorkspaceID:    "workspace-v22",
+		Amount:         200,
+		Currency:       "CNY",
+		IdempotencyKey: "credit-concurrent-open-once",
+	}); err != nil {
+		t.Fatalf("CreditBusinessAccount() error = %v", err)
+	}
 	if _, err := service.BindProviderKey(ctx, BindProviderKeyInput{
 		TenantID:       "tenant-v22",
 		PortalUserID:   "user-v22",

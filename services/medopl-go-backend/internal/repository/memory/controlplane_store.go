@@ -231,6 +231,24 @@ func (store *ControlPlaneStore) LaunchByID(ctx context.Context, launchID string)
 	return launch, nil
 }
 
+func (store *ControlPlaneStore) ListLaunches(ctx context.Context, workspaceID string) ([]cpd.LaunchProjection, error) {
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	items := make([]cpd.LaunchProjection, 0, len(store.launchesByID))
+	for _, item := range store.launchesByID {
+		if workspaceID == "" || item.WorkspaceID == workspaceID {
+			items = append(items, item)
+		}
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].LaunchID < items[j].LaunchID
+	})
+	return items, nil
+}
+
 func (store *ControlPlaneStore) SaveFile(ctx context.Context, file cpd.FileRecord) error {
 	if err := ctx.Err(); err != nil {
 		return err

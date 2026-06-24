@@ -50,6 +50,103 @@ func creditUser(service ControlPlaneService) gin.HandlerFunc {
 	}
 }
 
+func createPaymentOrder(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var request paymentOrderRequest
+		if err := ctx.ShouldBindJSON(&request); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "invalid_json"})
+			return
+		}
+		payload, err := service.CreatePaymentOrder(ctx.Request.Context(), cps.CreatePaymentOrderInput{
+			TenantID:       defaultString(request.TenantID, "tenant-local-rc"),
+			PortalUserID:   defaultString(request.PortalUserID, request.UserID, "user-local-rc"),
+			WorkspaceID:    defaultString(request.WorkspaceID, ctx.Query("workspaceId"), ctx.Query("workspace_id")),
+			Amount:         request.Amount,
+			Currency:       defaultString(request.Currency, "CNY"),
+			IdempotencyKey: defaultString(request.IdempotencyKey, "payment-order-local-rc"),
+			ProviderRef:    request.ProviderRef,
+		})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, payload)
+	}
+}
+
+func markPaymentPaid(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var request paymentPaidRequest
+		if err := ctx.ShouldBindJSON(&request); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "invalid_json"})
+			return
+		}
+		payload, err := service.MarkPaymentPaid(ctx.Request.Context(), cps.MarkPaymentPaidInput{
+			TenantID:       defaultString(request.TenantID, "tenant-local-rc"),
+			PortalUserID:   defaultString(request.PortalUserID, request.UserID, "user-local-rc"),
+			WorkspaceID:    defaultString(request.WorkspaceID, ctx.Query("workspaceId"), ctx.Query("workspace_id")),
+			OrderID:        request.OrderID,
+			Amount:         request.Amount,
+			Currency:       defaultString(request.Currency, "CNY"),
+			IdempotencyKey: defaultString(request.IdempotencyKey, "payment-paid-local-rc"),
+			ProviderRef:    request.ProviderRef,
+		})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, payload)
+	}
+}
+
+func refundBusinessAccount(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var request billingMutationRequest
+		if err := ctx.ShouldBindJSON(&request); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "invalid_json"})
+			return
+		}
+		payload, err := service.RefundBusinessAccount(ctx.Request.Context(), cps.RefundBusinessAccountInput{
+			TenantID:       defaultString(request.TenantID, "tenant-local-rc"),
+			PortalUserID:   defaultString(request.PortalUserID, request.UserID, "user-local-rc"),
+			WorkspaceID:    defaultString(request.WorkspaceID, ctx.Query("workspaceId"), ctx.Query("workspace_id")),
+			Amount:         request.Amount,
+			Currency:       defaultString(request.Currency, "CNY"),
+			IdempotencyKey: defaultString(request.IdempotencyKey, "refund-local-rc"),
+			Reason:         request.Reason,
+		})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, payload)
+	}
+}
+
+func adjustBusinessAccount(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var request billingMutationRequest
+		if err := ctx.ShouldBindJSON(&request); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "invalid_json"})
+			return
+		}
+		payload, err := service.AdjustBusinessAccount(ctx.Request.Context(), cps.AdjustBusinessAccountInput{
+			TenantID:       defaultString(request.TenantID, "tenant-local-rc"),
+			PortalUserID:   defaultString(request.PortalUserID, request.UserID, "user-local-rc"),
+			WorkspaceID:    defaultString(request.WorkspaceID, ctx.Query("workspaceId"), ctx.Query("workspace_id")),
+			Amount:         request.Amount,
+			Currency:       defaultString(request.Currency, "CNY"),
+			IdempotencyKey: defaultString(request.IdempotencyKey, "adjustment-local-rc"),
+			Reason:         request.Reason,
+		})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, payload)
+	}
+}
+
 func openManagedEnvironment(service ControlPlaneService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var request openManagedEnvironmentRequest
@@ -210,6 +307,28 @@ func billingSummary(service ControlPlaneService) gin.HandlerFunc {
 func billingDetails(service ControlPlaneService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		payload, err := service.BillingDetails(ctx.Request.Context(), cps.WorkspaceInput{WorkspaceID: workspaceIDFromQuery(ctx)})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, payload)
+	}
+}
+
+func billingStatement(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		payload, err := service.BillingStatement(ctx.Request.Context(), cps.WorkspaceInput{WorkspaceID: workspaceIDFromQuery(ctx)})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, payload)
+	}
+}
+
+func runtimeFreeze(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		payload, err := service.RuntimeFreeze(ctx.Request.Context(), cps.WorkspaceInput{WorkspaceID: workspaceIDFromQuery(ctx)})
 		if err != nil {
 			writeControlPlaneError(ctx, err)
 			return

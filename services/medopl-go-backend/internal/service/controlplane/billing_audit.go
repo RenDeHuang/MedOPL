@@ -144,6 +144,11 @@ type Trend struct {
 	Storage []float64 `json:"storage"`
 }
 
+const (
+	commercialRuntimeHoldAmount = 30.0
+	commercialMinRequiredRun    = 1.0
+)
+
 func (service *Service) BillingSummary(ctx context.Context, input WorkspaceInput) (BillingSummary, error) {
 	workspaceID := strings.TrimSpace(input.WorkspaceID)
 	events, err := service.store.ListAuditEvents(ctx, workspaceID)
@@ -170,6 +175,10 @@ func (service *Service) BillingSummary(ctx context.Context, input WorkspaceInput
 	if err != nil {
 		return BillingSummary{}, err
 	}
+	credits, err := service.store.ListCreditEvents(ctx, workspaceID)
+	if err != nil {
+		return BillingSummary{}, err
+	}
 	runCount := 0
 	for _, event := range events {
 		if event.Kind == cpd.AuditKindRunSucceeded {
@@ -177,17 +186,20 @@ func (service *Service) BillingSummary(ctx context.Context, input WorkspaceInput
 		}
 	}
 	totalCost := float64(runCount) * 1.25
+	ledger := ledgerFromBillingEvents(billingEvents)
+	if len(ledger) == 0 {
+		ledger = ledgerFromEvents(events, reconciliationIndex{files: files, runs: runs, artifacts: artifacts, ledgers: ledgers})
+	}
+	ledger = appendCreditLedgerItems(ledger, credits)
+	wallet := walletFromCommercialLedger(ledger)
 	summary := BillingSummary{
 		Ok:        true,
 		Source:    "go-control-plane",
-		Wallet:    Wallet{Balance: 100, ActiveFreeze: 10, Frozen: 10, AvailableBalance: 90},
+		Wallet:    wallet,
 		Totals:    Costs{CPUCost: totalCost, GPUCost: 0, PVCost: 0.1, TotalCost: totalCost + 0.1},
 		Filter:    BillingFilter{Range: "local-rc", From: "", To: ""},
 		TodayCost: totalCost + 0.1,
-		Ledger:    ledgerFromBillingEvents(billingEvents),
-	}
-	if len(summary.Ledger) == 0 {
-		summary.Ledger = ledgerFromEvents(events, reconciliationIndex{files: files, runs: runs, artifacts: artifacts, ledgers: ledgers})
+		Ledger:    ledger,
 	}
 	summary.Breakdown.CPUCost = totalCost
 	summary.Breakdown.StorageCost = 0.1
@@ -204,7 +216,7 @@ func (service *Service) BillingSummary(ctx context.Context, input WorkspaceInput
 	summary.SupportBoundary.GraceStatus = "active"
 	summary.SupportBoundary.FileRetentionStatus = "active"
 	summary.SupportBoundary.FailedRunBillingStatus = "not_charged"
-	summary.SupportBoundary.CanStartPaidRun = true
+	summary.SupportBoundary.CanStartPaidRun = summary.Wallet.AvailableBalance >= commercialMinRequiredRun
 	summary.SupportBoundary.CanDownloadExistingOutput = true
 	summary.SupportBoundary.BillingCopy = "Go control-plane local RC billing projection."
 	summary.SupportBoundary.UserCopy = "本地 RC 账务投影可用。"
@@ -212,7 +224,7 @@ func (service *Service) BillingSummary(ctx context.Context, input WorkspaceInput
 	summary.SupportBoundary.Amounts.WalletBalance = summary.Wallet.Balance
 	summary.SupportBoundary.Amounts.ActiveFreeze = summary.Wallet.ActiveFreeze
 	summary.SupportBoundary.Amounts.AvailableBalance = summary.Wallet.AvailableBalance
-	summary.SupportBoundary.Amounts.MinRequiredBalance = 1
+	summary.SupportBoundary.Amounts.MinRequiredBalance = commercialMinRequiredRun
 	return summary, nil
 }
 
@@ -308,6 +320,73 @@ func ledgerFromBillingEvents(events []cpd.BillingEvent) []LedgerItem {
 		})
 	}
 	return items
+}
+
+func appendCreditLedgerItems(items []LedgerItem, credits []cpd.CreditEvent) []LedgerItem {
+	for _, event := range credits {
+		items = append(items, LedgerItem{
+			ID:              event.ID,
+			Type:            "credit",
+			Amount:          event.Amount,
+			Currency:        firstNonEmpty(event.Currency, "CNY"),
+			Reason:          "wallet_topup",
+			OwnerScope:      "go-control-plane",
+			WorkspaceID:     event.WorkspaceID,
+			SourceEventID:   event.ID,
+			SourceEventType: "credit",
+			CreatedAt:       event.CreatedAt,
+		})
+	}
+	return items
+}
+
+func walletFromCommercialLedger(ledger []LedgerItem) Wallet {
+	wallet := Wallet{}
+	consumedHold := 0.0
+	releasedHold := 0.0
+	for _, item := range ledger {
+		switch item.Type {
+		case "credit", "adjustment":
+			wallet.Balance += item.Amount
+		case "debit":
+			wallet.Balance -= item.Amount
+			if item.Amount > 0 {
+				consumedHold += item.Amount
+			}
+		case "refund":
+			wallet.Balance -= item.Amount
+		case "hold":
+			if item.Reason == "resource_preauth_freeze" {
+				wallet.ActiveFreeze += item.Amount
+			} else if item.Amount > 0 {
+				wallet.Balance -= item.Amount
+				consumedHold += item.Amount
+			}
+		case "release":
+			if item.Reason == "subscription_freeze_release" {
+				releasedHold += item.Amount
+			}
+		}
+	}
+	wallet.ActiveFreeze = maxFloat(0, wallet.ActiveFreeze-consumedHold-releasedHold)
+	wallet.Frozen = wallet.ActiveFreeze
+	wallet.AvailableBalance = wallet.Balance - wallet.ActiveFreeze
+	if wallet.AvailableBalance < 0 {
+		wallet.AvailableBalance = 0
+	}
+	return wallet
+}
+
+func commercialSettlementForRelease(ledger []LedgerItem) float64 {
+	wallet := walletFromCommercialLedger(ledger)
+	return wallet.ActiveFreeze
+}
+
+func maxFloat(left float64, right float64) float64 {
+	if left > right {
+		return left
+	}
+	return right
 }
 
 func runCostsFromRecords(runs []cpd.RunRecord, storageCost float64) []RunCost {
