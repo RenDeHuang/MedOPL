@@ -168,6 +168,21 @@ const server = createServer(async (request, response) => {
     sendJson(200, { ok: true, artifactRef: "artifact_canary", fileRef: "artifact_file_canary" });
     return;
   }
+  if (url.pathname === "/api/session/bootstrap" && request.method === "POST") {
+    const body = await readRequestJson(request);
+    response.setHeader("Set-Cookie", [
+      "medopl_session=session-canary; Path=/; HttpOnly; Secure; SameSite=Strict",
+      "medopl_csrf=csrf-canary; Path=/; Secure; SameSite=Strict",
+    ]);
+    sendJson(200, {
+      ok: true,
+      tenantId: body.tenantId,
+      userId: body.userId,
+      workspaceId: body.workspaceId,
+      session: "issued",
+    });
+    return;
+  }
   if (url.pathname === "/api/billing/summary" && request.method === "GET") {
     sendJson(200, { ok: true, runCount: 1, ledgerCount: 1 });
     return;
@@ -272,6 +287,7 @@ try {
     TCR_ID: "tcr-id-test",
     TCR_SECRET: "tcr-secret-test",
     DATABASE_URL: "postgres://ledger.example.invalid/db",
+    MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256: "a".repeat(64),
     TENCENT_DEPLOY_KUBECONFIG_REF: "kubeconfig-ref-test",
     TEST_KUBECTL_LOG: kubectlLog,
     V22_OPL_WEBUI_CONSUMER_CANARY_URL: "https://opl.medopl.cn",
@@ -311,6 +327,15 @@ try {
 
   const liveCheck = parseJson(run(["--operation", "live_test", "--check-config"], baseEnv), "live_check_config");
   assert.deepEqual(liveCheck.summary.urls, ["https://opl.medopl.cn", "https://portal.medopl.cn"], "live_urls");
+  assert.equal(
+    runnerSource.includes("MEDOPL_SESSION_SIGNING_SECRET_SHA256"),
+    false,
+    "live_test_runner_must_not_forge_session_with_signing_secret",
+  );
+  assert(
+    runnerSource.includes("/api/session/bootstrap"),
+    "live_test_runner_must_use_session_bootstrap_route",
+  );
 
   const badCanary = await startCanaryServer("html-medopl");
   canaryServers.push(badCanary);
@@ -339,6 +364,7 @@ try {
     "medopl_portal_public_entry",
     "medopl_healthz",
     "medopl_readyz",
+    "session_bootstrap",
     "prepare_business_account",
     "credit_business_account",
     "bind_provider_key",

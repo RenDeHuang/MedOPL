@@ -4,6 +4,11 @@ import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import {
+  cookiePairFromSetCookie,
+  productionSessionBootstrapSignature,
+  setCookieLines,
+} from "./lib/production-session-bootstrap-support.js";
 
 const OPERATION_CONFIG = Object.freeze({
   tenant_runtime_provisioning: {
@@ -31,7 +36,7 @@ const OPERATION_CONFIG = Object.freeze({
     requiredPaths: ["V22_MEDOPL_DEPLOY_PLAN_FILE"],
   },
   live_test: {
-    requiredEnv: ["V22_OPL_WEBUI_CONSUMER_CANARY_URL", "V22_MEDOPL_PUBLIC_BASE_URL", "MEDOPL_SESSION_SIGNING_SECRET_SHA256"],
+    requiredEnv: ["V22_OPL_WEBUI_CONSUMER_CANARY_URL", "V22_MEDOPL_PUBLIC_BASE_URL", "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256"],
     requiredPaths: [],
   },
 });
@@ -78,7 +83,7 @@ function secretValuesForRedaction() {
     "MEDOPL_AUTH_TOKEN_SHA256",
     "MEDOPL_ADMIN_TOKEN_SHA256",
     "MEDOPL_WEBHOOK_SECRET_SHA256",
-    "MEDOPL_SESSION_SIGNING_SECRET_SHA256",
+    "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256",
   ]
     .map((key) => String(process.env[key] || "").trim())
     .filter((value) => value.length >= 4);
@@ -517,21 +522,74 @@ function hashPublicRef(value = "") {
   return createHash("sha256").update(String(value || "")).digest("hex").slice(0, 16);
 }
 
-function productionSessionCookieHeader({ tenantId, portalUserId, workspaceId, role = "user", csrfToken, operation }) {
-  const sessionSecretHash = String(process.env.MEDOPL_SESSION_SIGNING_SECRET_SHA256 || "").trim();
-  if (!/^[0-9a-f]{64}$/u.test(sessionSecretHash)) {
-    fail("production_goal_live_test_session_signing_secret_missing", { operationClass: operation }, 65);
+function signedProductionSessionBootstrapPayload({ tenantId, portalUserId, workspaceId, operation }) {
+  const bootstrapSecretHash = String(process.env.MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256 || "").trim();
+  if (!/^[0-9a-f]{64}$/u.test(bootstrapSecretHash)) {
+    fail("production_goal_live_test_session_bootstrap_secret_missing", { operationClass: operation }, 65);
   }
-  const claims = {
+  const nonce = `goal-f-bootstrap-${hashPublicRef(`${workspaceId}:${Date.now()}`)}`;
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString().replace(/\.\d{3}Z$/u, "Z");
+  return {
     tenantId,
     userId: portalUserId,
     workspaceId,
-    role,
-    csrfHash: createHash("sha256").update(csrfToken).digest("hex"),
+    nonce,
+    expiresAt,
+    signature: productionSessionBootstrapSignature({ tenantId, portalUserId, workspaceId, nonce, expiresAt, bootstrapSecretHash }),
   };
-  const payloadHex = Buffer.from(JSON.stringify(claims), "utf8").toString("hex");
-  const signature = createHash("sha256").update(`${payloadHex}:${sessionSecretHash}`).digest("hex");
-  return `medopl_session=${payloadHex}.${signature}; medopl_csrf=${encodeURIComponent(csrfToken)}`;
+}
+
+async function requestSessionBootstrap({ baseUrl, tenantId, portalUserId, workspaceId, operation }) {
+  const url = `${String(baseUrl || "").replace(/\/$/u, "")}/api/session/bootstrap`;
+  let response;
+  try {
+    response = await fetchWithTimeout(url, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(signedProductionSessionBootstrapPayload({ tenantId, portalUserId, workspaceId, operation })),
+    });
+  } catch (error) {
+    fail("production_goal_live_test_session_bootstrap_failed", {
+      operationClass: operation,
+      url,
+      errorCode: error?.name || "FetchError",
+    }, 1);
+  }
+  const text = await response.text();
+  let payload = {};
+  try {
+    payload = text ? JSON.parse(text) : {};
+  } catch {
+    fail("production_goal_live_test_session_bootstrap_failed", {
+      operationClass: operation,
+      url,
+      status: response.status,
+      contentType: response.headers.get("content-type") || "",
+      bodyShape: "non_json",
+    }, 1);
+  }
+  assertPublicPayload(payload, operation);
+  if (!response.ok || payload?.session !== "issued") {
+    fail("production_goal_live_test_session_bootstrap_failed", {
+      operationClass: operation,
+      url,
+      status: response.status,
+      payloadSummary: payload,
+    }, 1);
+  }
+  const cookieLines = setCookieLines(response.headers);
+  const sessionPair = cookiePairFromSetCookie(cookieLines, "medopl_session");
+  const csrfPair = cookiePairFromSetCookie(cookieLines, "medopl_csrf");
+  if (!sessionPair || !csrfPair) {
+    fail("production_goal_live_test_session_bootstrap_cookie_missing", {
+      operationClass: operation,
+      cookieNames: cookieLines.map((line) => line.split("=")[0]),
+    }, 1);
+  }
+  return {
+    cookieHeader: `${sessionPair}; ${csrfPair}`,
+    csrfToken: decodeURIComponent(csrfPair.slice("medopl_csrf=".length)),
+  };
 }
 
 function assertPositiveCount(value, label, operation) {
@@ -663,11 +721,6 @@ async function runLiveTest(operation) {
   const workspaceId = `goal-f-production-canary-${Date.now()}`;
   const tenantId = "tenant-goal-f-canary";
   const portalUserId = "user-goal-f-canary";
-  const csrfToken = `goal-f-csrf-${workspaceId}`;
-  const session = {
-    csrfToken,
-    cookieHeader: productionSessionCookieHeader({ tenantId, portalUserId, workspaceId, csrfToken, operation }),
-  };
   const observed = [];
 
   const oplEntry = await requestText({ url: oplBaseUrl, operation, stepId: "opl_webui_public_entry" });
@@ -681,6 +734,15 @@ async function runLiveTest(operation) {
   const ready = await requestJson({ baseUrl: medoplBaseUrl, path: "/readyz", operation, stepId: "medopl_readyz" });
   assertGoHealth(ready, "medopl_readyz", operation);
   observed.push({ step: "medopl_readyz", status: 200 });
+
+  const session = await requestSessionBootstrap({
+    baseUrl: medoplBaseUrl,
+    tenantId,
+    portalUserId,
+    workspaceId,
+    operation,
+  });
+  observed.push({ step: "session_bootstrap", session: "issued" });
 
   const account = await requestJson({
     baseUrl: medoplBaseUrl,
