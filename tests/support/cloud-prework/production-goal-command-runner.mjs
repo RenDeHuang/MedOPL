@@ -5,9 +5,10 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import {
-  cookiePairFromSetCookie,
-  productionSessionBootstrapSignature,
-  setCookieLines,
+  hashPublicRef,
+  identityScopeHeaders,
+  sessionFromBootstrapHeaders,
+  signedProductionSessionBootstrapPayload,
 } from "./lib/production-session-bootstrap-support.js";
 
 const OPERATION_CONFIG = Object.freeze({
@@ -36,7 +37,7 @@ const OPERATION_CONFIG = Object.freeze({
     requiredPaths: ["V22_MEDOPL_DEPLOY_PLAN_FILE"],
   },
   live_test: {
-    requiredEnv: ["V22_OPL_WEBUI_CONSUMER_CANARY_URL", "V22_MEDOPL_PUBLIC_BASE_URL", "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256"],
+    requiredEnv: ["V22_OPL_WEBUI_CONSUMER_CANARY_URL", "V22_MEDOPL_PUBLIC_BASE_URL", "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256", "MEDOPL_WEBHOOK_SECRET"],
     requiredPaths: [],
   },
 });
@@ -83,6 +84,7 @@ function secretValuesForRedaction() {
     "MEDOPL_AUTH_TOKEN_SHA256",
     "MEDOPL_ADMIN_TOKEN_SHA256",
     "MEDOPL_WEBHOOK_SECRET_SHA256",
+    "MEDOPL_WEBHOOK_SECRET",
     "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256",
   ]
     .map((key) => String(process.env[key] || "").trim())
@@ -394,19 +396,25 @@ async function fetchWithTimeout(url, options = {}) {
   }
 }
 
-async function requestJson({ baseUrl, path: requestPath, method = "GET", body, operation, stepId }) {
-  return requestJsonWithAuth({ baseUrl, path: requestPath, method, body, operation, stepId });
+async function requestJson({ baseUrl, path: requestPath, method = "GET", body, operation, stepId, session, identity, webhookSecret }) {
+  return requestJsonWithAuth({ baseUrl, path: requestPath, method, body, operation, stepId, session, identity, webhookSecret });
 }
 
-async function requestJsonWithAuth({ baseUrl, path: requestPath, method = "GET", body, operation, stepId, session }) {
+async function requestJsonWithAuth({ baseUrl, path: requestPath, method = "GET", body, operation, stepId, session, identity, webhookSecret }) {
   const url = `${String(baseUrl || "").replace(/\/$/u, "")}${requestPath}`;
   let response;
   const headers = body ? { "content-type": "application/json" } : {};
+  if (identity) {
+    Object.assign(headers, identityScopeHeaders(identity));
+  }
   if (session) {
     headers.cookie = session.cookieHeader;
     if (method !== "GET" && method !== "HEAD") {
       headers["X-MedOPL-CSRF"] = session.csrfToken;
     }
+  }
+  if (webhookSecret) {
+    headers["X-MedOPL-Webhook-Secret"] = webhookSecret;
   }
   try {
     response = await fetchWithTimeout(url, {
@@ -518,35 +526,18 @@ function assertGoHealth(payload, stepId, operation) {
   }
 }
 
-function hashPublicRef(value = "") {
-  return createHash("sha256").update(String(value || "")).digest("hex").slice(0, 16);
-}
-
-function signedProductionSessionBootstrapPayload({ tenantId, portalUserId, workspaceId, operation }) {
+async function requestSessionBootstrap({ baseUrl, tenantId, portalUserId, workspaceId, operation }) {
+  const url = `${String(baseUrl || "").replace(/\/$/u, "")}/api/session/bootstrap`;
   const bootstrapSecretHash = String(process.env.MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256 || "").trim();
   if (!/^[0-9a-f]{64}$/u.test(bootstrapSecretHash)) {
     fail("production_goal_live_test_session_bootstrap_secret_missing", { operationClass: operation }, 65);
   }
-  const nonce = `goal-f-bootstrap-${hashPublicRef(`${workspaceId}:${Date.now()}`)}`;
-  const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString().replace(/\.\d{3}Z$/u, "Z");
-  return {
-    tenantId,
-    userId: portalUserId,
-    workspaceId,
-    nonce,
-    expiresAt,
-    signature: productionSessionBootstrapSignature({ tenantId, portalUserId, workspaceId, nonce, expiresAt, bootstrapSecretHash }),
-  };
-}
-
-async function requestSessionBootstrap({ baseUrl, tenantId, portalUserId, workspaceId, operation }) {
-  const url = `${String(baseUrl || "").replace(/\/$/u, "")}/api/session/bootstrap`;
   let response;
   try {
     response = await fetchWithTimeout(url, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify(signedProductionSessionBootstrapPayload({ tenantId, portalUserId, workspaceId, operation })),
+      body: JSON.stringify(signedProductionSessionBootstrapPayload({ tenantId, portalUserId, workspaceId, bootstrapSecretHash })),
     });
   } catch (error) {
     fail("production_goal_live_test_session_bootstrap_failed", {
@@ -577,19 +568,14 @@ async function requestSessionBootstrap({ baseUrl, tenantId, portalUserId, worksp
       payloadSummary: payload,
     }, 1);
   }
-  const cookieLines = setCookieLines(response.headers);
-  const sessionPair = cookiePairFromSetCookie(cookieLines, "medopl_session");
-  const csrfPair = cookiePairFromSetCookie(cookieLines, "medopl_csrf");
-  if (!sessionPair || !csrfPair) {
+  const parsed = sessionFromBootstrapHeaders(response.headers);
+  if (!parsed.session) {
     fail("production_goal_live_test_session_bootstrap_cookie_missing", {
       operationClass: operation,
-      cookieNames: cookieLines.map((line) => line.split("=")[0]),
+      cookieNames: parsed.cookieLines.map((line) => line.split("=")[0]),
     }, 1);
   }
-  return {
-    cookieHeader: `${sessionPair}; ${csrfPair}`,
-    csrfToken: decodeURIComponent(csrfPair.slice("medopl_csrf=".length)),
-  };
+  return parsed.session;
 }
 
 function assertPositiveCount(value, label, operation) {
@@ -721,6 +707,7 @@ async function runLiveTest(operation) {
   const workspaceId = `goal-f-production-canary-${Date.now()}`;
   const tenantId = "tenant-goal-f-canary";
   const portalUserId = "user-goal-f-canary";
+  const identity = { tenantId, portalUserId, workspaceId };
   const observed = [];
 
   const oplEntry = await requestText({ url: oplBaseUrl, operation, stepId: "opl_webui_public_entry" });
@@ -743,9 +730,9 @@ async function runLiveTest(operation) {
     operation,
   });
   observed.push({ step: "session_bootstrap", session: "issued" });
+  const liveRequest = (input) => requestJson({ baseUrl: medoplBaseUrl, operation, session, identity, ...input });
 
-  const account = await requestJson({
-    baseUrl: medoplBaseUrl,
+  const account = await liveRequest({
     path: "/api/v22/users/prepare",
     method: "POST",
     body: {
@@ -753,34 +740,48 @@ async function runLiveTest(operation) {
       portalUserId,
       workspaceId,
     },
-    operation,
     stepId: "prepare_business_account",
-    session,
   });
   requireFields(account, ["workspaceId"], "production_goal_live_test_prepare_business_account_failed", operation);
   observed.push({ step: "prepare_business_account", accountStatus: account.accountStatus || account.status || "active" });
 
-  const credit = await requestJson({
-    baseUrl: medoplBaseUrl,
-    path: "/api/v22/users/credit",
+  const order = await liveRequest({
+    path: "/api/v22/billing/payment-orders",
     method: "POST",
     body: {
       tenantId,
       portalUserId,
       workspaceId,
-      amount: 1,
+      amount: 100,
       currency: "CNY",
-      idempotencyKey: `${workspaceId}-credit`,
+      idempotencyKey: `${workspaceId}-payment-order`,
     },
-    operation,
-    stepId: "credit_business_account",
-    session,
+    stepId: "create_payment_order",
   });
-  requireFields(credit, ["workspaceId"], "production_goal_live_test_credit_business_account_failed", operation);
-  observed.push({ step: "credit_business_account", credited: true });
+  requireFields(order, ["orderId", "workspaceId"], "production_goal_live_test_create_payment_order_failed", operation);
+  observed.push({ step: "create_payment_order", orderStatus: order.status || "created" });
 
-  const provider = await requestJson({
-    baseUrl: medoplBaseUrl,
+  const paid = await liveRequest({
+    path: "/api/v22/billing/payment-paid",
+    method: "POST",
+    body: {
+      tenantId,
+      portalUserId,
+      workspaceId,
+      orderId: order.orderId,
+      amount: 100,
+      currency: "CNY",
+      idempotencyKey: `${workspaceId}-payment-paid`,
+      providerRef: "goal-f-canary-payment-redacted",
+    },
+    stepId: "mark_payment_paid",
+    session: undefined,
+    webhookSecret: process.env.MEDOPL_WEBHOOK_SECRET,
+  });
+  requireFields(paid, ["workspaceId"], "production_goal_live_test_mark_payment_paid_failed", operation);
+  observed.push({ step: "mark_payment_paid", credited: true });
+
+  const provider = await liveRequest({
     path: "/api/v22/provider-key",
     method: "POST",
     body: {
@@ -790,15 +791,12 @@ async function runLiveTest(operation) {
       apiKey: "goal-f-canary-provider-key-redacted",
       idempotencyKey: `${workspaceId}-provider`,
     },
-    operation,
     stepId: "bind_provider_key",
-    session,
   });
   requireFields(provider, ["providerKeyRef"], "production_goal_live_test_provider_key_failed", operation);
   observed.push({ step: "bind_provider_key", providerKeyStatus: provider.boundStatus || "bound" });
 
-  const launch = await requestJson({
-    baseUrl: medoplBaseUrl,
+  const launch = await liveRequest({
     path: "/api/v22/managed-environment/open",
     method: "POST",
     body: {
@@ -807,29 +805,23 @@ async function runLiveTest(operation) {
       workspaceId,
       idempotencyKey: `${workspaceId}-open-runtime`,
     },
-    operation,
     stepId: "open_runtime",
-    session,
   });
   requireFields(launch, ["launchId", "resourceBindingId"], "production_goal_live_test_open_runtime_failed", operation);
   observed.push({ step: "open_runtime", runtimeRef: "runtime_ref" });
 
-  const gate = await requestJson({
-    baseUrl: medoplBaseUrl,
+  const gate = await liveRequest({
     path: "/api/opl/runtime-gate",
     method: "POST",
     body: { workspaceId, invocationMode: "runtime_required" },
-    operation,
     stepId: "runtime_gate",
-    session,
   });
   requireFields(gate, ["ok", "workspaceId", "runtimeState", "storageState", "nodePoolProjection.state"], "production_goal_live_test_runtime_gate_failed", operation);
   if (gate.ok !== true) fail("production_goal_live_test_runtime_gate_failed", { operationClass: operation, reason: "ok_false" }, 1);
   observed.push({ step: "runtime_gate", runtimeState: gate.runtimeState, storageState: gate.storageState });
 
   const launchQuery = `?launchId=${encodeURIComponent(launch.launchId)}`;
-  const file = await requestJson({
-    baseUrl: medoplBaseUrl,
+  const file = await liveRequest({
     path: `/api/opl/files${launchQuery}`,
     method: "POST",
     body: {
@@ -838,15 +830,12 @@ async function runLiveTest(operation) {
       contentType: "text/csv",
       sizeBytes: 32,
     },
-    operation,
     stepId: "upload_file",
-    session,
   });
   requireFields(file, ["fileRef"], "production_goal_live_test_upload_file_failed", operation);
   observed.push({ step: "upload_file", fileRef: "file_ref" });
 
-  const run = await requestJson({
-    baseUrl: medoplBaseUrl,
+  const run = await liveRequest({
     path: `/api/opl/runs${launchQuery}`,
     method: "POST",
     body: {
@@ -855,35 +844,26 @@ async function runLiveTest(operation) {
       toolName: "runtime_required",
       requestId: `${workspaceId}-run`,
     },
-    operation,
     stepId: "run_task",
-    session,
   });
   requireFields(run, ["artifactRef"], "production_goal_live_test_run_task_failed", operation);
   observed.push({ step: "run_task", artifactRef: "artifact_ref" });
 
-  const artifact = await requestJson({
-    baseUrl: medoplBaseUrl,
+  const artifact = await liveRequest({
     path: `/api/opl/artifacts/${encodeURIComponent(run.artifactRef)}${launchQuery}`,
-    operation,
     stepId: "fetch_artifact",
-    session,
   });
   requireFields(artifact, ["artifactRef"], "production_goal_live_test_fetch_artifact_failed", operation);
   observed.push({ step: "fetch_artifact", artifactRef: "artifact_ref" });
 
-  const billing = await requestJson({
-    baseUrl: medoplBaseUrl,
+  const billing = await liveRequest({
     path: `/api/billing/summary?workspaceId=${encodeURIComponent(workspaceId)}`,
-    operation,
     stepId: "billing_summary",
-    session,
   });
   requireFields(billing, ["runCount", "ledgerCount"], "production_goal_live_test_billing_summary_failed", operation);
   observed.push({ step: "billing_summary", runCount: billing.runCount, ledgerCount: billing.ledgerCount });
 
-  const release = await requestJson({
-    baseUrl: medoplBaseUrl,
+  const release = await liveRequest({
     path: "/api/v22/managed-environment/release",
     method: "POST",
     body: {
@@ -892,15 +872,12 @@ async function runLiveTest(operation) {
       stopBilling: true,
       idempotencyKey: `${workspaceId}-release-runtime`,
     },
-    operation,
     stepId: "release_runtime",
-    session,
   });
   requireFields(release, ["billingStopped", "auditEventId"], "production_goal_live_test_release_runtime_failed", operation);
   observed.push({ step: "release_runtime", billingStopped: release.billingStopped === true });
 
-  const storage = await requestJson({
-    baseUrl: medoplBaseUrl,
+  const storage = await liveRequest({
     path: "/api/v22/storage/destroy",
     method: "POST",
     body: {
@@ -909,9 +886,7 @@ async function runLiveTest(operation) {
       storageBindingId: gate.storageBindingId || file.storageBindingId || "storage-canary",
       idempotencyKey: `${workspaceId}-destroy-storage`,
     },
-    operation,
     stepId: "destroy_storage",
-    session,
   });
   requireFields(storage, ["storageDestroyed", "storageState"], "production_goal_live_test_destroy_storage_failed", operation);
   observed.push({ step: "destroy_storage", storageState: storage.storageState });

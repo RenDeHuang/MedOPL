@@ -103,6 +103,20 @@ const server = createServer(async (request, response) => {
     response.writeHead(status, { "content-type": "application/json", connection: "close" });
     response.end(JSON.stringify(payload));
   };
+  const requireIdentityScopeHeaders = (body) => {
+    const expected = {
+      "x-medopl-tenant-id": body.tenantId || body.tenant_id || "",
+      "x-medopl-user-id": body.portalUserId || body.portal_user_id || body.userId || body.user_id || "",
+      "x-medopl-workspace-id": body.workspaceId || body.workspace_id || "",
+    };
+    for (const [name, value] of Object.entries(expected)) {
+      if (!request.headers[name] || (value && request.headers[name] !== value)) {
+        sendJson(401, { ok: false, error: "unauthenticated", code: "authentication_required", missingScopeHeader: name });
+        return false;
+      }
+    }
+    return true;
+  };
   if (mode === "html-medopl" && (url.pathname === "/healthz" || url.pathname === "/readyz")) {
     response.writeHead(200, { "content-type": "text/html", connection: "close" });
     response.end("<!doctype html><title>wrong upstream</title>");
@@ -119,21 +133,41 @@ const server = createServer(async (request, response) => {
   }
   if (url.pathname === "/api/v22/provider-key" && request.method === "POST") {
     const body = await readRequestJson(request);
+    if (!requireIdentityScopeHeaders(body)) return;
     sendJson(200, { ok: true, workspaceId: body.workspaceId, providerKeyRef: "pkref_canary", boundStatus: "bound" });
     return;
   }
   if (url.pathname === "/api/v22/users/prepare" && request.method === "POST") {
     const body = await readRequestJson(request);
+    if (!requireIdentityScopeHeaders(body)) return;
     sendJson(200, { ok: true, workspaceId: body.workspaceId, accountStatus: "active", balance: 0, currency: "CNY" });
     return;
   }
   if (url.pathname === "/api/v22/users/credit" && request.method === "POST") {
     const body = await readRequestJson(request);
+    if (!requireIdentityScopeHeaders(body)) return;
+    sendJson(200, { ok: true, workspaceId: body.workspaceId, accountStatus: "active", balance: body.amount || 0, currency: body.currency || "CNY" });
+    return;
+  }
+  if (url.pathname === "/api/v22/billing/payment-orders" && request.method === "POST") {
+    const body = await readRequestJson(request);
+    if (!requireIdentityScopeHeaders(body)) return;
+    sendJson(200, { ok: true, workspaceId: body.workspaceId, orderId: "payorder_canary", status: "created", amount: body.amount || 0, currency: body.currency || "CNY" });
+    return;
+  }
+  if (url.pathname === "/api/v22/billing/payment-paid" && request.method === "POST") {
+    const body = await readRequestJson(request);
+    if (!requireIdentityScopeHeaders(body)) return;
+    if (request.headers["x-medopl-webhook-secret"] !== "webhook-secret-test") {
+      sendJson(401, { ok: false, error: "webhook_signature_required" });
+      return;
+    }
     sendJson(200, { ok: true, workspaceId: body.workspaceId, accountStatus: "active", balance: body.amount || 0, currency: body.currency || "CNY" });
     return;
   }
   if (url.pathname === "/api/v22/managed-environment/open" && request.method === "POST") {
     const body = await readRequestJson(request);
+    if (!requireIdentityScopeHeaders(body)) return;
     sendJson(200, { launchId: "launch_canary", resourceBindingId: "rb_canary", workspaceId: body.workspaceId });
     return;
   }
@@ -288,6 +322,7 @@ try {
     TCR_SECRET: "tcr-secret-test",
     DATABASE_URL: "postgres://ledger.example.invalid/db",
     MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256: "a".repeat(64),
+    MEDOPL_WEBHOOK_SECRET: "webhook-secret-test",
     TENCENT_DEPLOY_KUBECONFIG_REF: "kubeconfig-ref-test",
     TEST_KUBECTL_LOG: kubectlLog,
     V22_OPL_WEBUI_CONSUMER_CANARY_URL: "https://opl.medopl.cn",
@@ -366,7 +401,8 @@ try {
     "medopl_readyz",
     "session_bootstrap",
     "prepare_business_account",
-    "credit_business_account",
+    "create_payment_order",
+    "mark_payment_paid",
     "bind_provider_key",
     "open_runtime",
     "runtime_gate",

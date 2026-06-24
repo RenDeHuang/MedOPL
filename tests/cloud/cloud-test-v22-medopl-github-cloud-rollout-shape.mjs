@@ -387,6 +387,7 @@ for (const expected of [
   "MEDOPL_AUTH_TOKEN_SHA256: ${{ secrets.MEDOPL_AUTH_TOKEN_SHA256 }}",
   "MEDOPL_ADMIN_TOKEN_SHA256: ${{ secrets.MEDOPL_ADMIN_TOKEN_SHA256 }}",
   "MEDOPL_WEBHOOK_SECRET_SHA256: ${{ secrets.MEDOPL_WEBHOOK_SECRET_SHA256 }}",
+  "MEDOPL_WEBHOOK_SECRET: ${{ secrets.MEDOPL_WEBHOOK_SECRET }}",
   "MEDOPL_SESSION_SIGNING_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_SIGNING_SECRET_SHA256 }}",
   "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256 }}",
   "TENCENT_MUTATION_TKE_CLUSTER_ID: ${{ vars.TENCENT_MUTATION_TKE_CLUSTER_ID }}",
@@ -632,7 +633,10 @@ assert(
 assert(
   productionApplyJob.includes("V22_MEDOPL_LIVE_DB_PERSISTENCE_PROOF: \"1\"") &&
     commandRunnerSource.includes("/api/v22/users/prepare") &&
-    commandRunnerSource.includes("/api/v22/users/credit") &&
+    commandRunnerSource.includes("/api/v22/billing/payment-orders") &&
+    commandRunnerSource.includes("/api/v22/billing/payment-paid") &&
+    commandRunnerSource.includes("X-MedOPL-Webhook-Secret") &&
+    !commandRunnerSource.includes("path: \"/api/v22/users/credit\"") &&
     commandRunnerSource.includes("queryLiveDatabasePersistenceProof") &&
     commandRunnerSource.includes("databasePersistenceProof: true") &&
     commandRunnerSource.includes("workspaceRefHash") &&

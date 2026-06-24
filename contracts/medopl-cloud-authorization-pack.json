@@ -50,6 +50,7 @@
       "MEDOPL_AUTH_TOKEN_SHA256",
       "MEDOPL_ADMIN_TOKEN_SHA256",
       "MEDOPL_WEBHOOK_SECRET_SHA256",
+      "MEDOPL_WEBHOOK_SECRET",
       "MEDOPL_SESSION_SIGNING_SECRET_SHA256",
       "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256"
     ],
@@ -169,6 +170,7 @@
       "MEDOPL_AUTH_TOKEN_SHA256",
       "MEDOPL_ADMIN_TOKEN_SHA256",
       "MEDOPL_WEBHOOK_SECRET_SHA256",
+      "MEDOPL_WEBHOOK_SECRET",
       "MEDOPL_SESSION_SIGNING_SECRET_SHA256",
       "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256"
     ],
@@ -204,7 +206,9 @@
         "MEDOPL_SESSION_SIGNING_SECRET_SHA256",
         "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256"
       ],
-      "live_test": []
+      "live_test": [
+        "MEDOPL_WEBHOOK_SECRET"
+      ]
     },
     "api_allowlist_required": [
       "tencentcloud:readonly_inventory",
