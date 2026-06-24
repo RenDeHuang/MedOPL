@@ -21,11 +21,14 @@ type productionActor struct {
 	UserID      string
 	WorkspaceID string
 	Role        string
+	CSRFHash    string
 }
 
 const productionActorKey = "medoplProductionActor"
 
 const productionCORSOrigin = "https://portal.medopl.cn"
+const productionSessionCookieName = "medopl_session"
+const productionCSRFCookieName = "medopl_csrf"
 
 var productionRequestLimiter = newRequestLimiter(10)
 
@@ -65,28 +68,29 @@ func productionSecurityMiddleware(cfg config.Config) gin.HandlerFunc {
 			return
 		}
 
-		role, ok := authenticatedRole(ctx, cfg)
+		actor, ok := authenticatedActor(ctx, cfg)
 		if !ok {
 			writeSecurityError(ctx, http.StatusUnauthorized, "authentication_required")
 			return
 		}
-		if requiresAdmin(ctx.Request.Method, ctx.FullPath(), ctx.Request.URL.Path) && role != "admin" {
+		if requiresAdmin(ctx.Request.Method, ctx.FullPath(), ctx.Request.URL.Path) && actor.Role != "admin" {
 			writeSecurityError(ctx, http.StatusForbidden, "admin_required")
 			return
 		}
+		applyActorHeaders(ctx, actor)
 		if ok, code := identityScopeAllowed(ctx); !ok {
 			writeSecurityError(ctx, http.StatusForbidden, code)
 			return
 		}
-		if requiresCSRF(ctx.Request.Method) && strings.TrimSpace(ctx.GetHeader("X-MedOPL-CSRF")) == "" {
+		if requiresCSRF(ctx.Request.Method) && !csrfAllowed(ctx, actor) {
 			writeSecurityError(ctx, http.StatusForbidden, "csrf_required")
 			return
 		}
-		if !productionRequestLimiter.Allow(rateLimitKey(ctx, role)) {
+		if !productionRequestLimiter.Allow(rateLimitKey(ctx, actor.Role)) {
 			writeSecurityError(ctx, http.StatusTooManyRequests, "rate_limited")
 			return
 		}
-		ctx.Set(productionActorKey, actorFromHeaders(ctx, role))
+		ctx.Set(productionActorKey, actor)
 		ctx.Next()
 	}
 }
@@ -133,18 +137,20 @@ func rateLimitKey(ctx *gin.Context, role string) string {
 	}, "|")
 }
 
-func authenticatedRole(ctx *gin.Context, cfg config.Config) (string, bool) {
+func authenticatedActor(ctx *gin.Context, cfg config.Config) (productionActor, bool) {
 	token := bearerToken(ctx.GetHeader("Authorization"))
-	if token == "" {
-		return "", false
+	if token != "" {
+		if hashMatches(token, cfg.AdminTokenHash) {
+			return actorFromHeaders(ctx, "admin"), true
+		}
+		if hashMatches(token, cfg.AuthTokenHash) {
+			return actorFromHeaders(ctx, "user"), true
+		}
 	}
-	if hashMatches(token, cfg.AdminTokenHash) {
-		return "admin", true
+	if actor, ok := actorFromSessionCookie(ctx, cfg); ok {
+		return actor, true
 	}
-	if hashMatches(token, cfg.AuthTokenHash) {
-		return "user", true
-	}
-	return "", false
+	return productionActor{}, false
 }
 
 func isPublicProductionPath(method string, fullPath string, rawPath string) bool {
@@ -209,6 +215,12 @@ func identityScopeAllowed(ctx *gin.Context) (bool, string) {
 	return true, ""
 }
 
+func applyActorHeaders(ctx *gin.Context, actor productionActor) {
+	ctx.Request.Header.Set("X-MedOPL-Tenant-ID", actor.TenantID)
+	ctx.Request.Header.Set("X-MedOPL-User-ID", actor.UserID)
+	ctx.Request.Header.Set("X-MedOPL-Workspace-ID", actor.WorkspaceID)
+}
+
 type requestScope struct {
 	TenantID    string
 	UserID      string
@@ -271,6 +283,85 @@ func actorFromHeaders(ctx *gin.Context, role string) productionActor {
 	}
 }
 
+type productionSessionClaims struct {
+	TenantID    string `json:"tenantId"`
+	UserID      string `json:"userId"`
+	WorkspaceID string `json:"workspaceId"`
+	Role        string `json:"role"`
+	CSRFHash    string `json:"csrfHash"`
+}
+
+func actorFromSessionCookie(ctx *gin.Context, cfg config.Config) (productionActor, bool) {
+	cookie, err := ctx.Cookie(productionSessionCookieName)
+	if err != nil {
+		return productionActor{}, false
+	}
+	claims, ok := parseProductionSessionCookie(cookie, cfg.SessionSecretHash)
+	if !ok {
+		return productionActor{}, false
+	}
+	return productionActor{
+		TenantID:    claims.TenantID,
+		UserID:      claims.UserID,
+		WorkspaceID: claims.WorkspaceID,
+		Role:        "user",
+		CSRFHash:    claims.CSRFHash,
+	}, true
+}
+
+func parseProductionSessionCookie(cookieValue string, sessionSecretHash string) (productionSessionClaims, bool) {
+	parts := strings.Split(strings.TrimSpace(cookieValue), ".")
+	if len(parts) != 2 {
+		return productionSessionClaims{}, false
+	}
+	payloadHex := parts[0]
+	signatureHex := parts[1]
+	if !hexHashMatches(payloadHex+":"+strings.TrimSpace(sessionSecretHash), signatureHex) {
+		return productionSessionClaims{}, false
+	}
+	payload, err := hex.DecodeString(payloadHex)
+	if err != nil {
+		return productionSessionClaims{}, false
+	}
+	var claims productionSessionClaims
+	if err := json.Unmarshal(payload, &claims); err != nil {
+		return productionSessionClaims{}, false
+	}
+	if strings.TrimSpace(claims.TenantID) == "" ||
+		strings.TrimSpace(claims.UserID) == "" ||
+		strings.TrimSpace(claims.WorkspaceID) == "" ||
+		strings.TrimSpace(claims.CSRFHash) == "" {
+		return productionSessionClaims{}, false
+	}
+	if role := strings.TrimSpace(claims.Role); role != "" && role != "user" && role != "admin" {
+		return productionSessionClaims{}, false
+	}
+	claims.TenantID = strings.TrimSpace(claims.TenantID)
+	claims.UserID = strings.TrimSpace(claims.UserID)
+	claims.WorkspaceID = strings.TrimSpace(claims.WorkspaceID)
+	claims.Role = "user"
+	claims.CSRFHash = strings.TrimSpace(claims.CSRFHash)
+	return claims, true
+}
+
+func csrfAllowed(ctx *gin.Context, actor productionActor) bool {
+	header := strings.TrimSpace(ctx.GetHeader("X-MedOPL-CSRF"))
+	if header == "" {
+		return false
+	}
+	if strings.TrimSpace(actor.CSRFHash) == "" {
+		return true
+	}
+	cookie, err := ctx.Cookie(productionCSRFCookieName)
+	if err != nil || strings.TrimSpace(cookie) == "" {
+		return false
+	}
+	if subtle.ConstantTimeCompare([]byte(header), []byte(strings.TrimSpace(cookie))) != 1 {
+		return false
+	}
+	return hexHashMatches(header, actor.CSRFHash)
+}
+
 func writeSecurityError(ctx *gin.Context, status int, code string) {
 	ctx.AbortWithStatusJSON(status, gin.H{"ok": false, "error": code})
 }
@@ -307,6 +398,15 @@ func bearerToken(header string) string {
 }
 
 func hashMatches(raw string, expectedHash string) bool {
+	if strings.TrimSpace(raw) == "" || strings.TrimSpace(expectedHash) == "" {
+		return false
+	}
+	sum := sha256.Sum256([]byte(raw))
+	actual := hex.EncodeToString(sum[:])
+	return subtle.ConstantTimeCompare([]byte(actual), []byte(strings.TrimSpace(expectedHash))) == 1
+}
+
+func hexHashMatches(raw string, expectedHash string) bool {
 	if strings.TrimSpace(raw) == "" || strings.TrimSpace(expectedHash) == "" {
 		return false
 	}

@@ -3,6 +3,8 @@ package server
 import (
 	"bytes"
 	"context"
+	"encoding/hex"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -18,6 +20,8 @@ const (
 	testUserToken      = "user-token"
 	testAdminToken     = "admin-token"
 	testWebhookSecret  = "webhook-secret"
+	testSessionSecret  = "session-secret"
+	testCSRFToken      = "csrf-token"
 	testTenantID       = "tenant-v22"
 	testPortalUserID   = "user-v22"
 	testWorkspaceID    = "workspace-v22"
@@ -44,6 +48,7 @@ func productionRouterForSecurityTest(t *testing.T) http.Handler {
 		AuthTokenHash:      config.TokenHash(testUserToken),
 		AdminTokenHash:     config.TokenHash(testAdminToken),
 		WebhookSecretHash:  config.TokenHash(testWebhookSecret),
+		SessionSecretHash:  config.TokenHash(testSessionSecret),
 	})
 	if err != nil {
 		t.Fatalf("RouterWithError() error = %v", err)
@@ -299,8 +304,10 @@ func productionSecurityMiddlewareTestRouter() http.Handler {
 		AuthTokenHash:     config.TokenHash(testUserToken),
 		AdminTokenHash:    config.TokenHash(testAdminToken),
 		WebhookSecretHash: config.TokenHash(testWebhookSecret),
+		SessionSecretHash: config.TokenHash(testSessionSecret),
 	}))
 	api := router.Group("/api")
+	api.GET("/me", okSecurityActorHandler)
 	api.POST("/v22/users/prepare", okSecurityHandler)
 	api.POST("/v22/managed-environment/open", okSecurityHandler)
 	api.POST("/v22/billing/adjustment", okSecurityHandler)
@@ -311,6 +318,92 @@ func productionSecurityMiddlewareTestRouter() http.Handler {
 
 func okSecurityHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+func okSecurityActorHandler(ctx *gin.Context) {
+	value, ok := ctx.Get(productionActorKey)
+	if !ok {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"ok": false, "error": "actor_missing"})
+		return
+	}
+	actor := value.(productionActor)
+	ctx.JSON(http.StatusOK, gin.H{
+		"ok":          true,
+		"tenantId":    actor.TenantID,
+		"userId":      actor.UserID,
+		"workspaceId": actor.WorkspaceID,
+		"role":        actor.Role,
+	})
+}
+
+func TestProductionPortalSessionCookieAuthorizesUserSurfaceWithoutBearer(t *testing.T) {
+	router := productionSecurityMiddlewareTestRouter()
+	req := httptest.NewRequest(http.MethodGet, "/api/me", nil)
+	req.AddCookie(productionSessionCookie(testTenantID, testPortalUserID, testWorkspaceID, "user", testCSRFToken))
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("session-authenticated user request status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	assertSecurityBody(t, rec, `"workspaceId":"workspace-v22"`)
+	assertSecurityBody(t, rec, `"role":"user"`)
+}
+
+func TestProductionPortalSessionRequiresCSRFCookieMatchForMutations(t *testing.T) {
+	router := productionSecurityMiddlewareTestRouter()
+
+	missingHeader := serveSessionSecurityRequest(
+		router,
+		http.MethodPost,
+		"/api/v22/users/prepare",
+		`{"tenantId":"tenant-v22","userId":"user-v22","workspaceId":"workspace-v22"}`,
+		"",
+	)
+	if missingHeader.Code != http.StatusForbidden {
+		t.Fatalf("missing session csrf status = %d body = %s", missingHeader.Code, missingHeader.Body.String())
+	}
+	assertSecurityBody(t, missingHeader, "csrf_required")
+
+	authorized := serveSessionSecurityRequest(
+		router,
+		http.MethodPost,
+		"/api/v22/users/prepare",
+		`{"tenantId":"tenant-v22","userId":"user-v22","workspaceId":"workspace-v22"}`,
+		testCSRFToken,
+	)
+	if authorized.Code != http.StatusOK {
+		t.Fatalf("session csrf authorized status = %d body = %s", authorized.Code, authorized.Body.String())
+	}
+}
+
+func TestProductionPortalSessionCannotUseAdminSurface(t *testing.T) {
+	router := productionSecurityMiddlewareTestRouter()
+	req := httptest.NewRequest(http.MethodGet, "/api/admin/overview", nil)
+	req.AddCookie(productionSessionCookie(testTenantID, testPortalUserID, testWorkspaceID, "user", testCSRFToken))
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("user session admin request status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	assertSecurityBody(t, rec, "admin_required")
+}
+
+func TestProductionPortalSessionCannotEscalateRoleFromCookieClaims(t *testing.T) {
+	router := productionSecurityMiddlewareTestRouter()
+	req := httptest.NewRequest(http.MethodGet, "/api/admin/overview", nil)
+	req.AddCookie(productionSessionCookie(testTenantID, testPortalUserID, testWorkspaceID, "admin", testCSRFToken))
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("admin-claimed session admin request status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	assertSecurityBody(t, rec, "admin_required")
 }
 
 func serveSecurityRequest(router http.Handler, method string, path string, body string, bearerToken string, webhookSecret string, csrf string) *httptest.ResponseRecorder {
@@ -374,6 +467,45 @@ func serveSecurityRequestWithIdentityAndOrigin(
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
 	return rec
+}
+
+func serveSessionSecurityRequest(router http.Handler, method string, path string, body string, csrf string) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(method, path, bytes.NewBufferString(body))
+	if body != "" {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	req.AddCookie(productionSessionCookie(testTenantID, testPortalUserID, testWorkspaceID, "user", testCSRFToken))
+	if csrf != "" {
+		req.AddCookie(&http.Cookie{Name: productionCSRFCookieName, Value: testCSRFToken})
+		req.Header.Set("X-MedOPL-CSRF", csrf)
+	}
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	return rec
+}
+
+func productionSessionCookie(tenantID string, userID string, workspaceID string, role string, csrfToken string) *http.Cookie {
+	claims := productionSessionClaims{
+		TenantID:    tenantID,
+		UserID:      userID,
+		WorkspaceID: workspaceID,
+		Role:        role,
+		CSRFHash:    config.TokenHash(csrfToken),
+	}
+	payload, err := json.Marshal(claims)
+	if err != nil {
+		panic(err)
+	}
+	payloadHex := hex.EncodeToString(payload)
+	signature := config.TokenHash(payloadHex + ":" + config.TokenHash(testSessionSecret))
+	return &http.Cookie{
+		Name:     productionSessionCookieName,
+		Value:    payloadHex + "." + signature,
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		SameSite: http.SameSiteStrictMode,
+	}
 }
 
 func assertSecurityBody(t *testing.T, rec *httptest.ResponseRecorder, marker string) {

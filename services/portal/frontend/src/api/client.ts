@@ -8,6 +8,22 @@ export const goControlPlaneClient = axios.create({
 
 let authRedirectStarted = false;
 
+function cookieValue(name: string) {
+  if (typeof document === "undefined") return "";
+  const encodedName = `${encodeURIComponent(name)}=`;
+  const item = document.cookie.split("; ").find((entry) => entry.startsWith(encodedName));
+  if (!item) return "";
+  return decodeURIComponent(item.slice(encodedName.length));
+}
+
+goControlPlaneClient.interceptors.request.use((request) => {
+  const csrf = cookieValue("medopl_csrf");
+  if (csrf) {
+    request.headers.set("X-MedOPL-CSRF", csrf);
+  }
+  return request;
+});
+
 goControlPlaneClient.interceptors.response.use(
   (response) => response,
   (error) => {

@@ -31,7 +31,7 @@ const OPERATION_CONFIG = Object.freeze({
     requiredPaths: ["V22_MEDOPL_DEPLOY_PLAN_FILE"],
   },
   live_test: {
-    requiredEnv: ["V22_OPL_WEBUI_CONSUMER_CANARY_URL", "V22_MEDOPL_PUBLIC_BASE_URL"],
+    requiredEnv: ["V22_OPL_WEBUI_CONSUMER_CANARY_URL", "V22_MEDOPL_PUBLIC_BASE_URL", "MEDOPL_SESSION_SIGNING_SECRET_SHA256"],
     requiredPaths: [],
   },
 });
@@ -75,6 +75,10 @@ function secretValuesForRedaction() {
     "TCR_ID",
     "TCR_SECRET",
     "DATABASE_URL",
+    "MEDOPL_AUTH_TOKEN_SHA256",
+    "MEDOPL_ADMIN_TOKEN_SHA256",
+    "MEDOPL_WEBHOOK_SECRET_SHA256",
+    "MEDOPL_SESSION_SIGNING_SECRET_SHA256",
   ]
     .map((key) => String(process.env[key] || "").trim())
     .filter((value) => value.length >= 4);
@@ -386,12 +390,23 @@ async function fetchWithTimeout(url, options = {}) {
 }
 
 async function requestJson({ baseUrl, path: requestPath, method = "GET", body, operation, stepId }) {
+  return requestJsonWithAuth({ baseUrl, path: requestPath, method, body, operation, stepId });
+}
+
+async function requestJsonWithAuth({ baseUrl, path: requestPath, method = "GET", body, operation, stepId, session }) {
   const url = `${String(baseUrl || "").replace(/\/$/u, "")}${requestPath}`;
   let response;
+  const headers = body ? { "content-type": "application/json" } : {};
+  if (session) {
+    headers.cookie = session.cookieHeader;
+    if (method !== "GET" && method !== "HEAD") {
+      headers["X-MedOPL-CSRF"] = session.csrfToken;
+    }
+  }
   try {
     response = await fetchWithTimeout(url, {
       method,
-      headers: body ? { "content-type": "application/json" } : {},
+      headers,
       body: body ? JSON.stringify(body) : undefined,
     });
   } catch (error) {
@@ -500,6 +515,23 @@ function assertGoHealth(payload, stepId, operation) {
 
 function hashPublicRef(value = "") {
   return createHash("sha256").update(String(value || "")).digest("hex").slice(0, 16);
+}
+
+function productionSessionCookieHeader({ tenantId, portalUserId, workspaceId, role = "user", csrfToken, operation }) {
+  const sessionSecretHash = String(process.env.MEDOPL_SESSION_SIGNING_SECRET_SHA256 || "").trim();
+  if (!/^[0-9a-f]{64}$/u.test(sessionSecretHash)) {
+    fail("production_goal_live_test_session_signing_secret_missing", { operationClass: operation }, 65);
+  }
+  const claims = {
+    tenantId,
+    userId: portalUserId,
+    workspaceId,
+    role,
+    csrfHash: createHash("sha256").update(csrfToken).digest("hex"),
+  };
+  const payloadHex = Buffer.from(JSON.stringify(claims), "utf8").toString("hex");
+  const signature = createHash("sha256").update(`${payloadHex}:${sessionSecretHash}`).digest("hex");
+  return `medopl_session=${payloadHex}.${signature}; medopl_csrf=${encodeURIComponent(csrfToken)}`;
 }
 
 function assertPositiveCount(value, label, operation) {
@@ -631,6 +663,11 @@ async function runLiveTest(operation) {
   const workspaceId = `goal-f-production-canary-${Date.now()}`;
   const tenantId = "tenant-goal-f-canary";
   const portalUserId = "user-goal-f-canary";
+  const csrfToken = `goal-f-csrf-${workspaceId}`;
+  const session = {
+    csrfToken,
+    cookieHeader: productionSessionCookieHeader({ tenantId, portalUserId, workspaceId, csrfToken, operation }),
+  };
   const observed = [];
 
   const oplEntry = await requestText({ url: oplBaseUrl, operation, stepId: "opl_webui_public_entry" });
@@ -656,6 +693,7 @@ async function runLiveTest(operation) {
     },
     operation,
     stepId: "prepare_business_account",
+    session,
   });
   requireFields(account, ["workspaceId"], "production_goal_live_test_prepare_business_account_failed", operation);
   observed.push({ step: "prepare_business_account", accountStatus: account.accountStatus || account.status || "active" });
@@ -674,6 +712,7 @@ async function runLiveTest(operation) {
     },
     operation,
     stepId: "credit_business_account",
+    session,
   });
   requireFields(credit, ["workspaceId"], "production_goal_live_test_credit_business_account_failed", operation);
   observed.push({ step: "credit_business_account", credited: true });
@@ -691,6 +730,7 @@ async function runLiveTest(operation) {
     },
     operation,
     stepId: "bind_provider_key",
+    session,
   });
   requireFields(provider, ["providerKeyRef"], "production_goal_live_test_provider_key_failed", operation);
   observed.push({ step: "bind_provider_key", providerKeyStatus: provider.boundStatus || "bound" });
@@ -707,6 +747,7 @@ async function runLiveTest(operation) {
     },
     operation,
     stepId: "open_runtime",
+    session,
   });
   requireFields(launch, ["launchId", "resourceBindingId"], "production_goal_live_test_open_runtime_failed", operation);
   observed.push({ step: "open_runtime", runtimeRef: "runtime_ref" });
@@ -718,6 +759,7 @@ async function runLiveTest(operation) {
     body: { workspaceId, invocationMode: "runtime_required" },
     operation,
     stepId: "runtime_gate",
+    session,
   });
   requireFields(gate, ["ok", "workspaceId", "runtimeState", "storageState", "nodePoolProjection.state"], "production_goal_live_test_runtime_gate_failed", operation);
   if (gate.ok !== true) fail("production_goal_live_test_runtime_gate_failed", { operationClass: operation, reason: "ok_false" }, 1);
@@ -736,6 +778,7 @@ async function runLiveTest(operation) {
     },
     operation,
     stepId: "upload_file",
+    session,
   });
   requireFields(file, ["fileRef"], "production_goal_live_test_upload_file_failed", operation);
   observed.push({ step: "upload_file", fileRef: "file_ref" });
@@ -752,6 +795,7 @@ async function runLiveTest(operation) {
     },
     operation,
     stepId: "run_task",
+    session,
   });
   requireFields(run, ["artifactRef"], "production_goal_live_test_run_task_failed", operation);
   observed.push({ step: "run_task", artifactRef: "artifact_ref" });
@@ -761,6 +805,7 @@ async function runLiveTest(operation) {
     path: `/api/opl/artifacts/${encodeURIComponent(run.artifactRef)}${launchQuery}`,
     operation,
     stepId: "fetch_artifact",
+    session,
   });
   requireFields(artifact, ["artifactRef"], "production_goal_live_test_fetch_artifact_failed", operation);
   observed.push({ step: "fetch_artifact", artifactRef: "artifact_ref" });
@@ -770,6 +815,7 @@ async function runLiveTest(operation) {
     path: `/api/billing/summary?workspaceId=${encodeURIComponent(workspaceId)}`,
     operation,
     stepId: "billing_summary",
+    session,
   });
   requireFields(billing, ["runCount", "ledgerCount"], "production_goal_live_test_billing_summary_failed", operation);
   observed.push({ step: "billing_summary", runCount: billing.runCount, ledgerCount: billing.ledgerCount });
@@ -786,6 +832,7 @@ async function runLiveTest(operation) {
     },
     operation,
     stepId: "release_runtime",
+    session,
   });
   requireFields(release, ["billingStopped", "auditEventId"], "production_goal_live_test_release_runtime_failed", operation);
   observed.push({ step: "release_runtime", billingStopped: release.billingStopped === true });
@@ -802,6 +849,7 @@ async function runLiveTest(operation) {
     },
     operation,
     stepId: "destroy_storage",
+    session,
   });
   requireFields(storage, ["storageDestroyed", "storageState"], "production_goal_live_test_destroy_storage_failed", operation);
   observed.push({ step: "destroy_storage", storageState: storage.storageState });

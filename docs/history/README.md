@@ -17,7 +17,7 @@ History 只保留短索引：
 ## Latest Machine Cursor
 
 - latest landed branch: `recovery/platform-v22-trunk`
-- latest landed commit: `60954fb73da160747fcf5b2b6d9c69c9d6a54a80`
+- latest landed commit: `8ce6fc603a5fc4ce0c21c2ccbec89d69e72fb5c2`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`

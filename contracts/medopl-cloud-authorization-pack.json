@@ -49,7 +49,8 @@
       "DATABASE_URL",
       "MEDOPL_AUTH_TOKEN_SHA256",
       "MEDOPL_ADMIN_TOKEN_SHA256",
-      "MEDOPL_WEBHOOK_SECRET_SHA256"
+      "MEDOPL_WEBHOOK_SECRET_SHA256",
+      "MEDOPL_SESSION_SIGNING_SECRET_SHA256"
     ],
     "api_allowlist": [
       "tencentcloud:readonly_inventory",
@@ -166,7 +167,8 @@
       "DATABASE_URL",
       "MEDOPL_AUTH_TOKEN_SHA256",
       "MEDOPL_ADMIN_TOKEN_SHA256",
-      "MEDOPL_WEBHOOK_SECRET_SHA256"
+      "MEDOPL_WEBHOOK_SECRET_SHA256",
+      "MEDOPL_SESSION_SIGNING_SECRET_SHA256"
     ],
     "secret_allowlist_mapping": {
       "readonly_inventory": [
@@ -196,7 +198,8 @@
         "TENCENT_DEPLOY_KUBECONFIG_REF",
         "MEDOPL_AUTH_TOKEN_SHA256",
         "MEDOPL_ADMIN_TOKEN_SHA256",
-        "MEDOPL_WEBHOOK_SECRET_SHA256"
+        "MEDOPL_WEBHOOK_SECRET_SHA256",
+        "MEDOPL_SESSION_SIGNING_SECRET_SHA256"
       ],
       "live_test": []
     },

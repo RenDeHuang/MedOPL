@@ -62,6 +62,7 @@ for (const marker of [
   "MEDOPL_AUTH_TOKEN_SHA256",
   "MEDOPL_ADMIN_TOKEN_SHA256",
   "MEDOPL_WEBHOOK_SECRET_SHA256",
+  "MEDOPL_SESSION_SIGNING_SECRET_SHA256",
   "authentication_required",
   "admin_required",
   "webhook_signature_required",
@@ -78,6 +79,9 @@ for (const marker of [
   "requiresAdmin",
   "isWebhookOnlyPath",
   "identityScopeAllowed",
+  "actorFromSessionCookie",
+  "productionSessionCookieName",
+  "productionCSRFCookieName",
   "json.Unmarshal",
 ]) {
   assert(goRouteSurface.includes(marker), `api_contract_security_implementation_missing:${marker}`);

@@ -33,6 +33,7 @@ type Config struct {
 	AuthTokenHash      string
 	AdminTokenHash     string
 	WebhookSecretHash  string
+	SessionSecretHash  string
 }
 
 func Load() (Config, error) {
@@ -50,6 +51,7 @@ func Load() (Config, error) {
 		AuthTokenHash:      strings.TrimSpace(os.Getenv("MEDOPL_AUTH_TOKEN_SHA256")),
 		AdminTokenHash:     strings.TrimSpace(os.Getenv("MEDOPL_ADMIN_TOKEN_SHA256")),
 		WebhookSecretHash:  strings.TrimSpace(os.Getenv("MEDOPL_WEBHOOK_SECRET_SHA256")),
+		SessionSecretHash:  strings.TrimSpace(os.Getenv("MEDOPL_SESSION_SIGNING_SECRET_SHA256")),
 	}
 	rawPort := valueOrDefault(os.Getenv("MEDOPL_BACKEND_PORT"), strconv.Itoa(defaultPort))
 	port, err := strconv.Atoi(rawPort)
@@ -91,6 +93,9 @@ func (cfg Config) Validate() error {
 			return err
 		}
 		if err := validateSHA256Env("MEDOPL_WEBHOOK_SECRET_SHA256", cfg.WebhookSecretHash); err != nil {
+			return err
+		}
+		if err := validateSHA256Env("MEDOPL_SESSION_SIGNING_SECRET_SHA256", cfg.SessionSecretHash); err != nil {
 			return err
 		}
 	}
