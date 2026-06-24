@@ -111,6 +111,7 @@ jobs:
       MEDOPL_ADMIN_TOKEN_SHA256: ${{ secrets.MEDOPL_ADMIN_TOKEN_SHA256 }}
       MEDOPL_WEBHOOK_SECRET_SHA256: ${{ secrets.MEDOPL_WEBHOOK_SECRET_SHA256 }}
       MEDOPL_SESSION_SIGNING_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_SIGNING_SECRET_SHA256 }}
+      MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256 }}
       V22_PRODUCTION_GOAL_HTTP_TIMEOUT_MS: "15000"
       TENCENT_MUTATION_TKE_CLUSTER_ID: ${{ vars.TENCENT_MUTATION_TKE_CLUSTER_ID }}
       TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID: ${{ vars.TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID }}
@@ -245,7 +246,7 @@ jobs:
       - name: Sync in-cluster auth boundary secret from production source
         shell: bash
         run: |
-          for name in MEDOPL_AUTH_TOKEN_SHA256 MEDOPL_ADMIN_TOKEN_SHA256 MEDOPL_WEBHOOK_SECRET_SHA256 MEDOPL_SESSION_SIGNING_SECRET_SHA256; do
+          for name in MEDOPL_AUTH_TOKEN_SHA256 MEDOPL_ADMIN_TOKEN_SHA256 MEDOPL_WEBHOOK_SECRET_SHA256 MEDOPL_SESSION_SIGNING_SECRET_SHA256 MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256; do
             value="${!name}"
             if [ -z "$value" ]; then
               echo "$name required for in-cluster auth boundary secret sync" >&2
@@ -261,6 +262,7 @@ jobs:
             printf 'MEDOPL_ADMIN_TOKEN_SHA256=%s\n' "$MEDOPL_ADMIN_TOKEN_SHA256"
             printf 'MEDOPL_WEBHOOK_SECRET_SHA256=%s\n' "$MEDOPL_WEBHOOK_SECRET_SHA256"
             printf 'MEDOPL_SESSION_SIGNING_SECRET_SHA256=%s\n' "$MEDOPL_SESSION_SIGNING_SECRET_SHA256"
+            printf 'MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256=%s\n' "$MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256"
           } > "$RUNNER_TEMP/medopl-auth-boundary.env"
           chmod 600 "$RUNNER_TEMP/medopl-auth-boundary.env"
           kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl create secret generic medopl-auth-boundary \

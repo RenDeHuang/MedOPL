@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -17,15 +18,16 @@ import (
 )
 
 const (
-	testUserToken      = "user-token"
-	testAdminToken     = "admin-token"
-	testWebhookSecret  = "webhook-secret"
-	testSessionSecret  = "session-secret"
-	testCSRFToken      = "csrf-token"
-	testTenantID       = "tenant-v22"
-	testPortalUserID   = "user-v22"
-	testWorkspaceID    = "workspace-v22"
-	testOtherWorkspace = "workspace-other"
+	testUserToken       = "user-token"
+	testAdminToken      = "admin-token"
+	testWebhookSecret   = "webhook-secret"
+	testSessionSecret   = "session-secret"
+	testBootstrapSecret = "session-bootstrap-secret"
+	testCSRFToken       = "csrf-token"
+	testTenantID        = "tenant-v22"
+	testPortalUserID    = "user-v22"
+	testWorkspaceID     = "workspace-v22"
+	testOtherWorkspace  = "workspace-other"
 )
 
 func productionRouterForSecurityTest(t *testing.T) http.Handler {
@@ -39,16 +41,17 @@ func productionRouterForSecurityTest(t *testing.T) http.Handler {
 		openProductionSQLBackend = previous
 	})
 	router, err := RouterWithError(config.Config{
-		Service:            "medopl-go-backend",
-		Mode:               "production",
-		Port:               8789,
-		ProviderSecretRoot: t.TempDir(),
-		PortalStaticRoot:   writePortalStaticFixture(t),
-		DatabaseURL:        "postgres://medopl:test@postgres.medopl.local:5432/medopl?sslmode=require",
-		AuthTokenHash:      config.TokenHash(testUserToken),
-		AdminTokenHash:     config.TokenHash(testAdminToken),
-		WebhookSecretHash:  config.TokenHash(testWebhookSecret),
-		SessionSecretHash:  config.TokenHash(testSessionSecret),
+		Service:              "medopl-go-backend",
+		Mode:                 "production",
+		Port:                 8789,
+		ProviderSecretRoot:   t.TempDir(),
+		PortalStaticRoot:     writePortalStaticFixture(t),
+		DatabaseURL:          "postgres://medopl:test@postgres.medopl.local:5432/medopl?sslmode=require",
+		AuthTokenHash:        config.TokenHash(testUserToken),
+		AdminTokenHash:       config.TokenHash(testAdminToken),
+		WebhookSecretHash:    config.TokenHash(testWebhookSecret),
+		SessionSecretHash:    config.TokenHash(testSessionSecret),
+		SessionBootstrapHash: config.TokenHash(testBootstrapSecret),
 	})
 	if err != nil {
 		t.Fatalf("RouterWithError() error = %v", err)
@@ -297,17 +300,20 @@ func productionSecurityMiddlewareTestRouter() http.Handler {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 	router.Use(productionSecurityMiddleware(config.Config{
-		Service:           "medopl-go-backend",
-		Mode:              "production",
-		Port:              8789,
-		DatabaseURL:       "postgres://medopl:test@postgres.medopl.local:5432/medopl?sslmode=require",
-		AuthTokenHash:     config.TokenHash(testUserToken),
-		AdminTokenHash:    config.TokenHash(testAdminToken),
-		WebhookSecretHash: config.TokenHash(testWebhookSecret),
-		SessionSecretHash: config.TokenHash(testSessionSecret),
+		Service:              "medopl-go-backend",
+		Mode:                 "production",
+		Port:                 8789,
+		DatabaseURL:          "postgres://medopl:test@postgres.medopl.local:5432/medopl?sslmode=require",
+		AuthTokenHash:        config.TokenHash(testUserToken),
+		AdminTokenHash:       config.TokenHash(testAdminToken),
+		WebhookSecretHash:    config.TokenHash(testWebhookSecret),
+		SessionSecretHash:    config.TokenHash(testSessionSecret),
+		SessionBootstrapHash: config.TokenHash(testBootstrapSecret),
 	}))
 	api := router.Group("/api")
+	api.POST("/session/bootstrap", productionSessionBootstrap(config.Config{SessionSecretHash: config.TokenHash(testSessionSecret), SessionBootstrapHash: config.TokenHash(testBootstrapSecret)}))
 	api.GET("/me", okSecurityActorHandler)
+	api.GET("/logout", productionLogout())
 	api.POST("/v22/users/prepare", okSecurityHandler)
 	api.POST("/v22/managed-environment/open", okSecurityHandler)
 	api.POST("/v22/billing/adjustment", okSecurityHandler)
@@ -406,6 +412,50 @@ func TestProductionPortalSessionCannotEscalateRoleFromCookieClaims(t *testing.T)
 	assertSecurityBody(t, rec, "admin_required")
 }
 
+func TestProductionSessionBootstrapIssuesPortalCookiesAndLogoutClearsThem(t *testing.T) {
+	router := productionSecurityMiddlewareTestRouter()
+	expiresAt := time.Now().Add(5 * time.Minute).UTC().Format(time.RFC3339)
+	nonce := "nonce-session-bootstrap-v22"
+	signature := productionSessionBootstrapSignature(testTenantID, testPortalUserID, testWorkspaceID, nonce, expiresAt, config.TokenHash(testBootstrapSecret))
+	body := fmt.Sprintf(
+		`{"tenantId":%q,"userId":%q,"workspaceId":%q,"nonce":%q,"expiresAt":%q,"signature":%q}`,
+		testTenantID,
+		testPortalUserID,
+		testWorkspaceID,
+		nonce,
+		expiresAt,
+		signature,
+	)
+	rec := serveRawSecurityRequest(router, http.MethodPost, "/api/session/bootstrap", body, nil)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("session bootstrap status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	sessionCookie := responseCookie(t, rec, productionSessionCookieName)
+	csrfCookie := responseCookie(t, rec, productionCSRFCookieName)
+	if !sessionCookie.HttpOnly || !sessionCookie.Secure {
+		t.Fatalf("session cookie must be HttpOnly and Secure: %#v", sessionCookie)
+	}
+	if csrfCookie.HttpOnly || !csrfCookie.Secure || strings.TrimSpace(csrfCookie.Value) == "" {
+		t.Fatalf("csrf cookie must be readable, Secure and non-empty: %#v", csrfCookie)
+	}
+
+	authorized := serveRawSecurityRequest(router, http.MethodGet, "/api/me", "", []*http.Cookie{sessionCookie, csrfCookie})
+	if authorized.Code != http.StatusOK {
+		t.Fatalf("bootstrapped session /api/me status = %d body = %s", authorized.Code, authorized.Body.String())
+	}
+	assertSecurityBody(t, authorized, `"workspaceId":"workspace-v22"`)
+
+	logout := serveRawSecurityRequest(router, http.MethodGet, "/api/logout", "", []*http.Cookie{sessionCookie, csrfCookie})
+	if logout.Code != http.StatusFound {
+		t.Fatalf("logout status = %d body = %s", logout.Code, logout.Body.String())
+	}
+	clearedSession := responseCookie(t, logout, productionSessionCookieName)
+	clearedCSRF := responseCookie(t, logout, productionCSRFCookieName)
+	if clearedSession.MaxAge >= 0 || clearedCSRF.MaxAge >= 0 {
+		t.Fatalf("logout must expire both session cookies: session=%#v csrf=%#v", clearedSession, clearedCSRF)
+	}
+}
+
 func serveSecurityRequest(router http.Handler, method string, path string, body string, bearerToken string, webhookSecret string, csrf string) *httptest.ResponseRecorder {
 	return serveSecurityRequestWithOrigin(router, method, path, body, bearerToken, webhookSecret, csrf, "")
 }
@@ -484,6 +534,19 @@ func serveSessionSecurityRequest(router http.Handler, method string, path string
 	return rec
 }
 
+func serveRawSecurityRequest(router http.Handler, method string, path string, body string, cookies []*http.Cookie) *httptest.ResponseRecorder {
+	req := httptest.NewRequest(method, path, bytes.NewBufferString(body))
+	if body != "" {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	for _, cookie := range cookies {
+		req.AddCookie(cookie)
+	}
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	return rec
+}
+
 func productionSessionCookie(tenantID string, userID string, workspaceID string, role string, csrfToken string) *http.Cookie {
 	claims := productionSessionClaims{
 		TenantID:    tenantID,
@@ -506,6 +569,17 @@ func productionSessionCookie(tenantID string, userID string, workspaceID string,
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
 	}
+}
+
+func responseCookie(t *testing.T, rec *httptest.ResponseRecorder, name string) *http.Cookie {
+	t.Helper()
+	for _, cookie := range rec.Result().Cookies() {
+		if cookie.Name == name {
+			return cookie
+		}
+	}
+	t.Fatalf("response missing cookie %s headers=%v body=%s", name, rec.Result().Header.Values("Set-Cookie"), rec.Body.String())
+	return nil
 }
 
 func assertSecurityBody(t *testing.T, rec *httptest.ResponseRecorder, marker string) {

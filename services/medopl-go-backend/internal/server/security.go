@@ -157,9 +157,12 @@ func isPublicProductionPath(method string, fullPath string, rawPath string) bool
 	path := firstNonEmpty(fullPath, rawPath)
 	if method == http.MethodGet {
 		switch path {
-		case "/health", "/healthz", "/readyz", "/version", "/api/public/settings":
+		case "/health", "/healthz", "/readyz", "/version", "/api/public/settings", "/api/logout":
 			return true
 		}
+	}
+	if method == http.MethodPost && path == "/api/session/bootstrap" {
+		return true
 	}
 	if method == http.MethodGet && !strings.HasPrefix(path, "/api/") {
 		return true
@@ -363,6 +366,15 @@ func csrfAllowed(ctx *gin.Context, actor productionActor) bool {
 }
 
 func writeSecurityError(ctx *gin.Context, status int, code string) {
+	if status == http.StatusUnauthorized && code == "authentication_required" {
+		ctx.AbortWithStatusJSON(status, gin.H{
+			"ok":       false,
+			"error":    "unauthenticated",
+			"code":     code,
+			"loginUrl": "/",
+		})
+		return
+	}
 	ctx.AbortWithStatusJSON(status, gin.H{"ok": false, "error": code})
 }
 

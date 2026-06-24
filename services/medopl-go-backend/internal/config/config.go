@@ -20,38 +20,40 @@ const (
 )
 
 type Config struct {
-	Service            string
-	Mode               string
-	Port               int
-	DatabaseURL        string
-	ProviderSecretRoot string
-	PortalStaticRoot   string
-	PortalStateRoot    string
-	PortalStateStatus  string
-	OPLGatewayURL      string
-	RuntimeBridgeURL   string
-	AuthTokenHash      string
-	AdminTokenHash     string
-	WebhookSecretHash  string
-	SessionSecretHash  string
+	Service              string
+	Mode                 string
+	Port                 int
+	DatabaseURL          string
+	ProviderSecretRoot   string
+	PortalStaticRoot     string
+	PortalStateRoot      string
+	PortalStateStatus    string
+	OPLGatewayURL        string
+	RuntimeBridgeURL     string
+	AuthTokenHash        string
+	AdminTokenHash       string
+	WebhookSecretHash    string
+	SessionSecretHash    string
+	SessionBootstrapHash string
 }
 
 func Load() (Config, error) {
 	mode := valueOrDefault(os.Getenv("MEDOPL_BACKEND_MODE"), valueOrDefault(os.Getenv("MEDOPL_ENV"), defaultMode))
 	cfg := Config{
-		Service:            serviceName,
-		Mode:               mode,
-		Port:               defaultPort,
-		DatabaseURL:        strings.TrimSpace(os.Getenv("DATABASE_URL")),
-		ProviderSecretRoot: valueOrDefault(os.Getenv("PORTAL_OPL_PROVIDER_SECRET_ROOT"), defaultProviderSecretRoot(mode)),
-		PortalStaticRoot:   strings.TrimSpace(os.Getenv("MEDOPL_PORTAL_STATIC_ROOT")),
-		PortalStateRoot:    valueOrDefault(os.Getenv("MEDOPL_PORTAL_STATE_ROOT"), filepath.Join(".runtime", "local-services", "portal-state")),
-		OPLGatewayURL:      strings.TrimRight(valueOrDefault(os.Getenv("OPL_WEB_GATEWAY_PUBLIC_URL"), "http://127.0.0.1:18789"), "/"),
-		RuntimeBridgeURL:   strings.TrimRight(valueOrDefault(os.Getenv("PORTAL_RUNTIME_BRIDGE_PUBLIC_URL"), "http://127.0.0.1:8788"), "/"),
-		AuthTokenHash:      strings.TrimSpace(os.Getenv("MEDOPL_AUTH_TOKEN_SHA256")),
-		AdminTokenHash:     strings.TrimSpace(os.Getenv("MEDOPL_ADMIN_TOKEN_SHA256")),
-		WebhookSecretHash:  strings.TrimSpace(os.Getenv("MEDOPL_WEBHOOK_SECRET_SHA256")),
-		SessionSecretHash:  strings.TrimSpace(os.Getenv("MEDOPL_SESSION_SIGNING_SECRET_SHA256")),
+		Service:              serviceName,
+		Mode:                 mode,
+		Port:                 defaultPort,
+		DatabaseURL:          strings.TrimSpace(os.Getenv("DATABASE_URL")),
+		ProviderSecretRoot:   valueOrDefault(os.Getenv("PORTAL_OPL_PROVIDER_SECRET_ROOT"), defaultProviderSecretRoot(mode)),
+		PortalStaticRoot:     strings.TrimSpace(os.Getenv("MEDOPL_PORTAL_STATIC_ROOT")),
+		PortalStateRoot:      valueOrDefault(os.Getenv("MEDOPL_PORTAL_STATE_ROOT"), filepath.Join(".runtime", "local-services", "portal-state")),
+		OPLGatewayURL:        strings.TrimRight(valueOrDefault(os.Getenv("OPL_WEB_GATEWAY_PUBLIC_URL"), "http://127.0.0.1:18789"), "/"),
+		RuntimeBridgeURL:     strings.TrimRight(valueOrDefault(os.Getenv("PORTAL_RUNTIME_BRIDGE_PUBLIC_URL"), "http://127.0.0.1:8788"), "/"),
+		AuthTokenHash:        strings.TrimSpace(os.Getenv("MEDOPL_AUTH_TOKEN_SHA256")),
+		AdminTokenHash:       strings.TrimSpace(os.Getenv("MEDOPL_ADMIN_TOKEN_SHA256")),
+		WebhookSecretHash:    strings.TrimSpace(os.Getenv("MEDOPL_WEBHOOK_SECRET_SHA256")),
+		SessionSecretHash:    strings.TrimSpace(os.Getenv("MEDOPL_SESSION_SIGNING_SECRET_SHA256")),
+		SessionBootstrapHash: strings.TrimSpace(os.Getenv("MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256")),
 	}
 	rawPort := valueOrDefault(os.Getenv("MEDOPL_BACKEND_PORT"), strconv.Itoa(defaultPort))
 	port, err := strconv.Atoi(rawPort)
@@ -96,6 +98,9 @@ func (cfg Config) Validate() error {
 			return err
 		}
 		if err := validateSHA256Env("MEDOPL_SESSION_SIGNING_SECRET_SHA256", cfg.SessionSecretHash); err != nil {
+			return err
+		}
+		if err := validateSHA256Env("MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256", cfg.SessionBootstrapHash); err != nil {
 			return err
 		}
 	}

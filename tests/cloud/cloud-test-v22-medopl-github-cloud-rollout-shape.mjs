@@ -179,6 +179,7 @@ for (const expected of [
   "MEDOPL_ADMIN_TOKEN_SHA256",
   "MEDOPL_WEBHOOK_SECRET_SHA256",
   "MEDOPL_SESSION_SIGNING_SECRET_SHA256",
+  "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256",
 ]) {
   assert(envNames.has(expected), `container_env_missing:${expected}`);
 }
@@ -201,7 +202,7 @@ assert.deepEqual(
   { name: "medopl-postgres", key: "DATABASE_URL" },
   "database_url_must_use_secret_ref",
 );
-for (const name of ["MEDOPL_AUTH_TOKEN_SHA256", "MEDOPL_ADMIN_TOKEN_SHA256", "MEDOPL_WEBHOOK_SECRET_SHA256", "MEDOPL_SESSION_SIGNING_SECRET_SHA256"]) {
+for (const name of ["MEDOPL_AUTH_TOKEN_SHA256", "MEDOPL_ADMIN_TOKEN_SHA256", "MEDOPL_WEBHOOK_SECRET_SHA256", "MEDOPL_SESSION_SIGNING_SECRET_SHA256", "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256"]) {
   const item = (container.env || []).find((entry) => entry.name === name);
   assert.deepEqual(
     item?.valueFrom?.secretKeyRef,
@@ -387,6 +388,7 @@ for (const expected of [
   "MEDOPL_ADMIN_TOKEN_SHA256: ${{ secrets.MEDOPL_ADMIN_TOKEN_SHA256 }}",
   "MEDOPL_WEBHOOK_SECRET_SHA256: ${{ secrets.MEDOPL_WEBHOOK_SECRET_SHA256 }}",
   "MEDOPL_SESSION_SIGNING_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_SIGNING_SECRET_SHA256 }}",
+  "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256 }}",
   "TENCENT_MUTATION_TKE_CLUSTER_ID: ${{ vars.TENCENT_MUTATION_TKE_CLUSTER_ID }}",
   "TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID: ${{ vars.TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID }}",
   "TENCENT_MUTATION_COS_BUCKET: ${{ vars.TENCENT_MUTATION_COS_BUCKET }}",
@@ -416,6 +418,7 @@ for (const expected of [
   "V22_OPL_WEBUI_CONSUMER_CANARY_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs",
   "V22_OPL_WEBUI_CONSUMER_CANARY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation live_test --execute --confirm-current-session-authorization",
   "MEDOPL_SESSION_SIGNING_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_SIGNING_SECRET_SHA256 }}",
+  "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256 }}",
   "V22_PRODUCTION_GOAL_HTTP_TIMEOUT_MS: \"15000\"",
   "V22_MEDOPL_DEPLOY_PLAN_FILE: .runtime/v22-cloud-authorization/run-v22-001/medopl-deploy-plan.json",
   "Create Goal F receipt inputs",
@@ -551,6 +554,7 @@ assert(
     productionApplyJob.includes("MEDOPL_ADMIN_TOKEN_SHA256=%s") &&
     productionApplyJob.includes("MEDOPL_WEBHOOK_SECRET_SHA256=%s") &&
     productionApplyJob.includes("MEDOPL_SESSION_SIGNING_SECRET_SHA256=%s") &&
+    productionApplyJob.includes("MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256=%s") &&
     !productionApplyJob.includes("echo \"$MEDOPL_AUTH_TOKEN_SHA256\""),
   "production_apply_must_sync_auth_boundary_hashes_without_printing_secret",
 );

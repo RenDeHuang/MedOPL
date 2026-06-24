@@ -142,6 +142,15 @@
                         "key": "MEDOPL_SESSION_SIGNING_SECRET_SHA256"
                       }
                     }
+                  },
+                  {
+                    "name": "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "medopl-auth-boundary",
+                        "key": "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256"
+                      }
+                    }
                   }
                 ],
                 "securityContext": {

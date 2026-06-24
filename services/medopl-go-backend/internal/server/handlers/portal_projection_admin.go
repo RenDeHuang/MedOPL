@@ -110,9 +110,3 @@ func BillingExportCSV() gin.HandlerFunc {
 		ctx.String(http.StatusOK, portalProjectionState.billingCSV())
 	}
 }
-
-func Logout() gin.HandlerFunc {
-	return func(ctx *gin.Context) {
-		ctx.Redirect(http.StatusFound, "/")
-	}
-}

@@ -42,6 +42,7 @@ func TestLoadUsesWritableProductionProviderSecretDefault(t *testing.T) {
 	t.Setenv("MEDOPL_ADMIN_TOKEN_SHA256", TokenHash("admin-token"))
 	t.Setenv("MEDOPL_WEBHOOK_SECRET_SHA256", TokenHash("webhook-secret"))
 	t.Setenv("MEDOPL_SESSION_SIGNING_SECRET_SHA256", TokenHash("session-secret"))
+	t.Setenv("MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256", TokenHash("session-bootstrap-secret"))
 
 	cfg, err := Load()
 	if err != nil {
@@ -63,6 +64,7 @@ func TestLoadAcceptsProductionModeFromDeployEnvironment(t *testing.T) {
 	t.Setenv("MEDOPL_ADMIN_TOKEN_SHA256", TokenHash("admin-token"))
 	t.Setenv("MEDOPL_WEBHOOK_SECRET_SHA256", TokenHash("webhook-secret"))
 	t.Setenv("MEDOPL_SESSION_SIGNING_SECRET_SHA256", TokenHash("session-secret"))
+	t.Setenv("MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256", TokenHash("session-bootstrap-secret"))
 
 	cfg, err := Load()
 	if err != nil {
@@ -101,6 +103,7 @@ func TestProductionModeRejectsMalformedAuthBoundaryHash(t *testing.T) {
 	t.Setenv("MEDOPL_ADMIN_TOKEN_SHA256", TokenHash("admin-token"))
 	t.Setenv("MEDOPL_WEBHOOK_SECRET_SHA256", TokenHash("webhook-secret"))
 	t.Setenv("MEDOPL_SESSION_SIGNING_SECRET_SHA256", TokenHash("session-secret"))
+	t.Setenv("MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256", TokenHash("session-bootstrap-secret"))
 
 	if _, err := Load(); err == nil {
 		t.Fatal("expected malformed production auth hash to fail closed")
