@@ -34,17 +34,20 @@
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
     "branch": "recovery/platform-v22-trunk",
-    "landed_commit": "c1a987a88355521202403eae2b6933d57d7c73d7",
+    "landed_commit": "b83d555de3c3ad77e95f5c80421ba56cacb638b2",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
+      "npm run test:run-plan -- --dry-run --json PASS",
+      "npm run test:run-plan PASS",
       "npm run verify PASS",
       "npm run gate:review PASS",
       "npm run repo:hygiene PASS",
       "npm run repo:bloat PASS",
       "npm run line:budget PASS",
-      "npm run test:run-plan PASS",
-      "node tests/cloud/cloud-test-v22-production-goal-command-runner.mjs PASS",
-      "verify:cloud-release-candidate fail-closed only on missing runtime receipt manifest"
+      "Release Image run 28116660385 PASS",
+      "Cloud Rollout run 28116700519 PASS",
+      "npm run verify:cloud-release-candidate PASS",
+      "npm run verify:production-complete-candidate PASS"
     ],
     "plan_completion_audit": {
       "functional": "done",
@@ -52,29 +55,27 @@
       "docs_foldback": "done",
       "verification": "done",
       "retired_entrypoints": "done",
-      "cannot_claim": "done"
+      "cannot_claim": "partial"
     },
     "cleanup_result": {
-      "deleted": "feat-v22-cloud-rc-session-secret-gate-worktree-local-remote-branch-pending-post-push-cleanup",
-      "folded": "cloud-canary-session-bootstrap-gate-closeout",
-      "retained": "no-raw-evidence",
-      "reason": "post-push-truth-sync",
-      "next": "production-receipt-manifest-rollout"
+      "deleted": "feature worktree and feature branch after closeout",
+      "folded": "live canary auth boundary into existing cloud authorization pack, workflow, runner tests and current/history owners",
+      "retained": ".runtime redacted manifest only outside git plus local auth-boundary secret file",
+      "reason": "runtime evidence and raw secret material must not enter git",
+      "next": "continue from current authorized canary path without claiming multi-region SLA or enterprise compliance"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "opl-webui-runtime-production-slice"
   },
   "current_cursor": "opl-webui-runtime-production-slice",
   "next_leaf": "opl-webui-runtime-production-slice",
-  "current_stage": "S7 OPL-Webui runtime production slice before production authorization",
+  "current_stage": "S7 OPL-Webui runtime production slice scoped production-complete candidate verified",
   "current_risk_class": "sensitive_boundary",
   "current_blockers": [
-    "production_complete_candidate_now_requires_operational_stability_receipts_and_final_release_decision_pointer",
-    "remote_cloud_rollout_must_be_rerun_after_landing_to_replace_old_eight_criteria_manifest",
-    "github_production_var_MEDOPL_ALERT_ROUTE_REF_required_for_alerting_receipt",
-    "multi_region_sla_enterprise_compliance_ongoing_authorization_and_unobserved_tenants_resources_remain_unclaimed"
+    "multi_region_sla_enterprise_compliance_ongoing_authorization_and_unobserved_tenants_resources_remain_unclaimed",
+    "unscoped_production_complete_requires_dedicated_scope_expansion_evidence"
   ],
-  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is recovery/platform-v22-trunk at c1a987a88355521202403eae2b6933d57d7c73d7. Current trunk keeps Portal UI/UX production gates hardened, requires the production-complete owner gate for production-ready claims, and closes the release auditEventId canary blocker. GitHub v22 verify run 27974444437 passed for Portal production UI gate hardening; GitHub v22 verify run 28057359860 passed on 70db4e5; Release Image run 28057445074 built image tag 70db4e5; Cloud Rollout run 28057493445 deployed image tag 70db4e5 and passed production DB auth/secret sync, runtime/storage/billing-audit owner receipt lanes, kubectl rollout, deploy receipt, Portal public entry, HTTP redirect, Go health/ready availability, OPL-Webui consumer canary, production receipt manifest, verify:cloud-release-candidate and verify:production-complete-candidate. The redacted manifest contains seven owner receipts, 12 lifecycle sections, the previous eight production-complete criteria including business_db_persistence_receipt, claim=production_complete, state=complete, sha256 6c095a4ceddef604c53986b2cf0fcc0e2fb551b0a81ee1d86b06328463affd23, and live DB proof hash sha256:e61986f084e8867d9a87d4037a531cbd89263cd67600109890139aabe13ef9d8. This can claim historical cloud release candidate and production-complete candidate evidence for the current authorized canary path only, including Portal public entry, HTTP redirect availability, owner receipts and live PostgreSQL business metadata persistence proof. Phase F authoring branch gates final production-complete candidate on 14 criteria, adding soak_test_receipt, concurrency_pressure_receipt, rollback_drill_receipt, continuous_canary_monitoring_receipt, alerting_receipt and final_release_decision_receipt as runtime pointer evidence. The latest remote manifest from Cloud Rollout run 28057493445 is old eight-criteria evidence and must be regenerated after landing. MedOPL still does not claim unscoped production complete, multi-region/SLA, enterprise compliance, ongoing authorization or unobserved tenants/resources. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is recovery/platform-v22-trunk at c1a987a88355521202403eae2b6933d57d7c73d7.",
+  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is recovery/platform-v22-trunk at b83d555de3c3ad77e95f5c80421ba56cacb638b2. Phase A PostgreSQL Business Persistence RC, Phase E billing idempotency hardening and Phase F operational stability gates are source-landed. Release Image run 28116660385 and Cloud Rollout run 28116700519 passed on current trunk. The rollout produced a redacted production receipt manifest with seven owner receipts, 12 lifecycle sections and 14 production-complete candidate criteria. Manifest sha256 is sha256:3c718484f40b0bcfadf55bbafe6f97b02b22072ad801004a560bfe1f69059a0f. The live DB proof hash for business_db_persistence_receipt is sha256:77555180d9db24120515881082c54539a5d4f334ca8a188c460def5f022fe29f. This can claim cloud release candidate and scoped production-complete candidate evidence for the current authorized canary path only, including Portal public entry, HTTP redirect, Go health/ready, OPL-Webui consumer canary, PostgreSQL business metadata persistence, billing idempotency, soak, concurrency pressure, rollback drill, continuous canary, alerting and final release decision receipts. MedOPL still does not claim unscoped production complete, multi-region/SLA, enterprise compliance, ongoing authorization or unobserved tenants/resources. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -341,8 +342,8 @@
       "Then run canary / QA / status update with redacted evidence outside git"
     ],
     "readinessGaps": [
-      "Cloud release candidate and production-complete candidate evidence exists for the current authorized OPL-Webui runtime-required canary path via Cloud Rollout run 28057493445 and redacted receipt manifest sha256:6c095a4ceddef604c53986b2cf0fcc0e2fb551b0a81ee1d86b06328463affd23; the current availability probe includes Portal public entry, HTTP-to-HTTPS redirect, Go health and Go readiness, and the production-complete criteria include business_db_persistence_receipt backed by live_test evidence hash sha256:e61986f084e8867d9a87d4037a531cbd89263cd67600109890139aabe13ef9d8.",
-      "Production complete remains unclaimed until a separate production-complete gate defines and proves ongoing operations, multi-region/SLA, enterprise compliance and post-release monitoring criteria.",
+      "Cloud release candidate and scoped production-complete candidate evidence exists for the current authorized OPL-Webui runtime-required canary path via Release Image run 28116660385, Cloud Rollout run 28116700519 and redacted receipt manifest sha256:3c718484f40b0bcfadf55bbafe6f97b02b22072ad801004a560bfe1f69059a0f; the current availability probe includes Portal public entry, HTTP-to-HTTPS redirect, Go health and Go readiness, and the 14 production-complete candidate criteria include business_db_persistence_receipt backed by live_test evidence hash sha256:77555180d9db24120515881082c54539a5d4f334ca8a188c460def5f022fe29f.",
+      "Unscoped production complete remains unclaimed until dedicated scope-expansion evidence proves multi-region/SLA, enterprise compliance, ongoing authorization and broader tenant/resource readiness.",
       "Raw evidence, credentials, uploaded files, runtime artifacts and provider/cloud payloads remain outside git."
     ],
     "external_preconditions": {
@@ -526,12 +527,11 @@
       ]
     },
     "goal_f_cloud_release_candidate": {
-      "status": "production_complete_candidate_verified_current_trunk",
+      "status": "production_complete_candidate_verified_current_trunk_14_criteria",
       "feature_commit": "90a89b75b2a4613719ce9c424367fb35ed51495c",
-      "trunk_commit_with_ci_fixes": "70db4e55e945b4497f3cd9ceeb1c0c1c2210e1cc",
-      "release_image_run_id": "28057445074",
-      "cloud_rollout_run_id": "28057493445",
-      "v22_verify_run_id": "28057359860",
+      "trunk_commit_with_ci_fixes": "b83d555de3c3ad77e95f5c80421ba56cacb638b2",
+      "release_image_run_id": "28116660385",
+      "cloud_rollout_run_id": "28116700519",
       "receipt_manifest_artifact": "medopl-production-receipt-manifest",
       "receipt_manifest_ref": ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json",
       "required_receipts": [
@@ -544,36 +544,35 @@
         "production_deploy_receipt"
       ],
       "required_lifecycle_sections_count": 12,
-      "local_gate_behavior": "passes with redacted manifest artifact copied to .runtime pointer path after Cloud Rollout run 28057493445",
-      "can_claim": "cloud release candidate and production-complete candidate evidence for the current authorized canary path when the redacted manifest artifact is present and verify gates pass, including Portal public entry, HTTP redirect availability and live DB persistence proof",
+      "local_gate_behavior": "passes with redacted manifest artifact copied to .runtime pointer path after Cloud Rollout run 28116700519",
+      "can_claim": "cloud release candidate and scoped production-complete candidate evidence for the current authorized canary path when the redacted manifest artifact is present and verify gates pass, including Portal public entry, HTTP redirect availability, live DB persistence proof and operational stability receipts",
       "cannot_claim": [
-        "production complete",
+        "unscoped production complete",
         "multi-region production",
         "SLA proven",
         "enterprise compliance",
         "ongoing authorization for future mutations",
         "unobserved tenants or resources",
-        "long-running stability proven"
+        "all-tenant long-running stability proven"
       ],
-      "receipt_manifest_schema": "seven_owner_receipts_plus_required_lifecycle_sections_plus_eight_production_complete_criteria",
-      "receipt_manifest_hash": "sha256:6c095a4ceddef604c53986b2cf0fcc0e2fb551b0a81ee1d86b06328463affd23",
+      "receipt_manifest_schema": "seven_owner_receipts_plus_required_lifecycle_sections_plus_fourteen_production_complete_criteria",
+      "receipt_manifest_hash": "sha256:3c718484f40b0bcfadf55bbafe6f97b02b22072ad801004a560bfe1f69059a0f",
       "business_db_persistence_receipt": {
         "status": "accepted",
         "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/live_test.json",
-        "evidence_hash": "sha256:e61986f084e8867d9a87d4037a531cbd89263cd67600109890139aabe13ef9d8",
+        "evidence_hash": "sha256:77555180d9db24120515881082c54539a5d4f334ca8a188c460def5f022fe29f",
         "summary": "live_test redacted proof reports PostgreSQL business metadata persistence across nine record kinds and object ref hash keys artifactRef/fileRef/resourceBindingId/runRef; raw workspace IDs, DATABASE_URL and row payloads stay outside manifest."
       }
     },
     "latest_trunk_cloud_runs": {
-      "trunk_commit": "70db4e55e945b4497f3cd9ceeb1c0c1c2210e1cc",
-      "release_image_run_id": "28057445074",
-      "release_image_tag": "70db4e5",
-      "cloud_rollout_run_id": "28057493445",
-      "post_push_verify_run_id": "28057359860",
-      "cloud_rollout_workflow_conclusion": "success_production_complete_candidate_verified",
+      "trunk_commit": "b83d555de3c3ad77e95f5c80421ba56cacb638b2",
+      "release_image_run_id": "28116660385",
+      "release_image_tag": "b83d555",
+      "cloud_rollout_run_id": "28116700519",
+      "cloud_rollout_workflow_conclusion": "success_production_complete_candidate_verified_14_criteria",
       "public_api_blocker": "none_for_current_authorized_canary_path",
-      "fixed_by_this_slice": "Phase E billing idempotency hardening is deployed: production DB auth and in-cluster secret sync passed, runtime/storage/billing-audit/kubectl/deploy/live canary receipt lanes passed, and business_db_persistence_receipt plus billing/audit owner receipts are accepted in the redacted production receipt manifest.",
-      "public_api_availability": "portal_entry_http_redirect_go_health_ready_live_db_persistence_and_billing_idempotency_available_during_rollout",
+      "fixed_by_this_slice": "Phase E billing idempotency and Phase F operational stability are deployed: production DB auth and in-cluster secret sync passed, runtime/storage/billing-audit/kubectl/deploy/live canary receipt lanes passed, and the redacted manifest accepted business DB persistence plus soak, concurrency pressure, rollback drill, continuous canary, alerting and final release decision criteria.",
+      "public_api_availability": "portal_entry_http_redirect_go_health_ready_live_db_persistence_billing_idempotency_and_operational_stability_available_during_rollout",
       "raw_evidence_committed": false
     }
   },
@@ -885,11 +884,11 @@
   "nextAuthorizationPrompt": {
     "target": "cloud-codex",
     "runIdHint": "production-complete-owner-receipt-gate-next",
-    "prompt": "当前 cloud release candidate 和 production-complete candidate evidence 已由 Cloud Rollout run 28057493445、redacted receipt manifest 和 business_db_persistence_receipt 证明。若要推进最终 production complete release decision，必须继续使用 active authorization pack，并补持续运维/多区域/SLA/合规或明确非目标证据；不得把单次 canary 自动扩大成所有租户/资源长期稳定。"
+    "prompt": "当前 cloud release candidate 和 scoped production-complete candidate evidence 已由 Release Image run 28116660385、Cloud Rollout run 28116700519、14-criteria redacted receipt manifest 和 business_db_persistence_receipt 证明。若要推进 unscoped production complete，必须继续使用 active authorization pack，并补多区域/SLA/企业合规/长期所有租户观测或明确非目标证据；不得把单次授权 canary 自动扩大成所有租户/资源长期稳定。"
   },
   "nextLocalCodexPrompt": {
     "target": "local-codex",
-    "prompt": "下一步是 production-complete owner receipt gate 的窄 lane：只在现有 contracts/tests/docs owners 中定义生产完成需要的持续运维、SLA/多区域/合规或明确排除项，并由 consumer tests 消费。不要新增 phase 包，不提交 .runtime 原始证据。"
+    "prompt": "下一步不是再补 14-criteria canary gate；它已由 Cloud Rollout run 28116700519 证明。若要扩大生产声明，只能在现有 contracts/tests/docs owners 中定义多区域、SLA、企业合规、长期租户观测或明确排除项，并由 consumer tests 消费。不要新增 phase 包，不提交 .runtime 原始证据。"
   },
   "cloud_deploy_readiness_contract_ref": {
     "schema_version": 1,
@@ -914,8 +913,8 @@
       "production_deploy_receipt"
     ],
     "receipt_manifest_policy": "small_pointer_and_summary_only",
-    "can_claim": "local gates now require 14 production-complete criteria for production-complete candidate shape; old eight-criteria remote manifests fail closed until Cloud Rollout is rerun and writes the new redacted runtime pointers",
-    "cannot_claim": "final production complete release decision without fresh operational stability pointers, multi-region production, SLA proven, enterprise compliance, ongoing authorization, or unobserved tenant/resource readiness",
+    "can_claim": "current authorized canary path has a 14-criteria redacted production-complete candidate manifest accepted by verify gates after Cloud Rollout run 28116700519",
+    "cannot_claim": "unscoped production complete, multi-region production, SLA proven, enterprise compliance, ongoing authorization, or unobserved tenant/resource readiness without dedicated scope-expansion evidence",
     "receipt_operation_binding_required": true,
     "receipt_authorization_ref_required": true,
     "receipt_runner_id_required": true,
@@ -953,10 +952,9 @@
       "consumer_canary"
     ],
     "receipt_manifest_ref": ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json",
-    "receipt_manifest_hash": "sha256:6c095a4ceddef604c53986b2cf0fcc0e2fb551b0a81ee1d86b06328463affd23",
-    "release_image_run_id": "28057445074",
-    "cloud_rollout_run_id": "28057493445",
-    "v22_verify_run_id": "28057359860",
+    "receipt_manifest_hash": "sha256:3c718484f40b0bcfadf55bbafe6f97b02b22072ad801004a560bfe1f69059a0f",
+    "release_image_run_id": "28116660385",
+    "cloud_rollout_run_id": "28116700519",
     "release_owner_readiness_binding": {
       "criterion": "release_owner_readiness_receipt",
       "required_gate": "release_owner_receipt",
@@ -1032,8 +1030,8 @@
       "evidence_ref_policy": "runtime_pointer_summary_only",
       "evidence_hash_policy": "sha256_pointer_hash_required",
       "raw_database_payload_policy": "forbidden",
-      "accepted_evidence_hash": "sha256:e61986f084e8867d9a87d4037a531cbd89263cd67600109890139aabe13ef9d8",
-      "can_claim": "current authorized canary path persisted PostgreSQL business metadata proof into the production-complete candidate manifest",
+      "accepted_evidence_hash": "sha256:77555180d9db24120515881082c54539a5d4f334ca8a188c460def5f022fe29f",
+      "can_claim": "current authorized canary path persisted PostgreSQL business metadata proof into the 14-criteria production-complete candidate manifest",
       "cannot_claim": "long-running persistence, all tenants/resources, normalized typed tables for every projection, or production complete final release decision"
     },
     "operational_stability_receipt_binding": {
@@ -1061,12 +1059,12 @@
       "receipt_source_policy": "cloud_rollout_summary_only",
       "raw_log_policy": "forbidden",
       "runner_cross_check": "scripts/v22-production-receipt-boundary.mjs#validateProductionReceiptBoundary and scripts/v22-cloud-authorized-executor.mjs#manifest-only",
-      "can_claim": "operational stability and final release decision receipt contracts, pointer-writing rollout helper and manifest-only fail-closed behavior are consumer-tested locally",
-      "cannot_claim": "fresh remote soak, concurrency, rollback drill, continuous monitoring, alerting receipt or final release decision completed until Cloud Rollout is rerun after landing"
+      "can_claim": "current authorized canary path produced accepted soak, concurrency pressure, rollback drill, continuous canary monitoring, alerting and final release decision receipts in the redacted production-complete candidate manifest",
+      "cannot_claim": "multi-region production, SLA proven, enterprise compliance, ongoing authorization, or unobserved tenant/resource readiness"
     }
   },
-  "base_trunk_head": "c1a987a88355521202403eae2b6933d57d7c73d7",
-  "last_landed_commit": "c1a987a88355521202403eae2b6933d57d7c73d7",
+  "base_trunk_head": "b83d555de3c3ad77e95f5c80421ba56cacb638b2",
+  "last_landed_commit": "b83d555de3c3ad77e95f5c80421ba56cacb638b2",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
@@ -1089,10 +1087,10 @@
   },
   "live_test_progress": {
     "schema_version": 1,
-    "status": "phase_f_operational_stability_gate_landed_locally_remote_rerun_required",
-    "release_image_run_id": "28057445074",
-    "cloud_rollout_run_id": "28057493445",
-    "deployed_image_tag": "70db4e5",
+    "status": "phase_f_operational_stability_gate_remote_rollout_verified_14_criteria",
+    "release_image_run_id": "28116660385",
+    "cloud_rollout_run_id": "28116700519",
+    "deployed_image_tag": "b83d555",
     "passed_steps_before_blocker": [
       "release_image",
       "runtime_receipt_preflight",
@@ -1111,16 +1109,21 @@
       "portal_public_entry_probe",
       "http_to_https_redirect_probe",
       "medopl_availability_probe",
+      "soak_receipt",
+      "concurrency_pressure_receipt",
+      "rollback_drill_receipt",
+      "continuous_canary_receipt",
+      "alerting_receipt",
+      "final_release_decision_receipt",
       "production_receipt_manifest",
       "cloud_release_candidate_verify",
       "production_complete_candidate_verify",
       "upload_redacted_receipt_manifest"
     ],
-    "blocker": "fresh_cloud_rollout_receipt_manifest_with_14_production_complete_criteria_required",
     "previous_live_test_blocker": "production_goal_live_test_release_runtime_failed",
-    "local_fix_status": "Phase F local gates require soak/concurrency/rollback drill/continuous canary/alerting/final release decision runtime pointers before production-complete candidate can pass.",
+    "local_fix_status": "Phase F local gates and remote Cloud Rollout both require and accepted 14 production-complete candidate criteria for the current authorized canary path.",
     "receipt_manifest_ref": ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json",
-    "receipt_manifest_hash": "sha256:6c095a4ceddef604c53986b2cf0fcc0e2fb551b0a81ee1d86b06328463affd23",
+    "receipt_manifest_hash": "sha256:3c718484f40b0bcfadf55bbafe6f97b02b22072ad801004a560bfe1f69059a0f",
     "consumer_tests": [
       "node tests/release/release-test-v22-production-receipt-boundary.mjs",
       "node tests/cloud/cloud-test-v22-cloud-authorized-executor.mjs",
@@ -1141,10 +1144,9 @@
       "keeps_go_json_contract": true
     },
     "raw_evidence_committed": false,
-    "can_claim": "local contract/runner/workflow gates enforce operational stability and final release decision receipts for the current authorized canary path before manifest-only production-complete candidate passes.",
+    "can_claim": "current authorized canary path passed remote Cloud Rollout with 14 production-complete candidate criteria and local manifest-only verify gates.",
     "cannot_claim": [
-      "fresh remote Cloud Rollout completed under Phase F criteria",
-      "final production complete release decision accepted remotely",
+      "unscoped production complete",
       "multi-region production",
       "SLA proven",
       "enterprise compliance",
@@ -1153,9 +1155,25 @@
     ],
     "business_db_persistence_receipt": {
       "status": "accepted",
-      "evidence_hash": "sha256:e61986f084e8867d9a87d4037a531cbd89263cd67600109890139aabe13ef9d8",
+      "evidence_hash": "sha256:77555180d9db24120515881082c54539a5d4f334ca8a188c460def5f022fe29f",
       "record_kind_count": 9,
       "raw_evidence_committed": false
-    }
+    },
+    "production_complete_criteria": [
+      "release_owner_readiness_receipt",
+      "business_db_persistence_receipt",
+      "production_dependency_security_receipt",
+      "browser_accessibility_verification_receipt",
+      "s_level_ui_polish_receipt",
+      "observability_deploy_receipt",
+      "soak_test_receipt",
+      "concurrency_pressure_receipt",
+      "rollback_drill_receipt",
+      "continuous_canary_monitoring_receipt",
+      "alerting_receipt",
+      "rollback_readiness_receipt",
+      "post_release_monitoring_receipt",
+      "final_release_decision_receipt"
+    ]
   }
 }
