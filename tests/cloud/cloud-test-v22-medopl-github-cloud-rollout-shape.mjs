@@ -401,6 +401,13 @@ for (const expected of [
   "npm run cloud:goal -- --operation kubectl",
   "npm run cloud:goal -- --operation deploy",
   "npm run cloud:goal -- --operation live_test",
+  "node scripts/cloud-rollout/medopl.mjs --availability-probe --soak",
+  "node scripts/cloud-rollout/medopl.mjs --availability-probe --concurrency",
+  "node scripts/cloud-rollout/medopl.mjs --rollback --drill",
+  "node scripts/cloud-rollout/medopl.mjs --availability-probe --canary-window",
+  "node scripts/cloud-rollout/medopl.mjs --availability-probe --alert-check",
+  "MEDOPL_ALERT_ROUTE_REF: ${{ vars.MEDOPL_ALERT_ROUTE_REF }}",
+  "node scripts/cloud-rollout/medopl.mjs --release-decision",
   "npm run cloud:goal -- --manifest-only",
   "npm run verify:cloud-release-candidate",
   "npm run verify:production-complete-candidate",
@@ -598,6 +605,16 @@ assert(
   "production_apply_must_generate_manifest_after_live_test_receipt",
 );
 assert(
+  productionApplyJob.indexOf("npm run cloud:goal -- --operation live_test") < productionApplyJob.indexOf("node scripts/cloud-rollout/medopl.mjs --availability-probe --soak") &&
+    productionApplyJob.indexOf("node scripts/cloud-rollout/medopl.mjs --availability-probe --soak") < productionApplyJob.indexOf("node scripts/cloud-rollout/medopl.mjs --availability-probe --concurrency") &&
+    productionApplyJob.indexOf("node scripts/cloud-rollout/medopl.mjs --availability-probe --concurrency") < productionApplyJob.indexOf("node scripts/cloud-rollout/medopl.mjs --rollback --drill") &&
+    productionApplyJob.indexOf("node scripts/cloud-rollout/medopl.mjs --rollback --drill") < productionApplyJob.indexOf("node scripts/cloud-rollout/medopl.mjs --availability-probe --canary-window") &&
+    productionApplyJob.indexOf("node scripts/cloud-rollout/medopl.mjs --availability-probe --canary-window") < productionApplyJob.indexOf("node scripts/cloud-rollout/medopl.mjs --availability-probe --alert-check") &&
+    productionApplyJob.indexOf("node scripts/cloud-rollout/medopl.mjs --availability-probe --alert-check") < productionApplyJob.indexOf("node scripts/cloud-rollout/medopl.mjs --release-decision") &&
+    productionApplyJob.indexOf("node scripts/cloud-rollout/medopl.mjs --release-decision") < productionApplyJob.indexOf("npm run cloud:goal -- --manifest-only"),
+  "production_apply_must_collect_operational_stability_receipts_before_manifest_only",
+);
+assert(
   productionApplyJob.indexOf("npm run cloud:goal -- --manifest-only") < productionApplyJob.indexOf("npm run verify:cloud-release-candidate"),
   "production_apply_must_verify_cloud_rc_after_manifest",
 );
@@ -634,6 +651,87 @@ try {
     },
   });
   assert.equal(availability.status, 0, `availability_probe_must_accept_case_insensitive_https_redirect:${availability.stderr || availability.stdout}`);
+  const operationalRunId = `test-operational-stability-${process.pid}`;
+  const operational = spawnSync(process.execPath, [
+    "scripts/cloud-rollout/medopl.mjs",
+    "--availability-probe",
+    "--soak",
+    "--concurrency",
+    "--canary-window",
+    "--alert-check",
+  ], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+    env: {
+      ...process.env,
+      V22_CLOUD_GOAL_RUN_ID: operationalRunId,
+      MEDOPL_BASE_URL: `http://127.0.0.1:${port}`,
+      MEDOPL_HTTP_BASE_URL: `http://127.0.0.1:${port}/redirect`,
+      MEDOPL_ALERT_ROUTE_REF: "test-alert-route-ref",
+      MEDOPL_ALERT_CHECK_ALLOW_SYNTHETIC: "1",
+    },
+  });
+  assert.equal(operational.status, 0, `operational_stability_availability_probe_must_pass:${operational.stderr || operational.stdout}`);
+  const operationalPayload = JSON.parse(operational.stdout);
+  assert.equal(operationalPayload.ok, true, "operational_stability_payload_must_be_ok");
+  assert.deepEqual(
+    operationalPayload.operational.map((item) => item.id),
+    ["soak_test_receipt", "concurrency_pressure_receipt", "continuous_canary_monitoring_receipt", "alerting_receipt"],
+    "operational_stability_probe_ids_mismatch",
+  );
+  for (const id of ["soak_test_receipt", "concurrency_pressure_receipt", "continuous_canary_monitoring_receipt", "alerting_receipt"]) {
+    const pointer = JSON.parse(await readRepoFile(`.runtime/v22-cloud-authorization/${operationalRunId}/production-complete/${id}.json`));
+    assert.equal(pointer.status, "accepted", `operational_pointer_must_be_accepted:${id}`);
+    assert.equal(JSON.stringify(pointer).includes("postgres://"), false, `operational_pointer_must_not_embed_database_url:${id}`);
+    assert.equal(JSON.stringify(pointer).includes("SecretKey"), false, `operational_pointer_must_not_embed_secret_key:${id}`);
+  }
+  const releaseDecisionMissing = spawnSync(process.execPath, ["scripts/cloud-rollout/medopl.mjs", "--release-decision"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+    env: {
+      ...process.env,
+      V22_CLOUD_GOAL_RUN_ID: operationalRunId,
+    },
+  });
+  assert.equal(releaseDecisionMissing.status, 1, "release_decision_must_fail_until_rollback_drill_pointer_exists");
+  const releaseDecisionMissingPayload = JSON.parse(releaseDecisionMissing.stdout);
+  assert(
+    releaseDecisionMissingPayload.missing.includes("business_db_persistence_receipt"),
+    "release_decision_must_require_business_db_persistence_pointer",
+  );
+  const rollbackPointerPath = `.runtime/v22-cloud-authorization/${operationalRunId}/production-complete/rollback_drill_receipt.json`;
+  await import("node:fs/promises").then(({ mkdir, writeFile }) => mkdir(path.dirname(path.join(repoRoot, rollbackPointerPath)), { recursive: true })
+    .then(() => writeFile(path.join(repoRoot, rollbackPointerPath), `${JSON.stringify({
+      kind: "medopl_operational_stability_receipt",
+      id: "rollback_drill_receipt",
+      status: "accepted",
+      summary: "rollback drill accepted in test fixture",
+      checks: { explicit_image_target: true, rollout_converged: true, post_rollback_healthz_json: true, post_rollback_readyz_json: true },
+      cannotClaim: ["multi-region production", "SLA proven", "enterprise compliance"],
+    }, null, 2)}\n`)));
+  const liveTestPath = `.runtime/v22-cloud-authorization/${operationalRunId}/live_test.json`;
+  await import("node:fs/promises").then(({ writeFile }) => writeFile(path.join(repoRoot, liveTestPath), `${JSON.stringify({
+    kind: "v22_cloud_authorized_phase_evidence",
+    operationClass: "live_test",
+    status: "executed",
+    resultSummaries: [{ ok: true, databaseProof: { databasePersistenceProof: true } }],
+  }, null, 2)}\n`));
+  const releaseDecision = spawnSync(process.execPath, ["scripts/cloud-rollout/medopl.mjs", "--release-decision"], {
+    cwd: repoRoot,
+    encoding: "utf8",
+    stdio: "pipe",
+    env: {
+      ...process.env,
+      V22_CLOUD_GOAL_RUN_ID: operationalRunId,
+    },
+  });
+  assert.equal(releaseDecision.status, 0, `release_decision_must_pass_after_operational_pointers:${releaseDecision.stderr || releaseDecision.stdout}`);
+  const releaseDecisionPointer = JSON.parse(await readRepoFile(`.runtime/v22-cloud-authorization/${operationalRunId}/production-complete/final_release_decision_receipt.json`));
+  assert.equal(releaseDecisionPointer.status, "accepted", "final_release_decision_pointer_must_be_accepted");
+  assert.equal(JSON.stringify(releaseDecisionPointer).includes("production complete release"), false, "final_release_decision_pointer_must_not_claim_unscoped_production_complete");
+  await import("node:fs/promises").then(({ rm }) => rm(path.join(repoRoot, ".runtime/v22-cloud-authorization", operationalRunId), { recursive: true, force: true }));
 } finally {
   await availabilityServer.close();
 }

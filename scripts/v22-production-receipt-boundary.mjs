@@ -80,6 +80,23 @@ const RECEIPT_OPERATION_CLASSES = Object.freeze({
   production_deploy_receipt: "deploy",
 });
 
+const REQUIRED_PRODUCTION_COMPLETE_CRITERIA = Object.freeze([
+  "release_owner_readiness_receipt",
+  "business_db_persistence_receipt",
+  "production_dependency_security_receipt",
+  "browser_accessibility_verification_receipt",
+  "s_level_ui_polish_receipt",
+  "observability_deploy_receipt",
+  "soak_test_receipt",
+  "concurrency_pressure_receipt",
+  "rollback_drill_receipt",
+  "continuous_canary_monitoring_receipt",
+  "alerting_receipt",
+  "rollback_readiness_receipt",
+  "post_release_monitoring_receipt",
+  "final_release_decision_receipt",
+]);
+
 function isObject(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
@@ -268,16 +285,7 @@ export function validateProductionReceiptBoundary({ boundary, cloudAuthorization
       blockers.push("production_receipt_boundary_production_complete_gate_operational_criteria_contract_missing");
     }
     const criteriaContractById = operationalCriteriaContractById(productionCompleteGate);
-    for (const criterion of [
-      "release_owner_readiness_receipt",
-      "business_db_persistence_receipt",
-      "production_dependency_security_receipt",
-      "browser_accessibility_verification_receipt",
-      "s_level_ui_polish_receipt",
-      "observability_deploy_receipt",
-      "rollback_readiness_receipt",
-      "post_release_monitoring_receipt",
-    ]) {
+    for (const criterion of REQUIRED_PRODUCTION_COMPLETE_CRITERIA) {
       if (!criteriaSet.has(criterion)) {
         blockers.push(`production_receipt_boundary_production_complete_gate_operational_criterion_missing:${criterion}`);
       }
@@ -410,8 +418,14 @@ export function validateProductionReceiptBoundary({ boundary, cloudAuthorization
       }
     }
     const observabilityContract = criteriaContractById.get("observability_deploy_receipt");
+    const soakContract = criteriaContractById.get("soak_test_receipt");
+    const concurrencyContract = criteriaContractById.get("concurrency_pressure_receipt");
+    const rollbackDrillContract = criteriaContractById.get("rollback_drill_receipt");
+    const continuousCanaryContract = criteriaContractById.get("continuous_canary_monitoring_receipt");
+    const alertingContract = criteriaContractById.get("alerting_receipt");
     const rollbackContract = criteriaContractById.get("rollback_readiness_receipt");
     const monitoringContract = criteriaContractById.get("post_release_monitoring_receipt");
+    const finalReleaseDecisionContract = criteriaContractById.get("final_release_decision_receipt");
     const deployOperation = (cloudAuthorization?.active_pack?.operation_class_command_map || [])
       .find((entry) => entry?.operation_class === "deploy");
     const rollbackCommands = cloudAuthorization?.active_pack?.rollback_commands || [];
@@ -482,6 +496,95 @@ export function validateProductionReceiptBoundary({ boundary, cloudAuthorization
       if (monitoringContract.raw_log_policy !== "forbidden") {
         blockers.push("production_receipt_boundary_post_release_monitoring_raw_log_policy_mismatch");
       }
+    }
+    if (
+      !soakContract ||
+      soakContract.evidence_source !== "scripts/cloud-rollout/medopl.mjs" ||
+      !arraysMatch(soakContract.runbook_commands, ["npm run cloud:rollout:availability -- --soak"]) ||
+      !arraysMatch(soakContract.required_soak_checks, [
+        "minimum_duration_seconds",
+        "probe_count",
+        "max_failure_count",
+        "latency_p95_ms",
+        "healthz_json",
+        "readyz_json",
+      ])
+    ) {
+      blockers.push("production_receipt_boundary_soak_test_checks_mismatch");
+    }
+    if (
+      !concurrencyContract ||
+      concurrencyContract.evidence_source !== "scripts/cloud-rollout/medopl.mjs" ||
+      !arraysMatch(concurrencyContract.runbook_commands, ["npm run cloud:rollout:availability -- --concurrency"]) ||
+      !arraysMatch(concurrencyContract.required_concurrency_checks, [
+        "parallel_clients",
+        "request_count",
+        "max_error_count",
+        "idempotent_open_release",
+        "billing_double_charge_absent",
+      ])
+    ) {
+      blockers.push("production_receipt_boundary_concurrency_pressure_checks_mismatch");
+    }
+    if (
+      !rollbackDrillContract ||
+      rollbackDrillContract.evidence_source !== "scripts/cloud-rollout/medopl.mjs" ||
+      !arraysMatch(rollbackDrillContract.runbook_commands, [
+        "node scripts/cloud-rollout/medopl.mjs --rollback --drill",
+        "npm run cloud:rollout:availability",
+      ]) ||
+      !arraysMatch(rollbackDrillContract.required_rollback_drill_checks, [
+        "explicit_image_target",
+        "rollout_converged",
+        "post_rollback_healthz_json",
+        "post_rollback_readyz_json",
+      ])
+    ) {
+      blockers.push("production_receipt_boundary_rollback_drill_checks_mismatch");
+    }
+    if (
+      !continuousCanaryContract ||
+      continuousCanaryContract.evidence_source !== "scripts/cloud-rollout/medopl.mjs" ||
+      !arraysMatch(continuousCanaryContract.runbook_commands, ["npm run cloud:rollout:availability -- --canary-window"]) ||
+      !arraysMatch(continuousCanaryContract.required_canary_checks, [
+        "window_seconds",
+        "sample_count",
+        "healthz_json",
+        "readyz_json",
+        "no_static_html",
+        "no_secret_text",
+      ])
+    ) {
+      blockers.push("production_receipt_boundary_continuous_canary_checks_mismatch");
+    }
+    if (
+      !alertingContract ||
+      alertingContract.evidence_source !== "scripts/cloud-rollout/medopl.mjs" ||
+      !arraysMatch(alertingContract.runbook_commands, ["npm run cloud:rollout:availability -- --alert-check"]) ||
+      !arraysMatch(alertingContract.required_alerting_checks, [
+        "alert_route_configured",
+        "synthetic_failure_detected",
+        "notification_receipt_pointer",
+        "no_secret_text",
+      ])
+    ) {
+      blockers.push("production_receipt_boundary_alerting_checks_mismatch");
+    }
+    if (
+      !finalReleaseDecisionContract ||
+      finalReleaseDecisionContract.evidence_source !== "scripts/cloud-rollout/medopl.mjs" ||
+      !arraysMatch(finalReleaseDecisionContract.runbook_commands, ["npm run verify:production-complete-candidate"]) ||
+      !arraysMatch(finalReleaseDecisionContract.required_decision_inputs, [
+        "business_db_persistence_receipt",
+        "soak_test_receipt",
+        "concurrency_pressure_receipt",
+        "rollback_drill_receipt",
+        "continuous_canary_monitoring_receipt",
+        "alerting_receipt",
+        "release_owner_readiness_receipt",
+      ])
+    ) {
+      blockers.push("production_receipt_boundary_final_release_decision_inputs_mismatch");
     }
     const nonGoalSet = asStringSet(productionCompleteGate.explicit_non_goals_until_dedicated_contract);
     for (const nonGoal of [

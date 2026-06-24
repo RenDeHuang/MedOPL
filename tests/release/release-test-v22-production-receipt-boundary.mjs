@@ -141,8 +141,14 @@ for (const criterion of [
   "browser_accessibility_verification_receipt",
   "s_level_ui_polish_receipt",
   "observability_deploy_receipt",
+  "soak_test_receipt",
+  "concurrency_pressure_receipt",
+  "rollback_drill_receipt",
+  "continuous_canary_monitoring_receipt",
+  "alerting_receipt",
   "rollback_readiness_receipt",
   "post_release_monitoring_receipt",
+  "final_release_decision_receipt",
 ]) {
   assert(
     boundary.production_receipt_boundary.production_complete_owner_receipt_gate?.required_operational_criteria?.includes(criterion),
@@ -259,12 +265,24 @@ assert.equal(
   "s_level_ui_polish_receipt_source_policy_mismatch",
 );
 const observabilityContract = criteriaContractById.get("observability_deploy_receipt");
+const soakContract = criteriaContractById.get("soak_test_receipt");
+const concurrencyContract = criteriaContractById.get("concurrency_pressure_receipt");
+const rollbackDrillContract = criteriaContractById.get("rollback_drill_receipt");
+const continuousCanaryContract = criteriaContractById.get("continuous_canary_monitoring_receipt");
+const alertingContract = criteriaContractById.get("alerting_receipt");
 const rollbackContract = criteriaContractById.get("rollback_readiness_receipt");
 const monitoringContract = criteriaContractById.get("post_release_monitoring_receipt");
+const finalReleaseDecisionContract = criteriaContractById.get("final_release_decision_receipt");
 for (const [criterion, contract] of [
   ["observability_deploy_receipt", observabilityContract],
+  ["soak_test_receipt", soakContract],
+  ["concurrency_pressure_receipt", concurrencyContract],
+  ["rollback_drill_receipt", rollbackDrillContract],
+  ["continuous_canary_monitoring_receipt", continuousCanaryContract],
+  ["alerting_receipt", alertingContract],
   ["rollback_readiness_receipt", rollbackContract],
   ["post_release_monitoring_receipt", monitoringContract],
+  ["final_release_decision_receipt", finalReleaseDecisionContract],
 ]) {
   assert.equal(contract?.evidence_source, "scripts/cloud-rollout/medopl.mjs", `${criterion}_must_bind_cloud_rollout_runner`);
   assert.equal(contract?.receipt_source_policy, "cloud_rollout_summary_only", `${criterion}_source_policy_mismatch`);
@@ -282,6 +300,59 @@ assert.deepEqual(
   observabilityContract?.required_observability_checks,
   ["deployment_image", "pod_status", "routing_diagnostics", "healthz_json", "readyz_json"],
   "observability_deploy_receipt_checks_mismatch",
+);
+assert.deepEqual(
+  soakContract?.runbook_commands,
+  ["npm run cloud:rollout:availability -- --soak"],
+  "soak_test_receipt_runbook_commands_mismatch",
+);
+assert.deepEqual(
+  soakContract?.required_soak_checks,
+  ["minimum_duration_seconds", "probe_count", "max_failure_count", "latency_p95_ms", "healthz_json", "readyz_json"],
+  "soak_test_receipt_checks_mismatch",
+);
+assert.deepEqual(
+  concurrencyContract?.runbook_commands,
+  ["npm run cloud:rollout:availability -- --concurrency"],
+  "concurrency_pressure_receipt_runbook_commands_mismatch",
+);
+assert.deepEqual(
+  concurrencyContract?.required_concurrency_checks,
+  ["parallel_clients", "request_count", "max_error_count", "idempotent_open_release", "billing_double_charge_absent"],
+  "concurrency_pressure_receipt_checks_mismatch",
+);
+assert.deepEqual(
+  rollbackDrillContract?.runbook_commands,
+  [
+    "node scripts/cloud-rollout/medopl.mjs --rollback --drill",
+    "npm run cloud:rollout:availability",
+  ],
+  "rollback_drill_receipt_runbook_commands_mismatch",
+);
+assert.deepEqual(
+  rollbackDrillContract?.required_rollback_drill_checks,
+  ["explicit_image_target", "rollout_converged", "post_rollback_healthz_json", "post_rollback_readyz_json"],
+  "rollback_drill_receipt_checks_mismatch",
+);
+assert.deepEqual(
+  continuousCanaryContract?.runbook_commands,
+  ["npm run cloud:rollout:availability -- --canary-window"],
+  "continuous_canary_monitoring_receipt_runbook_commands_mismatch",
+);
+assert.deepEqual(
+  continuousCanaryContract?.required_canary_checks,
+  ["window_seconds", "sample_count", "healthz_json", "readyz_json", "no_static_html", "no_secret_text"],
+  "continuous_canary_monitoring_receipt_checks_mismatch",
+);
+assert.deepEqual(
+  alertingContract?.runbook_commands,
+  ["npm run cloud:rollout:availability -- --alert-check"],
+  "alerting_receipt_runbook_commands_mismatch",
+);
+assert.deepEqual(
+  alertingContract?.required_alerting_checks,
+  ["alert_route_configured", "synthetic_failure_detected", "notification_receipt_pointer", "no_secret_text"],
+  "alerting_receipt_checks_mismatch",
 );
 assert.deepEqual(
   rollbackContract?.runbook_commands,
@@ -305,6 +376,24 @@ assert.deepEqual(
   monitoringContract?.required_monitoring_checks,
   ["healthz_json", "readyz_json", "no_static_html", "no_secret_text"],
   "post_release_monitoring_receipt_checks_mismatch",
+);
+assert.deepEqual(
+  finalReleaseDecisionContract?.runbook_commands,
+  ["npm run verify:production-complete-candidate"],
+  "final_release_decision_receipt_runbook_commands_mismatch",
+);
+assert.deepEqual(
+  finalReleaseDecisionContract?.required_decision_inputs,
+  [
+    "business_db_persistence_receipt",
+    "soak_test_receipt",
+    "concurrency_pressure_receipt",
+    "rollback_drill_receipt",
+    "continuous_canary_monitoring_receipt",
+    "alerting_receipt",
+    "release_owner_readiness_receipt",
+  ],
+  "final_release_decision_receipt_inputs_mismatch",
 );
 for (const cannotClaim of [
   "multi_region_production",

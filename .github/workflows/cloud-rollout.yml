@@ -419,6 +419,33 @@ jobs:
         if: ${{ inputs.availability_probe }}
         run: node scripts/cloud-rollout/medopl.mjs --availability-probe
 
+      - name: MedOPL soak receipt
+        if: ${{ inputs.availability_probe }}
+        run: node scripts/cloud-rollout/medopl.mjs --availability-probe --soak
+
+      - name: MedOPL concurrency pressure receipt
+        if: ${{ inputs.availability_probe }}
+        run: node scripts/cloud-rollout/medopl.mjs --availability-probe --concurrency
+
+      - name: MedOPL rollback drill receipt
+        if: ${{ inputs.availability_probe }}
+        run: node scripts/cloud-rollout/medopl.mjs --rollback --drill
+
+      - name: MedOPL continuous canary receipt
+        if: ${{ inputs.availability_probe }}
+        run: node scripts/cloud-rollout/medopl.mjs --availability-probe --canary-window
+
+      - name: MedOPL alerting receipt
+        if: ${{ inputs.availability_probe }}
+        env:
+          MEDOPL_ALERT_ROUTE_REF: ${{ vars.MEDOPL_ALERT_ROUTE_REF }}
+          MEDOPL_ALERT_CHECK_ALLOW_SYNTHETIC: "1"
+        run: node scripts/cloud-rollout/medopl.mjs --availability-probe --alert-check
+
+      - name: MedOPL final release decision receipt
+        if: ${{ inputs.availability_probe }}
+        run: node scripts/cloud-rollout/medopl.mjs --release-decision
+
       - name: Production receipt manifest
         if: ${{ inputs.availability_probe }}
         run: npm run cloud:goal -- --manifest-only

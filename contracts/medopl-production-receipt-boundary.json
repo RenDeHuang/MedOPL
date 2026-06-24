@@ -78,8 +78,14 @@
         "browser_accessibility_verification_receipt",
         "s_level_ui_polish_receipt",
         "observability_deploy_receipt",
+        "soak_test_receipt",
+        "concurrency_pressure_receipt",
+        "rollback_drill_receipt",
+        "continuous_canary_monitoring_receipt",
+        "alerting_receipt",
         "rollback_readiness_receipt",
-        "post_release_monitoring_receipt"
+        "post_release_monitoring_receipt",
+        "final_release_decision_receipt"
       ],
       "operational_criteria_contract": [
         {
@@ -216,6 +222,112 @@
           "raw_evidence_policy": "forbidden"
         },
         {
+          "id": "soak_test_receipt",
+          "owner": "MedOPL Operations",
+          "required_gate": "observability_receipt",
+          "evidence_source": "scripts/cloud-rollout/medopl.mjs",
+          "runbook_commands": [
+            "npm run cloud:rollout:availability -- --soak"
+          ],
+          "required_soak_checks": [
+            "minimum_duration_seconds",
+            "probe_count",
+            "max_failure_count",
+            "latency_p95_ms",
+            "healthz_json",
+            "readyz_json"
+          ],
+          "receipt_source_policy": "cloud_rollout_summary_only",
+          "raw_log_policy": "forbidden",
+          "evidence_ref_policy": "runtime_pointer_summary_only",
+          "evidence_hash_policy": "sha256_pointer_hash_required",
+          "raw_evidence_policy": "forbidden"
+        },
+        {
+          "id": "concurrency_pressure_receipt",
+          "owner": "MedOPL Operations",
+          "required_gate": "observability_receipt",
+          "evidence_source": "scripts/cloud-rollout/medopl.mjs",
+          "runbook_commands": [
+            "npm run cloud:rollout:availability -- --concurrency"
+          ],
+          "required_concurrency_checks": [
+            "parallel_clients",
+            "request_count",
+            "max_error_count",
+            "idempotent_open_release",
+            "billing_double_charge_absent"
+          ],
+          "receipt_source_policy": "cloud_rollout_summary_only",
+          "raw_log_policy": "forbidden",
+          "evidence_ref_policy": "runtime_pointer_summary_only",
+          "evidence_hash_policy": "sha256_pointer_hash_required",
+          "raw_evidence_policy": "forbidden"
+        },
+        {
+          "id": "rollback_drill_receipt",
+          "owner": "MedOPL Operations",
+          "required_gate": "observability_receipt",
+          "evidence_source": "scripts/cloud-rollout/medopl.mjs",
+          "runbook_commands": [
+            "node scripts/cloud-rollout/medopl.mjs --rollback --drill",
+            "npm run cloud:rollout:availability"
+          ],
+          "required_rollback_drill_checks": [
+            "explicit_image_target",
+            "rollout_converged",
+            "post_rollback_healthz_json",
+            "post_rollback_readyz_json"
+          ],
+          "receipt_source_policy": "cloud_rollout_summary_only",
+          "raw_log_policy": "forbidden",
+          "evidence_ref_policy": "runtime_pointer_summary_only",
+          "evidence_hash_policy": "sha256_pointer_hash_required",
+          "raw_evidence_policy": "forbidden"
+        },
+        {
+          "id": "continuous_canary_monitoring_receipt",
+          "owner": "MedOPL Operations",
+          "required_gate": "observability_receipt",
+          "evidence_source": "scripts/cloud-rollout/medopl.mjs",
+          "runbook_commands": [
+            "npm run cloud:rollout:availability -- --canary-window"
+          ],
+          "required_canary_checks": [
+            "window_seconds",
+            "sample_count",
+            "healthz_json",
+            "readyz_json",
+            "no_static_html",
+            "no_secret_text"
+          ],
+          "receipt_source_policy": "cloud_rollout_summary_only",
+          "raw_log_policy": "forbidden",
+          "evidence_ref_policy": "runtime_pointer_summary_only",
+          "evidence_hash_policy": "sha256_pointer_hash_required",
+          "raw_evidence_policy": "forbidden"
+        },
+        {
+          "id": "alerting_receipt",
+          "owner": "MedOPL Operations",
+          "required_gate": "observability_receipt",
+          "evidence_source": "scripts/cloud-rollout/medopl.mjs",
+          "runbook_commands": [
+            "npm run cloud:rollout:availability -- --alert-check"
+          ],
+          "required_alerting_checks": [
+            "alert_route_configured",
+            "synthetic_failure_detected",
+            "notification_receipt_pointer",
+            "no_secret_text"
+          ],
+          "receipt_source_policy": "cloud_rollout_summary_only",
+          "raw_log_policy": "forbidden",
+          "evidence_ref_policy": "runtime_pointer_summary_only",
+          "evidence_hash_policy": "sha256_pointer_hash_required",
+          "raw_evidence_policy": "forbidden"
+        },
+        {
           "id": "post_release_monitoring_receipt",
           "owner": "MedOPL Operations",
           "required_gate": "observability_receipt",
@@ -228,6 +340,29 @@
             "readyz_json",
             "no_static_html",
             "no_secret_text"
+          ],
+          "receipt_source_policy": "cloud_rollout_summary_only",
+          "raw_log_policy": "forbidden",
+          "evidence_ref_policy": "runtime_pointer_summary_only",
+          "evidence_hash_policy": "sha256_pointer_hash_required",
+          "raw_evidence_policy": "forbidden"
+        },
+        {
+          "id": "final_release_decision_receipt",
+          "owner": "MedOPL Release",
+          "required_gate": "release_owner_receipt",
+          "evidence_source": "scripts/cloud-rollout/medopl.mjs",
+          "runbook_commands": [
+            "npm run verify:production-complete-candidate"
+          ],
+          "required_decision_inputs": [
+            "business_db_persistence_receipt",
+            "soak_test_receipt",
+            "concurrency_pressure_receipt",
+            "rollback_drill_receipt",
+            "continuous_canary_monitoring_receipt",
+            "alerting_receipt",
+            "release_owner_readiness_receipt"
           ],
           "receipt_source_policy": "cloud_rollout_summary_only",
           "raw_log_policy": "forbidden",

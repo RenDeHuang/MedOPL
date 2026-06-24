@@ -46,6 +46,11 @@ function jsonFrom(result, label) {
   return JSON.parse(result.stdout);
 }
 
+function failingJsonFrom(result, label) {
+  assert.notEqual(result.status, 0, `${label}_must_fail_closed`);
+  return JSON.parse(result.stdout);
+}
+
 const dryRun = jsonFrom(runExecutor(["--dry-run", "--json"]), "cloud_executor_dry_run");
 const packageJson = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8"));
 const authPack = JSON.parse(readFileSync(path.join(repoRoot, "contracts/medopl-cloud-authorization-pack.json"), "utf8"));
@@ -608,20 +613,44 @@ try {
   );
   assert.equal(JSON.stringify(failingBuildPushSummary).includes("tcr-secret-test"), false, "external_runner_failure_must_redact_secret");
 
-  const manifestOnly = jsonFrom(
+  const manifestOnly = failingJsonFrom(
     runExecutor(["--manifest-only", "--json"], { V22_CLOUD_GOAL_RUN_ID: testRunId }),
     "cloud_executor_manifest_only_from_existing_receipts",
   );
-  assert.equal(manifestOnly.ok, true, "cloud_executor_manifest_only_must_pass_with_existing_receipts");
+  assert.equal(manifestOnly.ok, false, "cloud_executor_manifest_only_must_fail_without_operational_stability_evidence");
   assert.equal(manifestOnly.receiptManifest.path, `${testEvidenceSink}/receipt-manifest.json`, "manifest_only_path");
-  assert.equal(manifestOnly.receiptManifest.status, "complete", "manifest_only_status");
+  assert.equal(manifestOnly.receiptManifest.status, "blocked", "manifest_only_status_without_operational_stability_evidence");
   const manifestOnlyPayload = JSON.parse(readFileSync(path.join(repoRoot, manifestOnly.receiptManifest.path), "utf8"));
   assert.equal(JSON.stringify(manifestOnlyPayload).includes("raw-secret-value"), false, "manifest_only_must_not_copy_raw_secret_receipt_summary");
   assert.equal(manifestOnlyPayload.claim, "production_complete", "manifest_only_must_emit_production_complete_candidate_manifest");
   assert.equal(
     manifestOnlyPayload.production_complete_criteria.length,
-    8,
-    "manifest_only_must_emit_8_production_complete_criteria",
+    14,
+    "manifest_only_must_emit_14_production_complete_criteria",
+  );
+  assert(
+    manifestOnly.receiptManifest.blockers.includes("production_receipt_manifest_production_complete_criterion_not_accepted:soak_test_receipt"),
+    "manifest_only_missing_soak_evidence_must_block",
+  );
+  assert(
+    manifestOnly.receiptManifest.blockers.includes("production_receipt_manifest_production_complete_criterion_not_accepted:concurrency_pressure_receipt"),
+    "manifest_only_missing_concurrency_evidence_must_block",
+  );
+  assert(
+    manifestOnly.receiptManifest.blockers.includes("production_receipt_manifest_production_complete_criterion_not_accepted:rollback_drill_receipt"),
+    "manifest_only_missing_rollback_drill_evidence_must_block",
+  );
+  assert(
+    manifestOnly.receiptManifest.blockers.includes("production_receipt_manifest_production_complete_criterion_not_accepted:continuous_canary_monitoring_receipt"),
+    "manifest_only_missing_continuous_canary_evidence_must_block",
+  );
+  assert(
+    manifestOnly.receiptManifest.blockers.includes("production_receipt_manifest_production_complete_criterion_not_accepted:alerting_receipt"),
+    "manifest_only_missing_alerting_evidence_must_block",
+  );
+  assert(
+    manifestOnly.receiptManifest.blockers.includes("production_receipt_manifest_production_complete_criterion_not_accepted:final_release_decision_receipt"),
+    "manifest_only_missing_final_release_decision_evidence_must_block",
   );
   const businessDbCriterion = manifestOnlyPayload.production_complete_criteria.find((criterion) => criterion.id === "business_db_persistence_receipt");
   assert(businessDbCriterion, "manifest_only_must_emit_business_db_persistence_criterion");
@@ -647,8 +676,51 @@ try {
   );
   assert.equal(
     manifestOnly.receiptManifest.productionCompleteCandidateComplete,
+    false,
+    "manifest_only_must_not_pass_production_complete_candidate_without_operational_stability_evidence",
+  );
+
+  for (const id of [
+    "soak_test_receipt",
+    "concurrency_pressure_receipt",
+    "rollback_drill_receipt",
+    "continuous_canary_monitoring_receipt",
+    "alerting_receipt",
+    "final_release_decision_receipt",
+  ]) {
+    const evidencePath = path.join(repoRoot, testEvidenceSink, "production-complete", `${id}.json`);
+    mkdirSync(path.dirname(evidencePath), { recursive: true });
+    writeFileSync(evidencePath, `${JSON.stringify({
+      kind: "medopl_operational_stability_receipt",
+      id,
+      status: "accepted",
+      summary: `${id} accepted by operational stability gate`,
+      checks: ["redacted_summary_only"],
+      cannotClaim: ["multi-region production", "SLA proven", "enterprise compliance"],
+    }, null, 2)}\n`);
+  }
+  const manifestOnlyWithOperationalEvidence = jsonFrom(
+    runExecutor(["--manifest-only", "--json"], { V22_CLOUD_GOAL_RUN_ID: testRunId }),
+    "cloud_executor_manifest_only_with_operational_stability_evidence",
+  );
+  assert.equal(manifestOnlyWithOperationalEvidence.ok, true, "cloud_executor_manifest_only_must_pass_with_operational_stability_evidence");
+  const manifestOnlyWithOperationalEvidencePayload = JSON.parse(readFileSync(path.join(repoRoot, manifestOnlyWithOperationalEvidence.receiptManifest.path), "utf8"));
+  const soakCriterion = manifestOnlyWithOperationalEvidencePayload.production_complete_criteria.find((criterion) => criterion.id === "soak_test_receipt");
+  assert.equal(soakCriterion?.owner, "MedOPL Operations", "soak_criterion_owner_mismatch");
+  assert.equal(
+    /^sha256:[a-f0-9]{64}$/u.test(soakCriterion?.evidence_hash || ""),
     true,
-    "manifest_only_must_pass_production_complete_candidate_shape_gate",
+    "soak_criterion_must_use_real_pointer_hash",
+  );
+  assert.equal(
+    JSON.stringify(soakCriterion).includes("probeBodies"),
+    false,
+    "soak_criterion_must_not_embed_raw_probe_payload",
+  );
+  assert.equal(
+    manifestOnlyWithOperationalEvidence.receiptManifest.productionCompleteCandidateComplete,
+    true,
+    "manifest_only_must_pass_production_complete_candidate_with_operational_stability_evidence",
   );
 
   const missingDbProofRunId = `${testRunId}-missing-db-proof`;

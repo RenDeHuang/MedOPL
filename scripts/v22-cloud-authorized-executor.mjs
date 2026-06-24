@@ -429,6 +429,21 @@ function liveDatabaseProofSummary(evidence) {
   };
 }
 
+const EXTERNAL_OPERATIONAL_CRITERIA = Object.freeze(new Set([
+  "soak_test_receipt",
+  "concurrency_pressure_receipt",
+  "rollback_drill_receipt",
+  "continuous_canary_monitoring_receipt",
+  "alerting_receipt",
+  "final_release_decision_receipt",
+]));
+
+function operationalCriterionSummary(evidence, id) {
+  if (!evidence || evidence.status !== "accepted") return null;
+  if (evidence.id && evidence.id !== id) return null;
+  return String(evidence.summary || "").trim() || `${id} accepted with redacted runtime pointer evidence.`;
+}
+
 function productionCompleteCriterion(payload, id, contract = {}, issuedAt) {
   const defaultCriterion = {
     id,
@@ -444,6 +459,31 @@ function productionCompleteCriterion(payload, id, contract = {}, issuedAt) {
       "enterprise compliance",
     ],
   };
+  if (EXTERNAL_OPERATIONAL_CRITERIA.has(id)) {
+    const evidenceRef = `${payload.evidenceSink}/production-complete/${id}.json`;
+    const evidence = readJsonIfExists(evidenceRef);
+    const evidenceHash = sha256RuntimePointer(evidenceRef);
+    const summary = operationalCriterionSummary(evidence, id);
+    if (!summary || !evidenceHash) {
+      return {
+        ...defaultCriterion,
+        status: "missing",
+        evidence_ref: evidenceRef,
+        evidence_hash: evidenceHash || `sha256:missing-${id.replaceAll("_", "-")}`,
+        summary: `${id} redacted operational stability evidence pointer missing.`,
+        cannotClaim: [
+          `${id} accepted`,
+          "production complete",
+        ],
+      };
+    }
+    return {
+      ...defaultCriterion,
+      evidence_ref: evidenceRef,
+      evidence_hash: evidenceHash,
+      summary,
+    };
+  }
   if (id !== "business_db_persistence_receipt") return defaultCriterion;
 
   const evidenceRef = `${payload.evidenceSink}/live_test.json`;
