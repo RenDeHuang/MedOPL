@@ -34,14 +34,17 @@
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
     "branch": "recovery/platform-v22-trunk",
-    "landed_commit": "a5b946239c0c8efabef364034835381f39cde3ed",
+    "landed_commit": "c1a987a88355521202403eae2b6933d57d7c73d7",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
       "npm run verify PASS",
       "npm run gate:review PASS",
       "npm run repo:hygiene PASS",
       "npm run repo:bloat PASS",
-      "npm run line:budget PASS"
+      "npm run line:budget PASS",
+      "npm run test:run-plan PASS",
+      "node tests/cloud/cloud-test-v22-production-goal-command-runner.mjs PASS",
+      "verify:cloud-release-candidate fail-closed only on missing runtime receipt manifest"
     ],
     "plan_completion_audit": {
       "functional": "done",
@@ -52,11 +55,11 @@
       "cannot_claim": "done"
     },
     "cleanup_result": {
-      "deleted": "feat-v22-production-session-bootstrap-worktree-local-remote-branch",
-      "folded": "production-session-bootstrap-closeout",
+      "deleted": "feat-v22-cloud-rc-session-secret-gate-worktree-local-remote-branch-pending-post-push-cleanup",
+      "folded": "cloud-canary-session-bootstrap-gate-closeout",
       "retained": "no-raw-evidence",
       "reason": "post-push-truth-sync",
-      "next": "cloud-rc-session-bootstrap-gate"
+      "next": "production-receipt-manifest-rollout"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "opl-webui-runtime-production-slice"
@@ -71,7 +74,7 @@
     "github_production_var_MEDOPL_ALERT_ROUTE_REF_required_for_alerting_receipt",
     "multi_region_sla_enterprise_compliance_ongoing_authorization_and_unobserved_tenants_resources_remain_unclaimed"
   ],
-  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is recovery/platform-v22-trunk at a5b946239c0c8efabef364034835381f39cde3ed. Current trunk keeps Portal UI/UX production gates hardened, requires the production-complete owner gate for production-ready claims, and closes the release auditEventId canary blocker. GitHub v22 verify run 27974444437 passed for Portal production UI gate hardening; GitHub v22 verify run 28057359860 passed on 70db4e5; Release Image run 28057445074 built image tag 70db4e5; Cloud Rollout run 28057493445 deployed image tag 70db4e5 and passed production DB auth/secret sync, runtime/storage/billing-audit owner receipt lanes, kubectl rollout, deploy receipt, Portal public entry, HTTP redirect, Go health/ready availability, OPL-Webui consumer canary, production receipt manifest, verify:cloud-release-candidate and verify:production-complete-candidate. The redacted manifest contains seven owner receipts, 12 lifecycle sections, the previous eight production-complete criteria including business_db_persistence_receipt, claim=production_complete, state=complete, sha256 6c095a4ceddef604c53986b2cf0fcc0e2fb551b0a81ee1d86b06328463affd23, and live DB proof hash sha256:e61986f084e8867d9a87d4037a531cbd89263cd67600109890139aabe13ef9d8. This can claim historical cloud release candidate and production-complete candidate evidence for the current authorized canary path only, including Portal public entry, HTTP redirect availability, owner receipts and live PostgreSQL business metadata persistence proof. Phase F authoring branch gates final production-complete candidate on 14 criteria, adding soak_test_receipt, concurrency_pressure_receipt, rollback_drill_receipt, continuous_canary_monitoring_receipt, alerting_receipt and final_release_decision_receipt as runtime pointer evidence. The latest remote manifest from Cloud Rollout run 28057493445 is old eight-criteria evidence and must be regenerated after landing. MedOPL still does not claim unscoped production complete, multi-region/SLA, enterprise compliance, ongoing authorization or unobserved tenants/resources. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is recovery/platform-v22-trunk at a5b946239c0c8efabef364034835381f39cde3ed.",
+  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is recovery/platform-v22-trunk at c1a987a88355521202403eae2b6933d57d7c73d7. Current trunk keeps Portal UI/UX production gates hardened, requires the production-complete owner gate for production-ready claims, and closes the release auditEventId canary blocker. GitHub v22 verify run 27974444437 passed for Portal production UI gate hardening; GitHub v22 verify run 28057359860 passed on 70db4e5; Release Image run 28057445074 built image tag 70db4e5; Cloud Rollout run 28057493445 deployed image tag 70db4e5 and passed production DB auth/secret sync, runtime/storage/billing-audit owner receipt lanes, kubectl rollout, deploy receipt, Portal public entry, HTTP redirect, Go health/ready availability, OPL-Webui consumer canary, production receipt manifest, verify:cloud-release-candidate and verify:production-complete-candidate. The redacted manifest contains seven owner receipts, 12 lifecycle sections, the previous eight production-complete criteria including business_db_persistence_receipt, claim=production_complete, state=complete, sha256 6c095a4ceddef604c53986b2cf0fcc0e2fb551b0a81ee1d86b06328463affd23, and live DB proof hash sha256:e61986f084e8867d9a87d4037a531cbd89263cd67600109890139aabe13ef9d8. This can claim historical cloud release candidate and production-complete candidate evidence for the current authorized canary path only, including Portal public entry, HTTP redirect availability, owner receipts and live PostgreSQL business metadata persistence proof. Phase F authoring branch gates final production-complete candidate on 14 criteria, adding soak_test_receipt, concurrency_pressure_receipt, rollback_drill_receipt, continuous_canary_monitoring_receipt, alerting_receipt and final_release_decision_receipt as runtime pointer evidence. The latest remote manifest from Cloud Rollout run 28057493445 is old eight-criteria evidence and must be regenerated after landing. MedOPL still does not claim unscoped production complete, multi-region/SLA, enterprise compliance, ongoing authorization or unobserved tenants/resources. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is recovery/platform-v22-trunk at c1a987a88355521202403eae2b6933d57d7c73d7.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -1062,8 +1065,8 @@
       "cannot_claim": "fresh remote soak, concurrency, rollback drill, continuous monitoring, alerting receipt or final release decision completed until Cloud Rollout is rerun after landing"
     }
   },
-  "base_trunk_head": "a5b946239c0c8efabef364034835381f39cde3ed",
-  "last_landed_commit": "a5b946239c0c8efabef364034835381f39cde3ed",
+  "base_trunk_head": "c1a987a88355521202403eae2b6933d57d7c73d7",
+  "last_landed_commit": "c1a987a88355521202403eae2b6933d57d7c73d7",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
