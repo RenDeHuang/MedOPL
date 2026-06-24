@@ -13,6 +13,18 @@
       }
     },
     {
+      "apiVersion": "v1",
+      "kind": "ServiceAccount",
+      "metadata": {
+        "name": "medopl-control-plane",
+        "namespace": "medopl",
+        "labels": {
+          "app.kubernetes.io/name": "medopl"
+        }
+      },
+      "automountServiceAccountToken": false
+    },
+    {
       "apiVersion": "apps/v1",
       "kind": "Deployment",
       "metadata": {
@@ -36,6 +48,17 @@
             }
           },
           "spec": {
+            "serviceAccountName": "medopl-control-plane",
+            "automountServiceAccountToken": false,
+            "securityContext": {
+              "runAsNonRoot": true,
+              "runAsUser": 10001,
+              "runAsGroup": 10001,
+              "fsGroup": 10001,
+              "seccompProfile": {
+                "type": "RuntimeDefault"
+              }
+            },
             "imagePullSecrets": [
               {
                 "name": "tcr-pull-secret"
@@ -83,8 +106,44 @@
                         "key": "DATABASE_URL"
                       }
                     }
+                  },
+                  {
+                    "name": "MEDOPL_AUTH_TOKEN_SHA256",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "medopl-auth-boundary",
+                        "key": "MEDOPL_AUTH_TOKEN_SHA256"
+                      }
+                    }
+                  },
+                  {
+                    "name": "MEDOPL_ADMIN_TOKEN_SHA256",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "medopl-auth-boundary",
+                        "key": "MEDOPL_ADMIN_TOKEN_SHA256"
+                      }
+                    }
+                  },
+                  {
+                    "name": "MEDOPL_WEBHOOK_SECRET_SHA256",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "medopl-auth-boundary",
+                        "key": "MEDOPL_WEBHOOK_SECRET_SHA256"
+                      }
+                    }
                   }
                 ],
+                "securityContext": {
+                  "allowPrivilegeEscalation": false,
+                  "readOnlyRootFilesystem": true,
+                  "capabilities": {
+                    "drop": [
+                      "ALL"
+                    ]
+                  }
+                },
                 "readinessProbe": {
                   "httpGet": {
                     "path": "/readyz",
@@ -111,6 +170,10 @@
                   {
                     "name": "medopl-runtime-state",
                     "mountPath": "/tmp/medopl-runtime"
+                  },
+                  {
+                    "name": "medopl-tmp",
+                    "mountPath": "/tmp"
                   }
                 ]
               }
@@ -118,6 +181,10 @@
             "volumes": [
               {
                 "name": "medopl-runtime-state",
+                "emptyDir": {}
+              },
+              {
+                "name": "medopl-tmp",
                 "emptyDir": {}
               }
             ]
@@ -142,6 +209,37 @@
             "name": "http",
             "port": 8080,
             "targetPort": 8080
+          }
+        ]
+      }
+    },
+    {
+      "apiVersion": "networking.k8s.io/v1",
+      "kind": "NetworkPolicy",
+      "metadata": {
+        "name": "medopl-control-plane-ingress",
+        "namespace": "medopl",
+        "labels": {
+          "app.kubernetes.io/name": "medopl"
+        }
+      },
+      "spec": {
+        "podSelector": {
+          "matchLabels": {
+            "app.kubernetes.io/name": "medopl"
+          }
+        },
+        "policyTypes": [
+          "Ingress"
+        ],
+        "ingress": [
+          {
+            "ports": [
+              {
+                "protocol": "TCP",
+                "port": 8080
+              }
+            ]
           }
         ]
       }

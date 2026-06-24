@@ -28,6 +28,7 @@ func RouterWithError(cfg config.Config) (*gin.Engine, error) {
 		cfg.PortalStateStatus = "ok"
 	}
 	handlers.UseLocalPortalProjectionState(portalState)
+	router.Use(productionSecurityMiddleware(cfg))
 	router.GET("/health", handlers.Health(cfg))
 	router.GET("/healthz", handlers.Health(cfg))
 	router.GET("/readyz", handlers.Health(cfg))

@@ -1,6 +1,8 @@
 package config
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"net/url"
 	"os"
@@ -28,6 +30,9 @@ type Config struct {
 	PortalStateStatus  string
 	OPLGatewayURL      string
 	RuntimeBridgeURL   string
+	AuthTokenHash      string
+	AdminTokenHash     string
+	WebhookSecretHash  string
 }
 
 func Load() (Config, error) {
@@ -42,6 +47,9 @@ func Load() (Config, error) {
 		PortalStateRoot:    valueOrDefault(os.Getenv("MEDOPL_PORTAL_STATE_ROOT"), filepath.Join(".runtime", "local-services", "portal-state")),
 		OPLGatewayURL:      strings.TrimRight(valueOrDefault(os.Getenv("OPL_WEB_GATEWAY_PUBLIC_URL"), "http://127.0.0.1:18789"), "/"),
 		RuntimeBridgeURL:   strings.TrimRight(valueOrDefault(os.Getenv("PORTAL_RUNTIME_BRIDGE_PUBLIC_URL"), "http://127.0.0.1:8788"), "/"),
+		AuthTokenHash:      strings.TrimSpace(os.Getenv("MEDOPL_AUTH_TOKEN_SHA256")),
+		AdminTokenHash:     strings.TrimSpace(os.Getenv("MEDOPL_ADMIN_TOKEN_SHA256")),
+		WebhookSecretHash:  strings.TrimSpace(os.Getenv("MEDOPL_WEBHOOK_SECRET_SHA256")),
 	}
 	rawPort := valueOrDefault(os.Getenv("MEDOPL_BACKEND_PORT"), strconv.Itoa(defaultPort))
 	port, err := strconv.Atoi(rawPort)
@@ -75,6 +83,36 @@ func (cfg Config) Validate() error {
 		}
 		if err := validateProductionDatabaseURL(cfg.DatabaseURL); err != nil {
 			return err
+		}
+		if err := validateSHA256Env("MEDOPL_AUTH_TOKEN_SHA256", cfg.AuthTokenHash); err != nil {
+			return err
+		}
+		if err := validateSHA256Env("MEDOPL_ADMIN_TOKEN_SHA256", cfg.AdminTokenHash); err != nil {
+			return err
+		}
+		if err := validateSHA256Env("MEDOPL_WEBHOOK_SECRET_SHA256", cfg.WebhookSecretHash); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func TokenHash(raw string) string {
+	sum := sha256.Sum256([]byte(raw))
+	return hex.EncodeToString(sum[:])
+}
+
+func validateSHA256Env(name string, value string) error {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return fmt.Errorf("%s required for production mode", name)
+	}
+	if len(trimmed) != 64 {
+		return fmt.Errorf("%s must be sha256 hex", name)
+	}
+	for _, char := range trimmed {
+		if !((char >= '0' && char <= '9') || (char >= 'a' && char <= 'f')) {
+			return fmt.Errorf("%s must be lowercase sha256 hex", name)
 		}
 	}
 	return nil

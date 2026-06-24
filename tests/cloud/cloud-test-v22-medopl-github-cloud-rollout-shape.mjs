@@ -140,9 +140,16 @@ assert.deepEqual(
   [{ name: "tcr-pull-secret" }],
   "deployment_must_use_tcr_pull_secret_ref_only",
 );
+assert.equal(deployment.spec.template.spec.automountServiceAccountToken, false, "deployment_must_disable_service_account_token_automount");
+assert.equal(deployment.spec.template.spec.serviceAccountName, "medopl-control-plane", "deployment_must_use_explicit_service_account");
+assert.equal(deployment.spec.template.spec.securityContext?.runAsNonRoot, true, "pod_must_run_as_non_root");
+assert.equal(deployment.spec.template.spec.securityContext?.seccompProfile?.type, "RuntimeDefault", "pod_must_use_runtime_default_seccomp");
 
 const container = deployment.spec.template.spec.containers.find((item) => item.name === "control-plane");
 assert(container, "medopl_control_plane_container_missing");
+assert.equal(container.securityContext?.allowPrivilegeEscalation, false, "container_must_disable_privilege_escalation");
+assert.equal(container.securityContext?.readOnlyRootFilesystem, true, "container_must_use_read_only_root_filesystem");
+assert.deepEqual(container.securityContext?.capabilities?.drop, ["ALL"], "container_must_drop_all_capabilities");
 assert.match(
   container.image,
   /^uswccr\.ccs\.tencentyun\.com\/medopl\/medopl-go-backend:[A-Za-z0-9_.-]+$/u,
@@ -168,6 +175,9 @@ for (const expected of [
   "PORTAL_OPL_PROVIDER_SECRET_ROOT",
   "MEDOPL_PORTAL_STATIC_ROOT",
   "DATABASE_URL",
+  "MEDOPL_AUTH_TOKEN_SHA256",
+  "MEDOPL_ADMIN_TOKEN_SHA256",
+  "MEDOPL_WEBHOOK_SECRET_SHA256",
 ]) {
   assert(envNames.has(expected), `container_env_missing:${expected}`);
 }
@@ -190,6 +200,14 @@ assert.deepEqual(
   { name: "medopl-postgres", key: "DATABASE_URL" },
   "database_url_must_use_secret_ref",
 );
+for (const name of ["MEDOPL_AUTH_TOKEN_SHA256", "MEDOPL_ADMIN_TOKEN_SHA256", "MEDOPL_WEBHOOK_SECRET_SHA256"]) {
+  const item = (container.env || []).find((entry) => entry.name === name);
+  assert.deepEqual(
+    item?.valueFrom?.secretKeyRef,
+    { name: "medopl-auth-boundary", key: name },
+    `auth_boundary_hash_must_use_secret_ref:${name}`,
+  );
+}
 
 const service = findItem(items, "Service", "medopl-control-plane");
 assert(service, "medopl_service_missing");
@@ -218,6 +236,12 @@ assert.equal(
 );
 assert(ingress.spec.tls?.some((entry) => entry.hosts?.includes("portal.medopl.cn")), "ingress_tls_must_include_medopl_host");
 assert(ingress.spec.rules?.some((rule) => rule.host === "portal.medopl.cn"), "ingress_rule_must_include_medopl_host");
+assert(findItem(items, "ServiceAccount", "medopl-control-plane"), "minimal_service_account_missing");
+const networkPolicy = findItem(items, "NetworkPolicy", "medopl-control-plane-ingress");
+assert(networkPolicy, "medopl_network_policy_missing");
+assert.equal(networkPolicy.metadata.namespace, "medopl", "network_policy_namespace_mismatch");
+assert.deepEqual(networkPolicy.spec.podSelector, { matchLabels: { "app.kubernetes.io/name": "medopl" } }, "network_policy_must_target_medopl_pods");
+assert.equal(networkPolicy.spec.policyTypes?.includes("Ingress"), true, "network_policy_must_define_ingress_policy");
 
 const rolloutSource = await readRepoFile("scripts/cloud-rollout/medopl.mjs");
 const backendDockerfile = await readRepoFile("services/medopl-go-backend/Dockerfile");
@@ -358,6 +382,9 @@ for (const expected of [
   "TENCENT_MUTATION_SECRET_ID: ${{ secrets.TENCENT_MUTATION_SECRET_ID }}",
   "TENCENT_MUTATION_SECRET_KEY: ${{ secrets.TENCENT_MUTATION_SECRET_KEY }}",
   "DATABASE_URL: ${{ secrets.DATABASE_URL }}",
+  "MEDOPL_AUTH_TOKEN_SHA256: ${{ secrets.MEDOPL_AUTH_TOKEN_SHA256 }}",
+  "MEDOPL_ADMIN_TOKEN_SHA256: ${{ secrets.MEDOPL_ADMIN_TOKEN_SHA256 }}",
+  "MEDOPL_WEBHOOK_SECRET_SHA256: ${{ secrets.MEDOPL_WEBHOOK_SECRET_SHA256 }}",
   "TENCENT_MUTATION_TKE_CLUSTER_ID: ${{ vars.TENCENT_MUTATION_TKE_CLUSTER_ID }}",
   "TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID: ${{ vars.TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID }}",
   "TENCENT_MUTATION_COS_BUCKET: ${{ vars.TENCENT_MUTATION_COS_BUCKET }}",
@@ -512,6 +539,15 @@ assert(
     productionApplyJob.includes("kubectl --kubeconfig \"$TENCENT_DEPLOY_KUBECONFIG_REF\" --namespace medopl apply -f -") &&
     !productionApplyJob.includes("echo \"$DATABASE_URL\""),
   "production_apply_must_sync_incluster_database_secret_from_github_production_source_without_printing_secret",
+);
+assert(
+  productionApplyJob.includes("Sync in-cluster auth boundary secret from production source") &&
+    productionApplyJob.includes("create secret generic medopl-auth-boundary") &&
+    productionApplyJob.includes("MEDOPL_AUTH_TOKEN_SHA256=%s") &&
+    productionApplyJob.includes("MEDOPL_ADMIN_TOKEN_SHA256=%s") &&
+    productionApplyJob.includes("MEDOPL_WEBHOOK_SECRET_SHA256=%s") &&
+    !productionApplyJob.includes("echo \"$MEDOPL_AUTH_TOKEN_SHA256\""),
+  "production_apply_must_sync_auth_boundary_hashes_without_printing_secret",
 );
 assert(
   productionApplyJob.includes("Validate in-cluster database secret shape") &&

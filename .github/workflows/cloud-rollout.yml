@@ -107,6 +107,9 @@ jobs:
       TENCENT_MUTATION_SECRET_ID: ${{ secrets.TENCENT_MUTATION_SECRET_ID }}
       TENCENT_MUTATION_SECRET_KEY: ${{ secrets.TENCENT_MUTATION_SECRET_KEY }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      MEDOPL_AUTH_TOKEN_SHA256: ${{ secrets.MEDOPL_AUTH_TOKEN_SHA256 }}
+      MEDOPL_ADMIN_TOKEN_SHA256: ${{ secrets.MEDOPL_ADMIN_TOKEN_SHA256 }}
+      MEDOPL_WEBHOOK_SECRET_SHA256: ${{ secrets.MEDOPL_WEBHOOK_SECRET_SHA256 }}
       TENCENT_MUTATION_TKE_CLUSTER_ID: ${{ vars.TENCENT_MUTATION_TKE_CLUSTER_ID }}
       TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID: ${{ vars.TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID }}
       TENCENT_MUTATION_COS_BUCKET: ${{ vars.TENCENT_MUTATION_COS_BUCKET }}
@@ -234,6 +237,31 @@ jobs:
           chmod 600 "$RUNNER_TEMP/medopl-postgres.env"
           kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl create secret generic medopl-postgres \
             --from-env-file="$RUNNER_TEMP/medopl-postgres.env" \
+            --dry-run=client -o yaml \
+            | kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl apply -f -
+
+      - name: Sync in-cluster auth boundary secret from production source
+        shell: bash
+        run: |
+          for name in MEDOPL_AUTH_TOKEN_SHA256 MEDOPL_ADMIN_TOKEN_SHA256 MEDOPL_WEBHOOK_SECRET_SHA256; do
+            value="${!name}"
+            if [ -z "$value" ]; then
+              echo "$name required for in-cluster auth boundary secret sync" >&2
+              exit 1
+            fi
+            if ! printf '%s' "$value" | grep -Eq '^[0-9a-f]{64}$'; then
+              echo "$name must be lowercase sha256 hex" >&2
+              exit 1
+            fi
+          done
+          {
+            printf 'MEDOPL_AUTH_TOKEN_SHA256=%s\n' "$MEDOPL_AUTH_TOKEN_SHA256"
+            printf 'MEDOPL_ADMIN_TOKEN_SHA256=%s\n' "$MEDOPL_ADMIN_TOKEN_SHA256"
+            printf 'MEDOPL_WEBHOOK_SECRET_SHA256=%s\n' "$MEDOPL_WEBHOOK_SECRET_SHA256"
+          } > "$RUNNER_TEMP/medopl-auth-boundary.env"
+          chmod 600 "$RUNNER_TEMP/medopl-auth-boundary.env"
+          kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl create secret generic medopl-auth-boundary \
+            --from-env-file="$RUNNER_TEMP/medopl-auth-boundary.env" \
             --dry-run=client -o yaml \
             | kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl apply -f -
 

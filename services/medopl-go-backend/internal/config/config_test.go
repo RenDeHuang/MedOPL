@@ -38,6 +38,9 @@ func TestLoadUsesWritableProductionProviderSecretDefault(t *testing.T) {
 	t.Setenv("MEDOPL_ENV", "")
 	t.Setenv("DATABASE_URL", "postgres://medopl:test@postgres.medopl.local:5432/medopl?sslmode=require")
 	t.Setenv("PORTAL_OPL_PROVIDER_SECRET_ROOT", "")
+	t.Setenv("MEDOPL_AUTH_TOKEN_SHA256", TokenHash("user-token"))
+	t.Setenv("MEDOPL_ADMIN_TOKEN_SHA256", TokenHash("admin-token"))
+	t.Setenv("MEDOPL_WEBHOOK_SECRET_SHA256", TokenHash("webhook-secret"))
 
 	cfg, err := Load()
 	if err != nil {
@@ -55,6 +58,9 @@ func TestLoadAcceptsProductionModeFromDeployEnvironment(t *testing.T) {
 	t.Setenv("MEDOPL_BACKEND_MODE", "")
 	t.Setenv("MEDOPL_ENV", "production")
 	t.Setenv("DATABASE_URL", "postgres://medopl:test@postgres.medopl.local:5432/medopl?sslmode=require")
+	t.Setenv("MEDOPL_AUTH_TOKEN_SHA256", TokenHash("user-token"))
+	t.Setenv("MEDOPL_ADMIN_TOKEN_SHA256", TokenHash("admin-token"))
+	t.Setenv("MEDOPL_WEBHOOK_SECRET_SHA256", TokenHash("webhook-secret"))
 
 	cfg, err := Load()
 	if err != nil {
@@ -72,6 +78,29 @@ func TestProductionModeRequiresDatabaseURL(t *testing.T) {
 
 	if _, err := Load(); err == nil {
 		t.Fatal("expected production without DATABASE_URL to fail closed")
+	}
+}
+
+func TestProductionModeRequiresAuthBoundaryHashes(t *testing.T) {
+	t.Setenv("MEDOPL_BACKEND_MODE", "production")
+	t.Setenv("MEDOPL_ENV", "")
+	t.Setenv("DATABASE_URL", "postgres://medopl:test@postgres.medopl.local:5432/medopl?sslmode=require")
+
+	if _, err := Load(); err == nil {
+		t.Fatal("expected production without auth hashes to fail closed")
+	}
+}
+
+func TestProductionModeRejectsMalformedAuthBoundaryHash(t *testing.T) {
+	t.Setenv("MEDOPL_BACKEND_MODE", "production")
+	t.Setenv("MEDOPL_ENV", "")
+	t.Setenv("DATABASE_URL", "postgres://medopl:test@postgres.medopl.local:5432/medopl?sslmode=require")
+	t.Setenv("MEDOPL_AUTH_TOKEN_SHA256", "not-a-sha")
+	t.Setenv("MEDOPL_ADMIN_TOKEN_SHA256", TokenHash("admin-token"))
+	t.Setenv("MEDOPL_WEBHOOK_SECRET_SHA256", TokenHash("webhook-secret"))
+
+	if _, err := Load(); err == nil {
+		t.Fatal("expected malformed production auth hash to fail closed")
 	}
 }
 

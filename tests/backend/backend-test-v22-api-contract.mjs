@@ -28,10 +28,12 @@ assert.equal(controlplaneServiceSurface.includes("func Test"), false, "api_contr
 assert.equal(controlplaneServiceSurface.includes("t.Fatalf"), false, "api_contract_surface_must_exclude_go_test_assertions");
 const goRouteSurface = [
   await readRepoFile("services/medopl-go-backend/internal/server/router.go"),
+  await readRepoFile("services/medopl-go-backend/internal/server/security.go"),
   await readRepoFile("services/medopl-go-backend/internal/server/handlers/controlplane.go"),
   await readRepoFile("services/medopl-go-backend/internal/server/handlers/controlplane_helpers.go"),
   controlplaneServiceSurface,
 ].join("\n");
+const configSurface = await readRepoFile("services/medopl-go-backend/internal/config/config.go");
 const serviceSurface = controlplaneServiceSurface;
 const migration = await readRepoFile("services/medopl-go-backend/migrations/0001_baseline.sql");
 
@@ -53,6 +55,32 @@ const requiredRouteMarkers = [
 ];
 for (const marker of requiredRouteMarkers) {
   assert(goRouteSurface.includes(marker), `api_contract_route_missing:${marker}`);
+}
+
+for (const marker of [
+  "productionSecurityMiddleware(cfg)",
+  "MEDOPL_AUTH_TOKEN_SHA256",
+  "MEDOPL_ADMIN_TOKEN_SHA256",
+  "MEDOPL_WEBHOOK_SECRET_SHA256",
+  "authentication_required",
+  "admin_required",
+  "webhook_signature_required",
+  "tenant_forbidden",
+  "user_forbidden",
+  "workspace_forbidden",
+  "/api/v22/billing/payment-paid",
+]) {
+  assert(goRouteSurface.includes(marker) || configSurface.includes(marker), `api_contract_security_boundary_missing:${marker}`);
+}
+for (const marker of [
+  "hashMatches",
+  "subtle.ConstantTimeCompare",
+  "requiresAdmin",
+  "isWebhookOnlyPath",
+  "identityScopeAllowed",
+  "json.Unmarshal",
+]) {
+  assert(goRouteSurface.includes(marker), `api_contract_security_implementation_missing:${marker}`);
 }
 
 for (const table of ["tenants", "workspaces", "runs", "artifacts", "files", "billing_events", "cloud_operations"]) {
