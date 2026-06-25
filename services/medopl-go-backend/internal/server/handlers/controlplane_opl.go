@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	cps "github.com/rendehuang/medopl/services/medopl-go-backend/internal/service/controlplane"
@@ -400,9 +401,33 @@ func destroyStorage(service ControlPlaneService) gin.HandlerFunc {
 			IdempotencyKey:    defaultString(request.IdempotencyKey, "destroy-storage-local-rc"),
 		})
 		if err != nil {
-			writeControlPlaneError(ctx, err)
+			writeControlPlaneErrorWithDiagnostic(ctx, err, storageDestroyDiagnostic(request))
 			return
 		}
 		ctx.JSON(http.StatusOK, payload)
+	}
+}
+
+func storageDestroyDiagnostic(request destroyStorageRequest) controlPlaneErrorDiagnostic {
+	workspaceID := defaultString(request.WorkspaceID, "workspace-local-rc")
+	resourceBindingID := request.ResourceBindingID
+	storageBindingID := request.StorageBindingID
+	operationSeed := strings.Join([]string{workspaceID, resourceBindingID, storageBindingID, request.IdempotencyKey}, ":")
+	return controlPlaneErrorDiagnostic{
+		ErrorCategory:        "unknown_control_plane_error",
+		CorrelationID:        "corr-" + hashForPublicDiagnostic(operationSeed),
+		OperationID:          "storage-destroy-" + hashForPublicDiagnostic(operationSeed+":operation"),
+		WorkspaceIDHash:      hashForPublicDiagnostic(workspaceID),
+		StorageBindingIDHash: hashForPublicDiagnostic(storageBindingID),
+		RuntimeBindingIDHash: hashForPublicDiagnostic(resourceBindingID),
+		CurrentStorageState:  "unknown",
+		ReleaseState:         "unknown",
+		BillingStopped:       false,
+		DestroyIntentState:   "unknown",
+		AuditEventWritten:    false,
+		ProviderRefPresent:   false,
+		DBOperationStage:     "destroy_storage",
+		HandlerStage:         "storage_destroy_handler",
+		Retryable:            false,
 	}
 }

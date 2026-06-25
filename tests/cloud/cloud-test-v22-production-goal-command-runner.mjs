@@ -226,6 +226,28 @@ const server = createServer(async (request, response) => {
     return;
   }
   if (url.pathname === "/api/v22/storage/destroy" && request.method === "POST") {
+    if (mode === "destroy-diagnostic") {
+      sendJson(400, {
+        ok: false,
+        error: "control_plane_operation_failed",
+        errorCategory: "db_constraint_failed",
+        correlationId: "corr-destroy-canary",
+        operationId: "storage-destroy-canary",
+        workspaceIdHash: "workspace_hash",
+        runtimeBindingIdHash: "runtime_hash",
+        storageBindingIdHash: "storage_hash",
+        currentStorageState: "ready",
+        releaseState: "released",
+        billingStopped: true,
+        destroyIntentState: "requested",
+        auditEventWritten: false,
+        providerRefPresent: true,
+        dbOperationStage: "save_billing_event",
+        handlerStage: "storage_destroy_handler",
+        retryable: false,
+      });
+      return;
+    }
     sendJson(200, { ok: true, storageDestroyed: true, storageState: "destroyed", auditEventId: "audit_destroy_canary" });
     return;
   }
@@ -415,6 +437,22 @@ try {
   ], "live_test_product_api_steps");
   assert.equal(liveExecute.summary.productionComplete, false, "live_test_must_not_claim_production_complete");
   assertNoSensitiveText(JSON.stringify(liveExecute), "live_test_execute");
+
+  const destroyDiagnosticCanary = await startCanaryServer("destroy-diagnostic");
+  canaryServers.push(destroyDiagnosticCanary);
+  const destroyDiagnostic = run(["--operation", "live_test", "--execute", "--confirm-current-session-authorization"], {
+    ...baseEnv,
+    V22_OPL_WEBUI_CONSUMER_CANARY_URL: destroyDiagnosticCanary.baseUrl,
+    V22_MEDOPL_PUBLIC_BASE_URL: destroyDiagnosticCanary.baseUrl,
+  });
+  assert.notEqual(destroyDiagnostic.status, 0, "live_test_must_fail_when_destroy_storage_returns_diagnostic_error");
+  const destroyDiagnosticPayload = JSON.parse(destroyDiagnostic.stdout);
+  assert.equal(destroyDiagnosticPayload.summary.blocker, "production_goal_live_test_destroy_storage_failed", "destroy_diagnostic_blocker");
+  assert.equal(destroyDiagnosticPayload.summary.diagnosticReceipt.errorCategory, "db_constraint_failed", "destroy_diagnostic_category");
+  assert.equal(destroyDiagnosticPayload.summary.diagnosticReceipt.correlationId, "corr-destroy-canary", "destroy_diagnostic_correlation");
+  assert.equal(destroyDiagnosticPayload.summary.diagnosticReceipt.dbOperationStage, "save_billing_event", "destroy_diagnostic_db_stage");
+  assert.equal(destroyDiagnosticPayload.summary.diagnosticReceipt.workspaceIdHash, "workspace_hash", "destroy_diagnostic_workspace_hash");
+  assertNoSensitiveText(destroyDiagnostic.stdout + destroyDiagnostic.stderr, "live_test_destroy_diagnostic");
 
   const dbProofMissing = run(["--operation", "live_test", "--execute", "--confirm-current-session-authorization"], {
     ...baseEnv,

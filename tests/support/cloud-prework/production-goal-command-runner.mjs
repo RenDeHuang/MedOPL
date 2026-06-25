@@ -132,6 +132,13 @@ function fail(blocker, details = {}, status = 1) {
   }, status);
 }
 
+function diagnosticReceiptFromPayload(payload = {}) {
+  if (!payload || typeof payload !== "object") return null;
+  const allowed = "errorCategory correlationId operationId workspaceIdHash storageBindingIdHash runtimeBindingIdHash currentStorageState releaseState billingStopped destroyIntentState auditEventWritten providerRefPresent dbOperationStage handlerStage retryable".split(" ");
+  const receipt = Object.fromEntries(allowed.filter((key) => Object.hasOwn(payload, key)).map((key) => [key, payload[key]]));
+  return receipt.errorCategory || receipt.correlationId ? receipt : null;
+}
+
 function parseEnvFile(file) {
   const env = {};
   for (const line of readFileSync(file, "utf8").split(/\r?\n/u)) {
@@ -444,11 +451,22 @@ async function requestJsonWithAuth({ baseUrl, path: requestPath, method = "GET",
   }
   assertPublicPayload(payload, operation);
   if (!response.ok) {
+    const diagnosticReceipt = diagnosticReceiptFromPayload(payload);
+    const evidenceRef = diagnosticReceipt
+      ? safeWriteRuntimeEvidence(operation, {
+        status: "blocked",
+        stepId,
+        blocker: `production_goal_live_test_${stepId}_failed`,
+        diagnosticReceipt,
+      })
+      : "";
     fail(`production_goal_live_test_${stepId}_failed`, {
       operationClass: operation,
       url,
       status: response.status,
       payloadSummary: payload,
+      ...(diagnosticReceipt ? { diagnosticReceipt } : {}),
+      ...(evidenceRef ? { evidenceRef } : {}),
     }, 1);
   }
   return payload;
