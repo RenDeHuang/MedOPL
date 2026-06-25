@@ -35,6 +35,7 @@ const goRouteSurface = [
   controlplaneServiceSurface,
 ].join("\n");
 const configSurface = await readRepoFile("services/medopl-go-backend/internal/config/config.go");
+const controlplaneDomainSurface = await readRepoFile("services/medopl-go-backend/internal/domain/controlplane/controlplane.go");
 const serviceSurface = controlplaneServiceSurface;
 const migration = await readRepoFile("services/medopl-go-backend/migrations/0001_baseline.sql");
 
@@ -130,6 +131,40 @@ const runtimeGateProjectionSurface = serviceSurface.slice(
   serviceSurface.indexOf("type RuntimeGateProjection struct"),
   serviceSurface.indexOf("type LaunchLookupInput struct"),
 );
+const canaryAdmission = runtimeGate.canary_admission;
+assert(canaryAdmission, "runtime_gate_canary_admission_contract_missing");
+assert.equal(canaryAdmission.intent, "selected_real_user_production_canary_runtime_required_admission", "runtime_gate_canary_admission_intent_mismatch");
+for (const marker of [
+  canaryAdmission.enabled_flag,
+  canaryAdmission.emergency_stop_flag,
+  canaryAdmission.tenant_allowlist,
+  canaryAdmission.user_allowlist,
+  "ErrCanaryAdmissionDenied",
+  "ErrCanaryAdmissionDisabled",
+  "WithCanaryAdmission",
+  "SetCanaryAdmissionPolicy",
+]) {
+  assert(goRouteSurface.includes(marker) || configSurface.includes(marker) || serviceSurface.includes(marker), `runtime_gate_canary_admission_marker_missing:${marker}`);
+}
+for (const field of canaryAdmission.decision_fields) {
+  assert(
+    serviceSurface.includes(`json:"${field}`),
+    `runtime_gate_canary_admission_decision_field_missing:${field}`,
+  );
+}
+for (const auditKind of canaryAdmission.audit_events) {
+  assert(
+    controlplaneDomainSurface.includes(auditKind) || serviceSurface.includes(auditKind) || goRouteSurface.includes(auditKind),
+    `runtime_gate_canary_admission_audit_missing:${auditKind}`,
+  );
+}
+assert(
+  serviceSurface.includes("RuntimeGateInput struct") && serviceSurface.includes("TenantID") && serviceSurface.includes("PortalUserID"),
+  "runtime_gate_canary_admission_identity_input_missing",
+);
+for (const field of canaryAdmission.must_not_return) {
+  assert(!runtimeGateProjectionSurface.includes(`json:"${field}`), `runtime_gate_canary_admission_forbidden_response_field:${field}`);
+}
 for (const field of runtimeGate.forbidden_response_fields) {
   assert(!runtimeGateProjectionSurface.includes(`json:"${field}`), `runtime_gate_forbidden_response_field:${field}`);
 }

@@ -19,6 +19,7 @@ type Service struct {
 	providerSecretSink ProviderSecretSink
 	oplGatewayURL      string
 	runtimeBridgeURL   string
+	canaryAdmission    CanaryAdmissionPolicy
 }
 
 type ProviderSecretSink interface {
@@ -29,6 +30,33 @@ type Option func(*Service)
 
 type WorkspaceInput struct {
 	WorkspaceID string
+}
+
+type CanaryAdmissionPolicy struct {
+	Enabled           bool
+	EmergencyStop     bool
+	AllowTenants      []string
+	AllowUsers        []string
+	EnabledBy         string
+	CostCeiling       float64
+	MonitoringOwner   string
+	RollbackOwner     string
+	DisableCommandRef string
+}
+
+type CanaryAdmissionDecision struct {
+	Enabled            bool    `json:"enabled"`
+	Allowed            bool    `json:"allowed"`
+	Decision           string  `json:"decision"`
+	Reason             string  `json:"reason,omitempty"`
+	EnabledBy          string  `json:"enabledBy,omitempty"`
+	TenantScopeHash    string  `json:"tenantScopeHash,omitempty"`
+	UserScopeHash      string  `json:"userScopeHash,omitempty"`
+	CostCeiling        float64 `json:"costCeiling,omitempty"`
+	MonitoringOwner    string  `json:"monitoringOwner,omitempty"`
+	RollbackOwner      string  `json:"rollbackOwner,omitempty"`
+	DisableCommandRef  string  `json:"disableCommandRef,omitempty"`
+	AdmissionReceiptID string  `json:"admissionReceiptId,omitempty"`
 }
 
 func WithProviderSecretStore(sink ProviderSecretSink) Option {
@@ -42,6 +70,18 @@ func WithGatewayURLs(oplGatewayURL string, runtimeBridgeURL string) Option {
 		service.oplGatewayURL = strings.TrimRight(strings.TrimSpace(oplGatewayURL), "/")
 		service.runtimeBridgeURL = strings.TrimRight(strings.TrimSpace(runtimeBridgeURL), "/")
 	}
+}
+
+func WithCanaryAdmission(policy CanaryAdmissionPolicy) Option {
+	return func(service *Service) {
+		service.canaryAdmission = normalizedCanaryAdmissionPolicy(policy)
+	}
+}
+
+func (service *Service) SetCanaryAdmissionPolicy(policy CanaryAdmissionPolicy) {
+	service.mu.Lock()
+	defer service.mu.Unlock()
+	service.canaryAdmission = normalizedCanaryAdmissionPolicy(policy)
 }
 
 func NewService(store cprepo.Store, options ...Option) *Service {

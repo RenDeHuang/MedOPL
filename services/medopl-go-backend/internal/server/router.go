@@ -83,6 +83,17 @@ func RouterWithError(cfg config.Config) (*gin.Engine, error) {
 		controlPlaneStore,
 		controlplaneservice.WithProviderSecretStore(providersecret.NewFileStore(cfg.ProviderSecretRoot)),
 		controlplaneservice.WithGatewayURLs(cfg.OPLGatewayURL, cfg.RuntimeBridgeURL),
+		controlplaneservice.WithCanaryAdmission(controlplaneservice.CanaryAdmissionPolicy{
+			Enabled:           cfg.CanaryAdmission.Enabled,
+			EmergencyStop:     cfg.CanaryAdmission.EmergencyStop,
+			AllowTenants:      cfg.CanaryAdmission.AllowTenants,
+			AllowUsers:        cfg.CanaryAdmission.AllowUsers,
+			EnabledBy:         cfg.CanaryAdmission.EnabledBy,
+			CostCeiling:       cfg.CanaryAdmission.CostCeiling,
+			MonitoringOwner:   cfg.CanaryAdmission.MonitoringOwner,
+			RollbackOwner:     cfg.CanaryAdmission.RollbackOwner,
+			DisableCommandRef: cfg.CanaryAdmission.DisableCommandRef,
+		}),
 	)
 	handlers.RegisterControlPlaneRoutes(api, controlPlane)
 	registerPortalStaticRoutes(router, cfg.PortalStaticRoot)

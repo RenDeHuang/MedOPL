@@ -174,6 +174,8 @@ func runtimeGate(service ControlPlaneService) gin.HandlerFunc {
 		var request runtimeGateRequest
 		_ = ctx.ShouldBindJSON(&request)
 		payload, err := service.RuntimeGate(ctx.Request.Context(), cps.RuntimeGateInput{
+			TenantID:       defaultString(request.TenantID, ctx.GetHeader("X-MedOPL-Tenant-ID")),
+			PortalUserID:   defaultString(request.PortalUserID, request.UserID, ctx.GetHeader("X-MedOPL-User-ID")),
 			WorkspaceID:    defaultString(request.WorkspaceID, workspaceIDFromQuery(ctx), "workspace-local-rc"),
 			InvocationMode: defaultString(request.InvocationMode, "runtime_required"),
 			RuntimePlanID:  request.RuntimePlanID,

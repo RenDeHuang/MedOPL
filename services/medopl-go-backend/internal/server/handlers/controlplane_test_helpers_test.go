@@ -20,9 +20,12 @@ func controlPlaneHandlerTestRouter() *gin.Engine {
 }
 
 func controlPlaneHandlerTestRouterWithSecretRoot(secretRoot string) *gin.Engine {
+	return controlPlaneHandlerTestRouterWithOptions(secretRoot)
+}
+
+func controlPlaneHandlerTestRouterWithOptions(secretRoot string, options ...controlplaneservice.Option) *gin.Engine {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
-	options := []controlplaneservice.Option{}
 	if strings.TrimSpace(secretRoot) != "" {
 		options = append(options, controlplaneservice.WithProviderSecretStore(providersecret.NewFileStore(secretRoot)))
 	}

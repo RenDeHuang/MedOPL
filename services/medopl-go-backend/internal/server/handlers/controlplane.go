@@ -109,6 +109,9 @@ type openManagedEnvironmentRequest struct {
 }
 
 type runtimeGateRequest struct {
+	TenantID       string `json:"tenantId"`
+	PortalUserID   string `json:"portalUserId"`
+	UserID         string `json:"userId"`
 	WorkspaceID    string `json:"workspaceId"`
 	InvocationMode string `json:"invocationMode"`
 	RuntimePlanID  string `json:"runtimePlanId"`

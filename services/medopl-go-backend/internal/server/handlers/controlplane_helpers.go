@@ -78,6 +78,10 @@ func controlPlaneStatus(err error) int {
 		return http.StatusPreconditionRequired
 	case errors.Is(err, cpd.ErrRuntimeReleaseRequired):
 		return http.StatusPreconditionRequired
+	case errors.Is(err, cpd.ErrCanaryAdmissionDenied):
+		return http.StatusForbidden
+	case errors.Is(err, cpd.ErrCanaryAdmissionDisabled):
+		return http.StatusServiceUnavailable
 	case errors.Is(err, cpd.ErrAccountRequired):
 		return http.StatusPreconditionRequired
 	case errors.Is(err, cpd.ErrInsufficientBalance):
@@ -97,6 +101,10 @@ func controlPlaneErrorBody(err error) gin.H {
 		return gin.H{"ok": false, "error": "provider_key_required"}
 	case errors.Is(err, cpd.ErrRuntimeReleaseRequired):
 		return gin.H{"ok": false, "error": "runtime_release_required_before_storage_destroy"}
+	case errors.Is(err, cpd.ErrCanaryAdmissionDenied):
+		return gin.H{"ok": false, "error": "canary_admission_denied"}
+	case errors.Is(err, cpd.ErrCanaryAdmissionDisabled):
+		return gin.H{"ok": false, "error": "canary_admission_disabled"}
 	case errors.Is(err, cpd.ErrAccountRequired):
 		return gin.H{"ok": false, "error": "account_required"}
 	case errors.Is(err, cpd.ErrInsufficientBalance):

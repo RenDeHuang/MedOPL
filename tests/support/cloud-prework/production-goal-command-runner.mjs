@@ -139,6 +139,14 @@ function diagnosticReceiptFromPayload(payload = {}) {
   return receipt.errorCategory || receipt.correlationId ? receipt : null;
 }
 
+function canaryAdmissionReceiptFromGate(payload = {}) {
+  const admission = payload?.canaryAdmission;
+  if (!admission || typeof admission !== "object") return null;
+  const allowed = "enabled allowed decision reason enabledBy tenantScopeHash userScopeHash costCeiling monitoringOwner rollbackOwner disableCommandRef admissionReceiptId".split(" ");
+  const receipt = Object.fromEntries(allowed.filter((key) => Object.hasOwn(admission, key)).map((key) => [key, admission[key]]));
+  return receipt.decision ? receipt : null;
+}
+
 function parseEnvFile(file) {
   const env = {};
   for (const line of readFileSync(file, "utf8").split(/\r?\n/u)) {
@@ -831,12 +839,13 @@ async function runLiveTest(operation) {
   const gate = await liveRequest({
     path: "/api/opl/runtime-gate",
     method: "POST",
-    body: { workspaceId, invocationMode: "runtime_required" },
+    body: { tenantId, portalUserId, workspaceId, invocationMode: "runtime_required" },
     stepId: "runtime_gate",
   });
   requireFields(gate, ["ok", "workspaceId", "runtimeState", "storageState", "nodePoolProjection.state"], "production_goal_live_test_runtime_gate_failed", operation);
   if (gate.ok !== true) fail("production_goal_live_test_runtime_gate_failed", { operationClass: operation, reason: "ok_false" }, 1);
-  observed.push({ step: "runtime_gate", runtimeState: gate.runtimeState, storageState: gate.storageState });
+  const canaryAdmissionReceipt = canaryAdmissionReceiptFromGate(gate);
+  observed.push({ step: "runtime_gate", runtimeState: gate.runtimeState, storageState: gate.storageState, canaryAdmission: canaryAdmissionReceipt || "not_required" });
 
   const launchQuery = `?launchId=${encodeURIComponent(launch.launchId)}`;
   const file = await liveRequest({
@@ -921,6 +930,7 @@ async function runLiveTest(operation) {
     flowCompleteness: "medopl_public_api_product_e2e",
     observed,
     databaseProof,
+    ...(canaryAdmissionReceipt ? { canaryAdmissionReceipt } : {}),
   });
   return {
     evidenceRef,
@@ -929,6 +939,7 @@ async function runLiveTest(operation) {
     steps,
     observed,
     databaseProof,
+    ...(canaryAdmissionReceipt ? { canaryAdmissionReceipt } : {}),
   };
 }
 

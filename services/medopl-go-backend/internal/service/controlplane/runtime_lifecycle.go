@@ -27,6 +27,8 @@ type OpenManagedEnvironmentInput struct {
 }
 
 type RuntimeGateInput struct {
+	TenantID       string
+	PortalUserID   string
 	WorkspaceID    string
 	InvocationMode string
 	RuntimePlanID  string
@@ -84,6 +86,7 @@ type RuntimeGateProjection struct {
 	Billing               RuntimeGateBilling            `json:"billing"`
 	Release               RuntimeGateRelease            `json:"release"`
 	ConsumerProjection    RuntimeGateConsumerProjection `json:"consumerProjection"`
+	CanaryAdmission       CanaryAdmissionDecision       `json:"canaryAdmission"`
 	NextAction            string                        `json:"nextAction"`
 	CannotClaim           []string                      `json:"cannotClaim"`
 }
@@ -144,6 +147,17 @@ func (service *Service) OpenManagedEnvironment(ctx context.Context, input OpenMa
 	service.mu.Lock()
 	defer service.mu.Unlock()
 
+	workspaceID := strings.TrimSpace(input.WorkspaceID)
+	if workspaceID == "" {
+		return cpd.LaunchProjection{}, cpd.ErrWorkspaceRequired
+	}
+	_, err := service.canaryAdmissionDecision(ctx, strings.TrimSpace(input.TenantID), strings.TrimSpace(input.PortalUserID), workspaceID)
+	if err != nil {
+		if errors.Is(err, cpd.ErrCanaryAdmissionDisabled) {
+			_ = service.recordCanaryAdmissionDisabled(ctx, workspaceID, "")
+		}
+		return cpd.LaunchProjection{}, err
+	}
 	binding, err := service.store.ProviderBindingByWorkspace(ctx, strings.TrimSpace(input.WorkspaceID))
 	if errors.Is(err, cprepo.ErrNotFound) {
 		return cpd.LaunchProjection{}, cpd.ErrProviderKeyRequired
@@ -230,6 +244,7 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 			ReleaseAction: "not_required",
 			StorageAction: "not_required",
 		},
+		CanaryAdmission:       CanaryAdmissionDecision{Enabled: false, Allowed: true, Decision: "not_required"},
 		ProviderKeyStatus:     "not_required_for_ordinary_chat",
 		NextAction:            "continue_in_opl_webui",
 		CannotClaim:           runtimeGateCannotClaim(),
@@ -239,6 +254,28 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 		return projection, nil
 	}
 	projection.MedOPLRuntimeRequired = true
+	admission, err := service.canaryAdmissionDecision(ctx, strings.TrimSpace(input.TenantID), strings.TrimSpace(input.PortalUserID), workspaceID)
+	projection.CanaryAdmission = admission
+	if err != nil && isCanaryAdmissionError(err) {
+		projection.Ok = false
+		projection.RuntimeState = "blocked"
+		projection.StorageState = "blocked"
+		projection.NodePoolProjection = NodePoolProjection{State: "blocked", CustomerVisible: false}
+		projection.Billing = RuntimeGateBilling{FreezeStatus: "not_started", Currency: "CNY"}
+		projection.Release = RuntimeGateRelease{CanReleaseRuntime: false, DestroyStorage: "requires_runtime_binding", StopBilling: "not_started"}
+		projection.ConsumerProjection = RuntimeGateConsumerProjection{
+			ChatSurface:   "opl-webui",
+			RunSurface:    "blocked_until_canary_admission",
+			ReleaseAction: "not_started",
+			StorageAction: "requires_runtime_binding",
+		}
+		projection.ProviderKeyStatus = "not_checked"
+		projection.NextAction = "canary_admission_required"
+		return projection, nil
+	}
+	if err != nil {
+		return RuntimeGateProjection{}, err
+	}
 	projection.RuntimeState = "blocked"
 	projection.StorageState = "blocked"
 	projection.NodePoolProjection = NodePoolProjection{State: "blocked", CustomerVisible: false}

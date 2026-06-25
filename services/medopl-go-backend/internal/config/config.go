@@ -35,6 +35,19 @@ type Config struct {
 	WebhookSecretHash    string
 	SessionSecretHash    string
 	SessionBootstrapHash string
+	CanaryAdmission      CanaryAdmissionConfig
+}
+
+type CanaryAdmissionConfig struct {
+	Enabled           bool
+	EmergencyStop     bool
+	AllowTenants      []string
+	AllowUsers        []string
+	EnabledBy         string
+	CostCeiling       float64
+	MonitoringOwner   string
+	RollbackOwner     string
+	DisableCommandRef string
 }
 
 func Load() (Config, error) {
@@ -54,6 +67,17 @@ func Load() (Config, error) {
 		WebhookSecretHash:    strings.TrimSpace(os.Getenv("MEDOPL_WEBHOOK_SECRET_SHA256")),
 		SessionSecretHash:    strings.TrimSpace(os.Getenv("MEDOPL_SESSION_SIGNING_SECRET_SHA256")),
 		SessionBootstrapHash: strings.TrimSpace(os.Getenv("MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256")),
+		CanaryAdmission: CanaryAdmissionConfig{
+			Enabled:           envBool("MEDOPL_CANARY_ADMISSION_ENABLED"),
+			EmergencyStop:     envBool("MEDOPL_CANARY_EMERGENCY_STOP"),
+			AllowTenants:      csvEnv("MEDOPL_CANARY_TENANT_ALLOWLIST"),
+			AllowUsers:        csvEnv("MEDOPL_CANARY_USER_ALLOWLIST"),
+			EnabledBy:         strings.TrimSpace(os.Getenv("MEDOPL_CANARY_ADMISSION_ENABLED_BY")),
+			CostCeiling:       envFloat("MEDOPL_CANARY_COST_CEILING_USD"),
+			MonitoringOwner:   strings.TrimSpace(os.Getenv("MEDOPL_CANARY_MONITORING_OWNER")),
+			RollbackOwner:     strings.TrimSpace(os.Getenv("MEDOPL_CANARY_ROLLBACK_OWNER")),
+			DisableCommandRef: strings.TrimSpace(os.Getenv("MEDOPL_CANARY_DISABLE_COMMAND_REF")),
+		},
 	}
 	rawPort := valueOrDefault(os.Getenv("MEDOPL_BACKEND_PORT"), strconv.Itoa(defaultPort))
 	port, err := strconv.Atoi(rawPort)
@@ -102,6 +126,17 @@ func (cfg Config) Validate() error {
 		}
 		if err := validateSHA256Env("MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256", cfg.SessionBootstrapHash); err != nil {
 			return err
+		}
+		if cfg.CanaryAdmission.Enabled {
+			if len(cfg.CanaryAdmission.AllowTenants) == 0 {
+				return fmt.Errorf("MEDOPL_CANARY_TENANT_ALLOWLIST required when canary admission is enabled")
+			}
+			if len(cfg.CanaryAdmission.AllowUsers) == 0 {
+				return fmt.Errorf("MEDOPL_CANARY_USER_ALLOWLIST required when canary admission is enabled")
+			}
+			if cfg.CanaryAdmission.CostCeiling <= 0 {
+				return fmt.Errorf("MEDOPL_CANARY_COST_CEILING_USD required when canary admission is enabled")
+			}
 		}
 	}
 	return nil
@@ -163,4 +198,36 @@ func defaultProviderSecretRoot(mode string) string {
 		return defaultProductionProviderSecretRoot
 	}
 	return defaultLocalProviderSecretRoot
+}
+
+func csvEnv(name string) []string {
+	values := strings.Split(os.Getenv(name), ",")
+	out := make([]string, 0, len(values))
+	for _, value := range values {
+		if trimmed := strings.TrimSpace(value); trimmed != "" {
+			out = append(out, trimmed)
+		}
+	}
+	return out
+}
+
+func envBool(name string) bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(name))) {
+	case "1", "true", "yes", "on", "enabled":
+		return true
+	default:
+		return false
+	}
+}
+
+func envFloat(name string) float64 {
+	raw := strings.TrimSpace(os.Getenv(name))
+	if raw == "" {
+		return 0
+	}
+	value, err := strconv.ParseFloat(raw, 64)
+	if err != nil || value < 0 {
+		return 0
+	}
+	return value
 }

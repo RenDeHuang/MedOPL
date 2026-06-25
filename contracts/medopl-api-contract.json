@@ -87,8 +87,46 @@
         "billing",
         "release",
         "consumerProjection",
+        "canaryAdmission",
         "nextAction"
       ],
+      "canary_admission": {
+        "intent": "selected_real_user_production_canary_runtime_required_admission",
+        "enabled_flag": "MEDOPL_CANARY_ADMISSION_ENABLED",
+        "emergency_stop_flag": "MEDOPL_CANARY_EMERGENCY_STOP",
+        "tenant_allowlist": "MEDOPL_CANARY_TENANT_ALLOWLIST",
+        "user_allowlist": "MEDOPL_CANARY_USER_ALLOWLIST",
+        "decision_fields": [
+          "enabled",
+          "allowed",
+          "decision",
+          "reason",
+          "enabledBy",
+          "tenantScopeHash",
+          "userScopeHash",
+          "costCeiling",
+          "monitoringOwner",
+          "rollbackOwner",
+          "disableCommandRef",
+          "admissionReceiptId"
+        ],
+        "audit_events": [
+          "canary_admission_enabled",
+          "canary_admission_denied",
+          "canary_admission_disabled",
+          "emergency_stop_triggered"
+        ],
+        "must_not_return": [
+          "tenantAllowlist",
+          "userAllowlist",
+          "rawTenantId",
+          "rawUserId",
+          "rawProviderKey",
+          "bearerToken",
+          "runtimeToken",
+          "kubeconfig"
+        ]
+      },
       "forbidden_response_fields": [
         "rawProviderKey",
         "apiKey",
