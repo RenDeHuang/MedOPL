@@ -2,45 +2,25 @@
 
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import {
+  assertCanaryAdmissionAllowed,
+  canaryAdmissionReceiptFromGate,
+  canaryEmergencyStopRequired,
+  probeUnlistedCanaryUser,
+} from "./lib/production-canary-admission-support.js";
+import {
+  ensureConfig,
+  getConfigCheck,
+  parseEnvFile,
+} from "./lib/production-goal-command-config-support.js";
 import {
   hashPublicRef,
   identityScopeHeaders,
   sessionFromBootstrapHeaders,
   signedProductionSessionBootstrapPayload,
 } from "./lib/production-session-bootstrap-support.js";
-
-const OPERATION_CONFIG = Object.freeze({
-  tenant_runtime_provisioning: {
-    requiredEnv: ["V22_TENCENT_MUTATION_SECRET_FILE", "V22_TENCENT_RUNTIME_PLAN_FILE"],
-    requiredPaths: ["V22_TENCENT_MUTATION_SECRET_FILE", "V22_TENCENT_RUNTIME_PLAN_FILE"],
-  },
-  storage_lifecycle: {
-    requiredEnv: ["V22_TENCENT_MUTATION_SECRET_FILE", "V22_TENCENT_STORAGE_PLAN_FILE"],
-    requiredPaths: ["V22_TENCENT_MUTATION_SECRET_FILE", "V22_TENCENT_STORAGE_PLAN_FILE"],
-  },
-  billing_audit_writeback: {
-    requiredEnv: ["V22_MEDOPL_BILLING_AUDIT_RECEIPT_FILE", "DATABASE_URL"],
-    requiredPaths: ["V22_MEDOPL_BILLING_AUDIT_RECEIPT_FILE"],
-  },
-  build_push: {
-    requiredEnv: ["V22_CONTAINER_BUILD_CONTEXT", "V22_CONTAINER_DOCKERFILE", "V22_CONTAINER_IMAGE_REF", "TCR_ID", "TCR_SECRET"],
-    requiredPaths: ["V22_CONTAINER_BUILD_CONTEXT", "V22_CONTAINER_DOCKERFILE"],
-  },
-  kubectl: {
-    requiredEnv: ["TENCENT_DEPLOY_KUBECONFIG_REF", "V22_KUBERNETES_MANIFEST_DIR"],
-    requiredPaths: ["V22_KUBERNETES_MANIFEST_DIR"],
-  },
-  deploy: {
-    requiredEnv: ["TENCENT_DEPLOY_KUBECONFIG_REF", "V22_MEDOPL_DEPLOY_PLAN_FILE"],
-    requiredPaths: ["V22_MEDOPL_DEPLOY_PLAN_FILE"],
-  },
-  live_test: {
-    requiredEnv: ["V22_OPL_WEBUI_CONSUMER_CANARY_URL", "V22_MEDOPL_PUBLIC_BASE_URL", "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256", "MEDOPL_WEBHOOK_SECRET"],
-    requiredPaths: [],
-  },
-});
 
 function parseArgs(argv = process.argv.slice(2)) {
   const options = { operation: "", execute: false, checkConfig: false, confirmAuthorization: false };
@@ -139,90 +119,8 @@ function diagnosticReceiptFromPayload(payload = {}) {
   return receipt.errorCategory || receipt.correlationId ? receipt : null;
 }
 
-function canaryAdmissionReceiptFromGate(payload = {}) {
-  const admission = payload?.canaryAdmission;
-  if (!admission || typeof admission !== "object") return null;
-  const allowed = "enabled allowed decision reason enabledBy tenantScopeHash userScopeHash costCeiling monitoringOwner rollbackOwner disableCommandRef admissionReceiptId".split(" ");
-  const receipt = Object.fromEntries(allowed.filter((key) => Object.hasOwn(admission, key)).map((key) => [key, admission[key]]));
-  return receipt.decision ? receipt : null;
-}
-
-function parseEnvFile(file) {
-  const env = {};
-  for (const line of readFileSync(file, "utf8").split(/\r?\n/u)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const normalized = trimmed.startsWith("export ") ? trimmed.slice("export ".length).trim() : trimmed;
-    const equals = normalized.indexOf("=");
-    if (equals <= 0) continue;
-    const key = normalized.slice(0, equals).trim();
-    let value = normalized.slice(equals + 1).trim();
-    if ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))) value = value.slice(1, -1);
-    env[key] = value;
-  }
-  return env;
-}
-
 function readJsonFile(file) {
   return JSON.parse(readFileSync(file, "utf8"));
-}
-
-function operationConfig(operation) {
-  const config = OPERATION_CONFIG[operation];
-  if (!config) fail("production_goal_command_operation_unsupported", { operationClass: operation }, 64);
-  return config;
-}
-
-function missingEnv(config) {
-  return config.requiredEnv.filter((key) => !String(process.env[key] || "").trim());
-}
-
-function missingPaths(config) {
-  return config.requiredPaths.filter((key) => {
-    const value = String(process.env[key] || "").trim();
-    return value && !existsSync(path.resolve(value));
-  });
-}
-
-function directoryHasFile(dir, predicate = () => true) {
-  if (!dir || !existsSync(dir) || !statSync(dir).isDirectory()) return false;
-  const entries = readdirSync(dir, { withFileTypes: true });
-  for (const entry of entries) {
-    const child = path.join(dir, entry.name);
-    if (entry.isFile() && predicate(entry.name)) return true;
-    if (entry.isDirectory() && directoryHasFile(child, predicate)) return true;
-  }
-  return false;
-}
-
-function semanticConfigMissing(operation) {
-  const missing = [];
-  if (operation === "build_push") {
-    const dockerfile = path.resolve(process.env.V22_CONTAINER_DOCKERFILE || "");
-    if (!existsSync(dockerfile) || !statSync(dockerfile).isFile()) {
-      missing.push("V22_CONTAINER_DOCKERFILE:Dockerfile");
-    }
-  }
-  if (operation === "kubectl" && !directoryHasFile(path.resolve(process.env.V22_KUBERNETES_MANIFEST_DIR || ""), (name) => /\.(?:ya?ml|json)$/u.test(name))) {
-    missing.push("V22_KUBERNETES_MANIFEST_DIR:manifest");
-  }
-  return missing;
-}
-
-function ensureConfig(operation) {
-  const config = operationConfig(operation);
-  const requiredEnvMissing = missingEnv(config);
-  const requiredPathMissing = missingPaths(config);
-  const requiredContentMissing = semanticConfigMissing(operation);
-  if (requiredEnvMissing.length || requiredPathMissing.length || requiredContentMissing.length) {
-    fail("production_goal_command_config_missing", {
-      operationClass: operation,
-      requiredEnvMissing,
-      requiredPathMissing,
-      requiredContentMissing,
-    }, 65);
-  }
-  return config;
 }
 
 function safeWriteRuntimeEvidence(operation, payload) {
@@ -411,11 +309,11 @@ async function fetchWithTimeout(url, options = {}) {
   }
 }
 
-async function requestJson({ baseUrl, path: requestPath, method = "GET", body, operation, stepId, session, identity, webhookSecret }) {
-  return requestJsonWithAuth({ baseUrl, path: requestPath, method, body, operation, stepId, session, identity, webhookSecret });
+async function requestJson({ baseUrl, path: requestPath, method = "GET", body, operation, stepId, session, identity, webhookSecret, allowFailure = false }) {
+  return requestJsonWithAuth({ baseUrl, path: requestPath, method, body, operation, stepId, session, identity, webhookSecret, allowFailure });
 }
 
-async function requestJsonWithAuth({ baseUrl, path: requestPath, method = "GET", body, operation, stepId, session, identity, webhookSecret }) {
+async function requestJsonWithAuth({ baseUrl, path: requestPath, method = "GET", body, operation, stepId, session, identity, webhookSecret, allowFailure = false }) {
   const url = `${String(baseUrl || "").replace(/\/$/u, "")}${requestPath}`;
   let response;
   const headers = body ? { "content-type": "application/json" } : {};
@@ -458,6 +356,9 @@ async function requestJsonWithAuth({ baseUrl, path: requestPath, method = "GET",
     }, 1);
   }
   assertPublicPayload(payload, operation);
+  if (!response.ok && allowFailure) {
+    return { ...payload, httpStatus: response.status };
+  }
   if (!response.ok) {
     const diagnosticReceipt = diagnosticReceiptFromPayload(payload);
     const evidenceRef = diagnosticReceipt
@@ -841,11 +742,36 @@ async function runLiveTest(operation) {
     method: "POST",
     body: { tenantId, portalUserId, workspaceId, invocationMode: "runtime_required" },
     stepId: "runtime_gate",
+    allowFailure: canaryEmergencyStopRequired(),
   });
+  if (canaryEmergencyStopRequired()) {
+    const emergencyReceipt = canaryAdmissionReceiptFromGate(gate);
+    if (gate.httpStatus === 403 && emergencyReceipt?.decision === "disabled" && emergencyReceipt?.reason === "emergency_stop_triggered") {
+      const evidenceRef = safeWriteRuntimeEvidence(operation, {
+        status: "blocked",
+        stepId: "runtime_gate",
+        blocker: "production_goal_live_test_canary_admission_emergency_stop_blocked",
+        canaryAdmissionReceipt: emergencyReceipt,
+      });
+      fail("production_goal_live_test_canary_admission_emergency_stop_blocked", {
+        operationClass: operation,
+        canaryAdmissionReceipt: emergencyReceipt,
+        evidenceRef,
+      }, 1);
+    }
+    fail("production_goal_live_test_canary_admission_emergency_stop_not_enforced", {
+      operationClass: operation,
+      status: gate.httpStatus || 0,
+      canaryAdmissionReceipt: emergencyReceipt || null,
+    }, 1);
+  }
   requireFields(gate, ["ok", "workspaceId", "runtimeState", "storageState", "nodePoolProjection.state"], "production_goal_live_test_runtime_gate_failed", operation);
   if (gate.ok !== true) fail("production_goal_live_test_runtime_gate_failed", { operationClass: operation, reason: "ok_false" }, 1);
   const canaryAdmissionReceipt = canaryAdmissionReceiptFromGate(gate);
+  assertCanaryAdmissionAllowed({ receipt: canaryAdmissionReceipt, operation, fail });
+  const canaryAdmissionNegativeProbe = await probeUnlistedCanaryUser({ liveRequest, tenantId, workspaceId, operation, fail });
   observed.push({ step: "runtime_gate", runtimeState: gate.runtimeState, storageState: gate.storageState, canaryAdmission: canaryAdmissionReceipt || "not_required" });
+  if (canaryAdmissionNegativeProbe) observed.push({ step: "canary_admission_unlisted_user", canaryAdmission: canaryAdmissionNegativeProbe });
 
   const launchQuery = `?launchId=${encodeURIComponent(launch.launchId)}`;
   const file = await liveRequest({
@@ -931,6 +857,7 @@ async function runLiveTest(operation) {
     observed,
     databaseProof,
     ...(canaryAdmissionReceipt ? { canaryAdmissionReceipt } : {}),
+    ...(canaryAdmissionNegativeProbe ? { canaryAdmissionNegativeProbe } : {}),
   });
   return {
     evidenceRef,
@@ -940,6 +867,7 @@ async function runLiveTest(operation) {
     observed,
     databaseProof,
     ...(canaryAdmissionReceipt ? { canaryAdmissionReceipt } : {}),
+    ...(canaryAdmissionNegativeProbe ? { canaryAdmissionNegativeProbe } : {}),
   };
 }
 
@@ -961,27 +889,24 @@ async function main() {
     return;
   }
   if (!options.operation) fail("production_goal_command_operation_required", {}, 64);
-  const config = operationConfig(options.operation);
-  const requiredEnvMissing = missingEnv(config);
-  const requiredPathMissing = missingPaths(config);
+  const configCheck = getConfigCheck(options.operation, fail);
   if (options.checkConfig) {
-    const requiredContentMissing = semanticConfigMissing(options.operation);
     writeJson({
-      ok: requiredEnvMissing.length === 0 && requiredPathMissing.length === 0 && requiredContentMissing.length === 0,
+      ok: configCheck.requiredEnvMissing.length === 0 && configCheck.requiredPathMissing.length === 0 && configCheck.requiredContentMissing.length === 0,
       summary: {
         operationClass: options.operation,
         executesCloudCommands: false,
-        requiredEnvMissing,
-        requiredPathMissing,
-        requiredContentMissing,
+        requiredEnvMissing: configCheck.requiredEnvMissing,
+        requiredPathMissing: configCheck.requiredPathMissing,
+        requiredContentMissing: configCheck.requiredContentMissing,
         urls: [process.env.V22_OPL_WEBUI_CONSUMER_CANARY_URL, process.env.V22_MEDOPL_PUBLIC_BASE_URL].filter(Boolean),
         productionComplete: false,
       },
-    }, requiredEnvMissing.length || requiredPathMissing.length || requiredContentMissing.length ? 1 : 0);
+    }, configCheck.requiredEnvMissing.length || configCheck.requiredPathMissing.length || configCheck.requiredContentMissing.length ? 1 : 0);
   }
   if (!options.execute) fail("production_goal_command_execute_required", { operationClass: options.operation }, 65);
   if (!options.confirmAuthorization) fail("production_goal_command_authorization_required", { operationClass: options.operation }, 65);
-  ensureConfig(options.operation);
+  ensureConfig(options.operation, fail);
   const summary = await runOperation(options.operation);
   writeJson({
     ok: true,

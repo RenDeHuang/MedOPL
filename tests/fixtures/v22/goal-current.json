@@ -34,19 +34,16 @@
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
     "branch": "recovery/platform-v22-trunk",
-    "landed_commit": "eba7f9b9438b1fb7e7f0750ea861c4cdcdaf5b9c",
+    "landed_commit": "b594793ee969c56ba95a86070e51a1b4f03f9e76",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
-      "npm run test:run-plan -- --dry-run --json passed",
-      "npm run test:run-plan passed",
-      "npm run test:backend passed",
-      "npm run test:release passed",
       "npm run verify passed",
       "npm run test:health passed",
-      "npm run gate:review -- --slice-id goal-s2-storage-destroy-production-diagnostic-receipt passed",
-      "npm run repo:bloat -- --diff --slice-id goal-s2-storage-destroy-production-diagnostic-receipt passed",
+      "npm run gate:review passed",
+      "npm run repo:bloat passed",
       "npm run line:budget passed",
-      "npm run slice:post-push-verify -- --execute --slice-id goal-s2-storage-destroy-production-diagnostic-receipt passed"
+      "selected canary admission control source landed",
+      "raw cloud evidence stayed outside git"
     ],
     "plan_completion_audit": {
       "functional": "done",
@@ -58,10 +55,10 @@
     },
     "cleanup_result": {
       "deleted": "none",
-      "folded": "storage destroy diagnostic receipt closeout into active/history/goal-current",
+      "folded": "selected canary admission control closeout into active/history/goal-current",
       "retained": "runtime evidence and raw cloud evidence outside git",
-      "reason": "post-merge closeout for diagnostic receipt slice",
-      "next": "rerun S2 live_test and use redacted diagnostic receipt if storage destroy still fails"
+      "reason": "post-merge closeout for selected canary admission control",
+      "next": "deploy config injection for selected real user canary admission"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "opl-webui-runtime-production-slice"
@@ -74,7 +71,7 @@
     "multi_region_sla_enterprise_compliance_ongoing_authorization_and_unobserved_tenants_resources_remain_unclaimed",
     "unscoped_production_complete_requires_dedicated_scope_expansion_evidence"
   ],
-  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is recovery/platform-v22-trunk at eba7f9b9438b1fb7e7f0750ea861c4cdcdaf5b9c. Phase A PostgreSQL Business Persistence RC, Phase E billing idempotency hardening and Phase F operational stability gates are source-landed. Release Image run 28116660385 and Cloud Rollout run 28116700519 passed on current trunk. The rollout produced a redacted production receipt manifest with seven owner receipts, 12 lifecycle sections and 14 production-complete candidate criteria. Manifest sha256 is sha256:3c718484f40b0bcfadf55bbafe6f97b02b22072ad801004a560bfe1f69059a0f. The live DB proof hash for business_db_persistence_receipt is sha256:77555180d9db24120515881082c54539a5d4f334ca8a188c460def5f022fe29f. This can claim cloud release candidate and scoped production-complete candidate evidence for the current authorized canary path only, including Portal public entry, HTTP redirect, Go health/ready, OPL-Webui consumer canary, PostgreSQL business metadata persistence, billing idempotency, soak, concurrency pressure, rollback drill, continuous canary, alerting and final release decision receipts. MedOPL still does not claim unscoped production complete, multi-region/SLA, enterprise compliance, ongoing authorization or unobserved tenants/resources. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is recovery/platform-v22-trunk at eba7f9b9438b1fb7e7f0750ea861c4cdcdaf5b9c.",
+  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is recovery/platform-v22-trunk at b594793ee969c56ba95a86070e51a1b4f03f9e76. Phase A PostgreSQL Business Persistence RC, Phase E billing idempotency hardening and Phase F operational stability gates are source-landed. Release Image run 28116660385 and Cloud Rollout run 28116700519 passed on current trunk. The rollout produced a redacted production receipt manifest with seven owner receipts, 12 lifecycle sections and 14 production-complete candidate criteria. Manifest sha256 is sha256:3c718484f40b0bcfadf55bbafe6f97b02b22072ad801004a560bfe1f69059a0f. The live DB proof hash for business_db_persistence_receipt is sha256:77555180d9db24120515881082c54539a5d4f334ca8a188c460def5f022fe29f. This can claim cloud release candidate and scoped production-complete candidate evidence for the current authorized canary path only, including Portal public entry, HTTP redirect, Go health/ready, OPL-Webui consumer canary, PostgreSQL business metadata persistence, billing idempotency, soak, concurrency pressure, rollback drill, continuous canary, alerting and final release decision receipts. MedOPL still does not claim unscoped production complete, multi-region/SLA, enterprise compliance, ongoing authorization or unobserved tenants/resources. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is recovery/platform-v22-trunk at b594793ee969c56ba95a86070e51a1b4f03f9e76.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -1062,8 +1059,8 @@
       "cannot_claim": "multi-region production, SLA proven, enterprise compliance, ongoing authorization, or unobserved tenant/resource readiness"
     }
   },
-  "base_trunk_head": "eba7f9b9438b1fb7e7f0750ea861c4cdcdaf5b9c",
-  "last_landed_commit": "eba7f9b9438b1fb7e7f0750ea861c4cdcdaf5b9c",
+  "base_trunk_head": "b594793ee969c56ba95a86070e51a1b4f03f9e76",
+  "last_landed_commit": "b594793ee969c56ba95a86070e51a1b4f03f9e76",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",

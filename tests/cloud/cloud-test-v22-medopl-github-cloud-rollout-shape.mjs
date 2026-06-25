@@ -183,6 +183,27 @@ for (const expected of [
 ]) {
   assert(envNames.has(expected), `container_env_missing:${expected}`);
 }
+const canaryAdmissionSecretName = "medopl-canary-admission";
+for (const name of [
+  "MEDOPL_CANARY_ADMISSION_ENABLED",
+  "MEDOPL_CANARY_EMERGENCY_STOP",
+  "MEDOPL_CANARY_TENANT_ALLOWLIST",
+  "MEDOPL_CANARY_USER_ALLOWLIST",
+  "MEDOPL_CANARY_COST_CEILING_USD",
+  "MEDOPL_CANARY_ADMISSION_ENABLED_BY",
+  "MEDOPL_CANARY_MONITORING_OWNER",
+  "MEDOPL_CANARY_ROLLBACK_OWNER",
+  "MEDOPL_CANARY_DISABLE_COMMAND_REF",
+]) {
+  const item = (container.env || []).find((entry) => entry.name === name);
+  assert.deepEqual(
+    item?.valueFrom?.secretKeyRef,
+    { name: canaryAdmissionSecretName, key: name },
+    `canary_admission_env_must_use_secret_ref:${name}`,
+  );
+}
+assert.equal(manifestSource.includes("tenant-goal-f-canary"), false, "deploy_manifest_must_not_embed_selected_tenant_value");
+assert.equal(manifestSource.includes("user-goal-f-canary"), false, "deploy_manifest_must_not_embed_selected_user_value");
 const providerSecretRoot = (container.env || []).find((item) => item.name === "PORTAL_OPL_PROVIDER_SECRET_ROOT");
 assert.equal(
   providerSecretRoot.value,
@@ -420,6 +441,15 @@ for (const expected of [
   "V22_OPL_WEBUI_CONSUMER_CANARY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation live_test --execute --confirm-current-session-authorization",
   "MEDOPL_SESSION_SIGNING_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_SIGNING_SECRET_SHA256 }}",
   "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256 }}",
+  "MEDOPL_CANARY_ADMISSION_ENABLED: ${{ vars.MEDOPL_CANARY_ADMISSION_ENABLED }}",
+  "MEDOPL_CANARY_EMERGENCY_STOP: ${{ vars.MEDOPL_CANARY_EMERGENCY_STOP }}",
+  "MEDOPL_CANARY_TENANT_ALLOWLIST: ${{ secrets.MEDOPL_CANARY_TENANT_ALLOWLIST }}",
+  "MEDOPL_CANARY_USER_ALLOWLIST: ${{ secrets.MEDOPL_CANARY_USER_ALLOWLIST }}",
+  "MEDOPL_CANARY_COST_CEILING_USD: ${{ vars.MEDOPL_CANARY_COST_CEILING_USD }}",
+  "MEDOPL_CANARY_ADMISSION_ENABLED_BY: ${{ vars.MEDOPL_CANARY_ADMISSION_ENABLED_BY }}",
+  "MEDOPL_CANARY_MONITORING_OWNER: ${{ vars.MEDOPL_CANARY_MONITORING_OWNER }}",
+  "MEDOPL_CANARY_ROLLBACK_OWNER: ${{ vars.MEDOPL_CANARY_ROLLBACK_OWNER }}",
+  "MEDOPL_CANARY_DISABLE_COMMAND_REF: ${{ vars.MEDOPL_CANARY_DISABLE_COMMAND_REF }}",
   "V22_PRODUCTION_GOAL_HTTP_TIMEOUT_MS: \"15000\"",
   "V22_MEDOPL_DEPLOY_PLAN_FILE: .runtime/v22-cloud-authorization/run-v22-001/medopl-deploy-plan.json",
   "Create Goal F receipt inputs",
@@ -430,6 +460,9 @@ for (const expected of [
   "npm run cloud:goal -- --operation storage_lifecycle",
   "npm run cloud:goal -- --operation billing_audit_writeback",
   "Create deploy plan",
+  "Validate selected canary admission config shape",
+  "Sync in-cluster canary admission secret from production source",
+  "Validate in-cluster canary admission secret shape",
   "npm run cloud:goal:preflight -- --operation kubectl",
   "npm run cloud:goal:preflight -- --operation deploy",
   "npm run cloud:goal:preflight -- --operation live_test",
@@ -560,6 +593,42 @@ assert(
   "production_apply_must_sync_auth_boundary_hashes_without_printing_secret",
 );
 assert(
+  productionApplyJob.includes("Validate selected canary admission config shape") &&
+    productionApplyJob.includes("MEDOPL_CANARY_ADMISSION_ENABLED required for selected-user canary launch") &&
+    productionApplyJob.includes("MEDOPL_CANARY_TENANT_ALLOWLIST required when canary admission is enabled") &&
+    productionApplyJob.includes("MEDOPL_CANARY_USER_ALLOWLIST required when canary admission is enabled") &&
+    productionApplyJob.includes("MEDOPL_CANARY_COST_CEILING_USD required when canary admission is enabled") &&
+    productionApplyJob.includes("selected canary admission config source ok") &&
+    !productionApplyJob.includes("console.log(process.env.MEDOPL_CANARY_TENANT_ALLOWLIST)") &&
+    !productionApplyJob.includes("console.log(process.env.MEDOPL_CANARY_USER_ALLOWLIST)"),
+  "production_apply_must_validate_selected_canary_admission_config_without_printing_allowlists",
+);
+assert(
+  productionApplyJob.includes("Sync in-cluster canary admission secret from production source") &&
+    productionApplyJob.includes("create secret generic medopl-canary-admission") &&
+    productionApplyJob.includes("MEDOPL_CANARY_ADMISSION_ENABLED=%s") &&
+    productionApplyJob.includes("MEDOPL_CANARY_EMERGENCY_STOP=%s") &&
+    productionApplyJob.includes("MEDOPL_CANARY_TENANT_ALLOWLIST=%s") &&
+    productionApplyJob.includes("MEDOPL_CANARY_USER_ALLOWLIST=%s") &&
+    productionApplyJob.includes("MEDOPL_CANARY_COST_CEILING_USD=%s") &&
+    productionApplyJob.includes("MEDOPL_CANARY_ADMISSION_ENABLED_BY=%s") &&
+    productionApplyJob.includes("MEDOPL_CANARY_MONITORING_OWNER=%s") &&
+    productionApplyJob.includes("MEDOPL_CANARY_ROLLBACK_OWNER=%s") &&
+    productionApplyJob.includes("MEDOPL_CANARY_DISABLE_COMMAND_REF=%s") &&
+    !productionApplyJob.includes("echo \"$MEDOPL_CANARY_TENANT_ALLOWLIST\"") &&
+    !productionApplyJob.includes("echo \"$MEDOPL_CANARY_USER_ALLOWLIST\""),
+  "production_apply_must_sync_canary_admission_secret_without_printing_selected_identity_values",
+);
+assert(
+  productionApplyJob.includes("Validate in-cluster canary admission secret shape") &&
+    productionApplyJob.includes("get secret medopl-canary-admission") &&
+    productionApplyJob.includes("jsonpath={.data}") &&
+    productionApplyJob.includes("canary admission in-cluster secret shape ok") &&
+    productionApplyJob.includes("tenantScopeHashPresent") &&
+    productionApplyJob.includes("userScopeHashPresent"),
+  "production_apply_must_validate_incluster_canary_admission_secret_shape",
+);
+assert(
   productionApplyJob.includes("Validate in-cluster database secret shape") &&
     productionApplyJob.includes("kubectl --kubeconfig") &&
     productionApplyJob.includes("get secret medopl-postgres") &&
@@ -593,6 +662,13 @@ assert(
   productionApplyJob.indexOf("Install Goal F runner dependencies") < productionApplyJob.indexOf("Validate in-cluster database secret authentication") &&
     productionApplyJob.indexOf("Validate in-cluster database secret authentication") < productionApplyJob.indexOf("Create Goal F receipt inputs"),
   "production_apply_must_validate_incluster_database_auth_after_dependencies_before_goal_f_receipts",
+);
+assert(
+  productionApplyJob.indexOf("Sync in-cluster auth boundary secret from production source") < productionApplyJob.indexOf("Validate selected canary admission config shape") &&
+    productionApplyJob.indexOf("Validate selected canary admission config shape") < productionApplyJob.indexOf("Sync in-cluster canary admission secret from production source") &&
+    productionApplyJob.indexOf("Sync in-cluster canary admission secret from production source") < productionApplyJob.indexOf("Validate in-cluster canary admission secret shape") &&
+    productionApplyJob.indexOf("Validate in-cluster canary admission secret shape") < productionApplyJob.indexOf("Create Goal F receipt inputs"),
+  "production_apply_must_sync_canary_admission_before_goal_f_receipts_and_rollout",
 );
 assert(
   productionApplyJob.indexOf("npm ci") < productionApplyJob.indexOf("Create Goal F receipt inputs"),
