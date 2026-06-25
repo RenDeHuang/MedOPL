@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `recovery/platform-v22-trunk`
-- latest landed commit: `b594793ee969c56ba95a86070e51a1b4f03f9e76`
+- latest landed branch: `goal-s5-selected-real-user-canary-admission-deploy-config`
+- latest landed commit: `75886f1a6cf5c55ec497c2796d0366e6e027b941`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
