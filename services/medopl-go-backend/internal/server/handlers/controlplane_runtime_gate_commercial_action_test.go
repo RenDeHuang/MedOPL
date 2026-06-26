@@ -81,6 +81,19 @@ func TestControlPlaneHandlersExposeOPLWebuiCommercialActionContract(t *testing.T
 	if openResourceAction["action"] != "open_runtime_storage" || openResourceAction["reason"] != "runtime_storage_not_opened" {
 		t.Fatalf("open resource commercial action = %+v", openResourceAction)
 	}
+	purchaseProjection := openResourceGate["actionContract"].(map[string]any)["purchaseProjection"].(map[string]any)
+	if purchaseProjection["workspaceId"] != "workspace-open-resource" || purchaseProjection["selectedPlanId"] != "starter_2c4g_10gb" {
+		t.Fatalf("purchase projection context = %+v", purchaseProjection)
+	}
+	if purchaseProjection["canOpenRuntimeStorage"] != true || purchaseProjection["availableBalance"] != float64(200) {
+		t.Fatalf("purchase projection wallet = %+v", purchaseProjection)
+	}
+	for _, field := range []string{"selectPlanAction", "rechargeOrCreditAction", "openRuntimeStorageAction", "returnToOplAction"} {
+		action, ok := purchaseProjection[field].(map[string]any)
+		if !ok || action["href"] == "" || action["method"] == "" {
+			t.Fatalf("purchase projection action %s = %+v", field, purchaseProjection[field])
+		}
+	}
 }
 
 func TestControlPlaneHandlersExposeOPLWebuiRuntimeGate(t *testing.T) {

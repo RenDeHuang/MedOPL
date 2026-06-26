@@ -16,6 +16,75 @@ import {
 } from "./portalRuntimeEnvironmentLifecycle";
 import { usePortalQuery } from "./portalQuery";
 
+type PurchaseActionLink = {
+  action: string;
+  label: string;
+  href: string;
+  method: string;
+};
+
+export type PurchaseActionProjection = {
+  workspaceId: string;
+  sessionId: string;
+  taskRef: string;
+  taskIntent: string;
+  requiredPlan: string;
+  selectedPlanId: string;
+  balance: number;
+  availableBalance: number;
+  activeFreeze: number;
+  minRequiredBalance: number;
+  canOpenRuntimeStorage: boolean;
+  selectPlanAction: PurchaseActionLink;
+  rechargeOrCreditAction: PurchaseActionLink;
+  openRuntimeStorageAction: PurchaseActionLink;
+  returnToOplAction: PurchaseActionLink;
+  canClaim: string[];
+  cannotClaim: string[];
+};
+
+function queryValue(params: URLSearchParams, key: string, fallback = "") {
+  return stringValue(params.get(key), fallback);
+}
+
+export function buildPurchaseActionProjectionFromSearch(search = window.location.search, account?: {
+  balance?: number;
+  availableBalance?: number;
+  activeFreeze?: number;
+}): PurchaseActionProjection {
+  const params = new URLSearchParams(search);
+  const workspaceId = queryValue(params, "workspaceId", "workspace-local-rc");
+  const selectedPlanId = queryValue(params, "runtimePlanId", "starter_2c4g_10gb");
+  const storagePlanId = queryValue(params, "storagePlanId", "workspace_10gb");
+  const taskIntent = queryValue(params, "taskIntent", "research");
+  const sessionId = queryValue(params, "sessionId");
+  const taskRef = queryValue(params, "taskRef");
+  const balance = numberValue(account?.balance);
+  const activeFreeze = numberValue(account?.activeFreeze);
+  const availableBalance = numberValue(account?.availableBalance, Math.max(0, balance - activeFreeze));
+  const minRequiredBalance = 30;
+  const base = `?workspaceId=${workspaceId}&runtimePlanId=${selectedPlanId}&storagePlanId=${storagePlanId}&taskIntent=${taskIntent}&sessionId=${sessionId}&taskRef=${taskRef}`;
+  return {
+    workspaceId,
+    sessionId,
+    taskRef,
+    taskIntent,
+    requiredPlan: selectedPlanId,
+    selectedPlanId,
+    balance,
+    availableBalance,
+    activeFreeze,
+    minRequiredBalance,
+    canOpenRuntimeStorage: availableBalance >= minRequiredBalance,
+    selectPlanAction: { action: "select_plan", label: "选择托管套餐", href: `/packages${base}`, method: "POST /api/lab-packages/activate" },
+    rechargeOrCreditAction: { action: "recharge_or_credit_required", label: "充值或申请授信", href: `/usage${base}`, method: "POST /api/v22/users/credit" },
+    openRuntimeStorageAction: { action: "open_runtime_storage", label: "开通计算资源和存储空间", href: `/compute${base}`, method: "POST /api/v22/managed-environment/open" },
+    returnToOplAction: { action: "return_to_opl_task", label: "返回 OPL 继续任务", href: `/opl${base}`, method: "GET" },
+    canClaim: ["purchase_action_projection", "internal_credit_or_grant_path", "existing_runtime_storage_open_path"],
+    cannotClaim: ["external_psp_settlement", "return_to_opl_resume_complete", "production_canary_commercial_closure"],
+  };
+}
+
 export async function fetchPackageCatalog() {
   const [catalog, user] = await Promise.all([fetchLabPackages(), fetchCurrentUser()]);
   const workspaceId = stringValue(user.currentTaskSlug, "");
@@ -36,7 +105,16 @@ export async function fetchPackageCatalog() {
     recommended: plan.id === "pro_8c16g_100gb",
     purchasable: true,
     openingWindow: "预计开通时间以后端资源队列为准",
+    selectActionHref: buildPurchaseActionProjectionFromSearch(window.location.search).selectPlanAction.href.replace(
+      /runtimePlanId=[^&]*/u,
+      `runtimePlanId=${plan.id}`,
+    ),
   }));
+  const purchaseProjection = buildPurchaseActionProjectionFromSearch(window.location.search, {
+    balance: numberValue(subscription.wallet?.balance, subscription.balance),
+    availableBalance: numberValue(subscription.wallet?.availableBalance),
+    activeFreeze: numberValue(subscription.wallet?.activeFreeze, subscription.frozenAmount),
+  });
   return {
     workspaceId,
     currentPackageId: subscription.currentPackageId || entitlement.entitlement.packageId || "",
@@ -44,6 +122,7 @@ export async function fetchPackageCatalog() {
     balance: numberValue(subscription.wallet?.balance, subscription.balance),
     frozenAmount: numberValue(subscription.wallet?.activeFreeze, subscription.frozenAmount),
     subscriptionStatusText: statusText(subscription.status),
+    purchaseProjection,
     plans,
     subscription: subscription as LabSubscriptionPayload,
     entitlement: entitlement as LabEntitlementPayload,

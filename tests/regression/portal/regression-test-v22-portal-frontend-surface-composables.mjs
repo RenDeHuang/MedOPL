@@ -123,6 +123,52 @@ for (const modelOwnedLaunchState of [
   );
 }
 
+const packagesPageSource = await readFile("services/portal/frontend/src/app/pages/PackagesPurchase.tsx", "utf8");
+const packagesModelSource = await readFile("services/portal/frontend/src/app/data/portalPackagesPurchaseModel.ts", "utf8");
+for (const modelOwnedPurchaseProjection of [
+  "function buildPurchaseActionProjectionFromSearch",
+  "purchaseProjection",
+  "selectPlanAction",
+  "rechargeOrCreditAction",
+  "openRuntimeStorageAction",
+  "returnToOplAction",
+  "canOpenRuntimeStorage",
+]) {
+  assert(
+    packagesModelSource.includes(modelOwnedPurchaseProjection),
+    `packages_model_must_own_runtime_required_purchase_projection:${modelOwnedPurchaseProjection}`,
+  );
+}
+for (const pageOwnedPurchaseParsing of [
+  "new URLSearchParams(window.location.search)",
+  "params.get(\"taskIntent\")",
+  "params.get(\"runtimePlanId\")",
+  "params.get(\"sessionId\")",
+]) {
+  assert.equal(
+    packagesPageSource.includes(pageOwnedPurchaseParsing),
+    false,
+    `packages_page_must_not_parse_runtime_required_purchase_query:${pageOwnedPurchaseParsing}`,
+  );
+}
+for (const pagePurchaseProjectionMarker of [
+  "model.purchaseProjection",
+  "model.purchaseProjection.selectPlanAction.label",
+  "model.purchaseProjection.rechargeOrCreditAction.href",
+  "model.purchaseProjection.openRuntimeStorageAction.href",
+  "model.purchaseProjection.returnToOplAction.href",
+]) {
+  assert(
+    packagesPageSource.includes(pagePurchaseProjectionMarker),
+    `packages_page_must_render_runtime_required_purchase_projection:${pagePurchaseProjectionMarker}`,
+  );
+}
+assert.equal(
+  packagesPageSource.includes("<Button asChild disabled="),
+  false,
+  "packages_page_must_not_render_disabled_purchase_action_as_link",
+);
+
 for (const pageOwnedWorkspaceState of [
   "const filteredInputFiles",
   "const filteredOutputFiles",

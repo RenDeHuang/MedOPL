@@ -68,6 +68,26 @@ export interface OplRuntimeGateCommercialAction {
   cannotClaim: string[];
 }
 
+export interface OplPurchaseActionProjection {
+  workspaceId: string;
+  sessionId: string;
+  taskRef: string;
+  taskIntent: string;
+  requiredPlan: string;
+  selectedPlanId: string;
+  balance: number;
+  availableBalance: number;
+  activeFreeze: number;
+  minRequiredBalance: number;
+  canOpenRuntimeStorage: boolean;
+  selectPlanAction: { action: string; label: string; href: string; method: string };
+  rechargeOrCreditAction: { action: string; label: string; href: string; method: string };
+  openRuntimeStorageAction: { action: string; label: string; href: string; method: string };
+  returnToOplAction: { action: string; label: string; href: string; method: string };
+  canClaim: string[];
+  cannotClaim: string[];
+}
+
 export interface OplRuntimeGatePayload {
   ok: boolean;
   productOwner: "medopl";
@@ -114,6 +134,7 @@ export interface OplRuntimeGatePayload {
   actionContract: {
     primaryAction: OplRuntimeGateCommercialAction;
     availableActions: OplRuntimeGateCommercialAction[];
+    purchaseProjection?: OplPurchaseActionProjection;
   };
   nextAction: string;
   cannotClaim: string[];

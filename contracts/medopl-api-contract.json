@@ -115,6 +115,35 @@
           "canClaim",
           "cannotClaim"
         ],
+        "purchase_action_projection": {
+          "intent": "medopl_purchase_plan_recharge_open_resource_projection",
+          "actions": [
+            "select_plan",
+            "recharge_or_credit_required",
+            "open_runtime_storage",
+            "return_to_opl_task"
+          ],
+          "fields": [
+            "workspaceId",
+            "sessionId",
+            "taskRef",
+            "taskIntent",
+            "requiredPlan",
+            "selectedPlanId",
+            "balance",
+            "availableBalance",
+            "activeFreeze",
+            "minRequiredBalance",
+            "canOpenRuntimeStorage",
+            "selectPlanAction",
+            "rechargeOrCreditAction",
+            "openRuntimeStorageAction",
+            "returnToOplAction",
+            "canClaim",
+            "cannotClaim"
+          ],
+          "boundary": "purchase_projection_uses_internal_credit_and_existing_resource_opening_only"
+        },
         "boundary": "machine_readable_action_contract_only",
         "does_not_claim": [
           "external_psp_settlement",

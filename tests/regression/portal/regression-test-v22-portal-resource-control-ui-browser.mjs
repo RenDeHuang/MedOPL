@@ -624,7 +624,7 @@ try {
     });
 
     await page.goto(`${frontendBaseUrl}/overview`, { waitUntil: "domcontentloaded" });
-    await waitReady(page, "正在读取 Portal 总览数据");
+    await waitReady(page, "正在读取资源总览数据");
     await page.waitForSelector("text=总览", { timeout: 30000 });
     lastBodyText = await page.locator("body").innerText();
     assertResourceControlCopy(lastBodyText, "browser_overview");
@@ -664,7 +664,7 @@ try {
       });
     });
     await page.goto(`${frontendBaseUrl}/overview`, { waitUntil: "domcontentloaded" });
-    await waitReady(page, "正在读取 Portal 总览数据");
+    await waitReady(page, "正在读取资源总览数据");
     lastBodyText = await page.locator("body").innerText();
     await assertEmptyErrorRecovery(page, "browser_overview_error_recovery");
     assertResourceControlCopy(lastBodyText, "browser_overview_error_recovery", ["资源总览"]);
@@ -746,7 +746,7 @@ try {
     });
     const userPage = await userContext.newPage();
     await userPage.goto(`${frontendBaseUrl}/overview`, { waitUntil: "domcontentloaded" });
-    await waitReady(userPage, "正在读取 Portal 总览数据");
+    await waitReady(userPage, "正在读取资源总览数据");
     const userBodyText = await userPage.locator("body").innerText();
     assertResourceControlCopy(userBodyText, "browser_user_overview");
     assert.equal(userBodyText.includes("管理台"), false, "browser_user_overview_must_not_show_admin_nav");

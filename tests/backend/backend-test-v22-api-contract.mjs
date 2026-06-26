@@ -134,6 +134,41 @@ assert.deepEqual(
   ],
   "runtime_gate_commercial_action_contract_fields_mismatch",
 );
+const purchaseProjection = runtimeGate.commercial_action_contract.purchase_action_projection;
+assert(purchaseProjection, "runtime_gate_purchase_action_projection_missing");
+assert.equal(
+  purchaseProjection.intent,
+  "medopl_purchase_plan_recharge_open_resource_projection",
+  "runtime_gate_purchase_action_projection_intent_mismatch",
+);
+assert.deepEqual(
+  purchaseProjection.actions,
+  ["select_plan", "recharge_or_credit_required", "open_runtime_storage", "return_to_opl_task"],
+  "runtime_gate_purchase_action_projection_actions_mismatch",
+);
+assert.deepEqual(
+  purchaseProjection.fields,
+  [
+    "workspaceId",
+    "sessionId",
+    "taskRef",
+    "taskIntent",
+    "requiredPlan",
+    "selectedPlanId",
+    "balance",
+    "availableBalance",
+    "activeFreeze",
+    "minRequiredBalance",
+    "canOpenRuntimeStorage",
+    "selectPlanAction",
+    "rechargeOrCreditAction",
+    "openRuntimeStorageAction",
+    "returnToOplAction",
+    "canClaim",
+    "cannotClaim",
+  ],
+  "runtime_gate_purchase_action_projection_fields_mismatch",
+);
 assert(
   runtimeGate.must_return.includes("actionContract"),
   "runtime_gate_must_return_action_contract",
@@ -278,6 +313,9 @@ for (const marker of [
   "walletFromCommercialLedger",
   "commercialRuntimeHoldAmount",
   "commercialFreezeDays",
+  "type RuntimePurchaseActionProjection struct",
+  "func RuntimePurchaseActionProjectionFromQuery",
+  "json:\"purchaseProjection\"",
 ]) {
   assert(serviceSurface.includes(marker), `commercial_billing_service_marker_missing:${marker}`);
 }

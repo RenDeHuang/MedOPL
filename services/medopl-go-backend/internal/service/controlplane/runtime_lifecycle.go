@@ -98,8 +98,36 @@ type RuntimeGateCommercialAction struct {
 }
 
 type RuntimeGateCommercialActionContract struct {
-	PrimaryAction    RuntimeGateCommercialAction   `json:"primaryAction"`
-	AvailableActions []RuntimeGateCommercialAction `json:"availableActions"`
+	PrimaryAction      RuntimeGateCommercialAction     `json:"primaryAction"`
+	AvailableActions   []RuntimeGateCommercialAction   `json:"availableActions"`
+	PurchaseProjection RuntimePurchaseActionProjection `json:"purchaseProjection"`
+}
+
+type RuntimePurchaseActionLink struct {
+	Action string `json:"action"`
+	Label  string `json:"label"`
+	Href   string `json:"href"`
+	Method string `json:"method"`
+}
+
+type RuntimePurchaseActionProjection struct {
+	WorkspaceID              string                    `json:"workspaceId"`
+	SessionID                string                    `json:"sessionId"`
+	TaskRef                  string                    `json:"taskRef"`
+	TaskIntent               string                    `json:"taskIntent"`
+	RequiredPlan             string                    `json:"requiredPlan"`
+	SelectedPlanID           string                    `json:"selectedPlanId"`
+	Balance                  float64                   `json:"balance"`
+	AvailableBalance         float64                   `json:"availableBalance"`
+	ActiveFreeze             float64                   `json:"activeFreeze"`
+	MinRequiredBalance       float64                   `json:"minRequiredBalance"`
+	CanOpenRuntimeStorage    bool                      `json:"canOpenRuntimeStorage"`
+	SelectPlanAction         RuntimePurchaseActionLink `json:"selectPlanAction"`
+	RechargeOrCreditAction   RuntimePurchaseActionLink `json:"rechargeOrCreditAction"`
+	OpenRuntimeStorageAction RuntimePurchaseActionLink `json:"openRuntimeStorageAction"`
+	ReturnToOplAction        RuntimePurchaseActionLink `json:"returnToOplAction"`
+	CanClaim                 []string                  `json:"canClaim"`
+	CannotClaim              []string                  `json:"cannotClaim"`
 }
 
 type RuntimeGateProjection struct {
@@ -746,8 +774,38 @@ func runtimeGateCommercialActionContractWithWallet(input RuntimeGateInput, proje
 		primary = actions[1]
 	}
 	return RuntimeGateCommercialActionContract{
-		PrimaryAction:    primary,
-		AvailableActions: actions,
+		PrimaryAction:      primary,
+		AvailableActions:   actions,
+		PurchaseProjection: RuntimePurchaseActionProjectionFromQuery(primary),
+	}
+}
+
+func RuntimePurchaseActionProjectionFromQuery(action RuntimeGateCommercialAction) RuntimePurchaseActionProjection {
+	canOpen := action.BalanceRequirement.AvailableBalance >= action.BalanceRequirement.MinRequiredBalance
+	base := "?workspaceId=" + action.WorkspaceID +
+		"&runtimePlanId=" + action.PlanRequirement.RuntimePlanID +
+		"&storagePlanId=" + action.PlanRequirement.StoragePlanID +
+		"&taskIntent=" + action.TaskIntent +
+		"&sessionId=" + action.SessionID +
+		"&taskRef=" + action.TaskRef
+	return RuntimePurchaseActionProjection{
+		WorkspaceID:              action.WorkspaceID,
+		SessionID:                action.SessionID,
+		TaskRef:                  action.TaskRef,
+		TaskIntent:               action.TaskIntent,
+		RequiredPlan:             action.RequiredPlan,
+		SelectedPlanID:           action.PlanRequirement.RuntimePlanID,
+		Balance:                  action.BalanceRequirement.CurrentBalance,
+		AvailableBalance:         action.BalanceRequirement.AvailableBalance,
+		ActiveFreeze:             action.BalanceRequirement.ActiveFreeze,
+		MinRequiredBalance:       action.BalanceRequirement.MinRequiredBalance,
+		CanOpenRuntimeStorage:    canOpen,
+		SelectPlanAction:         RuntimePurchaseActionLink{Action: "select_plan", Label: "选择托管套餐", Href: "/packages" + base, Method: "POST /api/lab-packages/activate"},
+		RechargeOrCreditAction:   RuntimePurchaseActionLink{Action: "recharge_or_credit_required", Label: "充值或申请授信", Href: "/usage" + base, Method: "POST /api/v22/users/credit"},
+		OpenRuntimeStorageAction: RuntimePurchaseActionLink{Action: "open_runtime_storage", Label: "开通计算资源和存储空间", Href: "/compute" + base, Method: "POST /api/v22/managed-environment/open"},
+		ReturnToOplAction:        RuntimePurchaseActionLink{Action: "return_to_opl_task", Label: "返回 OPL 继续任务", Href: action.ReturnToOPLDeeplink, Method: "GET"},
+		CanClaim:                 []string{"purchase_action_projection", "internal_credit_or_grant_path", "existing_runtime_storage_open_path"},
+		CannotClaim:              []string{"external_psp_settlement", "return_to_opl_resume_complete", "production_canary_commercial_closure"},
 	}
 }
 

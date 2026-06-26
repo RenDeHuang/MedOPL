@@ -84,6 +84,37 @@ export function PackagesPurchase() {
         />
       </div>
 
+      <Card className="border border-neutral-200 p-5 mb-8">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <div className="text-sm font-semibold text-neutral-900">OPL 任务购买路径</div>
+            <div className="mt-1 text-sm text-neutral-600">
+              {model.purchaseProjection.taskIntent} / {model.purchaseProjection.requiredPlan} / 可用余额 ¥ {model.purchaseProjection.availableBalance.toFixed(2)}
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button asChild variant="outline">
+              <Link to={model.purchaseProjection.selectPlanAction.href}>{model.purchaseProjection.selectPlanAction.label}</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link to={model.purchaseProjection.rechargeOrCreditAction.href}>{model.purchaseProjection.rechargeOrCreditAction.label}</Link>
+            </Button>
+            {model.purchaseProjection.canOpenRuntimeStorage ? (
+              <Button asChild>
+                <Link to={model.purchaseProjection.openRuntimeStorageAction.href}>{model.purchaseProjection.openRuntimeStorageAction.label}</Link>
+              </Button>
+            ) : (
+              <Button disabled title="可用余额不足，需先充值或申请授信">
+                {model.purchaseProjection.openRuntimeStorageAction.label}
+              </Button>
+            )}
+            <Button asChild variant="outline">
+              <Link to={model.purchaseProjection.returnToOplAction.href}>{model.purchaseProjection.returnToOplAction.label}</Link>
+            </Button>
+          </div>
+        </div>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {filteredPlans.map((plan) => {
           const current = plan.id === model.currentPackageId;
@@ -104,7 +135,7 @@ export function PackagesPurchase() {
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="text-xs text-neutral-500">{plan.openingWindow}</div>
                   <Button asChild variant={current ? "outline" : undefined}>
-                    <Link to="/compute">{current ? "查看当前计算资源" : "购买或升级"}</Link>
+                    <Link to={current ? model.purchaseProjection.openRuntimeStorageAction.href : plan.selectActionHref}>{current ? "查看当前计算资源" : "购买或升级"}</Link>
                   </Button>
                 </div>
               }
