@@ -17,7 +17,7 @@ History 只保留短索引：
 ## Latest Machine Cursor
 
 - latest landed branch: `goal-g3-release-runtime-diagnostic-receipt`
-- latest landed commit: `845642b801749c427533da79f9d41edc7d2e7128`
+- latest landed commit: `643c6ccc13c823a90fe8ccf557b65a3cd76baa24`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
