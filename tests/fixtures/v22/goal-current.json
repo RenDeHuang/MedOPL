@@ -33,19 +33,19 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "goal-commercial-admission-truth-realignment",
-    "landed_commit": "e9d7909f82b7b9ee381cd1304c49ba1877264a14",
+    "branch": "goal-commercial-gap6-local-controlled-business-closure",
+    "landed_commit": "d7661e1819a9fcf13e6efe4577538f64f352b5d2",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
       "npm run test:run-plan -- --dry-run --json passed",
-      "npm run test:run-plan passed with 13 local commands and 9 authorized commands skipped",
+      "npm run test:run-plan passed with 11 local commands and 0 authorized commands",
       "npm run test:backend passed",
       "npm run test:frontend passed",
       "npm run test:release passed",
       "npm run verify passed",
       "npm run test:health passed",
-      "npm run gate:review -- --slice-id goal-commercial-admission-truth-realignment passed",
-      "npm run repo:bloat -- --diff --slice-id goal-commercial-admission-truth-realignment passed",
+      "npm run gate:review -- --slice-id goal-commercial-gap6-local-controlled-business-closure passed",
+      "npm run repo:bloat -- --diff --slice-id goal-commercial-gap6-local-controlled-business-closure passed",
       "npm run line:budget passed"
     ],
     "plan_completion_audit": {
@@ -57,11 +57,11 @@
       "cannot_claim": "done"
     },
     "cleanup_result": {
-      "deleted": "business selected-canary admission handler/test and production-canary-admission support module",
-      "folded": "account-approved commercial admission truth into existing product/active/history/api-contract/goal-current surfaces",
-      "retained": "MEDOPL_CANARY refs only as Cloud Rollout operations safety config while active workflow/deploy callers consume them",
-      "reason": "business admission truth is account-approved plus plan/balance/quota, not selected user allowlist",
-      "next": "goal-commercial-gap6-local-controlled-business-closure"
+      "deleted": "none",
+      "folded": "gap6 local controlled commercial closure into existing active history api contract goal-current and tests",
+      "retained": "MEDOPL_CANARY only as Cloud Rollout operations safety config while active deployment callers consume it",
+      "reason": "business closure is account ledger plan balance quota evidence not rollout governance",
+      "next": "goal-external-psp-settlement-boundary"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "opl-webui-runtime-production-slice"
@@ -74,7 +74,7 @@
     "multi_region_sla_enterprise_compliance_ongoing_authorization_and_unobserved_tenants_resources_remain_unclaimed",
     "unscoped_production_complete_requires_dedicated_scope_expansion_evidence"
   ],
-  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is goal-commercial-admission-truth-realignment at e9d7909f82b7b9ee381cd1304c49ba1877264a14. The current feature slice goal-commercial-gap6-local-controlled-business-closure fixes gap6 as local/controlled commercial business closure rather than a production-canary rollout blocker: account approved, plan selected, balance sufficient, quota available, purchase/credit/open, resource_preauth_freeze, upload/run/artifact, debit/ledger/audit, release/destroy/stop billing, return_to_opl_task and insufficient balance fail-closed are covered by existing Go backend commercial ledger E2E plus runtime_required action and return-to-OPL contracts. Cost ceiling for this business claim comes from account balance, plan hold amount and quota. MEDOPL_CANARY_* may remain only as Cloud Rollout operations safety config while active callers consume it; it is not business admission, recharge, quota, cost ceiling or billing truth, and it is not a gap6 blocker. Cloud deployment proof, external PSP settlement, full OPL-Webui resume implementation, unscoped production complete, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git.",
+  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is goal-commercial-gap6-local-controlled-business-closure at d7661e1819a9fcf13e6efe4577538f64f352b5d2. The current feature slice goal-commercial-gap6-local-controlled-business-closure fixes gap6 as local/controlled commercial business closure rather than a production-canary rollout blocker: account approved, plan selected, balance sufficient, quota available, purchase/credit/open, resource_preauth_freeze, upload/run/artifact, debit/ledger/audit, release/destroy/stop billing, return_to_opl_task and insufficient balance fail-closed are covered by existing Go backend commercial ledger E2E plus runtime_required action and return-to-OPL contracts. Cost ceiling for this business claim comes from account balance, plan hold amount and quota. MEDOPL_CANARY_* may remain only as Cloud Rollout operations safety config while active callers consume it; it is not business admission, recharge, quota, cost ceiling or billing truth, and it is not a gap6 blocker. Cloud deployment proof, external PSP settlement, full OPL-Webui resume implementation, unscoped production complete, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-gap6-local-controlled-business-closure at d7661e1819a9fcf13e6efe4577538f64f352b5d2.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -637,9 +637,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "goal-commercial-admission-truth-realignment",
+  "last_landed_branch": "goal-commercial-gap6-local-controlled-business-closure",
   "last_landed_at": "2026-06-26",
-  "history_latest_branch": "goal-commercial-admission-truth-realignment",
+  "history_latest_branch": "goal-commercial-gap6-local-controlled-business-closure",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -1062,8 +1062,8 @@
       "cannot_claim": "multi-region production, SLA proven, enterprise compliance, ongoing authorization, or unobserved tenant/resource readiness"
     }
   },
-  "base_trunk_head": "e9d7909f82b7b9ee381cd1304c49ba1877264a14",
-  "last_landed_commit": "e9d7909f82b7b9ee381cd1304c49ba1877264a14",
+  "base_trunk_head": "d7661e1819a9fcf13e6efe4577538f64f352b5d2",
+  "last_landed_commit": "d7661e1819a9fcf13e6efe4577538f64f352b5d2",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
