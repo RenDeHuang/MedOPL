@@ -198,7 +198,7 @@ for (const name of [
   const item = (container.env || []).find((entry) => entry.name === name);
   assert.deepEqual(
     item?.valueFrom?.secretKeyRef,
-    { name: canaryOperationsSafetySecretName, key: name },
+    { name: canaryOperationsSafetySecretName, key: name, optional: true },
     `canary_operations_safety_env_must_use_secret_ref:${name}`,
   );
 }
@@ -362,6 +362,7 @@ const cloudRollout = await readRepoFile(".github/workflows/cloud-rollout.yml");
 const g3BusinessClosure = await readRepoFile(".github/workflows/g3-business-closure.yml");
 const productionApplyJob = sectionBetween(cloudRollout, "  production-apply:", "  production-rollback:");
 const productionRollbackJob = sectionBetween(cloudRollout, "  production-rollback:", "  production-availability-probe-current:");
+const workflowDispatchInputs = sectionBetween(cloudRollout, "    inputs:", "permissions:");
 assertNoRawSecretValues(releaseImage, "release_image_workflow");
 assertNoRawSecretValues(cloudRollout, "cloud_rollout_workflow");
 assertNoRawSecretValues(g3BusinessClosure, "g3_business_closure_workflow");
@@ -617,17 +618,12 @@ assert(
   productionRollbackJob.includes("MEDOPL_KUBECTL_ROLLOUT_TIMEOUT_SECONDS: \"420\""),
   "production_rollback_must_use_extended_rollout_timeout",
 );
-assert(
-  productionRollbackJob.includes("MEDOPL_HTTP_BASE_URL: http://portal.medopl.cn"),
-  "production_rollback_must_keep_http_redirect_probe_context",
-);
-assert(
-  rolloutSource.includes("deploymentConvergedAfterRolloutStatusFailure") &&
-    rolloutSource.includes("rollout_status_failed_but_deployment_converged") &&
-    rolloutSource.includes("availableReplicas") &&
-    rolloutSource.includes("updatedReplicas"),
-  "rollout_helper_must_not_fail_rollback_when_deployment_already_converged",
-);
+assert(productionRollbackJob.includes("MEDOPL_HTTP_BASE_URL: http://portal.medopl.cn"), "production_rollback_must_keep_http_redirect_probe_context");
+assert(["rollout_scope:", "default: production_launch", "- production_launch", "- g3_diagnostic"].every((item) => workflowDispatchInputs.includes(item)) && cloudRollout.includes("MEDOPL_ROLLOUT_SCOPE: ${{ inputs.rollout_scope }}"), "cloud_rollout_must_expose_explicit_rollout_scope_for_g3_diagnostic");
+assert.equal(countOccurrences(productionApplyJob, "if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}"), 13, "g3_diagnostic_must_skip_production_launch_receipt_steps");
+assert.equal(countOccurrences(productionApplyJob, "if: ${{ inputs.availability_probe && inputs.rollout_scope != 'g3_diagnostic' }}"), 12, "g3_diagnostic_must_skip_availability_production_complete_steps");
+assert(["Kubernetes receipt lane\n        run: npm run cloud:goal -- --operation kubectl", "Rollout apply\n        run: node scripts/cloud-rollout/medopl.mjs --apply", "MedOPL availability probe\n        if: ${{ inputs.availability_probe }}"].every((item) => productionApplyJob.includes(item)), "g3_diagnostic_scope_must_keep_rollout_apply_and_no_secret_availability_probe_available");
+assert(rolloutSource.includes("deploymentConvergedAfterRolloutStatusFailure") && rolloutSource.includes("rollout_status_failed_but_deployment_converged") && rolloutSource.includes("availableReplicas") && rolloutSource.includes("updatedReplicas"), "rollout_helper_must_not_fail_rollback_when_deployment_already_converged");
 assert(
   productionApplyJob.includes("Validate production database secret shape") &&
     productionApplyJob.includes("new URL(raw)") &&

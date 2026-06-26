@@ -28,6 +28,14 @@ on:
         required: true
         default: false
         type: boolean
+      rollout_scope:
+        description: Scope of rollout evidence. production_launch keeps production safety gates; g3_diagnostic only deploys a diagnostic image for G3 business-closure debugging.
+        required: true
+        default: production_launch
+        type: choice
+        options:
+          - production_launch
+          - g3_diagnostic
 
 permissions:
   contents: read
@@ -38,6 +46,7 @@ jobs:
     runs-on: [self-hosted, tencent-cloud, medopl]
     env:
       MEDOPL_IMAGE: ${{ inputs.image }}
+      MEDOPL_ROLLOUT_SCOPE: ${{ inputs.rollout_scope }}
       MEDOPL_NAMESPACE: medopl
       MEDOPL_BASE_URL: https://portal.medopl.cn
       MEDOPL_HTTP_BASE_URL: http://portal.medopl.cn
@@ -97,6 +106,7 @@ jobs:
     environment: production
     env:
       MEDOPL_IMAGE: ${{ inputs.image }}
+      MEDOPL_ROLLOUT_SCOPE: ${{ inputs.rollout_scope }}
       MEDOPL_NAMESPACE: medopl
       MEDOPL_BASE_URL: https://portal.medopl.cn
       MEDOPL_HTTP_BASE_URL: http://portal.medopl.cn
@@ -281,6 +291,7 @@ jobs:
             | kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl apply -f -
 
       - name: Validate canary operations safety config shape
+        if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}
         shell: bash
         run: |
           node <<'NODE'
@@ -336,6 +347,7 @@ jobs:
           NODE
 
       - name: Sync in-cluster canary operations safety secret from production source
+        if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}
         shell: bash
         run: |
           {
@@ -356,6 +368,7 @@ jobs:
             | kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl apply -f -
 
       - name: Validate in-cluster canary operations safety secret shape
+        if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}
         shell: bash
         run: |
           encoded_data="$(kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl get secret medopl-canary-admission -o 'jsonpath={.data}')"
@@ -491,6 +504,7 @@ jobs:
           NODE
 
       - name: Create Goal F receipt inputs
+        if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}
         shell: bash
         run: |
           mkdir -p "$(dirname "$V22_TENCENT_MUTATION_SECRET_FILE")"
@@ -537,24 +551,31 @@ jobs:
           JSON
 
       - name: Runtime receipt preflight
+        if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}
         run: npm run cloud:goal:preflight -- --operation tenant_runtime_provisioning
 
       - name: Runtime receipt lane
+        if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}
         run: npm run cloud:goal -- --operation tenant_runtime_provisioning
 
       - name: Storage receipt preflight
+        if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}
         run: npm run cloud:goal:preflight -- --operation storage_lifecycle
 
       - name: Storage receipt lane
+        if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}
         run: npm run cloud:goal -- --operation storage_lifecycle
 
       - name: Billing audit receipt preflight
+        if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}
         run: npm run cloud:goal:preflight -- --operation billing_audit_writeback
 
       - name: Billing audit receipt lane
+        if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}
         run: npm run cloud:goal -- --operation billing_audit_writeback
 
       - name: Create deploy plan
+        if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}
         shell: bash
         run: |
           mkdir -p "$(dirname "$V22_MEDOPL_DEPLOY_PLAN_FILE")"
@@ -578,17 +599,19 @@ jobs:
         run: node scripts/cloud-rollout/medopl.mjs --apply
 
       - name: Deploy receipt preflight
+        if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}
         run: npm run cloud:goal:preflight -- --operation deploy
 
       - name: Deploy receipt lane
+        if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}
         run: npm run cloud:goal -- --operation deploy
 
       - name: OPL-Webui consumer canary preflight
-        if: ${{ inputs.availability_probe }}
+        if: ${{ inputs.availability_probe && inputs.rollout_scope != 'g3_diagnostic' }}
         run: npm run cloud:goal:preflight -- --operation live_test
 
       - name: OPL-Webui consumer canary receipt lane
-        if: ${{ inputs.availability_probe }}
+        if: ${{ inputs.availability_probe && inputs.rollout_scope != 'g3_diagnostic' }}
         run: npm run cloud:goal -- --operation live_test
 
       - name: MedOPL availability probe
@@ -596,46 +619,46 @@ jobs:
         run: node scripts/cloud-rollout/medopl.mjs --availability-probe
 
       - name: MedOPL soak receipt
-        if: ${{ inputs.availability_probe }}
+        if: ${{ inputs.availability_probe && inputs.rollout_scope != 'g3_diagnostic' }}
         run: node scripts/cloud-rollout/medopl.mjs --availability-probe --soak
 
       - name: MedOPL concurrency pressure receipt
-        if: ${{ inputs.availability_probe }}
+        if: ${{ inputs.availability_probe && inputs.rollout_scope != 'g3_diagnostic' }}
         run: node scripts/cloud-rollout/medopl.mjs --availability-probe --concurrency
 
       - name: MedOPL rollback drill receipt
-        if: ${{ inputs.availability_probe }}
+        if: ${{ inputs.availability_probe && inputs.rollout_scope != 'g3_diagnostic' }}
         run: node scripts/cloud-rollout/medopl.mjs --rollback --drill
 
       - name: MedOPL continuous canary receipt
-        if: ${{ inputs.availability_probe }}
+        if: ${{ inputs.availability_probe && inputs.rollout_scope != 'g3_diagnostic' }}
         run: node scripts/cloud-rollout/medopl.mjs --availability-probe --canary-window
 
       - name: MedOPL alerting receipt
-        if: ${{ inputs.availability_probe }}
+        if: ${{ inputs.availability_probe && inputs.rollout_scope != 'g3_diagnostic' }}
         env:
           MEDOPL_ALERT_ROUTE_REF: ${{ vars.MEDOPL_ALERT_ROUTE_REF }}
           MEDOPL_ALERT_CHECK_ALLOW_SYNTHETIC: "1"
         run: node scripts/cloud-rollout/medopl.mjs --availability-probe --alert-check
 
       - name: MedOPL final release decision receipt
-        if: ${{ inputs.availability_probe }}
+        if: ${{ inputs.availability_probe && inputs.rollout_scope != 'g3_diagnostic' }}
         run: node scripts/cloud-rollout/medopl.mjs --release-decision
 
       - name: Production receipt manifest
-        if: ${{ inputs.availability_probe }}
+        if: ${{ inputs.availability_probe && inputs.rollout_scope != 'g3_diagnostic' }}
         run: npm run cloud:goal -- --manifest-only
 
       - name: Cloud release candidate verify
-        if: ${{ inputs.availability_probe }}
+        if: ${{ inputs.availability_probe && inputs.rollout_scope != 'g3_diagnostic' }}
         run: npm run verify:cloud-release-candidate
 
       - name: Production complete candidate verify
-        if: ${{ inputs.availability_probe }}
+        if: ${{ inputs.availability_probe && inputs.rollout_scope != 'g3_diagnostic' }}
         run: npm run verify:production-complete-candidate
 
       - name: Upload redacted receipt manifest
-        if: ${{ inputs.availability_probe }}
+        if: ${{ inputs.availability_probe && inputs.rollout_scope != 'g3_diagnostic' }}
         uses: actions/upload-artifact@v4
         with:
           name: medopl-production-receipt-manifest

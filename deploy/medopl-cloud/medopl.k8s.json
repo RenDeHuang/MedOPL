@@ -157,7 +157,8 @@
                     "valueFrom": {
                       "secretKeyRef": {
                         "name": "medopl-canary-admission",
-                        "key": "MEDOPL_CANARY_ADMISSION_ENABLED"
+                        "key": "MEDOPL_CANARY_ADMISSION_ENABLED",
+                        "optional": true
                       }
                     }
                   },
@@ -166,7 +167,8 @@
                     "valueFrom": {
                       "secretKeyRef": {
                         "name": "medopl-canary-admission",
-                        "key": "MEDOPL_CANARY_EMERGENCY_STOP"
+                        "key": "MEDOPL_CANARY_EMERGENCY_STOP",
+                        "optional": true
                       }
                     }
                   },
@@ -175,7 +177,8 @@
                     "valueFrom": {
                       "secretKeyRef": {
                         "name": "medopl-canary-admission",
-                        "key": "MEDOPL_CANARY_TENANT_ALLOWLIST"
+                        "key": "MEDOPL_CANARY_TENANT_ALLOWLIST",
+                        "optional": true
                       }
                     }
                   },
@@ -184,7 +187,8 @@
                     "valueFrom": {
                       "secretKeyRef": {
                         "name": "medopl-canary-admission",
-                        "key": "MEDOPL_CANARY_USER_ALLOWLIST"
+                        "key": "MEDOPL_CANARY_USER_ALLOWLIST",
+                        "optional": true
                       }
                     }
                   },
@@ -193,7 +197,8 @@
                     "valueFrom": {
                       "secretKeyRef": {
                         "name": "medopl-canary-admission",
-                        "key": "MEDOPL_CANARY_COST_CEILING_USD"
+                        "key": "MEDOPL_CANARY_COST_CEILING_USD",
+                        "optional": true
                       }
                     }
                   },
@@ -202,7 +207,8 @@
                     "valueFrom": {
                       "secretKeyRef": {
                         "name": "medopl-canary-admission",
-                        "key": "MEDOPL_CANARY_ADMISSION_ENABLED_BY"
+                        "key": "MEDOPL_CANARY_ADMISSION_ENABLED_BY",
+                        "optional": true
                       }
                     }
                   },
@@ -211,7 +217,8 @@
                     "valueFrom": {
                       "secretKeyRef": {
                         "name": "medopl-canary-admission",
-                        "key": "MEDOPL_CANARY_MONITORING_OWNER"
+                        "key": "MEDOPL_CANARY_MONITORING_OWNER",
+                        "optional": true
                       }
                     }
                   },
@@ -220,7 +227,8 @@
                     "valueFrom": {
                       "secretKeyRef": {
                         "name": "medopl-canary-admission",
-                        "key": "MEDOPL_CANARY_ROLLBACK_OWNER"
+                        "key": "MEDOPL_CANARY_ROLLBACK_OWNER",
+                        "optional": true
                       }
                     }
                   },
@@ -229,7 +237,8 @@
                     "valueFrom": {
                       "secretKeyRef": {
                         "name": "medopl-canary-admission",
-                        "key": "MEDOPL_CANARY_DISABLE_COMMAND_REF"
+                        "key": "MEDOPL_CANARY_DISABLE_COMMAND_REF",
+                        "optional": true
                       }
                     }
                   }
