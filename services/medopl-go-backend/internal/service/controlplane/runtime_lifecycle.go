@@ -818,7 +818,7 @@ func RuntimePurchaseActionProjectionFromQuery(action RuntimeGateCommercialAction
 		ReturnToOplAction:        RuntimePurchaseActionLink{Action: "return_to_opl_task", Label: "返回 OPL 继续任务", Href: action.ReturnToOPLDeeplink, Method: "GET"},
 		ReturnToOPLTask:          action.ReturnToOPLTask,
 		CanClaim:                 []string{"purchase_action_projection", "internal_credit_or_grant_path", "existing_runtime_storage_open_path", "return_to_opl_task_contract"},
-		CannotClaim:              []string{"external_psp_settlement", "full_opl_webui_resume_implementation", "production_canary_commercial_closure"},
+		CannotClaim:              []string{"external_psp_settlement", "full_opl_webui_resume_implementation", "cloud_deployment_proof"},
 	}
 }
 
@@ -857,13 +857,14 @@ func runtimeGateCommercialAction(input RuntimeGateInput, projection RuntimeGateP
 		CanClaim: []string{
 			"runtime_required_action_contract",
 			"internal_billing_projection_only",
+			"local_controlled_commercial_business_closure",
 			"return_to_opl_task_contract",
 		},
 		CannotClaim: []string{
 			"external_psp_settlement",
 			"complete_purchase_page",
 			"full_opl_webui_resume_implementation",
-			"production_canary_commercial_closure",
+			"cloud_deployment_proof",
 		},
 	}
 }

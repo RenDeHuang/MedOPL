@@ -74,6 +74,34 @@ func TestCommercialBillingFullBusinessCapabilityE2E(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OpenManagedEnvironment() error = %v", err)
 	}
+	gate, err := service.RuntimeGate(ctx, RuntimeGateInput{
+		TenantID:       "tenant-commercial-e2e",
+		PortalUserID:   "user-commercial-e2e",
+		WorkspaceID:    "workspace-commercial-e2e",
+		InvocationMode: "runtime_required",
+		RuntimePlanID:  "starter_2c4g_10gb",
+		StoragePlanID:  "workspace_10gb",
+		SessionID:      "session-commercial-e2e",
+		TaskRef:        "task-commercial-e2e",
+		TaskIntent:     "paper",
+	})
+	if err != nil {
+		t.Fatalf("RuntimeGate(commercial e2e) error = %v", err)
+	}
+	admission := gate.CommercialAdmission
+	if !admission.AccountExists || !admission.AccountApproved || !admission.WorkspaceExists || !admission.ProviderKeyRefExists || !admission.PlanSelected || !admission.BalanceSufficient || !admission.QuotaAvailable || admission.EmergencyPlatformStop {
+		t.Fatalf("commercial e2e runtime gate must prove account/plan/balance/quota admission: %+v", admission)
+	}
+	if gate.ActionContract.PrimaryAction.Action != "return_to_opl_task" || gate.ActionContract.PrimaryAction.Reason != "runtime_storage_ready" {
+		t.Fatalf("commercial e2e primary action must return to OPL task after paid runtime is ready: %+v", gate.ActionContract.PrimaryAction)
+	}
+	if gate.ActionContract.PurchaseProjection.ReturnToOPLTask.ResumeAction != "return_to_opl_task" ||
+		gate.ActionContract.PurchaseProjection.ReturnToOPLTask.TaskRef != "task-commercial-e2e" ||
+		gate.ActionContract.PurchaseProjection.ReturnToOPLTask.TaskIntent != "paper" {
+		t.Fatalf("commercial e2e return-to-OPL contract = %+v", gate.ActionContract.PurchaseProjection.ReturnToOPLTask)
+	}
+	assertStringPresent(t, gate.ActionContract.PrimaryAction.CanClaim, "local_controlled_commercial_business_closure")
+	assertStringPresent(t, gate.ActionContract.PrimaryAction.CannotClaim, "cloud_deployment_proof")
 	freeze, err := service.RuntimeFreeze(ctx, WorkspaceInput{WorkspaceID: launch.WorkspaceID})
 	if err != nil {
 		t.Fatalf("RuntimeFreeze() error = %v", err)

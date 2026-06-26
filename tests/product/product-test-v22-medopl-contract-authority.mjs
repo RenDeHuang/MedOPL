@@ -92,6 +92,35 @@ assert.equal(current.current_truth_role, "machine_cursor_fixture", "current_fixt
 assert.equal(current.product_authority?.contracts_dir, "contracts", "current_fixture_must_point_to_contracts_authority");
 assert.deepEqual(current.product_authority?.product_contracts, productContractPaths, "current_fixture_product_contracts_mismatch");
 assert.equal(current.product_authority?.changes_retired, true, "current_fixture_must_mark_changes_retired");
+const commercialGapMap = current.commercial_runtime_business_closure_goal_gap_map;
+assert(commercialGapMap, "commercial_runtime_business_closure_goal_gap_map_missing");
+const commercialGap6 = commercialGapMap.gaps?.find((gap) => gap.gap_id === "gap6");
+assert(commercialGap6, "commercial_gap6_missing");
+assert.equal(
+  commercialGap6.slice_id,
+  "goal-commercial-gap6-local-controlled-business-closure",
+  "commercial_gap6_must_use_local_controlled_business_closure_slice",
+);
+assert.equal(
+  commercialGap6.target_business_capability,
+  "local/controlled commercial billing closure",
+  "commercial_gap6_must_not_be_production_canary_rollout_closure",
+);
+assert.equal(commercialGap6.cloud_execute_required, false, "commercial_gap6_must_not_require_cloud_execute");
+assert.equal(
+  commercialGap6.deployment_proof_boundary,
+  "future_separate_deployment_proof_not_gap6_blocker",
+  "commercial_gap6_deployment_proof_boundary_mismatch",
+);
+for (const marker of ["account_approved", "plan_selected", "balance_sufficient", "quota_available", "resource_preauth_freeze", "return_to_opl_task", "insufficient_balance_fail_closed"]) {
+  assert(commercialGap6.minimum_evidence_slice?.includes(marker), `commercial_gap6_minimum_evidence_missing:${marker}`);
+}
+for (const forbidden of ["MEDOPL_CANARY", "selected-user", "selected user", "allowlist", "production-canary"]) {
+  assert(
+    !JSON.stringify(commercialGap6).includes(forbidden),
+    `commercial_gap6_must_not_depend_on_canary_rollout_governance:${forbidden}`,
+  );
+}
 assert.equal(productProfile.medopl_product_profile.primary_consumer_surface?.name, "opl-webui", "product_profile_primary_consumer_must_be_opl_webui");
 assert.equal(productProfile.medopl_product_profile.primary_consumer_surface?.ordinary_chat_owner, "opl-webui", "product_profile_ordinary_chat_owner_must_be_opl_webui");
 assert.equal(productProfile.medopl_product_profile.primary_consumer_surface?.runtime_required_owner, "medopl", "product_profile_runtime_required_owner_must_be_medopl");

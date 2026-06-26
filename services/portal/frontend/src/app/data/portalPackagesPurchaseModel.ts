@@ -109,7 +109,7 @@ export function buildPurchaseActionProjectionFromSearch(search = window.location
     returnToOplAction: { action: "return_to_opl_task", label: "返回 OPL 继续任务", href: returnToOplDeeplink, method: "GET" },
     returnToOplTaskContract,
     canClaim: ["purchase_action_projection", "internal_credit_or_grant_path", "existing_runtime_storage_open_path", "return_to_opl_task_contract"],
-    cannotClaim: ["external_psp_settlement", "full_opl_webui_resume_implementation", "production_canary_commercial_closure"],
+    cannotClaim: ["external_psp_settlement", "full_opl_webui_resume_implementation", "cloud_deployment_proof"],
   };
 }
 

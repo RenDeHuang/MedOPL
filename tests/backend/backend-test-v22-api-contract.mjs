@@ -247,6 +247,8 @@ for (const marker of [
   "func runtimeReturnToOPLTaskContract",
   "json:\"returnToOplTaskContract\"",
   "full_opl_webui_resume_implementation",
+  "local_controlled_commercial_business_closure",
+  "cloud_deployment_proof",
 ]) {
   assert(serviceSurface.includes(marker), `runtime_gate_return_to_opl_task_contract_marker_missing:${marker}`);
 }
@@ -484,9 +486,14 @@ for (const marker of [
   "type RuntimePurchaseActionProjection struct",
   "func RuntimePurchaseActionProjectionFromQuery",
   "json:\"purchaseProjection\"",
+  "cloud_deployment_proof",
 ]) {
   assert(serviceSurface.includes(marker), `commercial_billing_service_marker_missing:${marker}`);
 }
+assert(
+  !serviceSurface.includes("production_canary_commercial_closure"),
+  "commercial_billing_projection_must_not_make_production_canary_gap6_a_business_claim_boundary",
+);
 for (const marker of [
   "ErrAccountRequired",
   "ErrInsufficientBalance",
