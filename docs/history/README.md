@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `goal-g1-commercial-account-productization`
-- latest landed commit: `251c87d4117a49648c093265644a017f514d76d7`
+- latest landed branch: `goal-g2-opl-webui-runtime-required-integration`
+- latest landed commit: `3bcf78e7aee195f1197561607e58565bc852703f`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
