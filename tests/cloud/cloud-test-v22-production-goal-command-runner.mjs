@@ -173,48 +173,6 @@ const server = createServer(async (request, response) => {
   }
   if (url.pathname === "/api/opl/runtime-gate" && request.method === "POST") {
     const body = await readRequestJson(request);
-    if (mode === "canary-emergency-stop") {
-      sendJson(403, {
-        ok: false,
-        error: "canary_admission_disabled",
-        canaryAdmission: {
-          enabled: true,
-          allowed: false,
-          decision: "disabled",
-          reason: "emergency_stop_triggered",
-          enabledBy: "medopl-operations",
-          tenantScopeHash: "tenant_scope_hash",
-          userScopeHash: "user_scope_hash",
-          costCeiling: 250,
-          monitoringOwner: "MedOPL Operations",
-          rollbackOwner: "MedOPL Operations",
-          disableCommandRef: "MEDOPL_CANARY_EMERGENCY_STOP=1",
-          admissionReceiptId: "audit-emergency-stop",
-        },
-      });
-      return;
-    }
-    if (mode === "canary-admission" && body.portalUserId === "user-unlisted-canary") {
-      sendJson(403, {
-        ok: false,
-        error: "canary_admission_denied",
-        canaryAdmission: {
-          enabled: true,
-          allowed: false,
-          decision: "denied",
-          reason: "selected_tenant_user_required",
-          enabledBy: "medopl-operations",
-          tenantScopeHash: "tenant_scope_hash",
-          userScopeHash: "user_scope_hash",
-          costCeiling: 250,
-          monitoringOwner: "MedOPL Operations",
-          rollbackOwner: "MedOPL Operations",
-          disableCommandRef: "MEDOPL_CANARY_ADMISSION_ENABLED=0",
-          admissionReceiptId: "audit-canary-denied",
-        },
-      });
-      return;
-    }
     sendJson(200, {
       ok: true,
       productOwner: "medopl",
@@ -229,21 +187,19 @@ const server = createServer(async (request, response) => {
       storageBindingId: "storage_canary",
       nodePoolProjection: { nodePoolRef: "nodepool_canary", state: "ready", customerVisible: false },
       consumerProjection: { uploadEnabled: true, runEnabled: true, artifactEnabled: true },
-      ...(mode === "canary-admission" ? {
-        canaryAdmission: {
-          enabled: true,
-          allowed: true,
-          decision: "allowed",
-          enabledBy: "medopl-operations",
-          tenantScopeHash: "tenant_scope_hash",
-          userScopeHash: "user_scope_hash",
-          costCeiling: 250,
-          monitoringOwner: "MedOPL Operations",
-          rollbackOwner: "MedOPL Operations",
-          disableCommandRef: "MEDOPL_CANARY_ADMISSION_ENABLED=0",
-          admissionReceiptId: "audit-canary-allowed",
-        },
-      } : {}),
+      commercialAdmission: {
+        accountExists: true,
+        accountApproved: true,
+        workspaceExists: true,
+        providerKeyRefExists: true,
+        planSelected: true,
+        balanceSufficient: true,
+        quotaAvailable: true,
+        emergencyPlatformStop: false,
+        allowed: true,
+        decision: "allowed",
+        reason: "runtime_storage_ready",
+      },
     });
     return;
   }
@@ -494,37 +450,6 @@ try {
   ], "live_test_product_api_steps");
   assert.equal(liveExecute.summary.productionComplete, false, "live_test_must_not_claim_production_complete");
   assertNoSensitiveText(JSON.stringify(liveExecute), "live_test_execute");
-
-  const admissionCanary = await startCanaryServer("canary-admission");
-  canaryServers.push(admissionCanary);
-  const liveAdmission = parseJson(run(["--operation", "live_test", "--execute", "--confirm-current-session-authorization"], {
-    ...baseEnv,
-    V22_OPL_WEBUI_CONSUMER_CANARY_URL: admissionCanary.baseUrl,
-    V22_MEDOPL_PUBLIC_BASE_URL: admissionCanary.baseUrl,
-    MEDOPL_CANARY_ADMISSION_ENABLED: "1",
-  }), "live_test_execute_selected_canary_admission");
-  assert.equal(liveAdmission.summary.canaryAdmissionReceipt?.decision, "allowed", "live_test_must_capture_selected_canary_allowed_receipt");
-  assert.equal(liveAdmission.summary.canaryAdmissionReceipt?.enabled, true, "live_test_canary_admission_must_be_enabled");
-  assert.equal(liveAdmission.summary.canaryAdmissionReceipt?.allowed, true, "live_test_canary_admission_must_allow_selected_user");
-  assert.equal(liveAdmission.summary.canaryAdmissionNegativeProbe?.decision, "denied", "live_test_must_probe_unlisted_user_denied");
-  assert.equal(liveAdmission.summary.canaryAdmissionNegativeProbe?.allowed, false, "live_test_unlisted_user_must_be_denied");
-  assertNoSensitiveText(JSON.stringify(liveAdmission), "live_test_selected_canary_admission");
-
-  const emergencyCanary = await startCanaryServer("canary-emergency-stop");
-  canaryServers.push(emergencyCanary);
-  const emergencyStop = run(["--operation", "live_test", "--execute", "--confirm-current-session-authorization"], {
-    ...baseEnv,
-    V22_OPL_WEBUI_CONSUMER_CANARY_URL: emergencyCanary.baseUrl,
-    V22_MEDOPL_PUBLIC_BASE_URL: emergencyCanary.baseUrl,
-    MEDOPL_CANARY_ADMISSION_ENABLED: "1",
-    MEDOPL_CANARY_EMERGENCY_STOP: "1",
-  });
-  assert.notEqual(emergencyStop.status, 0, "live_test_must_fail_when_emergency_stop_blocks_new_runtime_required");
-  const emergencyPayload = JSON.parse(emergencyStop.stdout);
-  assert.equal(emergencyPayload.summary.blocker, "production_goal_live_test_canary_admission_emergency_stop_blocked", "emergency_stop_blocker");
-  assert.equal(emergencyPayload.summary.canaryAdmissionReceipt?.decision, "disabled", "emergency_stop_diagnostic_decision");
-  assert.equal(emergencyPayload.summary.canaryAdmissionReceipt?.reason, "emergency_stop_triggered", "emergency_stop_diagnostic_reason");
-  assertNoSensitiveText(emergencyStop.stdout + emergencyStop.stderr, "live_test_emergency_stop");
 
   const destroyDiagnosticCanary = await startCanaryServer("destroy-diagnostic");
   canaryServers.push(destroyDiagnosticCanary);

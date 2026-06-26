@@ -203,6 +203,10 @@ assert(
   runtimeGate.must_return.includes("actionContract"),
   "runtime_gate_must_return_action_contract",
 );
+assert(
+  runtimeGate.must_return.includes("commercialAdmission"),
+  "runtime_gate_must_return_commercial_admission",
+);
 assert.equal(apiContract.medopl_api_contract.storage_destroy?.route, "POST /api/v22/storage/destroy", "storage_destroy_route_contract_missing");
 assert.deepEqual(
   apiContract.medopl_api_contract.storage_destroy?.must_return,
@@ -246,40 +250,95 @@ for (const marker of [
 ]) {
   assert(serviceSurface.includes(marker), `runtime_gate_return_to_opl_task_contract_marker_missing:${marker}`);
 }
-const canaryAdmission = runtimeGate.canary_admission;
-assert(canaryAdmission, "runtime_gate_canary_admission_contract_missing");
-assert.equal(canaryAdmission.intent, "selected_real_user_production_canary_runtime_required_admission", "runtime_gate_canary_admission_intent_mismatch");
+assert.equal(runtimeGate.canary_admission, undefined, "runtime_gate_must_not_use_selected_canary_as_business_admission_truth");
+const commercialAdmission = runtimeGate.commercial_admission;
+assert(commercialAdmission, "runtime_gate_commercial_admission_contract_missing");
+assert.equal(
+  commercialAdmission.intent,
+  "account_approved_commercial_runtime_gate",
+  "runtime_gate_commercial_admission_intent_mismatch",
+);
+assert.deepEqual(
+  commercialAdmission.conditions,
+  [
+    "account_exists",
+    "account_approved",
+    "workspace_exists",
+    "provider_key_ref_exists_when_needed",
+    "plan_selected",
+    "balance_sufficient",
+    "quota_available",
+    "no_emergency_platform_stop",
+  ],
+  "runtime_gate_commercial_admission_conditions_mismatch",
+);
+assert.deepEqual(
+  commercialAdmission.decision_fields,
+  [
+    "accountExists",
+    "accountApproved",
+    "workspaceExists",
+    "providerKeyRefExists",
+    "planSelected",
+    "balanceSufficient",
+    "quotaAvailable",
+    "emergencyPlatformStop",
+    "allowed",
+    "decision",
+    "reason",
+  ],
+  "runtime_gate_commercial_admission_decision_fields_mismatch",
+);
 for (const marker of [
-  canaryAdmission.enabled_flag,
-  canaryAdmission.emergency_stop_flag,
-  canaryAdmission.tenant_allowlist,
-  canaryAdmission.user_allowlist,
-  "ErrCanaryAdmissionDenied",
-  "ErrCanaryAdmissionDisabled",
-  "WithCanaryAdmission",
-  "SetCanaryAdmissionPolicy",
+  "CommercialAdmission",
+  "json:\"commercialAdmission\"",
+  "account_exists",
+  "account_approved",
+  "workspace_exists",
+  "provider_key_ref_exists_when_needed",
+  "plan_selected",
+  "balance_sufficient",
+  "quota_available",
+  "no_emergency_platform_stop",
 ]) {
-  assert(goRouteSurface.includes(marker) || configSurface.includes(marker) || serviceSurface.includes(marker), `runtime_gate_canary_admission_marker_missing:${marker}`);
+  assert(goRouteSurface.includes(marker) || serviceSurface.includes(marker), `runtime_gate_commercial_admission_marker_missing:${marker}`);
 }
-for (const field of canaryAdmission.decision_fields) {
+for (const field of commercialAdmission.decision_fields) {
   assert(
     serviceSurface.includes(`json:"${field}`),
-    `runtime_gate_canary_admission_decision_field_missing:${field}`,
-  );
-}
-for (const auditKind of canaryAdmission.audit_events) {
-  assert(
-    controlplaneDomainSurface.includes(auditKind) || serviceSurface.includes(auditKind) || goRouteSurface.includes(auditKind),
-    `runtime_gate_canary_admission_audit_missing:${auditKind}`,
+    `runtime_gate_commercial_admission_decision_field_missing:${field}`,
   );
 }
 assert(
   serviceSurface.includes("RuntimeGateInput struct") && serviceSurface.includes("TenantID") && serviceSurface.includes("PortalUserID"),
-  "runtime_gate_canary_admission_identity_input_missing",
+  "runtime_gate_commercial_admission_identity_input_missing",
 );
-for (const field of canaryAdmission.must_not_return) {
-  assert(!runtimeGateProjectionSurface.includes(`json:"${field}`), `runtime_gate_canary_admission_forbidden_response_field:${field}`);
-}
+const operationsSafety = runtimeGate.operations_safety_boundary;
+assert(operationsSafety, "runtime_gate_operations_safety_boundary_missing_for_retained_canary_rollout_env");
+assert.equal(operationsSafety.intent, "cloud_rollout_operations_safety_gate_only", "runtime_gate_operations_safety_boundary_intent_mismatch");
+assert.deepEqual(
+  operationsSafety.env_refs,
+  [
+    "MEDOPL_CANARY_ADMISSION_ENABLED",
+    "MEDOPL_CANARY_EMERGENCY_STOP",
+    "MEDOPL_CANARY_TENANT_ALLOWLIST",
+    "MEDOPL_CANARY_USER_ALLOWLIST",
+    "MEDOPL_CANARY_COST_CEILING_USD",
+    "MEDOPL_CANARY_ADMISSION_ENABLED_BY",
+    "MEDOPL_CANARY_MONITORING_OWNER",
+    "MEDOPL_CANARY_ROLLBACK_OWNER",
+    "MEDOPL_CANARY_DISABLE_COMMAND_REF",
+  ],
+  "runtime_gate_operations_safety_env_refs_mismatch",
+);
+assert(
+  operationsSafety.cannot_claim.includes("business_or_commercial_admission_truth"),
+  "runtime_gate_operations_safety_must_not_claim_business_admission",
+);
+assert(
+  !runtimeGateProjectionSurface.includes("CanaryAdmission") && !runtimeGateProjectionSurface.includes('json:"canaryAdmission"'),
+  "runtime_gate_projection_must_not_return_canary_admission_as_business_field",
+);
 for (const field of runtimeGate.forbidden_response_fields) {
   assert(!runtimeGateProjectionSurface.includes(`json:"${field}`), `runtime_gate_forbidden_response_field:${field}`);
 }

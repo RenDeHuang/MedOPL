@@ -258,77 +258,41 @@ func TestControlPlaneHandlersKeepRuntimeGateContractAnchor(t *testing.T) {
 	}
 }
 
-func TestControlPlaneHandlersEnforceSelectedCanaryAdmission(t *testing.T) {
-	router := controlPlaneHandlerTestRouterWithOptions("", controlplaneservice.WithCanaryAdmission(controlplaneservice.CanaryAdmissionPolicy{
-		Enabled:           true,
-		AllowTenants:      []string{"tenant-selected"},
-		AllowUsers:        []string{"user-selected"},
-		CostCeiling:       250,
-		MonitoringOwner:   "MedOPL Operations",
-		RollbackOwner:     "MedOPL Release",
-		DisableCommandRef: "MEDOPL_CANARY_ADMISSION_ENABLED=0",
-	}))
-	rawProviderKey := "canary-admission-provider-key-material-that-must-stay-private"
+func TestControlPlaneHandlersExposeCommercialAdmissionAndDoNotUseSelectedCanaryAsBusinessGate(t *testing.T) {
+	router := controlPlaneHandlerTestRouter()
+	rawProviderKey := "commercial-admission-provider-key-material-that-must-stay-private"
 
-	prepareCreditUser(t, router, "workspace-selected", 200)
+	prepareCreditUser(t, router, "workspace-paid", 200)
 	postMap(t, router, "/api/v22/provider-key", map[string]any{
-		"tenantId":       "tenant-selected",
-		"portalUserId":   "user-selected",
-		"workspaceId":    "workspace-selected",
+		"tenantId":       "tenant-paid",
+		"portalUserId":   "user-paid",
+		"workspaceId":    "workspace-paid",
 		"apiKey":         rawProviderKey,
-		"idempotencyKey": "canary-admission-provider-selected",
+		"idempotencyKey": "commercial-admission-provider-paid",
 	})
 	openResponse := postMap(t, router, "/api/v22/managed-environment/open", map[string]any{
-		"tenantId":       "tenant-selected",
-		"portalUserId":   "user-selected",
-		"workspaceId":    "workspace-selected",
-		"idempotencyKey": "canary-admission-open-selected",
+		"tenantId":       "tenant-paid",
+		"portalUserId":   "user-paid",
+		"workspaceId":    "workspace-paid",
+		"idempotencyKey": "commercial-admission-open-paid",
 	})
 	if openResponse["resourceBindingId"] == "" {
-		t.Fatalf("selected canary open response = %+v", openResponse)
+		t.Fatalf("commercial admission open response = %+v", openResponse)
 	}
 	gate := postMap(t, router, "/api/opl/runtime-gate", map[string]any{
-		"tenantId":       "tenant-selected",
-		"portalUserId":   "user-selected",
-		"workspaceId":    "workspace-selected",
+		"tenantId":       "tenant-paid",
+		"portalUserId":   "user-paid",
+		"workspaceId":    "workspace-paid",
 		"invocationMode": "runtime_required",
 	})
 	assertPublicPayload(t, gate, rawProviderKey)
-	admission := gate["canaryAdmission"].(map[string]any)
-	if admission["allowed"] != true || admission["decision"] != "allowed" || admission["tenantScopeHash"] == "" || admission["userScopeHash"] == "" {
-		t.Fatalf("selected canary admission receipt = %+v", admission)
+	if _, exists := gate["canaryAdmission"]; exists {
+		t.Fatalf("runtime gate must not expose selected canary as business admission: %+v", gate)
 	}
-
-	prepareCreditUser(t, router, "workspace-denied", 200)
-	postMap(t, router, "/api/v22/provider-key", map[string]any{
-		"tenantId":       "tenant-denied",
-		"portalUserId":   "user-denied",
-		"workspaceId":    "workspace-denied",
-		"apiKey":         rawProviderKey,
-		"idempotencyKey": "canary-admission-provider-denied",
-	})
-	rec := postRaw(router, "/api/v22/managed-environment/open", map[string]any{
-		"tenantId":       "tenant-denied",
-		"portalUserId":   "user-denied",
-		"workspaceId":    "workspace-denied",
-		"idempotencyKey": "canary-admission-open-denied",
-	})
-	if rec.Code != http.StatusForbidden || !strings.Contains(rec.Body.String(), "canary_admission_denied") {
-		t.Fatalf("denied canary open status = %d body = %s", rec.Code, rec.Body.String())
+	admission := gate["commercialAdmission"].(map[string]any)
+	if admission["allowed"] != true || admission["decision"] != "allowed" || admission["accountExists"] != true || admission["accountApproved"] != true || admission["balanceSufficient"] != true || admission["quotaAvailable"] != true {
+		t.Fatalf("commercial admission receipt = %+v", admission)
 	}
-	assertPublicPayload(t, mapFromRecorder(t, rec), rawProviderKey)
-
-	deniedGate := postMap(t, router, "/api/opl/runtime-gate", map[string]any{
-		"tenantId":       "tenant-denied",
-		"portalUserId":   "user-denied",
-		"workspaceId":    "workspace-denied",
-		"invocationMode": "runtime_required",
-	})
-	deniedAdmission := deniedGate["canaryAdmission"].(map[string]any)
-	if deniedGate["ok"] != false || deniedAdmission["decision"] != "denied" || deniedAdmission["tenantScopeHash"] == "" || deniedAdmission["userScopeHash"] == "" {
-		t.Fatalf("denied canary gate must expose redacted admission receipt: %+v", deniedGate)
-	}
-	assertPublicPayload(t, deniedGate, rawProviderKey)
 }
 
 func TestControlPlaneProductionBootstrapContractFailsClosed(t *testing.T) {

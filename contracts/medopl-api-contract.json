@@ -87,10 +87,43 @@
         "billing",
         "release",
         "consumerProjection",
-        "canaryAdmission",
+        "commercialAdmission",
         "actionContract",
         "nextAction"
       ],
+      "commercial_admission": {
+        "intent": "account_approved_commercial_runtime_gate",
+        "conditions": [
+          "account_exists",
+          "account_approved",
+          "workspace_exists",
+          "provider_key_ref_exists_when_needed",
+          "plan_selected",
+          "balance_sufficient",
+          "quota_available",
+          "no_emergency_platform_stop"
+        ],
+        "decision_fields": [
+          "accountExists",
+          "accountApproved",
+          "workspaceExists",
+          "providerKeyRefExists",
+          "planSelected",
+          "balanceSufficient",
+          "quotaAvailable",
+          "emergencyPlatformStop",
+          "allowed",
+          "decision",
+          "reason"
+        ],
+        "blocking_actions": [
+          "open_medopl_purchase",
+          "select_plan",
+          "recharge_or_credit_required",
+          "open_runtime_storage"
+        ],
+        "boundary": "paid_account_runtime_gate_uses_account_plan_balance_quota_and_platform_stop_state"
+      },
       "commercial_action_contract": {
         "intent": "opl_webui_runtime_required_commercial_purchase_actions",
         "actions": [
@@ -177,33 +210,28 @@
           "opl_domain_quality_verdict"
         ]
       },
-      "canary_admission": {
-        "intent": "selected_real_user_production_canary_runtime_required_admission",
-        "enabled_flag": "MEDOPL_CANARY_ADMISSION_ENABLED",
-        "emergency_stop_flag": "MEDOPL_CANARY_EMERGENCY_STOP",
-        "tenant_allowlist": "MEDOPL_CANARY_TENANT_ALLOWLIST",
-        "user_allowlist": "MEDOPL_CANARY_USER_ALLOWLIST",
-        "decision_fields": [
-          "enabled",
-          "allowed",
-          "decision",
-          "reason",
-          "enabledBy",
-          "tenantScopeHash",
-          "userScopeHash",
-          "costCeiling",
-          "monitoringOwner",
-          "rollbackOwner",
-          "disableCommandRef",
-          "admissionReceiptId"
+      "operations_safety_boundary": {
+        "intent": "cloud_rollout_operations_safety_gate_only",
+        "env_refs": [
+          "MEDOPL_CANARY_ADMISSION_ENABLED",
+          "MEDOPL_CANARY_EMERGENCY_STOP",
+          "MEDOPL_CANARY_TENANT_ALLOWLIST",
+          "MEDOPL_CANARY_USER_ALLOWLIST",
+          "MEDOPL_CANARY_COST_CEILING_USD",
+          "MEDOPL_CANARY_ADMISSION_ENABLED_BY",
+          "MEDOPL_CANARY_MONITORING_OWNER",
+          "MEDOPL_CANARY_ROLLBACK_OWNER",
+          "MEDOPL_CANARY_DISABLE_COMMAND_REF"
         ],
-        "audit_events": [
-          "canary_admission_enabled",
-          "canary_admission_denied",
-          "canary_admission_disabled",
-          "emergency_stop_triggered"
+        "retained_because": "active_cloud_rollout_workflow_and_kubernetes_deploy_manifest_still_consume_these_refs_as_rollout_safety_config",
+        "cannot_claim": [
+          "business_or_commercial_admission_truth",
+          "recharge_or_billing_rule",
+          "paid_account_runtime_gate",
+          "external_psp_settlement"
         ],
         "must_not_return": [
+          "canaryAdmission",
           "tenantAllowlist",
           "userAllowlist",
           "rawTenantId",

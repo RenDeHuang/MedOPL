@@ -75,37 +75,6 @@ func TestLoadAcceptsProductionModeFromDeployEnvironment(t *testing.T) {
 	}
 }
 
-func TestProductionCanaryAdmissionRequiresSelectedTenantAndUserScope(t *testing.T) {
-	t.Setenv("MEDOPL_BACKEND_MODE", "production")
-	t.Setenv("MEDOPL_ENV", "")
-	t.Setenv("DATABASE_URL", "postgres://medopl:test@postgres.medopl.local:5432/medopl?sslmode=require")
-	t.Setenv("MEDOPL_AUTH_TOKEN_SHA256", TokenHash("user-token"))
-	t.Setenv("MEDOPL_ADMIN_TOKEN_SHA256", TokenHash("admin-token"))
-	t.Setenv("MEDOPL_WEBHOOK_SECRET_SHA256", TokenHash("webhook-secret"))
-	t.Setenv("MEDOPL_SESSION_SIGNING_SECRET_SHA256", TokenHash("session-secret"))
-	t.Setenv("MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256", TokenHash("session-bootstrap-secret"))
-	t.Setenv("MEDOPL_CANARY_ADMISSION_ENABLED", "1")
-
-	if _, err := Load(); err == nil {
-		t.Fatal("expected enabled canary admission without selected tenant/user scope to fail closed")
-	}
-
-	t.Setenv("MEDOPL_CANARY_TENANT_ALLOWLIST", "tenant-selected")
-	t.Setenv("MEDOPL_CANARY_USER_ALLOWLIST", "user-selected")
-	if _, err := Load(); err == nil {
-		t.Fatal("expected enabled canary admission without cost ceiling to fail closed")
-	}
-
-	t.Setenv("MEDOPL_CANARY_COST_CEILING_USD", "250")
-	cfg, err := Load()
-	if err != nil {
-		t.Fatalf("Load() with selected canary scope error = %v", err)
-	}
-	if !cfg.CanaryAdmission.Enabled || len(cfg.CanaryAdmission.AllowTenants) != 1 || len(cfg.CanaryAdmission.AllowUsers) != 1 || cfg.CanaryAdmission.CostCeiling != 250 {
-		t.Fatalf("canary admission config = %+v", cfg.CanaryAdmission)
-	}
-}
-
 func TestProductionModeRequiresDatabaseURL(t *testing.T) {
 	t.Setenv("MEDOPL_BACKEND_MODE", "production")
 	t.Setenv("MEDOPL_ENV", "")

@@ -5,12 +5,6 @@ import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import {
-  assertCanaryAdmissionAllowed,
-  canaryAdmissionReceiptFromGate,
-  canaryEmergencyStopRequired,
-  probeUnlistedCanaryUser,
-} from "./lib/production-canary-admission-support.js";
-import {
   ensureConfig,
   getConfigCheck,
   parseEnvFile,
@@ -742,36 +736,15 @@ async function runLiveTest(operation) {
     method: "POST",
     body: { tenantId, portalUserId, workspaceId, invocationMode: "runtime_required" },
     stepId: "runtime_gate",
-    allowFailure: canaryEmergencyStopRequired(),
   });
-  if (canaryEmergencyStopRequired()) {
-    const emergencyReceipt = canaryAdmissionReceiptFromGate(gate);
-    if (gate.httpStatus === 403 && emergencyReceipt?.decision === "disabled" && emergencyReceipt?.reason === "emergency_stop_triggered") {
-      const evidenceRef = safeWriteRuntimeEvidence(operation, {
-        status: "blocked",
-        stepId: "runtime_gate",
-        blocker: "production_goal_live_test_canary_admission_emergency_stop_blocked",
-        canaryAdmissionReceipt: emergencyReceipt,
-      });
-      fail("production_goal_live_test_canary_admission_emergency_stop_blocked", {
-        operationClass: operation,
-        canaryAdmissionReceipt: emergencyReceipt,
-        evidenceRef,
-      }, 1);
-    }
-    fail("production_goal_live_test_canary_admission_emergency_stop_not_enforced", {
-      operationClass: operation,
-      status: gate.httpStatus || 0,
-      canaryAdmissionReceipt: emergencyReceipt || null,
-    }, 1);
-  }
   requireFields(gate, ["ok", "workspaceId", "runtimeState", "storageState", "nodePoolProjection.state"], "production_goal_live_test_runtime_gate_failed", operation);
   if (gate.ok !== true) fail("production_goal_live_test_runtime_gate_failed", { operationClass: operation, reason: "ok_false" }, 1);
-  const canaryAdmissionReceipt = canaryAdmissionReceiptFromGate(gate);
-  assertCanaryAdmissionAllowed({ receipt: canaryAdmissionReceipt, operation, fail });
-  const canaryAdmissionNegativeProbe = await probeUnlistedCanaryUser({ liveRequest, tenantId, workspaceId, operation, fail });
-  observed.push({ step: "runtime_gate", runtimeState: gate.runtimeState, storageState: gate.storageState, canaryAdmission: canaryAdmissionReceipt || "not_required" });
-  if (canaryAdmissionNegativeProbe) observed.push({ step: "canary_admission_unlisted_user", canaryAdmission: canaryAdmissionNegativeProbe });
+  observed.push({
+    step: "runtime_gate",
+    runtimeState: gate.runtimeState,
+    storageState: gate.storageState,
+    commercialAdmission: gate.commercialAdmission || "not_observed",
+  });
 
   const launchQuery = `?launchId=${encodeURIComponent(launch.launchId)}`;
   const file = await liveRequest({
@@ -856,8 +829,6 @@ async function runLiveTest(operation) {
     flowCompleteness: "medopl_public_api_product_e2e",
     observed,
     databaseProof,
-    ...(canaryAdmissionReceipt ? { canaryAdmissionReceipt } : {}),
-    ...(canaryAdmissionNegativeProbe ? { canaryAdmissionNegativeProbe } : {}),
   });
   return {
     evidenceRef,
@@ -866,8 +837,6 @@ async function runLiveTest(operation) {
     steps,
     observed,
     databaseProof,
-    ...(canaryAdmissionReceipt ? { canaryAdmissionReceipt } : {}),
-    ...(canaryAdmissionNegativeProbe ? { canaryAdmissionNegativeProbe } : {}),
   };
 }
 

@@ -10,24 +10,20 @@ import (
 )
 
 const (
-	ProviderBoundStatusActive        = "bound"
-	LaunchStatusReady                = "ready"
-	LaunchStatusBlocked              = "blocked_by_provider_key"
-	ResourceStatusActive             = "active"
-	ResourceStatusReleased           = "released"
-	StorageStatusReady               = "ready"
-	StorageStatusDestroyed           = "destroyed"
-	AuditKindFileUpload              = "file.upload"
-	AuditKindRunSucceeded            = "run.succeeded"
-	AuditKindArtifactAvailable       = "artifact.available"
-	BillingStatusActive              = "active"
-	BillingStatusStopped             = "stopped"
-	AuditKindResourceRelease         = "resource.release"
-	AuditKindStorageDestroy          = "storage.destroy"
-	AuditKindCanaryAdmissionEnabled  = "canary_admission_enabled"
-	AuditKindCanaryAdmissionDenied   = "canary_admission_denied"
-	AuditKindCanaryAdmissionDisabled = "canary_admission_disabled"
-	AuditKindEmergencyStopTriggered  = "emergency_stop_triggered"
+	ProviderBoundStatusActive  = "bound"
+	LaunchStatusReady          = "ready"
+	LaunchStatusBlocked        = "blocked_by_provider_key"
+	ResourceStatusActive       = "active"
+	ResourceStatusReleased     = "released"
+	StorageStatusReady         = "ready"
+	StorageStatusDestroyed     = "destroyed"
+	AuditKindFileUpload        = "file.upload"
+	AuditKindRunSucceeded      = "run.succeeded"
+	AuditKindArtifactAvailable = "artifact.available"
+	BillingStatusActive        = "active"
+	BillingStatusStopped       = "stopped"
+	AuditKindResourceRelease   = "resource.release"
+	AuditKindStorageDestroy    = "storage.destroy"
 )
 
 var (
@@ -44,8 +40,6 @@ var (
 	ErrFileNameRequired        = errors.New("file_name_required")
 	ErrFileRefRequired         = errors.New("file_ref_required")
 	ErrArtifactRefRequired     = errors.New("artifact_ref_required")
-	ErrCanaryAdmissionDenied   = errors.New("canary_admission_denied")
-	ErrCanaryAdmissionDisabled = errors.New("canary_admission_disabled")
 )
 
 type BindProviderKeyInput struct {

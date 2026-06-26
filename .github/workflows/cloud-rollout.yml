@@ -280,7 +280,7 @@ jobs:
             --dry-run=client -o yaml \
             | kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl apply -f -
 
-      - name: Validate selected canary admission config shape
+      - name: Validate canary operations safety config shape
         shell: bash
         run: |
           node <<'NODE'
@@ -294,23 +294,23 @@ jobs:
             if (!raw && required) fail(missingMessage);
             if (["1", "true", "yes", "on", "enabled"].includes(raw)) return true;
             if (["0", "false", "no", "off", "disabled"].includes(raw)) return false;
-            fail(`${name} must be boolean for selected-user canary launch`);
+            fail(`${name} must be boolean for canary operations safety gate`);
           }
-          function requiredText(name, missingMessage = `${name} required when canary admission is enabled`) {
+          function requiredText(name, missingMessage = `${name} required when canary operations safety gate is enabled`) {
             const value = String(process.env[name] || "").trim();
             if (!value) fail(missingMessage);
             if (/[\r\n]/u.test(value)) fail(`${name} must be single-line`);
             return value;
           }
-          const enabled = boolValue("MEDOPL_CANARY_ADMISSION_ENABLED", "MEDOPL_CANARY_ADMISSION_ENABLED required for selected-user canary launch");
-          const emergencyStop = boolValue("MEDOPL_CANARY_EMERGENCY_STOP", "MEDOPL_CANARY_EMERGENCY_STOP required for selected-user canary launch");
-          if (!enabled) fail("MEDOPL_CANARY_ADMISSION_ENABLED must enable selected-user canary launch");
-          const tenantAllowlist = requiredText("MEDOPL_CANARY_TENANT_ALLOWLIST", "MEDOPL_CANARY_TENANT_ALLOWLIST required when canary admission is enabled");
-          const userAllowlist = requiredText("MEDOPL_CANARY_USER_ALLOWLIST", "MEDOPL_CANARY_USER_ALLOWLIST required when canary admission is enabled");
-          const costCeilingRaw = requiredText("MEDOPL_CANARY_COST_CEILING_USD", "MEDOPL_CANARY_COST_CEILING_USD required when canary admission is enabled");
+          const enabled = boolValue("MEDOPL_CANARY_ADMISSION_ENABLED", "MEDOPL_CANARY_ADMISSION_ENABLED required for canary operations safety gate");
+          const emergencyStop = boolValue("MEDOPL_CANARY_EMERGENCY_STOP", "MEDOPL_CANARY_EMERGENCY_STOP required for canary operations safety gate");
+          if (!enabled) fail("MEDOPL_CANARY_ADMISSION_ENABLED must enable canary operations safety gate");
+          const tenantAllowlist = requiredText("MEDOPL_CANARY_TENANT_ALLOWLIST", "MEDOPL_CANARY_TENANT_ALLOWLIST required when canary operations safety gate is enabled");
+          const userAllowlist = requiredText("MEDOPL_CANARY_USER_ALLOWLIST", "MEDOPL_CANARY_USER_ALLOWLIST required when canary operations safety gate is enabled");
+          const costCeilingRaw = requiredText("MEDOPL_CANARY_COST_CEILING_USD", "MEDOPL_CANARY_COST_CEILING_USD required when canary operations safety gate is enabled");
           const costCeiling = Number.parseFloat(costCeilingRaw);
           if (!Number.isFinite(costCeiling) || costCeiling <= 0) {
-            fail("MEDOPL_CANARY_COST_CEILING_USD required when canary admission is enabled");
+            fail("MEDOPL_CANARY_COST_CEILING_USD required when canary operations safety gate is enabled");
           }
           for (const name of [
             "MEDOPL_CANARY_ADMISSION_ENABLED_BY",
@@ -323,7 +323,7 @@ jobs:
           const hash = (value) => crypto.createHash("sha256").update(value).digest("hex").slice(0, 16);
           console.log(JSON.stringify({
             ok: true,
-            message: "selected canary admission config source ok",
+            message: "canary operations safety config source ok",
             enabled,
             emergencyStop,
             tenantScopeHashPresent: Boolean(hash(tenantAllowlist)),
@@ -335,7 +335,7 @@ jobs:
           }));
           NODE
 
-      - name: Sync in-cluster canary admission secret from production source
+      - name: Sync in-cluster canary operations safety secret from production source
         shell: bash
         run: |
           {
@@ -355,7 +355,7 @@ jobs:
             --dry-run=client -o yaml \
             | kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl apply -f -
 
-      - name: Validate in-cluster canary admission secret shape
+      - name: Validate in-cluster canary operations safety secret shape
         shell: bash
         run: |
           encoded_data="$(kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl get secret medopl-canary-admission -o 'jsonpath={.data}')"
@@ -402,7 +402,7 @@ jobs:
           const hash = (value) => crypto.createHash("sha256").update(value).digest("hex").slice(0, 16);
           console.log(JSON.stringify({
             ok: true,
-            message: "canary admission in-cluster secret shape ok",
+            message: "canary operations safety in-cluster secret shape ok",
             enabled,
             emergencyStop,
             tenantScopeHashPresent: Boolean(hash(tenantAllowlist)),

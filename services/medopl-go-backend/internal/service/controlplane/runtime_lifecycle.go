@@ -168,7 +168,7 @@ type RuntimeGateProjection struct {
 	Billing               RuntimeGateBilling                  `json:"billing"`
 	Release               RuntimeGateRelease                  `json:"release"`
 	ConsumerProjection    RuntimeGateConsumerProjection       `json:"consumerProjection"`
-	CanaryAdmission       CanaryAdmissionDecision             `json:"canaryAdmission"`
+	CommercialAdmission   RuntimeGateCommercialAdmission      `json:"commercialAdmission"`
 	ActionContract        RuntimeGateCommercialActionContract `json:"actionContract"`
 	NextAction            string                              `json:"nextAction"`
 	CannotClaim           []string                            `json:"cannotClaim"`
@@ -233,13 +233,6 @@ func (service *Service) OpenManagedEnvironment(ctx context.Context, input OpenMa
 	workspaceID := strings.TrimSpace(input.WorkspaceID)
 	if workspaceID == "" {
 		return cpd.LaunchProjection{}, cpd.ErrWorkspaceRequired
-	}
-	_, err := service.canaryAdmissionDecision(ctx, strings.TrimSpace(input.TenantID), strings.TrimSpace(input.PortalUserID), workspaceID)
-	if err != nil {
-		if errors.Is(err, cpd.ErrCanaryAdmissionDisabled) {
-			_ = service.recordCanaryAdmissionDisabled(ctx, workspaceID, "")
-		}
-		return cpd.LaunchProjection{}, err
 	}
 	binding, err := service.store.ProviderBindingByWorkspace(ctx, strings.TrimSpace(input.WorkspaceID))
 	if errors.Is(err, cprepo.ErrNotFound) {
@@ -327,7 +320,7 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 			ReleaseAction: "not_required",
 			StorageAction: "not_required",
 		},
-		CanaryAdmission:       CanaryAdmissionDecision{Enabled: false, Allowed: true, Decision: "not_required"},
+		CommercialAdmission:   RuntimeGateCommercialAdmission{WorkspaceExists: true, PlanSelected: true, QuotaAvailable: true, Allowed: true, Decision: "not_required", Reason: "ordinary_chat_or_api_only"},
 		ProviderKeyStatus:     "not_required_for_ordinary_chat",
 		NextAction:            "continue_in_opl_webui",
 		CannotClaim:           runtimeGateCannotClaim(),
@@ -338,29 +331,6 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 		return projection, nil
 	}
 	projection.MedOPLRuntimeRequired = true
-	admission, err := service.canaryAdmissionDecision(ctx, strings.TrimSpace(input.TenantID), strings.TrimSpace(input.PortalUserID), workspaceID)
-	projection.CanaryAdmission = admission
-	if err != nil && isCanaryAdmissionError(err) {
-		projection.Ok = false
-		projection.RuntimeState = "blocked"
-		projection.StorageState = "blocked"
-		projection.NodePoolProjection = NodePoolProjection{State: "blocked", CustomerVisible: false}
-		projection.Billing = RuntimeGateBilling{FreezeStatus: "not_started", Currency: "CNY"}
-		projection.Release = RuntimeGateRelease{CanReleaseRuntime: false, DestroyStorage: "requires_runtime_binding", StopBilling: "not_started"}
-		projection.ConsumerProjection = RuntimeGateConsumerProjection{
-			ChatSurface:   "opl-webui",
-			RunSurface:    "blocked_until_canary_admission",
-			ReleaseAction: "not_started",
-			StorageAction: "requires_runtime_binding",
-		}
-		projection.ProviderKeyStatus = "not_checked"
-		projection.NextAction = "canary_admission_required"
-		projection.ActionContract = runtimeGateCommercialActionContract(input, projection, "canary_admission_required")
-		return projection, nil
-	}
-	if err != nil {
-		return RuntimeGateProjection{}, err
-	}
 	projection.RuntimeState = "blocked"
 	projection.StorageState = "blocked"
 	projection.NodePoolProjection = NodePoolProjection{State: "blocked", CustomerVisible: false}
@@ -374,10 +344,12 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 	}
 	projection.ProviderKeyStatus = "missing"
 	projection.NextAction = "bind_provider_key"
+	projection.CommercialAdmission = service.runtimeGateCommercialAdmission(ctx, workspaceID, false, runtimeGateActionReason(projection))
 	projection.ActionContract = runtimeGateCommercialActionContract(input, projection, "provider_key_required")
 
 	binding, err := service.store.ProviderBindingByWorkspace(ctx, workspaceID)
 	if errors.Is(err, cprepo.ErrNotFound) {
+		projection.CommercialAdmission = service.runtimeGateCommercialAdmission(ctx, workspaceID, false, "provider_key_required")
 		return projection, nil
 	}
 	if err != nil {
@@ -391,8 +363,10 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 		if wallet.AvailableBalance < commercialRuntimeHoldAmount {
 			reason = "insufficient_balance"
 		}
+		projection.CommercialAdmission = service.runtimeGateCommercialAdmissionWithWallet(ctx, workspaceID, true, reason, wallet)
 		projection.ActionContract = runtimeGateCommercialActionContractWithWallet(input, projection, reason, wallet)
 	} else if errors.Is(err, cprepo.ErrNotFound) {
+		projection.CommercialAdmission = service.runtimeGateCommercialAdmission(ctx, workspaceID, true, "account_required")
 		projection.ActionContract = runtimeGateCommercialActionContract(input, projection, "account_required")
 	} else {
 		return RuntimeGateProjection{}, err
@@ -405,6 +379,20 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 	if len(resources) == 0 {
 		projection.RuntimeState = "not_opened"
 		projection.StorageState = "not_opened"
+		projection.CommercialAdmission = service.runtimeGateCommercialAdmission(ctx, workspaceID, true, "runtime_storage_not_opened")
+		if wallet, err := service.runtimeGateWallet(ctx, workspaceID); err == nil {
+			reason := "runtime_storage_not_opened"
+			if wallet.AvailableBalance < commercialRuntimeHoldAmount {
+				reason = "insufficient_balance"
+			}
+			projection.CommercialAdmission = service.runtimeGateCommercialAdmissionWithWallet(ctx, workspaceID, true, reason, wallet)
+			projection.ActionContract = runtimeGateCommercialActionContractWithWallet(input, projection, reason, wallet)
+		} else if errors.Is(err, cprepo.ErrNotFound) {
+			projection.CommercialAdmission = service.runtimeGateCommercialAdmission(ctx, workspaceID, true, "account_required")
+			projection.ActionContract = runtimeGateCommercialActionContract(input, projection, "account_required")
+		} else {
+			return RuntimeGateProjection{}, err
+		}
 		return projection, nil
 	}
 	resource := newestResource(resources)
@@ -448,7 +436,16 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 	} else {
 		projection.NextAction = "open_medopl_runtime"
 	}
-	projection.ActionContract = runtimeGateCommercialActionContract(input, projection, runtimeGateActionReason(projection))
+	reason := runtimeGateActionReason(projection)
+	if wallet, err := service.runtimeGateWallet(ctx, workspaceID); err == nil {
+		projection.CommercialAdmission = service.runtimeGateCommercialAdmissionWithWallet(ctx, workspaceID, projection.ProviderKeyRef != "", reason, wallet)
+		projection.ActionContract = runtimeGateCommercialActionContractWithWallet(input, projection, reason, wallet)
+	} else if errors.Is(err, cprepo.ErrNotFound) {
+		projection.CommercialAdmission = service.runtimeGateCommercialAdmission(ctx, workspaceID, projection.ProviderKeyRef != "", "account_required")
+		projection.ActionContract = runtimeGateCommercialActionContract(input, projection, "account_required")
+	} else {
+		return RuntimeGateProjection{}, err
+	}
 	return projection, nil
 }
 
@@ -783,7 +780,7 @@ func runtimeGateCommercialActionContractWithWallet(input RuntimeGateInput, proje
 		primary = actions[3]
 	case "runtime_storage_ready":
 		primary = actions[4]
-	case "provider_key_required", "canary_admission_required", "continue_in_opl_webui":
+	case "provider_key_required", "continue_in_opl_webui":
 		primary = actions[0]
 	case "plan_required":
 		primary = actions[1]
