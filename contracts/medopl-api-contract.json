@@ -256,6 +256,61 @@
         "kubeconfig"
       ]
     },
+    "billing_statement": {
+      "route": "GET /api/v22/billing/statement",
+      "owner": "medopl",
+      "primary_consumer": "opl-webui",
+      "intent": "internal_commercial_billing_business_closure_receipt",
+      "must_return": [
+        "ok",
+        "source",
+        "workspaceId",
+        "wallet",
+        "rows",
+        "receipts",
+        "businessClosureReceipt"
+      ],
+      "business_closure_receipt_fields": [
+        "customerAccountExists",
+        "creditRecorded",
+        "balanceIncreased",
+        "preOpenBalanceCheck",
+        "resourcePreauthFreeze",
+        "usageDebitRecorded",
+        "billingAttributionLinked",
+        "releaseStopBilling",
+        "storageBillingStopped",
+        "auditLinked",
+        "idempotencyPolicy",
+        "insufficientBalancePolicy",
+        "canClaim",
+        "cannotClaim"
+      ],
+      "can_claim": [
+        "internal_commercial_billing_ledger_closure",
+        "credit_balance_freeze_debit_release_audit_receipt"
+      ],
+      "cannot_claim": [
+        "external_psp_settlement",
+        "card_network_or_bank_reconciliation",
+        "tax_invoice_or_enterprise_compliance",
+        "full_production_complete"
+      ],
+      "boundary": "internal_account_credit_balance_freeze_debit_release_ledger_audit_receipt_only",
+      "must_not_return": [
+        "rawObjectStoreSecret",
+        "signedUrl",
+        "objectKey",
+        "storageKey",
+        "localPath",
+        "bearerToken",
+        "runtimeToken",
+        "kubeconfig",
+        "cardNumber",
+        "bankAccount",
+        "paymentProviderSecret"
+      ]
+    },
     "release_runtime": {
       "route": "POST /api/v22/managed-environment/release",
       "owner": "medopl",

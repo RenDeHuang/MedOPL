@@ -129,6 +129,18 @@ func TestCommercialBillingFullBusinessCapabilityE2E(t *testing.T) {
 	if !statement.Receipts.RuntimeHold || !statement.Receipts.StorageMetadata || !statement.Receipts.FileMetadata || !statement.Receipts.RunMetadata || !statement.Receipts.ArtifactMetadata || !statement.Receipts.BillingAuditLinked || !statement.Receipts.ReleaseSettlement {
 		t.Fatalf("statement receipts must prove storage/file/run/artifact/billing/audit/release linkage: %+v", statement.Receipts)
 	}
+	closure := statement.BusinessClosureReceipt
+	if !closure.CustomerAccountExists || !closure.CreditRecorded || !closure.BalanceIncreased || !closure.ResourcePreauthFreeze || !closure.UsageDebitRecorded || !closure.BillingAttributionLinked || !closure.ReleaseStopBilling || !closure.StorageBillingStopped || !closure.AuditLinked {
+		t.Fatalf("business closure receipt must prove internal commercial ledger journey: %+v", closure)
+	}
+	if closure.PreOpenBalanceCheck != "account_and_available_balance_required" {
+		t.Fatalf("business closure pre-open balance check = %+v", closure)
+	}
+	if closure.IdempotencyPolicy != "credit_and_billing_events_use_idempotency_keys" || closure.InsufficientBalancePolicy != "runtime_open_fails_closed_when_available_balance_below_hold" {
+		t.Fatalf("business closure safety policies = %+v", closure)
+	}
+	assertStringPresent(t, closure.CanClaim, "internal_commercial_billing_ledger_closure")
+	assertStringPresent(t, closure.CannotClaim, "external_psp_settlement")
 	assertLedgerEntry(t, statement.Rows, "credit", 300, "wallet_topup")
 	assertLedgerEntry(t, statement.Rows, "hold", 30, "resource_preauth_freeze")
 	assertLedgerEntry(t, statement.Rows, "hold", 0.1, cpd.AuditKindFileUpload)
@@ -322,6 +334,16 @@ func assertLedgerReconciliationID(t *testing.T, ledger []LedgerItem, sourceEvent
 		}
 	}
 	t.Fatalf("ledger missing reconciliation id for source=%s run=%s ledger=%+v", sourceEventType, runRef, ledger)
+}
+
+func assertStringPresent(t *testing.T, values []string, expected string) {
+	t.Helper()
+	for _, value := range values {
+		if value == expected {
+			return
+		}
+	}
+	t.Fatalf("missing %q in %+v", expected, values)
 }
 
 func TestCommercialBillingFreezeClockUsesSevenDayWindow(t *testing.T) {

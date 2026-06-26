@@ -303,6 +303,71 @@ assert(
   serviceSurface.includes("summary.RunCount = runCount") && serviceSurface.includes("summary.LedgerCount = len(summary.Ledger)"),
   "billing_summary_top_level_counts_not_populated_from_summary_and_ledger",
 );
+
+const billingStatement = apiContract.medopl_api_contract.billing_statement;
+assert(billingStatement, "api_contract_billing_statement_missing");
+assert.equal(billingStatement.route, "GET /api/v22/billing/statement", "billing_statement_route_contract_missing");
+assert.equal(billingStatement.primary_consumer, "opl-webui", "billing_statement_primary_consumer_must_be_opl_webui");
+assert.deepEqual(
+  billingStatement.must_return,
+  ["ok", "source", "workspaceId", "wallet", "rows", "receipts", "businessClosureReceipt"],
+  "billing_statement_must_return_contract_mismatch",
+);
+assert.deepEqual(
+  billingStatement.business_closure_receipt_fields,
+  [
+    "customerAccountExists",
+    "creditRecorded",
+    "balanceIncreased",
+    "preOpenBalanceCheck",
+    "resourcePreauthFreeze",
+    "usageDebitRecorded",
+    "billingAttributionLinked",
+    "releaseStopBilling",
+    "storageBillingStopped",
+    "auditLinked",
+    "idempotencyPolicy",
+    "insufficientBalancePolicy",
+    "canClaim",
+    "cannotClaim",
+  ],
+  "billing_statement_business_closure_receipt_fields_mismatch",
+);
+assert(
+  billingStatement.can_claim.includes("internal_commercial_billing_ledger_closure") &&
+    billingStatement.cannot_claim.includes("external_psp_settlement"),
+  "billing_statement_claim_boundary_mismatch",
+);
+const billingStatementSurface = serviceSurface.slice(
+  serviceSurface.indexOf("type BillingStatement struct"),
+  serviceSurface.indexOf("type RuntimeFreezeProjection struct"),
+);
+for (const field of billingStatement.must_return) {
+  assert(
+    billingStatementSurface.includes(`json:"${field}`),
+    `billing_statement_go_response_field_missing:${field}`,
+  );
+}
+for (const field of billingStatement.business_closure_receipt_fields) {
+  assert(
+    billingStatementSurface.includes(`json:"${field}`),
+    `billing_statement_business_closure_go_field_missing:${field}`,
+  );
+}
+for (const field of billingStatement.must_not_return) {
+  assert(!billingStatementSurface.includes(`json:"${field}`), `billing_statement_forbidden_response_field:${field}`);
+}
+for (const marker of [
+  "type CommercialBusinessClosureReceipt struct",
+  "func (service *Service) commercialBusinessClosureReceipt",
+  "account_and_available_balance_required",
+  "credit_and_billing_events_use_idempotency_keys",
+  "runtime_open_fails_closed_when_available_balance_below_hold",
+  "internal_commercial_billing_ledger_closure",
+  "external_psp_settlement",
+]) {
+  assert(serviceSurface.includes(marker), `billing_statement_business_closure_marker_missing:${marker}`);
+}
 for (const marker of [
   "func (service *Service) CreatePaymentOrder",
   "func (service *Service) MarkPaymentPaid",

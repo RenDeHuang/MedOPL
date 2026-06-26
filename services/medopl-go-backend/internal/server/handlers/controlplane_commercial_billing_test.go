@@ -93,4 +93,25 @@ func TestControlPlaneHandlersExposeCommercialBillingAPIs(t *testing.T) {
 	if receipts["runtimeHold"] != true || receipts["billingAuditLinked"] != true {
 		t.Fatalf("statement receipts = %+v", receipts)
 	}
+	closure := statement["businessClosureReceipt"].(map[string]any)
+	if closure["customerAccountExists"] != true || closure["creditRecorded"] != true || closure["resourcePreauthFreeze"] != true {
+		t.Fatalf("business closure receipt core = %+v", closure)
+	}
+	if closure["preOpenBalanceCheck"] != "account_and_available_balance_required" {
+		t.Fatalf("business closure balance check = %+v", closure)
+	}
+	canClaim := closure["canClaim"].([]any)
+	cannotClaim := closure["cannotClaim"].([]any)
+	if !containsStringValue(canClaim, "internal_commercial_billing_ledger_closure") || !containsStringValue(cannotClaim, "external_psp_settlement") {
+		t.Fatalf("business closure claims = can:%+v cannot:%+v", canClaim, cannotClaim)
+	}
+}
+
+func containsStringValue(values []any, expected string) bool {
+	for _, value := range values {
+		if value == expected {
+			return true
+		}
+	}
+	return false
 }

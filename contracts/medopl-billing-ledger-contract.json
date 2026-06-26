@@ -43,6 +43,33 @@
       "source_event_id",
       "created_at"
     ],
+    "business_closure_receipt": {
+      "surface": "GET /api/v22/billing/statement businessClosureReceipt",
+      "can_claim": [
+        "internal_commercial_billing_ledger_closure",
+        "credit_balance_freeze_debit_release_audit_receipt"
+      ],
+      "cannot_claim": [
+        "external_psp_settlement",
+        "card_network_or_bank_reconciliation",
+        "tax_invoice_or_enterprise_compliance",
+        "full_production_complete"
+      ],
+      "must_prove": [
+        "customer_account_exists",
+        "credit_recorded",
+        "balance_increased",
+        "pre_open_balance_check",
+        "resource_preauth_freeze",
+        "usage_debit_recorded",
+        "billing_attribution_linked",
+        "release_stop_billing",
+        "storage_billing_stopped",
+        "audit_linked",
+        "idempotency_policy",
+        "insufficient_balance_policy"
+      ]
+    },
     "must_fail_closed_on": [
       "negative_balance_without_policy",
       "missing_source_event",

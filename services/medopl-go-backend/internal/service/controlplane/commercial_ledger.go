@@ -69,14 +69,15 @@ type AdjustBusinessAccountInput struct {
 }
 
 type BillingStatement struct {
-	Ok          bool         `json:"ok"`
-	Source      string       `json:"source"`
-	WorkspaceID string       `json:"workspaceId"`
-	RunCount    int          `json:"runCount"`
-	LedgerCount int          `json:"ledgerCount"`
-	Wallet      Wallet       `json:"wallet"`
-	Rows        []LedgerItem `json:"rows"`
-	Receipts    struct {
+	Ok                     bool                             `json:"ok"`
+	Source                 string                           `json:"source"`
+	WorkspaceID            string                           `json:"workspaceId"`
+	RunCount               int                              `json:"runCount"`
+	LedgerCount            int                              `json:"ledgerCount"`
+	Wallet                 Wallet                           `json:"wallet"`
+	Rows                   []LedgerItem                     `json:"rows"`
+	BusinessClosureReceipt CommercialBusinessClosureReceipt `json:"businessClosureReceipt"`
+	Receipts               struct {
 		RuntimeHold        bool `json:"runtimeHold"`
 		StorageMetadata    bool `json:"storageMetadata"`
 		FileMetadata       bool `json:"fileMetadata"`
@@ -85,6 +86,23 @@ type BillingStatement struct {
 		BillingAuditLinked bool `json:"billingAuditLinked"`
 		ReleaseSettlement  bool `json:"releaseSettlement"`
 	} `json:"receipts"`
+}
+
+type CommercialBusinessClosureReceipt struct {
+	CustomerAccountExists     bool     `json:"customerAccountExists"`
+	CreditRecorded            bool     `json:"creditRecorded"`
+	BalanceIncreased          bool     `json:"balanceIncreased"`
+	PreOpenBalanceCheck       string   `json:"preOpenBalanceCheck"`
+	ResourcePreauthFreeze     bool     `json:"resourcePreauthFreeze"`
+	UsageDebitRecorded        bool     `json:"usageDebitRecorded"`
+	BillingAttributionLinked  bool     `json:"billingAttributionLinked"`
+	ReleaseStopBilling        bool     `json:"releaseStopBilling"`
+	StorageBillingStopped     bool     `json:"storageBillingStopped"`
+	AuditLinked               bool     `json:"auditLinked"`
+	IdempotencyPolicy         string   `json:"idempotencyPolicy"`
+	InsufficientBalancePolicy string   `json:"insufficientBalancePolicy"`
+	CanClaim                  []string `json:"canClaim"`
+	CannotClaim               []string `json:"cannotClaim"`
 }
 
 type RuntimeFreezeProjection struct {
@@ -189,14 +207,19 @@ func (service *Service) BillingStatement(ctx context.Context, input WorkspaceInp
 	if err != nil {
 		return BillingStatement{}, err
 	}
+	audits, err := service.store.ListAuditEvents(ctx, workspaceID)
+	if err != nil {
+		return BillingStatement{}, err
+	}
 	statement := BillingStatement{
-		Ok:          true,
-		Source:      "go-control-plane",
-		WorkspaceID: workspaceID,
-		RunCount:    summary.RunCount,
-		LedgerCount: summary.LedgerCount,
-		Wallet:      summary.Wallet,
-		Rows:        summary.Ledger,
+		Ok:                     true,
+		Source:                 "go-control-plane",
+		WorkspaceID:            workspaceID,
+		RunCount:               summary.RunCount,
+		LedgerCount:            summary.LedgerCount,
+		Wallet:                 summary.Wallet,
+		Rows:                   summary.Ledger,
+		BusinessClosureReceipt: service.commercialBusinessClosureReceipt(ctx, workspaceID, summary.Wallet, summary.Ledger, audits),
 	}
 	for _, row := range summary.Ledger {
 		if row.Type == "hold" && row.Reason == "resource_preauth_freeze" {
@@ -214,6 +237,61 @@ func (service *Service) BillingStatement(ctx context.Context, input WorkspaceInp
 	statement.Receipts.ArtifactMetadata = len(artifacts) > 0
 	statement.Receipts.StorageMetadata = hasStorageMetadata(files, runs, artifacts)
 	return statement, nil
+}
+
+func (service *Service) commercialBusinessClosureReceipt(ctx context.Context, workspaceID string, wallet Wallet, ledger []LedgerItem, audits []cpd.AuditEvent) CommercialBusinessClosureReceipt {
+	receipt := CommercialBusinessClosureReceipt{
+		PreOpenBalanceCheck:       "account_and_available_balance_required",
+		IdempotencyPolicy:         "credit_and_billing_events_use_idempotency_keys",
+		InsufficientBalancePolicy: "runtime_open_fails_closed_when_available_balance_below_hold",
+		CanClaim: []string{
+			"internal_commercial_billing_ledger_closure",
+			"credit_balance_freeze_debit_release_audit_receipt",
+		},
+		CannotClaim: []string{
+			"external_psp_settlement",
+			"card_network_or_bank_reconciliation",
+			"tax_invoice_or_enterprise_compliance",
+			"full_production_complete",
+		},
+	}
+	if _, err := service.store.BusinessAccountByWorkspace(ctx, workspaceID); err == nil {
+		receipt.CustomerAccountExists = true
+	}
+	for _, item := range ledger {
+		if item.Type == "credit" && item.Amount > 0 {
+			receipt.CreditRecorded = true
+		}
+		if item.Type == "hold" && item.Reason == "resource_preauth_freeze" {
+			receipt.ResourcePreauthFreeze = true
+		}
+		if item.Type == "debit" && item.Amount > 0 {
+			receipt.UsageDebitRecorded = true
+		}
+		if item.BillingAttributionID != "" && item.SourceEventID != "" && item.SourceEventType != "" {
+			receipt.BillingAttributionLinked = true
+			receipt.AuditLinked = true
+		}
+		if item.Type == "release" && item.SourceEventType == cpd.AuditKindResourceRelease {
+			receipt.ReleaseStopBilling = true
+		}
+		if item.Type == "release" && item.SourceEventType == cpd.AuditKindStorageDestroy {
+			receipt.StorageBillingStopped = true
+		}
+	}
+	receipt.BalanceIncreased = receipt.CreditRecorded && wallet.Balance > 0
+	for _, audit := range audits {
+		if audit.ID != "" && audit.Kind != "" {
+			receipt.AuditLinked = true
+		}
+		if audit.Kind == cpd.AuditKindResourceRelease {
+			receipt.ReleaseStopBilling = true
+		}
+		if audit.Kind == cpd.AuditKindStorageDestroy {
+			receipt.StorageBillingStopped = true
+		}
+	}
+	return receipt
 }
 
 func (service *Service) RuntimeFreeze(ctx context.Context, input WorkspaceInput) (RuntimeFreezeProjection, error) {
