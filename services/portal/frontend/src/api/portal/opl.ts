@@ -64,6 +64,20 @@ export interface OplRuntimeGateCommercialAction {
   };
   medoplDeeplink: string;
   returnToOplDeeplink: string;
+  returnToOplTaskContract: OplReturnToTaskContract;
+  canClaim: string[];
+  cannotClaim: string[];
+}
+
+export interface OplReturnToTaskContract {
+  resumeAction: "return_to_opl_task" | string;
+  resumeMethod: "GET" | string;
+  workspaceId: string;
+  sessionId: string;
+  taskRef: string;
+  taskIntent: string;
+  returnToOplDeeplink: string;
+  requiredConsumer: "opl-webui" | string;
   canClaim: string[];
   cannotClaim: string[];
 }
@@ -84,6 +98,7 @@ export interface OplPurchaseActionProjection {
   rechargeOrCreditAction: { action: string; label: string; href: string; method: string };
   openRuntimeStorageAction: { action: string; label: string; href: string; method: string };
   returnToOplAction: { action: string; label: string; href: string; method: string };
+  returnToOplTaskContract: OplReturnToTaskContract;
   canClaim: string[];
   cannotClaim: string[];
 }

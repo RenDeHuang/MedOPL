@@ -112,6 +112,7 @@
           "balanceRequirement",
           "medoplDeeplink",
           "returnToOplDeeplink",
+          "returnToOplTaskContract",
           "canClaim",
           "cannotClaim"
         ],
@@ -139,16 +140,39 @@
             "rechargeOrCreditAction",
             "openRuntimeStorageAction",
             "returnToOplAction",
+            "returnToOplTaskContract",
             "canClaim",
             "cannotClaim"
           ],
           "boundary": "purchase_projection_uses_internal_credit_and_existing_resource_opening_only"
         },
+        "return_to_opl_task_contract": {
+          "intent": "stable_deeplink_and_session_resume_contract_for_opl_webui",
+          "fields": [
+            "resumeAction",
+            "resumeMethod",
+            "workspaceId",
+            "sessionId",
+            "taskRef",
+            "taskIntent",
+            "returnToOplDeeplink",
+            "requiredConsumer",
+            "canClaim",
+            "cannotClaim"
+          ],
+          "can_claim": [
+            "return_to_opl_task_contract"
+          ],
+          "cannot_claim": [
+            "full_opl_webui_resume_implementation",
+            "opl_domain_quality_verdict"
+          ]
+        },
         "boundary": "machine_readable_action_contract_only",
         "does_not_claim": [
           "external_psp_settlement",
           "complete_purchase_page",
-          "return_to_opl_resume_complete",
+          "full_opl_webui_resume_implementation",
           "production_canary_commercial_closure",
           "opl_domain_quality_verdict"
         ]

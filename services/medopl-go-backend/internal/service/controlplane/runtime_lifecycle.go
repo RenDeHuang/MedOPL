@@ -93,6 +93,7 @@ type RuntimeGateCommercialAction struct {
 	BalanceRequirement  RuntimeGateBalanceRequirement `json:"balanceRequirement"`
 	MedOPLDeeplink      string                        `json:"medoplDeeplink"`
 	ReturnToOPLDeeplink string                        `json:"returnToOplDeeplink"`
+	ReturnToOPLTask     RuntimeReturnToOPLTask        `json:"returnToOplTaskContract"`
 	CanClaim            []string                      `json:"canClaim"`
 	CannotClaim         []string                      `json:"cannotClaim"`
 }
@@ -126,8 +127,22 @@ type RuntimePurchaseActionProjection struct {
 	RechargeOrCreditAction   RuntimePurchaseActionLink `json:"rechargeOrCreditAction"`
 	OpenRuntimeStorageAction RuntimePurchaseActionLink `json:"openRuntimeStorageAction"`
 	ReturnToOplAction        RuntimePurchaseActionLink `json:"returnToOplAction"`
+	ReturnToOPLTask          RuntimeReturnToOPLTask    `json:"returnToOplTaskContract"`
 	CanClaim                 []string                  `json:"canClaim"`
 	CannotClaim              []string                  `json:"cannotClaim"`
+}
+
+type RuntimeReturnToOPLTask struct {
+	ResumeAction        string   `json:"resumeAction"`
+	ResumeMethod        string   `json:"resumeMethod"`
+	WorkspaceID         string   `json:"workspaceId"`
+	SessionID           string   `json:"sessionId"`
+	TaskRef             string   `json:"taskRef"`
+	TaskIntent          string   `json:"taskIntent"`
+	ReturnToOPLDeeplink string   `json:"returnToOplDeeplink"`
+	RequiredConsumer    string   `json:"requiredConsumer"`
+	CanClaim            []string `json:"canClaim"`
+	CannotClaim         []string `json:"cannotClaim"`
 }
 
 type RuntimeGateProjection struct {
@@ -804,8 +819,9 @@ func RuntimePurchaseActionProjectionFromQuery(action RuntimeGateCommercialAction
 		RechargeOrCreditAction:   RuntimePurchaseActionLink{Action: "recharge_or_credit_required", Label: "充值或申请授信", Href: "/usage" + base, Method: "POST /api/v22/users/credit"},
 		OpenRuntimeStorageAction: RuntimePurchaseActionLink{Action: "open_runtime_storage", Label: "开通计算资源和存储空间", Href: "/compute" + base, Method: "POST /api/v22/managed-environment/open"},
 		ReturnToOplAction:        RuntimePurchaseActionLink{Action: "return_to_opl_task", Label: "返回 OPL 继续任务", Href: action.ReturnToOPLDeeplink, Method: "GET"},
-		CanClaim:                 []string{"purchase_action_projection", "internal_credit_or_grant_path", "existing_runtime_storage_open_path"},
-		CannotClaim:              []string{"external_psp_settlement", "return_to_opl_resume_complete", "production_canary_commercial_closure"},
+		ReturnToOPLTask:          action.ReturnToOPLTask,
+		CanClaim:                 []string{"purchase_action_projection", "internal_credit_or_grant_path", "existing_runtime_storage_open_path", "return_to_opl_task_contract"},
+		CannotClaim:              []string{"external_psp_settlement", "full_opl_webui_resume_implementation", "production_canary_commercial_closure"},
 	}
 }
 
@@ -816,6 +832,7 @@ func runtimeGateCommercialAction(input RuntimeGateInput, projection RuntimeGateP
 	taskRef := strings.TrimSpace(input.TaskRef)
 	runtimePlanID := firstNonEmpty(projection.RuntimePlanID, input.RuntimePlanID, "starter_2c4g_10gb")
 	storagePlanID := firstNonEmpty(projection.StoragePlanID, input.StoragePlanID, "workspace_10gb")
+	returnToOPLDeeplink := runtimeGateReturnToOPLDeeplink(workspaceID, taskIntent, sessionID, taskRef)
 	return RuntimeGateCommercialAction{
 		Action:       action,
 		Reason:       reason,
@@ -838,17 +855,34 @@ func runtimeGateCommercialAction(input RuntimeGateInput, projection RuntimeGateP
 			ActiveFreeze:       wallet.ActiveFreeze,
 		},
 		MedOPLDeeplink:      runtimeGateMedOPLDeeplink(action, workspaceID, runtimePlanID, storagePlanID, taskIntent, sessionID, taskRef),
-		ReturnToOPLDeeplink: runtimeGateReturnToOPLDeeplink(workspaceID, taskIntent, sessionID, taskRef),
+		ReturnToOPLDeeplink: returnToOPLDeeplink,
+		ReturnToOPLTask:     runtimeReturnToOPLTaskContract(workspaceID, taskIntent, sessionID, taskRef, returnToOPLDeeplink),
 		CanClaim: []string{
 			"runtime_required_action_contract",
 			"internal_billing_projection_only",
+			"return_to_opl_task_contract",
 		},
 		CannotClaim: []string{
 			"external_psp_settlement",
 			"complete_purchase_page",
-			"return_to_opl_resume_complete",
+			"full_opl_webui_resume_implementation",
 			"production_canary_commercial_closure",
 		},
+	}
+}
+
+func runtimeReturnToOPLTaskContract(workspaceID string, taskIntent string, sessionID string, taskRef string, deeplink string) RuntimeReturnToOPLTask {
+	return RuntimeReturnToOPLTask{
+		ResumeAction:        "return_to_opl_task",
+		ResumeMethod:        "GET",
+		WorkspaceID:         workspaceID,
+		SessionID:           sessionID,
+		TaskRef:             taskRef,
+		TaskIntent:          taskIntent,
+		ReturnToOPLDeeplink: deeplink,
+		RequiredConsumer:    "opl-webui",
+		CanClaim:            []string{"return_to_opl_task_contract"},
+		CannotClaim:         []string{"full_opl_webui_resume_implementation", "opl_domain_quality_verdict"},
 	}
 }
 

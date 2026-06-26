@@ -109,7 +109,7 @@ export function PackagesPurchase() {
               </Button>
             )}
             <Button asChild variant="outline">
-              <Link to={model.purchaseProjection.returnToOplAction.href}>{model.purchaseProjection.returnToOplAction.label}</Link>
+              <Link to={model.purchaseProjection.returnToOplTaskContract.returnToOplDeeplink}>{model.purchaseProjection.returnToOplAction.label}</Link>
             </Button>
           </div>
         </div>

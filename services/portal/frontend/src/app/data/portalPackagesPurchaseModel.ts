@@ -23,6 +23,19 @@ type PurchaseActionLink = {
   method: string;
 };
 
+type ReturnToOplTaskContract = {
+  resumeAction: string;
+  resumeMethod: string;
+  workspaceId: string;
+  sessionId: string;
+  taskRef: string;
+  taskIntent: string;
+  returnToOplDeeplink: string;
+  requiredConsumer: string;
+  canClaim: string[];
+  cannotClaim: string[];
+};
+
 export type PurchaseActionProjection = {
   workspaceId: string;
   sessionId: string;
@@ -39,6 +52,7 @@ export type PurchaseActionProjection = {
   rechargeOrCreditAction: PurchaseActionLink;
   openRuntimeStorageAction: PurchaseActionLink;
   returnToOplAction: PurchaseActionLink;
+  returnToOplTaskContract: ReturnToOplTaskContract;
   canClaim: string[];
   cannotClaim: string[];
 };
@@ -64,6 +78,19 @@ export function buildPurchaseActionProjectionFromSearch(search = window.location
   const availableBalance = numberValue(account?.availableBalance, Math.max(0, balance - activeFreeze));
   const minRequiredBalance = 30;
   const base = `?workspaceId=${workspaceId}&runtimePlanId=${selectedPlanId}&storagePlanId=${storagePlanId}&taskIntent=${taskIntent}&sessionId=${sessionId}&taskRef=${taskRef}`;
+  const returnToOplDeeplink = `/opl${base}`;
+  const returnToOplTaskContract = {
+    resumeAction: "return_to_opl_task",
+    resumeMethod: "GET",
+    workspaceId,
+    sessionId,
+    taskRef,
+    taskIntent,
+    returnToOplDeeplink,
+    requiredConsumer: "opl-webui",
+    canClaim: ["return_to_opl_task_contract"],
+    cannotClaim: ["full_opl_webui_resume_implementation", "opl_domain_quality_verdict"],
+  };
   return {
     workspaceId,
     sessionId,
@@ -79,9 +106,10 @@ export function buildPurchaseActionProjectionFromSearch(search = window.location
     selectPlanAction: { action: "select_plan", label: "选择托管套餐", href: `/packages${base}`, method: "POST /api/lab-packages/activate" },
     rechargeOrCreditAction: { action: "recharge_or_credit_required", label: "充值或申请授信", href: `/usage${base}`, method: "POST /api/v22/users/credit" },
     openRuntimeStorageAction: { action: "open_runtime_storage", label: "开通计算资源和存储空间", href: `/compute${base}`, method: "POST /api/v22/managed-environment/open" },
-    returnToOplAction: { action: "return_to_opl_task", label: "返回 OPL 继续任务", href: `/opl${base}`, method: "GET" },
-    canClaim: ["purchase_action_projection", "internal_credit_or_grant_path", "existing_runtime_storage_open_path"],
-    cannotClaim: ["external_psp_settlement", "return_to_opl_resume_complete", "production_canary_commercial_closure"],
+    returnToOplAction: { action: "return_to_opl_task", label: "返回 OPL 继续任务", href: returnToOplDeeplink, method: "GET" },
+    returnToOplTaskContract,
+    canClaim: ["purchase_action_projection", "internal_credit_or_grant_path", "existing_runtime_storage_open_path", "return_to_opl_task_contract"],
+    cannotClaim: ["external_psp_settlement", "full_opl_webui_resume_implementation", "production_canary_commercial_closure"],
   };
 }
 

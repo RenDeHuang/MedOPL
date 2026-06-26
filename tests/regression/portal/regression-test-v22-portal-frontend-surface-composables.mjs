@@ -132,6 +132,8 @@ for (const modelOwnedPurchaseProjection of [
   "rechargeOrCreditAction",
   "openRuntimeStorageAction",
   "returnToOplAction",
+  "returnToOplTaskContract",
+  "full_opl_webui_resume_implementation",
   "canOpenRuntimeStorage",
 ]) {
   assert(
@@ -156,7 +158,7 @@ for (const pagePurchaseProjectionMarker of [
   "model.purchaseProjection.selectPlanAction.label",
   "model.purchaseProjection.rechargeOrCreditAction.href",
   "model.purchaseProjection.openRuntimeStorageAction.href",
-  "model.purchaseProjection.returnToOplAction.href",
+  "model.purchaseProjection.returnToOplTaskContract.returnToOplDeeplink",
 ]) {
   assert(
     packagesPageSource.includes(pagePurchaseProjectionMarker),

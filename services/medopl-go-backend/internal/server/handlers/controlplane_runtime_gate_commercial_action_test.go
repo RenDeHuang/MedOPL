@@ -24,11 +24,18 @@ func TestControlPlaneHandlersExposeOPLWebuiCommercialActionContract(t *testing.T
 	if missingProviderAction["medoplDeeplink"] == "" || missingProviderAction["returnToOplDeeplink"] == "" {
 		t.Fatalf("missing provider action deeplinks = %+v", missingProviderAction)
 	}
+	missingProviderReturnContract := missingProviderAction["returnToOplTaskContract"].(map[string]any)
+	if missingProviderReturnContract["resumeAction"] != "return_to_opl_task" || missingProviderReturnContract["resumeMethod"] != "GET" || missingProviderReturnContract["workspaceId"] != "workspace-needs-purchase" {
+		t.Fatalf("missing provider return-to-OPL contract = %+v", missingProviderReturnContract)
+	}
+	if missingProviderReturnContract["returnToOplDeeplink"] != missingProviderAction["returnToOplDeeplink"] {
+		t.Fatalf("return-to-OPL contract must share action deeplink: action=%+v contract=%+v", missingProviderAction, missingProviderReturnContract)
+	}
 	availableActions := missingProviderActionContract["availableActions"].([]any)
 	seenActions := map[string]bool{}
 	for _, item := range availableActions {
 		action := item.(map[string]any)
-		for _, field := range []string{"action", "reason", "workspaceId", "taskIntent", "planRequirement", "balanceRequirement", "medoplDeeplink", "returnToOplDeeplink", "canClaim", "cannotClaim"} {
+		for _, field := range []string{"action", "reason", "workspaceId", "taskIntent", "planRequirement", "balanceRequirement", "medoplDeeplink", "returnToOplDeeplink", "returnToOplTaskContract", "canClaim", "cannotClaim"} {
 			if _, ok := action[field]; !ok {
 				t.Fatalf("available action missing stable field %s: %+v", field, action)
 			}
@@ -87,6 +94,13 @@ func TestControlPlaneHandlersExposeOPLWebuiCommercialActionContract(t *testing.T
 	}
 	if purchaseProjection["canOpenRuntimeStorage"] != true || purchaseProjection["availableBalance"] != float64(200) {
 		t.Fatalf("purchase projection wallet = %+v", purchaseProjection)
+	}
+	returnContract := purchaseProjection["returnToOplTaskContract"].(map[string]any)
+	if returnContract["sessionId"] != "" || returnContract["taskRef"] != "task-open-resource" || returnContract["taskIntent"] != "ppt" {
+		t.Fatalf("purchase projection return-to-OPL contract context = %+v", returnContract)
+	}
+	if returnContract["returnToOplDeeplink"] != purchaseProjection["returnToOplAction"].(map[string]any)["href"] {
+		t.Fatalf("purchase projection return-to-OPL deeplink mismatch: projection=%+v contract=%+v", purchaseProjection, returnContract)
 	}
 	for _, field := range []string{"selectPlanAction", "rechargeOrCreditAction", "openRuntimeStorageAction", "returnToOplAction"} {
 		action, ok := purchaseProjection[field].(map[string]any)
@@ -180,5 +194,12 @@ func TestControlPlaneHandlersExposeOPLWebuiRuntimeGate(t *testing.T) {
 	}
 	if primaryAction["medoplDeeplink"] == "" || primaryAction["returnToOplDeeplink"] == "" {
 		t.Fatalf("runtime required commercial action deeplinks = %+v", primaryAction)
+	}
+	returnContract := primaryAction["returnToOplTaskContract"].(map[string]any)
+	if returnContract["resumeAction"] != "return_to_opl_task" || returnContract["workspaceId"] != "workspace-v22" || returnContract["sessionId"] != "session-v22" || returnContract["taskRef"] != "task-v22" || returnContract["taskIntent"] != "book" {
+		t.Fatalf("runtime required return-to-OPL contract = %+v", returnContract)
+	}
+	if returnContract["returnToOplDeeplink"] != primaryAction["returnToOplDeeplink"] {
+		t.Fatalf("runtime required return-to-OPL deeplink mismatch: action=%+v contract=%+v", primaryAction, returnContract)
 	}
 }

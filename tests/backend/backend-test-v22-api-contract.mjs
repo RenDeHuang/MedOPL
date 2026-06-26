@@ -129,6 +129,7 @@ assert.deepEqual(
     "balanceRequirement",
     "medoplDeeplink",
     "returnToOplDeeplink",
+    "returnToOplTaskContract",
     "canClaim",
     "cannotClaim",
   ],
@@ -164,10 +165,39 @@ assert.deepEqual(
     "rechargeOrCreditAction",
     "openRuntimeStorageAction",
     "returnToOplAction",
+    "returnToOplTaskContract",
     "canClaim",
     "cannotClaim",
   ],
   "runtime_gate_purchase_action_projection_fields_mismatch",
+);
+const returnToOplContract = runtimeGate.commercial_action_contract.return_to_opl_task_contract;
+assert(returnToOplContract, "runtime_gate_return_to_opl_task_contract_missing");
+assert.equal(
+  returnToOplContract.intent,
+  "stable_deeplink_and_session_resume_contract_for_opl_webui",
+  "runtime_gate_return_to_opl_task_contract_intent_mismatch",
+);
+assert.deepEqual(
+  returnToOplContract.fields,
+  [
+    "resumeAction",
+    "resumeMethod",
+    "workspaceId",
+    "sessionId",
+    "taskRef",
+    "taskIntent",
+    "returnToOplDeeplink",
+    "requiredConsumer",
+    "canClaim",
+    "cannotClaim",
+  ],
+  "runtime_gate_return_to_opl_task_contract_fields_mismatch",
+);
+assert(
+  returnToOplContract.can_claim.includes("return_to_opl_task_contract") &&
+    returnToOplContract.cannot_claim.includes("full_opl_webui_resume_implementation"),
+  "runtime_gate_return_to_opl_task_contract_claim_boundary_mismatch",
 );
 assert(
   runtimeGate.must_return.includes("actionContract"),
@@ -201,6 +231,20 @@ for (const field of runtimeGate.commercial_action_contract.action_fields) {
     serviceSurface.includes(`json:"${field}`),
     `runtime_gate_commercial_action_field_missing:${field}`,
   );
+}
+for (const field of returnToOplContract.fields) {
+  assert(
+    serviceSurface.includes(`json:"${field}`),
+    `runtime_gate_return_to_opl_task_contract_go_field_missing:${field}`,
+  );
+}
+for (const marker of [
+  "type RuntimeReturnToOPLTask struct",
+  "func runtimeReturnToOPLTaskContract",
+  "json:\"returnToOplTaskContract\"",
+  "full_opl_webui_resume_implementation",
+]) {
+  assert(serviceSurface.includes(marker), `runtime_gate_return_to_opl_task_contract_marker_missing:${marker}`);
 }
 const canaryAdmission = runtimeGate.canary_admission;
 assert(canaryAdmission, "runtime_gate_canary_admission_contract_missing");
