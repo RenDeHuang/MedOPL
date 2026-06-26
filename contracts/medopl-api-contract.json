@@ -308,6 +308,7 @@
         "run",
         "artifactRef",
         "artifacts",
+        "refs",
         "progress",
         "deliverables"
       ],

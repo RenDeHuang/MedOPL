@@ -360,6 +360,13 @@ func TestServiceRecordsFileRunArtifactBillingAuditAndRelease(t *testing.T) {
 	if runResult.ArtifactRef == "" || runResult.ArtifactRef != runResult.Artifacts[0].ArtifactRef {
 		t.Fatalf("run result top-level artifactRef = %q artifacts = %+v", runResult.ArtifactRef, runResult.Artifacts)
 	}
+	if runResult.Refs.RunRef != runResult.Run.RunRef ||
+		runResult.Refs.ArtifactRef != runResult.ArtifactRef ||
+		runResult.Refs.StorageBindingID != fileRef.StorageBindingID ||
+		len(runResult.Refs.FileRefs) != 1 ||
+		runResult.Refs.FileRefs[0] != fileRef.FileRef {
+		t.Fatalf("run result refs must stabilize OPL-Webui resume pointers: %+v", runResult.Refs)
+	}
 	if len(runResult.Progress) != 2 {
 		t.Fatalf("run result progress = %+v", runResult.Progress)
 	}

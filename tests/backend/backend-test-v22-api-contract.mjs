@@ -414,7 +414,7 @@ assert.equal(
 );
 assert.deepEqual(
   runResult.must_return,
-  ["ok", "status", "statusUrl", "run", "artifactRef", "artifacts", "progress", "deliverables"],
+  ["ok", "status", "statusUrl", "run", "artifactRef", "artifacts", "refs", "progress", "deliverables"],
   "run_result_must_return_contract_mismatch",
 );
 const publicRunResultSurface = serviceSurface.slice(
@@ -434,6 +434,23 @@ assert(
   /ArtifactRef:\s*artifactRef/u.test(serviceSurface),
   "run_result_top_level_artifact_ref_not_populated_from_generated_artifact_ref",
 );
+assert(
+  /Refs\s+PublicRunRefs/u.test(publicRunResultSurface) &&
+    /json:"refs"/u.test(publicRunResultSurface),
+  "run_result_refs_projection_missing",
+);
+const runRefsProjection = serviceSurface.slice(
+  serviceSurface.indexOf("Refs: PublicRunRefs{"),
+  serviceSurface.indexOf("Artifacts: []PublicArtifact{{"),
+);
+for (const marker of [
+  "RunRef:           runID",
+  "ArtifactRef:      artifactRef",
+  "FileRefs:         append([]string(nil), fileRefs...)",
+  "StorageBindingID: storageBindingID",
+]) {
+  assert(runRefsProjection.includes(marker), `run_result_refs_projection_marker_missing:${marker}`);
+}
 
 const billingSummary = apiContract.medopl_api_contract.billing_summary;
 assert(billingSummary, "api_contract_billing_summary_missing");

@@ -1263,16 +1263,16 @@
   },
   "cloud_saas_runtime_commercial_productization_goal_map": {
     "schema_version": 1,
-    "status": "g1_in_authoring",
+    "status": "g2_in_authoring",
     "business_truth": "MedOPL is the OPL-Webui cloud SaaS resource control plane; commercial admission is account-approved plus plan/balance/quota, not selected allowlist or cloud rollout governance.",
-    "active_cursor": "goal-g1-commercial-account-productization",
-    "next_cursor": "goal-g2-opl-webui-runtime-required-integration",
+    "active_cursor": "goal-g2-opl-webui-runtime-required-integration",
+    "next_cursor": "goal-g3-real-cloud-runtime-storage-proof",
     "goals": [
       {
         "goal_id": "G1",
         "slice_id": "goal-g1-commercial-account-productization",
         "target_business_capability": "commercial account/recharge/plan productization",
-        "status": "authoring_slice",
+        "status": "landed_local_closeout",
         "minimum_evidence_slice": "platform-approved account route, admin recharge/credit route, payment order, plan purchase projection, balance/freeze/quota projection and insufficient-balance fail-closed tests",
         "can_claim": [
           "repo_local_account_recharge_plan_productization",
@@ -1289,9 +1289,18 @@
         "goal_id": "G2",
         "slice_id": "goal-g2-opl-webui-runtime-required-integration",
         "target_business_capability": "OPL-Webui runtime_required integration",
-        "status": "next_cursor",
+        "status": "authoring_slice",
         "minimum_evidence_slice": "runtime_required actions, purchase/select/recharge/open action, resource/storage binding projection, return_to_opl_task contract and artifact/progress/refs projection",
-        "blocker": "explicit refs projection may be required if OPL-Webui needs a stable top-level refs object"
+        "can_claim": [
+          "repo_local_opl_webui_runtime_required_consumer_contract",
+          "stable_run_artifact_storage_file_refs_projection"
+        ],
+        "cannot_claim": [
+          "real_cloud_runtime_storage_proof",
+          "deployment_proof",
+          "external_psp_settlement",
+          "domain_agent_quality"
+        ]
       },
       {
         "goal_id": "G3",

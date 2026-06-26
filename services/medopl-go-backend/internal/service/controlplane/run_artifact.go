@@ -52,6 +52,13 @@ type PublicDeliverable struct {
 	Ref           string `json:"ref"`
 }
 
+type PublicRunRefs struct {
+	RunRef           string   `json:"runRef"`
+	ArtifactRef      string   `json:"artifactRef"`
+	StorageBindingID string   `json:"storageBindingId,omitempty"`
+	FileRefs         []string `json:"fileRefs"`
+}
+
 type PublicRunResult struct {
 	Ok               bool                `json:"ok"`
 	Status           string              `json:"status"`
@@ -60,6 +67,7 @@ type PublicRunResult struct {
 	Run              PublicRun           `json:"run"`
 	ArtifactRef      string              `json:"artifactRef"`
 	Artifacts        []PublicArtifact    `json:"artifacts"`
+	Refs             PublicRunRefs       `json:"refs"`
 	Progress         []PublicProgress    `json:"progress"`
 	Deliverables     []PublicDeliverable `json:"deliverables"`
 }
@@ -114,6 +122,12 @@ func (service *Service) StartRun(ctx context.Context, input StartRunInput) (Publ
 		StorageBindingID: storageBindingID,
 		Run:              PublicRun{RunRef: runID, Status: "succeeded"},
 		ArtifactRef:      artifactRef,
+		Refs: PublicRunRefs{
+			RunRef:           runID,
+			ArtifactRef:      artifactRef,
+			StorageBindingID: storageBindingID,
+			FileRefs:         append([]string(nil), fileRefs...),
+		},
 		Artifacts: []PublicArtifact{{
 			ArtifactRef:      artifactRef,
 			WorkspaceID:      launch.WorkspaceID,

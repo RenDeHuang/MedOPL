@@ -244,6 +244,12 @@ export interface OplRunPayload {
     sizeBytes: number;
     contentType: string;
   }>;
+  refs?: {
+    runRef: string;
+    artifactRef: string;
+    storageBindingId: string;
+    fileRefs: string[];
+  };
 }
 
 export interface OplArtifactPayload {
