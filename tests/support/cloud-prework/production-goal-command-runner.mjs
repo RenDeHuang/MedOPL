@@ -666,6 +666,19 @@ async function runLiveTest(operation) {
   requireFields(account, ["workspaceId"], "production_goal_live_test_prepare_business_account_failed", operation);
   observed.push({ step: "prepare_business_account", accountStatus: account.accountStatus || account.status || "active" });
 
+  const approved = await liveRequest({
+    path: "/api/v22/users/approve",
+    method: "POST",
+    body: {
+      tenantId,
+      portalUserId,
+      workspaceId,
+    },
+    stepId: "approve_business_account",
+  });
+  requireFields(approved, ["workspaceId"], "production_goal_live_test_approve_business_account_failed", operation);
+  observed.push({ step: "approve_business_account", accountStatus: approved.accountStatus || approved.status || "approved" });
+
   const order = await liveRequest({
     path: "/api/v22/billing/payment-orders",
     method: "POST",

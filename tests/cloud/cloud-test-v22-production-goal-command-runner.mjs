@@ -56,6 +56,21 @@ assert.equal(
   false,
   "live_db_persistence_proof_must_not_check_retired_generic_file_records",
 );
+const livePrepareIndex = runnerSource.indexOf('path: "/api/v22/users/prepare"');
+const liveApproveIndex = runnerSource.indexOf('path: "/api/v22/users/approve"');
+const livePaymentOrderIndex = runnerSource.indexOf('path: "/api/v22/billing/payment-orders"');
+const livePaymentPaidIndex = runnerSource.indexOf('path: "/api/v22/billing/payment-paid"');
+const liveProviderBindIndex = runnerSource.indexOf('path: "/api/v22/provider-key"');
+const liveOpenRuntimeIndex = runnerSource.indexOf('path: "/api/v22/managed-environment/open"');
+assert(
+  livePrepareIndex !== -1
+    && liveApproveIndex > livePrepareIndex
+    && livePaymentOrderIndex > liveApproveIndex
+    && livePaymentPaidIndex > liveApproveIndex
+    && liveProviderBindIndex > liveApproveIndex
+    && liveOpenRuntimeIndex > liveApproveIndex,
+  "live_test_runner_must_approve_business_account_before_payment_provider_and_open_runtime",
+);
 
 function run(args = [], env = {}) {
   return spawnSync(process.execPath, [runner, ...args], {
@@ -91,6 +106,7 @@ async function startCanaryServer(mode = "full") {
   const child = spawn(process.execPath, ["-e", `
 const { createServer } = require("node:http");
 const mode = process.argv[1];
+const state = { preparedWorkspaceId: "", approvedWorkspaceId: "", sequence: [] };
 async function readRequestJson(request) {
   const chunks = [];
   for await (const chunk of request) chunks.push(chunk);
@@ -117,6 +133,13 @@ const server = createServer(async (request, response) => {
     }
     return true;
   };
+  const requireApprovedAccount = (body) => {
+    if (state.approvedWorkspaceId !== body.workspaceId) {
+      sendJson(428, { ok: false, error: "account_not_approved" });
+      return false;
+    }
+    return true;
+  };
   if (mode === "html-medopl" && (url.pathname === "/healthz" || url.pathname === "/readyz")) {
     response.writeHead(200, { "content-type": "text/html", connection: "close" });
     response.end("<!doctype html><title>wrong upstream</title>");
@@ -134,40 +157,64 @@ const server = createServer(async (request, response) => {
   if (url.pathname === "/api/v22/provider-key" && request.method === "POST") {
     const body = await readRequestJson(request);
     if (!requireIdentityScopeHeaders(body)) return;
+    if (!requireApprovedAccount(body)) return;
+    state.sequence.push("bind_provider_key");
     sendJson(200, { ok: true, workspaceId: body.workspaceId, providerKeyRef: "pkref_canary", boundStatus: "bound" });
     return;
   }
   if (url.pathname === "/api/v22/users/prepare" && request.method === "POST") {
     const body = await readRequestJson(request);
     if (!requireIdentityScopeHeaders(body)) return;
-    sendJson(200, { ok: true, workspaceId: body.workspaceId, accountStatus: "active", balance: 0, currency: "CNY" });
+    state.preparedWorkspaceId = body.workspaceId;
+    state.approvedWorkspaceId = "";
+    state.sequence.push("prepare_business_account");
+    sendJson(200, { ok: true, workspaceId: body.workspaceId, accountStatus: "pending_approval", balance: 0, currency: "CNY" });
+    return;
+  }
+  if (url.pathname === "/api/v22/users/approve" && request.method === "POST") {
+    const body = await readRequestJson(request);
+    if (!requireIdentityScopeHeaders(body)) return;
+    if (state.preparedWorkspaceId !== body.workspaceId) {
+      sendJson(428, { ok: false, error: "account_required" });
+      return;
+    }
+    state.approvedWorkspaceId = body.workspaceId;
+    state.sequence.push("approve_business_account");
+    sendJson(200, { ok: true, workspaceId: body.workspaceId, accountStatus: "approved", status: "approved" });
     return;
   }
   if (url.pathname === "/api/v22/users/credit" && request.method === "POST") {
     const body = await readRequestJson(request);
     if (!requireIdentityScopeHeaders(body)) return;
+    if (!requireApprovedAccount(body)) return;
     sendJson(200, { ok: true, workspaceId: body.workspaceId, accountStatus: "active", balance: body.amount || 0, currency: body.currency || "CNY" });
     return;
   }
   if (url.pathname === "/api/v22/billing/payment-orders" && request.method === "POST") {
     const body = await readRequestJson(request);
     if (!requireIdentityScopeHeaders(body)) return;
+    if (!requireApprovedAccount(body)) return;
+    state.sequence.push("create_payment_order");
     sendJson(200, { ok: true, workspaceId: body.workspaceId, orderId: "payorder_canary", status: "created", amount: body.amount || 0, currency: body.currency || "CNY" });
     return;
   }
   if (url.pathname === "/api/v22/billing/payment-paid" && request.method === "POST") {
     const body = await readRequestJson(request);
     if (!requireIdentityScopeHeaders(body)) return;
+    if (!requireApprovedAccount(body)) return;
     if (request.headers["x-medopl-webhook-secret"] !== "webhook-secret-test") {
       sendJson(401, { ok: false, error: "webhook_signature_required" });
       return;
     }
+    state.sequence.push("mark_payment_paid");
     sendJson(200, { ok: true, workspaceId: body.workspaceId, accountStatus: "active", balance: body.amount || 0, currency: body.currency || "CNY" });
     return;
   }
   if (url.pathname === "/api/v22/managed-environment/open" && request.method === "POST") {
     const body = await readRequestJson(request);
     if (!requireIdentityScopeHeaders(body)) return;
+    if (!requireApprovedAccount(body)) return;
+    state.sequence.push("open_runtime");
     sendJson(200, { launchId: "launch_canary", resourceBindingId: "rb_canary", workspaceId: body.workspaceId });
     return;
   }
@@ -465,6 +512,7 @@ try {
     "medopl_readyz",
     "session_bootstrap",
     "prepare_business_account",
+    "approve_business_account",
     "create_payment_order",
     "mark_payment_paid",
     "bind_provider_key",
