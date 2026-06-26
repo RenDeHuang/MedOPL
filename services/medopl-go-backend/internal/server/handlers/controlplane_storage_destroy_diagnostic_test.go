@@ -57,6 +57,75 @@ func TestControlPlaneHandlersExposeStorageDestroyDiagnosticForGenericFailure(t *
 	}
 }
 
+func TestControlPlaneHandlersExposeReleaseRuntimeDiagnosticForGenericFailure(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+	router := gin.New()
+	api := router.Group("/api")
+	RegisterControlPlaneRoutes(api, storageDestroyFailingService{})
+
+	rec := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodPost, "/api/v22/managed-environment/release", strings.NewReader(`{
+		"workspaceId":"workspace-v22",
+		"resourceBindingId":"runtime-binding-v22",
+		"stopBilling":true,
+		"idempotencyKey":"release-once"
+	}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("release runtime diagnostic status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	body := mapFromRecorder(t, rec)
+	if body["error"] != "control_plane_operation_failed" {
+		t.Fatalf("release runtime diagnostic keeps public error = %+v", body)
+	}
+	if body["errorCategory"] != "unknown_control_plane_failure" {
+		t.Fatalf("release runtime diagnostic category = %+v", body)
+	}
+	if body["correlationId"] == "" || body["operationId"] == "" {
+		t.Fatalf("release runtime diagnostic ids = %+v", body)
+	}
+	for _, field := range []string{
+		"workspaceIdHash",
+		"runtimeBindingIdHash",
+		"handlerStage",
+		"dbOperationStage",
+		"runtimeState",
+		"expectedReleaseTransition",
+		"stopBillingState",
+		"providerReleaseCategory",
+		"migrationState",
+		"workspaceBindingMatch",
+		"authSessionMatch",
+	} {
+		if body[field] == "" {
+			t.Fatalf("release runtime diagnostic missing %s in %+v", field, body)
+		}
+	}
+	for _, field := range []string{
+		"resourceBindingPresent",
+		"billingAttributionPresent",
+		"idempotencyKeyPresent",
+		"alreadyReleased",
+		"auditEventWritten",
+		"providerRefPresent",
+		"retryable",
+	} {
+		if _, ok := body[field]; !ok {
+			t.Fatalf("release runtime diagnostic missing %s in %+v", field, body)
+		}
+	}
+	if body["idempotencyKeyPresent"] != true {
+		t.Fatalf("release runtime diagnostic idempotency flag = %+v", body)
+	}
+	for _, forbidden := range []string{"workspace-v22", "runtime-binding-v22", "release-once", "postgres://", "SecretKey", "signed"} {
+		if strings.Contains(rec.Body.String(), forbidden) {
+			t.Fatalf("release runtime diagnostic leaked %q in %s", forbidden, rec.Body.String())
+		}
+	}
+}
+
 type storageDestroyFailingService struct{}
 
 func (storageDestroyFailingService) PrepareBusinessAccount(context.Context, cps.PrepareBusinessAccountInput) (cps.BusinessAccountProjection, error) {
@@ -132,7 +201,7 @@ func (storageDestroyFailingService) Resources(context.Context, cps.WorkspaceInpu
 	return cps.ResourcesProjection{}, nil
 }
 func (storageDestroyFailingService) Release(context.Context, cps.ReleaseInput) (cps.ReleaseResult, error) {
-	return cps.ReleaseResult{}, nil
+	return cps.ReleaseResult{}, errors.New("provider release failure detail must stay private")
 }
 func (storageDestroyFailingService) DestroyStorage(context.Context, cps.DestroyStorageInput) (cps.StorageDestroyReceipt, error) {
 	return cps.StorageDestroyReceipt{}, errors.New("postgres constraint detail must stay private")

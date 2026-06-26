@@ -16,21 +16,32 @@ func writeControlPlaneError(ctx *gin.Context, err error) {
 }
 
 type controlPlaneErrorDiagnostic struct {
-	ErrorCategory        string
-	CorrelationID        string
-	OperationID          string
-	WorkspaceIDHash      string
-	StorageBindingIDHash string
-	RuntimeBindingIDHash string
-	CurrentStorageState  string
-	ReleaseState         string
-	BillingStopped       bool
-	DestroyIntentState   string
-	AuditEventWritten    bool
-	ProviderRefPresent   bool
-	DBOperationStage     string
-	HandlerStage         string
-	Retryable            bool
+	ErrorCategory             string
+	CorrelationID             string
+	OperationID               string
+	WorkspaceIDHash           string
+	StorageBindingIDHash      string
+	RuntimeBindingIDHash      string
+	CurrentStorageState       string
+	ReleaseState              string
+	BillingStopped            bool
+	DestroyIntentState        string
+	AuditEventWritten         bool
+	ProviderRefPresent        bool
+	DBOperationStage          string
+	HandlerStage              string
+	Retryable                 bool
+	RuntimeState              string
+	ExpectedReleaseTransition string
+	ResourceBindingPresent    bool
+	BillingAttributionPresent bool
+	StopBillingState          string
+	IdempotencyKeyPresent     bool
+	AlreadyReleased           bool
+	ProviderReleaseCategory   string
+	MigrationState            string
+	WorkspaceBindingMatch     string
+	AuthSessionMatch          string
 }
 
 func writeControlPlaneErrorWithDiagnostic(ctx *gin.Context, err error, diagnostic controlPlaneErrorDiagnostic) {
@@ -51,6 +62,19 @@ func writeControlPlaneErrorWithDiagnostic(ctx *gin.Context, err error, diagnosti
 		body["dbOperationStage"] = defaultString(diagnostic.DBOperationStage, "unknown")
 		body["handlerStage"] = defaultString(diagnostic.HandlerStage, "unknown")
 		body["retryable"] = diagnostic.Retryable
+		if diagnostic.HandlerStage == "release_runtime_handler" {
+			body["runtimeState"] = defaultString(diagnostic.RuntimeState, "unknown")
+			body["expectedReleaseTransition"] = defaultString(diagnostic.ExpectedReleaseTransition, "unknown_to_released")
+			body["resourceBindingPresent"] = diagnostic.ResourceBindingPresent
+			body["billingAttributionPresent"] = diagnostic.BillingAttributionPresent
+			body["stopBillingState"] = defaultString(diagnostic.StopBillingState, "unknown")
+			body["idempotencyKeyPresent"] = diagnostic.IdempotencyKeyPresent
+			body["alreadyReleased"] = diagnostic.AlreadyReleased
+			body["providerReleaseCategory"] = defaultString(diagnostic.ProviderReleaseCategory, "unknown")
+			body["migrationState"] = defaultString(diagnostic.MigrationState, "unknown")
+			body["workspaceBindingMatch"] = defaultString(diagnostic.WorkspaceBindingMatch, "unknown")
+			body["authSessionMatch"] = defaultString(diagnostic.AuthSessionMatch, "unknown")
+		}
 	}
 	ctx.JSON(controlPlaneStatus(err), body)
 }

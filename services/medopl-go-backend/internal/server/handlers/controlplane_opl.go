@@ -405,7 +405,7 @@ func releaseManagedEnvironment(service ControlPlaneService) gin.HandlerFunc {
 			IdempotencyKey:    defaultString(request.IdempotencyKey, "release-local-rc"),
 		})
 		if err != nil {
-			writeControlPlaneError(ctx, err)
+			writeControlPlaneErrorWithDiagnostic(ctx, err, releaseRuntimeDiagnostic(request))
 			return
 		}
 		ctx.JSON(http.StatusOK, payload)
@@ -454,5 +454,40 @@ func storageDestroyDiagnostic(request destroyStorageRequest) controlPlaneErrorDi
 		DBOperationStage:     "destroy_storage",
 		HandlerStage:         "storage_destroy_handler",
 		Retryable:            false,
+	}
+}
+
+func releaseRuntimeDiagnostic(request releaseRequest) controlPlaneErrorDiagnostic {
+	workspaceID := defaultString(request.WorkspaceID, "workspace-local-rc")
+	resourceBindingID := request.ResourceBindingID
+	operationSeed := strings.Join([]string{workspaceID, resourceBindingID, request.IdempotencyKey}, ":")
+	stopBillingState := "not_requested"
+	if request.StopBilling {
+		stopBillingState = "requested"
+	}
+	return controlPlaneErrorDiagnostic{
+		ErrorCategory:             "unknown_control_plane_failure",
+		CorrelationID:             "corr-" + hashForPublicDiagnostic(operationSeed),
+		OperationID:               "runtime-release-" + hashForPublicDiagnostic(operationSeed+":operation"),
+		WorkspaceIDHash:           hashForPublicDiagnostic(workspaceID),
+		RuntimeBindingIDHash:      hashForPublicDiagnostic(resourceBindingID),
+		ReleaseState:              "unknown",
+		BillingStopped:            false,
+		AuditEventWritten:         false,
+		ProviderRefPresent:        false,
+		DBOperationStage:          "release_runtime",
+		HandlerStage:              "release_runtime_handler",
+		Retryable:                 false,
+		RuntimeState:              "unknown",
+		ExpectedReleaseTransition: "unknown_to_released",
+		ResourceBindingPresent:    strings.TrimSpace(resourceBindingID) != "",
+		BillingAttributionPresent: false,
+		StopBillingState:          stopBillingState,
+		IdempotencyKeyPresent:     strings.TrimSpace(request.IdempotencyKey) != "",
+		AlreadyReleased:           false,
+		ProviderReleaseCategory:   "unknown",
+		MigrationState:            "unknown",
+		WorkspaceBindingMatch:     "unknown",
+		AuthSessionMatch:          "unknown",
 	}
 }

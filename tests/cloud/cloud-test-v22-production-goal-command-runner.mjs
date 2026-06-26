@@ -235,6 +235,35 @@ const server = createServer(async (request, response) => {
     return;
   }
   if (url.pathname === "/api/v22/managed-environment/release" && request.method === "POST") {
+    if (mode === "release-diagnostic") {
+      sendJson(400, {
+        ok: false,
+        error: "control_plane_operation_failed",
+        errorCategory: "provider_release_failed",
+        correlationId: "corr-release-canary",
+        operationId: "runtime-release-canary",
+        workspaceIdHash: "workspace_hash",
+        runtimeBindingIdHash: "runtime_hash",
+        runtimeState: "ready",
+        expectedReleaseTransition: "ready_to_released",
+        resourceBindingPresent: true,
+        billingAttributionPresent: true,
+        billingStopped: false,
+        stopBillingState: "pending",
+        idempotencyKeyPresent: true,
+        alreadyReleased: false,
+        auditEventWritten: false,
+        providerRefPresent: true,
+        providerReleaseCategory: "adapter_error",
+        dbOperationStage: "release_runtime",
+        handlerStage: "release_runtime_handler",
+        migrationState: "matched",
+        workspaceBindingMatch: "matched",
+        authSessionMatch: "matched",
+        retryable: false,
+      });
+      return;
+    }
     sendJson(200, { ok: true, billingStopped: true, auditEventId: "audit_release_canary", runtimeState: "released" });
     return;
   }
@@ -466,6 +495,24 @@ try {
   assert.equal(destroyDiagnosticPayload.summary.diagnosticReceipt.dbOperationStage, "save_billing_event", "destroy_diagnostic_db_stage");
   assert.equal(destroyDiagnosticPayload.summary.diagnosticReceipt.workspaceIdHash, "workspace_hash", "destroy_diagnostic_workspace_hash");
   assertNoSensitiveText(destroyDiagnostic.stdout + destroyDiagnostic.stderr, "live_test_destroy_diagnostic");
+
+  const releaseDiagnosticCanary = await startCanaryServer("release-diagnostic");
+  canaryServers.push(releaseDiagnosticCanary);
+  const releaseDiagnostic = run(["--operation", "live_test", "--execute", "--confirm-current-session-authorization"], {
+    ...baseEnv,
+    V22_OPL_WEBUI_CONSUMER_CANARY_URL: releaseDiagnosticCanary.baseUrl,
+    V22_MEDOPL_PUBLIC_BASE_URL: releaseDiagnosticCanary.baseUrl,
+  });
+  assert.notEqual(releaseDiagnostic.status, 0, "live_test_must_fail_when_release_runtime_returns_diagnostic_error");
+  const releaseDiagnosticPayload = JSON.parse(releaseDiagnostic.stdout);
+  assert.equal(releaseDiagnosticPayload.summary.blocker, "production_goal_live_test_release_runtime_failed", "release_diagnostic_blocker");
+  assert.equal(releaseDiagnosticPayload.summary.diagnosticReceipt.errorCategory, "provider_release_failed", "release_diagnostic_category");
+  assert.equal(releaseDiagnosticPayload.summary.diagnosticReceipt.correlationId, "corr-release-canary", "release_diagnostic_correlation");
+  assert.equal(releaseDiagnosticPayload.summary.diagnosticReceipt.runtimeState, "ready", "release_diagnostic_runtime_state");
+  assert.equal(releaseDiagnosticPayload.summary.diagnosticReceipt.stopBillingState, "pending", "release_diagnostic_stop_billing_state");
+  assert.equal(releaseDiagnosticPayload.summary.diagnosticReceipt.billingAttributionPresent, true, "release_diagnostic_billing_attribution");
+  assert.equal(releaseDiagnosticPayload.summary.diagnosticReceipt.providerReleaseCategory, "adapter_error", "release_diagnostic_provider_category");
+  assertNoSensitiveText(releaseDiagnostic.stdout + releaseDiagnostic.stderr, "live_test_release_diagnostic");
 
   const dbProofMissing = run(["--operation", "live_test", "--execute", "--confirm-current-session-authorization"], {
     ...baseEnv,
