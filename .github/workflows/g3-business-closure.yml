@@ -1,0 +1,143 @@
+name: G3 Business Closure
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_g3_business_closure:
+        description: Type run-g3-business-closure to execute billing/audit writeback and live_test.
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  g3-business-closure:
+    name: G3 Business Closure
+    runs-on: [self-hosted, tencent-cloud, medopl]
+    environment: production
+    env:
+      V22_MEDOPL_PUBLIC_BASE_URL: https://portal.medopl.cn
+      V22_OPL_WEBUI_CONSUMER_CANARY_URL: https://opl.medopl.cn
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      MEDOPL_WEBHOOK_SECRET: ${{ secrets.MEDOPL_WEBHOOK_SECRET }}
+      MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256 }}
+      V22_PRODUCTION_GOAL_HTTP_TIMEOUT_MS: "15000"
+      V22_MEDOPL_BILLING_AUDIT_USE_POSTGRES: "1"
+      V22_MEDOPL_LIVE_DB_PERSISTENCE_PROOF: "1"
+      V22_MEDOPL_BILLING_AUDIT_WRITEBACK_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs
+      V22_MEDOPL_BILLING_AUDIT_WRITEBACK_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation billing_audit_writeback --execute --confirm-current-session-authorization
+      V22_OPL_WEBUI_CONSUMER_CANARY_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs
+      V22_OPL_WEBUI_CONSUMER_CANARY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation live_test --execute --confirm-current-session-authorization
+      V22_MEDOPL_BILLING_AUDIT_RECEIPT_FILE: .runtime/v22-cloud-authorization/run-v22-001/billing-audit-request.json
+    steps:
+      - name: Confirm manual G3 run
+        shell: bash
+        run: |
+          if [ "${{ inputs.confirm_g3_business_closure }}" != "run-g3-business-closure" ]; then
+            echo "confirm_g3_business_closure must be run-g3-business-closure" >&2
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install G3 runner dependencies
+        run: npm ci
+
+      - name: Validate production database secret shape
+        shell: bash
+        run: |
+          node <<'NODE'
+          const raw = String(process.env.DATABASE_URL || "").trim();
+          function fail(message) {
+            console.error(message);
+            process.exit(1);
+          }
+          if (!raw) fail("DATABASE_URL required for G3 billing/audit writeback");
+          let parsed;
+          try {
+            parsed = new URL(raw);
+          } catch {
+            fail("DATABASE_URL must be a valid postgres URL");
+          }
+          if (!["postgres:", "postgresql:"].includes(parsed.protocol)) {
+            fail("DATABASE_URL must use postgres protocol");
+          }
+          if (!parsed.hostname) fail("DATABASE_URL hostname required");
+          console.log(JSON.stringify({
+            ok: true,
+            databaseUrlRef: "DATABASE_URL",
+            host: parsed.hostname,
+            port: parsed.port || "default",
+            database: parsed.pathname.replace(/^\//u, "") || "default"
+          }));
+          NODE
+
+      - name: Prepare G3 billing audit request
+        shell: bash
+        run: |
+          mkdir -p "$(dirname "$V22_MEDOPL_BILLING_AUDIT_RECEIPT_FILE")"
+          cat > "$V22_MEDOPL_BILLING_AUDIT_RECEIPT_FILE" <<'JSON'
+          {
+            "kind": "medopl_g3_billing_audit_request",
+            "workspace_id": "goal-g3-business-closure",
+            "events": [
+              "account_approved",
+              "plan_selected",
+              "balance_sufficient",
+              "resource_preauth_freeze",
+              "usage_debit_ledger",
+              "release_stop_billing",
+              "destroy_or_retain_storage"
+            ]
+          }
+          JSON
+
+      - name: Billing audit writeback preflight
+        run: npm run cloud:goal:preflight -- --operation billing_audit_writeback
+
+      - name: Billing audit writeback
+        run: npm run cloud:goal -- --operation billing_audit_writeback
+
+      - name: OPL-Webui live business E2E preflight
+        run: npm run cloud:goal:preflight -- --operation live_test
+
+      - name: OPL-Webui live business E2E
+        run: npm run cloud:goal -- --operation live_test
+
+      - name: Production receipt manifest
+        run: npm run cloud:goal -- --manifest-only
+
+      - name: Cloud release candidate verify
+        run: npm run verify:cloud-release-candidate
+
+      - name: Production complete candidate verify
+        run: npm run verify:production-complete-candidate
+
+      - name: Verify current repo
+        run: npm run verify
+
+      - name: Repo bloat gate
+        run: npm run repo:bloat
+
+      - name: Line budget gate
+        run: npm run line:budget
+
+      - name: Review gate
+        run: npm run gate:review
+
+      - name: Upload G3 redacted evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: medopl-g3-business-closure-evidence
+          path: |
+            .runtime/v22-cloud-authorization/run-v22-001/billing_audit_writeback.json
+            .runtime/v22-cloud-authorization/run-v22-001/billing_owner_receipt.json
+            .runtime/v22-cloud-authorization/run-v22-001/audit_owner_receipt.json
+            .runtime/v22-cloud-authorization/run-v22-001/live_test.json
+            .runtime/v22-cloud-authorization/run-v22-001/opl_webui_consumer_receipt.json
+            .runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json
+          if-no-files-found: error

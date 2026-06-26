@@ -359,10 +359,82 @@ assert(
 
 const releaseImage = await readRepoFile(".github/workflows/release-image.yml");
 const cloudRollout = await readRepoFile(".github/workflows/cloud-rollout.yml");
+const g3BusinessClosure = await readRepoFile(".github/workflows/g3-business-closure.yml");
 const productionApplyJob = sectionBetween(cloudRollout, "  production-apply:", "  production-rollback:");
 const productionRollbackJob = sectionBetween(cloudRollout, "  production-rollback:", "  production-availability-probe-current:");
 assertNoRawSecretValues(releaseImage, "release_image_workflow");
 assertNoRawSecretValues(cloudRollout, "cloud_rollout_workflow");
+assertNoRawSecretValues(g3BusinessClosure, "g3_business_closure_workflow");
+for (const expected of [
+  "name: G3 Business Closure",
+  "workflow_dispatch:",
+  "confirm_g3_business_closure",
+  "runs-on: [self-hosted, tencent-cloud, medopl]",
+  "environment: production",
+  "DATABASE_URL: ${{ secrets.DATABASE_URL }}",
+  "MEDOPL_WEBHOOK_SECRET: ${{ secrets.MEDOPL_WEBHOOK_SECRET }}",
+  "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256 }}",
+  "V22_MEDOPL_PUBLIC_BASE_URL: https://portal.medopl.cn",
+  "V22_OPL_WEBUI_CONSUMER_CANARY_URL: https://opl.medopl.cn",
+  "V22_MEDOPL_BILLING_AUDIT_USE_POSTGRES: \"1\"",
+  "V22_MEDOPL_LIVE_DB_PERSISTENCE_PROOF: \"1\"",
+  "V22_MEDOPL_BILLING_AUDIT_WRITEBACK_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs",
+  "V22_MEDOPL_BILLING_AUDIT_WRITEBACK_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation billing_audit_writeback --execute --confirm-current-session-authorization",
+  "V22_OPL_WEBUI_CONSUMER_CANARY_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs",
+  "V22_OPL_WEBUI_CONSUMER_CANARY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation live_test --execute --confirm-current-session-authorization",
+  "V22_MEDOPL_BILLING_AUDIT_RECEIPT_FILE: .runtime/v22-cloud-authorization/run-v22-001/billing-audit-request.json",
+  "npm run cloud:goal:preflight -- --operation billing_audit_writeback",
+  "npm run cloud:goal -- --operation billing_audit_writeback",
+  "npm run cloud:goal:preflight -- --operation live_test",
+  "npm run cloud:goal -- --operation live_test",
+  "npm run cloud:goal -- --manifest-only",
+  "npm run verify:cloud-release-candidate",
+  "npm run verify:production-complete-candidate",
+  "npm run verify",
+  "npm run repo:bloat",
+  "npm run line:budget",
+  "npm run gate:review",
+  "actions/upload-artifact@v4",
+  ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json",
+]) {
+  assert(g3BusinessClosure.includes(expected), `g3_business_closure_workflow_missing:${expected}`);
+}
+for (const forbidden of [
+  "kubectl",
+  "node scripts/cloud-rollout/medopl.mjs",
+  "cloud:rollout",
+  "npm run cloud:goal -- --operation deploy",
+  "npm run cloud:goal -- --operation kubectl",
+  "npm run cloud:goal -- --operation tenant_runtime_provisioning",
+  "npm run cloud:goal -- --operation storage_lifecycle",
+  "npm run cloud:goal -- --operation build_push",
+  "KUBECONFIG",
+  "TENCENT_DEPLOY_KUBECONFIG_REF",
+  "MEDOPL_CANARY_",
+  "TENCENT_MUTATION_SECRET_ID",
+  "TENCENT_MUTATION_SECRET_KEY",
+]) {
+  assert.equal(g3BusinessClosure.includes(forbidden), false, `g3_business_closure_workflow_must_not_include:${forbidden}`);
+}
+assert(
+  g3BusinessClosure.indexOf("npm run cloud:goal -- --operation billing_audit_writeback") <
+    g3BusinessClosure.indexOf("npm run cloud:goal -- --operation live_test"),
+  "g3_business_closure_must_write_billing_audit_before_live_test",
+);
+assert(
+  g3BusinessClosure.indexOf("npm run cloud:goal -- --operation live_test") <
+    g3BusinessClosure.indexOf("npm run cloud:goal -- --manifest-only"),
+  "g3_business_closure_must_generate_manifest_after_live_test",
+);
+assert(
+  g3BusinessClosure.indexOf("npm run cloud:goal -- --manifest-only") <
+    g3BusinessClosure.indexOf("npm run verify:cloud-release-candidate") &&
+    g3BusinessClosure.indexOf("npm run verify:cloud-release-candidate") <
+      g3BusinessClosure.indexOf("npm run verify:production-complete-candidate") &&
+    g3BusinessClosure.indexOf("npm run verify:production-complete-candidate") <
+      g3BusinessClosure.indexOf("run: npm run verify\n"),
+  "g3_business_closure_must_verify_after_manifest",
+);
 assert.equal(cloudRollout.includes("medopl.medopl.cn"), false, "cloud_rollout_must_not_reference_retired_medopl_host");
 assert.equal(releaseImage.includes("workflow_run:"), false, "release_image_must_not_auto_push_after_verify");
 assert.equal(releaseImage.includes("docker/build-push-action"), false, "release_image_build_push_must_go_through_cloud_goal_runner");
