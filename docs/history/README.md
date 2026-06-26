@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/goal-g3-prior-receipts-manifest-restore`
-- latest landed commit: `553bafe4d23d519840988cc12fdc5fb02eb7399a`
+- latest landed branch: `feat/goal-g3-prior-receipts-download-action`
+- latest landed commit: `f5c8fcee01c7eda3a6083fb0683baa8f2ba6aab3`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
