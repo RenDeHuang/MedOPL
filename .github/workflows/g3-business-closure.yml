@@ -140,7 +140,7 @@ jobs:
             echo "No prior G3 artifact run id provided; using existing evidence sink only"
           fi
           node <<'NODE'
-          const { existsSync, readdirSync, copyFileSync } = require("node:fs");
+          const { existsSync, readdirSync, copyFileSync, readFileSync, writeFileSync } = require("node:fs");
           const path = require("node:path");
 
           const evidenceSink = ".runtime/v22-cloud-authorization/run-v22-001";
@@ -163,6 +163,20 @@ jobs:
 
           const candidates = [...walk(restoreRoot), ...walk(evidenceSink)];
           const restored = [];
+          const manifestRestored = [];
+          for (const manifestPath of candidates.filter((candidate) => path.basename(candidate) === "receipt-manifest.json")) {
+            const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+            for (const [type, fileName] of mappings) {
+              const target = path.join(evidenceSink, fileName);
+              if (existsSync(target)) continue;
+              const receipt = Array.isArray(manifest.receipts) ? manifest.receipts.find((item) => item?.type === type) : null;
+              if (receipt) {
+                writeFileSync(target, `${JSON.stringify(receipt, null, 2)}\n`);
+                restored.push(type);
+                manifestRestored.push(type);
+              }
+            }
+          }
           for (const [type, fileName] of mappings) {
             const target = path.join(evidenceSink, fileName);
             if (existsSync(target)) {
@@ -183,8 +197,9 @@ jobs:
             kind: "g3_prior_runtime_storage_release_receipt_restore",
             evidenceSink,
             restored,
+            manifestRestored,
             missingReceiptTypes: missing,
-            source: process.env.PRIOR_RECEIPTS_ARTIFACT_RUN_ID ? "github_actions_artifact" : "existing_evidence_sink"
+            source: manifestRestored.length > 0 ? "receipt_manifest" : (process.env.PRIOR_RECEIPTS_ARTIFACT_RUN_ID ? "github_actions_artifact" : "existing_evidence_sink")
           }));
           NODE
 

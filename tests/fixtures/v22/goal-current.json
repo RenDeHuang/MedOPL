@@ -33,14 +33,14 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "feat/goal-g3-live-test-platform-approval-sequence-fix",
-    "landed_commit": "6a7b1ab034ebe78c9eb41d83cbc438d1ca7b6ae9",
+    "branch": "feat/goal-g3-prior-runtime-storage-receipts-restore",
+    "landed_commit": "cde98c7c92303d661d71439e92e1baa4cc672862",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
       "test:run-plan dry-run passed",
       "test:run-plan passed",
       "test:cloud passed",
-      "production goal command runner shape test passed",
+      "cloud rollout shape test passed",
       "verify passed",
       "test:health passed",
       "gate:review passed",
@@ -58,10 +58,10 @@
     },
     "cleanup_result": {
       "deleted": "none",
-      "folded": "G3 live-test platform approval sequence fix folded into active history and goal-current",
-      "retained": "account approval remains a required commercial admission step before payment/order/open runtime in the G3 live_test runner",
-      "reason": "G3 live business E2E can proceed past account approval; scoped evidence validation still requires prior runtime/storage/release receipts to be restored",
-      "next": "Restore prior G3 runtime/storage/release redacted receipts before G3 scoped evidence validation"
+      "folded": "G3 prior runtime/storage/release receipt restore workflow folded into active history and goal-current",
+      "retained": "G3 Business Closure workflow restores prior receipts from GitHub artifact or existing evidence sink before scoped validation",
+      "reason": "G3 live business E2E has passed; scoped validation can proceed after prior runtime/storage/release receipts are restored",
+      "next": "Rerun G3 Business Closure workflow with prior redacted receipt evidence restored"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "opl-webui-runtime-production-slice"
@@ -74,7 +74,7 @@
     "multi_region_sla_enterprise_compliance_ongoing_authorization_and_unobserved_tenants_resources_remain_unclaimed",
     "unscoped_production_complete_requires_dedicated_scope_expansion_evidence"
   ],
-  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is feat/goal-g3-live-test-platform-approval-sequence-fix at 6a7b1ab034ebe78c9eb41d83cbc438d1ca7b6ae9. The current feature slice goal-commercial-gap6-local-controlled-business-closure fixes gap6 as local/controlled commercial business closure rather than a production-canary rollout blocker: account approved, plan selected, balance sufficient, quota available, purchase/credit/open, resource_preauth_freeze, upload/run/artifact, debit/ledger/audit, release/destroy/stop billing, return_to_opl_task and insufficient balance fail-closed are covered by existing Go backend commercial ledger E2E plus runtime_required action and return-to-OPL contracts. Cost ceiling for this business claim comes from account balance, plan hold amount and quota. MEDOPL_CANARY_* may remain only as Cloud Rollout operations safety config while active callers consume it; it is not business admission, recharge, quota, cost ceiling or billing truth, and it is not a gap6 blocker. Cloud deployment proof, external PSP settlement, full OPL-Webui resume implementation, unscoped production complete, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. Cloud SaaS productization has landed G1 account/recharge/plan productization and G2 OPL-Webui runtime_required consumer refs projection; the next cursor is goal-g3-real-cloud-runtime-storage-proof, a cloud-execute slice that must use the existing authorization boundary before claiming real runtime/storage proof. The latest landed closeout is feat/goal-g3-live-test-platform-approval-sequence-fix at 6a7b1ab034ebe78c9eb41d83cbc438d1ca7b6ae9.",
+  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is feat/goal-g3-prior-runtime-storage-receipts-restore at cde98c7c92303d661d71439e92e1baa4cc672862. The current feature slice goal-commercial-gap6-local-controlled-business-closure fixes gap6 as local/controlled commercial business closure rather than a production-canary rollout blocker: account approved, plan selected, balance sufficient, quota available, purchase/credit/open, resource_preauth_freeze, upload/run/artifact, debit/ledger/audit, release/destroy/stop billing, return_to_opl_task and insufficient balance fail-closed are covered by existing Go backend commercial ledger E2E plus runtime_required action and return-to-OPL contracts. Cost ceiling for this business claim comes from account balance, plan hold amount and quota. MEDOPL_CANARY_* may remain only as Cloud Rollout operations safety config while active callers consume it; it is not business admission, recharge, quota, cost ceiling or billing truth, and it is not a gap6 blocker. Cloud deployment proof, external PSP settlement, full OPL-Webui resume implementation, unscoped production complete, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. Cloud SaaS productization has landed G1 account/recharge/plan productization and G2 OPL-Webui runtime_required consumer refs projection; the next cursor is goal-g3-real-cloud-runtime-storage-proof, a cloud-execute slice that must use the existing authorization boundary before claiming real runtime/storage proof. The latest landed closeout is feat/goal-g3-prior-runtime-storage-receipts-restore at cde98c7c92303d661d71439e92e1baa4cc672862.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -637,9 +637,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/goal-g3-live-test-platform-approval-sequence-fix",
+  "last_landed_branch": "feat/goal-g3-prior-runtime-storage-receipts-restore",
   "last_landed_at": "2026-06-27",
-  "history_latest_branch": "feat/goal-g3-live-test-platform-approval-sequence-fix",
+  "history_latest_branch": "feat/goal-g3-prior-runtime-storage-receipts-restore",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -1062,8 +1062,8 @@
       "cannot_claim": "multi-region production, SLA proven, enterprise compliance, ongoing authorization, or unobserved tenant/resource readiness"
     }
   },
-  "base_trunk_head": "6a7b1ab034ebe78c9eb41d83cbc438d1ca7b6ae9",
-  "last_landed_commit": "6a7b1ab034ebe78c9eb41d83cbc438d1ca7b6ae9",
+  "base_trunk_head": "cde98c7c92303d661d71439e92e1baa4cc672862",
+  "last_landed_commit": "cde98c7c92303d661d71439e92e1baa4cc672862",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
