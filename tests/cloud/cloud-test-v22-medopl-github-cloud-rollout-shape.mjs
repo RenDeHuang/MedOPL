@@ -389,8 +389,10 @@ for (const expected of [
   "npm run cloud:goal -- --operation billing_audit_writeback",
   "npm run cloud:goal:preflight -- --operation live_test",
   "npm run cloud:goal -- --operation live_test",
-  "Restore prior G3 runtime/storage/release receipts", "GH_TOKEN: ${{ github.token }}", "gh run download",
-  "Prior G3 receipt artifact unavailable; scoped validation will fail fast if receipts remain missing", "prior-g3-receipts",
+  "Download prior G3 receipt artifact", "actions/download-artifact@v4", "run-id: ${{ inputs.prior_receipts_artifact_run_id }}",
+  "name: ${{ inputs.prior_receipts_artifact_name }}", "path: .runtime/g3-prior-receipts",
+  "Restore prior G3 runtime/storage/release receipts",
+  "No prior G3 artifact run id provided; using existing evidence sink only", "prior-g3-receipts",
   "tenant_runtime_provisioning.json", "storage_lifecycle.json", "receipt-manifest.json",
   "Validate G3 scoped business closure evidence",
   "missing_prior_g3_runtime_storage_receipts",
@@ -445,6 +447,7 @@ for (const expected of ["manifest.receipts", "JSON.stringify(receipt, null, 2)",
   assert(g3BusinessClosure.includes(expected), "g3_business_closure_must_restore_prior_receipts_from_manifest_artifact");
 }
 assert(g3BusinessClosure.includes("No prior G3 artifact run id provided; using existing evidence sink only") && g3BusinessClosure.includes("missing_prior_g3_runtime_storage_receipts"), "g3_business_closure_must_fail_fast_when_prior_receipts_remain_missing");
+assert.equal(g3BusinessClosure.includes("gh run download"), false, "g3_business_closure_must_not_require_gh_cli_on_self_hosted_runner");
 assert.equal(cloudRollout.includes("medopl.medopl.cn"), false, "cloud_rollout_must_not_reference_retired_medopl_host");
 assert.equal(releaseImage.includes("workflow_run:"), false, "release_image_must_not_auto_push_after_verify");
 assert.equal(releaseImage.includes("docker/build-push-action"), false, "release_image_build_push_must_go_through_cloud_goal_runner");

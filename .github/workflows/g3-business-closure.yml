@@ -118,10 +118,18 @@ jobs:
       - name: OPL-Webui live business E2E
         run: npm run cloud:goal -- --operation live_test
 
+      - name: Download prior G3 receipt artifact
+        if: ${{ inputs.prior_receipts_artifact_run_id != '' }}
+        uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ inputs.prior_receipts_artifact_run_id }}
+          github-token: ${{ github.token }}
+          name: ${{ inputs.prior_receipts_artifact_name }}
+          path: .runtime/g3-prior-receipts
+
       - name: Restore prior G3 runtime/storage/release receipts
         shell: bash
         env:
-          GH_TOKEN: ${{ github.token }}
           PRIOR_RECEIPTS_ARTIFACT_RUN_ID: ${{ inputs.prior_receipts_artifact_run_id }}
           PRIOR_RECEIPTS_ARTIFACT_NAME: ${{ inputs.prior_receipts_artifact_name }}
         run: |
@@ -131,12 +139,7 @@ jobs:
           mkdirSync(path.join(".runtime", "v22-cloud-authorization", "run-v22-001"), { recursive: true });
           mkdirSync(path.join(".runtime", "g3-prior-receipts"), { recursive: true });
           NODE
-          if [ -n "$PRIOR_RECEIPTS_ARTIFACT_RUN_ID" ]; then
-            gh run download "$PRIOR_RECEIPTS_ARTIFACT_RUN_ID" \
-              --name "${PRIOR_RECEIPTS_ARTIFACT_NAME:-prior-g3-receipts}" \
-              --dir .runtime/g3-prior-receipts \
-              || echo "Prior G3 receipt artifact unavailable; scoped validation will fail fast if receipts remain missing"
-          else
+          if [ -z "$PRIOR_RECEIPTS_ARTIFACT_RUN_ID" ]; then
             echo "No prior G3 artifact run id provided; using existing evidence sink only"
           fi
           node <<'NODE'
