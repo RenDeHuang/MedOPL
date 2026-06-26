@@ -1177,7 +1177,7 @@
   },
   "commercial_runtime_business_closure_goal_gap_map": {
     "schema_version": 1,
-    "status": "truth_realigned_landed_pending_post_push",
+    "status": "truth_realigned_landed",
     "owner_surface": "MedOPL control plane / OPL-Webui consumer boundary",
     "next_cursor": "goal-production-canary-commercial-billing-closure",
     "gaps": [
@@ -1213,9 +1213,9 @@
         "gap_id": "gap5",
         "slice_id": "goal-commercial-admission-truth-realignment",
         "target_business_capability": "account-approved commercial admission / paid-account runtime gate",
-        "status": "landed_pending_post_push",
+        "status": "landed",
         "current_evidence": "docs/product, docs/active, goal-current, medopl-api contract, Go runtime gate and backend/cloud tests express commercialAdmission instead of canaryAdmission",
-        "missing_evidence": "post-push verification after ff-only trunk landing",
+        "missing_evidence": "none for repo-local truth realignment; production-canary commercial billing closure remains gap6",
         "minimum_evidence_slice": "docs/product, docs/active, goal-current, medopl-api contract and backend/cloud tests no longer present selected-user canary allowlist as business truth",
         "required_code_surface": "Go runtime gate projection, API contract, production live_test runner, cloud rollout operations safety boundary",
         "required_test_gate": "test:backend, test:frontend, test:release, verify, gate:review, repo:bloat, line:budget",
@@ -1228,7 +1228,7 @@
         "gap_id": "gap6",
         "slice_id": "goal-production-canary-commercial-billing-closure",
         "target_business_capability": "production-canary commercial billing closure",
-        "status": "blocked_until_gap5_closeout",
+        "status": "ready_after_gap5_closeout",
         "closeout_target": "production-canary paid-account scope proves runtime_required -> purchase/credit/open -> upload/run/artifact -> billing/release/destroy/return flow using account-approved admission"
       },
       {
