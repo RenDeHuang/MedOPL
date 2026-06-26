@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/goal-g3-diagnostic-rollout-scope-fix`
-- latest landed commit: `9c41e8d30b69aea7bc60a7f8220142ada9ecf4ad`
+- latest landed branch: `feat/goal-g3-live-test-platform-approval-sequence-fix`
+- latest landed commit: `6a7b1ab034ebe78c9eb41d83cbc438d1ca7b6ae9`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
@@ -29,6 +29,7 @@ History 只保留短索引：
 - evidence index: `docs/evidence/README.md`
 - delivery closeout policy: `docs/delivery/README.md`
 - Cloud SaaS OPL-Webui runtime_required integration: `goal-g2-opl-webui-runtime-required-integration` adds stable top-level `refs` to the existing runtime_required run result projection so OPL-Webui can consume run/artifact/storage/file refs alongside progress and deliverables. It can claim repo-local G2 consumer contract closure only; real cloud runtime/storage proof, deployment proof, external PSP settlement and domain agent quality remain unclaimed.
+- G3 live-test platform approval sequence: `goal-g3-live-test-platform-approval-sequence-fix` / `6a7b1ab034ebe78c9eb41d83cbc438d1ca7b6ae9` makes the existing G3 live_test runner approve the prepared account before payment/order/provider/open-runtime execution, while preserving unapproved-account fail-closed behavior as `account_not_approved`. It can claim runner sequence alignment with account-approved commercial admission only; G3 scoped evidence still requires prior runtime/storage/release redacted receipts before closure.
 - Cloud SaaS commercial account productization: `goal-g1-commercial-account-productization` separates account preparation from platform approval, adds platform approval as a repo-local API/admin action, keeps prepared accounts fail-closed before runtime/storage open, and proves approved funded accounts can proceed through plan/balance/freeze/quota commercial admission. It can claim repo-local G1 account/recharge/plan productization only; cloud deployment proof, external PSP settlement and full production remain unclaimed.
 - Commercial runtime purchase action contract: `goal-commercial-runtime-purchase-action-contract` / `995c8c7ee4de64561c4a3c34ef6ea521dd738524` adds a machine-readable runtime_required action contract for OPL-Webui with `open_medopl_purchase`, `select_plan`, `recharge_or_credit_required`, `open_runtime_storage` and `return_to_opl_task`. It can claim repo-local gap1 action contract closure only; purchase projection, return-to-OPL resume closure, local/controlled commercial billing closure and external PSP settlement remain next/future cursors.
 - Commercial purchase action projection: `goal-commercial-purchase-action-projection` / `14715dba994a37d2e29562cb916f77e7405bbf68` connects the runtime_required action contract to MedOPL purchase / plan / recharge-or-credit / open-runtime-storage projections in the Go API and Portal packages surface. It can claim repo-local gap2 purchase projection closure only; internal billing receipt closure, return-to-OPL resume closure, local/controlled commercial billing closure and external PSP settlement remain next/future cursors.

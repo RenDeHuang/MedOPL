@@ -7,9 +7,19 @@ on:
         description: Type run-g3-business-closure to execute billing/audit writeback and live_test.
         required: true
         type: string
+      prior_receipts_artifact_run_id:
+        description: Optional run id containing redacted prior G3 runtime/storage/release receipts.
+        required: false
+        type: string
+      prior_receipts_artifact_name:
+        description: Redacted prior receipt artifact name.
+        required: false
+        type: string
+        default: prior-g3-receipts
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
   g3-business-closure:
@@ -107,6 +117,76 @@ jobs:
 
       - name: OPL-Webui live business E2E
         run: npm run cloud:goal -- --operation live_test
+
+      - name: Restore prior G3 runtime/storage/release receipts
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRIOR_RECEIPTS_ARTIFACT_RUN_ID: ${{ inputs.prior_receipts_artifact_run_id }}
+          PRIOR_RECEIPTS_ARTIFACT_NAME: ${{ inputs.prior_receipts_artifact_name }}
+        run: |
+          node <<'NODE'
+          const { mkdirSync } = require("node:fs");
+          const path = require("node:path");
+          mkdirSync(path.join(".runtime", "v22-cloud-authorization", "run-v22-001"), { recursive: true });
+          mkdirSync(path.join(".runtime", "g3-prior-receipts"), { recursive: true });
+          NODE
+          if [ -n "$PRIOR_RECEIPTS_ARTIFACT_RUN_ID" ]; then
+            gh run download "$PRIOR_RECEIPTS_ARTIFACT_RUN_ID" \
+              --name "${PRIOR_RECEIPTS_ARTIFACT_NAME:-prior-g3-receipts}" \
+              --dir .runtime/g3-prior-receipts \
+              || echo "Prior G3 receipt artifact unavailable; scoped validation will fail fast if receipts remain missing"
+          else
+            echo "No prior G3 artifact run id provided; using existing evidence sink only"
+          fi
+          node <<'NODE'
+          const { existsSync, readdirSync, copyFileSync } = require("node:fs");
+          const path = require("node:path");
+
+          const evidenceSink = ".runtime/v22-cloud-authorization/run-v22-001";
+          const restoreRoot = ".runtime/g3-prior-receipts";
+          const mappings = [
+            ["runtime_owner_receipt", "runtime_owner_receipt.json"],
+            ["storage_owner_receipt", "storage_owner_receipt.json"],
+            ["release_owner_receipt", "release_owner_receipt.json"],
+            ["tenant_runtime_provisioning", "tenant_runtime_provisioning.json"],
+            ["storage_lifecycle", "storage_lifecycle.json"]
+          ];
+
+          function walk(dir) {
+            if (!existsSync(dir)) return [];
+            return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+              const child = path.join(dir, entry.name);
+              return entry.isDirectory() ? walk(child) : [child];
+            });
+          }
+
+          const candidates = [...walk(restoreRoot), ...walk(evidenceSink)];
+          const restored = [];
+          for (const [type, fileName] of mappings) {
+            const target = path.join(evidenceSink, fileName);
+            if (existsSync(target)) {
+              restored.push(type);
+              continue;
+            }
+            const found = candidates.find((candidate) => path.basename(candidate) === fileName);
+            if (found) {
+              copyFileSync(found, target);
+              restored.push(type);
+            }
+          }
+
+          const required = ["runtime_owner_receipt", "storage_owner_receipt", "release_owner_receipt"];
+          const missing = required.filter((type) => !existsSync(path.join(evidenceSink, `${type}.json`)));
+          console.log(JSON.stringify({
+            ok: missing.length === 0,
+            kind: "g3_prior_runtime_storage_release_receipt_restore",
+            evidenceSink,
+            restored,
+            missingReceiptTypes: missing,
+            source: process.env.PRIOR_RECEIPTS_ARTIFACT_RUN_ID ? "github_actions_artifact" : "existing_evidence_sink"
+          }));
+          NODE
 
       - name: Validate G3 scoped business closure evidence
         shell: bash
