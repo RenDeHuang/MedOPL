@@ -33,6 +33,9 @@ type RuntimeGateInput struct {
 	InvocationMode string
 	RuntimePlanID  string
 	StoragePlanID  string
+	SessionID      string
+	TaskRef        string
+	TaskIntent     string
 }
 
 type NodePoolProjection struct {
@@ -63,32 +66,69 @@ type RuntimeGateConsumerProjection struct {
 	StorageAction   string `json:"storageAction"`
 }
 
+type RuntimeGatePlanRequirement struct {
+	RuntimePlanID string `json:"runtimePlanId"`
+	StoragePlanID string `json:"storagePlanId"`
+	Compute       string `json:"compute"`
+	Storage       string `json:"storage"`
+}
+
+type RuntimeGateBalanceRequirement struct {
+	Currency           string  `json:"currency"`
+	MinRequiredBalance float64 `json:"minRequiredBalance"`
+	CurrentBalance     float64 `json:"currentBalance"`
+	AvailableBalance   float64 `json:"availableBalance"`
+	ActiveFreeze       float64 `json:"activeFreeze"`
+}
+
+type RuntimeGateCommercialAction struct {
+	Action              string                        `json:"action"`
+	Reason              string                        `json:"reason"`
+	WorkspaceID         string                        `json:"workspaceId"`
+	SessionID           string                        `json:"sessionId"`
+	TaskRef             string                        `json:"taskRef"`
+	TaskIntent          string                        `json:"taskIntent"`
+	RequiredPlan        string                        `json:"requiredPlan"`
+	PlanRequirement     RuntimeGatePlanRequirement    `json:"planRequirement"`
+	BalanceRequirement  RuntimeGateBalanceRequirement `json:"balanceRequirement"`
+	MedOPLDeeplink      string                        `json:"medoplDeeplink"`
+	ReturnToOPLDeeplink string                        `json:"returnToOplDeeplink"`
+	CanClaim            []string                      `json:"canClaim"`
+	CannotClaim         []string                      `json:"cannotClaim"`
+}
+
+type RuntimeGateCommercialActionContract struct {
+	PrimaryAction    RuntimeGateCommercialAction   `json:"primaryAction"`
+	AvailableActions []RuntimeGateCommercialAction `json:"availableActions"`
+}
+
 type RuntimeGateProjection struct {
-	Ok                    bool                          `json:"ok"`
-	ProductOwner          string                        `json:"productOwner"`
-	PrimaryConsumer       string                        `json:"primaryConsumer"`
-	ConsumerRole          string                        `json:"consumerRole"`
-	OrdinaryChatOwner     string                        `json:"ordinaryChatOwner"`
-	RuntimeRequiredOwner  string                        `json:"runtimeRequiredOwner"`
-	WorkspaceID           string                        `json:"workspaceId"`
-	WorkspaceBindingID    string                        `json:"workspaceBindingId"`
-	InvocationMode        string                        `json:"invocationMode"`
-	MedOPLRuntimeRequired bool                          `json:"medoplRuntimeRequired"`
-	ProviderKeyStatus     string                        `json:"providerKeyStatus"`
-	ProviderKeyRef        string                        `json:"providerKeyRef,omitempty"`
-	RuntimePlanID         string                        `json:"runtimePlanId"`
-	RuntimeBindingID      string                        `json:"runtimeBindingId,omitempty"`
-	RuntimeState          string                        `json:"runtimeState"`
-	StoragePlanID         string                        `json:"storagePlanId"`
-	StorageBindingID      string                        `json:"storageBindingId,omitempty"`
-	StorageState          string                        `json:"storageState"`
-	NodePoolProjection    NodePoolProjection            `json:"nodePoolProjection"`
-	Billing               RuntimeGateBilling            `json:"billing"`
-	Release               RuntimeGateRelease            `json:"release"`
-	ConsumerProjection    RuntimeGateConsumerProjection `json:"consumerProjection"`
-	CanaryAdmission       CanaryAdmissionDecision       `json:"canaryAdmission"`
-	NextAction            string                        `json:"nextAction"`
-	CannotClaim           []string                      `json:"cannotClaim"`
+	Ok                    bool                                `json:"ok"`
+	ProductOwner          string                              `json:"productOwner"`
+	PrimaryConsumer       string                              `json:"primaryConsumer"`
+	ConsumerRole          string                              `json:"consumerRole"`
+	OrdinaryChatOwner     string                              `json:"ordinaryChatOwner"`
+	RuntimeRequiredOwner  string                              `json:"runtimeRequiredOwner"`
+	WorkspaceID           string                              `json:"workspaceId"`
+	WorkspaceBindingID    string                              `json:"workspaceBindingId"`
+	InvocationMode        string                              `json:"invocationMode"`
+	MedOPLRuntimeRequired bool                                `json:"medoplRuntimeRequired"`
+	ProviderKeyStatus     string                              `json:"providerKeyStatus"`
+	ProviderKeyRef        string                              `json:"providerKeyRef,omitempty"`
+	RuntimePlanID         string                              `json:"runtimePlanId"`
+	RuntimeBindingID      string                              `json:"runtimeBindingId,omitempty"`
+	RuntimeState          string                              `json:"runtimeState"`
+	StoragePlanID         string                              `json:"storagePlanId"`
+	StorageBindingID      string                              `json:"storageBindingId,omitempty"`
+	StorageState          string                              `json:"storageState"`
+	NodePoolProjection    NodePoolProjection                  `json:"nodePoolProjection"`
+	Billing               RuntimeGateBilling                  `json:"billing"`
+	Release               RuntimeGateRelease                  `json:"release"`
+	ConsumerProjection    RuntimeGateConsumerProjection       `json:"consumerProjection"`
+	CanaryAdmission       CanaryAdmissionDecision             `json:"canaryAdmission"`
+	ActionContract        RuntimeGateCommercialActionContract `json:"actionContract"`
+	NextAction            string                              `json:"nextAction"`
+	CannotClaim           []string                            `json:"cannotClaim"`
 }
 
 type LaunchLookupInput struct {
@@ -250,6 +290,7 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 		CannotClaim:           runtimeGateCannotClaim(),
 		MedOPLRuntimeRequired: false,
 	}
+	projection.ActionContract = runtimeGateCommercialActionContract(input, projection, "continue_in_opl_webui")
 	if mode == "api_only" || mode == "ordinary_chat" {
 		return projection, nil
 	}
@@ -271,6 +312,7 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 		}
 		projection.ProviderKeyStatus = "not_checked"
 		projection.NextAction = "canary_admission_required"
+		projection.ActionContract = runtimeGateCommercialActionContract(input, projection, "canary_admission_required")
 		return projection, nil
 	}
 	if err != nil {
@@ -289,6 +331,7 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 	}
 	projection.ProviderKeyStatus = "missing"
 	projection.NextAction = "bind_provider_key"
+	projection.ActionContract = runtimeGateCommercialActionContract(input, projection, "provider_key_required")
 
 	binding, err := service.store.ProviderBindingByWorkspace(ctx, workspaceID)
 	if errors.Is(err, cprepo.ErrNotFound) {
@@ -300,6 +343,17 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 	projection.ProviderKeyStatus = binding.BoundStatus
 	projection.ProviderKeyRef = binding.ProviderKeyRef
 	projection.NextAction = "open_medopl_runtime"
+	if wallet, err := service.runtimeGateWallet(ctx, workspaceID); err == nil {
+		reason := "runtime_storage_not_opened"
+		if wallet.AvailableBalance < commercialRuntimeHoldAmount {
+			reason = "insufficient_balance"
+		}
+		projection.ActionContract = runtimeGateCommercialActionContractWithWallet(input, projection, reason, wallet)
+	} else if errors.Is(err, cprepo.ErrNotFound) {
+		projection.ActionContract = runtimeGateCommercialActionContract(input, projection, "account_required")
+	} else {
+		return RuntimeGateProjection{}, err
+	}
 
 	resources, err := service.store.ListResources(ctx, workspaceID)
 	if err != nil {
@@ -351,6 +405,7 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 	} else {
 		projection.NextAction = "open_medopl_runtime"
 	}
+	projection.ActionContract = runtimeGateCommercialActionContract(input, projection, runtimeGateActionReason(projection))
 	return projection, nil
 }
 
@@ -637,4 +692,146 @@ func runtimeGateCannotClaim() []string {
 		"runtime_required_without_medopl_runtime",
 		"storage_destroy_without_user_intent",
 	}
+}
+
+func (service *Service) runtimeGateWallet(ctx context.Context, workspaceID string) (Wallet, error) {
+	account, err := service.store.BusinessAccountByWorkspace(ctx, workspaceID)
+	if err != nil {
+		return Wallet{}, err
+	}
+	events, err := service.store.ListBillingEvents(ctx, workspaceID)
+	if err != nil {
+		return Wallet{}, err
+	}
+	credits, err := service.store.ListCreditEvents(ctx, workspaceID)
+	if err != nil {
+		return Wallet{}, err
+	}
+	wallet := walletFromCommercialLedger(appendCreditLedgerItems(ledgerFromBillingEvents(events), credits))
+	if len(credits) == 0 && wallet.Balance == 0 && account.Balance > 0 {
+		wallet.Balance = account.Balance
+		wallet.AvailableBalance = maxFloat(0, wallet.Balance-wallet.ActiveFreeze)
+	}
+	return wallet, nil
+}
+
+func runtimeGateCommercialActionContract(input RuntimeGateInput, projection RuntimeGateProjection, reason string) RuntimeGateCommercialActionContract {
+	return runtimeGateCommercialActionContractWithWallet(input, projection, reason, Wallet{
+		Balance:          0,
+		ActiveFreeze:     projection.Billing.FrozenAmount,
+		Frozen:           projection.Billing.FrozenAmount,
+		AvailableBalance: 0,
+	})
+}
+
+func runtimeGateCommercialActionContractWithWallet(input RuntimeGateInput, projection RuntimeGateProjection, reason string, wallet Wallet) RuntimeGateCommercialActionContract {
+	actions := []RuntimeGateCommercialAction{
+		runtimeGateCommercialAction(input, projection, "open_medopl_purchase", reason, wallet),
+		runtimeGateCommercialAction(input, projection, "select_plan", reason, wallet),
+		runtimeGateCommercialAction(input, projection, "recharge_or_credit_required", reason, wallet),
+		runtimeGateCommercialAction(input, projection, "open_runtime_storage", reason, wallet),
+		runtimeGateCommercialAction(input, projection, "return_to_opl_task", reason, wallet),
+	}
+	primary := actions[0]
+	switch reason {
+	case "account_required", "insufficient_balance":
+		primary = actions[2]
+	case "runtime_storage_not_opened", "runtime_storage_released", "runtime_storage_failed":
+		primary = actions[3]
+	case "runtime_storage_ready":
+		primary = actions[4]
+	case "provider_key_required", "canary_admission_required", "continue_in_opl_webui":
+		primary = actions[0]
+	case "plan_required":
+		primary = actions[1]
+	}
+	return RuntimeGateCommercialActionContract{
+		PrimaryAction:    primary,
+		AvailableActions: actions,
+	}
+}
+
+func runtimeGateCommercialAction(input RuntimeGateInput, projection RuntimeGateProjection, action string, reason string, wallet Wallet) RuntimeGateCommercialAction {
+	workspaceID := firstNonEmpty(projection.WorkspaceID, input.WorkspaceID, "workspace-local-rc")
+	taskIntent := firstNonEmpty(input.TaskIntent, "research")
+	sessionID := strings.TrimSpace(input.SessionID)
+	taskRef := strings.TrimSpace(input.TaskRef)
+	runtimePlanID := firstNonEmpty(projection.RuntimePlanID, input.RuntimePlanID, "starter_2c4g_10gb")
+	storagePlanID := firstNonEmpty(projection.StoragePlanID, input.StoragePlanID, "workspace_10gb")
+	return RuntimeGateCommercialAction{
+		Action:       action,
+		Reason:       reason,
+		WorkspaceID:  workspaceID,
+		SessionID:    sessionID,
+		TaskRef:      taskRef,
+		TaskIntent:   taskIntent,
+		RequiredPlan: runtimePlanID,
+		PlanRequirement: RuntimeGatePlanRequirement{
+			RuntimePlanID: runtimePlanID,
+			StoragePlanID: storagePlanID,
+			Compute:       "2c4g",
+			Storage:       "10gb",
+		},
+		BalanceRequirement: RuntimeGateBalanceRequirement{
+			Currency:           firstNonEmpty(projection.Billing.Currency, "CNY"),
+			MinRequiredBalance: commercialRuntimeHoldAmount,
+			CurrentBalance:     wallet.Balance,
+			AvailableBalance:   wallet.AvailableBalance,
+			ActiveFreeze:       wallet.ActiveFreeze,
+		},
+		MedOPLDeeplink:      runtimeGateMedOPLDeeplink(action, workspaceID, runtimePlanID, storagePlanID, taskIntent, sessionID, taskRef),
+		ReturnToOPLDeeplink: runtimeGateReturnToOPLDeeplink(workspaceID, taskIntent, sessionID, taskRef),
+		CanClaim: []string{
+			"runtime_required_action_contract",
+			"internal_billing_projection_only",
+		},
+		CannotClaim: []string{
+			"external_psp_settlement",
+			"complete_purchase_page",
+			"return_to_opl_resume_complete",
+			"production_canary_commercial_closure",
+		},
+	}
+}
+
+func runtimeGateActionReason(projection RuntimeGateProjection) string {
+	if projection.RuntimeState == "ready" && projection.StorageState == "ready" {
+		return "runtime_storage_ready"
+	}
+	if projection.RuntimeState == "released" || projection.StorageState == "destroyed" {
+		return "runtime_storage_released"
+	}
+	if projection.RuntimeState == "failed" || projection.RuntimeState == "cleanup_required" {
+		return "runtime_storage_failed"
+	}
+	if projection.RuntimeState == "provisioning" || projection.RuntimeState == "releasing" {
+		return "runtime_storage_pending"
+	}
+	return "runtime_storage_not_opened"
+}
+
+func runtimeGateMedOPLDeeplink(action string, workspaceID string, runtimePlanID string, storagePlanID string, taskIntent string, sessionID string, taskRef string) string {
+	path := "/packages"
+	if action == "recharge_or_credit_required" {
+		path = "/usage"
+	}
+	if action == "open_runtime_storage" {
+		path = "/compute"
+	}
+	if action == "return_to_opl_task" {
+		path = "/opl"
+	}
+	return path + "?workspaceId=" + workspaceID +
+		"&runtimePlanId=" + runtimePlanID +
+		"&storagePlanId=" + storagePlanID +
+		"&taskIntent=" + taskIntent +
+		"&sessionId=" + sessionID +
+		"&taskRef=" + taskRef
+}
+
+func runtimeGateReturnToOPLDeeplink(workspaceID string, taskIntent string, sessionID string, taskRef string) string {
+	return "/opl?workspaceId=" + workspaceID +
+		"&taskIntent=" + taskIntent +
+		"&sessionId=" + sessionID +
+		"&taskRef=" + taskRef
 }

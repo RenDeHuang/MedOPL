@@ -54,6 +54,7 @@ export function OPLEntry() {
   const [providerKeyError, setProviderKeyError] = useState("");
   const viewState = buildOplEntryViewState(query.status === "ready" ? query.data : {});
   const { pageState, steps } = viewState;
+  const commercialAction = query.status === "ready" ? query.data.commercialAction : null;
 
   const handleProviderKeyBind = async () => {
     const apiKey = providerKeyInput.trim();
@@ -143,8 +144,8 @@ export function OPLEntry() {
           </p>
           <div className="flex gap-3">
             <Button asChild className="gap-2">
-              <a href={query.data.oplWebUrl}>
-                立即进入 OPL
+              <a href={commercialAction?.returnToOplDeeplink || query.data.oplWebUrl}>
+                {commercialAction?.primaryLabel || "立即进入 OPL"}
                 <ArrowRight className="w-4 h-4" />
               </a>
             </Button>
@@ -265,9 +266,9 @@ export function OPLEntry() {
           </p>
           <div className="flex gap-3">
             <Button asChild className="gap-2">
-              <Link to="/compute">
+              <Link to={commercialAction?.medoplDeeplink || "/compute"}>
                 <Server className="w-4 h-4" />
-                去计算资源页
+                {commercialAction?.primaryLabel || "去计算资源页"}
               </Link>
             </Button>
             <Button asChild variant="outline" className="gap-2">
@@ -325,9 +326,9 @@ export function OPLEntry() {
           </p>
           <div className="flex gap-3">
             <Button asChild className="gap-2">
-              <Link to="/usage">
+              <Link to={commercialAction?.medoplDeeplink || "/usage"}>
                 <CreditCard className="w-4 h-4" />
-                去账单页
+                {commercialAction?.primaryLabel || "去账单页"}
               </Link>
             </Button>
             <Button asChild variant="outline" className="gap-2">

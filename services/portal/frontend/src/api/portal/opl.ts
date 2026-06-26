@@ -36,6 +36,36 @@ export interface OplRuntimeGateInput {
   invocationMode?: "ordinary_chat" | "runtime_required" | "api_only";
   runtimePlanId?: string;
   storagePlanId?: string;
+  sessionId?: string;
+  taskRef?: string;
+  taskIntent?: "paper" | "grant" | "ppt" | "book" | "research" | string;
+}
+
+export interface OplRuntimeGateCommercialAction {
+  action: "open_medopl_purchase" | "select_plan" | "recharge_or_credit_required" | "open_runtime_storage" | "return_to_opl_task" | string;
+  reason: string;
+  workspaceId: string;
+  sessionId: string;
+  taskRef: string;
+  taskIntent: string;
+  requiredPlan: string;
+  planRequirement: {
+    runtimePlanId: string;
+    storagePlanId: string;
+    compute: string;
+    storage: string;
+  };
+  balanceRequirement: {
+    currency: string;
+    minRequiredBalance: number;
+    currentBalance: number;
+    availableBalance: number;
+    activeFreeze: number;
+  };
+  medoplDeeplink: string;
+  returnToOplDeeplink: string;
+  canClaim: string[];
+  cannotClaim: string[];
 }
 
 export interface OplRuntimeGatePayload {
@@ -80,6 +110,10 @@ export interface OplRuntimeGatePayload {
     artifactEnabled: boolean;
     releaseAction: string;
     storageAction: string;
+  };
+  actionContract: {
+    primaryAction: OplRuntimeGateCommercialAction;
+    availableActions: OplRuntimeGateCommercialAction[];
   };
   nextAction: string;
   cannotClaim: string[];
@@ -214,6 +248,9 @@ export async function fetchOplRuntimeGate(input: OplRuntimeGateInput = {}) {
     invocationMode: input.invocationMode || "runtime_required",
     runtimePlanId: input.runtimePlanId || "starter_2c4g_10gb",
     storagePlanId: input.storagePlanId || "workspace_10gb",
+    sessionId: input.sessionId,
+    taskRef: input.taskRef,
+    taskIntent: input.taskIntent || "research",
   });
   return data;
 }

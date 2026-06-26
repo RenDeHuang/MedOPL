@@ -88,8 +88,42 @@
         "release",
         "consumerProjection",
         "canaryAdmission",
+        "actionContract",
         "nextAction"
       ],
+      "commercial_action_contract": {
+        "intent": "opl_webui_runtime_required_commercial_purchase_actions",
+        "actions": [
+          "open_medopl_purchase",
+          "select_plan",
+          "recharge_or_credit_required",
+          "open_runtime_storage",
+          "return_to_opl_task"
+        ],
+        "action_fields": [
+          "action",
+          "reason",
+          "workspaceId",
+          "sessionId",
+          "taskRef",
+          "taskIntent",
+          "requiredPlan",
+          "planRequirement",
+          "balanceRequirement",
+          "medoplDeeplink",
+          "returnToOplDeeplink",
+          "canClaim",
+          "cannotClaim"
+        ],
+        "boundary": "machine_readable_action_contract_only",
+        "does_not_claim": [
+          "external_psp_settlement",
+          "complete_purchase_page",
+          "return_to_opl_resume_complete",
+          "production_canary_commercial_closure",
+          "opl_domain_quality_verdict"
+        ]
+      },
       "canary_admission": {
         "intent": "selected_real_user_production_canary_runtime_required_admission",
         "enabled_flag": "MEDOPL_CANARY_ADMISSION_ENABLED",

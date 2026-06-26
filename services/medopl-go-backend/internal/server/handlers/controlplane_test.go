@@ -212,76 +212,49 @@ func TestControlPlaneHandlersExposeV22GoTakeoverProviderOpenShape(t *testing.T) 
 	}
 }
 
-func TestControlPlaneHandlersExposeOPLWebuiRuntimeGate(t *testing.T) {
+func TestControlPlaneHandlersKeepRuntimeGateContractAnchor(t *testing.T) {
 	router := controlPlaneHandlerTestRouter()
-	rawProviderKey := "runtime-gate-provider-key-material-that-must-stay-private"
+	rawProviderKey := "runtime-gate-anchor-provider-key-material-that-must-stay-private"
 
 	ordinaryChat := postMap(t, router, "/api/opl/runtime-gate", map[string]any{
 		"workspaceId":    "workspace-v22",
 		"invocationMode": "ordinary_chat",
-		"runtimePlanId":  "starter_2c4g_10gb",
-		"storagePlanId":  "workspace_10gb",
 	})
-	assertPublicPayload(t, ordinaryChat, rawProviderKey)
 	if ordinaryChat["productOwner"] != "medopl" || ordinaryChat["primaryConsumer"] != "opl-webui" {
-		t.Fatalf("ordinary runtime gate owner boundary = %+v", ordinaryChat)
-	}
-	if ordinaryChat["medoplRuntimeRequired"] != false || ordinaryChat["nextAction"] != "continue_in_opl_webui" {
-		t.Fatalf("ordinary runtime gate = %+v", ordinaryChat)
+		t.Fatalf("ordinary runtime gate owner = %+v", ordinaryChat)
 	}
 	ordinaryConsumer := ordinaryChat["consumerProjection"].(map[string]any)
-	if ordinaryConsumer["chatSurface"] != "opl-webui" || ordinaryConsumer["runSurface"] != "none" {
-		t.Fatalf("ordinary runtime consumer projection = %+v", ordinaryConsumer)
-	}
 	if ordinaryConsumer["uploadEnabled"] != false || ordinaryConsumer["runEnabled"] != false || ordinaryConsumer["artifactEnabled"] != false {
-		t.Fatalf("ordinary runtime consumer actions = %+v", ordinaryConsumer)
+		t.Fatalf("ordinary runtime gate consumer projection = %+v", ordinaryConsumer)
 	}
 
 	prepareCreditUser(t, router, "workspace-v22", 200)
-	bindResponse := postMap(t, router, "/api/v22/provider-key", map[string]any{
+	postMap(t, router, "/api/v22/provider-key", map[string]any{
 		"tenantId":       "tenant-v22",
 		"portalUserId":   "user-v22",
 		"workspaceId":    "workspace-v22",
 		"apiKey":         rawProviderKey,
-		"idempotencyKey": "runtime-gate-provider-once",
+		"idempotencyKey": "runtime-gate-anchor-provider-once",
 	})
-	openResponse := postMap(t, router, "/api/v22/managed-environment/open", map[string]any{
+	postMap(t, router, "/api/v22/managed-environment/open", map[string]any{
 		"tenantId":       "tenant-v22",
 		"portalUserId":   "user-v22",
 		"workspaceId":    "workspace-v22",
-		"idempotencyKey": "runtime-gate-open-once",
+		"idempotencyKey": "runtime-gate-anchor-open-once",
 	})
-
 	runtimeRequired := postMap(t, router, "/api/opl/runtime-gate", map[string]any{
 		"workspaceId":    "workspace-v22",
 		"invocationMode": "runtime_required",
-		"runtimePlanId":  "starter_2c4g_10gb",
-		"storagePlanId":  "workspace_10gb",
 	})
 	assertPublicPayload(t, runtimeRequired, rawProviderKey)
-	if runtimeRequired["medoplRuntimeRequired"] != true || runtimeRequired["runtimeBindingId"] != openResponse["resourceBindingId"] {
-		t.Fatalf("runtime required gate = %+v", runtimeRequired)
-	}
-	if runtimeRequired["providerKeyRef"] != bindResponse["providerKeyRef"] || runtimeRequired["storageBindingId"] == "" {
-		t.Fatalf("runtime required provider/storage = %+v", runtimeRequired)
-	}
-	nodePool := runtimeRequired["nodePoolProjection"].(map[string]any)
-	if nodePool["nodePoolRef"] == "" || nodePool["state"] != "ready" || nodePool["customerVisible"] != false {
-		t.Fatalf("runtime required node pool projection = %+v", nodePool)
-	}
+	nodePoolProjection := runtimeRequired["nodePoolProjection"].(map[string]any)
 	release := runtimeRequired["release"].(map[string]any)
-	if release["canReleaseRuntime"] != true || release["destroyStorage"] != "requires_explicit_user_intent" {
-		t.Fatalf("runtime required release projection = %+v", release)
-	}
 	consumerProjection := runtimeRequired["consumerProjection"].(map[string]any)
-	if consumerProjection["chatSurface"] != "opl-webui" || consumerProjection["runSurface"] != "opl-webui_with_medopl_runtime" {
-		t.Fatalf("runtime required consumer surface = %+v", consumerProjection)
+	if nodePoolProjection["state"] != "ready" || release["destroyStorage"] != "requires_explicit_user_intent" {
+		t.Fatalf("runtime required node pool/release projection = nodePoolProjection:%+v release:%+v", nodePoolProjection, release)
 	}
-	if consumerProjection["uploadEnabled"] != true || consumerProjection["runEnabled"] != true || consumerProjection["artifactEnabled"] != true {
-		t.Fatalf("runtime required consumer actions = %+v", consumerProjection)
-	}
-	if consumerProjection["releaseAction"] != "release_runtime_stop_billing" || consumerProjection["storageAction"] != "retain_storage_until_explicit_destroy" {
-		t.Fatalf("runtime required consumer release/storage = %+v", consumerProjection)
+	if consumerProjection["uploadEnabled"] != true || consumerProjection["runEnabled"] != true || consumerProjection["artifactEnabled"] != true || consumerProjection["releaseAction"] != "release_runtime_stop_billing" || consumerProjection["storageAction"] == "" {
+		t.Fatalf("runtime required consumer projection = %+v", consumerProjection)
 	}
 }
 

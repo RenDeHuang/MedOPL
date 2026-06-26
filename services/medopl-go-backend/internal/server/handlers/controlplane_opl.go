@@ -180,6 +180,9 @@ func runtimeGate(service ControlPlaneService) gin.HandlerFunc {
 			InvocationMode: defaultString(request.InvocationMode, "runtime_required"),
 			RuntimePlanID:  request.RuntimePlanID,
 			StoragePlanID:  request.StoragePlanID,
+			SessionID:      request.SessionID,
+			TaskRef:        request.TaskRef,
+			TaskIntent:     request.TaskIntent,
 		})
 		if err != nil {
 			writeControlPlaneError(ctx, err)

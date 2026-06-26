@@ -5,6 +5,7 @@ import {
   fetchOplBootstrap,
   fetchOplEntryPreflight,
   fetchOplRuntimeGate,
+  type OplRuntimeGateCommercialAction,
 } from "../../api/portal/opl";
 import { fetchOplLaunchStatus } from "../../api/portal/resources";
 import { OPL_GATEWAY_UNAVAILABLE_MESSAGE, PortalDisplayError } from "./portalDisplayErrors";
@@ -53,6 +54,52 @@ export type OplEntryRuntimeConsumerProjection = {
   storageAction: string;
 };
 
+export type OplEntryCommercialActionView = {
+  commercialAction: string;
+  reason: string;
+  workspaceId: string;
+  sessionId: string;
+  taskRef: string;
+  taskIntent: string;
+  requiredPlan: string;
+  planRequirement: OplRuntimeGateCommercialAction["planRequirement"];
+  balanceRequirement: OplRuntimeGateCommercialAction["balanceRequirement"];
+  medoplDeeplink: string;
+  returnToOplDeeplink: string;
+  primaryLabel: string;
+  canClaim: string[];
+  cannotClaim: string[];
+};
+
+function commercialActionLabel(action: string) {
+  if (action === "open_medopl_purchase") return "打开 MedOPL 购买入口";
+  if (action === "select_plan") return "选择托管套餐";
+  if (action === "recharge_or_credit_required") return "充值或申请授信";
+  if (action === "open_runtime_storage") return "开通计算资源和存储空间";
+  if (action === "return_to_opl_task") return "返回 OPL 继续任务";
+  return "查看 MedOPL 资源状态";
+}
+
+export function buildOplEntryCommercialActionView(action?: OplRuntimeGateCommercialAction | null): OplEntryCommercialActionView | null {
+  if (!action) return null;
+  return {
+    commercialAction: action.action,
+    reason: action.reason,
+    workspaceId: action.workspaceId,
+    sessionId: action.sessionId,
+    taskRef: action.taskRef,
+    taskIntent: action.taskIntent,
+    requiredPlan: action.requiredPlan,
+    planRequirement: action.planRequirement,
+    balanceRequirement: action.balanceRequirement,
+    medoplDeeplink: action.medoplDeeplink,
+    returnToOplDeeplink: action.returnToOplDeeplink,
+    primaryLabel: commercialActionLabel(action.action),
+    canClaim: action.canClaim,
+    cannotClaim: action.cannotClaim,
+  };
+}
+
 function blockedByProviderKey(input: {
   workspaceId?: string;
   userVisibleState?: string;
@@ -71,6 +118,8 @@ function blockedByProviderKey(input: {
     gatewayState: "等待模型调用密钥绑定",
     runtimeSessionId: "",
     oplSessionId: "",
+    commercialAction: null,
+    commercialActions: [],
     stages: [],
     workspaceId: input.workspaceId || "workspace-local-rc",
   } as const;
@@ -297,6 +346,9 @@ export async function loadOplEntryModel() {
     const runtimeGate = await fetchOplRuntimeGate({
       workspaceId: status.workspaceId || launch.workspaceId || "workspace-local-rc",
       invocationMode: "runtime_required",
+      sessionId: bootstrap.identity.runtimeSessionId,
+      taskRef: existingLaunchId || launch.launchId,
+      taskIntent: "research",
     });
     await bindOplSession({
       launchId: launch.launchId,
@@ -324,6 +376,8 @@ export async function loadOplEntryModel() {
         release: runtimeGate.release,
         consumerProjection: runtimeGate.consumerProjection,
       },
+      commercialAction: buildOplEntryCommercialActionView(runtimeGate.actionContract?.primaryAction),
+      commercialActions: runtimeGate.actionContract?.availableActions.map((action) => buildOplEntryCommercialActionView(action)).filter(Boolean),
       stages: status.stages,
       workspaceId: status.workspaceId || launch.workspaceId || "workspace-local-rc",
     } as const;

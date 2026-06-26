@@ -115,16 +115,18 @@ for (const [label, pageSource, routes] of [
   ["packages_purchase", packagesSource, ["/compute"]],
   ["workspace", workspaceSource, ["/opl", "/usage", "/packages"]],
   ["runtime_environment", runtimeSource, ["/usage"]],
-  ["opl_entry", oplEntrySource, ["/overview", "/storage", "/compute", "/usage"]],
+  ["opl_entry", oplEntrySource, ["/overview", "/storage"]],
 ]) {
   assertIncludes(pageSource, 'from "react-router"', `${label}_must_use_react_router_links`);
   for (const route of routes) {
     assertIncludes(pageSource, `to="${route}"`, `${label}_cta_route`);
   }
 }
+assertIncludes(oplEntrySource, 'commercialAction?.medoplDeeplink || "/compute"', "opl_entry_runtime_required_cta");
+assertIncludes(oplEntrySource, 'commercialAction?.medoplDeeplink || "/usage"', "opl_entry_billing_required_cta");
 
 assertIncludes(oplEntrySource, "OPL 网关暂不可用，请稍后重试；如持续失败，请联系管理员。", "opl_entry_product_error_copy");
-assertIncludes(oplEntrySource, "<a href={query.data.oplWebUrl}", "opl_entry_ready_cta_must_open_opl_url");
+assertIncludes(oplEntrySource, "commercialAction?.returnToOplDeeplink || query.data.oplWebUrl", "opl_entry_ready_cta_must_open_opl_url");
 assertIncludes(oplEntrySource, "<Button asChild", "opl_entry_primary_ctas_must_bind_children");
 assertIncludes(portalTypesSource, "providerBound: boolean;", "opl_launch_status_payload_must_include_provider_bound_projection");
 assertIncludes(portalTypesSource, "providerKeyRef: string;", "opl_launch_status_payload_must_include_provider_key_ref_projection");

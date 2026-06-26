@@ -109,6 +109,35 @@ assert.equal(runtimeGate.consumer_role, "entry_and_chat_surface", "runtime_gate_
 assert.deepEqual(runtimeGate.invocation_modes, ["api_only", "ordinary_chat", "runtime_required"], "runtime_gate_invocation_modes_mismatch");
 assert.equal(runtimeGate.ordinary_chat_owner, "opl-webui", "runtime_gate_ordinary_chat_owner_must_be_opl_webui");
 assert.equal(runtimeGate.runtime_required_owner, "medopl", "runtime_gate_runtime_required_owner_must_be_medopl");
+assert(runtimeGate.commercial_action_contract, "runtime_gate_commercial_action_contract_missing");
+assert.deepEqual(
+  runtimeGate.commercial_action_contract.actions,
+  ["open_medopl_purchase", "select_plan", "recharge_or_credit_required", "open_runtime_storage", "return_to_opl_task"],
+  "runtime_gate_commercial_action_contract_actions_mismatch",
+);
+assert.deepEqual(
+  runtimeGate.commercial_action_contract.action_fields,
+  [
+    "action",
+    "reason",
+    "workspaceId",
+    "sessionId",
+    "taskRef",
+    "taskIntent",
+    "requiredPlan",
+    "planRequirement",
+    "balanceRequirement",
+    "medoplDeeplink",
+    "returnToOplDeeplink",
+    "canClaim",
+    "cannotClaim",
+  ],
+  "runtime_gate_commercial_action_contract_fields_mismatch",
+);
+assert(
+  runtimeGate.must_return.includes("actionContract"),
+  "runtime_gate_must_return_action_contract",
+);
 assert.equal(apiContract.medopl_api_contract.storage_destroy?.route, "POST /api/v22/storage/destroy", "storage_destroy_route_contract_missing");
 assert.deepEqual(
   apiContract.medopl_api_contract.storage_destroy?.must_return,
@@ -131,6 +160,13 @@ const runtimeGateProjectionSurface = serviceSurface.slice(
   serviceSurface.indexOf("type RuntimeGateProjection struct"),
   serviceSurface.indexOf("type LaunchLookupInput struct"),
 );
+assert(runtimeGateProjectionSurface.includes("ActionContract"), "runtime_gate_projection_action_contract_missing");
+for (const field of runtimeGate.commercial_action_contract.action_fields) {
+  assert(
+    serviceSurface.includes(`json:"${field}`),
+    `runtime_gate_commercial_action_field_missing:${field}`,
+  );
+}
 const canaryAdmission = runtimeGate.canary_admission;
 assert(canaryAdmission, "runtime_gate_canary_admission_contract_missing");
 assert.equal(canaryAdmission.intent, "selected_real_user_production_canary_runtime_required_admission", "runtime_gate_canary_admission_intent_mismatch");

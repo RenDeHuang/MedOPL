@@ -116,6 +116,9 @@ type runtimeGateRequest struct {
 	InvocationMode string `json:"invocationMode"`
 	RuntimePlanID  string `json:"runtimePlanId"`
 	StoragePlanID  string `json:"storagePlanId"`
+	SessionID      string `json:"sessionId"`
+	TaskRef        string `json:"taskRef"`
+	TaskIntent     string `json:"taskIntent"`
 }
 
 type recordFileRequest struct {

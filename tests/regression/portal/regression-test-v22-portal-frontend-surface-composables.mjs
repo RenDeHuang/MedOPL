@@ -113,6 +113,9 @@ for (const modelOwnedLaunchState of [
   "function buildOplEntryLaunchSteps",
   "function buildOplEntryFailurePanel",
   "function buildOplEntryViewState",
+  "function buildOplEntryCommercialActionView",
+  "commercialAction",
+  "return_to_opl_task",
 ]) {
   assert(
     oplEntryModelSource.includes(modelOwnedLaunchState),
