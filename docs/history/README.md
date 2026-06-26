@@ -16,9 +16,9 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `goal-webui-real-e2e-progress-deliverables`
-- latest landed commit: `b0963a392b24324ae27f0a6c4ed6daf141f809d6`
-- next cursor: `opl-webui-runtime-production-slice`
+- latest landed branch: `goal-commercial-admission-truth-realignment`
+- latest landed commit: `e9d7909f82b7b9ee381cd1304c49ba1877264a14`
+- next cursor: `goal-production-canary-commercial-billing-closure`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
 

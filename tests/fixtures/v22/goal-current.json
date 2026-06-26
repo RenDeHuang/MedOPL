@@ -33,12 +33,20 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "goal-webui-real-e2e-progress-deliverables",
-    "landed_commit": "b0963a392b24324ae27f0a6c4ed6daf141f809d6",
+    "branch": "goal-commercial-admission-truth-realignment",
+    "landed_commit": "e9d7909f82b7b9ee381cd1304c49ba1877264a14",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
-      "pre-existing trunk closeout synced to current origin/recovery/platform-v22-trunk head",
-      "this slice runs fresh verification separately before landing"
+      "npm run test:run-plan -- --dry-run --json passed",
+      "npm run test:run-plan passed with 13 local commands and 9 authorized commands skipped",
+      "npm run test:backend passed",
+      "npm run test:frontend passed",
+      "npm run test:release passed",
+      "npm run verify passed",
+      "npm run test:health passed",
+      "npm run gate:review -- --slice-id goal-commercial-admission-truth-realignment passed",
+      "npm run repo:bloat -- --diff --slice-id goal-commercial-admission-truth-realignment passed",
+      "npm run line:budget passed"
     ],
     "plan_completion_audit": {
       "functional": "done",
@@ -49,11 +57,11 @@
       "cannot_claim": "done"
     },
     "cleanup_result": {
-      "deleted": "none",
-      "folded": "run progress deliverables into existing API contract and backend source",
-      "retained": "no raw evidence in git",
-      "reason": "run progress deliverables landed",
-      "next": "goal-commercial-admission-truth-realignment"
+      "deleted": "business selected-canary admission handler/test and production-canary-admission support module",
+      "folded": "account-approved commercial admission truth into existing product/active/history/api-contract/goal-current surfaces",
+      "retained": "MEDOPL_CANARY refs only as Cloud Rollout operations safety config while active workflow/deploy callers consume them",
+      "reason": "business admission truth is account-approved plus plan/balance/quota, not selected user allowlist",
+      "next": "goal-production-canary-commercial-billing-closure"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "opl-webui-runtime-production-slice"
@@ -66,7 +74,7 @@
     "multi_region_sla_enterprise_compliance_ongoing_authorization_and_unobserved_tenants_resources_remain_unclaimed",
     "unscoped_production_complete_requires_dedicated_scope_expansion_evidence"
   ],
-  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is goal-webui-real-e2e-progress-deliverables at b0963a392b24324ae27f0a6c4ed6daf141f809d6. It exposes stable run progress and deliverables in the runtime_required run result contract and Go backend projection, so OPL-Webui can render task progress and artifact deliverables instead of only a raw artifact ref. This can claim repo-local run progress/deliverable contract shape only; account-approved commercial admission / paid-account runtime gate, production-canary commercial billing closure, full OPL-Webui resume implementation and external PSP settlement remain unclaimed. MedOPL business admission truth is account-approved + plan/balance/quota gate: account exists, account approved by platform, workspace exists, providerKeyRef exists when needed, plan selected, balance sufficient, quota available and no emergency platform stop. MEDOPL_CANARY_* may remain only as Cloud Rollout operations safety config while active callers consume it; it is not business admission, recharge, quota or billing truth. Phase A PostgreSQL Business Persistence RC, Phase E billing idempotency hardening and Phase F operational stability gates are source-landed. Release Image run 28116660385 and Cloud Rollout run 28116700519 passed on current trunk. The rollout produced a redacted production receipt manifest with seven owner receipts, 12 lifecycle sections and 14 production-complete candidate criteria. Manifest sha256 is sha256:3c718484f40b0bcfadf55bbafe6f97b02b22072ad801004a560bfe1f69059a0f. The live DB proof hash for business_db_persistence_receipt is sha256:77555180d9db24120515881082c54539a5d4f334ca8a188c460def5f022fe29f. This can claim cloud release candidate and scoped production-complete candidate evidence for the current authorized canary path only, including Portal public entry, HTTP redirect, Go health/ready, OPL-Webui consumer canary, PostgreSQL business metadata persistence, billing idempotency, soak, concurrency pressure, rollback drill, continuous canary, alerting and final release decision receipts. MedOPL still does not claim unscoped production complete, multi-region/SLA, enterprise compliance, ongoing authorization or unobserved tenants/resources. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-webui-real-e2e-progress-deliverables at b0963a392b24324ae27f0a6c4ed6daf141f809d6.",
+  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is goal-commercial-admission-truth-realignment at e9d7909f82b7b9ee381cd1304c49ba1877264a14. It removes selected-user canary admission from the product/business runtime gate and fixes the business admission truth as account-approved commercial admission: account exists, account approved by platform, workspace exists, providerKeyRef exists when needed, plan selected, balance sufficient, quota available and no emergency platform stop. It can claim repo-local truth/contract/source/test realignment for paid-account runtime gate only; production-canary commercial billing closure, full OPL-Webui resume implementation, external PSP settlement and unscoped production complete remain unclaimed. MEDOPL_CANARY_* may remain only as Cloud Rollout operations safety config while active callers consume it; it is not business admission, recharge, quota or billing truth. Phase A PostgreSQL Business Persistence RC, Phase E billing idempotency hardening and Phase F operational stability gates are source-landed. Release Image run 28116660385 and Cloud Rollout run 28116700519 passed on current trunk. The rollout produced a redacted production receipt manifest with seven owner receipts, 12 lifecycle sections and 14 production-complete candidate criteria. Manifest sha256 is sha256:3c718484f40b0bcfadf55bbafe6f97b02b22072ad801004a560bfe1f69059a0f. The live DB proof hash for business_db_persistence_receipt is sha256:77555180d9db24120515881082c54539a5d4f334ca8a188c460def5f022fe29f. This can claim cloud release candidate and scoped production-complete candidate evidence for the current authorized canary path only, including Portal public entry, HTTP redirect, Go health/ready, OPL-Webui consumer canary, PostgreSQL business metadata persistence, billing idempotency, soak, concurrency pressure, rollback drill, continuous canary, alerting and final release decision receipts. MedOPL still does not claim unscoped production complete, multi-region/SLA, enterprise compliance, ongoing authorization or unobserved tenants/resources. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-admission-truth-realignment at e9d7909f82b7b9ee381cd1304c49ba1877264a14.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -629,9 +637,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "goal-webui-real-e2e-progress-deliverables",
+  "last_landed_branch": "goal-commercial-admission-truth-realignment",
   "last_landed_at": "2026-06-26",
-  "history_latest_branch": "goal-webui-real-e2e-progress-deliverables",
+  "history_latest_branch": "goal-commercial-admission-truth-realignment",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -1054,8 +1062,8 @@
       "cannot_claim": "multi-region production, SLA proven, enterprise compliance, ongoing authorization, or unobserved tenant/resource readiness"
     }
   },
-  "base_trunk_head": "b0963a392b24324ae27f0a6c4ed6daf141f809d6",
-  "last_landed_commit": "b0963a392b24324ae27f0a6c4ed6daf141f809d6",
+  "base_trunk_head": "e9d7909f82b7b9ee381cd1304c49ba1877264a14",
+  "last_landed_commit": "e9d7909f82b7b9ee381cd1304c49ba1877264a14",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
@@ -1169,9 +1177,9 @@
   },
   "commercial_runtime_business_closure_goal_gap_map": {
     "schema_version": 1,
-    "status": "truth_realigned_in_progress",
+    "status": "truth_realigned_landed_pending_post_push",
     "owner_surface": "MedOPL control plane / OPL-Webui consumer boundary",
-    "next_cursor": "goal-commercial-admission-truth-realignment",
+    "next_cursor": "goal-production-canary-commercial-billing-closure",
     "gaps": [
       {
         "gap_id": "gap1",
@@ -1205,9 +1213,9 @@
         "gap_id": "gap5",
         "slice_id": "goal-commercial-admission-truth-realignment",
         "target_business_capability": "account-approved commercial admission / paid-account runtime gate",
-        "status": "in_progress",
-        "current_evidence": "contracts and Go runtime gate now express commercialAdmission instead of canaryAdmission",
-        "missing_evidence": "landed closeout and post-push verification for truth realignment",
+        "status": "landed_pending_post_push",
+        "current_evidence": "docs/product, docs/active, goal-current, medopl-api contract, Go runtime gate and backend/cloud tests express commercialAdmission instead of canaryAdmission",
+        "missing_evidence": "post-push verification after ff-only trunk landing",
         "minimum_evidence_slice": "docs/product, docs/active, goal-current, medopl-api contract and backend/cloud tests no longer present selected-user canary allowlist as business truth",
         "required_code_surface": "Go runtime gate projection, API contract, production live_test runner, cloud rollout operations safety boundary",
         "required_test_gate": "test:backend, test:frontend, test:release, verify, gate:review, repo:bloat, line:budget",
