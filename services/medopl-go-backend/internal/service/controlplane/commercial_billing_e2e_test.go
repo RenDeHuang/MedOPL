@@ -22,6 +22,13 @@ func TestCommercialBillingFullBusinessCapabilityE2E(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("PrepareBusinessAccount() error = %v", err)
 	}
+	if _, err := service.ApproveBusinessAccount(ctx, ApproveBusinessAccountInput{
+		TenantID:     "tenant-commercial-e2e",
+		PortalUserID: "user-commercial-e2e",
+		WorkspaceID:  "workspace-commercial-e2e",
+	}); err != nil {
+		t.Fatalf("ApproveBusinessAccount() error = %v", err)
+	}
 	order, err := service.CreatePaymentOrder(ctx, CreatePaymentOrderInput{
 		TenantID:       "tenant-commercial-e2e",
 		PortalUserID:   "user-commercial-e2e",
@@ -204,6 +211,13 @@ func TestCommercialBillingOpenRuntimeRequiresFundedBusinessAccount(t *testing.T)
 	}); err != nil {
 		t.Fatalf("PrepareBusinessAccount() error = %v", err)
 	}
+	if _, err := service.ApproveBusinessAccount(ctx, ApproveBusinessAccountInput{
+		TenantID:     "tenant-commercial-blocked",
+		PortalUserID: "user-commercial-blocked",
+		WorkspaceID:  "workspace-commercial-blocked",
+	}); err != nil {
+		t.Fatalf("ApproveBusinessAccount() error = %v", err)
+	}
 	if _, err := service.CreditBusinessAccount(ctx, CreditBusinessAccountInput{
 		TenantID:       "tenant-commercial-blocked",
 		PortalUserID:   "user-commercial-blocked",
@@ -233,6 +247,13 @@ func TestCommercialBillingRefundAdjustmentAndConcurrentPaymentAreIdempotent(t *t
 		WorkspaceID:  "workspace-commercial-ops",
 	}); err != nil {
 		t.Fatalf("PrepareBusinessAccount() error = %v", err)
+	}
+	if _, err := service.ApproveBusinessAccount(ctx, ApproveBusinessAccountInput{
+		TenantID:     "tenant-commercial-ops",
+		PortalUserID: "user-commercial-ops",
+		WorkspaceID:  "workspace-commercial-ops",
+	}); err != nil {
+		t.Fatalf("ApproveBusinessAccount() error = %v", err)
 	}
 	order, err := service.CreatePaymentOrder(ctx, CreatePaymentOrderInput{
 		TenantID:       "tenant-commercial-ops",
@@ -317,6 +338,13 @@ func TestCommercialBillingRefundCannotOverdrawAvailableBalance(t *testing.T) {
 		WorkspaceID:  "workspace-commercial-refund",
 	}); err != nil {
 		t.Fatalf("PrepareBusinessAccount() error = %v", err)
+	}
+	if _, err := service.ApproveBusinessAccount(ctx, ApproveBusinessAccountInput{
+		TenantID:     "tenant-commercial-refund",
+		PortalUserID: "user-commercial-refund",
+		WorkspaceID:  "workspace-commercial-refund",
+	}); err != nil {
+		t.Fatalf("ApproveBusinessAccount() error = %v", err)
 	}
 	credit, err := service.CreditBusinessAccount(ctx, CreditBusinessAccountInput{
 		TenantID:       "tenant-commercial-refund",

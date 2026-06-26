@@ -360,6 +360,9 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 	projection.NextAction = "open_medopl_runtime"
 	if wallet, err := service.runtimeGateWallet(ctx, workspaceID); err == nil {
 		reason := "runtime_storage_not_opened"
+		if account, accountErr := service.store.BusinessAccountByWorkspace(ctx, workspaceID); accountErr == nil && !businessAccountApproved(account) {
+			reason = "account_not_approved"
+		}
 		if wallet.AvailableBalance < commercialRuntimeHoldAmount {
 			reason = "insufficient_balance"
 		}
@@ -382,6 +385,9 @@ func (service *Service) RuntimeGate(ctx context.Context, input RuntimeGateInput)
 		projection.CommercialAdmission = service.runtimeGateCommercialAdmission(ctx, workspaceID, true, "runtime_storage_not_opened")
 		if wallet, err := service.runtimeGateWallet(ctx, workspaceID); err == nil {
 			reason := "runtime_storage_not_opened"
+			if account, accountErr := service.store.BusinessAccountByWorkspace(ctx, workspaceID); accountErr == nil && !businessAccountApproved(account) {
+				reason = "account_not_approved"
+			}
 			if wallet.AvailableBalance < commercialRuntimeHoldAmount {
 				reason = "insufficient_balance"
 			}

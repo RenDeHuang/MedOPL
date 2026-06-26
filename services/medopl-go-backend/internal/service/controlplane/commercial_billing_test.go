@@ -21,6 +21,20 @@ func TestCommercialBillingSummaryDerivesWalletFromCreditAndRuntimeHold(t *testin
 	}); err != nil {
 		t.Fatalf("PrepareBusinessAccount() error = %v", err)
 	}
+	if _, err := service.ApproveBusinessAccount(ctx, ApproveBusinessAccountInput{
+		TenantID:     "tenant-commercial",
+		PortalUserID: "user-commercial",
+		WorkspaceID:  "workspace-commercial",
+	}); err != nil {
+		t.Fatalf("ApproveBusinessAccount() error = %v", err)
+	}
+	if _, err := service.ApproveBusinessAccount(ctx, ApproveBusinessAccountInput{
+		TenantID:     "tenant-commercial",
+		PortalUserID: "user-commercial",
+		WorkspaceID:  "workspace-commercial",
+	}); err != nil {
+		t.Fatalf("ApproveBusinessAccount() error = %v", err)
+	}
 	if _, err := service.CreditBusinessAccount(ctx, CreditBusinessAccountInput{
 		TenantID:       "tenant-commercial",
 		PortalUserID:   "user-commercial",
@@ -126,6 +140,13 @@ func prepareFundedRuntime(t *testing.T, ctx context.Context, service *Service, a
 		WorkspaceID:  "workspace-commercial",
 	}); err != nil {
 		t.Fatalf("PrepareBusinessAccount() error = %v", err)
+	}
+	if _, err := service.ApproveBusinessAccount(ctx, ApproveBusinessAccountInput{
+		TenantID:     "tenant-commercial",
+		PortalUserID: "user-commercial",
+		WorkspaceID:  "workspace-commercial",
+	}); err != nil {
+		t.Fatalf("ApproveBusinessAccount() error = %v", err)
 	}
 	if _, err := service.CreditBusinessAccount(ctx, CreditBusinessAccountInput{
 		TenantID:       "tenant-commercial",

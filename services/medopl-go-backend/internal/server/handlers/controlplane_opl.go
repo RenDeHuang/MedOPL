@@ -28,6 +28,26 @@ func prepareUser(service ControlPlaneService) gin.HandlerFunc {
 	}
 }
 
+func approveUser(service ControlPlaneService) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var request prepareBusinessAccountRequest
+		if err := ctx.ShouldBindJSON(&request); err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{"ok": false, "error": "invalid_json"})
+			return
+		}
+		payload, err := service.ApproveBusinessAccount(ctx.Request.Context(), cps.ApproveBusinessAccountInput{
+			TenantID:     defaultString(request.TenantID, "tenant-local-rc"),
+			PortalUserID: defaultString(request.PortalUserID, request.UserID, "user-local-rc"),
+			WorkspaceID:  defaultString(request.WorkspaceID, ctx.Query("workspaceId"), ctx.Query("workspace_id"), "workspace-local-rc"),
+		})
+		if err != nil {
+			writeControlPlaneError(ctx, err)
+			return
+		}
+		ctx.JSON(http.StatusOK, payload)
+	}
+}
+
 func creditUser(service ControlPlaneService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var request creditBusinessAccountRequest

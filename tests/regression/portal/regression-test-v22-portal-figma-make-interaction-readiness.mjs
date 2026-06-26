@@ -171,6 +171,7 @@ assertExcludes(layoutSource, "客户账户", "layout_must_not_use_old_customer_a
 assertIncludes(adminAuditSource, "overflow-x-auto", "admin_audit_table_must_be_scrollable_instead_of_layout_overflow");
 
 assertIncludes(adminApiSource, "toggleAdminUser", "admin_user_toggle_api_helper_missing");
+assertIncludes(adminApiSource, "approve-user", "admin_user_platform_approve_action_missing");
 assertIncludes(adminApiSource, "createAdminUser", "admin_user_create_api_helper_missing");
 assertIncludes(adminApiSource, "updateAdminUser", "admin_user_update_api_helper_missing");
 assertIncludes(adminApiSource, "rechargeAdminUser", "admin_user_recharge_api_helper_missing");
@@ -185,6 +186,7 @@ assertExcludes(adminApiSource, "response.text()", "admin_action_errors_must_not_
 
 assertIncludes(adminUsersSource, "用户管理", "admin_users_page_must_use_user_management_copy");
 assertIncludes(adminUsersSource, "toggleAdminUser", "admin_users_page_must_wire_toggle_action");
+assertIncludes(adminUsersSource, "approve: selectedUser.status !== \"active\"", "admin_users_page_must_wire_platform_approve_action");
 assertIncludes(adminUsersSource, "createAdminUser", "admin_users_page_must_wire_create_action");
 assertIncludes(adminUsersSource, "updateAdminUser", "admin_users_page_must_wire_update_action");
 assertIncludes(adminUsersSource, "deleteAdminUser", "admin_users_page_must_wire_delete_action");

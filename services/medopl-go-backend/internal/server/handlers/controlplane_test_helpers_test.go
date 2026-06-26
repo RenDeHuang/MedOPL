@@ -42,6 +42,11 @@ func prepareCreditUser(t *testing.T, router *gin.Engine, workspaceID string, amo
 		"userId":      "user-v22",
 		"workspaceId": workspaceID,
 	})
+	postMap(t, router, "/api/v22/users/approve", map[string]any{
+		"tenantId":    "tenant-v22",
+		"userId":      "user-v22",
+		"workspaceId": workspaceID,
+	})
 	postMap(t, router, "/api/v22/users/credit", map[string]any{
 		"tenantId":       "tenant-v22",
 		"userId":         "user-v22",

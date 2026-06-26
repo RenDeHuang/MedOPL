@@ -80,6 +80,8 @@ func controlPlaneStatus(err error) int {
 		return http.StatusPreconditionRequired
 	case errors.Is(err, cpd.ErrAccountRequired):
 		return http.StatusPreconditionRequired
+	case errors.Is(err, cpd.ErrAccountNotApproved):
+		return http.StatusPreconditionRequired
 	case errors.Is(err, cpd.ErrInsufficientBalance):
 		return http.StatusPaymentRequired
 	case errors.Is(err, cpd.ErrLaunchNotFound):
@@ -99,6 +101,8 @@ func controlPlaneErrorBody(err error) gin.H {
 		return gin.H{"ok": false, "error": "runtime_release_required_before_storage_destroy"}
 	case errors.Is(err, cpd.ErrAccountRequired):
 		return gin.H{"ok": false, "error": "account_required"}
+	case errors.Is(err, cpd.ErrAccountNotApproved):
+		return gin.H{"ok": false, "error": "account_not_approved"}
 	case errors.Is(err, cpd.ErrInsufficientBalance):
 		return gin.H{"ok": false, "error": "insufficient_balance"}
 	case errors.Is(err, cpd.ErrLaunchNotFound):

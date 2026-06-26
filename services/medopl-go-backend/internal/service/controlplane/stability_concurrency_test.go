@@ -123,6 +123,13 @@ func TestServiceConcurrentOpenAndRunKeepSingleRuntimeAndRunLedger(t *testing.T) 
 	}); err != nil {
 		t.Fatalf("PrepareBusinessAccount() error = %v", err)
 	}
+	if _, err := service.ApproveBusinessAccount(ctx, ApproveBusinessAccountInput{
+		TenantID:     "tenant-v22",
+		PortalUserID: "user-v22",
+		WorkspaceID:  "workspace-v22",
+	}); err != nil {
+		t.Fatalf("ApproveBusinessAccount() error = %v", err)
+	}
 	if _, err := service.CreditBusinessAccount(ctx, CreditBusinessAccountInput{
 		TenantID:       "tenant-v22",
 		PortalUserID:   "user-v22",

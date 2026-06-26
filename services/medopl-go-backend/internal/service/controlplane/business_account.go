@@ -17,6 +17,12 @@ type PrepareBusinessAccountInput struct {
 	WorkspaceID  string
 }
 
+type ApproveBusinessAccountInput struct {
+	TenantID     string
+	PortalUserID string
+	WorkspaceID  string
+}
+
 type CreditBusinessAccountInput struct {
 	TenantID       string
 	PortalUserID   string
@@ -89,6 +95,44 @@ func (service *Service) PrepareBusinessAccount(ctx context.Context, input Prepar
 	} else if !errors.Is(err, cprepo.ErrNotFound) {
 		return BusinessAccountProjection{}, err
 	}
+	if err := service.store.SaveBusinessAccount(ctx, account); err != nil {
+		return BusinessAccountProjection{}, err
+	}
+	return businessAccountProjection(account), nil
+}
+
+func (service *Service) ApproveBusinessAccount(ctx context.Context, input ApproveBusinessAccountInput) (BusinessAccountProjection, error) {
+	tenantID := strings.TrimSpace(input.TenantID)
+	portalUserID := strings.TrimSpace(input.PortalUserID)
+	workspaceID := strings.TrimSpace(input.WorkspaceID)
+	if workspaceID == "" && portalUserID != "" {
+		account, err := service.store.BusinessAccountByUser(ctx, portalUserID)
+		if err == nil {
+			workspaceID = account.WorkspaceID
+			if tenantID == "" {
+				tenantID = account.TenantID
+			}
+		} else if !errors.Is(err, cprepo.ErrNotFound) {
+			return BusinessAccountProjection{}, err
+		}
+	}
+	if workspaceID == "" {
+		return BusinessAccountProjection{}, cpd.ErrWorkspaceRequired
+	}
+	account, err := service.store.BusinessAccountByWorkspace(ctx, workspaceID)
+	if err != nil {
+		if errors.Is(err, cprepo.ErrNotFound) {
+			return BusinessAccountProjection{}, cpd.ErrAccountRequired
+		}
+		return BusinessAccountProjection{}, err
+	}
+	if tenantID != "" {
+		account.TenantID = tenantID
+	}
+	if portalUserID != "" {
+		account.PortalUserID = portalUserID
+	}
+	account.Status = "approved"
 	if err := service.store.SaveBusinessAccount(ctx, account); err != nil {
 		return BusinessAccountProjection{}, err
 	}

@@ -10,6 +10,7 @@ import (
 
 type ControlPlaneService interface {
 	PrepareBusinessAccount(ctx context.Context, input cps.PrepareBusinessAccountInput) (cps.BusinessAccountProjection, error)
+	ApproveBusinessAccount(ctx context.Context, input cps.ApproveBusinessAccountInput) (cps.BusinessAccountProjection, error)
 	CreditBusinessAccount(ctx context.Context, input cps.CreditBusinessAccountInput) (cps.BusinessAccountProjection, error)
 	CreatePaymentOrder(ctx context.Context, input cps.CreatePaymentOrderInput) (cps.PaymentOrderProjection, error)
 	MarkPaymentPaid(ctx context.Context, input cps.MarkPaymentPaidInput) (cps.BusinessAccountProjection, error)
@@ -173,6 +174,7 @@ func RegisterControlPlaneRoutes(api *gin.RouterGroup, service ControlPlaneServic
 	api.POST("/v22/production/external-access-strategy/plan", productionExternalAccessStrategyContractPlan())
 	api.POST("/v22/production/external-access-strategy/commit", productionExternalAccessStrategyContractCommit())
 	api.POST("/v22/users/prepare", prepareUser(service))
+	api.POST("/v22/users/approve", approveUser(service))
 	api.POST("/v22/users/credit", creditUser(service))
 	api.POST("/v22/billing/payment-orders", createPaymentOrder(service))
 	api.POST("/v22/billing/payment-paid", markPaymentPaid(service))

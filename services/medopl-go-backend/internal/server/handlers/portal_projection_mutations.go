@@ -16,6 +16,8 @@ func (state *localPortalProjectionState) applyAdminAction(action string, payload
 		err = state.updateUser(payload)
 	case "toggle-user":
 		err = state.toggleUser(payload)
+	case "approve-user":
+		err = state.approveUser(payload)
 	case "delete-user":
 		err = state.deleteUser(payload)
 	case "recharge":
@@ -85,6 +87,15 @@ func (state *localPortalProjectionState) toggleUser(payload map[string]any) erro
 	} else {
 		user.Status = "disabled"
 	}
+	return nil
+}
+
+func (state *localPortalProjectionState) approveUser(payload map[string]any) error {
+	user := state.findUser(actionString(payload, "userId"))
+	if user == nil {
+		return fmt.Errorf("admin_user_not_found")
+	}
+	user.Status = "active"
 	return nil
 }
 

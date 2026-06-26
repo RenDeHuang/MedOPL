@@ -140,9 +140,10 @@ export async function updateAdminUser(input: {
 
 export async function toggleAdminUser(input: {
   userId: string;
+  approve?: boolean;
   redirectTo?: string;
 }) {
-  await postPortalAdminAction("toggle-user", {
+  await postPortalAdminAction(input.approve ? "approve-user" : "toggle-user", {
     userId: input.userId,
     redirectTo: input.redirectTo || "/admin/users",
   });

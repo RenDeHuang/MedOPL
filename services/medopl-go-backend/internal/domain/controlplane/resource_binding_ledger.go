@@ -25,6 +25,7 @@ const (
 
 var (
 	ErrAccountRequired            = errors.New("account_required")
+	ErrAccountNotApproved         = errors.New("account_not_approved")
 	ErrBillingAttributionRequired = errors.New("billing_attribution_required")
 	ErrInsufficientBalance        = errors.New("insufficient_balance")
 	ErrServerPlanRequired         = errors.New("server_plan_required")

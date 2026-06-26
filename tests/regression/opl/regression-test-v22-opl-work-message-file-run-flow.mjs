@@ -162,6 +162,16 @@ try {
   assert.equal(prepared.json.source, "go-control-plane", "prepare_user_source_mismatch");
   assertNoPublicSecretLeak(prepared.json, "prepare_user");
 
+  const approved = await postJson(`${baseUrl}/api/v22/users/approve`, {
+    tenantId: TENANT_ID,
+    userId: USER_ID,
+    workspaceId: WORKSPACE_ID,
+  });
+  assert.equal(approved.response.status, 200, "approve_user_must_return_200");
+  assert.equal(approved.json.status, "approved", "approve_user_status_mismatch");
+  assert.equal(approved.json.source, "go-control-plane", "approve_user_source_mismatch");
+  assertNoPublicSecretLeak(approved.json, "approve_user");
+
   const credited = await postJson(`${baseUrl}/api/v22/users/credit`, {
     userId: USER_ID,
     amount: 500,

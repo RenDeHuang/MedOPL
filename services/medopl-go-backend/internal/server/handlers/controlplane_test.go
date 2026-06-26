@@ -165,6 +165,14 @@ func TestControlPlaneHandlersExposeV22GoTakeoverProviderOpenShape(t *testing.T) 
 	if prepareResponse["source"] != "go-control-plane" || prepareResponse["status"] != "prepared" {
 		t.Fatalf("prepare response = %+v", prepareResponse)
 	}
+	approveResponse := postMap(t, router, "/api/v22/users/approve", map[string]any{
+		"tenantId":    "tenant-v22",
+		"userId":      "user-v22",
+		"workspaceId": "workspace-v22",
+	})
+	if approveResponse["source"] != "go-control-plane" || approveResponse["status"] != "approved" {
+		t.Fatalf("approve response = %+v", approveResponse)
+	}
 
 	creditResponse := postMap(t, router, "/api/v22/users/credit", map[string]any{
 		"workspaceId": "workspace-v22",

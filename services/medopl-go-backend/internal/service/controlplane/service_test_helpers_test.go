@@ -68,6 +68,13 @@ func prepareFundedWorkspace(t *testing.T, ctx context.Context, service *Service,
 	}); err != nil {
 		t.Fatalf("PrepareBusinessAccount() error = %v", err)
 	}
+	if _, err := service.ApproveBusinessAccount(ctx, ApproveBusinessAccountInput{
+		TenantID:     tenantID,
+		PortalUserID: portalUserID,
+		WorkspaceID:  workspaceID,
+	}); err != nil {
+		t.Fatalf("ApproveBusinessAccount() error = %v", err)
+	}
 	if _, err := service.CreditBusinessAccount(ctx, CreditBusinessAccountInput{
 		TenantID:       tenantID,
 		PortalUserID:   portalUserID,

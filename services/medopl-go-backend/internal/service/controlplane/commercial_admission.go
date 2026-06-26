@@ -82,7 +82,7 @@ func (service *Service) runtimeGateCommercialAdmissionWithWallet(ctx context.Con
 
 func businessAccountApproved(account cpd.BusinessAccount) bool {
 	switch strings.TrimSpace(account.Status) {
-	case "prepared", "approved", "active", "provisioned":
+	case "approved", "active", "provisioned":
 		return true
 	default:
 		return false

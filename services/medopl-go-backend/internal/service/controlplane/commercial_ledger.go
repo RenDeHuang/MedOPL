@@ -339,6 +339,9 @@ func (service *Service) ensureCommercialAccountCanOpen(ctx context.Context, work
 	if err != nil {
 		return cpd.BusinessAccount{}, cpd.ErrAccountRequired
 	}
+	if !businessAccountApproved(account) {
+		return cpd.BusinessAccount{}, cpd.ErrAccountNotApproved
+	}
 	events, err := service.store.ListBillingEvents(ctx, workspaceID)
 	if err != nil {
 		return cpd.BusinessAccount{}, err

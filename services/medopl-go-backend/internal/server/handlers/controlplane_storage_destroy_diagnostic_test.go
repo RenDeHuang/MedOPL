@@ -62,6 +62,9 @@ type storageDestroyFailingService struct{}
 func (storageDestroyFailingService) PrepareBusinessAccount(context.Context, cps.PrepareBusinessAccountInput) (cps.BusinessAccountProjection, error) {
 	return cps.BusinessAccountProjection{}, nil
 }
+func (storageDestroyFailingService) ApproveBusinessAccount(context.Context, cps.ApproveBusinessAccountInput) (cps.BusinessAccountProjection, error) {
+	return cps.BusinessAccountProjection{}, nil
+}
 func (storageDestroyFailingService) CreditBusinessAccount(context.Context, cps.CreditBusinessAccountInput) (cps.BusinessAccountProjection, error) {
 	return cps.BusinessAccountProjection{}, nil
 }

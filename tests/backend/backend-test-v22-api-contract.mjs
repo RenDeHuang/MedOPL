@@ -109,6 +109,64 @@ assert.equal(runtimeGate.consumer_role, "entry_and_chat_surface", "runtime_gate_
 assert.deepEqual(runtimeGate.invocation_modes, ["api_only", "ordinary_chat", "runtime_required"], "runtime_gate_invocation_modes_mismatch");
 assert.equal(runtimeGate.ordinary_chat_owner, "opl-webui", "runtime_gate_ordinary_chat_owner_must_be_opl_webui");
 assert.equal(runtimeGate.runtime_required_owner, "medopl", "runtime_gate_runtime_required_owner_must_be_medopl");
+
+const accountProductization = apiContract.medopl_api_contract.account_productization;
+assert(accountProductization, "api_contract_account_productization_missing");
+assert.equal(
+  accountProductization.intent,
+  "platform_approved_account_recharge_plan_productization",
+  "account_productization_intent_mismatch",
+);
+assert.deepEqual(
+  accountProductization.routes,
+  [
+    "POST /api/v22/users/prepare",
+    "POST /api/v22/users/approve",
+    "POST /api/v22/users/credit",
+    "POST /api/v22/billing/payment-orders",
+    "POST /api/v22/billing/payment-paid",
+    "GET /api/v22/billing/statement",
+    "GET /api/v22/runtime/freeze",
+  ],
+  "account_productization_routes_mismatch",
+);
+assert.equal(
+  accountProductization.approval_policy,
+  "prepared_account_is_not_approved_until_platform_approve",
+  "account_productization_approval_policy_mismatch",
+);
+assert.deepEqual(
+  accountProductization.commercial_runtime_fail_closed_on,
+  ["account_required", "account_not_approved", "insufficient_balance"],
+  "account_productization_fail_closed_mismatch",
+);
+assert.equal(
+  accountProductization.cost_ceiling_source,
+  "business_account_balance_plan_hold_amount_and_quota",
+  "account_productization_cost_ceiling_source_mismatch",
+);
+assert(
+  accountProductization.can_claim.includes("platform_approved_paid_account_runtime_gate") &&
+    accountProductization.cannot_claim.includes("external_psp_settlement"),
+  "account_productization_claim_boundary_mismatch",
+);
+for (const marker of [
+  "/v22/users/prepare",
+  "/v22/users/approve",
+  "/v22/users/credit",
+  "func (service *Service) PrepareBusinessAccount",
+  "func (service *Service) ApproveBusinessAccount",
+  "func (service *Service) CreditBusinessAccount",
+  "ErrAccountNotApproved",
+  "account_not_approved",
+]) {
+  assert(goRouteSurface.includes(marker) || serviceSurface.includes(marker), `account_productization_marker_missing:${marker}`);
+}
+assert(
+  serviceSurface.includes("case \"approved\", \"active\", \"provisioned\"") &&
+    !serviceSurface.includes("case \"prepared\", \"approved\", \"active\", \"provisioned\""),
+  "prepared_account_must_not_be_treated_as_approved",
+);
 assert(runtimeGate.commercial_action_contract, "runtime_gate_commercial_action_contract_missing");
 assert.deepEqual(
   runtimeGate.commercial_action_contract.actions,

@@ -214,12 +214,17 @@ for (const modelOwnedAdminUsersState of [
   "function filterAdminUsers",
   "function buildAdminUserRechargePayload",
   "function buildAdminUserRefundPayload",
+  "平台批准",
 ]) {
   assert(
     adminUsersModelSource.includes(modelOwnedAdminUsersState),
     `admin_users_model_must_own_filter_or_wallet_payload:${modelOwnedAdminUsersState}`,
   );
 }
+assert(
+  adminUsersPageSource.includes("approve: selectedUser.status !== \"active\""),
+  "admin_users_page_must_route_non_active_toggle_through_platform_approval",
+);
 
 for (const source of adminPageSources) {
   assert.equal(

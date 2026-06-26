@@ -1,6 +1,9 @@
 package handlers
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestControlPlaneHandlersExposeCommercialBillingAPIs(t *testing.T) {
 	router := controlPlaneHandlerTestRouter()
@@ -13,6 +16,14 @@ func TestControlPlaneHandlersExposeCommercialBillingAPIs(t *testing.T) {
 	})
 	if prepare["status"] != "prepared" || prepare["workspaceId"] != "workspace-v22" {
 		t.Fatalf("prepare = %+v", prepare)
+	}
+	approve := postMap(t, router, "/api/v22/users/approve", map[string]any{
+		"tenantId":    "tenant-v22",
+		"userId":      "user-v22",
+		"workspaceId": "workspace-v22",
+	})
+	if approve["status"] != "approved" || approve["workspaceId"] != "workspace-v22" {
+		t.Fatalf("approve = %+v", approve)
 	}
 	order := postMap(t, router, "/api/v22/billing/payment-orders", map[string]any{
 		"tenantId":       "tenant-v22",
@@ -104,6 +115,57 @@ func TestControlPlaneHandlersExposeCommercialBillingAPIs(t *testing.T) {
 	cannotClaim := closure["cannotClaim"].([]any)
 	if !containsStringValue(canClaim, "internal_commercial_billing_ledger_closure") || !containsStringValue(cannotClaim, "external_psp_settlement") {
 		t.Fatalf("business closure claims = can:%+v cannot:%+v", canClaim, cannotClaim)
+	}
+}
+
+func TestControlPlaneHandlersRequirePlatformApprovalBeforeCommercialRuntimeOpen(t *testing.T) {
+	router := controlPlaneHandlerTestRouter()
+	rawProviderKey := "commercial-handler-provider-key-material-that-must-stay-private"
+
+	postMap(t, router, "/api/v22/users/prepare", map[string]any{
+		"tenantId":    "tenant-v22",
+		"userId":      "user-v22",
+		"workspaceId": "workspace-approval",
+	})
+	postMap(t, router, "/api/v22/users/credit", map[string]any{
+		"tenantId":       "tenant-v22",
+		"userId":         "user-v22",
+		"workspaceId":    "workspace-approval",
+		"amount":         200,
+		"currency":       "CNY",
+		"idempotencyKey": "credit-before-approval",
+	})
+	postMap(t, router, "/api/v22/provider-key", map[string]any{
+		"tenantId":       "tenant-v22",
+		"portalUserId":   "user-v22",
+		"workspaceId":    "workspace-approval",
+		"apiKey":         rawProviderKey,
+		"idempotencyKey": "provider-before-approval",
+	})
+
+	blocked := postRaw(router, "/api/v22/managed-environment/open", map[string]any{
+		"tenantId":       "tenant-v22",
+		"portalUserId":   "user-v22",
+		"workspaceId":    "workspace-approval",
+		"idempotencyKey": "open-before-approval",
+	})
+	if blocked.Code != 428 || !strings.Contains(blocked.Body.String(), "account_not_approved") {
+		t.Fatalf("open before approval status = %d body = %s", blocked.Code, blocked.Body.String())
+	}
+
+	postMap(t, router, "/api/v22/users/approve", map[string]any{
+		"tenantId":    "tenant-v22",
+		"userId":      "user-v22",
+		"workspaceId": "workspace-approval",
+	})
+	open := postMap(t, router, "/api/v22/managed-environment/open", map[string]any{
+		"tenantId":       "tenant-v22",
+		"portalUserId":   "user-v22",
+		"workspaceId":    "workspace-approval",
+		"idempotencyKey": "open-after-approval",
+	})
+	if open["launchStatus"] != "ready" {
+		t.Fatalf("open after approval = %+v", open)
 	}
 }
 

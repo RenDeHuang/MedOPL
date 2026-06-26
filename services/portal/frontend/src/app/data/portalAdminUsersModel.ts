@@ -11,7 +11,7 @@ import {
 import { dateText, numberValue } from "./portalFormatters";
 import { usePortalQuery } from "./portalQuery";
 
-export const adminLocalActionMessage = "已接入本地 Portal 用户启停、删除、充值、退款和公告管理动作。";
+export const adminLocalActionMessage = "已接入本地 Portal 用户创建、平台批准、启停、删除、充值、退款和公告管理动作。";
 
 export {
   createAdminUser,

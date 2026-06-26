@@ -209,7 +209,7 @@ export function AdminUsers() {
     if (!selectedUser) return;
     await runUserAction(
       "toggle",
-      () => toggleAdminUser({ userId: selectedUser.id, redirectTo: "/admin/users" }),
+      () => toggleAdminUser({ userId: selectedUser.id, approve: selectedUser.status !== "active", redirectTo: "/admin/users" }),
       () => setToggleDialogOpen(false),
     );
   };

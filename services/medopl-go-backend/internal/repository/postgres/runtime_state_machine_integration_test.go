@@ -19,6 +19,13 @@ func TestRuntimeOpenReleaseStateMachineSurvivesPostgresStoreRestart(t *testing.T
 	}); err != nil {
 		t.Fatalf("PrepareBusinessAccount() error = %v", err)
 	}
+	if _, err := first.ApproveBusinessAccount(ctx, cps.ApproveBusinessAccountInput{
+		TenantID:     "tenant-runtime-state-rc",
+		PortalUserID: "user-runtime-state-rc",
+		WorkspaceID:  "workspace-runtime-state-rc",
+	}); err != nil {
+		t.Fatalf("ApproveBusinessAccount() error = %v", err)
+	}
 	if _, err := first.CreditBusinessAccount(ctx, cps.CreditBusinessAccountInput{
 		TenantID:       "tenant-runtime-state-rc",
 		PortalUserID:   "user-runtime-state-rc",
