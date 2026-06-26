@@ -295,7 +295,7 @@ assert.equal(
 );
 assert.deepEqual(
   runResult.must_return,
-  ["ok", "status", "statusUrl", "run", "artifactRef", "artifacts"],
+  ["ok", "status", "statusUrl", "run", "artifactRef", "artifacts", "progress", "deliverables"],
   "run_result_must_return_contract_mismatch",
 );
 const publicRunResultSurface = serviceSurface.slice(

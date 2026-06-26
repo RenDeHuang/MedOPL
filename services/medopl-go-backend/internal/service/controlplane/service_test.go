@@ -360,6 +360,22 @@ func TestServiceRecordsFileRunArtifactBillingAuditAndRelease(t *testing.T) {
 	if runResult.ArtifactRef == "" || runResult.ArtifactRef != runResult.Artifacts[0].ArtifactRef {
 		t.Fatalf("run result top-level artifactRef = %q artifacts = %+v", runResult.ArtifactRef, runResult.Artifacts)
 	}
+	if len(runResult.Progress) != 2 {
+		t.Fatalf("run result progress = %+v", runResult.Progress)
+	}
+	if runResult.Progress[0] != (PublicProgress{Stage: "run_started", State: "done", Title: "Run started"}) {
+		t.Fatalf("run result first progress = %+v", runResult.Progress[0])
+	}
+	if runResult.Progress[1] != (PublicProgress{Stage: "artifact_available", State: "done", Title: "Artifact ref ready"}) {
+		t.Fatalf("run result second progress = %+v", runResult.Progress[1])
+	}
+	if len(runResult.Deliverables) != 1 {
+		t.Fatalf("run result deliverables = %+v", runResult.Deliverables)
+	}
+	deliverable := runResult.Deliverables[0]
+	if deliverable.DeliverableID == "" || deliverable.ArtifactRef != runResult.ArtifactRef || deliverable.Ref != runResult.ArtifactRef || deliverable.Status != "available" || deliverable.Title != "result.md" || deliverable.Kind != "outputs" {
+		t.Fatalf("run result deliverable = %+v", deliverable)
+	}
 
 	billing, err := service.BillingSummary(ctx, WorkspaceInput{WorkspaceID: "workspace-v22"})
 	if err != nil {

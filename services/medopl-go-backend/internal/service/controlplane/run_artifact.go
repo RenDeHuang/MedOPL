@@ -37,14 +37,31 @@ type PublicArtifact struct {
 	ContentType      string   `json:"contentType"`
 }
 
+type PublicProgress struct {
+	Stage string `json:"stage"`
+	State string `json:"state"`
+	Title string `json:"title"`
+}
+
+type PublicDeliverable struct {
+	DeliverableID string `json:"deliverableId"`
+	ArtifactRef   string `json:"artifactRef"`
+	Status        string `json:"status"`
+	Title         string `json:"title"`
+	Kind          string `json:"kind"`
+	Ref           string `json:"ref"`
+}
+
 type PublicRunResult struct {
-	Ok               bool             `json:"ok"`
-	Status           string           `json:"status"`
-	StatusURL        string           `json:"statusUrl,omitempty"`
-	StorageBindingID string           `json:"storageBindingId,omitempty"`
-	Run              PublicRun        `json:"run"`
-	ArtifactRef      string           `json:"artifactRef"`
-	Artifacts        []PublicArtifact `json:"artifacts"`
+	Ok               bool                `json:"ok"`
+	Status           string              `json:"status"`
+	StatusURL        string              `json:"statusUrl,omitempty"`
+	StorageBindingID string              `json:"storageBindingId,omitempty"`
+	Run              PublicRun           `json:"run"`
+	ArtifactRef      string              `json:"artifactRef"`
+	Artifacts        []PublicArtifact    `json:"artifacts"`
+	Progress         []PublicProgress    `json:"progress"`
+	Deliverables     []PublicDeliverable `json:"deliverables"`
 }
 
 func (service *Service) StartRun(ctx context.Context, input StartRunInput) (PublicRunResult, error) {
@@ -109,6 +126,18 @@ func (service *Service) StartRun(ctx context.Context, input StartRunInput) (Publ
 			RelativePath:     artifactRelativePath,
 			SizeBytes:        256,
 			ContentType:      "text/markdown",
+		}},
+		Progress: []PublicProgress{
+			{Stage: "run_started", State: "done", Title: "Run started"},
+			{Stage: "artifact_available", State: "done", Title: "Artifact ref ready"},
+		},
+		Deliverables: []PublicDeliverable{{
+			DeliverableID: "deliverable-" + shortID(artifactRef),
+			ArtifactRef:   artifactRef,
+			Status:        "available",
+			Title:         "result.md",
+			Kind:          "outputs",
+			Ref:           artifactRef,
 		}},
 	}
 	if err := service.store.SaveRun(ctx, cpd.RunRecord{

@@ -241,7 +241,9 @@
         "statusUrl",
         "run",
         "artifactRef",
-        "artifacts"
+        "artifacts",
+        "progress",
+        "deliverables"
       ],
       "artifact_ref_policy": "top_level_artifactRef_must_match_first_artifact_artifactRef",
       "must_not_return": [
