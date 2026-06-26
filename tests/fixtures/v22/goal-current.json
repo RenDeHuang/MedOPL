@@ -33,12 +33,12 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "goal-commercial-internal-billing-receipt-closure",
-    "landed_commit": "643ed2436d15bc7016b918f59f15df6b49cd93dd",
+    "branch": "goal-commercial-return-to-opl-task-contract",
+    "landed_commit": "12c36cac3e4f1bea5e4457645e83a8d7c51b7354",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
       "npm run verify passed",
-      "npm run gate:review -- --slice-id goal-commercial-internal-billing-receipt-closure passed"
+      "npm run gate:review -- --slice-id goal-commercial-return-to-opl-task-contract passed"
     ],
     "plan_completion_audit": {
       "functional": "done",
@@ -50,10 +50,10 @@
     },
     "cleanup_result": {
       "deleted": "none",
-      "folded": "business closure receipt contract into existing truth files",
+      "folded": "return-to-OPL task contract into existing truth files",
       "retained": "no raw evidence in git",
-      "reason": "gap3 internal billing closure landed",
-      "next": "goal-commercial-return-to-opl-task-contract"
+      "reason": "gap4 return-to-OPL task contract landed",
+      "next": "goal-selected-real-user-canary-admission-runtime-proof"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "opl-webui-runtime-production-slice"
@@ -66,7 +66,7 @@
     "multi_region_sla_enterprise_compliance_ongoing_authorization_and_unobserved_tenants_resources_remain_unclaimed",
     "unscoped_production_complete_requires_dedicated_scope_expansion_evidence"
   ],
-  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is goal-commercial-internal-billing-receipt-closure at 643ed2436d15bc7016b918f59f15df6b49cd93dd. It closes the repo-local internal commercial billing receipt by exposing `businessClosureReceipt` on the billing statement for credit, balance, pre-open balance policy, freeze, debit, release stop-billing, storage stop-billing, audit linkage and idempotency policy; return-to-OPL resume closure, production-canary commercial billing closure and external PSP settlement remain unclaimed. Phase A PostgreSQL Business Persistence RC, Phase E billing idempotency hardening and Phase F operational stability gates are source-landed. Release Image run 28116660385 and Cloud Rollout run 28116700519 passed on current trunk. The rollout produced a redacted production receipt manifest with seven owner receipts, 12 lifecycle sections and 14 production-complete candidate criteria. Manifest sha256 is sha256:3c718484f40b0bcfadf55bbafe6f97b02b22072ad801004a560bfe1f69059a0f. The live DB proof hash for business_db_persistence_receipt is sha256:77555180d9db24120515881082c54539a5d4f334ca8a188c460def5f022fe29f. This can claim cloud release candidate and scoped production-complete candidate evidence for the current authorized canary path only, including Portal public entry, HTTP redirect, Go health/ready, OPL-Webui consumer canary, PostgreSQL business metadata persistence, billing idempotency, soak, concurrency pressure, rollback drill, continuous canary, alerting and final release decision receipts. MedOPL still does not claim unscoped production complete, multi-region/SLA, enterprise compliance, ongoing authorization or unobserved tenants/resources. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-internal-billing-receipt-closure at 643ed2436d15bc7016b918f59f15df6b49cd93dd.",
+  "current_problem": "MedOPL current truth for opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is goal-commercial-return-to-opl-task-contract at 12c36cac3e4f1bea5e4457645e83a8d7c51b7354. It adds a stable `returnToOplTaskContract` to the runtime_required commercial action contract, Go runtime gate projection and Portal packages surface so OPL-Webui can consume resume action/method, workspace/session/task refs, task intent and return deeplink after MedOPL purchase/open-resource flow. This can claim repo-local return-to-OPL contract shape only; full OPL-Webui resume implementation, production-canary commercial billing closure, selected-user canary runtime proof and external PSP settlement remain unclaimed. Phase A PostgreSQL Business Persistence RC, Phase E billing idempotency hardening and Phase F operational stability gates are source-landed. Release Image run 28116660385 and Cloud Rollout run 28116700519 passed on current trunk. The rollout produced a redacted production receipt manifest with seven owner receipts, 12 lifecycle sections and 14 production-complete candidate criteria. Manifest sha256 is sha256:3c718484f40b0bcfadf55bbafe6f97b02b22072ad801004a560bfe1f69059a0f. The live DB proof hash for business_db_persistence_receipt is sha256:77555180d9db24120515881082c54539a5d4f334ca8a188c460def5f022fe29f. This can claim cloud release candidate and scoped production-complete candidate evidence for the current authorized canary path only, including Portal public entry, HTTP redirect, Go health/ready, OPL-Webui consumer canary, PostgreSQL business metadata persistence, billing idempotency, soak, concurrency pressure, rollback drill, continuous canary, alerting and final release decision receipts. MedOPL still does not claim unscoped production complete, multi-region/SLA, enterprise compliance, ongoing authorization or unobserved tenants/resources. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-return-to-opl-task-contract at 12c36cac3e4f1bea5e4457645e83a8d7c51b7354.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -629,9 +629,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "goal-commercial-internal-billing-receipt-closure",
+  "last_landed_branch": "goal-commercial-return-to-opl-task-contract",
   "last_landed_at": "2026-06-26",
-  "history_latest_branch": "goal-commercial-internal-billing-receipt-closure",
+  "history_latest_branch": "goal-commercial-return-to-opl-task-contract",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -1054,8 +1054,8 @@
       "cannot_claim": "multi-region production, SLA proven, enterprise compliance, ongoing authorization, or unobserved tenant/resource readiness"
     }
   },
-  "base_trunk_head": "643ed2436d15bc7016b918f59f15df6b49cd93dd",
-  "last_landed_commit": "643ed2436d15bc7016b918f59f15df6b49cd93dd",
+  "base_trunk_head": "12c36cac3e4f1bea5e4457645e83a8d7c51b7354",
+  "last_landed_commit": "12c36cac3e4f1bea5e4457645e83a8d7c51b7354",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",

@@ -16,9 +16,9 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `goal-commercial-internal-billing-receipt-closure`
-- latest landed commit: `643ed2436d15bc7016b918f59f15df6b49cd93dd`
-- next cursor: `goal-commercial-return-to-opl-task-contract`
+- latest landed branch: `goal-commercial-return-to-opl-task-contract`
+- latest landed commit: `12c36cac3e4f1bea5e4457645e83a8d7c51b7354`
+- next cursor: `goal-selected-real-user-canary-admission-runtime-proof`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
 
@@ -31,6 +31,7 @@ History 只保留短索引：
 - Commercial runtime purchase action contract: `goal-commercial-runtime-purchase-action-contract` / `995c8c7ee4de64561c4a3c34ef6ea521dd738524` adds a machine-readable runtime_required action contract for OPL-Webui with `open_medopl_purchase`, `select_plan`, `recharge_or_credit_required`, `open_runtime_storage` and `return_to_opl_task`. It can claim repo-local gap1 action contract closure only; purchase projection, return-to-OPL resume closure, production-canary commercial billing closure and external PSP settlement remain next/future cursors.
 - Commercial purchase action projection: `goal-commercial-purchase-action-projection` / `14715dba994a37d2e29562cb916f77e7405bbf68` connects the runtime_required action contract to MedOPL purchase / plan / recharge-or-credit / open-runtime-storage projections in the Go API and Portal packages surface. It can claim repo-local gap2 purchase projection closure only; internal billing receipt closure, return-to-OPL resume closure, production-canary commercial billing closure and external PSP settlement remain next/future cursors.
 - Commercial internal billing receipt closure: `goal-commercial-internal-billing-receipt-closure` / `643ed2436d15bc7016b918f59f15df6b49cd93dd` adds a stable `businessClosureReceipt` to the existing billing statement surface and contract-tests credit, balance, pre-open balance policy, freeze, debit, billing attribution, release stop-billing, storage stop-billing, audit linkage, idempotency policy and insufficient-balance fail-closed policy. It can claim repo-local internal commercial ledger closure only; return-to-OPL resume closure, production-canary commercial billing closure and external PSP settlement remain next/future cursors.
+- Commercial return-to-OPL task contract: `goal-commercial-return-to-opl-task-contract` / `12c36cac3e4f1bea5e4457645e83a8d7c51b7354` adds `returnToOplTaskContract` to the runtime_required commercial action and purchase projection surfaces, including resume action/method, workspace/session/task refs, task intent, consumer owner and return deeplink. It can claim repo-local gap4 deeplink/session resume contract shape only; selected-user canary runtime proof, production-canary commercial billing closure and external PSP settlement remain next/future cursors.
 - production goal runner RC: `feat/v22-production-goal-runner` mapped cloud authorization operation classes to initial `cloud:goal:*` entries; current active entrypoint is the single `cloud:goal -- --operation <operation_class>` runner, with Goal B dry-run plan remaining local/no-cloud.
 - production goal runner receipt hardening: `feat/v22-goal-real-runner-receipts` / `a584d2ee07c866eb9a125c31674b69fb79c18fb7` keeps Goal A readonly inventory secret-file gated, adds Goal C/D/E/F external runner interfaces, writes owner receipt pointers only through the authorized executor, and requires receipt manifests to bind `operation_class`, `runner_id` and the current authorization run. This is runner/receipt infrastructure, not production completion.
 - cloud goal preflight gate: `feat/v22-cloud-goal-preflight` / `93771d950b9838302621010125d1487136c6feb2` adds `cloud:goal:preflight` as a safe Goal A-F readiness check for required env, path and external runner inputs. It does not read secrets, call cloud APIs, write `.runtime` evidence or satisfy production owner receipts.
