@@ -16,9 +16,9 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `goal-commercial-runtime-purchase-action-contract`
-- latest landed commit: `995c8c7ee4de64561c4a3c34ef6ea521dd738524`
-- next cursor: `goal-commercial-purchase-action-projection`
+- latest landed branch: `goal-commercial-purchase-action-projection`
+- latest landed commit: `14715dba994a37d2e29562cb916f77e7405bbf68`
+- next cursor: `goal-commercial-internal-billing-receipt-closure`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
 
@@ -29,6 +29,7 @@ History 只保留短索引：
 - evidence index: `docs/evidence/README.md`
 - delivery closeout policy: `docs/delivery/README.md`
 - Commercial runtime purchase action contract: `goal-commercial-runtime-purchase-action-contract` / `995c8c7ee4de64561c4a3c34ef6ea521dd738524` adds a machine-readable runtime_required action contract for OPL-Webui with `open_medopl_purchase`, `select_plan`, `recharge_or_credit_required`, `open_runtime_storage` and `return_to_opl_task`. It can claim repo-local gap1 action contract closure only; purchase projection, return-to-OPL resume closure, production-canary commercial billing closure and external PSP settlement remain next/future cursors.
+- Commercial purchase action projection: `goal-commercial-purchase-action-projection` / `14715dba994a37d2e29562cb916f77e7405bbf68` connects the runtime_required action contract to MedOPL purchase / plan / recharge-or-credit / open-runtime-storage projections in the Go API and Portal packages surface. It can claim repo-local gap2 purchase projection closure only; internal billing receipt closure, return-to-OPL resume closure, production-canary commercial billing closure and external PSP settlement remain next/future cursors.
 - production goal runner RC: `feat/v22-production-goal-runner` mapped cloud authorization operation classes to initial `cloud:goal:*` entries; current active entrypoint is the single `cloud:goal -- --operation <operation_class>` runner, with Goal B dry-run plan remaining local/no-cloud.
 - production goal runner receipt hardening: `feat/v22-goal-real-runner-receipts` / `a584d2ee07c866eb9a125c31674b69fb79c18fb7` keeps Goal A readonly inventory secret-file gated, adds Goal C/D/E/F external runner interfaces, writes owner receipt pointers only through the authorized executor, and requires receipt manifests to bind `operation_class`, `runner_id` and the current authorization run. This is runner/receipt infrastructure, not production completion.
 - cloud goal preflight gate: `feat/v22-cloud-goal-preflight` / `93771d950b9838302621010125d1487136c6feb2` adds `cloud:goal:preflight` as a safe Goal A-F readiness check for required env, path and external runner inputs. It does not read secrets, call cloud APIs, write `.runtime` evidence or satisfy production owner receipts.
