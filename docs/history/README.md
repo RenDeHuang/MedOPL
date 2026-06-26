@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `goal-commercial-gap6-local-controlled-business-closure`
-- latest landed commit: `d7661e1819a9fcf13e6efe4577538f64f352b5d2`
+- latest landed branch: `goal-g1-commercial-account-productization`
+- latest landed commit: `251c87d4117a49648c093265644a017f514d76d7`
 - next cursor: `opl-webui-runtime-production-slice`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
