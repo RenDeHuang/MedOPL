@@ -108,14 +108,110 @@ jobs:
       - name: OPL-Webui live business E2E
         run: npm run cloud:goal -- --operation live_test
 
-      - name: Production receipt manifest
-        run: npm run cloud:goal -- --manifest-only
+      - name: Validate G3 scoped business closure evidence
+        shell: bash
+        run: |
+          node <<'NODE'
+          const { createHash } = require("node:crypto");
+          const { existsSync, mkdirSync, readFileSync, writeFileSync } = require("node:fs");
+          const path = require("node:path");
 
-      - name: Cloud release candidate verify
-        run: npm run verify:cloud-release-candidate
+          const evidenceSink = ".runtime/v22-cloud-authorization/run-v22-001";
+          const priorReceipts = [
+            ["runtime_owner_receipt", "runtime_owner_receipt.json"],
+            ["storage_owner_receipt", "storage_owner_receipt.json"],
+            ["release_owner_receipt", "release_owner_receipt.json"]
+          ];
+          const businessReceipts = [
+            ["billing_audit_writeback", "billing_audit_writeback.json"],
+            ["billing_owner_receipt", "billing_owner_receipt.json"],
+            ["audit_owner_receipt", "audit_owner_receipt.json"],
+            ["live_test", "live_test.json"],
+            ["opl_webui_consumer_receipt", "opl_webui_consumer_receipt.json"]
+          ];
 
-      - name: Production complete candidate verify
-        run: npm run verify:production-complete-candidate
+          function filePath(fileName) {
+            return path.join(evidenceSink, fileName);
+          }
+
+          function missing(receipts) {
+            return receipts
+              .filter(([, fileName]) => !existsSync(filePath(fileName)))
+              .map(([type]) => type);
+          }
+
+          const missingPrior = missing(priorReceipts);
+          if (missingPrior.length > 0) {
+            console.error(JSON.stringify({
+              ok: false,
+              error: "missing_prior_g3_runtime_storage_receipts",
+              missingReceiptTypes: missingPrior
+            }));
+            process.exit(1);
+          }
+
+          const missingBusiness = missing(businessReceipts);
+          if (missingBusiness.length > 0) {
+            console.error(JSON.stringify({
+              ok: false,
+              error: "missing_g3_business_closure_receipts",
+              missingReceiptTypes: missingBusiness
+            }));
+            process.exit(1);
+          }
+
+          function hashFile(fileName) {
+            const bytes = readFileSync(filePath(fileName));
+            return `sha256:${createHash("sha256").update(bytes).digest("hex")}`;
+          }
+
+          mkdirSync(evidenceSink, { recursive: true });
+          const receipt = {
+            "schema_version": 1,
+            "kind": "medopl_g3_business_closure_receipt",
+            "claim_scope": "g3_real_cloud_business_closure",
+            "generated_at": new Date().toISOString(),
+            "evidence_sink": evidenceSink,
+            "required_receipts": [...priorReceipts, ...businessReceipts].map(([type, fileName]) => ({
+              type,
+              evidenceRef: `${evidenceSink}/${fileName}`,
+              hash: hashFile(fileName)
+            })),
+            "canClaim": [
+              "real cloud runtime/storage proof",
+              "billing/audit writeback",
+              "OPL-Webui live business E2E",
+              "artifact refs",
+              "release/destroy/stop billing"
+            ],
+            "cannotClaim": [
+              "production deploy proof",
+              "full production complete",
+              "external PSP settlement",
+              "multi-region/SLA",
+              "long-running production stability"
+            ],
+            "excluded_receipts": [
+              "production_deploy_receipt",
+              "soak_test_receipt",
+              "concurrency_pressure_receipt",
+              "rollback_drill_receipt",
+              "continuous_canary_monitoring_receipt",
+              "alerting_receipt",
+              "final_release_decision_receipt"
+            ]
+          };
+          writeFileSync(
+            path.join(evidenceSink, "g3-business-closure-receipt.json"),
+            `${JSON.stringify(receipt, null, 2)}\n`
+          );
+          console.log(JSON.stringify({
+            ok: true,
+            kind: receipt.kind,
+            claimScope: receipt.claim_scope,
+            receiptCount: receipt.required_receipts.length
+          }));
+          NODE
 
       - name: Verify current repo
         run: npm run verify
@@ -139,5 +235,8 @@ jobs:
             .runtime/v22-cloud-authorization/run-v22-001/audit_owner_receipt.json
             .runtime/v22-cloud-authorization/run-v22-001/live_test.json
             .runtime/v22-cloud-authorization/run-v22-001/opl_webui_consumer_receipt.json
-            .runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json
+            .runtime/v22-cloud-authorization/run-v22-001/runtime_owner_receipt.json
+            .runtime/v22-cloud-authorization/run-v22-001/storage_owner_receipt.json
+            .runtime/v22-cloud-authorization/run-v22-001/release_owner_receipt.json
+            .runtime/v22-cloud-authorization/run-v22-001/g3-business-closure-receipt.json
           if-no-files-found: error

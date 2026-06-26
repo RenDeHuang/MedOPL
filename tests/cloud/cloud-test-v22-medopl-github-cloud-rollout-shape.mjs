@@ -387,15 +387,20 @@ for (const expected of [
   "npm run cloud:goal -- --operation billing_audit_writeback",
   "npm run cloud:goal:preflight -- --operation live_test",
   "npm run cloud:goal -- --operation live_test",
-  "npm run cloud:goal -- --manifest-only",
-  "npm run verify:cloud-release-candidate",
-  "npm run verify:production-complete-candidate",
+  "Validate G3 scoped business closure evidence",
+  "missing_prior_g3_runtime_storage_receipts",
+  "g3-business-closure-receipt.json",
+  "\"kind\": \"medopl_g3_business_closure_receipt\"",
+  "\"claim_scope\": \"g3_real_cloud_business_closure\"",
   "npm run verify",
   "npm run repo:bloat",
   "npm run line:budget",
   "npm run gate:review",
   "actions/upload-artifact@v4",
-  ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json",
+  ".runtime/v22-cloud-authorization/run-v22-001/g3-business-closure-receipt.json",
+  ".runtime/v22-cloud-authorization/run-v22-001/runtime_owner_receipt.json",
+  ".runtime/v22-cloud-authorization/run-v22-001/storage_owner_receipt.json",
+  ".runtime/v22-cloud-authorization/run-v22-001/release_owner_receipt.json",
 ]) {
   assert(g3BusinessClosure.includes(expected), `g3_business_closure_workflow_missing:${expected}`);
 }
@@ -413,6 +418,10 @@ for (const forbidden of [
   "MEDOPL_CANARY_",
   "TENCENT_MUTATION_SECRET_ID",
   "TENCENT_MUTATION_SECRET_KEY",
+  "npm run cloud:goal -- --manifest-only",
+  "npm run verify:cloud-release-candidate",
+  "npm run verify:production-complete-candidate",
+  ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json",
 ]) {
   assert.equal(g3BusinessClosure.includes(forbidden), false, `g3_business_closure_workflow_must_not_include:${forbidden}`);
 }
@@ -423,17 +432,13 @@ assert(
 );
 assert(
   g3BusinessClosure.indexOf("npm run cloud:goal -- --operation live_test") <
-    g3BusinessClosure.indexOf("npm run cloud:goal -- --manifest-only"),
-  "g3_business_closure_must_generate_manifest_after_live_test",
+    g3BusinessClosure.indexOf("Validate G3 scoped business closure evidence"),
+  "g3_business_closure_must_validate_scoped_evidence_after_live_test",
 );
 assert(
-  g3BusinessClosure.indexOf("npm run cloud:goal -- --manifest-only") <
-    g3BusinessClosure.indexOf("npm run verify:cloud-release-candidate") &&
-    g3BusinessClosure.indexOf("npm run verify:cloud-release-candidate") <
-      g3BusinessClosure.indexOf("npm run verify:production-complete-candidate") &&
-    g3BusinessClosure.indexOf("npm run verify:production-complete-candidate") <
-      g3BusinessClosure.indexOf("run: npm run verify\n"),
-  "g3_business_closure_must_verify_after_manifest",
+  g3BusinessClosure.indexOf("Validate G3 scoped business closure evidence") <
+    g3BusinessClosure.indexOf("run: npm run verify\n"),
+  "g3_business_closure_must_verify_repo_after_scoped_business_evidence",
 );
 assert.equal(cloudRollout.includes("medopl.medopl.cn"), false, "cloud_rollout_must_not_reference_retired_medopl_host");
 assert.equal(releaseImage.includes("workflow_run:"), false, "release_image_must_not_auto_push_after_verify");
