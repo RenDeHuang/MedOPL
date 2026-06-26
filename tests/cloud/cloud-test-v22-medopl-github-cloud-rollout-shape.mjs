@@ -399,7 +399,7 @@ for (const expected of [
   "g3-business-closure-receipt.json",
   "\"kind\": \"medopl_g3_business_closure_receipt\"",
   "\"claim_scope\": \"g3_real_cloud_business_closure\"",
-  "npm run verify",
+  "actions/setup-go@v5", "go-version: \"1.22.x\"", "npm run verify",
   "npm run repo:bloat",
   "npm run line:budget",
   "npm run gate:review",
@@ -436,7 +436,7 @@ for (const [before, after, message] of [
   ["npm run cloud:goal -- --operation billing_audit_writeback", "npm run cloud:goal -- --operation live_test", "g3_business_closure_must_write_billing_audit_before_live_test"],
   ["npm run cloud:goal -- --operation live_test", "Restore prior G3 runtime/storage/release receipts", "g3_business_closure_must_restore_prior_receipts_after_live_test"],
   ["Restore prior G3 runtime/storage/release receipts", "Validate G3 scoped business closure evidence", "g3_business_closure_must_restore_prior_receipts_before_scoped_validation"],
-  ["Validate G3 scoped business closure evidence", "run: npm run verify\n", "g3_business_closure_must_verify_repo_after_scoped_business_evidence"],
+  ["Validate G3 scoped business closure evidence", "Upload G3 redacted evidence", "g3_business_closure_must_upload_scoped_evidence_before_repo_verify"],
 ]) {
   assert(g3BusinessClosure.indexOf(before) < g3BusinessClosure.indexOf(after), message);
 }

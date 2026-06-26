@@ -57,6 +57,10 @@ jobs:
       - name: Install G3 runner dependencies
         run: npm ci
 
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.x"
+
       - name: Validate production database secret shape
         shell: bash
         run: |
@@ -311,19 +315,8 @@ jobs:
           }));
           NODE
 
-      - name: Verify current repo
-        run: npm run verify
-
-      - name: Repo bloat gate
-        run: npm run repo:bloat
-
-      - name: Line budget gate
-        run: npm run line:budget
-
-      - name: Review gate
-        run: npm run gate:review
-
       - name: Upload G3 redacted evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: medopl-g3-business-closure-evidence
@@ -338,3 +331,15 @@ jobs:
             .runtime/v22-cloud-authorization/run-v22-001/release_owner_receipt.json
             .runtime/v22-cloud-authorization/run-v22-001/g3-business-closure-receipt.json
           if-no-files-found: error
+
+      - name: Verify current repo
+        run: npm run verify
+
+      - name: Repo bloat gate
+        run: npm run repo:bloat
+
+      - name: Line budget gate
+        run: npm run line:budget
+
+      - name: Review gate
+        run: npm run gate:review
