@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `goal-g4-upload-file-billing-event-writeback-fix`
-- latest landed commit: `0f7c80b1c3062ddc33e612b37cdeeb9c7e483be1`
+- latest landed branch: `goal-retire-legacy-account-narrative`
+- latest landed commit: `376699370b06f43f57086f0d24bafd4232945e9e`
 - next cursor: `goal-owner-created-or-approved-account-launch-approval-decision`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
