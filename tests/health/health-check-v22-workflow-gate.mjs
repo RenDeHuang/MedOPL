@@ -135,6 +135,7 @@ const reviewWithPostMergeCloseoutOnly = evaluateReview({
     "docs/active/README.md",
     "docs/delivery/README.md",
     "docs/history/README.md",
+    "tests/fixtures/v22/agent-verify-manifest.json",
     "tests/fixtures/v22/goal-current.json",
   ],
 });
@@ -152,6 +153,7 @@ const reviewWithDeliveryCloseout = evaluateReview({
     "docs/active/README.md",
     "docs/delivery/README.md",
     "docs/history/README.md",
+    "tests/fixtures/v22/agent-verify-manifest.json",
     "tests/fixtures/v22/goal-current.json",
   ],
 });

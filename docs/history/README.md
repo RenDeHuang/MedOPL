@@ -16,14 +16,15 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `goal-g4-upload-file-diagnostic-receipt`
-- latest landed commit: `1e33b3829194d566877f8b46821616b189e8deed`
-- next cursor: `goal-g4-upload-file-billing-event-writeback-fix`
+- latest landed branch: `goal-g4-upload-file-billing-event-writeback-fix`
+- latest landed commit: `0f7c80b1c3062ddc33e612b37cdeeb9c7e483be1`
+- next cursor: `goal-platform-approved-account-launch-approval-decision`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
 
 ## Archive Pointers
 
+- G4 production-canary closeout sync: `goal-g4-upload-file-billing-event-writeback-fix` / `0f7c80b1c3062ddc33e612b37cdeeb9c7e483be1` fixes `upload_file -> save_billing_event` tenant ownership with `BusinessAccountByWorkspace(ctx, audit.WorkspaceID)` while keeping billing/audit fail-closed. Release Image run `28286560942` built image tag `0f7c80b`; Cloud Rollout production_launch run `28286621467` passed deploy receipt, OPL-Webui consumer canary, availability probe, soak, concurrency pressure, rollback drill, continuous canary, alerting, final release decision, production receipt manifest, `verify:cloud-release-candidate` and `verify:production-complete-candidate`. The redacted manifest hash is `sha256:16fb4289f3dd91543f083b1c1ad773e44be6d5a74f76a56b417b39974bca4612`. This can claim the current authorized production-canary path can proceed to platform-approved account launch approval decision; it cannot claim external PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization or long-term stability.
 - G4 upload file diagnostic receipt: `goal-g4-upload-file-diagnostic-receipt` / `1e33b3829194d566877f8b46821616b189e8deed` adds redacted diagnostic fields for `/api/opl/files` and the live_test runner. Release Image run `28283617400` built tag `1e33b38`; Cloud Rollout run `28283635464` deployed it and produced `upload_file` diagnostic category `billing_event_write_failed` at `save_billing_event`. It can claim diagnostic receipt shape and root-cause category only; consumer canary pass, G4 deployment proof, production complete and external PSP remain unclaimed.
 - G4 one-person production launch approval: `feat/goal-g4-one-person-production-launch-approval` / `39ccf31a85df0124d12a881df809898084ab060e` makes Cloud Rollout `workflow_dispatch` + GitHub `production` environment approval + `confirm_production_launch=deploy-current` the production launch approval gate, removes `MEDOPL_PRODUCTION_*` GitHub vars/secrets and K8s runtime env refs as requirements, and records a redacted approval receipt from workflow inputs. It can claim launch approval shape simplification only; production deploy proof, G3 evidence restore rerun, full production and external PSP remain unclaimed.
 - change archive: retired; do not use as long-term database
