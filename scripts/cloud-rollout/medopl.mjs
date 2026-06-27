@@ -365,7 +365,7 @@ async function runConcurrencySummary() {
 }
 
 function runCanaryWindowSummary(checks) {
-  const windowSeconds = boundedInt(process.env.MEDOPL_CANARY_WINDOW_SECONDS, 1, 1, 86400);
+  const windowSeconds = boundedInt(process.env.MEDOPL_PRODUCTION_MONITORING_WINDOW_SECONDS, 1, 1, 86400);
   const sampleCount = checks.length;
   const accepted = checks.every((check) => check.ok) && sampleCount >= 4;
   writeProductionCompleteEvidence("continuous_canary_monitoring_receipt", {

@@ -153,91 +153,101 @@
                     }
                   },
                   {
-                    "name": "MEDOPL_CANARY_ADMISSION_ENABLED",
+                    "name": "MEDOPL_PRODUCTION_LAUNCH_ENABLED",
                     "valueFrom": {
                       "secretKeyRef": {
-                        "name": "medopl-canary-admission",
-                        "key": "MEDOPL_CANARY_ADMISSION_ENABLED",
+                        "name": "medopl-production-launch-safety",
+                        "key": "MEDOPL_PRODUCTION_LAUNCH_ENABLED",
                         "optional": true
                       }
                     }
                   },
                   {
-                    "name": "MEDOPL_CANARY_EMERGENCY_STOP",
+                    "name": "MEDOPL_PRODUCTION_EMERGENCY_STOP",
                     "valueFrom": {
                       "secretKeyRef": {
-                        "name": "medopl-canary-admission",
-                        "key": "MEDOPL_CANARY_EMERGENCY_STOP",
+                        "name": "medopl-production-launch-safety",
+                        "key": "MEDOPL_PRODUCTION_EMERGENCY_STOP",
                         "optional": true
                       }
                     }
                   },
                   {
-                    "name": "MEDOPL_CANARY_TENANT_ALLOWLIST",
+                    "name": "MEDOPL_PRODUCTION_LAUNCH_SCOPE",
                     "valueFrom": {
                       "secretKeyRef": {
-                        "name": "medopl-canary-admission",
-                        "key": "MEDOPL_CANARY_TENANT_ALLOWLIST",
+                        "name": "medopl-production-launch-safety",
+                        "key": "MEDOPL_PRODUCTION_LAUNCH_SCOPE",
                         "optional": true
                       }
                     }
                   },
                   {
-                    "name": "MEDOPL_CANARY_USER_ALLOWLIST",
+                    "name": "MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID",
                     "valueFrom": {
                       "secretKeyRef": {
-                        "name": "medopl-canary-admission",
-                        "key": "MEDOPL_CANARY_USER_ALLOWLIST",
+                        "name": "medopl-production-launch-safety",
+                        "key": "MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID",
                         "optional": true
                       }
                     }
                   },
                   {
-                    "name": "MEDOPL_CANARY_COST_CEILING_USD",
+                    "name": "MEDOPL_PRODUCTION_SYNTHETIC_USER_ID",
                     "valueFrom": {
                       "secretKeyRef": {
-                        "name": "medopl-canary-admission",
-                        "key": "MEDOPL_CANARY_COST_CEILING_USD",
+                        "name": "medopl-production-launch-safety",
+                        "key": "MEDOPL_PRODUCTION_SYNTHETIC_USER_ID",
                         "optional": true
                       }
                     }
                   },
                   {
-                    "name": "MEDOPL_CANARY_ADMISSION_ENABLED_BY",
+                    "name": "MEDOPL_PRODUCTION_COST_GUARD_REF",
                     "valueFrom": {
                       "secretKeyRef": {
-                        "name": "medopl-canary-admission",
-                        "key": "MEDOPL_CANARY_ADMISSION_ENABLED_BY",
+                        "name": "medopl-production-launch-safety",
+                        "key": "MEDOPL_PRODUCTION_COST_GUARD_REF",
                         "optional": true
                       }
                     }
                   },
                   {
-                    "name": "MEDOPL_CANARY_MONITORING_OWNER",
+                    "name": "MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY",
                     "valueFrom": {
                       "secretKeyRef": {
-                        "name": "medopl-canary-admission",
-                        "key": "MEDOPL_CANARY_MONITORING_OWNER",
+                        "name": "medopl-production-launch-safety",
+                        "key": "MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY",
                         "optional": true
                       }
                     }
                   },
                   {
-                    "name": "MEDOPL_CANARY_ROLLBACK_OWNER",
+                    "name": "MEDOPL_PRODUCTION_MONITORING_OWNER",
                     "valueFrom": {
                       "secretKeyRef": {
-                        "name": "medopl-canary-admission",
-                        "key": "MEDOPL_CANARY_ROLLBACK_OWNER",
+                        "name": "medopl-production-launch-safety",
+                        "key": "MEDOPL_PRODUCTION_MONITORING_OWNER",
                         "optional": true
                       }
                     }
                   },
                   {
-                    "name": "MEDOPL_CANARY_DISABLE_COMMAND_REF",
+                    "name": "MEDOPL_PRODUCTION_ROLLBACK_OWNER",
                     "valueFrom": {
                       "secretKeyRef": {
-                        "name": "medopl-canary-admission",
-                        "key": "MEDOPL_CANARY_DISABLE_COMMAND_REF",
+                        "name": "medopl-production-launch-safety",
+                        "key": "MEDOPL_PRODUCTION_ROLLBACK_OWNER",
+                        "optional": true
+                      }
+                    }
+                  },
+                  {
+                    "name": "MEDOPL_PRODUCTION_DISABLE_COMMAND_REF",
+                    "valueFrom": {
+                      "secretKeyRef": {
+                        "name": "medopl-production-launch-safety",
+                        "key": "MEDOPL_PRODUCTION_DISABLE_COMMAND_REF",
                         "optional": true
                       }
                     }

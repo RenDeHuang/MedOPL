@@ -123,15 +123,16 @@ jobs:
       MEDOPL_WEBHOOK_SECRET: ${{ secrets.MEDOPL_WEBHOOK_SECRET }}
       MEDOPL_SESSION_SIGNING_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_SIGNING_SECRET_SHA256 }}
       MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256 }}
-      MEDOPL_CANARY_ADMISSION_ENABLED: ${{ vars.MEDOPL_CANARY_ADMISSION_ENABLED }}
-      MEDOPL_CANARY_EMERGENCY_STOP: ${{ vars.MEDOPL_CANARY_EMERGENCY_STOP }}
-      MEDOPL_CANARY_TENANT_ALLOWLIST: ${{ secrets.MEDOPL_CANARY_TENANT_ALLOWLIST }}
-      MEDOPL_CANARY_USER_ALLOWLIST: ${{ secrets.MEDOPL_CANARY_USER_ALLOWLIST }}
-      MEDOPL_CANARY_COST_CEILING_USD: ${{ vars.MEDOPL_CANARY_COST_CEILING_USD }}
-      MEDOPL_CANARY_ADMISSION_ENABLED_BY: ${{ vars.MEDOPL_CANARY_ADMISSION_ENABLED_BY }}
-      MEDOPL_CANARY_MONITORING_OWNER: ${{ vars.MEDOPL_CANARY_MONITORING_OWNER }}
-      MEDOPL_CANARY_ROLLBACK_OWNER: ${{ vars.MEDOPL_CANARY_ROLLBACK_OWNER }}
-      MEDOPL_CANARY_DISABLE_COMMAND_REF: ${{ vars.MEDOPL_CANARY_DISABLE_COMMAND_REF }}
+      MEDOPL_PRODUCTION_LAUNCH_ENABLED: ${{ vars.MEDOPL_PRODUCTION_LAUNCH_ENABLED }}
+      MEDOPL_PRODUCTION_EMERGENCY_STOP: ${{ vars.MEDOPL_PRODUCTION_EMERGENCY_STOP }}
+      MEDOPL_PRODUCTION_LAUNCH_SCOPE: ${{ vars.MEDOPL_PRODUCTION_LAUNCH_SCOPE }}
+      MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID: ${{ secrets.MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID }}
+      MEDOPL_PRODUCTION_SYNTHETIC_USER_ID: ${{ secrets.MEDOPL_PRODUCTION_SYNTHETIC_USER_ID }}
+      MEDOPL_PRODUCTION_COST_GUARD_REF: ${{ vars.MEDOPL_PRODUCTION_COST_GUARD_REF }}
+      MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY: ${{ vars.MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY }}
+      MEDOPL_PRODUCTION_MONITORING_OWNER: ${{ vars.MEDOPL_PRODUCTION_MONITORING_OWNER }}
+      MEDOPL_PRODUCTION_ROLLBACK_OWNER: ${{ vars.MEDOPL_PRODUCTION_ROLLBACK_OWNER }}
+      MEDOPL_PRODUCTION_DISABLE_COMMAND_REF: ${{ vars.MEDOPL_PRODUCTION_DISABLE_COMMAND_REF }}
       V22_PRODUCTION_GOAL_HTTP_TIMEOUT_MS: "15000"
       TENCENT_MUTATION_TKE_CLUSTER_ID: ${{ vars.TENCENT_MUTATION_TKE_CLUSTER_ID }}
       TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID: ${{ vars.TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID }}
@@ -290,7 +291,7 @@ jobs:
             --dry-run=client -o yaml \
             | kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl apply -f -
 
-      - name: Validate canary operations safety config shape
+      - name: Validate production launch operations safety config shape
         if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}
         shell: bash
         run: |
@@ -305,75 +306,74 @@ jobs:
             if (!raw && required) fail(missingMessage);
             if (["1", "true", "yes", "on", "enabled"].includes(raw)) return true;
             if (["0", "false", "no", "off", "disabled"].includes(raw)) return false;
-            fail(`${name} must be boolean for canary operations safety gate`);
+            fail(`${name} must be boolean for production launch operations safety gate`);
           }
-          function requiredText(name, missingMessage = `${name} required when canary operations safety gate is enabled`) {
+          function requiredText(name, missingMessage = `${name} required when production launch operations safety gate is enabled`) {
             const value = String(process.env[name] || "").trim();
             if (!value) fail(missingMessage);
             if (/[\r\n]/u.test(value)) fail(`${name} must be single-line`);
             return value;
           }
-          const enabled = boolValue("MEDOPL_CANARY_ADMISSION_ENABLED", "MEDOPL_CANARY_ADMISSION_ENABLED required for canary operations safety gate");
-          const emergencyStop = boolValue("MEDOPL_CANARY_EMERGENCY_STOP", "MEDOPL_CANARY_EMERGENCY_STOP required for canary operations safety gate");
-          if (!enabled) fail("MEDOPL_CANARY_ADMISSION_ENABLED must enable canary operations safety gate");
-          const tenantAllowlist = requiredText("MEDOPL_CANARY_TENANT_ALLOWLIST", "MEDOPL_CANARY_TENANT_ALLOWLIST required when canary operations safety gate is enabled");
-          const userAllowlist = requiredText("MEDOPL_CANARY_USER_ALLOWLIST", "MEDOPL_CANARY_USER_ALLOWLIST required when canary operations safety gate is enabled");
-          const costCeilingRaw = requiredText("MEDOPL_CANARY_COST_CEILING_USD", "MEDOPL_CANARY_COST_CEILING_USD required when canary operations safety gate is enabled");
-          const costCeiling = Number.parseFloat(costCeilingRaw);
-          if (!Number.isFinite(costCeiling) || costCeiling <= 0) {
-            fail("MEDOPL_CANARY_COST_CEILING_USD required when canary operations safety gate is enabled");
-          }
+          const enabled = boolValue("MEDOPL_PRODUCTION_LAUNCH_ENABLED", "MEDOPL_PRODUCTION_LAUNCH_ENABLED required for production launch operations safety gate");
+          const emergencyStop = boolValue("MEDOPL_PRODUCTION_EMERGENCY_STOP", "MEDOPL_PRODUCTION_EMERGENCY_STOP required for production launch operations safety gate");
+          if (!enabled) fail("MEDOPL_PRODUCTION_LAUNCH_ENABLED must enable production launch operations safety gate");
+          const launchScope = requiredText("MEDOPL_PRODUCTION_LAUNCH_SCOPE", "MEDOPL_PRODUCTION_LAUNCH_SCOPE required for production launch operations safety gate");
+          const syntheticTenantId = requiredText("MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID", "MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID required for production launch synthetic probe identity");
+          const syntheticUserId = requiredText("MEDOPL_PRODUCTION_SYNTHETIC_USER_ID", "MEDOPL_PRODUCTION_SYNTHETIC_USER_ID required for production launch synthetic probe identity");
+          const costGuardRef = requiredText("MEDOPL_PRODUCTION_COST_GUARD_REF", "MEDOPL_PRODUCTION_COST_GUARD_REF required for production launch operations safety gate");
           for (const name of [
-            "MEDOPL_CANARY_ADMISSION_ENABLED_BY",
-            "MEDOPL_CANARY_MONITORING_OWNER",
-            "MEDOPL_CANARY_ROLLBACK_OWNER",
-            "MEDOPL_CANARY_DISABLE_COMMAND_REF",
+            "MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY",
+            "MEDOPL_PRODUCTION_MONITORING_OWNER",
+            "MEDOPL_PRODUCTION_ROLLBACK_OWNER",
+            "MEDOPL_PRODUCTION_DISABLE_COMMAND_REF",
           ]) {
             requiredText(name);
           }
           const hash = (value) => crypto.createHash("sha256").update(value).digest("hex").slice(0, 16);
           console.log(JSON.stringify({
             ok: true,
-            message: "canary operations safety config source ok",
+            message: "production launch operations safety config source ok",
             enabled,
             emergencyStop,
-            tenantScopeHashPresent: Boolean(hash(tenantAllowlist)),
-            userScopeHashPresent: Boolean(hash(userAllowlist)),
-            costCeiling,
-            monitoringOwnerRef: "MEDOPL_CANARY_MONITORING_OWNER",
-            rollbackOwnerRef: "MEDOPL_CANARY_ROLLBACK_OWNER",
-            rawAllowlistsPrinted: false
+            launchScopeRef: "MEDOPL_PRODUCTION_LAUNCH_SCOPE",
+            syntheticTenantHashPresent: Boolean(hash(syntheticTenantId)),
+            syntheticUserHashPresent: Boolean(hash(syntheticUserId)),
+            costGuardRefPresent: Boolean(costGuardRef),
+            monitoringOwnerRef: "MEDOPL_PRODUCTION_MONITORING_OWNER",
+            rollbackOwnerRef: "MEDOPL_PRODUCTION_ROLLBACK_OWNER",
+            rawSyntheticIdentityPrinted: false
           }));
           NODE
 
-      - name: Sync in-cluster canary operations safety secret from production source
+      - name: Sync in-cluster production launch operations safety secret from production source
         if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}
         shell: bash
         run: |
           {
-            printf 'MEDOPL_CANARY_ADMISSION_ENABLED=%s\n' "$MEDOPL_CANARY_ADMISSION_ENABLED"
-            printf 'MEDOPL_CANARY_EMERGENCY_STOP=%s\n' "$MEDOPL_CANARY_EMERGENCY_STOP"
-            printf 'MEDOPL_CANARY_TENANT_ALLOWLIST=%s\n' "$MEDOPL_CANARY_TENANT_ALLOWLIST"
-            printf 'MEDOPL_CANARY_USER_ALLOWLIST=%s\n' "$MEDOPL_CANARY_USER_ALLOWLIST"
-            printf 'MEDOPL_CANARY_COST_CEILING_USD=%s\n' "$MEDOPL_CANARY_COST_CEILING_USD"
-            printf 'MEDOPL_CANARY_ADMISSION_ENABLED_BY=%s\n' "$MEDOPL_CANARY_ADMISSION_ENABLED_BY"
-            printf 'MEDOPL_CANARY_MONITORING_OWNER=%s\n' "$MEDOPL_CANARY_MONITORING_OWNER"
-            printf 'MEDOPL_CANARY_ROLLBACK_OWNER=%s\n' "$MEDOPL_CANARY_ROLLBACK_OWNER"
-            printf 'MEDOPL_CANARY_DISABLE_COMMAND_REF=%s\n' "$MEDOPL_CANARY_DISABLE_COMMAND_REF"
-          } > "$RUNNER_TEMP/medopl-canary-admission.env"
-          chmod 600 "$RUNNER_TEMP/medopl-canary-admission.env"
-          kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl create secret generic medopl-canary-admission \
-            --from-env-file="$RUNNER_TEMP/medopl-canary-admission.env" \
+            printf 'MEDOPL_PRODUCTION_LAUNCH_ENABLED=%s\n' "$MEDOPL_PRODUCTION_LAUNCH_ENABLED"
+            printf 'MEDOPL_PRODUCTION_EMERGENCY_STOP=%s\n' "$MEDOPL_PRODUCTION_EMERGENCY_STOP"
+            printf 'MEDOPL_PRODUCTION_LAUNCH_SCOPE=%s\n' "$MEDOPL_PRODUCTION_LAUNCH_SCOPE"
+            printf 'MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID=%s\n' "$MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID"
+            printf 'MEDOPL_PRODUCTION_SYNTHETIC_USER_ID=%s\n' "$MEDOPL_PRODUCTION_SYNTHETIC_USER_ID"
+            printf 'MEDOPL_PRODUCTION_COST_GUARD_REF=%s\n' "$MEDOPL_PRODUCTION_COST_GUARD_REF"
+            printf 'MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY=%s\n' "$MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY"
+            printf 'MEDOPL_PRODUCTION_MONITORING_OWNER=%s\n' "$MEDOPL_PRODUCTION_MONITORING_OWNER"
+            printf 'MEDOPL_PRODUCTION_ROLLBACK_OWNER=%s\n' "$MEDOPL_PRODUCTION_ROLLBACK_OWNER"
+            printf 'MEDOPL_PRODUCTION_DISABLE_COMMAND_REF=%s\n' "$MEDOPL_PRODUCTION_DISABLE_COMMAND_REF"
+          } > "$RUNNER_TEMP/medopl-production-launch-safety.env"
+          chmod 600 "$RUNNER_TEMP/medopl-production-launch-safety.env"
+          kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl create secret generic medopl-production-launch-safety \
+            --from-env-file="$RUNNER_TEMP/medopl-production-launch-safety.env" \
             --dry-run=client -o yaml \
             | kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl apply -f -
 
-      - name: Validate in-cluster canary operations safety secret shape
+      - name: Validate in-cluster production launch operations safety secret shape
         if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}
         shell: bash
         run: |
-          encoded_data="$(kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl get secret medopl-canary-admission -o 'jsonpath={.data}')"
-          secret_json="$(kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl get secret medopl-canary-admission -o json)"
-          CANARY_SECRET_DATA="$encoded_data" CANARY_SECRET_JSON="$secret_json" node <<'NODE'
+          encoded_data="$(kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl get secret medopl-production-launch-safety -o 'jsonpath={.data}')"
+          secret_json="$(kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl get secret medopl-production-launch-safety -o json)"
+          PRODUCTION_LAUNCH_SECRET_DATA="$encoded_data" PRODUCTION_LAUNCH_SECRET_JSON="$secret_json" node <<'NODE'
           const crypto = require("crypto");
           function fail(message) {
             console.error(message);
@@ -381,48 +381,49 @@ jobs:
           }
           let parsed;
           try {
-            parsed = JSON.parse(process.env.CANARY_SECRET_JSON || "{}");
+            parsed = JSON.parse(process.env.PRODUCTION_LAUNCH_SECRET_JSON || "{}");
           } catch {
-            fail("medopl-canary-admission secret must be valid kubernetes json");
+            fail("medopl-production-launch-safety secret must be valid kubernetes json");
           }
           const data = parsed.data || {};
           function decode(name) {
             const encoded = String(data[name] || "").trim();
-            if (!encoded) fail(`${name} missing from medopl-canary-admission`);
+            if (!encoded) fail(`${name} missing from medopl-production-launch-safety`);
             return Buffer.from(encoded, "base64").toString("utf8").trim();
           }
           function boolValue(name) {
             const raw = decode(name).toLowerCase();
             if (["1", "true", "yes", "on", "enabled"].includes(raw)) return true;
             if (["0", "false", "no", "off", "disabled"].includes(raw)) return false;
-            fail(`${name} must be boolean in medopl-canary-admission`);
+            fail(`${name} must be boolean in medopl-production-launch-safety`);
           }
-          const enabled = boolValue("MEDOPL_CANARY_ADMISSION_ENABLED");
-          const emergencyStop = boolValue("MEDOPL_CANARY_EMERGENCY_STOP");
-          if (!enabled) fail("MEDOPL_CANARY_ADMISSION_ENABLED must be enabled in medopl-canary-admission");
-          const tenantAllowlist = decode("MEDOPL_CANARY_TENANT_ALLOWLIST");
-          const userAllowlist = decode("MEDOPL_CANARY_USER_ALLOWLIST");
-          const costCeiling = Number.parseFloat(decode("MEDOPL_CANARY_COST_CEILING_USD"));
-          if (!Number.isFinite(costCeiling) || costCeiling <= 0) fail("MEDOPL_CANARY_COST_CEILING_USD must be positive in medopl-canary-admission");
+          const enabled = boolValue("MEDOPL_PRODUCTION_LAUNCH_ENABLED");
+          const emergencyStop = boolValue("MEDOPL_PRODUCTION_EMERGENCY_STOP");
+          if (!enabled) fail("MEDOPL_PRODUCTION_LAUNCH_ENABLED must be enabled in medopl-production-launch-safety");
+          const launchScope = decode("MEDOPL_PRODUCTION_LAUNCH_SCOPE");
+          const syntheticTenantId = decode("MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID");
+          const syntheticUserId = decode("MEDOPL_PRODUCTION_SYNTHETIC_USER_ID");
+          const costGuardRef = decode("MEDOPL_PRODUCTION_COST_GUARD_REF");
           for (const name of [
-            "MEDOPL_CANARY_ADMISSION_ENABLED_BY",
-            "MEDOPL_CANARY_MONITORING_OWNER",
-            "MEDOPL_CANARY_ROLLBACK_OWNER",
-            "MEDOPL_CANARY_DISABLE_COMMAND_REF",
+            "MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY",
+            "MEDOPL_PRODUCTION_MONITORING_OWNER",
+            "MEDOPL_PRODUCTION_ROLLBACK_OWNER",
+            "MEDOPL_PRODUCTION_DISABLE_COMMAND_REF",
           ]) {
             decode(name);
           }
           const hash = (value) => crypto.createHash("sha256").update(value).digest("hex").slice(0, 16);
           console.log(JSON.stringify({
             ok: true,
-            message: "canary operations safety in-cluster secret shape ok",
+            message: "production launch operations safety in-cluster secret shape ok",
             enabled,
             emergencyStop,
-            tenantScopeHashPresent: Boolean(hash(tenantAllowlist)),
-            userScopeHashPresent: Boolean(hash(userAllowlist)),
-            costCeiling,
-            rawAllowlistsPrinted: false,
-            dataShapeObserved: Boolean(process.env.CANARY_SECRET_DATA)
+            launchScopeRef: Boolean(launchScope),
+            syntheticTenantHashPresent: Boolean(hash(syntheticTenantId)),
+            syntheticUserHashPresent: Boolean(hash(syntheticUserId)),
+            costGuardRefPresent: Boolean(costGuardRef),
+            rawSyntheticIdentityPrinted: false,
+            dataShapeObserved: Boolean(process.env.PRODUCTION_LAUNCH_SECRET_DATA)
           }));
           NODE
 

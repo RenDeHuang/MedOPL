@@ -183,25 +183,17 @@ for (const expected of [
 ]) {
   assert(envNames.has(expected), `container_env_missing:${expected}`);
 }
-const canaryOperationsSafetySecretName = "medopl-canary-admission";
-for (const name of [
-  "MEDOPL_CANARY_ADMISSION_ENABLED",
-  "MEDOPL_CANARY_EMERGENCY_STOP",
-  "MEDOPL_CANARY_TENANT_ALLOWLIST",
-  "MEDOPL_CANARY_USER_ALLOWLIST",
-  "MEDOPL_CANARY_COST_CEILING_USD",
-  "MEDOPL_CANARY_ADMISSION_ENABLED_BY",
-  "MEDOPL_CANARY_MONITORING_OWNER",
-  "MEDOPL_CANARY_ROLLBACK_OWNER",
-  "MEDOPL_CANARY_DISABLE_COMMAND_REF",
-]) {
+const productionLaunchSafetySecretName = "medopl-production-launch-safety";
+for (const name of ["MEDOPL_PRODUCTION_LAUNCH_ENABLED", "MEDOPL_PRODUCTION_EMERGENCY_STOP", "MEDOPL_PRODUCTION_LAUNCH_SCOPE", "MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID", "MEDOPL_PRODUCTION_SYNTHETIC_USER_ID", "MEDOPL_PRODUCTION_COST_GUARD_REF", "MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY", "MEDOPL_PRODUCTION_MONITORING_OWNER", "MEDOPL_PRODUCTION_ROLLBACK_OWNER", "MEDOPL_PRODUCTION_DISABLE_COMMAND_REF"]) {
   const item = (container.env || []).find((entry) => entry.name === name);
   assert.deepEqual(
     item?.valueFrom?.secretKeyRef,
-    { name: canaryOperationsSafetySecretName, key: name, optional: true },
-    `canary_operations_safety_env_must_use_secret_ref:${name}`,
+    { name: productionLaunchSafetySecretName, key: name, optional: true },
+    `production_launch_operations_safety_env_must_use_secret_ref:${name}`,
   );
 }
+assert.equal(manifestSource.includes("MEDOPL_CANARY_"), false, "deploy_manifest_must_not_reference_legacy_canary_safety_env");
+assert.equal(manifestSource.includes("medopl-canary-admission"), false, "deploy_manifest_must_not_reference_legacy_canary_secret");
 assert.equal(manifestSource.includes("tenant-goal-f-canary"), false, "deploy_manifest_must_not_embed_selected_tenant_value");
 assert.equal(manifestSource.includes("user-goal-f-canary"), false, "deploy_manifest_must_not_embed_selected_user_value");
 const providerSecretRoot = (container.env || []).find((item) => item.name === "PORTAL_OPL_PROVIDER_SECRET_ROOT");
@@ -526,15 +518,16 @@ for (const expected of [
   "V22_OPL_WEBUI_CONSUMER_CANARY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation live_test --execute --confirm-current-session-authorization",
   "MEDOPL_SESSION_SIGNING_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_SIGNING_SECRET_SHA256 }}",
   "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256 }}",
-  "MEDOPL_CANARY_ADMISSION_ENABLED: ${{ vars.MEDOPL_CANARY_ADMISSION_ENABLED }}",
-  "MEDOPL_CANARY_EMERGENCY_STOP: ${{ vars.MEDOPL_CANARY_EMERGENCY_STOP }}",
-  "MEDOPL_CANARY_TENANT_ALLOWLIST: ${{ secrets.MEDOPL_CANARY_TENANT_ALLOWLIST }}",
-  "MEDOPL_CANARY_USER_ALLOWLIST: ${{ secrets.MEDOPL_CANARY_USER_ALLOWLIST }}",
-  "MEDOPL_CANARY_COST_CEILING_USD: ${{ vars.MEDOPL_CANARY_COST_CEILING_USD }}",
-  "MEDOPL_CANARY_ADMISSION_ENABLED_BY: ${{ vars.MEDOPL_CANARY_ADMISSION_ENABLED_BY }}",
-  "MEDOPL_CANARY_MONITORING_OWNER: ${{ vars.MEDOPL_CANARY_MONITORING_OWNER }}",
-  "MEDOPL_CANARY_ROLLBACK_OWNER: ${{ vars.MEDOPL_CANARY_ROLLBACK_OWNER }}",
-  "MEDOPL_CANARY_DISABLE_COMMAND_REF: ${{ vars.MEDOPL_CANARY_DISABLE_COMMAND_REF }}",
+  "MEDOPL_PRODUCTION_LAUNCH_ENABLED: ${{ vars.MEDOPL_PRODUCTION_LAUNCH_ENABLED }}",
+  "MEDOPL_PRODUCTION_EMERGENCY_STOP: ${{ vars.MEDOPL_PRODUCTION_EMERGENCY_STOP }}",
+  "MEDOPL_PRODUCTION_LAUNCH_SCOPE: ${{ vars.MEDOPL_PRODUCTION_LAUNCH_SCOPE }}",
+  "MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID: ${{ secrets.MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID }}",
+  "MEDOPL_PRODUCTION_SYNTHETIC_USER_ID: ${{ secrets.MEDOPL_PRODUCTION_SYNTHETIC_USER_ID }}",
+  "MEDOPL_PRODUCTION_COST_GUARD_REF: ${{ vars.MEDOPL_PRODUCTION_COST_GUARD_REF }}",
+  "MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY: ${{ vars.MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY }}",
+  "MEDOPL_PRODUCTION_MONITORING_OWNER: ${{ vars.MEDOPL_PRODUCTION_MONITORING_OWNER }}",
+  "MEDOPL_PRODUCTION_ROLLBACK_OWNER: ${{ vars.MEDOPL_PRODUCTION_ROLLBACK_OWNER }}",
+  "MEDOPL_PRODUCTION_DISABLE_COMMAND_REF: ${{ vars.MEDOPL_PRODUCTION_DISABLE_COMMAND_REF }}",
   "V22_PRODUCTION_GOAL_HTTP_TIMEOUT_MS: \"15000\"",
   "V22_MEDOPL_DEPLOY_PLAN_FILE: .runtime/v22-cloud-authorization/run-v22-001/medopl-deploy-plan.json",
   "Create Goal F receipt inputs",
@@ -545,9 +538,9 @@ for (const expected of [
   "npm run cloud:goal -- --operation storage_lifecycle",
   "npm run cloud:goal -- --operation billing_audit_writeback",
   "Create deploy plan",
-  "Validate canary operations safety config shape",
-  "Sync in-cluster canary operations safety secret from production source",
-  "Validate in-cluster canary operations safety secret shape",
+  "Validate production launch operations safety config shape",
+  "Sync in-cluster production launch operations safety secret from production source",
+  "Validate in-cluster production launch operations safety secret shape",
   "npm run cloud:goal:preflight -- --operation kubectl",
   "npm run cloud:goal:preflight -- --operation deploy",
   "npm run cloud:goal:preflight -- --operation live_test",
@@ -673,40 +666,43 @@ assert(
   "production_apply_must_sync_auth_boundary_hashes_without_printing_secret",
 );
 assert(
-  productionApplyJob.includes("Validate canary operations safety config shape") &&
-    productionApplyJob.includes("MEDOPL_CANARY_ADMISSION_ENABLED required for canary operations safety gate") &&
-    productionApplyJob.includes("MEDOPL_CANARY_TENANT_ALLOWLIST required when canary operations safety gate is enabled") &&
-    productionApplyJob.includes("MEDOPL_CANARY_USER_ALLOWLIST required when canary operations safety gate is enabled") &&
-    productionApplyJob.includes("MEDOPL_CANARY_COST_CEILING_USD required when canary operations safety gate is enabled") &&
-    productionApplyJob.includes("canary operations safety config source ok") &&
-    !productionApplyJob.includes("console.log(process.env.MEDOPL_CANARY_TENANT_ALLOWLIST)") &&
-    !productionApplyJob.includes("console.log(process.env.MEDOPL_CANARY_USER_ALLOWLIST)"),
-  "production_apply_must_validate_canary_operations_safety_config_without_printing_allowlists",
+  productionApplyJob.includes("Validate production launch operations safety config shape") &&
+    productionApplyJob.includes("MEDOPL_PRODUCTION_LAUNCH_ENABLED required for production launch operations safety gate") &&
+    productionApplyJob.includes("MEDOPL_PRODUCTION_LAUNCH_SCOPE required for production launch operations safety gate") &&
+    productionApplyJob.includes("MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID required for production launch synthetic probe identity") &&
+    productionApplyJob.includes("MEDOPL_PRODUCTION_SYNTHETIC_USER_ID required for production launch synthetic probe identity") &&
+    productionApplyJob.includes("MEDOPL_PRODUCTION_COST_GUARD_REF required for production launch operations safety gate") &&
+    productionApplyJob.includes("production launch operations safety config source ok") &&
+    !productionApplyJob.includes("allowlist") &&
+    !productionApplyJob.includes("console.log(process.env.MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID)") &&
+    !productionApplyJob.includes("console.log(process.env.MEDOPL_PRODUCTION_SYNTHETIC_USER_ID)"),
+  "production_apply_must_validate_production_launch_operations_safety_config_without_printing_synthetic_identity_values",
 );
 assert(
-  productionApplyJob.includes("Sync in-cluster canary operations safety secret from production source") &&
-    productionApplyJob.includes("create secret generic medopl-canary-admission") &&
-    productionApplyJob.includes("MEDOPL_CANARY_ADMISSION_ENABLED=%s") &&
-    productionApplyJob.includes("MEDOPL_CANARY_EMERGENCY_STOP=%s") &&
-    productionApplyJob.includes("MEDOPL_CANARY_TENANT_ALLOWLIST=%s") &&
-    productionApplyJob.includes("MEDOPL_CANARY_USER_ALLOWLIST=%s") &&
-    productionApplyJob.includes("MEDOPL_CANARY_COST_CEILING_USD=%s") &&
-    productionApplyJob.includes("MEDOPL_CANARY_ADMISSION_ENABLED_BY=%s") &&
-    productionApplyJob.includes("MEDOPL_CANARY_MONITORING_OWNER=%s") &&
-    productionApplyJob.includes("MEDOPL_CANARY_ROLLBACK_OWNER=%s") &&
-    productionApplyJob.includes("MEDOPL_CANARY_DISABLE_COMMAND_REF=%s") &&
-    !productionApplyJob.includes("echo \"$MEDOPL_CANARY_TENANT_ALLOWLIST\"") &&
-    !productionApplyJob.includes("echo \"$MEDOPL_CANARY_USER_ALLOWLIST\""),
-  "production_apply_must_sync_canary_operations_safety_secret_without_printing_selected_identity_values",
+  productionApplyJob.includes("Sync in-cluster production launch operations safety secret from production source") &&
+    productionApplyJob.includes("create secret generic medopl-production-launch-safety") &&
+    productionApplyJob.includes("MEDOPL_PRODUCTION_LAUNCH_ENABLED=%s") &&
+    productionApplyJob.includes("MEDOPL_PRODUCTION_EMERGENCY_STOP=%s") &&
+    productionApplyJob.includes("MEDOPL_PRODUCTION_LAUNCH_SCOPE=%s") &&
+    productionApplyJob.includes("MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID=%s") &&
+    productionApplyJob.includes("MEDOPL_PRODUCTION_SYNTHETIC_USER_ID=%s") &&
+    productionApplyJob.includes("MEDOPL_PRODUCTION_COST_GUARD_REF=%s") &&
+    productionApplyJob.includes("MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY=%s") &&
+    productionApplyJob.includes("MEDOPL_PRODUCTION_MONITORING_OWNER=%s") &&
+    productionApplyJob.includes("MEDOPL_PRODUCTION_ROLLBACK_OWNER=%s") &&
+    productionApplyJob.includes("MEDOPL_PRODUCTION_DISABLE_COMMAND_REF=%s") &&
+    !productionApplyJob.includes("echo \"$MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID\"") &&
+    !productionApplyJob.includes("echo \"$MEDOPL_PRODUCTION_SYNTHETIC_USER_ID\""),
+  "production_apply_must_sync_production_launch_operations_safety_secret_without_printing_synthetic_identity_values",
 );
 assert(
-  productionApplyJob.includes("Validate in-cluster canary operations safety secret shape") &&
-    productionApplyJob.includes("get secret medopl-canary-admission") &&
+  productionApplyJob.includes("Validate in-cluster production launch operations safety secret shape") &&
+    productionApplyJob.includes("get secret medopl-production-launch-safety") &&
     productionApplyJob.includes("jsonpath={.data}") &&
-    productionApplyJob.includes("canary operations safety in-cluster secret shape ok") &&
-    productionApplyJob.includes("tenantScopeHashPresent") &&
-    productionApplyJob.includes("userScopeHashPresent"),
-  "production_apply_must_validate_incluster_canary_operations_safety_secret_shape",
+    productionApplyJob.includes("production launch operations safety in-cluster secret shape ok") &&
+    productionApplyJob.includes("syntheticTenantHashPresent") &&
+    productionApplyJob.includes("syntheticUserHashPresent"),
+  "production_apply_must_validate_incluster_production_launch_operations_safety_secret_shape",
 );
 assert(
   productionApplyJob.includes("Validate in-cluster database secret shape") &&
@@ -744,11 +740,11 @@ assert(
   "production_apply_must_validate_incluster_database_auth_after_dependencies_before_goal_f_receipts",
 );
 assert(
-  productionApplyJob.indexOf("Sync in-cluster auth boundary secret from production source") < productionApplyJob.indexOf("Validate canary operations safety config shape") &&
-    productionApplyJob.indexOf("Validate canary operations safety config shape") < productionApplyJob.indexOf("Sync in-cluster canary operations safety secret from production source") &&
-    productionApplyJob.indexOf("Sync in-cluster canary operations safety secret from production source") < productionApplyJob.indexOf("Validate in-cluster canary operations safety secret shape") &&
-    productionApplyJob.indexOf("Validate in-cluster canary operations safety secret shape") < productionApplyJob.indexOf("Create Goal F receipt inputs"),
-  "production_apply_must_sync_canary_operations_safety_before_goal_f_receipts_and_rollout",
+  productionApplyJob.indexOf("Sync in-cluster auth boundary secret from production source") < productionApplyJob.indexOf("Validate production launch operations safety config shape") &&
+    productionApplyJob.indexOf("Validate production launch operations safety config shape") < productionApplyJob.indexOf("Sync in-cluster production launch operations safety secret from production source") &&
+    productionApplyJob.indexOf("Sync in-cluster production launch operations safety secret from production source") < productionApplyJob.indexOf("Validate in-cluster production launch operations safety secret shape") &&
+    productionApplyJob.indexOf("Validate in-cluster production launch operations safety secret shape") < productionApplyJob.indexOf("Create Goal F receipt inputs"),
+  "production_apply_must_sync_production_launch_operations_safety_before_goal_f_receipts_and_rollout",
 );
 assert(
   productionApplyJob.indexOf("npm ci") < productionApplyJob.indexOf("Create Goal F receipt inputs"),

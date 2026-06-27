@@ -115,7 +115,7 @@ assert.equal(
 for (const marker of ["account_approved", "plan_selected", "balance_sufficient", "quota_available", "resource_preauth_freeze", "return_to_opl_task", "insufficient_balance_fail_closed"]) {
   assert(commercialGap6.minimum_evidence_slice?.includes(marker), `commercial_gap6_minimum_evidence_missing:${marker}`);
 }
-for (const forbidden of ["MEDOPL_CANARY", "selected-user", "selected user", "allowlist", "production-canary"]) {
+for (const forbidden of ["MEDOPL_CANARY", "selected-user", "selected user", "selected tenant", "selected canary", "allowlist"]) {
   assert(
     !JSON.stringify(commercialGap6).includes(forbidden),
     `commercial_gap6_must_not_depend_on_canary_rollout_governance:${forbidden}`,

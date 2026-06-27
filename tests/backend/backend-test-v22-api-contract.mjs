@@ -374,26 +374,31 @@ assert(
   "runtime_gate_commercial_admission_identity_input_missing",
 );
 const operationsSafety = runtimeGate.operations_safety_boundary;
-assert(operationsSafety, "runtime_gate_operations_safety_boundary_missing_for_retained_canary_rollout_env");
-assert.equal(operationsSafety.intent, "cloud_rollout_operations_safety_gate_only", "runtime_gate_operations_safety_boundary_intent_mismatch");
+assert(operationsSafety, "runtime_gate_operations_safety_boundary_missing_for_production_launch_env");
+assert.equal(operationsSafety.intent, "production_launch_operations_safety_gate_only", "runtime_gate_operations_safety_boundary_intent_mismatch");
 assert.deepEqual(
   operationsSafety.env_refs,
   [
-    "MEDOPL_CANARY_ADMISSION_ENABLED",
-    "MEDOPL_CANARY_EMERGENCY_STOP",
-    "MEDOPL_CANARY_TENANT_ALLOWLIST",
-    "MEDOPL_CANARY_USER_ALLOWLIST",
-    "MEDOPL_CANARY_COST_CEILING_USD",
-    "MEDOPL_CANARY_ADMISSION_ENABLED_BY",
-    "MEDOPL_CANARY_MONITORING_OWNER",
-    "MEDOPL_CANARY_ROLLBACK_OWNER",
-    "MEDOPL_CANARY_DISABLE_COMMAND_REF",
+    "MEDOPL_PRODUCTION_LAUNCH_ENABLED",
+    "MEDOPL_PRODUCTION_EMERGENCY_STOP",
+    "MEDOPL_PRODUCTION_LAUNCH_SCOPE",
+    "MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID",
+    "MEDOPL_PRODUCTION_SYNTHETIC_USER_ID",
+    "MEDOPL_PRODUCTION_COST_GUARD_REF",
+    "MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY",
+    "MEDOPL_PRODUCTION_MONITORING_OWNER",
+    "MEDOPL_PRODUCTION_ROLLBACK_OWNER",
+    "MEDOPL_PRODUCTION_DISABLE_COMMAND_REF",
   ],
   "runtime_gate_operations_safety_env_refs_mismatch",
 );
 assert(
   operationsSafety.cannot_claim.includes("business_or_commercial_admission_truth"),
   "runtime_gate_operations_safety_must_not_claim_business_admission",
+);
+assert(
+  operationsSafety.cannot_claim.includes("selected_user_allowlist"),
+  "runtime_gate_operations_safety_must_not_claim_selected_user_allowlist",
 );
 assert(
   !runtimeGateProjectionSurface.includes("CanaryAdmission") && !runtimeGateProjectionSurface.includes('json:"canaryAdmission"'),
