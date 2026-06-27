@@ -112,7 +112,11 @@ for (const suite of ["health", "local-contract", "current", "review"]) {
 
 assert.equal(current.verify_manifest, "tests/fixtures/v22/agent-verify-manifest.json", "current_manifest_pointer_mismatch");
 assert.equal(manifest.runner, "scripts/v22-verify.mjs", "manifest_runner_mismatch");
-assert(manifest.leaves.some((leaf) => leaf.leaf_id === current.current_cursor), "manifest_current_leaf_missing");
+const manifestCurrentLeaf = manifest.leaves.find((leaf) => leaf.leaf_id === current.current_cursor);
+assert(manifestCurrentLeaf, "manifest_current_leaf_missing");
+assert.equal(current.current_leaf?.step_id, current.current_cursor, "current_leaf_step_must_match_current_cursor");
+assert.equal(manifestCurrentLeaf.gap_id, current.current_leaf?.gap_id, "manifest_current_leaf_gap_must_match_current_fixture");
+assert.equal(manifestCurrentLeaf.stage, current.current_leaf?.stage, "manifest_current_leaf_stage_must_match_current_fixture");
 
 const lastLandedCommit = current.last_landed_commit;
 assert.match(lastLandedCommit, /^[0-9a-f]{40}$/u, "current_last_landed_commit_must_be_full_sha");

@@ -16,9 +16,9 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/goal-g3-business-closure-post-validation-artifact-go-setup`
-- latest landed commit: `76bd2d7c3adb28355f077fe2e06b347c0debaa4b`
-- next cursor: `opl-webui-runtime-production-slice`
+- latest landed branch: `feat/goal-g4-clear-medopl-canary-ops-safety`
+- latest landed commit: `9a11b81b3c76dffaeee26cf07bfc19ed0a0ff8e9`
+- next cursor: `goal-g4-production-canary-deployment-proof`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
 
