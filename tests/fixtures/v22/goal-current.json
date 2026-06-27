@@ -1071,7 +1071,7 @@
       "cannot_claim": "multi-region production, SLA proven, enterprise compliance, ongoing authorization, or unobserved tenant/resource readiness"
     }
   },
-  "base_trunk_head": "9a11b81b3c76dffaeee26cf07bfc19ed0a0ff8e9",
+  "base_trunk_head": "39ccf31a85df0124d12a881df809898084ab060e",
   "last_landed_commit": "39ccf31a85df0124d12a881df809898084ab060e",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
