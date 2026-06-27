@@ -388,9 +388,9 @@
       "machine_truth_commit_field": "last_landed_commit"
     },
     {
-      "leaf_id": "goal-platform-approved-account-launch-approval-decision",
-      "gap_id": "goal-platform-approved-account-launch-approval-decision",
-      "stage": "platform-approved account launch approval decision after G4 production-canary evidence",
+      "leaf_id": "goal-owner-created-or-approved-account-launch-approval-decision",
+      "gap_id": "goal-owner-created-or-approved-account-launch-approval-decision",
+      "stage": "owner-created-or-approved account launch approval decision after G4 production-canary evidence",
       "risk_class": "sensitive_boundary",
       "live_external_allowed": false,
       "requires_step_local_auth_record": true,

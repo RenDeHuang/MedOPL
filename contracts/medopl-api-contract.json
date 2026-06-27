@@ -59,7 +59,7 @@
       "kubeconfig_content"
     ],
     "account_productization": {
-      "intent": "platform_approved_account_recharge_plan_productization",
+      "intent": "owner_created_or_approved_account_recharge_plan_productization",
       "routes": [
         "POST /api/v22/users/prepare",
         "POST /api/v22/users/approve",
@@ -69,7 +69,7 @@
         "GET /api/v22/billing/statement",
         "GET /api/v22/runtime/freeze"
       ],
-      "approval_policy": "prepared_account_is_not_approved_until_platform_approve",
+      "approval_policy": "prepared_account_is_not_approved_until_owner_approve",
       "commercial_runtime_fail_closed_on": [
         "account_required",
         "account_not_approved",
@@ -87,7 +87,7 @@
       "cost_ceiling_source": "business_account_balance_plan_hold_amount_and_quota",
       "can_claim": [
         "repo_local_account_recharge_plan_productization",
-        "platform_approved_paid_account_runtime_gate",
+        "owner_created_or_approved_paid_account_runtime_gate",
         "insufficient_balance_fail_closed"
       ],
       "cannot_claim": [

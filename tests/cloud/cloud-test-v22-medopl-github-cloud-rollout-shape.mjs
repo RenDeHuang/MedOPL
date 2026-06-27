@@ -614,7 +614,7 @@ for (const expected of [
   "confirm_production_launch:",
   "default: deploy-current",
   "launch_scope:",
-  "default: platform-approved-accounts",
+  "default: owner-created-or-approved-medopl-accounts",
   "emergency_stop:",
   "default: false",
   "cost_guard_ref:",

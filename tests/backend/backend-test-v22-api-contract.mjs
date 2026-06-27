@@ -114,7 +114,7 @@ const accountProductization = apiContract.medopl_api_contract.account_productiza
 assert(accountProductization, "api_contract_account_productization_missing");
 assert.equal(
   accountProductization.intent,
-  "platform_approved_account_recharge_plan_productization",
+  "owner_created_or_approved_account_recharge_plan_productization",
   "account_productization_intent_mismatch",
 );
 assert.deepEqual(
@@ -132,7 +132,7 @@ assert.deepEqual(
 );
 assert.equal(
   accountProductization.approval_policy,
-  "prepared_account_is_not_approved_until_platform_approve",
+  "prepared_account_is_not_approved_until_owner_approve",
   "account_productization_approval_policy_mismatch",
 );
 assert.deepEqual(
@@ -146,7 +146,7 @@ assert.equal(
   "account_productization_cost_ceiling_source_mismatch",
 );
 assert(
-  accountProductization.can_claim.includes("platform_approved_paid_account_runtime_gate") &&
+  accountProductization.can_claim.includes("owner_created_or_approved_paid_account_runtime_gate") &&
     accountProductization.cannot_claim.includes("external_psp_settlement"),
   "account_productization_claim_boundary_mismatch",
 );

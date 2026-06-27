@@ -44,7 +44,7 @@ on:
       launch_scope:
         description: Production launch scope recorded in the redacted approval receipt.
         required: true
-        default: platform-approved-accounts
+        default: owner-created-or-approved-medopl-accounts
         type: string
       emergency_stop:
         description: Block production_launch apply when true.
