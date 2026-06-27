@@ -16,14 +16,15 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/goal-g4-clear-medopl-canary-ops-safety`
-- latest landed commit: `9a11b81b3c76dffaeee26cf07bfc19ed0a0ff8e9`
+- latest landed branch: `feat/goal-g4-one-person-production-launch-approval`
+- latest landed commit: `39ccf31a85df0124d12a881df809898084ab060e`
 - next cursor: `goal-g4-production-canary-deployment-proof`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
 
 ## Archive Pointers
 
+- G4 one-person production launch approval: `feat/goal-g4-one-person-production-launch-approval` / `39ccf31a85df0124d12a881df809898084ab060e` makes Cloud Rollout `workflow_dispatch` + GitHub `production` environment approval + `confirm_production_launch=deploy-current` the production launch approval gate, removes `MEDOPL_PRODUCTION_*` GitHub vars/secrets and K8s runtime env refs as requirements, and records a redacted approval receipt from workflow inputs. It can claim launch approval shape simplification only; production deploy proof, G3 evidence restore rerun, full production and external PSP remain unclaimed.
 - change archive: retired; do not use as long-term database
 - active change packages: retired; do not use as current source of truth
 - evidence index: `docs/evidence/README.md`

@@ -33,21 +33,22 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "feat/goal-g4-clear-medopl-canary-ops-safety",
-    "landed_commit": "9a11b81b3c76dffaeee26cf07bfc19ed0a0ff8e9",
+    "branch": "feat/goal-g4-one-person-production-launch-approval",
+    "landed_commit": "39ccf31a85df0124d12a881df809898084ab060e",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
       "npm run test:run-plan -- --dry-run --json passed",
       "npm run test:run-plan passed",
       "npm run test:cloud passed",
       "npm run test:backend passed",
+      "npm run test:frontend passed",
       "npm run test:release passed",
+      "npm run test:contract passed",
       "npm run verify passed",
       "npm run test:health passed",
-      "npm run gate:review -- --slice-id goal-g4-clear-medopl-canary-ops-safety passed",
-      "npm run repo:bloat -- --diff --slice-id goal-g4-clear-medopl-canary-ops-safety passed",
-      "npm run line:budget passed",
-      "npm run slice:post-push-verify -- --execute --slice-id goal-g4-clear-medopl-canary-ops-safety passed"
+      "npm run gate:review -- --slice-id goal-g4-one-person-production-launch-approval passed",
+      "npm run repo:bloat -- --diff --slice-id goal-g4-one-person-production-launch-approval passed",
+      "npm run line:budget passed"
     ],
     "plan_completion_audit": {
       "functional": "done",
@@ -58,11 +59,11 @@
       "cannot_claim": "done"
     },
     "cleanup_result": {
-      "deleted": "legacy MEDOPL_CANARY env refs from active workflow/deploy/contract implementation",
-      "folded": "legacy selected-user operations-safety narrative into MEDOPL_PRODUCTION production launch operations safety",
-      "retained": "history-only provenance and prohibitive tests for legacy selected-user admission",
-      "reason": "production launch safety remains an operations gate and must not become business admission",
-      "next": "G4 deployment proof can use Cloud Rollout workflow_dispatch inputs plus GitHub production environment approval without requiring MEDOPL_PRODUCTION vars/secrets"
+      "deleted": "MEDOPL_PRODUCTION GitHub production vars/secrets requirement and K8s runtime env refs for production launch approval",
+      "folded": "production launch approval into Cloud Rollout workflow_dispatch inputs plus GitHub production environment approval and redacted approval receipt",
+      "retained": "GitHub production environment auth/runtime secrets, rollout/deploy/live-test owner receipt lanes and business account-approved admission truth",
+      "reason": "one-person deployment treats manual Cloud Rollout dispatch with confirm input as operator approval; production safety is not business admission",
+      "next": "G4 deployment proof can run production_launch with confirm_production_launch=deploy-current and no MEDOPL_PRODUCTION vars/secrets"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "goal-g4-production-canary-deployment-proof"
@@ -75,7 +76,7 @@
     "multi_region_sla_enterprise_compliance_ongoing_authorization_and_unobserved_tenants_resources_remain_unclaimed",
     "unscoped_production_complete_requires_dedicated_scope_expansion_evidence"
   ],
-  "current_problem": "MedOPL current truth for goal-g4-production-canary-deployment-proof within opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is feat/goal-g4-clear-medopl-canary-ops-safety at 9a11b81b3c76dffaeee26cf07bfc19ed0a0ff8e9. The current feature slice goal-commercial-gap6-local-controlled-business-closure fixes gap6 as local/controlled commercial business closure rather than a rollout-governance blocker: account approved, plan chosen, balance sufficient, quota available, purchase/credit/open, resource_preauth_freeze, upload/run/artifact, debit/ledger/audit, release/destroy/stop billing, return_to_opl_task and insufficient balance fail-closed are covered by existing Go backend commercial ledger E2E plus runtime_required action and return-to-OPL contracts. Cost ceiling for this business claim comes from account balance, plan hold amount and quota. Cloud Rollout workflow_dispatch plus GitHub production environment approval plus confirm_production_launch=deploy-current is the one-person production launch approval gate; MEDOPL_PRODUCTION GitHub vars/secrets are not required and production launch approval is not business admission, recharge, quota, cost ceiling or billing truth. Cloud deployment proof, external PSP settlement, full OPL-Webui resume implementation, unscoped production complete, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. Cloud SaaS productization has landed G1 account/recharge/plan productization, G2 OPL-Webui runtime_required consumer refs projection, G3 real cloud business closure and legacy operations-safety retirement. The next cursor is goal-g4-production-canary-deployment-proof, which must prove deployment/availability/rollback/monitoring readiness without treating production launch safety as business admission. The current slice goal-g4-one-person-production-launch-approval removes MEDOPL_PRODUCTION GitHub vars/secrets as launch approval requirements before G4 deployment proof.",
+  "current_problem": "MedOPL current truth for goal-g4-production-canary-deployment-proof within opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is feat/goal-g4-one-person-production-launch-approval at 39ccf31a85df0124d12a881df809898084ab060e. The current feature slice goal-commercial-gap6-local-controlled-business-closure fixes gap6 as local/controlled commercial business closure rather than a rollout-governance blocker: account approved, plan chosen, balance sufficient, quota available, purchase/credit/open, resource_preauth_freeze, upload/run/artifact, debit/ledger/audit, release/destroy/stop billing, return_to_opl_task and insufficient balance fail-closed are covered by existing Go backend commercial ledger E2E plus runtime_required action and return-to-OPL contracts. Cost ceiling for this business claim comes from account balance, plan hold amount and quota. Cloud Rollout workflow_dispatch plus GitHub production environment approval plus confirm_production_launch=deploy-current is the one-person production launch approval gate; MEDOPL_PRODUCTION GitHub vars/secrets are not required and production launch approval is not business admission, recharge, quota, cost ceiling or billing truth. Cloud deployment proof, external PSP settlement, full OPL-Webui resume implementation, unscoped production complete, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. Cloud SaaS productization has landed G1 account/recharge/plan productization, G2 OPL-Webui runtime_required consumer refs projection, G3 real cloud business closure and legacy operations-safety retirement. The next cursor is goal-g4-production-canary-deployment-proof, which must prove deployment/availability/rollback/monitoring readiness without treating production launch safety as business admission. The latest landed slice feat/goal-g4-one-person-production-launch-approval / 39ccf31a removes MEDOPL_PRODUCTION GitHub vars/secrets as launch approval requirements before G4 deployment proof.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -645,9 +646,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "feat/goal-g4-clear-medopl-canary-ops-safety",
+  "last_landed_branch": "feat/goal-g4-one-person-production-launch-approval",
   "last_landed_at": "2026-06-27",
-  "history_latest_branch": "feat/goal-g4-clear-medopl-canary-ops-safety",
+  "history_latest_branch": "feat/goal-g4-one-person-production-launch-approval",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -1071,7 +1072,7 @@
     }
   },
   "base_trunk_head": "9a11b81b3c76dffaeee26cf07bfc19ed0a0ff8e9",
-  "last_landed_commit": "9a11b81b3c76dffaeee26cf07bfc19ed0a0ff8e9",
+  "last_landed_commit": "39ccf31a85df0124d12a881df809898084ab060e",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
