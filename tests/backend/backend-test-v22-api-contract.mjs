@@ -376,21 +376,24 @@ assert(
 const operationsSafety = runtimeGate.operations_safety_boundary;
 assert(operationsSafety, "runtime_gate_operations_safety_boundary_missing_for_production_launch_env");
 assert.equal(operationsSafety.intent, "production_launch_operations_safety_gate_only", "runtime_gate_operations_safety_boundary_intent_mismatch");
+assert.equal(operationsSafety.env_refs, undefined, "runtime_gate_operations_safety_must_not_require_runtime_env_refs");
 assert.deepEqual(
-  operationsSafety.env_refs,
+  operationsSafety.workflow_input_refs,
   [
-    "MEDOPL_PRODUCTION_LAUNCH_ENABLED",
-    "MEDOPL_PRODUCTION_EMERGENCY_STOP",
-    "MEDOPL_PRODUCTION_LAUNCH_SCOPE",
-    "MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID",
-    "MEDOPL_PRODUCTION_SYNTHETIC_USER_ID",
-    "MEDOPL_PRODUCTION_COST_GUARD_REF",
-    "MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY",
-    "MEDOPL_PRODUCTION_MONITORING_OWNER",
-    "MEDOPL_PRODUCTION_ROLLBACK_OWNER",
-    "MEDOPL_PRODUCTION_DISABLE_COMMAND_REF",
+    "confirm_production_launch",
+    "rollout_scope",
+    "launch_scope",
+    "emergency_stop",
+    "cost_guard_ref",
+    "owner",
+    "rollback_ref",
   ],
-  "runtime_gate_operations_safety_env_refs_mismatch",
+  "runtime_gate_operations_safety_workflow_input_refs_mismatch",
+);
+assert.equal(
+  operationsSafety.approval_gate,
+  "workflow_dispatch_plus_github_production_environment",
+  "runtime_gate_operations_safety_approval_gate_mismatch",
 );
 assert(
   operationsSafety.cannot_claim.includes("business_or_commercial_admission_truth"),

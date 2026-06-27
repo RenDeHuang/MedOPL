@@ -183,15 +183,10 @@ for (const expected of [
 ]) {
   assert(envNames.has(expected), `container_env_missing:${expected}`);
 }
-const productionLaunchSafetySecretName = "medopl-production-launch-safety";
 for (const name of ["MEDOPL_PRODUCTION_LAUNCH_ENABLED", "MEDOPL_PRODUCTION_EMERGENCY_STOP", "MEDOPL_PRODUCTION_LAUNCH_SCOPE", "MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID", "MEDOPL_PRODUCTION_SYNTHETIC_USER_ID", "MEDOPL_PRODUCTION_COST_GUARD_REF", "MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY", "MEDOPL_PRODUCTION_MONITORING_OWNER", "MEDOPL_PRODUCTION_ROLLBACK_OWNER", "MEDOPL_PRODUCTION_DISABLE_COMMAND_REF"]) {
-  const item = (container.env || []).find((entry) => entry.name === name);
-  assert.deepEqual(
-    item?.valueFrom?.secretKeyRef,
-    { name: productionLaunchSafetySecretName, key: name, optional: true },
-    `production_launch_operations_safety_env_must_use_secret_ref:${name}`,
-  );
+  assert.equal(envNames.has(name), false, `production_launch_approval_must_not_be_control_plane_runtime_env:${name}`);
 }
+assert.equal(manifestSource.includes("medopl-production-launch-safety"), false, "deploy_manifest_must_not_reference_production_launch_safety_secret");
 assert.equal(manifestSource.includes("MEDOPL_CANARY_"), false, "deploy_manifest_must_not_reference_legacy_canary_safety_env");
 assert.equal(manifestSource.includes("medopl-canary-admission"), false, "deploy_manifest_must_not_reference_legacy_canary_secret");
 assert.equal(manifestSource.includes("tenant-goal-f-canary"), false, "deploy_manifest_must_not_embed_selected_tenant_value");
@@ -518,16 +513,12 @@ for (const expected of [
   "V22_OPL_WEBUI_CONSUMER_CANARY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation live_test --execute --confirm-current-session-authorization",
   "MEDOPL_SESSION_SIGNING_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_SIGNING_SECRET_SHA256 }}",
   "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256 }}",
-  "MEDOPL_PRODUCTION_LAUNCH_ENABLED: ${{ vars.MEDOPL_PRODUCTION_LAUNCH_ENABLED }}",
-  "MEDOPL_PRODUCTION_EMERGENCY_STOP: ${{ vars.MEDOPL_PRODUCTION_EMERGENCY_STOP }}",
-  "MEDOPL_PRODUCTION_LAUNCH_SCOPE: ${{ vars.MEDOPL_PRODUCTION_LAUNCH_SCOPE }}",
-  "MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID: ${{ secrets.MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID }}",
-  "MEDOPL_PRODUCTION_SYNTHETIC_USER_ID: ${{ secrets.MEDOPL_PRODUCTION_SYNTHETIC_USER_ID }}",
-  "MEDOPL_PRODUCTION_COST_GUARD_REF: ${{ vars.MEDOPL_PRODUCTION_COST_GUARD_REF }}",
-  "MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY: ${{ vars.MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY }}",
-  "MEDOPL_PRODUCTION_MONITORING_OWNER: ${{ vars.MEDOPL_PRODUCTION_MONITORING_OWNER }}",
-  "MEDOPL_PRODUCTION_ROLLBACK_OWNER: ${{ vars.MEDOPL_PRODUCTION_ROLLBACK_OWNER }}",
-  "MEDOPL_PRODUCTION_DISABLE_COMMAND_REF: ${{ vars.MEDOPL_PRODUCTION_DISABLE_COMMAND_REF }}",
+  "V22_PRODUCTION_LAUNCH_CONFIRMATION: ${{ inputs.confirm_production_launch }}",
+  "V22_PRODUCTION_LAUNCH_SCOPE_INPUT: ${{ inputs.launch_scope }}",
+  "V22_PRODUCTION_LAUNCH_EMERGENCY_STOP_INPUT: ${{ inputs.emergency_stop }}",
+  "V22_PRODUCTION_LAUNCH_COST_GUARD_REF_INPUT: ${{ inputs.cost_guard_ref }}",
+  "V22_PRODUCTION_LAUNCH_OPERATOR_INPUT: ${{ inputs.owner }}",
+  "V22_PRODUCTION_LAUNCH_ROLLBACK_REF_INPUT: ${{ inputs.rollback_ref }}",
   "V22_PRODUCTION_GOAL_HTTP_TIMEOUT_MS: \"15000\"",
   "V22_MEDOPL_DEPLOY_PLAN_FILE: .runtime/v22-cloud-authorization/run-v22-001/medopl-deploy-plan.json",
   "Create Goal F receipt inputs",
@@ -538,9 +529,8 @@ for (const expected of [
   "npm run cloud:goal -- --operation storage_lifecycle",
   "npm run cloud:goal -- --operation billing_audit_writeback",
   "Create deploy plan",
-  "Validate production launch operations safety config shape",
-  "Sync in-cluster production launch operations safety secret from production source",
-  "Validate in-cluster production launch operations safety secret shape",
+  "Validate workflow-dispatch production launch approval",
+  "Write production launch approval receipt",
   "npm run cloud:goal:preflight -- --operation kubectl",
   "npm run cloud:goal:preflight -- --operation deploy",
   "npm run cloud:goal:preflight -- --operation live_test",
@@ -620,7 +610,36 @@ assert(
 );
 assert(productionRollbackJob.includes("MEDOPL_HTTP_BASE_URL: http://portal.medopl.cn"), "production_rollback_must_keep_http_redirect_probe_context");
 assert(["rollout_scope:", "default: production_launch", "- production_launch", "- g3_diagnostic"].every((item) => workflowDispatchInputs.includes(item)) && cloudRollout.includes("MEDOPL_ROLLOUT_SCOPE: ${{ inputs.rollout_scope }}"), "cloud_rollout_must_expose_explicit_rollout_scope_for_g3_diagnostic");
-assert.equal(countOccurrences(productionApplyJob, "if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}"), 13, "g3_diagnostic_must_skip_production_launch_receipt_steps");
+for (const expected of [
+  "confirm_production_launch:",
+  "default: deploy-current",
+  "launch_scope:",
+  "default: platform-approved-accounts",
+  "emergency_stop:",
+  "default: false",
+  "cost_guard_ref:",
+  "default: business-account-balance-plan-quota",
+  "owner:",
+  "default: huangrende",
+  "rollback_ref:",
+]) {
+  assert(workflowDispatchInputs.includes(expected), `cloud_rollout_dispatch_input_missing:${expected}`);
+}
+for (const forbidden of [
+  "${{ vars.MEDOPL_PRODUCTION_LAUNCH_ENABLED }}",
+  "${{ vars.MEDOPL_PRODUCTION_EMERGENCY_STOP }}",
+  "${{ vars.MEDOPL_PRODUCTION_LAUNCH_SCOPE }}",
+  "${{ secrets.MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID }}",
+  "${{ secrets.MEDOPL_PRODUCTION_SYNTHETIC_USER_ID }}",
+  "${{ vars.MEDOPL_PRODUCTION_COST_GUARD_REF }}",
+  "${{ vars.MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY }}",
+  "${{ vars.MEDOPL_PRODUCTION_MONITORING_OWNER }}",
+  "${{ vars.MEDOPL_PRODUCTION_ROLLBACK_OWNER }}",
+  "${{ vars.MEDOPL_PRODUCTION_DISABLE_COMMAND_REF }}",
+]) {
+  assert.equal(cloudRollout.includes(forbidden), false, `cloud_rollout_must_not_require_production_env_var_or_synthetic_secret:${forbidden}`);
+}
+assert.equal(countOccurrences(productionApplyJob, "if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}"), 12, "g3_diagnostic_must_skip_production_launch_receipt_steps");
 assert.equal(countOccurrences(productionApplyJob, "if: ${{ inputs.availability_probe && inputs.rollout_scope != 'g3_diagnostic' }}"), 12, "g3_diagnostic_must_skip_availability_production_complete_steps");
 assert(["Kubernetes receipt lane\n        run: npm run cloud:goal -- --operation kubectl", "Rollout apply\n        run: node scripts/cloud-rollout/medopl.mjs --apply", "MedOPL availability probe\n        if: ${{ inputs.availability_probe }}"].every((item) => productionApplyJob.includes(item)), "g3_diagnostic_scope_must_keep_rollout_apply_and_no_secret_availability_probe_available");
 assert(rolloutSource.includes("deploymentConvergedAfterRolloutStatusFailure") && rolloutSource.includes("rollout_status_failed_but_deployment_converged") && rolloutSource.includes("availableReplicas") && rolloutSource.includes("updatedReplicas"), "rollout_helper_must_not_fail_rollback_when_deployment_already_converged");
@@ -666,43 +685,24 @@ assert(
   "production_apply_must_sync_auth_boundary_hashes_without_printing_secret",
 );
 assert(
-  productionApplyJob.includes("Validate production launch operations safety config shape") &&
-    productionApplyJob.includes("MEDOPL_PRODUCTION_LAUNCH_ENABLED required for production launch operations safety gate") &&
-    productionApplyJob.includes("MEDOPL_PRODUCTION_LAUNCH_SCOPE required for production launch operations safety gate") &&
-    productionApplyJob.includes("MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID required for production launch synthetic probe identity") &&
-    productionApplyJob.includes("MEDOPL_PRODUCTION_SYNTHETIC_USER_ID required for production launch synthetic probe identity") &&
-    productionApplyJob.includes("MEDOPL_PRODUCTION_COST_GUARD_REF required for production launch operations safety gate") &&
-    productionApplyJob.includes("production launch operations safety config source ok") &&
-    !productionApplyJob.includes("allowlist") &&
-    !productionApplyJob.includes("console.log(process.env.MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID)") &&
-    !productionApplyJob.includes("console.log(process.env.MEDOPL_PRODUCTION_SYNTHETIC_USER_ID)"),
-  "production_apply_must_validate_production_launch_operations_safety_config_without_printing_synthetic_identity_values",
+  productionApplyJob.includes("Validate workflow-dispatch production launch approval") &&
+    productionApplyJob.includes("confirm_production_launch must be deploy-current for production_launch apply") &&
+    productionApplyJob.includes("Cloud Rollout workflow_dispatch plus GitHub production environment approval is the production launch approval gate") &&
+    productionApplyJob.includes("emergency_stop=true blocks production_launch apply") &&
+    productionApplyJob.includes("production launch approval input shape ok") &&
+    !productionApplyJob.includes("MEDOPL_PRODUCTION_LAUNCH_ENABLED required") &&
+    !productionApplyJob.includes("MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID required") &&
+    !productionApplyJob.includes("MEDOPL_PRODUCTION_SYNTHETIC_USER_ID required"),
+  "production_apply_must_validate_workflow_dispatch_approval_without_github_production_vars",
 );
 assert(
-  productionApplyJob.includes("Sync in-cluster production launch operations safety secret from production source") &&
-    productionApplyJob.includes("create secret generic medopl-production-launch-safety") &&
-    productionApplyJob.includes("MEDOPL_PRODUCTION_LAUNCH_ENABLED=%s") &&
-    productionApplyJob.includes("MEDOPL_PRODUCTION_EMERGENCY_STOP=%s") &&
-    productionApplyJob.includes("MEDOPL_PRODUCTION_LAUNCH_SCOPE=%s") &&
-    productionApplyJob.includes("MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID=%s") &&
-    productionApplyJob.includes("MEDOPL_PRODUCTION_SYNTHETIC_USER_ID=%s") &&
-    productionApplyJob.includes("MEDOPL_PRODUCTION_COST_GUARD_REF=%s") &&
-    productionApplyJob.includes("MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY=%s") &&
-    productionApplyJob.includes("MEDOPL_PRODUCTION_MONITORING_OWNER=%s") &&
-    productionApplyJob.includes("MEDOPL_PRODUCTION_ROLLBACK_OWNER=%s") &&
-    productionApplyJob.includes("MEDOPL_PRODUCTION_DISABLE_COMMAND_REF=%s") &&
-    !productionApplyJob.includes("echo \"$MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID\"") &&
-    !productionApplyJob.includes("echo \"$MEDOPL_PRODUCTION_SYNTHETIC_USER_ID\""),
-  "production_apply_must_sync_production_launch_operations_safety_secret_without_printing_synthetic_identity_values",
-);
-assert(
-  productionApplyJob.includes("Validate in-cluster production launch operations safety secret shape") &&
-    productionApplyJob.includes("get secret medopl-production-launch-safety") &&
-    productionApplyJob.includes("jsonpath={.data}") &&
-    productionApplyJob.includes("production launch operations safety in-cluster secret shape ok") &&
-    productionApplyJob.includes("syntheticTenantHashPresent") &&
-    productionApplyJob.includes("syntheticUserHashPresent"),
-  "production_apply_must_validate_incluster_production_launch_operations_safety_secret_shape",
+  productionApplyJob.includes("Write production launch approval receipt") &&
+    productionApplyJob.includes("production-launch-approval-receipt.json") &&
+    productionApplyJob.includes("\"approvalGate\": \"workflow_dispatch_plus_github_production_environment\"") &&
+    productionApplyJob.includes("\"businessAdmission\": \"account_approved_plan_balance_quota\"") &&
+    productionApplyJob.includes("\"costGuardRef\"") &&
+    !productionApplyJob.includes("create secret generic medopl-production-launch-safety"),
+  "production_apply_must_write_redacted_approval_receipt_from_inputs_without_syncing_runtime_secret",
 );
 assert(
   productionApplyJob.includes("Validate in-cluster database secret shape") &&
@@ -740,11 +740,10 @@ assert(
   "production_apply_must_validate_incluster_database_auth_after_dependencies_before_goal_f_receipts",
 );
 assert(
-  productionApplyJob.indexOf("Sync in-cluster auth boundary secret from production source") < productionApplyJob.indexOf("Validate production launch operations safety config shape") &&
-    productionApplyJob.indexOf("Validate production launch operations safety config shape") < productionApplyJob.indexOf("Sync in-cluster production launch operations safety secret from production source") &&
-    productionApplyJob.indexOf("Sync in-cluster production launch operations safety secret from production source") < productionApplyJob.indexOf("Validate in-cluster production launch operations safety secret shape") &&
-    productionApplyJob.indexOf("Validate in-cluster production launch operations safety secret shape") < productionApplyJob.indexOf("Create Goal F receipt inputs"),
-  "production_apply_must_sync_production_launch_operations_safety_before_goal_f_receipts_and_rollout",
+  productionApplyJob.indexOf("Sync in-cluster auth boundary secret from production source") < productionApplyJob.indexOf("Validate workflow-dispatch production launch approval") &&
+    productionApplyJob.indexOf("Validate workflow-dispatch production launch approval") < productionApplyJob.indexOf("Write production launch approval receipt") &&
+    productionApplyJob.indexOf("Write production launch approval receipt") < productionApplyJob.indexOf("Create Goal F receipt inputs"),
+  "production_apply_must_record_workflow_dispatch_approval_before_goal_f_receipts_and_rollout",
 );
 assert(
   productionApplyJob.indexOf("npm ci") < productionApplyJob.indexOf("Create Goal F receipt inputs"),

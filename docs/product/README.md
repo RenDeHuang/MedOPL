@@ -17,7 +17,7 @@ MedOPL 不是云资源控制台。普通用户产品语言不展示 CVM、COS、
 
 MedOPL 不回答科研问题，不复制 OPL chatbot，不评判 OPL 科研能力质量。MedOPL 负责计算资源、存储空间、套餐、任务并发、usage/billing、release、storage destroy intent 和运维审计 receipt；OPL-Webui 负责 ordinary chat、项目 / session、文件管理、skill 上传、任务推进和结果展示体验；OPL 负责 framework、runtime semantics、agent / skill protocol 和科研执行 runtime。
 
-MedOPL 的业务准入 truth 是 account-approved commercial admission，不是 selected-user allowlist。`runtime_required` 主业务 gate 必须检查账号存在、账号已由平台批准或开通、workspace 存在、需要时已有 `providerKeyRef`、已选择套餐、余额足够、quota 可用且没有平台 emergency stop；余额或套餐不足时返回 purchase / recharge / select_plan action，余额足够后才允许开通 compute resource 和 storage space。production launch safety uses `MEDOPL_PRODUCTION_*` only for deployment operations; it is not recharge, billing, plan, quota or business admission truth.
+MedOPL 的业务准入 truth 是 account-approved commercial admission，不是 selected-user allowlist。`runtime_required` 主业务 gate 必须检查账号存在、账号已由平台批准或开通、workspace 存在、需要时已有 `providerKeyRef`、已选择套餐、余额足够、quota 可用且没有平台 emergency stop；余额或套餐不足时返回 purchase / recharge / select_plan action，余额足够后才允许开通 compute resource 和 storage space。production launch safety is recorded from Cloud Rollout workflow inputs and GitHub production environment approval; it is not recharge, billing, plan, quota or business admission truth, and it does not require `MEDOPL_PRODUCTION_*` GitHub vars/secrets.
 
 普通用户主语言优先使用：账号、工作空间、计算资源、存储空间、套餐、任务并发、余额、冻结金额、费用与用量。租户、runtime、environmentId、resourceBindingId 和 billingAttributionId 只能作为内部标签、对账标签或审计字段。
 

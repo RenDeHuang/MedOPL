@@ -36,6 +36,36 @@ on:
         options:
           - production_launch
           - g3_diagnostic
+      confirm_production_launch:
+        description: One-person production launch approval confirmation. Use deploy-current for production_launch apply.
+        required: true
+        default: deploy-current
+        type: string
+      launch_scope:
+        description: Production launch scope recorded in the redacted approval receipt.
+        required: true
+        default: platform-approved-accounts
+        type: string
+      emergency_stop:
+        description: Block production_launch apply when true.
+        required: true
+        default: false
+        type: boolean
+      cost_guard_ref:
+        description: Business cost guard reference; commercial admission remains account balance, plan and quota.
+        required: true
+        default: business-account-balance-plan-quota
+        type: string
+      owner:
+        description: Operator owner recorded in the redacted approval receipt.
+        required: true
+        default: huangrende
+        type: string
+      rollback_ref:
+        description: Previous image or workflow rollback command reference.
+        required: true
+        default: cloud-rollout-rollback-explicit-image
+        type: string
 
 permissions:
   contents: read
@@ -123,16 +153,12 @@ jobs:
       MEDOPL_WEBHOOK_SECRET: ${{ secrets.MEDOPL_WEBHOOK_SECRET }}
       MEDOPL_SESSION_SIGNING_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_SIGNING_SECRET_SHA256 }}
       MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256 }}
-      MEDOPL_PRODUCTION_LAUNCH_ENABLED: ${{ vars.MEDOPL_PRODUCTION_LAUNCH_ENABLED }}
-      MEDOPL_PRODUCTION_EMERGENCY_STOP: ${{ vars.MEDOPL_PRODUCTION_EMERGENCY_STOP }}
-      MEDOPL_PRODUCTION_LAUNCH_SCOPE: ${{ vars.MEDOPL_PRODUCTION_LAUNCH_SCOPE }}
-      MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID: ${{ secrets.MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID }}
-      MEDOPL_PRODUCTION_SYNTHETIC_USER_ID: ${{ secrets.MEDOPL_PRODUCTION_SYNTHETIC_USER_ID }}
-      MEDOPL_PRODUCTION_COST_GUARD_REF: ${{ vars.MEDOPL_PRODUCTION_COST_GUARD_REF }}
-      MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY: ${{ vars.MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY }}
-      MEDOPL_PRODUCTION_MONITORING_OWNER: ${{ vars.MEDOPL_PRODUCTION_MONITORING_OWNER }}
-      MEDOPL_PRODUCTION_ROLLBACK_OWNER: ${{ vars.MEDOPL_PRODUCTION_ROLLBACK_OWNER }}
-      MEDOPL_PRODUCTION_DISABLE_COMMAND_REF: ${{ vars.MEDOPL_PRODUCTION_DISABLE_COMMAND_REF }}
+      V22_PRODUCTION_LAUNCH_CONFIRMATION: ${{ inputs.confirm_production_launch }}
+      V22_PRODUCTION_LAUNCH_SCOPE_INPUT: ${{ inputs.launch_scope }}
+      V22_PRODUCTION_LAUNCH_EMERGENCY_STOP_INPUT: ${{ inputs.emergency_stop }}
+      V22_PRODUCTION_LAUNCH_COST_GUARD_REF_INPUT: ${{ inputs.cost_guard_ref }}
+      V22_PRODUCTION_LAUNCH_OPERATOR_INPUT: ${{ inputs.owner }}
+      V22_PRODUCTION_LAUNCH_ROLLBACK_REF_INPUT: ${{ inputs.rollback_ref }}
       V22_PRODUCTION_GOAL_HTTP_TIMEOUT_MS: "15000"
       TENCENT_MUTATION_TKE_CLUSTER_ID: ${{ vars.TENCENT_MUTATION_TKE_CLUSTER_ID }}
       TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID: ${{ vars.TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID }}
@@ -291,140 +317,75 @@ jobs:
             --dry-run=client -o yaml \
             | kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl apply -f -
 
-      - name: Validate production launch operations safety config shape
+      - name: Validate workflow-dispatch production launch approval
         if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}
         shell: bash
         run: |
           node <<'NODE'
-          const crypto = require("crypto");
           function fail(message) {
             console.error(message);
             process.exit(1);
           }
-          function boolValue(name, missingMessage, { required = true } = {}) {
-            const raw = String(process.env[name] || "").trim().toLowerCase();
-            if (!raw && required) fail(missingMessage);
-            if (["1", "true", "yes", "on", "enabled"].includes(raw)) return true;
-            if (["0", "false", "no", "off", "disabled"].includes(raw)) return false;
-            fail(`${name} must be boolean for production launch operations safety gate`);
-          }
-          function requiredText(name, missingMessage = `${name} required when production launch operations safety gate is enabled`) {
+          function requiredText(name) {
             const value = String(process.env[name] || "").trim();
-            if (!value) fail(missingMessage);
+            if (!value) fail(`${name} required for workflow-dispatch production launch approval`);
             if (/[\r\n]/u.test(value)) fail(`${name} must be single-line`);
             return value;
           }
-          const enabled = boolValue("MEDOPL_PRODUCTION_LAUNCH_ENABLED", "MEDOPL_PRODUCTION_LAUNCH_ENABLED required for production launch operations safety gate");
-          const emergencyStop = boolValue("MEDOPL_PRODUCTION_EMERGENCY_STOP", "MEDOPL_PRODUCTION_EMERGENCY_STOP required for production launch operations safety gate");
-          if (!enabled) fail("MEDOPL_PRODUCTION_LAUNCH_ENABLED must enable production launch operations safety gate");
-          const launchScope = requiredText("MEDOPL_PRODUCTION_LAUNCH_SCOPE", "MEDOPL_PRODUCTION_LAUNCH_SCOPE required for production launch operations safety gate");
-          const syntheticTenantId = requiredText("MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID", "MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID required for production launch synthetic probe identity");
-          const syntheticUserId = requiredText("MEDOPL_PRODUCTION_SYNTHETIC_USER_ID", "MEDOPL_PRODUCTION_SYNTHETIC_USER_ID required for production launch synthetic probe identity");
-          const costGuardRef = requiredText("MEDOPL_PRODUCTION_COST_GUARD_REF", "MEDOPL_PRODUCTION_COST_GUARD_REF required for production launch operations safety gate");
-          for (const name of [
-            "MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY",
-            "MEDOPL_PRODUCTION_MONITORING_OWNER",
-            "MEDOPL_PRODUCTION_ROLLBACK_OWNER",
-            "MEDOPL_PRODUCTION_DISABLE_COMMAND_REF",
-          ]) {
+          const confirmation = requiredText("V22_PRODUCTION_LAUNCH_CONFIRMATION");
+          if (confirmation !== "deploy-current") fail("confirm_production_launch must be deploy-current for production_launch apply");
+          const emergencyStopRaw = requiredText("V22_PRODUCTION_LAUNCH_EMERGENCY_STOP_INPUT").toLowerCase();
+          if (!["true", "false"].includes(emergencyStopRaw)) fail("emergency_stop must be true or false");
+          if (emergencyStopRaw === "true") fail("emergency_stop=true blocks production_launch apply");
+          for (const name of ["V22_PRODUCTION_LAUNCH_SCOPE_INPUT", "V22_PRODUCTION_LAUNCH_COST_GUARD_REF_INPUT", "V22_PRODUCTION_LAUNCH_OPERATOR_INPUT", "V22_PRODUCTION_LAUNCH_ROLLBACK_REF_INPUT"]) {
             requiredText(name);
           }
-          const hash = (value) => crypto.createHash("sha256").update(value).digest("hex").slice(0, 16);
           console.log(JSON.stringify({
             ok: true,
-            message: "production launch operations safety config source ok",
-            enabled,
-            emergencyStop,
-            launchScopeRef: "MEDOPL_PRODUCTION_LAUNCH_SCOPE",
-            syntheticTenantHashPresent: Boolean(hash(syntheticTenantId)),
-            syntheticUserHashPresent: Boolean(hash(syntheticUserId)),
-            costGuardRefPresent: Boolean(costGuardRef),
-            monitoringOwnerRef: "MEDOPL_PRODUCTION_MONITORING_OWNER",
-            rollbackOwnerRef: "MEDOPL_PRODUCTION_ROLLBACK_OWNER",
-            rawSyntheticIdentityPrinted: false
+            message: "production launch approval input shape ok",
+            approvalGate: "Cloud Rollout workflow_dispatch plus GitHub production environment approval is the production launch approval gate",
+            launchScopeRef: "workflow_dispatch.launch_scope",
+            costGuardRefPresent: true,
+            rollbackRefPresent: true
           }));
           NODE
 
-      - name: Sync in-cluster production launch operations safety secret from production source
+      - name: Write production launch approval receipt
         if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}
         shell: bash
         run: |
-          {
-            printf 'MEDOPL_PRODUCTION_LAUNCH_ENABLED=%s\n' "$MEDOPL_PRODUCTION_LAUNCH_ENABLED"
-            printf 'MEDOPL_PRODUCTION_EMERGENCY_STOP=%s\n' "$MEDOPL_PRODUCTION_EMERGENCY_STOP"
-            printf 'MEDOPL_PRODUCTION_LAUNCH_SCOPE=%s\n' "$MEDOPL_PRODUCTION_LAUNCH_SCOPE"
-            printf 'MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID=%s\n' "$MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID"
-            printf 'MEDOPL_PRODUCTION_SYNTHETIC_USER_ID=%s\n' "$MEDOPL_PRODUCTION_SYNTHETIC_USER_ID"
-            printf 'MEDOPL_PRODUCTION_COST_GUARD_REF=%s\n' "$MEDOPL_PRODUCTION_COST_GUARD_REF"
-            printf 'MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY=%s\n' "$MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY"
-            printf 'MEDOPL_PRODUCTION_MONITORING_OWNER=%s\n' "$MEDOPL_PRODUCTION_MONITORING_OWNER"
-            printf 'MEDOPL_PRODUCTION_ROLLBACK_OWNER=%s\n' "$MEDOPL_PRODUCTION_ROLLBACK_OWNER"
-            printf 'MEDOPL_PRODUCTION_DISABLE_COMMAND_REF=%s\n' "$MEDOPL_PRODUCTION_DISABLE_COMMAND_REF"
-          } > "$RUNNER_TEMP/medopl-production-launch-safety.env"
-          chmod 600 "$RUNNER_TEMP/medopl-production-launch-safety.env"
-          kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl create secret generic medopl-production-launch-safety \
-            --from-env-file="$RUNNER_TEMP/medopl-production-launch-safety.env" \
-            --dry-run=client -o yaml \
-            | kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl apply -f -
-
-      - name: Validate in-cluster production launch operations safety secret shape
-        if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}
-        shell: bash
-        run: |
-          encoded_data="$(kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl get secret medopl-production-launch-safety -o 'jsonpath={.data}')"
-          secret_json="$(kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl get secret medopl-production-launch-safety -o json)"
-          PRODUCTION_LAUNCH_SECRET_DATA="$encoded_data" PRODUCTION_LAUNCH_SECRET_JSON="$secret_json" node <<'NODE'
-          const crypto = require("crypto");
-          function fail(message) {
-            console.error(message);
-            process.exit(1);
+          node <<'NODE'
+          const { mkdirSync, writeFileSync } = require("fs");
+          const { dirname } = require("path");
+          const receiptPath = ".runtime/v22-cloud-authorization/run-v22-001/production-launch-approval-receipt.json";
+          function text(name) {
+            const value = String(process.env[name] || "").trim();
+            if (!value) throw new Error(`${name} missing for production launch approval receipt`);
+            return value;
           }
-          let parsed;
-          try {
-            parsed = JSON.parse(process.env.PRODUCTION_LAUNCH_SECRET_JSON || "{}");
-          } catch {
-            fail("medopl-production-launch-safety secret must be valid kubernetes json");
-          }
-          const data = parsed.data || {};
-          function decode(name) {
-            const encoded = String(data[name] || "").trim();
-            if (!encoded) fail(`${name} missing from medopl-production-launch-safety`);
-            return Buffer.from(encoded, "base64").toString("utf8").trim();
-          }
-          function boolValue(name) {
-            const raw = decode(name).toLowerCase();
-            if (["1", "true", "yes", "on", "enabled"].includes(raw)) return true;
-            if (["0", "false", "no", "off", "disabled"].includes(raw)) return false;
-            fail(`${name} must be boolean in medopl-production-launch-safety`);
-          }
-          const enabled = boolValue("MEDOPL_PRODUCTION_LAUNCH_ENABLED");
-          const emergencyStop = boolValue("MEDOPL_PRODUCTION_EMERGENCY_STOP");
-          if (!enabled) fail("MEDOPL_PRODUCTION_LAUNCH_ENABLED must be enabled in medopl-production-launch-safety");
-          const launchScope = decode("MEDOPL_PRODUCTION_LAUNCH_SCOPE");
-          const syntheticTenantId = decode("MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID");
-          const syntheticUserId = decode("MEDOPL_PRODUCTION_SYNTHETIC_USER_ID");
-          const costGuardRef = decode("MEDOPL_PRODUCTION_COST_GUARD_REF");
-          for (const name of [
-            "MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY",
-            "MEDOPL_PRODUCTION_MONITORING_OWNER",
-            "MEDOPL_PRODUCTION_ROLLBACK_OWNER",
-            "MEDOPL_PRODUCTION_DISABLE_COMMAND_REF",
-          ]) {
-            decode(name);
-          }
-          const hash = (value) => crypto.createHash("sha256").update(value).digest("hex").slice(0, 16);
-          console.log(JSON.stringify({
-            ok: true,
-            message: "production launch operations safety in-cluster secret shape ok",
-            enabled,
-            emergencyStop,
-            launchScopeRef: Boolean(launchScope),
-            syntheticTenantHashPresent: Boolean(hash(syntheticTenantId)),
-            syntheticUserHashPresent: Boolean(hash(syntheticUserId)),
-            costGuardRefPresent: Boolean(costGuardRef),
-            rawSyntheticIdentityPrinted: false,
-            dataShapeObserved: Boolean(process.env.PRODUCTION_LAUNCH_SECRET_DATA)
-          }));
+          const receipt = {
+            "kind": "medopl_production_launch_approval_receipt",
+            "approvalGate": "workflow_dispatch_plus_github_production_environment",
+            "confirmation": text("V22_PRODUCTION_LAUNCH_CONFIRMATION"),
+            "rolloutScope": text("MEDOPL_ROLLOUT_SCOPE"),
+            "launchScope": text("V22_PRODUCTION_LAUNCH_SCOPE_INPUT"),
+            "emergencyStop": text("V22_PRODUCTION_LAUNCH_EMERGENCY_STOP_INPUT") === "true",
+            "costGuardRef": text("V22_PRODUCTION_LAUNCH_COST_GUARD_REF_INPUT"),
+            "operator": text("V22_PRODUCTION_LAUNCH_OPERATOR_INPUT"),
+            "rollbackRef": text("V22_PRODUCTION_LAUNCH_ROLLBACK_REF_INPUT"),
+            "businessAdmission": "account_approved_plan_balance_quota",
+            "secretsSource": "github_production_environment_auth_secrets_only",
+            "rawSecretsWritten": false,
+            "cannotClaim": [
+              "business_or_commercial_admission_truth",
+              "selected_user_allowlist",
+              "external_psp_settlement",
+              "full_production_complete"
+            ]
+          };
+          mkdirSync(dirname(receiptPath), { recursive: true });
+          writeFileSync(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`);
+          console.log(JSON.stringify({ ok: true, receiptPath, approvalGate: receipt.approvalGate }));
           NODE
 
       - name: Validate in-cluster database secret shape
