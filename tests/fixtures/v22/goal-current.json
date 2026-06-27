@@ -33,36 +33,36 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "goal-retire-legacy-account-narrative",
-    "landed_commit": "376699370b06f43f57086f0d24bafd4232945e9e",
+    "branch": "goal-admin-account-commercial-ledger-ui-closure",
+    "landed_commit": "51c6e0fb347bc59a1b0ccfe29a0481cf6870dfbd",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
       "npm run test:run-plan -- --dry-run --json passed",
-      "npm run test:run-plan passed with 13 local commands and 9 authorized cloud commands skipped",
+      "npm run test:run-plan passed after rerun",
       "npm run test:backend passed",
       "npm run test:cloud passed",
       "npm run verify passed",
-      "npm run test:health passed before landing",
-      "npm run gate:review for the legacy account narrative cleanup slice passed",
-      "npm run repo:bloat -- --diff for the legacy account narrative cleanup slice passed",
+      "npm run test:health passed",
+      "npm run gate:review -- --slice-id goal-admin-account-commercial-ledger-ui-closure passed",
+      "npm run repo:bloat -- --diff --slice-id goal-admin-account-commercial-ledger-ui-closure passed",
       "npm run line:budget passed",
-      "post-push npm run verify passed",
-      "post-push test:health initially exposed stale closeout pointer and is folded by this closeout-only sync"
+      "post-push node scripts/v22-verify.mjs current passed",
+      "post-push node scripts/v22-workflow-gate.mjs review passed"
     ],
     "plan_completion_audit": {
       "functional": "done",
       "code_cleanup": "done",
       "docs_foldback": "done",
-      "verification": "partial",
+      "verification": "done",
       "retired_entrypoints": "done",
       "cannot_claim": "done"
     },
     "cleanup_result": {
-      "deleted": "legacy approved-account narrative from active current contract workflow defaults and tests",
-      "folded": "3766993 narrative retirement into latest landed closeout and owner-created-or-approved launch approval cursor",
-      "retained": "account_approved/account_not_approved machine gate conditions, billing fail-closed truth, selected/canary allowlist prohibition, and scoped cannot-claim boundaries",
-      "reason": "business admission truth is owner-created-or-approved MedOPL account plus plan/balance/quota, while OPL-Webui only triggers runtime_required and consumes artifacts",
-      "next": "goal-owner-created-or-approved-account-launch-approval-decision may decide scoped launch approval without claiming external PSP, selected allowlist admission, public self-serve, unrestricted full production, multi-region/SLA, enterprise compliance, ongoing authorization or long-term stability"
+      "deleted": "legacy Admin Users commercial create recharge refund projection-only interactions and commercial aliases",
+      "folded": "Figma Commercial Launch admin account billing modules into Admin Users backed by v22 business account credit ledger billing statement runtime freeze and runtime gate endpoints",
+      "retained": "/api/admin/actions only for non-commercial admin settings user profile toggle delete announcements and billing ops",
+      "reason": "commercial account operations must use owner-created-or-approved MedOPL account plus plan balance quota truth and real v22 business ledger",
+      "next": "owner-created-or-approved account launch approval decision can proceed without claiming external PSP real cloud execution from this UI slice full production selected allowlist admission or projection-only fallback"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "goal-owner-created-or-approved-account-launch-approval-decision"
@@ -75,7 +75,7 @@
     "owner_created_or_approved_account_launch_approval_decision_required",
     "external_psp_multi_region_sla_enterprise_compliance_ongoing_authorization_and_unrestricted_full_production_remain_unclaimed"
   ],
-  "current_problem": "MedOPL current truth for goal-owner-created-or-approved-account-launch-approval-decision within opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is goal-retire-legacy-account-narrative at 376699370b06f43f57086f0d24bafd4232945e9e. Release Image run 28286560942 built image tag 0f7c80b. Cloud Rollout production_launch run 28286621467 passed deploy receipt, OPL-Webui consumer canary, availability probe, soak, concurrency pressure, rollback drill, continuous canary, alerting, final release decision, production receipt manifest, verify:cloud-release-candidate and verify:production-complete-candidate. The redacted receipt manifest hash is sha256:16fb4289f3dd91543f083b1c1ad773e44be6d5a74f76a56b417b39974bca4612. The current authorized production-canary path can proceed to owner-created-or-approved account launch approval decision. Cost ceiling for business claims comes from account balance, plan hold amount and quota. Cloud Rollout workflow_dispatch plus GitHub production environment approval plus confirm_production_launch=deploy-current is the one-person production launch approval gate; production launch approval is not business admission, recharge, quota, cost ceiling or billing truth. External PSP settlement, full OPL-Webui resume implementation, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-retire-legacy-account-narrative at 376699370b06f43f57086f0d24bafd4232945e9e.",
+  "current_problem": "MedOPL current truth for goal-owner-created-or-approved-account-launch-approval-decision within opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is goal-admin-account-commercial-ledger-ui-closure at 51c6e0fb347bc59a1b0ccfe29a0481cf6870dfbd. Release Image run 28286560942 built image tag 0f7c80b. Cloud Rollout production_launch run 28286621467 passed deploy receipt, OPL-Webui consumer canary, availability probe, soak, concurrency pressure, rollback drill, continuous canary, alerting, final release decision, production receipt manifest, verify:cloud-release-candidate and verify:production-complete-candidate. The redacted receipt manifest hash is sha256:16fb4289f3dd91543f083b1c1ad773e44be6d5a74f76a56b417b39974bca4612. The current authorized production-canary path can proceed to owner-created-or-approved account launch approval decision. Cost ceiling for business claims comes from account balance, plan hold amount and quota. Cloud Rollout workflow_dispatch plus GitHub production environment approval plus confirm_production_launch=deploy-current is the one-person production launch approval gate; production launch approval is not business admission, recharge, quota, cost ceiling or billing truth. External PSP settlement, full OPL-Webui resume implementation, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-admin-account-commercial-ledger-ui-closure at 51c6e0fb347bc59a1b0ccfe29a0481cf6870dfbd.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -634,9 +634,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "goal-retire-legacy-account-narrative",
+  "last_landed_branch": "goal-admin-account-commercial-ledger-ui-closure",
   "last_landed_at": "2026-06-27",
-  "history_latest_branch": "goal-retire-legacy-account-narrative",
+  "history_latest_branch": "goal-admin-account-commercial-ledger-ui-closure",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -1059,8 +1059,8 @@
       "cannot_claim": "multi-region production, SLA proven, enterprise compliance, ongoing authorization, or unobserved tenant/resource readiness"
     }
   },
-  "base_trunk_head": "376699370b06f43f57086f0d24bafd4232945e9e",
-  "last_landed_commit": "376699370b06f43f57086f0d24bafd4232945e9e",
+  "base_trunk_head": "51c6e0fb347bc59a1b0ccfe29a0481cf6870dfbd",
+  "last_landed_commit": "51c6e0fb347bc59a1b0ccfe29a0481cf6870dfbd",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",

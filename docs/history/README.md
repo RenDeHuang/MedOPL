@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `goal-retire-legacy-account-narrative`
-- latest landed commit: `376699370b06f43f57086f0d24bafd4232945e9e`
+- latest landed branch: `goal-admin-account-commercial-ledger-ui-closure`
+- latest landed commit: `51c6e0fb347bc59a1b0ccfe29a0481cf6870dfbd`
 - next cursor: `goal-owner-created-or-approved-account-launch-approval-decision`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
