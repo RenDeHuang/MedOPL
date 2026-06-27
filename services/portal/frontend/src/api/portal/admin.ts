@@ -12,6 +12,9 @@ export interface AdminUserListItem {
   role: string;
   status: string;
   balance: number;
+  workspaceId?: string;
+  tenantId?: string;
+  portalUserId?: string;
   lastActiveAt?: string;
   lastUsedAt?: string;
   createdAt?: string;
@@ -47,6 +50,33 @@ export interface AdminSystemPayload {
 }
 
 export type AdminAuditEventsPayload = Record<string, any>;
+
+export interface AdminCommercialAccountInput {
+  tenantId: string;
+  portalUserId: string;
+  workspaceId: string;
+}
+
+export interface AdminCommercialCreditInput extends AdminCommercialAccountInput {
+  amount: number;
+  currency?: string;
+  idempotencyKey: string;
+}
+
+export interface AdminCommercialAccountPayload {
+  ok: boolean;
+  source: string;
+  status: string;
+  tenantId: string;
+  portalUserId: string;
+  workspaceId: string;
+  balance: number;
+  currency: string;
+}
+
+export type AdminBillingStatementPayload = Record<string, any>;
+export type AdminRuntimeFreezePayload = Record<string, any>;
+export type AdminRuntimeGatePayload = Record<string, any>;
 
 export async function fetchAdminAuditEvents(params?: Record<string, string | number | undefined>) {
   const { data } = await goControlPlaneClient.get<AdminAuditEventsPayload>("/admin/audit-events", { params });
@@ -94,18 +124,67 @@ async function postPortalAdminAction(action: string, fields: Record<string, Port
   }
 }
 
-export async function createAdminUser(input: {
-  name: string;
-  email: string;
-  password: string;
-  redirectTo?: string;
-}) {
-  await postPortalAdminAction("create-user", {
-    name: input.name,
-    email: input.email,
-    password: input.password,
-    redirectTo: input.redirectTo || "/admin/users",
+const ADMIN_COMMERCIAL_ACTION_FAILED_MESSAGE = "MedOPL 商业账号账本动作未完成，请检查账号、工作空间、余额和配额后重试。";
+
+function normalizeAdminCommercialLedgerError(error: unknown) {
+  return normalizePortalAdminActionError(error, ADMIN_COMMERCIAL_ACTION_FAILED_MESSAGE);
+}
+
+export async function prepareAdminCommercialAccount(input: AdminCommercialAccountInput) {
+  try {
+    const { data } = await goControlPlaneClient.post<AdminCommercialAccountPayload>("/v22/users/prepare", input);
+    return data;
+  } catch (error) {
+    throw normalizeAdminCommercialLedgerError(error);
+  }
+}
+
+export async function approveAdminCommercialAccount(input: AdminCommercialAccountInput) {
+  try {
+    const { data } = await goControlPlaneClient.post<AdminCommercialAccountPayload>("/v22/users/approve", input);
+    return data;
+  } catch (error) {
+    throw normalizeAdminCommercialLedgerError(error);
+  }
+}
+
+export async function creditAdminCommercialAccount(input: AdminCommercialCreditInput) {
+  try {
+    const { data } = await goControlPlaneClient.post<AdminCommercialAccountPayload>("/v22/users/credit", {
+      ...input,
+      currency: input.currency || "CNY",
+    });
+    return data;
+  } catch (error) {
+    throw normalizeAdminCommercialLedgerError(error);
+  }
+}
+
+export async function fetchAdminBillingStatement(workspaceId: string) {
+  const { data } = await goControlPlaneClient.get<AdminBillingStatementPayload>("/v22/billing/statement", {
+    params: { workspaceId },
   });
+  return data;
+}
+
+export async function fetchAdminRuntimeFreeze(workspaceId: string) {
+  const { data } = await goControlPlaneClient.get<AdminRuntimeFreezePayload>("/v22/runtime/freeze", {
+    params: { workspaceId },
+  });
+  return data;
+}
+
+export async function fetchAdminRuntimeGate(input: AdminCommercialAccountInput) {
+  const { data } = await goControlPlaneClient.post<AdminRuntimeGatePayload>("/opl/runtime-gate", {
+    tenantId: input.tenantId,
+    portalUserId: input.portalUserId,
+    workspaceId: input.workspaceId,
+    invocationMode: "runtime_required",
+    taskIntent: "research",
+    sessionId: "admin-commercial-ledger-ui",
+    taskRef: "admin-commercial-ledger-ui",
+  });
+  return data;
 }
 
 export async function updateAdminSiteSettings(input: PublicSettingsPayload & {
@@ -145,35 +224,6 @@ export async function toggleAdminUser(input: {
 }) {
   await postPortalAdminAction(input.approve ? "approve-user" : "toggle-user", {
     userId: input.userId,
-    redirectTo: input.redirectTo || "/admin/users",
-  });
-}
-
-export async function rechargeAdminUser(input: {
-  userId: string;
-  amount: number;
-  redirectTo?: string;
-}) {
-  await postPortalAdminAction("recharge", {
-    userId: input.userId,
-    amount: input.amount,
-    redirectTo: input.redirectTo || "/admin/users",
-  });
-}
-
-export async function refundAdminUser(input: {
-  userId: string;
-  amount: number;
-  reason: string;
-  idempotencyKey?: string;
-  redirectTo?: string;
-}) {
-  await postPortalAdminAction("ledger-adjust", {
-    userId: input.userId,
-    amount: input.amount,
-    reason: input.reason,
-    actionType: "refund",
-    idempotencyKey: input.idempotencyKey || "",
     redirectTo: input.redirectTo || "/admin/users",
   });
 }

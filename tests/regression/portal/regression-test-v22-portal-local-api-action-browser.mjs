@@ -13,8 +13,8 @@ const frontendRoot = path.join(repoRoot, "services", "portal", "frontend");
 const viteEntrypoint = path.join(frontendRoot, "node_modules", "vite", "bin", "vite.js");
 const localUserEmail = "local@medopl.test";
 const localUserName = "MedOPL Local User";
-const actionUserEmail = "go-browser-action-user@example.test";
-const actionUserName = "Go Browser Action User";
+const localWorkspaceId = "workspace-local-rc";
+const localPortalUserId = "user-local-rc";
 const announcementTitle = "Go 浏览器动作公告";
 const announcementContent = "公告通过 Go control-plane 本地动作闭环写入。";
 
@@ -145,12 +145,56 @@ async function openUserActionMenu(page, name) {
   await page.locator('[data-slot="dropdown-menu-content"]').waitFor({ timeout: 10000 });
 }
 
-async function assertUserBalance(baseUrl, email, expectedBalance) {
-  const users = await backendGetJson(baseUrl, "/api/admin/users");
-  assert.equal(users.response.status, 200, "admin_users_balance_check_must_return_200");
-  const found = (users.json.items || []).find((item) => item.email === email);
-  assert(found, "browser_target_user_missing_after_action");
-  assert.equal(Number(found.balance), expectedBalance, `browser_user_balance_mismatch:${expectedBalance}`);
+async function assertUserCreditLedger(baseUrl, email, expectedCreditAmount) {
+  const workspaceId = email === localUserEmail ? localWorkspaceId : `workspace-${email.replace(/[^a-zA-Z0-9._:-]+/g, "_").toLowerCase()}`;
+  const statement = await backendGetJson(baseUrl, `/api/v22/billing/statement?workspaceId=${encodeURIComponent(workspaceId)}`);
+  assert.equal(statement.response.status, 200, "billing_statement_balance_check_must_return_200");
+  assert.equal(statement.json.workspaceId, workspaceId, "billing_statement_workspace_mismatch");
+  assert(
+    (statement.json.rows || []).some((row) => row.type === "credit" && Number(row.amount) === expectedCreditAmount),
+    `billing_statement_must_include_credit_ledger:${expectedCreditAmount}`,
+  );
+  assert(Number(statement.json.wallet?.balance) > 0, "billing_statement_wallet_balance_must_increase");
+  return statement.json;
+}
+
+async function assertRuntimeGateReason(baseUrl, email, expectedReason) {
+  const workspaceId = email === localUserEmail ? localWorkspaceId : `workspace-${email.replace(/[^a-zA-Z0-9._:-]+/g, "_").toLowerCase()}`;
+  const portalUserId = email === localUserEmail ? localPortalUserId : `user-${email.replace(/[^a-zA-Z0-9._:-]+/g, "_").toLowerCase()}`;
+  const response = await fetch(`${baseUrl}/api/opl/runtime-gate`, {
+    method: "POST",
+    headers: { "content-type": "application/json", accept: "application/json" },
+    body: JSON.stringify({
+      tenantId: "tenant-local-rc",
+      portalUserId,
+      workspaceId,
+      invocationMode: "runtime_required",
+      taskIntent: "research",
+      sessionId: "browser-admin-commercial-ledger-ui",
+      taskRef: "browser-admin-commercial-ledger-ui",
+    }),
+  });
+  const json = await response.json().catch(() => ({}));
+  assert.equal(response.status, 200, "runtime_gate_check_must_return_200");
+  assert.equal(json.commercialAdmission?.reason, expectedReason, `runtime_gate_reason_mismatch:${expectedReason}`);
+  return json;
+}
+
+async function bindProviderKeyForRuntimeGate(baseUrl) {
+  const response = await fetch(`${baseUrl}/api/v22/provider-key`, {
+    method: "POST",
+    headers: { "content-type": "application/json", accept: "application/json" },
+    body: JSON.stringify({
+      tenantId: "tenant-local-rc",
+      portalUserId: localPortalUserId,
+      workspaceId: localWorkspaceId,
+      apiKey: "browser-admin-commercial-ledger-provider-key-material-that-must-stay-private",
+      idempotencyKey: "browser-admin-commercial-ledger-provider-key",
+    }),
+  });
+  const json = await response.json().catch(() => ({}));
+  assert.equal(response.status, 200, `provider_key_bind_must_return_200:${JSON.stringify(json)}`);
+  assert.equal(json.providerBound, true, "provider_key_bind_must_succeed");
 }
 
 async function assertAnnouncementPresence(baseUrl, title, expectedPresent) {
@@ -217,6 +261,7 @@ try {
     });
 
     await waitFor(`${backendBaseUrl}/healthz`, backend, "go_backend");
+    await bindProviderKeyForRuntimeGate(backendBaseUrl);
 
     vite = spawn(process.execPath, [viteEntrypoint, "--host", "127.0.0.1", "--port", String(vitePort), "--strictPort"], {
       cwd: frontendRoot,
@@ -253,7 +298,7 @@ try {
     });
 
     await page.goto(`${frontendBaseUrl}/overview`, { waitUntil: "domcontentloaded" });
-    await waitReady(page, "正在加载总览");
+    await waitReady(page, "正在读取资源总览数据");
     lastBodyText = await page.locator("body").innerText();
     assert(lastBodyText.includes("总览"), "overview_must_render_with_go_backend");
     assert(lastBodyText.includes("资源总览"), "overview_must_render_resource_control_spine");
@@ -271,30 +316,30 @@ try {
     await page.goto(`${frontendBaseUrl}/admin/users`, { waitUntil: "domcontentloaded" });
     await waitReady(page, "正在读取用户管理数据");
     await page.getByText(localUserEmail).waitFor({ timeout: 30000 });
-    await page.getByRole("button", { name: "新建用户" }).click();
-    await page.getByRole("dialog", { name: "新建用户" }).waitFor({ timeout: 10000 });
-    await page.locator("#createUserName").fill(actionUserName);
-    await page.locator("#createUserEmail").fill(actionUserEmail);
-    await page.locator("#createUserPassword").fill("Password123!");
-    await page.getByRole("button", { name: "确认创建" }).click();
-    await page.getByText(actionUserEmail).waitFor({ timeout: 30000 });
+    await page.getByRole("button", { name: "准备账号" }).click();
+    await page.getByRole("dialog", { name: "准备商业账号" }).waitFor({ timeout: 10000 });
+    await page.locator("#createUserName").fill(localUserName);
+    await page.locator("#createUserEmail").fill(localUserEmail);
+    await page.getByRole("button", { name: "确认准备" }).click();
+    await page.getByText("account_not_approved").waitFor({ timeout: 30000 });
 
-    await openUserActionMenu(page, actionUserName);
-    await page.getByRole("menuitem", { name: "充值" }).click();
-    await page.getByRole("dialog", { name: "账户充值" }).waitFor({ timeout: 10000 });
+    await openUserActionMenu(page, localUserName);
+    await page.getByRole("menuitem", { name: "批准商业账号" }).click();
+    await page.getByRole("dialog", { name: "批准商业账号" }).waitFor({ timeout: 10000 });
+    await page.getByRole("button", { name: "确认批准" }).click();
+    await assertRuntimeGateReason(backendBaseUrl, localUserEmail, "insufficient_balance");
+
+    await openUserActionMenu(page, localUserName);
+    await page.getByRole("menuitem", { name: "授信/充值" }).click();
+    await page.getByRole("dialog", { name: "授信/充值" }).waitFor({ timeout: 10000 });
     await page.locator("#rechargeAmount").fill("120");
-    await page.getByRole("button", { name: "确认充值" }).click();
-    await page.getByText("¥120.00").waitFor({ timeout: 30000 });
-    await assertUserBalance(backendBaseUrl, actionUserEmail, 120);
-
-    await openUserActionMenu(page, actionUserName);
-    await page.getByRole("menuitem", { name: "退款" }).click();
-    await page.getByRole("dialog", { name: "账本退款" }).waitFor({ timeout: 10000 });
-    await page.locator("#refundAmount").fill("30");
-    await page.locator("#refundReason").fill("browser go action closure");
-    await page.getByRole("button", { name: "确认退款" }).click();
-    await page.getByText("¥90.00").waitFor({ timeout: 30000 });
-    await assertUserBalance(backendBaseUrl, actionUserEmail, 90);
+    await page.getByRole("button", { name: "确认授信" }).click();
+    const statement = await assertUserCreditLedger(backendBaseUrl, localUserEmail, 120);
+    await page.goto(`${frontendBaseUrl}/admin/users`, { waitUntil: "domcontentloaded" });
+    await waitReady(page, "正在读取用户管理数据");
+    await page.getByRole("table").getByText(`¥${Number(statement.wallet?.balance).toFixed(2)}`, { exact: true }).waitFor({ timeout: 30000 });
+    const afterCreditGate = await assertRuntimeGateReason(backendBaseUrl, localUserEmail, "runtime_storage_not_opened");
+    assert.equal(afterCreditGate.commercialAdmission?.balanceSufficient, true, "runtime_gate_balance_must_be_sufficient_after_credit");
 
     await page.goto(`${frontendBaseUrl}/usage`, { waitUntil: "domcontentloaded" });
     await waitReady(page, "正在读取账单与审计数据");
@@ -309,8 +354,6 @@ try {
     const csv = await readFile(downloadPath, "utf8");
     assert(csv.includes("id,type,amount,reason,created_at"), "billing_export_must_export_go_ledger_header");
     assert(csv.includes("local_rc_environment_open"), "billing_export_must_include_precloud_local_rc_entry");
-    assert(csv.includes("topup"), "billing_export_must_include_go_topup_ledger");
-    assert(csv.includes("refund"), "billing_export_must_include_go_refund_ledger");
 
     await page.goto(`${frontendBaseUrl}/admin/alerts`, { waitUntil: "domcontentloaded" });
     await waitReady(page, "正在读取公告与待处理事项");
@@ -323,7 +366,7 @@ try {
     await assertAnnouncementPresence(backendBaseUrl, announcementTitle, true);
 
     await page.goto(`${frontendBaseUrl}/overview`, { waitUntil: "domcontentloaded" });
-    await waitReady(page, "正在加载总览");
+    await waitReady(page, "正在读取资源总览数据");
     await page.getByRole("button", { name: /公告/ }).click();
     await page.getByText(announcementTitle).waitFor({ timeout: 30000 });
     await page.getByRole("heading", { name: "Local RC" }).waitFor({ timeout: 30000 });
@@ -362,7 +405,7 @@ try {
 
     await page.setViewportSize({ width: 1440, height: 920 });
     await page.goto(`${frontendBaseUrl}/overview`, { waitUntil: "domcontentloaded" });
-    await waitReady(page, "正在加载总览");
+    await waitReady(page, "正在读取资源总览数据");
     await page.getByRole("button", { name: "打开账号菜单" }).click();
     await Promise.all([
       page.waitForURL(`${frontendBaseUrl}/`, { timeout: 30000 }),
@@ -382,7 +425,7 @@ try {
       "account_info_dialog",
       "logout_click",
       "billing_go_csv_download",
-      "admin_user_recharge_refund_clicks",
+      "admin_user_prepare_approve_credit_clicks",
       "announcement_create_visible_delete",
       "desktop_mobile_global_overflow",
     ],

@@ -1,16 +1,18 @@
 import { useState } from "react";
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Textarea } from "../../components/ui/core";
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/core";
 import { Search, MoreVertical, Ban, CheckCircle, DollarSign, Trash2, Plus, Edit } from "lucide-react";
 import {
   adminLocalActionMessage,
-  buildAdminUserRechargePayload,
-  buildAdminUserRefundPayload,
-  createAdminUser,
+  adminRuntimeGateReasonLabel,
+  approveAdminCommercialAccount,
+  buildAdminCommercialAccountDraftInput,
+  buildAdminCommercialAccountInput,
+  buildAdminCommercialCreditPayload,
+  creditAdminCommercialAccount,
   deleteAdminUser,
   filterAdminUsers,
   normalizePortalAdminActionError,
-  rechargeAdminUser,
-  refundAdminUser,
+  prepareAdminCommercialAccount,
   toggleAdminUser,
   updateAdminUser,
   type AdminUserStatus,
@@ -26,13 +28,11 @@ export function AdminUsers() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [approveDialogOpen, setApproveDialogOpen] = useState(false);
   const [toggleDialogOpen, setToggleDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [rechargeDialogOpen, setRechargeDialogOpen] = useState(false);
-  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
   const [rechargeAmount, setRechargeAmount] = useState("");
-  const [refundAmount, setRefundAmount] = useState("");
-  const [refundReason, setRefundReason] = useState("");
   const [userNameInput, setUserNameInput] = useState("");
   const [userEmailInput, setUserEmailInput] = useState("");
   const [userPasswordInput, setUserPasswordInput] = useState("");
@@ -51,6 +51,19 @@ export function AdminUsers() {
     }
   };
 
+  const getRuntimeGateBadge = (user: AdminUserView) => {
+    if (user.runtimeGateDecision === "allowed") {
+      return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">allowed</Badge>;
+    }
+    if (user.runtimeGateReason === "insufficient_balance") {
+      return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">insufficient_balance</Badge>;
+    }
+    if (user.runtimeGateReason === "account_not_approved") {
+      return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">account_not_approved</Badge>;
+    }
+    return <Badge variant="outline" className="bg-neutral-50 text-neutral-600 border-neutral-200">{adminRuntimeGateReasonLabel(user.runtimeGateReason)}</Badge>;
+  };
+
   if (query.status === "loading") {
     return <div className="p-6"><Card className="p-6 text-sm text-neutral-600">正在读取用户管理数据...</Card></div>;
   }
@@ -60,6 +73,12 @@ export function AdminUsers() {
   }
 
   const filteredUsers = filterAdminUsers(query.data.users, searchQuery, statusFilter);
+  const totalBalance = filteredUsers.reduce((sum, user) => sum + user.balance, 0);
+  const totalAvailableBalance = filteredUsers.reduce((sum, user) => sum + user.availableBalance, 0);
+  const totalFrozenAmount = filteredUsers.reduce((sum, user) => sum + user.frozenAmount, 0);
+  const totalLedgerEvents = filteredUsers.reduce((sum, user) => sum + user.ledgerCount, 0);
+  const allowedGateCount = filteredUsers.filter((user) => user.runtimeGateDecision === "allowed").length;
+  const blockedGateCount = filteredUsers.filter((user) => user.runtimeGateDecision === "blocked").length;
 
   const refreshUsers = () => setRefreshVersion((value) => value + 1);
 
@@ -87,6 +106,12 @@ export function AdminUsers() {
     setEditDialogOpen(true);
   };
 
+  const openApproveDialog = (user: AdminUserView) => {
+    setSelectedUser(user);
+    setActionError("");
+    setApproveDialogOpen(true);
+  };
+
   const openToggleDialog = (user: AdminUserView) => {
     setSelectedUser(user);
     setActionError("");
@@ -106,14 +131,6 @@ export function AdminUsers() {
     setRechargeDialogOpen(true);
   };
 
-  const openRefundDialog = (user: AdminUserView) => {
-    setSelectedUser(user);
-    setRefundAmount("");
-    setRefundReason("");
-    setActionError("");
-    setRefundDialogOpen(true);
-  };
-
   const closeDetailDialog = () => {
     setDetailDialogOpen(false);
     setSelectedUser(null);
@@ -126,6 +143,11 @@ export function AdminUsers() {
 
   const closeEditDialog = () => {
     setEditDialogOpen(false);
+    setSelectedUser(null);
+  };
+
+  const closeApproveDialog = () => {
+    setApproveDialogOpen(false);
     setSelectedUser(null);
   };
 
@@ -144,12 +166,7 @@ export function AdminUsers() {
     setSelectedUser(null);
   };
 
-  const closeRefundDialog = () => {
-    setRefundDialogOpen(false);
-    setSelectedUser(null);
-  };
-
-  const runUserAction = async (actionName: string, action: () => Promise<void>, closeDialog: () => void) => {
+  const runUserAction = async (actionName: string, action: () => Promise<unknown>, closeDialog: () => void) => {
     setPendingAction(actionName);
     setActionError("");
     try {
@@ -165,18 +182,17 @@ export function AdminUsers() {
   };
 
   const submitCreate = async () => {
-    const name = userNameInput.trim();
-    const email = userEmailInput.trim();
-    const password = userPasswordInput.trim();
-    if (!name || !email || password.length < 8) {
-      setActionError("请输入姓名、邮箱和至少 8 位密码。");
+    try {
+      const payload = buildAdminCommercialAccountDraftInput(userNameInput, userEmailInput);
+      await runUserAction(
+        "create",
+        () => prepareAdminCommercialAccount(payload),
+        closeCreateDialog,
+      );
+    } catch (error) {
+      setActionError(normalizePortalAdminActionError(error, "操作失败，请稍后重试。"));
       return;
     }
-    await runUserAction(
-      "create",
-      () => createAdminUser({ name, email, password, redirectTo: "/admin/users" }),
-      closeCreateDialog,
-    );
   };
 
   const submitEdit = async () => {
@@ -214,6 +230,16 @@ export function AdminUsers() {
     );
   };
 
+  const submitApprove = async () => {
+    const payload = buildAdminCommercialAccountInput(selectedUser);
+    if (!payload) return;
+    await runUserAction(
+      "approve",
+      () => approveAdminCommercialAccount(payload),
+      closeApproveDialog,
+    );
+  };
+
   const submitDelete = async () => {
     if (!selectedUser) return;
     await runUserAction(
@@ -225,27 +251,12 @@ export function AdminUsers() {
 
   const submitRecharge = async () => {
     try {
-      const payload = buildAdminUserRechargePayload(selectedUser, rechargeAmount);
+      const payload = buildAdminCommercialCreditPayload(selectedUser, rechargeAmount);
       if (!payload) return;
       await runUserAction(
         "recharge",
-        () => rechargeAdminUser(payload),
+        () => creditAdminCommercialAccount(payload),
         () => setRechargeDialogOpen(false),
-      );
-    } catch (error) {
-      setActionError(normalizePortalAdminActionError(error, "操作失败，请稍后重试。"));
-      return;
-    }
-  };
-
-  const submitRefund = async () => {
-    try {
-      const payload = buildAdminUserRefundPayload(selectedUser, refundAmount, refundReason);
-      if (!payload) return;
-      await runUserAction(
-        "refund",
-        () => refundAdminUser(payload),
-        () => setRefundDialogOpen(false),
       );
     } catch (error) {
       setActionError(normalizePortalAdminActionError(error, "操作失败，请稍后重试。"));
@@ -261,6 +272,23 @@ export function AdminUsers() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="text-xs text-neutral-500">{adminLocalActionMessage}</div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+            {[
+              { label: "收入摘要", value: `¥${totalBalance.toFixed(2)}`, sub: `可用 ¥${totalAvailableBalance.toFixed(2)}` },
+              { label: "冻结金额", value: `¥${totalFrozenAmount.toFixed(2)}`, sub: "resource_preauth_freeze" },
+              { label: "运行时准入", value: `${allowedGateCount} allowed`, sub: `${blockedGateCount} blocked` },
+              { label: "账本事件", value: String(totalLedgerEvents), sub: "billing statement ledger" },
+            ].map((item) => (
+              <div key={item.label} className="rounded-md border border-neutral-200 bg-white p-4">
+                <div className="text-xs text-neutral-500">{item.label}</div>
+                <div className="mt-1 text-lg font-semibold text-neutral-900">{item.value}</div>
+                <div className="mt-1 text-xs text-neutral-500">{item.sub}</div>
+              </div>
+            ))}
+          </div>
+          <div className="text-xs text-neutral-500">
+            owner-created-or-approved MedOPL accounts 由真实 v22 business ledger 驱动；account_not_approved / insufficient_balance 会保持 fail-closed。
+          </div>
           {/* 搜索与筛选 */}
           <div className="flex gap-3">
             <div className="relative flex-1">
@@ -285,7 +313,7 @@ export function AdminUsers() {
             </Select>
             <Button className="gap-2" onClick={() => openCreateDialog()}>
               <Plus className="w-4 h-4" />
-              新建用户
+              准备账号
             </Button>
           </div>
 
@@ -297,8 +325,10 @@ export function AdminUsers() {
                   <TableHead>用户</TableHead>
                   <TableHead>状态</TableHead>
                   <TableHead>余额</TableHead>
-                  <TableHead>工作空间</TableHead>
+                  <TableHead>冻结金额</TableHead>
+                  <TableHead>运行时准入</TableHead>
                   <TableHead>套餐</TableHead>
+                  <TableHead>账本事件</TableHead>
                   <TableHead>注册时间</TableHead>
                   <TableHead className="w-[100px]">操作</TableHead>
                 </TableRow>
@@ -317,11 +347,19 @@ export function AdminUsers() {
                       <span className={user.balance < 100 ? "text-orange-600 font-medium" : ""}>
                         ¥{user.balance.toFixed(2)}
                       </span>
+                      <div className="text-xs text-neutral-500">可用 ¥{user.availableBalance.toFixed(2)}</div>
                     </TableCell>
-                    <TableCell>{user.workspaces}</TableCell>
+                    <TableCell>¥{user.frozenAmount.toFixed(2)}</TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        {getRuntimeGateBadge(user)}
+                        <div className="text-xs text-neutral-500">{user.runtimeState} / {user.storageState}</div>
+                      </div>
+                    </TableCell>
                     <TableCell>
                       <Badge variant="outline">{user.plan}</Badge>
                     </TableCell>
+                    <TableCell>{user.ledgerCount}</TableCell>
                     <TableCell className="text-sm text-neutral-600">{user.createdAt}</TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -341,11 +379,11 @@ export function AdminUsers() {
                           </DropdownMenuItem>
                           <DropdownMenuItem onSelect={() => openRechargeDialog(user)}>
                             <DollarSign className="w-4 h-4 mr-2" />
-                            充值
+                            授信/充值
                           </DropdownMenuItem>
-                          <DropdownMenuItem onSelect={() => openRefundDialog(user)}>
-                            <DollarSign className="w-4 h-4 mr-2" />
-                            退款
+                          <DropdownMenuItem onSelect={() => openApproveDialog(user)}>
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            批准商业账号
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           {user.status !== "disabled" && (
@@ -405,8 +443,18 @@ export function AdminUsers() {
                 <span>{getStatusBadge(selectedUser.status)}</span>
                 <span className="text-neutral-500">余额</span>
                 <span>¥{selectedUser.balance.toFixed(2)}</span>
+                <span className="text-neutral-500">可用余额</span>
+                <span>¥{selectedUser.availableBalance.toFixed(2)}</span>
+                <span className="text-neutral-500">冻结金额</span>
+                <span>¥{selectedUser.frozenAmount.toFixed(2)}</span>
                 <span className="text-neutral-500">工作空间</span>
-                <span>{selectedUser.workspaces}</span>
+                <span>{selectedUser.workspaceId}</span>
+                <span className="text-neutral-500">运行时准入</span>
+                <span>{getRuntimeGateBadge(selectedUser)}</span>
+                <span className="text-neutral-500">准入原因</span>
+                <span>{adminRuntimeGateReasonLabel(selectedUser.runtimeGateReason)}</span>
+                <span className="text-neutral-500">账本事件</span>
+                <span>{selectedUser.ledgerCount}</span>
                 <span className="text-neutral-500">套餐</span>
                 <span>{selectedUser.plan}</span>
                 <span className="text-neutral-500">注册时间</span>
@@ -429,8 +477,8 @@ export function AdminUsers() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>新建用户</DialogTitle>
-            <DialogDescription>创建本地 Portal 账号，并写入用户管理列表。</DialogDescription>
+            <DialogTitle>准备商业账号</DialogTitle>
+            <DialogDescription>创建或准备 owner-created-or-approved MedOPL account，并写入 v22 business account。</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
@@ -441,16 +489,12 @@ export function AdminUsers() {
               <Label htmlFor="createUserEmail">邮箱</Label>
               <Input id="createUserEmail" type="email" value={userEmailInput} onChange={(event) => setUserEmailInput(event.target.value)} disabled={pendingAction === "create"} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="createUserPassword">初始密码</Label>
-              <Input id="createUserPassword" type="password" value={userPasswordInput} onChange={(event) => setUserPasswordInput(event.target.value)} disabled={pendingAction === "create"} />
-            </div>
           </div>
           {actionError && <div className="text-sm text-red-600">{actionError}</div>}
           <DialogFooter>
             <Button variant="outline" onClick={closeCreateDialog} disabled={pendingAction === "create"}>取消</Button>
             <Button onClick={submitCreate} disabled={pendingAction === "create"}>
-              {pendingAction === "create" ? "提交中..." : "确认创建"}
+              {pendingAction === "create" ? "提交中..." : "确认准备"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -487,6 +531,36 @@ export function AdminUsers() {
             <Button variant="outline" onClick={closeEditDialog} disabled={pendingAction === "edit"}>取消</Button>
             <Button onClick={submitEdit} disabled={pendingAction === "edit"}>
               {pendingAction === "edit" ? "提交中..." : "保存修改"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={approveDialogOpen}
+        onOpenChange={(open) => {
+          setApproveDialogOpen(open);
+          if (!open) setSelectedUser(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>批准商业账号</DialogTitle>
+            <DialogDescription>批准后仍需满足 plan/balance/quota，runtime gate 才会从 account_not_approved 或 insufficient_balance 进入 allowed。</DialogDescription>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-2 text-sm text-neutral-700">
+              <div>{selectedUser.name} · {selectedUser.email}</div>
+              <div className="rounded-md border border-neutral-200 bg-neutral-50 p-3 text-xs text-neutral-600">
+                workspaceId: {selectedUser.workspaceId}
+              </div>
+            </div>
+          )}
+          {actionError && <div className="text-sm text-red-600">{actionError}</div>}
+          <DialogFooter>
+            <Button variant="outline" onClick={closeApproveDialog} disabled={pendingAction === "approve"}>取消</Button>
+            <Button onClick={submitApprove} disabled={pendingAction === "approve"}>
+              {pendingAction === "approve" ? "提交中..." : "确认批准"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -557,8 +631,8 @@ export function AdminUsers() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>账户充值</DialogTitle>
-            <DialogDescription>向当前 Portal 本地账户账本写入充值金额。</DialogDescription>
+            <DialogTitle>授信/充值</DialogTitle>
+            <DialogDescription>向当前 v22 business account 写入 credit ledger，余额不足时 runtime/storage 仍 fail-closed。</DialogDescription>
           </DialogHeader>
           {selectedUser && (
             <div className="space-y-4">
@@ -566,7 +640,7 @@ export function AdminUsers() {
                 {selectedUser.name} · {selectedUser.email}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="rechargeAmount">充值金额</Label>
+                <Label htmlFor="rechargeAmount">授信金额</Label>
                 <Input
                   id="rechargeAmount"
                   type="number"
@@ -575,7 +649,7 @@ export function AdminUsers() {
                   inputMode="decimal"
                   value={rechargeAmount}
                   onChange={(event) => setRechargeAmount(event.target.value)}
-                  placeholder="输入充值金额"
+                  placeholder="输入授信金额"
                   disabled={pendingAction === "recharge"}
                 />
               </div>
@@ -586,61 +660,7 @@ export function AdminUsers() {
             <Button variant="outline" onClick={closeRechargeDialog} disabled={pendingAction === "recharge"}>取消</Button>
             <Button onClick={submitRecharge} disabled={pendingAction === "recharge"} className="gap-2">
               <DollarSign className="w-4 h-4" />
-              {pendingAction === "recharge" ? "提交中..." : "确认充值"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={refundDialogOpen}
-        onOpenChange={(open) => {
-          setRefundDialogOpen(open);
-          if (!open) setSelectedUser(null);
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>账本退款</DialogTitle>
-            <DialogDescription>从当前 Portal 本地账本登记退款金额和退款原因。</DialogDescription>
-          </DialogHeader>
-          {selectedUser && (
-            <div className="space-y-4">
-              <div className="text-sm text-neutral-700">
-                {selectedUser.name} · {selectedUser.email}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="refundAmount">退款金额</Label>
-                <Input
-                  id="refundAmount"
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  inputMode="decimal"
-                  value={refundAmount}
-                  onChange={(event) => setRefundAmount(event.target.value)}
-                  placeholder="输入退款金额"
-                  disabled={pendingAction === "refund"}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="refundReason">退款原因</Label>
-                <Textarea
-                  id="refundReason"
-                  value={refundReason}
-                  onChange={(event) => setRefundReason(event.target.value)}
-                  placeholder="输入退款原因"
-                  disabled={pendingAction === "refund"}
-                />
-              </div>
-            </div>
-          )}
-          {actionError && <div className="text-sm text-red-600">{actionError}</div>}
-          <DialogFooter>
-            <Button variant="outline" onClick={closeRefundDialog} disabled={pendingAction === "refund"}>取消</Button>
-            <Button onClick={submitRefund} disabled={pendingAction === "refund"} variant="destructive" className="gap-2">
-              <DollarSign className="w-4 h-4" />
-              {pendingAction === "refund" ? "提交中..." : "确认退款"}
+              {pendingAction === "recharge" ? "提交中..." : "确认授信"}
             </Button>
           </DialogFooter>
         </DialogContent>

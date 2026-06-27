@@ -172,9 +172,19 @@ assertIncludes(adminAuditSource, "overflow-x-auto", "admin_audit_table_must_be_s
 
 assertIncludes(adminApiSource, "toggleAdminUser", "admin_user_toggle_api_helper_missing");
 assertIncludes(adminApiSource, "approve-user", "admin_user_platform_approve_action_missing");
-assertIncludes(adminApiSource, "createAdminUser", "admin_user_create_api_helper_missing");
+assertIncludes(adminApiSource, "prepareAdminCommercialAccount", "admin_commercial_prepare_api_helper_missing");
+assertIncludes(adminApiSource, "approveAdminCommercialAccount", "admin_commercial_approve_api_helper_missing");
+assertIncludes(adminApiSource, "creditAdminCommercialAccount", "admin_commercial_credit_api_helper_missing");
+assertIncludes(adminApiSource, "/v22/users/prepare", "admin_commercial_prepare_must_call_v22_business_ledger");
+assertIncludes(adminApiSource, "/v22/users/approve", "admin_commercial_approve_must_call_v22_business_ledger");
+assertIncludes(adminApiSource, "/v22/users/credit", "admin_commercial_credit_must_call_v22_business_ledger");
+assertIncludes(adminApiSource, "/v22/billing/statement", "admin_commercial_statement_must_read_v22_business_ledger");
+assertIncludes(adminApiSource, "/v22/runtime/freeze", "admin_commercial_freeze_must_read_v22_business_ledger");
+assertIncludes(adminApiSource, "/opl/runtime-gate", "admin_commercial_runtime_gate_must_read_v22_business_ledger");
+assertExcludes(adminApiSource, "createAdminUser", "admin_commercial_must_retire_legacy_create_alias");
+assertExcludes(adminApiSource, "rechargeAdminUser", "admin_commercial_must_retire_legacy_recharge_alias");
+assertExcludes(adminApiSource, "refundAdminUser", "admin_commercial_must_retire_legacy_refund_alias");
 assertIncludes(adminApiSource, "updateAdminUser", "admin_user_update_api_helper_missing");
-assertIncludes(adminApiSource, "rechargeAdminUser", "admin_user_recharge_api_helper_missing");
 assertIncludes(adminApiSource, "deleteAdminUser", "admin_user_delete_api_helper_missing");
 assertIncludes(adminApiSource, "saveAdminAnnouncement", "admin_announcement_save_api_helper_missing");
 assertIncludes(adminApiSource, "toggleAdminAnnouncement", "admin_announcement_toggle_api_helper_missing");
@@ -186,8 +196,17 @@ assertExcludes(adminApiSource, "response.text()", "admin_action_errors_must_not_
 
 assertIncludes(adminUsersSource, "用户管理", "admin_users_page_must_use_user_management_copy");
 assertIncludes(adminUsersSource, "toggleAdminUser", "admin_users_page_must_wire_toggle_action");
-assertIncludes(adminUsersSource, "approve: selectedUser.status !== \"active\"", "admin_users_page_must_wire_platform_approve_action");
-assertIncludes(adminUsersSource, "createAdminUser", "admin_users_page_must_wire_create_action");
+assertIncludes(adminUsersSource, "prepareAdminCommercialAccount", "admin_users_page_must_wire_prepare_account_action");
+assertIncludes(adminUsersSource, "approveAdminCommercialAccount", "admin_users_page_must_wire_business_approval_action");
+assertIncludes(adminUsersSource, "creditAdminCommercialAccount", "admin_users_page_must_wire_credit_action");
+assertIncludes(adminUsersSource, "收入摘要", "admin_users_page_must_absorb_figma_revenue_summary");
+assertIncludes(adminUsersSource, "运行时准入", "admin_users_page_must_absorb_figma_runtime_admission");
+assertIncludes(adminUsersSource, "冻结金额", "admin_users_page_must_absorb_figma_freeze_summary");
+assertIncludes(adminUsersSource, "账本事件", "admin_users_page_must_absorb_figma_ledger_summary");
+assertIncludes(adminUsersSource, "owner-created-or-approved MedOPL accounts", "admin_users_page_must_use_current_business_account_truth");
+assertExcludes(adminUsersSource, "createAdminUser", "admin_users_page_must_not_wire_legacy_create_action");
+assertExcludes(adminUsersSource, "rechargeAdminUser", "admin_users_page_must_not_wire_legacy_recharge_action");
+assertExcludes(adminUsersSource, "refundAdminUser", "admin_users_page_must_not_wire_legacy_refund_action");
 assertIncludes(adminUsersSource, "updateAdminUser", "admin_users_page_must_wire_update_action");
 assertIncludes(adminUsersSource, "deleteAdminUser", "admin_users_page_must_wire_delete_action");
 assertIncludes(adminUsersSource, "setRefreshVersion", "admin_users_page_must_refresh_after_mutation");
@@ -195,10 +214,7 @@ assertIncludes(adminUsersSource, "Dialog", "admin_users_actions_must_open_dialog
 assertIncludes(adminUsersSource, "openDetailDialog(user)", "admin_users_detail_menu_must_open_dialog");
 assertIncludes(adminUsersSource, "openCreateDialog()", "admin_users_create_button_must_open_dialog");
 assertIncludes(adminUsersSource, "openEditDialog(user)", "admin_users_edit_menu_must_open_dialog");
-assertIncludes(adminUsersSource, "rechargeAdminUser", "admin_users_page_must_wire_recharge_action");
-assertIncludes(adminUsersSource, "refundAdminUser", "admin_users_page_must_wire_refund_action");
 assertIncludes(adminUsersSource, "openRechargeDialog(user)", "admin_users_recharge_menu_must_open_dialog");
-assertIncludes(adminUsersSource, "openRefundDialog(user)", "admin_users_refund_menu_must_open_dialog");
 assertExcludes(adminUsersSource, "账本充值/退款等待后端账务事务能力启用", "admin_users_wallet_actions_must_not_use_legacy_disabled_copy");
 assertIncludes(adminUsersSource, "openToggleDialog(user)", "admin_users_toggle_menu_must_open_confirm_dialog");
 assertIncludes(adminUsersSource, "openDeleteDialog(user)", "admin_users_delete_menu_must_open_confirm_dialog");

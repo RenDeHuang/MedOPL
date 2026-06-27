@@ -73,6 +73,7 @@ const workspacePageSource = await readFile("services/portal/frontend/src/app/pag
 const workspaceModelSource = await readFile("services/portal/frontend/src/app/data/portalWorkspaceModel.ts", "utf8");
 const adminUsersPageSource = await readFile("services/portal/frontend/src/app/pages/admin/AdminUsers.tsx", "utf8");
 const adminUsersModelSource = await readFile("services/portal/frontend/src/app/data/portalAdminUsersModel.ts", "utf8");
+const adminApiSource = await readFile("services/portal/frontend/src/api/portal/admin.ts", "utf8");
 const adminPageSources = await Promise.all([
   "services/portal/frontend/src/app/pages/admin/AdminDashboard.tsx",
   "services/portal/frontend/src/app/pages/admin/AdminUsers.tsx",
@@ -200,8 +201,6 @@ for (const pageOwnedAdminUsersState of [
   "query.data.users.filter",
   "user.name.toLowerCase()",
   "Number(rechargeAmount)",
-  "Number(refundAmount)",
-  "refundReason.trim()",
 ]) {
   assert.equal(
     adminUsersPageSource.includes(pageOwnedAdminUsersState),
@@ -212,9 +211,10 @@ for (const pageOwnedAdminUsersState of [
 
 for (const modelOwnedAdminUsersState of [
   "function filterAdminUsers",
-  "function buildAdminUserRechargePayload",
-  "function buildAdminUserRefundPayload",
-  "平台批准",
+  "function buildAdminCommercialAccountInput",
+  "function buildAdminCommercialCreditPayload",
+  "function buildAdminCommercialAccountDraftInput",
+  "owner-created-or-approved MedOPL account",
 ]) {
   assert(
     adminUsersModelSource.includes(modelOwnedAdminUsersState),
@@ -222,9 +222,102 @@ for (const modelOwnedAdminUsersState of [
   );
 }
 assert(
-  adminUsersPageSource.includes("approve: selectedUser.status !== \"active\""),
-  "admin_users_page_must_route_non_active_toggle_through_platform_approval",
+  adminUsersPageSource.includes("approveAdminCommercialAccount"),
+  "admin_users_page_must_route_account_approval_through_v22_business_ledger",
 );
+
+for (const retiredCommercialAlias of [
+  "createAdminUser",
+  "rechargeAdminUser",
+  "refundAdminUser",
+]) {
+  for (const source of [adminApiSource, adminUsersModelSource, adminUsersPageSource]) {
+    assert.equal(
+      source.includes(retiredCommercialAlias),
+      false,
+      `admin_commercial_ui_must_not_keep_legacy_alias:${retiredCommercialAlias}`,
+    );
+  }
+}
+
+for (const commercialAction of [
+  "prepareAdminCommercialAccount",
+  "approveAdminCommercialAccount",
+  "creditAdminCommercialAccount",
+]) {
+  const functionStart = adminApiSource.indexOf(`export async function ${commercialAction}`);
+  assert(functionStart >= 0, `admin_commercial_api_function_missing:${commercialAction}`);
+  const nextFunction = adminApiSource.indexOf("\nexport async function ", functionStart + 1);
+  const functionSource = adminApiSource.slice(functionStart, nextFunction >= 0 ? nextFunction : adminApiSource.length);
+  assert.equal(
+    functionSource.includes("postPortalAdminAction"),
+    false,
+    `admin_commercial_api_must_not_use_legacy_admin_actions:${commercialAction}`,
+  );
+}
+
+for (const businessEndpoint of [
+  "/v22/users/prepare",
+  "/v22/users/approve",
+  "/v22/users/credit",
+  "/v22/billing/statement",
+  "/v22/runtime/freeze",
+  "/opl/runtime-gate",
+]) {
+  assert(
+    adminApiSource.includes(businessEndpoint),
+    `admin_commercial_api_must_call_v22_business_endpoint:${businessEndpoint}`,
+  );
+}
+assert(
+  adminUsersModelSource.includes("Promise.all([") &&
+    adminUsersModelSource.includes("fetchAdminBillingStatement") &&
+    adminUsersModelSource.includes("fetchAdminRuntimeFreeze") &&
+    adminUsersModelSource.includes("fetchAdminRuntimeGate"),
+  "admin_commercial_ledger_state_must_load_real_ledger_endpoints_together",
+);
+assert.equal(
+  adminUsersModelSource.includes("Promise.allSettled"),
+  false,
+  "admin_commercial_ledger_state_must_fail_closed_instead_of_rendering_partial_projection",
+);
+assert(
+  adminUsersModelSource.includes("crypto.randomUUID") &&
+    adminUsersModelSource.includes("adminCreditIdempotencyKey"),
+  "admin_commercial_credit_must_generate_per_operation_idempotency_key",
+);
+assert.equal(
+  adminUsersModelSource.includes('idempotencyKey: `admin-credit:${user.workspaceId}:${amount.toFixed(2)}`'),
+  false,
+  "admin_commercial_credit_must_not_reuse_same_amount_as_idempotency_key",
+);
+
+for (const figmaCommercialLaunchMarker of [
+  "收入摘要",
+  "运行时准入",
+  "冻结金额",
+  "账本事件",
+  "owner-created-or-approved MedOPL accounts",
+]) {
+  assert(
+    adminUsersPageSource.includes(figmaCommercialLaunchMarker),
+    `admin_users_page_must_absorb_figma_commercial_launch_module:${figmaCommercialLaunchMarker}`,
+  );
+}
+
+for (const ledgerModelMarker of [
+  "billingStatement",
+  "runtimeFreeze",
+  "runtimeGate",
+  "account_not_approved",
+  "insufficient_balance",
+  "allowed",
+]) {
+  assert(
+    adminUsersModelSource.includes(ledgerModelMarker),
+    `admin_users_model_must_project_real_business_ledger_state:${ledgerModelMarker}`,
+  );
+}
 
 for (const source of adminPageSources) {
   assert.equal(
