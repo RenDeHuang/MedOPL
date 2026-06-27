@@ -461,6 +461,7 @@ async function assertLocalRCControlPlaneParity() {
     "BillingSummary(ctx",
     "BillingDetails(ctx",
     "SaveAuditEvent",
+    "BusinessAccountByWorkspace(ctx, audit.WorkspaceID)",
     "ledgerFromEvents",
     "OwnerScope: \"go-control-plane\"",
     "Resources(ctx",
@@ -532,6 +533,16 @@ async function assertLocalRCControlPlaneParity() {
     "./internal/service/controlplane",
     "TestServicePersistsBillingEventsForBusinessReceipts",
     "go_billing_event_receipt_persistence_parity",
+  );
+  runGoPackageTest(
+    "./internal/service/controlplane",
+    "TestServiceRecordFileWritesBillingEventWhenLedgerTenantLookupIsUnavailable",
+    "go_upload_file_billing_event_tenant_fallback_parity",
+  );
+  runGoPackageTest(
+    "./internal/repository/postgres",
+    "TestBillingEventWritebackFromFileUploadIsIdempotent",
+    "go_upload_file_billing_event_idempotency_parity",
   );
   const creditEventRegressionSource = await readRepoFile(`${serviceRoot}/internal/service/controlplane/business_account_credit_test.go`);
   assertIncludes(

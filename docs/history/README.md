@@ -16,14 +16,15 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `feat/goal-g4-one-person-production-launch-approval`
-- latest landed commit: `39ccf31a85df0124d12a881df809898084ab060e`
-- next cursor: `goal-g4-production-canary-deployment-proof`
+- latest landed branch: `goal-g4-upload-file-diagnostic-receipt`
+- latest landed commit: `1e33b3829194d566877f8b46821616b189e8deed`
+- next cursor: `goal-g4-upload-file-billing-event-writeback-fix`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
 
 ## Archive Pointers
 
+- G4 upload file diagnostic receipt: `goal-g4-upload-file-diagnostic-receipt` / `1e33b3829194d566877f8b46821616b189e8deed` adds redacted diagnostic fields for `/api/opl/files` and the live_test runner. Release Image run `28283617400` built tag `1e33b38`; Cloud Rollout run `28283635464` deployed it and produced `upload_file` diagnostic category `billing_event_write_failed` at `save_billing_event`. It can claim diagnostic receipt shape and root-cause category only; consumer canary pass, G4 deployment proof, production complete and external PSP remain unclaimed.
 - G4 one-person production launch approval: `feat/goal-g4-one-person-production-launch-approval` / `39ccf31a85df0124d12a881df809898084ab060e` makes Cloud Rollout `workflow_dispatch` + GitHub `production` environment approval + `confirm_production_launch=deploy-current` the production launch approval gate, removes `MEDOPL_PRODUCTION_*` GitHub vars/secrets and K8s runtime env refs as requirements, and records a redacted approval receipt from workflow inputs. It can claim launch approval shape simplification only; production deploy proof, G3 evidence restore rerun, full production and external PSP remain unclaimed.
 - change archive: retired; do not use as long-term database
 - active change packages: retired; do not use as current source of truth

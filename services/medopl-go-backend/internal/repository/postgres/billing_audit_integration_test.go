@@ -131,3 +131,50 @@ func TestBillingEventUpsertIsIdempotentBySourceEventKey(t *testing.T) {
 		t.Fatalf("billing event must retain source event idempotency refs: %+v", events[0])
 	}
 }
+
+func TestBillingEventWritebackFromFileUploadIsIdempotent(t *testing.T) {
+	ctx := context.Background()
+	db := newTypedBillingAuditTestDB(t)
+	store := NewControlPlaneStore(db)
+	first := cpd.BillingEvent{
+		ID:                   "billing-file-upload-first",
+		TenantID:             "tenant-file-upload-billing-rc",
+		WorkspaceID:          "workspace-file-upload-billing-rc",
+		Type:                 "hold",
+		Status:               "recorded",
+		IdempotencyKey:       "audit-file-upload-once",
+		Amount:               0.1,
+		Currency:             "CNY",
+		Reason:               cpd.AuditKindFileUpload,
+		OwnerScope:           "go-control-plane",
+		ResourceBindingID:    "binding-file-upload-billing-rc",
+		BillingAttributionID: "billing-attr-file-upload-rc",
+		FileRef:              "file-upload-billing-rc",
+		SourceEventID:        "audit-file-upload-once",
+		SourceEventType:      cpd.AuditKindFileUpload,
+		CreatedAt:            "2026-06-24T02:03:04Z",
+	}
+	retry := first
+	retry.ID = "billing-file-upload-retry"
+
+	if err := store.SaveBillingEvent(ctx, first); err != nil {
+		t.Fatalf("SaveBillingEvent(first) error = %v", err)
+	}
+	if err := store.SaveBillingEvent(ctx, retry); err != nil {
+		t.Fatalf("SaveBillingEvent(retry) error = %v", err)
+	}
+	events, err := store.ListBillingEvents(ctx, first.WorkspaceID)
+	if err != nil {
+		t.Fatalf("ListBillingEvents() error = %v", err)
+	}
+	if len(events) != 1 {
+		t.Fatalf("file upload billing event retry must keep one event, got %d: %+v", len(events), events)
+	}
+	event := events[0]
+	if event.TenantID != first.TenantID || event.SourceEventType != cpd.AuditKindFileUpload || event.FileRef != first.FileRef {
+		t.Fatalf("file upload billing event must retain tenant/source/file refs: %+v", event)
+	}
+	if event.Type != "hold" || event.Amount != 0.1 || event.IdempotencyKey != first.IdempotencyKey {
+		t.Fatalf("file upload billing event must keep hold/idempotency semantics: %+v", event)
+	}
+}

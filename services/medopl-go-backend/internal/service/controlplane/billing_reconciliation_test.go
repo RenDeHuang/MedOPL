@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	cpd "github.com/rendehuang/medopl/services/medopl-go-backend/internal/domain/controlplane"
+	cprepo "github.com/rendehuang/medopl/services/medopl-go-backend/internal/repository/controlplane"
 	"github.com/rendehuang/medopl/services/medopl-go-backend/internal/repository/memory"
 )
 
@@ -160,6 +161,66 @@ func TestServicePersistsBillingEventsForBusinessReceipts(t *testing.T) {
 	if summary.LedgerCount != len(events)+len(credits) {
 		t.Fatalf("summary must read persisted billing and credit ledger count: got=%d want=%d ledger=%+v events=%+v credits=%+v", summary.LedgerCount, len(events)+len(credits), summary.Ledger, events, credits)
 	}
+}
+
+func TestServiceRecordFileWritesBillingEventWhenLedgerTenantLookupIsUnavailable(t *testing.T) {
+	ctx := context.Background()
+	store := &ledgerTenantLookupUnavailableStore{Store: memory.NewControlPlaneStore()}
+	service := NewService(store)
+	launch := bindAndOpen(t, ctx, service)
+
+	first, err := service.RecordFile(ctx, RecordFileInput{
+		LaunchID:     launch.LaunchID,
+		FileName:     "billing-event-writeback.csv",
+		RelativePath: "inputs/billing-event-writeback.csv",
+		ContentType:  "text/csv",
+		SizeBytes:    128,
+	})
+	if err != nil {
+		t.Fatalf("RecordFile(first) error = %v", err)
+	}
+	second, err := service.RecordFile(ctx, RecordFileInput{
+		LaunchID:     launch.LaunchID,
+		FileName:     "billing-event-writeback.csv",
+		RelativePath: "inputs/billing-event-writeback.csv",
+		ContentType:  "text/csv",
+		SizeBytes:    128,
+	})
+	if err != nil {
+		t.Fatalf("RecordFile(second) error = %v", err)
+	}
+	if second.FileRef != first.FileRef {
+		t.Fatalf("repeated upload must keep stable fileRef: first=%+v second=%+v", first, second)
+	}
+
+	events, err := service.store.ListBillingEvents(ctx, launch.WorkspaceID)
+	if err != nil {
+		t.Fatalf("ListBillingEvents() error = %v", err)
+	}
+	var fileUploadEvents []cpd.BillingEvent
+	for _, event := range events {
+		if event.SourceEventType == cpd.AuditKindFileUpload {
+			fileUploadEvents = append(fileUploadEvents, event)
+		}
+	}
+	if len(fileUploadEvents) != 1 {
+		t.Fatalf("expected exactly one file.upload billing event after retry, got %d: %+v", len(fileUploadEvents), events)
+	}
+	event := fileUploadEvents[0]
+	if event.TenantID != "tenant-v22" || event.WorkspaceID != launch.WorkspaceID || event.ResourceBindingID != launch.ResourceBindingID {
+		t.Fatalf("file upload billing event must carry account tenant/workspace/resource identity: %+v launch=%+v", event, launch)
+	}
+	if event.Type != "hold" || event.Amount != 0.1 || event.FileRef != first.FileRef || event.IdempotencyKey == "" {
+		t.Fatalf("file upload billing event mismatch: %+v file=%+v", event, first)
+	}
+}
+
+type ledgerTenantLookupUnavailableStore struct {
+	cprepo.Store
+}
+
+func (store *ledgerTenantLookupUnavailableStore) ListResourceBindingLedgers(ctx context.Context, workspaceID string) ([]cpd.ResourceBindingLedger, error) {
+	return nil, nil
 }
 
 func ledgerAsMaps(t *testing.T, items []LedgerItem) []map[string]any {

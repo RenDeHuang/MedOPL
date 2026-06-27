@@ -21,6 +21,12 @@ func (service *Service) saveBillingEventForAudit(ctx context.Context, audit cpd.
 		}
 	}
 	if tenantID == "" {
+		account, accountErr := service.store.BusinessAccountByWorkspace(ctx, audit.WorkspaceID)
+		if accountErr == nil {
+			tenantID = firstNonEmpty(account.TenantID)
+		}
+	}
+	if tenantID == "" {
 		return cpd.ErrResourceNotFound
 	}
 	amount := 1.25
