@@ -126,7 +126,113 @@ func TestControlPlaneHandlersExposeReleaseRuntimeDiagnosticForGenericFailure(t *
 	}
 }
 
+func TestControlPlaneHandlersExposeUploadFileDiagnosticForGenericFailure(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+	router := gin.New()
+	api := router.Group("/api")
+	RegisterControlPlaneRoutes(api, uploadFileFailingService{})
+
+	rec := httptest.NewRecorder()
+	req, _ := http.NewRequest(http.MethodPost, "/api/opl/files?launchId=launch-v22", strings.NewReader(`{
+		"fileName":"measurements.csv",
+		"relativePath":"inputs/private/measurements.csv",
+		"contentType":"text/csv",
+		"sizeBytes":32
+	}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("upload file diagnostic status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	body := mapFromRecorder(t, rec)
+	if body["error"] != "control_plane_operation_failed" {
+		t.Fatalf("upload file diagnostic keeps public error = %+v", body)
+	}
+	if body["errorCategory"] != "file_save_failed" {
+		t.Fatalf("upload file diagnostic category = %+v", body)
+	}
+	if body["correlationId"] == "" || body["operationId"] == "" {
+		t.Fatalf("upload file diagnostic ids = %+v", body)
+	}
+	for _, field := range []string{
+		"launchIdPresent",
+		"launchLookupSucceeded",
+		"workspaceIdHash",
+		"resourceBindingIdHash",
+		"storageBindingIdHash",
+		"runtimeState",
+		"storageState",
+		"fileNamePresent",
+		"relativePathHash",
+		"fileRefHash",
+		"objectRefHash",
+		"dbOperationStage",
+		"handlerStage",
+		"migrationState",
+		"duplicateCategory",
+	} {
+		if _, ok := body[field]; !ok {
+			t.Fatalf("upload file diagnostic missing %s in %+v", field, body)
+		}
+	}
+	for _, field := range []string{
+		"providerKeyRefPresent",
+		"saveFileStageSucceeded",
+		"saveAuditEventStageSucceeded",
+		"billingEventStageSucceeded",
+		"retryable",
+	} {
+		if _, ok := body[field]; !ok {
+			t.Fatalf("upload file diagnostic missing %s in %+v", field, body)
+		}
+	}
+	if body["launchIdPresent"] != true || body["fileNamePresent"] != true {
+		t.Fatalf("upload file diagnostic request shape flags = %+v", body)
+	}
+	if body["handlerStage"] != "upload_file_handler" {
+		t.Fatalf("upload file diagnostic handler stage = %+v", body)
+	}
+	for _, forbidden := range []string{
+		"launch-v22",
+		"measurements.csv",
+		"inputs/private/measurements.csv",
+		"object://",
+		"postgres://",
+		"SecretKey",
+		"signed",
+	} {
+		if strings.Contains(rec.Body.String(), forbidden) {
+			t.Fatalf("upload file diagnostic leaked %q in %s", forbidden, rec.Body.String())
+		}
+	}
+}
+
 type storageDestroyFailingService struct{}
+
+type uploadFileFailingService struct {
+	storageDestroyFailingService
+}
+
+func (uploadFileFailingService) RecordFile(context.Context, cps.RecordFileInput) (cps.PublicFileRef, error) {
+	return cps.PublicFileRef{}, cps.RecordFileDiagnosticError{
+		Diagnostic: cps.RecordFileDiagnostic{
+			Stage:             "save_file",
+			LaunchID:          "launch-v22",
+			WorkspaceID:       "workspace-v22",
+			ResourceBindingID: "runtime-binding-v22",
+			StorageBindingID:  "storage-binding-v22",
+			ProviderKeyRef:    "provider-key-ref-v22",
+			RuntimeState:      "ready",
+			StorageState:      "ready",
+			FileName:          "measurements.csv",
+			RelativePath:      "inputs/private/measurements.csv",
+			FileRef:           "file-v22",
+			ObjectRef:         "object://storage-binding-v22/workspace-v22/inputs/private/measurements.csv",
+		},
+		Err: errors.New("raw save file detail must stay private"),
+	}
+}
 
 func (storageDestroyFailingService) PrepareBusinessAccount(context.Context, cps.PrepareBusinessAccountInput) (cps.BusinessAccountProjection, error) {
 	return cps.BusinessAccountProjection{}, nil

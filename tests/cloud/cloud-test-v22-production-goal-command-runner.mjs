@@ -251,6 +251,36 @@ const server = createServer(async (request, response) => {
     return;
   }
   if (url.pathname === "/api/opl/files" && request.method === "POST") {
+    if (mode === "upload-diagnostic") {
+      sendJson(400, {
+        ok: false,
+        error: "control_plane_operation_failed",
+        errorCategory: "file_save_failed",
+        correlationId: "corr-upload-canary",
+        operationId: "upload-file-canary",
+        launchIdPresent: true,
+        launchLookupSucceeded: true,
+        workspaceIdHash: "workspace_hash",
+        resourceBindingIdHash: "resource_hash",
+        storageBindingIdHash: "storage_hash",
+        providerKeyRefPresent: true,
+        runtimeState: "ready",
+        storageState: "ready",
+        fileNamePresent: true,
+        relativePathHash: "relative_path_hash",
+        fileRefHash: "file_hash",
+        objectRefHash: "object_hash",
+        saveFileStageSucceeded: false,
+        saveAuditEventStageSucceeded: false,
+        billingEventStageSucceeded: false,
+        dbOperationStage: "save_file",
+        handlerStage: "upload_file_handler",
+        migrationState: "matched",
+        duplicateCategory: "none",
+        retryable: false,
+      });
+      return;
+    }
     sendJson(200, { ok: true, fileRef: "file_canary", storageBindingId: "storage_canary" });
     return;
   }
@@ -561,6 +591,30 @@ try {
   assert.equal(releaseDiagnosticPayload.summary.diagnosticReceipt.billingAttributionPresent, true, "release_diagnostic_billing_attribution");
   assert.equal(releaseDiagnosticPayload.summary.diagnosticReceipt.providerReleaseCategory, "adapter_error", "release_diagnostic_provider_category");
   assertNoSensitiveText(releaseDiagnostic.stdout + releaseDiagnostic.stderr, "live_test_release_diagnostic");
+
+  const uploadDiagnosticCanary = await startCanaryServer("upload-diagnostic");
+  canaryServers.push(uploadDiagnosticCanary);
+  const uploadDiagnostic = run(["--operation", "live_test", "--execute", "--confirm-current-session-authorization"], {
+    ...baseEnv,
+    V22_OPL_WEBUI_CONSUMER_CANARY_URL: uploadDiagnosticCanary.baseUrl,
+    V22_MEDOPL_PUBLIC_BASE_URL: uploadDiagnosticCanary.baseUrl,
+  });
+  assert.notEqual(uploadDiagnostic.status, 0, "live_test_must_fail_when_upload_file_returns_diagnostic_error");
+  const uploadDiagnosticPayload = JSON.parse(uploadDiagnostic.stdout);
+  assert.equal(uploadDiagnosticPayload.summary.blocker, "production_goal_live_test_upload_file_failed", "upload_diagnostic_blocker");
+  assert.equal(uploadDiagnosticPayload.summary.diagnosticReceipt.errorCategory, "file_save_failed", "upload_diagnostic_category");
+  assert.equal(uploadDiagnosticPayload.summary.diagnosticReceipt.correlationId, "corr-upload-canary", "upload_diagnostic_correlation");
+  assert.equal(uploadDiagnosticPayload.summary.diagnosticReceipt.launchIdPresent, true, "upload_diagnostic_launch_id_present");
+  assert.equal(uploadDiagnosticPayload.summary.diagnosticReceipt.launchLookupSucceeded, true, "upload_diagnostic_launch_lookup");
+  assert.equal(uploadDiagnosticPayload.summary.diagnosticReceipt.resourceBindingIdHash, "resource_hash", "upload_diagnostic_resource_hash");
+  assert.equal(uploadDiagnosticPayload.summary.diagnosticReceipt.storageBindingIdHash, "storage_hash", "upload_diagnostic_storage_hash");
+  assert.equal(uploadDiagnosticPayload.summary.diagnosticReceipt.fileNamePresent, true, "upload_diagnostic_file_name");
+  assert.equal(uploadDiagnosticPayload.summary.diagnosticReceipt.relativePathHash, "relative_path_hash", "upload_diagnostic_relative_path_hash");
+  assert.equal(uploadDiagnosticPayload.summary.diagnosticReceipt.objectRefHash, "object_hash", "upload_diagnostic_object_hash");
+  assert.equal(uploadDiagnosticPayload.summary.diagnosticReceipt.saveFileStageSucceeded, false, "upload_diagnostic_save_file_stage");
+  assert.equal(uploadDiagnosticPayload.summary.diagnosticReceipt.dbOperationStage, "save_file", "upload_diagnostic_db_stage");
+  assert.equal(uploadDiagnosticPayload.summary.diagnosticReceipt.handlerStage, "upload_file_handler", "upload_diagnostic_handler_stage");
+  assertNoSensitiveText(uploadDiagnostic.stdout + uploadDiagnostic.stderr, "live_test_upload_diagnostic");
 
   const dbProofMissing = run(["--operation", "live_test", "--execute", "--confirm-current-session-authorization"], {
     ...baseEnv,

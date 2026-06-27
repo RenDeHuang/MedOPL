@@ -108,7 +108,7 @@ function fail(blocker, details = {}, status = 1) {
 
 function diagnosticReceiptFromPayload(payload = {}) {
   if (!payload || typeof payload !== "object") return null;
-  const allowed = "errorCategory correlationId operationId workspaceIdHash storageBindingIdHash runtimeBindingIdHash currentStorageState releaseState billingStopped destroyIntentState auditEventWritten providerRefPresent dbOperationStage handlerStage retryable runtimeState expectedReleaseTransition resourceBindingPresent billingAttributionPresent stopBillingState idempotencyKeyPresent alreadyReleased providerReleaseCategory migrationState workspaceBindingMatch authSessionMatch".split(" ");
+  const allowed = "errorCategory correlationId operationId workspaceIdHash storageBindingIdHash runtimeBindingIdHash currentStorageState releaseState billingStopped destroyIntentState auditEventWritten providerRefPresent dbOperationStage handlerStage retryable runtimeState expectedReleaseTransition resourceBindingPresent billingAttributionPresent stopBillingState idempotencyKeyPresent alreadyReleased providerReleaseCategory migrationState workspaceBindingMatch authSessionMatch launchIdPresent launchLookupSucceeded resourceBindingIdHash providerKeyRefPresent storageState fileNamePresent relativePathHash fileRefHash objectRefHash saveFileStageSucceeded saveAuditEventStageSucceeded billingEventStageSucceeded duplicateCategory".split(" ");
   const receipt = Object.fromEntries(allowed.filter((key) => Object.hasOwn(payload, key)).map((key) => [key, payload[key]]));
   return receipt.errorCategory || receipt.correlationId ? receipt : null;
 }

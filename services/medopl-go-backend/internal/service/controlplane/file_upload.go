@@ -2,6 +2,7 @@ package controlplane
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -35,13 +36,52 @@ type PublicFileRef struct {
 	} `json:"file"`
 }
 
+type RecordFileDiagnostic struct {
+	Stage             string
+	LaunchID          string
+	WorkspaceID       string
+	ResourceBindingID string
+	StorageBindingID  string
+	ProviderKeyRef    string
+	RuntimeState      string
+	StorageState      string
+	FileName          string
+	RelativePath      string
+	FileRef           string
+	ObjectRef         string
+}
+
+type RecordFileDiagnosticError struct {
+	Diagnostic RecordFileDiagnostic
+	Err        error
+}
+
+func (err RecordFileDiagnosticError) Error() string {
+	if err.Err == nil {
+		return "record_file_failed"
+	}
+	return err.Err.Error()
+}
+
+func (err RecordFileDiagnosticError) Unwrap() error {
+	return err.Err
+}
+
+func RecordFileDiagnosticFromError(err error) (RecordFileDiagnostic, bool) {
+	var diagnosticErr RecordFileDiagnosticError
+	if errors.As(err, &diagnosticErr) {
+		return diagnosticErr.Diagnostic, true
+	}
+	return RecordFileDiagnostic{}, false
+}
+
 func (service *Service) RecordFile(ctx context.Context, input RecordFileInput) (PublicFileRef, error) {
 	launch, err := service.LaunchStatus(ctx, LaunchLookupInput{LaunchID: input.LaunchID})
 	if err != nil {
-		return PublicFileRef{}, err
+		return PublicFileRef{}, recordFileDiagnosticError(input, cpd.LaunchProjection{}, "launch_lookup", err)
 	}
 	if strings.TrimSpace(input.FileName) == "" {
-		return PublicFileRef{}, cpd.ErrFileNameRequired
+		return PublicFileRef{}, recordFileDiagnosticError(input, launch, "validate_payload", cpd.ErrFileNameRequired)
 	}
 	relativePath := strings.TrimSpace(input.RelativePath)
 	if relativePath == "" {
@@ -84,7 +124,7 @@ func (service *Service) RecordFile(ctx context.Context, input RecordFileInput) (
 		Status:           result.File.Status,
 		CreatedAt:        recordedAt,
 	}); err != nil {
-		return PublicFileRef{}, err
+		return PublicFileRef{}, recordFileDiagnosticError(input, launch, "save_file", err)
 	}
 	audit := cpd.AuditEvent{
 		ID:                "audit-" + shortID(refID+":file-upload"),
@@ -96,12 +136,55 @@ func (service *Service) RecordFile(ctx context.Context, input RecordFileInput) (
 		CreatedAt:         recordedAt,
 	}
 	if err := service.store.SaveAuditEvent(ctx, audit); err != nil {
-		return PublicFileRef{}, err
+		return PublicFileRef{}, recordFileDiagnosticError(input, launch, "save_audit_event", err)
 	}
 	if err := service.saveBillingEventForAudit(ctx, audit, billingEventRefs{FileRef: refID}); err != nil {
-		return PublicFileRef{}, err
+		return PublicFileRef{}, recordFileDiagnosticError(input, launch, "save_billing_event", err)
 	}
 	return result, nil
+}
+
+func recordFileDiagnosticError(input RecordFileInput, launch cpd.LaunchProjection, stage string, err error) error {
+	relativePath := strings.TrimSpace(input.RelativePath)
+	if relativePath == "" && strings.TrimSpace(input.FileName) != "" {
+		relativePath = "inputs/" + strings.TrimSpace(input.FileName)
+	}
+	storageBindingID := ""
+	objectRef := ""
+	fileRef := ""
+	if strings.TrimSpace(launch.WorkspaceID) != "" || strings.TrimSpace(launch.ResourceBindingID) != "" {
+		storageBindingID = storageBindingIDForLaunch(launch)
+	}
+	if strings.TrimSpace(launch.LaunchID) != "" && relativePath != "" {
+		fileRef = "file-" + shortID(launch.LaunchID+":"+relativePath)
+	}
+	if strings.TrimSpace(launch.WorkspaceID) != "" && storageBindingID != "" && relativePath != "" {
+		objectRef = objectRefForWorkspacePath(launch.WorkspaceID, storageBindingID, relativePath)
+	}
+	return RecordFileDiagnosticError{
+		Diagnostic: RecordFileDiagnostic{
+			Stage:             stage,
+			LaunchID:          input.LaunchID,
+			WorkspaceID:       launch.WorkspaceID,
+			ResourceBindingID: launch.ResourceBindingID,
+			StorageBindingID:  storageBindingID,
+			ProviderKeyRef:    launch.ProviderKeyRef,
+			RuntimeState:      firstNonEmpty(launch.Status, launch.LaunchStatus),
+			StorageState:      recordFileStorageState(storageBindingID),
+			FileName:          input.FileName,
+			RelativePath:      relativePath,
+			FileRef:           fileRef,
+			ObjectRef:         objectRef,
+		},
+		Err: err,
+	}
+}
+
+func recordFileStorageState(storageBindingID string) string {
+	if strings.TrimSpace(storageBindingID) == "" {
+		return "unknown"
+	}
+	return "ready"
 }
 
 func storageBindingIDForLaunch(launch cpd.LaunchProjection) string {

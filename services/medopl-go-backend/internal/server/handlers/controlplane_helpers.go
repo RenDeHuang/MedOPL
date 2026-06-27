@@ -16,32 +16,44 @@ func writeControlPlaneError(ctx *gin.Context, err error) {
 }
 
 type controlPlaneErrorDiagnostic struct {
-	ErrorCategory             string
-	CorrelationID             string
-	OperationID               string
-	WorkspaceIDHash           string
-	StorageBindingIDHash      string
-	RuntimeBindingIDHash      string
-	CurrentStorageState       string
-	ReleaseState              string
-	BillingStopped            bool
-	DestroyIntentState        string
-	AuditEventWritten         bool
-	ProviderRefPresent        bool
-	DBOperationStage          string
-	HandlerStage              string
-	Retryable                 bool
-	RuntimeState              string
-	ExpectedReleaseTransition string
-	ResourceBindingPresent    bool
-	BillingAttributionPresent bool
-	StopBillingState          string
-	IdempotencyKeyPresent     bool
-	AlreadyReleased           bool
-	ProviderReleaseCategory   string
-	MigrationState            string
-	WorkspaceBindingMatch     string
-	AuthSessionMatch          string
+	ErrorCategory                string
+	CorrelationID                string
+	OperationID                  string
+	WorkspaceIDHash              string
+	StorageBindingIDHash         string
+	RuntimeBindingIDHash         string
+	CurrentStorageState          string
+	ReleaseState                 string
+	BillingStopped               bool
+	DestroyIntentState           string
+	AuditEventWritten            bool
+	ProviderRefPresent           bool
+	DBOperationStage             string
+	HandlerStage                 string
+	Retryable                    bool
+	RuntimeState                 string
+	ExpectedReleaseTransition    string
+	ResourceBindingPresent       bool
+	BillingAttributionPresent    bool
+	StopBillingState             string
+	IdempotencyKeyPresent        bool
+	AlreadyReleased              bool
+	ProviderReleaseCategory      string
+	MigrationState               string
+	WorkspaceBindingMatch        string
+	AuthSessionMatch             string
+	LaunchIDPresent              bool
+	LaunchLookupSucceeded        bool
+	ResourceBindingIDHash        string
+	StorageState                 string
+	FileNamePresent              bool
+	RelativePathHash             string
+	FileRefHash                  string
+	ObjectRefHash                string
+	SaveFileStageSucceeded       bool
+	SaveAuditEventStageSucceeded bool
+	BillingEventStageSucceeded   bool
+	DuplicateCategory            string
 }
 
 func writeControlPlaneErrorWithDiagnostic(ctx *gin.Context, err error, diagnostic controlPlaneErrorDiagnostic) {
@@ -74,6 +86,23 @@ func writeControlPlaneErrorWithDiagnostic(ctx *gin.Context, err error, diagnosti
 			body["migrationState"] = defaultString(diagnostic.MigrationState, "unknown")
 			body["workspaceBindingMatch"] = defaultString(diagnostic.WorkspaceBindingMatch, "unknown")
 			body["authSessionMatch"] = defaultString(diagnostic.AuthSessionMatch, "unknown")
+		}
+		if diagnostic.HandlerStage == "upload_file_handler" {
+			body["launchIdPresent"] = diagnostic.LaunchIDPresent
+			body["launchLookupSucceeded"] = diagnostic.LaunchLookupSucceeded
+			body["resourceBindingIdHash"] = diagnostic.ResourceBindingIDHash
+			body["providerKeyRefPresent"] = diagnostic.ProviderRefPresent
+			body["runtimeState"] = defaultString(diagnostic.RuntimeState, "unknown")
+			body["storageState"] = defaultString(diagnostic.StorageState, "unknown")
+			body["fileNamePresent"] = diagnostic.FileNamePresent
+			body["relativePathHash"] = diagnostic.RelativePathHash
+			body["fileRefHash"] = diagnostic.FileRefHash
+			body["objectRefHash"] = diagnostic.ObjectRefHash
+			body["saveFileStageSucceeded"] = diagnostic.SaveFileStageSucceeded
+			body["saveAuditEventStageSucceeded"] = diagnostic.SaveAuditEventStageSucceeded
+			body["billingEventStageSucceeded"] = diagnostic.BillingEventStageSucceeded
+			body["migrationState"] = defaultString(diagnostic.MigrationState, "unknown")
+			body["duplicateCategory"] = defaultString(diagnostic.DuplicateCategory, "unknown")
 		}
 	}
 	ctx.JSON(controlPlaneStatus(err), body)
@@ -149,6 +178,13 @@ func controlPlaneErrorBody(err error) gin.H {
 func hashForPublicDiagnostic(value string) string {
 	sum := sha256.Sum256([]byte(strings.TrimSpace(value)))
 	return hex.EncodeToString(sum[:])[:16]
+}
+
+func hashNonEmptyForPublicDiagnostic(value string) string {
+	if strings.TrimSpace(value) == "" {
+		return ""
+	}
+	return hashForPublicDiagnostic(value)
 }
 
 func mergeOK(value any) gin.H {

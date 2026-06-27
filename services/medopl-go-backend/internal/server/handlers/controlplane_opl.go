@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	cpd "github.com/rendehuang/medopl/services/medopl-go-backend/internal/domain/controlplane"
 	cps "github.com/rendehuang/medopl/services/medopl-go-backend/internal/service/controlplane"
 )
 
@@ -279,7 +281,7 @@ func recordFile(service ControlPlaneService) gin.HandlerFunc {
 			SizeBytes:    request.SizeBytes,
 		})
 		if err != nil {
-			writeControlPlaneError(ctx, err)
+			writeControlPlaneErrorWithDiagnostic(ctx, err, uploadFileDiagnostic(request, launchIDFromQuery(ctx), err))
 			return
 		}
 		ctx.JSON(http.StatusOK, payload)
@@ -455,6 +457,110 @@ func storageDestroyDiagnostic(request destroyStorageRequest) controlPlaneErrorDi
 		HandlerStage:         "storage_destroy_handler",
 		Retryable:            false,
 	}
+}
+
+func uploadFileDiagnostic(request recordFileRequest, launchID string, err error) controlPlaneErrorDiagnostic {
+	fileDiagnostic, ok := cps.RecordFileDiagnosticFromError(err)
+	if !ok {
+		fileDiagnostic = cps.RecordFileDiagnostic{
+			Stage:        "record_file",
+			LaunchID:     launchID,
+			FileName:     request.FileName,
+			RelativePath: request.RelativePath,
+		}
+	}
+	operationSeed := strings.Join([]string{fileDiagnostic.LaunchID, fileDiagnostic.WorkspaceID, fileDiagnostic.ResourceBindingID, fileDiagnostic.StorageBindingID, fileDiagnostic.RelativePath, fileDiagnostic.FileRef}, ":")
+	return controlPlaneErrorDiagnostic{
+		ErrorCategory:                uploadFileErrorCategory(err),
+		CorrelationID:                "corr-" + hashForPublicDiagnostic(operationSeed),
+		OperationID:                  "upload-file-" + hashForPublicDiagnostic(operationSeed+":operation"),
+		WorkspaceIDHash:              hashNonEmptyForPublicDiagnostic(fileDiagnostic.WorkspaceID),
+		ResourceBindingIDHash:        hashNonEmptyForPublicDiagnostic(fileDiagnostic.ResourceBindingID),
+		RuntimeBindingIDHash:         hashNonEmptyForPublicDiagnostic(fileDiagnostic.ResourceBindingID),
+		StorageBindingIDHash:         hashNonEmptyForPublicDiagnostic(fileDiagnostic.StorageBindingID),
+		RuntimeState:                 defaultString(fileDiagnostic.RuntimeState, "unknown"),
+		StorageState:                 defaultString(fileDiagnostic.StorageState, "unknown"),
+		ProviderRefPresent:           strings.TrimSpace(fileDiagnostic.ProviderKeyRef) != "",
+		DBOperationStage:             uploadFileDBOperationStage(fileDiagnostic.Stage),
+		HandlerStage:                 "upload_file_handler",
+		Retryable:                    false,
+		LaunchIDPresent:              strings.TrimSpace(fileDiagnostic.LaunchID) != "",
+		LaunchLookupSucceeded:        uploadFileLaunchLookupSucceeded(fileDiagnostic.Stage),
+		FileNamePresent:              strings.TrimSpace(fileDiagnostic.FileName) != "",
+		RelativePathHash:             hashNonEmptyForPublicDiagnostic(fileDiagnostic.RelativePath),
+		FileRefHash:                  hashNonEmptyForPublicDiagnostic(fileDiagnostic.FileRef),
+		ObjectRefHash:                hashNonEmptyForPublicDiagnostic(fileDiagnostic.ObjectRef),
+		SaveFileStageSucceeded:       uploadFileStageAfter(fileDiagnostic.Stage, "save_file"),
+		SaveAuditEventStageSucceeded: uploadFileStageAfter(fileDiagnostic.Stage, "save_audit_event"),
+		BillingEventStageSucceeded:   uploadFileStageAfter(fileDiagnostic.Stage, "save_billing_event"),
+		MigrationState:               "unknown",
+		DuplicateCategory:            "unknown",
+	}
+}
+
+func uploadFileErrorCategory(err error) string {
+	switch {
+	case errors.Is(err, cpd.ErrLaunchNotFound), errors.Is(err, cpd.ErrLaunchRequired):
+		return "launch_not_found"
+	case errors.Is(err, cpd.ErrFileNameRequired):
+		return "file_payload_invalid"
+	default:
+		fileDiagnostic, ok := cps.RecordFileDiagnosticFromError(err)
+		if !ok {
+			return "unknown_control_plane_failure"
+		}
+		switch strings.TrimSpace(fileDiagnostic.Stage) {
+		case "save_file":
+			return "file_save_failed"
+		case "save_audit_event":
+			return "audit_save_failed"
+		case "save_billing_event":
+			return "billing_event_write_failed"
+		default:
+			return "unknown_control_plane_failure"
+		}
+	}
+}
+
+func uploadFileDBOperationStage(stage string) string {
+	switch strings.TrimSpace(stage) {
+	case "launch_lookup":
+		return "launch_lookup"
+	case "validate_payload":
+		return "validate_payload"
+	case "save_file":
+		return "save_file"
+	case "save_audit_event":
+		return "save_audit_event"
+	case "save_billing_event":
+		return "save_billing_event"
+	default:
+		return "unknown"
+	}
+}
+
+func uploadFileLaunchLookupSucceeded(stage string) bool {
+	stage = strings.TrimSpace(stage)
+	return stage != "" && stage != "launch_lookup"
+}
+
+func uploadFileStageAfter(current string, stage string) bool {
+	order := map[string]int{
+		"launch_lookup":      0,
+		"validate_payload":   1,
+		"save_file":          2,
+		"save_audit_event":   3,
+		"save_billing_event": 4,
+	}
+	currentIndex, ok := order[strings.TrimSpace(current)]
+	if !ok {
+		return false
+	}
+	targetIndex, ok := order[strings.TrimSpace(stage)]
+	if !ok {
+		return false
+	}
+	return currentIndex > targetIndex
 }
 
 func releaseRuntimeDiagnostic(request releaseRequest) controlPlaneErrorDiagnostic {
