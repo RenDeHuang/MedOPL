@@ -85,6 +85,10 @@ for (const field of ["canClaim", "cannotClaim", "verification", "retirement", "l
 }
 assert.equal(current.latest_landed_closeout?.retirement?.active_blocker_retired, true, "latest_closeout_must_retire_active_blocker");
 assert.equal(current.latest_landed_closeout?.retirement?.current_cursor_retained_reason, "ongoing_business_closure_cursor", "latest_closeout_cursor_retention_reason_mismatch");
+assert(
+  (current.goal_lifecycle?.completed_goals || []).some((goal) => goal.goal_id === current.latest_landed_closeout?.branch),
+  "latest_landed_closeout_must_be_registered_completed_goal",
+);
 for (const goal of current.goal_lifecycle?.completed_goals || []) {
   assert.equal(typeof goal.goal_id, "string", "completed_goal_id_missing");
   assert.match(goal.landed_commit, /^[0-9a-f]{40}$/u, "completed_goal_landed_commit_must_be_full_sha");

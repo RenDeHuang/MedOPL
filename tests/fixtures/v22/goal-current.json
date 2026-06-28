@@ -1380,6 +1380,16 @@
           "active_product_narrative"
         ],
         "evidence_pointer": "docs/history/README.md"
+      },
+      {
+        "goal_id": "goal-lifecycle-development-rule-hardening",
+        "landed_commit": "2b3621451fe0697a965bb61c5070e9671fc3750b",
+        "status": "completed_retired",
+        "retired_from": [
+          "active_blocker",
+          "current_cursor"
+        ],
+        "evidence_pointer": "docs/history/README.md"
       }
     ],
     "risk_class_verification": {
