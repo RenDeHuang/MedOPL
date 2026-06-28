@@ -570,17 +570,17 @@
         "all-tenant long-running stability proven"
       ],
       "receipt_manifest_schema": "seven_owner_receipts_plus_required_lifecycle_sections_plus_fourteen_production_complete_criteria",
-      "receipt_manifest_hash": "sha256:ea854000438638a7b906bc5a7ddd66005e4608c5298c15ad7b3ef7a52acaab8e",
+      "receipt_manifest_hash": "sha256:fa71a90c267503d617c4d196353b55c1f30a6e4e7eaaddbba6b60837a2442234",
       "business_db_persistence_receipt": {
         "status": "accepted",
         "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/live_test.json",
         "evidence_hash": "sha256:d8f4be331668cd613563155abae4c34ec52e6a3a83e179f471feb721605dce25",
         "summary": "live_test redacted proof reports PostgreSQL business metadata persistence across nine record kinds and object ref hash keys artifactRef/fileRef/resourceBindingId/runRef; raw workspace IDs, DATABASE_URL and row payloads stay outside manifest."
       },
-      "workflow_run_id": "28322350847",
-      "release_image_run_id": "28322335961",
-      "image_tag": "3de3657",
-      "receipt_manifest_artifact_id": "7934630167",
+      "workflow_run_id": "28332365127",
+      "release_image_run_id": "28330799411",
+      "image_tag": "bdf32f3",
+      "receipt_manifest_artifact_id": "7937559220",
       "raw_evidence_committed": false
     },
     "latest_trunk_cloud_runs": {
@@ -968,7 +968,7 @@
       "consumer_canary"
     ],
     "receipt_manifest_ref": ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json",
-    "receipt_manifest_hash": "sha256:ea854000438638a7b906bc5a7ddd66005e4608c5298c15ad7b3ef7a52acaab8e",
+    "receipt_manifest_hash": "sha256:fa71a90c267503d617c4d196353b55c1f30a6e4e7eaaddbba6b60837a2442234",
     "release_owner_readiness_binding": {
       "criterion": "release_owner_readiness_receipt",
       "required_gate": "release_owner_receipt",
@@ -1076,7 +1076,7 @@
       "can_claim": "operational stability receipts are contract-bound to the redacted receipt manifest when authorized evidence is restored",
       "cannot_claim": "multi-region production, SLA proven, enterprise compliance, ongoing authorization, or unobserved tenant/resource readiness"
     },
-    "receipt_manifest_artifact_id": "7934630167"
+    "receipt_manifest_artifact_id": "7937559220"
   },
   "base_trunk_head": "6803ac7ec79197d96fedcf215cf4acf982ac19ec",
   "last_landed_commit": "6803ac7ec79197d96fedcf215cf4acf982ac19ec",
@@ -1135,7 +1135,7 @@
     "previous_live_test_blocker": "production_goal_live_test_release_runtime_failed",
     "local_fix_status": "Operations receipt substrate remains contract-bound and fail-closed; authorized commercial business-flow production-canary rerun passed after the storage_destroy billing writeback source fix landed.",
     "receipt_manifest_ref": ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json",
-    "receipt_manifest_hash": "sha256:ea854000438638a7b906bc5a7ddd66005e4608c5298c15ad7b3ef7a52acaab8e",
+    "receipt_manifest_hash": "sha256:fa71a90c267503d617c4d196353b55c1f30a6e4e7eaaddbba6b60837a2442234",
     "consumer_tests": [
       "node tests/release/release-test-v22-production-receipt-boundary.mjs",
       "node tests/cloud/cloud-test-v22-cloud-authorized-executor.mjs",
@@ -1187,10 +1187,75 @@
       "post_release_monitoring_receipt",
       "final_release_decision_receipt"
     ],
-    "workflow_run_id": "28322350847",
-    "release_image_run_id": "28322335961",
-    "image_tag": "3de3657",
-    "receipt_manifest_artifact_id": "7934630167"
+    "workflow_run_id": "28332365127",
+    "release_image_run_id": "28330799411",
+    "image_tag": "bdf32f3",
+    "receipt_manifest_artifact_id": "7937559220"
+  },
+  "cross_repo_launch_completion": {
+    "schema_version": 1,
+    "goal_id": "goal-commercial-webui-medopl-cross-repo-launch-completion",
+    "status": "scoped_live_cross_repo_canary_passed",
+    "scope": "S1 local contract guard + S2 authorized live OPL-Webui consumer canary + MedOPL commercial resource-control canary",
+    "truth_split": {
+      "opl_webui": "ordinary/task experience plus readonly MedOPL projection consumer and deeplink handoff",
+      "medopl": "payment/billing/runtime/storage/resource-control truth"
+    },
+    "opl_webui": {
+      "commit": "d86c16354742e496d56327cbf7221cc6209fbf58",
+      "release_image_run_id": "28332125563",
+      "cloud_rollout_run_id": "28332168943",
+      "run_url": "https://github.com/RenDeHuang/OPL-Webui/actions/runs/28332168943",
+      "canary_job": "Commercial Cross-Repo Browser Canary",
+      "production_browser_e2e": "skipped_by_design_for_this_scoped_canary"
+    },
+    "medopl": {
+      "commit": "bdf32f3f79fa665ca1aa77a1d275b9ba16b9d0b1",
+      "release_image_run_id": "28330799411",
+      "cloud_rollout_run_id": "28332365127",
+      "run_url": "https://github.com/RenDeHuang/MedOPL/actions/runs/28332365127",
+      "receipt_manifest_artifact": "medopl-production-receipt-manifest",
+      "receipt_manifest_artifact_id": "7937559220",
+      "receipt_manifest_hash": "sha256:fa71a90c267503d617c4d196353b55c1f30a6e4e7eaaddbba6b60837a2442234"
+    },
+    "canClaim": [
+      "scoped live OPL-Webui consumer canary reached MedOPL readonly projection and handoff boundary",
+      "MedOPL scoped commercial resource-control canary completed with redacted receipt manifest",
+      "truth ownership split remained intact for this scoped cross-repo launch canary"
+    ],
+    "cannotClaim": [
+      "production complete",
+      "external PSP settlement",
+      "all users/all tenants",
+      "multi-region/SLA",
+      "ongoing authorization",
+      "enterprise compliance",
+      "MedOPL owns ordinary chat/task experience",
+      "OPL-Webui owns payment/billing/runtime/storage truth"
+    ],
+    "raw_evidence_committed": false
+  },
+  "ops_readiness_minimum": {
+    "schema_version": 1,
+    "status": "minimum_boundary_present_for_scoped_cross_repo_canary",
+    "monitoring_readiness_pointer": "production_receipt_boundary.ops_observability_rollback_monitoring_binding and Cloud Rollout run 28332365127 MedOPL availability/continuous canary/alerting receipts",
+    "rollback_drill_evidence_pointer": "Cloud Rollout run 28332365127 MedOPL rollback drill receipt",
+    "troubleshooting_pointer": "docs/delivery/README.md#Cloud / Deploy Sequence and docs/history/README.md cross-repo closeout pointer",
+    "incident_failed_handoff_runbook_pointer": "contracts/medopl-api-contract.json#/medopl_api_contract/opl_webui_e2e_launch_contract plus OPL-Webui commercial consumer contract",
+    "next_recommended_goal": "goal-commercial-release-metadata-rollback-maturity",
+    "canClaim": [
+      "minimum MedOPL-side ops pointers exist for scoped cross-repo canary follow-up",
+      "failed handoff remains a commercial resource-control incident boundary, not an ordinary chat/task owner expansion"
+    ],
+    "cannotClaim": [
+      "full SLA",
+      "multi-region HA",
+      "ongoing authorization",
+      "enterprise compliance",
+      "all users/all tenants readiness",
+      "external PSP settlement",
+      "unscoped production complete"
+    ]
   },
   "commercial_runtime_business_closure_goal_gap_map": {
     "schema_version": 1,
