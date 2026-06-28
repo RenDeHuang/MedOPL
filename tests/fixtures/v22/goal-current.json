@@ -899,12 +899,12 @@
   ],
   "nextAuthorizationPrompt": {
     "target": "local-codex",
-    "runIdHint": "commercial-ops-install-package-maturity",
-    "prompt": "当前授权 commercial business-flow canary 已通过，Payment/Admin Payment API maturity boundary 与 local / standalone install package boundary 已 closeout。下一步不是重开 business closure，而是按 commercial production maturity gap roadmap 推进 goal-commercial-owner-bootstrap-setup-wizard；不触云、不 build/push/deploy/live-test，除非单独授权。"
+    "runIdHint": "commercial-release-metadata-rollback-maturity",
+    "prompt": "当前授权 commercial business-flow canary 已通过，Payment/Admin Payment API maturity、local / standalone install package maturity 与 owner/admin bootstrap setup boundary 均已 closeout。下一步不是重开 business closure，也不是重复已 completed_retired goals，而是按 commercial production maturity gap roadmap 推进 goal-commercial-release-metadata-rollback-maturity；不触云、不 build/push/deploy/live-test，除非单独授权。"
   },
   "nextLocalCodexPrompt": {
     "target": "local-codex",
-    "prompt": "继续开发时按 maturity gap roadmap 走：下一项是安装包、compose/install/upgrade/uninstall/systemd maturity；Payment/Admin Payment API maturity boundary 已完成，后续真实 PSP、refund、invoice、tax/compliance 仍需单独授权 goal。"
+    "prompt": "继续开发时按 maturity gap roadmap 走：下一项是 release metadata / rollback maturity；Payment/Admin Payment API、install package 与 owner bootstrap setup boundary 已完成并退役，后续真实 PSP、refund、invoice、tax/compliance 仍需单独授权 goal。"
   },
   "cloud_deploy_readiness_contract_ref": {
     "schema_version": 1,

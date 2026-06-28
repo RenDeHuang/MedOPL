@@ -140,7 +140,7 @@ RemainAfterExit=yes
 WantedBy=multi-user.target
 ```
 
-Secret generation and admin bootstrap stay fail-closed: tracked templates keep secret values empty; generated secrets, admin bootstrap token, session bootstrap secret and webhook secret live only in `.runtime`, an operator secret store or host env file. Admin bootstrap creates or approves the owner/admin MedOPL account and credit/plan path; it does not complete external PSP settlement. The setup wizard future boundary is `goal-commercial-owner-bootstrap-setup-wizard`; this slice cannot claim self-serve setup or automatic production setup complete.
+Secret generation and admin bootstrap stay fail-closed: tracked templates keep secret values empty; generated secrets, admin bootstrap token, session bootstrap secret and webhook secret live only in `.runtime`, an operator secret store or host env file. Admin bootstrap creates or approves the owner/admin MedOPL account and credit/plan path; it does not complete external PSP settlement. The setup wizard maturity boundary is already closed and retired by `goal-commercial-owner-bootstrap-setup-wizard`; real self-serve setup execution and automatic production setup still require a future implementation goal.
 
 Env/config example keys for this package are recorded in `compose.product.yaml` under `x-medopl-package-maturity.env_config_example_keys`. Operator env files may include:
 

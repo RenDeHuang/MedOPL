@@ -130,6 +130,43 @@ assert.equal(
   "goal-commercial-release-metadata-rollback-maturity",
   "goal_lifecycle_next_goal_must_follow_owner_bootstrap_closeout",
 );
+assert.equal(
+  current.nextAuthorizationPrompt?.runIdHint,
+  "commercial-release-metadata-rollback-maturity",
+  "next_authorization_prompt_must_point_to_release_metadata_rollback",
+);
+assert(
+  current.nextAuthorizationPrompt?.prompt?.includes("goal-commercial-release-metadata-rollback-maturity"),
+  "next_authorization_prompt_must_name_release_metadata_rollback_goal",
+);
+assert.equal(
+  current.nextAuthorizationPrompt?.prompt?.includes("推进 goal-commercial-owner-bootstrap-setup-wizard"),
+  false,
+  "next_authorization_prompt_must_not_recommend_retired_owner_bootstrap_goal",
+);
+assert.equal(
+  productTruth.includes("下一步推荐进入 `goal-commercial-ops-install-package-maturity`"),
+  false,
+  "product_truth_must_not_recommend_retired_install_package_goal",
+);
+assert(
+  productTruth.includes("goal-commercial-release-metadata-rollback-maturity"),
+  "product_truth_must_point_to_release_metadata_rollback_next_goal",
+);
+assert(
+  activeTruth.includes("umbrella product spine"),
+  "active_truth_must_explain_current_cursor_as_umbrella_product_spine",
+);
+assert.equal(
+  current.goal_lifecycle?.completed_goals?.some((goal) => goal.goal_id === current.current_cursor),
+  false,
+  "current_cursor_must_not_be_completed_goal",
+);
+assert.equal(
+  current.goal_lifecycle?.completed_goals?.some((goal) => goal.goal_id === current.goal_lifecycle?.next_recommended_goal),
+  false,
+  "next_recommended_goal_must_not_be_completed_goal",
+);
 
 const completedGoal = current.goal_lifecycle?.completed_goals?.find((goal) => goal.goal_id === "goal-commercial-production-maturity-gap-audit");
 if (completedGoal) {
