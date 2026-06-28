@@ -73,9 +73,9 @@
   "current_stage": "commercial runtime storage billing business closure",
   "current_risk_class": "commercial_billing_boundary",
   "current_blockers": [
-    "none_for_authorized_commercial_business_flow_production_canary_revalidation"
+    "none_for_current_scoped_commercial_business_flow"
   ],
-  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-storage-destroy-writeback-fix at 64699bd3619f01a4442936b096079b3e8051733d. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The authorized Release Image, Cloud Rollout and OPL-Webui consumer canary rerun passed for the same commercial business flow; detailed run provenance stays in docs/history and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are active operations substrate only; they are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git.",
+  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-storage-destroy-writeback-fix at 64699bd3619f01a4442936b096079b3e8051733d. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -244,7 +244,7 @@
     "gap_id": "goal-commercial-runtime-storage-billing-business-closure",
     "stage": "commercial runtime storage billing business closure",
     "cursor_eligible": true,
-    "problem": "Prove the commercial business flow account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. Upload billing writeback and storage_destroy billing writeback source fixes are landed; the authorized Release Image, Cloud Rollout and OPL-Webui consumer canary rerun passed for the same business flow without bypassing billing/audit. Future scope expansion or ongoing operations proof requires separate authorization.",
+    "problem": "Prove the commercial business flow account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. Upload billing writeback and storage_destroy billing writeback source fixes are landed; the scoped canary proof is retained as operations substrate without bypassing billing/audit. Future scope expansion or ongoing operations proof requires separate authorization.",
     "verification_commands": [
       "node scripts/v22-verify.mjs active-platform --json",
       "node tests/product/product-test-v22-medopl-contract-authority.mjs",
@@ -299,10 +299,10 @@
       "tests/fixtures/v22/goal-current.json",
       "tests/fixtures/v22/agent-verify-manifest.json"
     ],
-    "latest_local_evidence": "Release Image run 28314552457 built image tag 691cc10 from trunk 691cc106fd5eb510436f6b94f6867b6b9d832953; Cloud Rollout production_launch run 28314565929 passed deploy receipt, OPL-Webui consumer canary, availability probe, soak, concurrency pressure, rollback drill, continuous canary, alerting, final release decision, production receipt manifest, verify:cloud-release-candidate and verify:production-complete-candidate; redacted artifact id 7932066015; computed receipt manifest hash sha256:01ae9e5b4ae2a54b1c18aebf7f94fac5ab2a077864c29d55edcd59bc49ac1660. Source fixes remain landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df and 64699bd3619f01a4442936b096079b3e8051733d; raw evidence remains outside git."
+    "latest_local_evidence": "Scoped operations substrate proof is retained in release_readiness_state.goal_f_cloud_release_candidate / live_test_progress and docs/history; raw workflow evidence stays outside git."
   },
   "release_readiness_state": {
-    "status": "authorized_commercial_business_flow_production_canary_revalidated",
+    "status": "scoped_commercial_business_flow_canary_proof_retained",
     "cursor_eligible": false,
     "blocked_before_risky_execution": true,
     "forbidden_until_executable": [
@@ -327,15 +327,15 @@
       "ledger / billing / audit writeback",
       "canary / QA / status update"
     ],
-    "latest_local_evidence": "Release Image run 28314552457 built image tag 691cc10 from trunk 691cc106fd5eb510436f6b94f6867b6b9d832953; Cloud Rollout production_launch run 28314565929 passed deploy receipt, OPL-Webui consumer canary, availability probe, soak, concurrency pressure, rollback drill, continuous canary, alerting, final release decision, production receipt manifest, verify:cloud-release-candidate and verify:production-complete-candidate; redacted artifact id 7932066015; computed receipt manifest hash sha256:01ae9e5b4ae2a54b1c18aebf7f94fac5ab2a077864c29d55edcd59bc49ac1660. Operations substrate supports the authorized commercial business-flow production-canary proof; future mutations or scope expansion still require explicit authorization.",
+    "latest_local_evidence": "Scoped operations substrate proof is retained in goal_f_cloud_release_candidate / live_test_progress and docs/history. Future mutations, scope expansion or ongoing operations proof require explicit authorization.",
     "productionization_plan": [
       "Keep product truth centered on account approval, plan, balance, quota, runtime/storage, file/run ledger, billing ledger, statement reconciliation and release/destroy/stop billing",
-      "Use Release Image and Cloud Rollout only as active operations substrate for authorized verification",
-      "Treat this proof as scoped to the authorized owner-created-or-approved MedOPL account commercial business-flow production-canary path",
+      "Keep Release Image and Cloud Rollout as operations substrate for scoped proof and future authorized revalidation",
+      "Treat the retained proof as scoped to the authorized owner-created-or-approved MedOPL account commercial business-flow production-canary path",
       "Keep raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts outside git"
     ],
     "readinessGaps": [
-      "Future scope expansion, ongoing authorization, broader tenant/resource readiness and long-running stability require separate evidence.",
+      "Future scope expansion, ongoing authorization, broader tenant/resource readiness and long-running stability require a separate authorization and evidence slice.",
       "Unscoped production complete remains unclaimed until dedicated scope-expansion evidence proves multi-region/SLA, enterprise compliance, ongoing authorization and broader tenant/resource readiness.",
       "Raw evidence, credentials, uploaded files, runtime artifacts and provider/cloud payloads remain outside git."
     ],
@@ -872,7 +872,7 @@
   "nextAuthorizationPrompt": {
     "target": "cloud-codex",
     "runIdHint": "future-scope-expansion-or-ongoing-operations-proof",
-    "prompt": "当前授权商业业务流 production-canary 复验已通过。下一步如需扩大范围、长期运行证明、外部 PSP、SLA/multi-region 或 full production，必须单独授权并保持 raw evidence outside git。"
+    "prompt": "当前只保留 scoped commercial business-flow canary proof 作为 operations substrate。下一步如需扩大范围、长期运行证明、外部 PSP、SLA/multi-region 或 full production，必须单独授权并保持 raw evidence outside git。"
   },
   "nextLocalCodexPrompt": {
     "target": "local-codex",

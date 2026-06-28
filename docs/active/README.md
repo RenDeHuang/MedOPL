@@ -18,15 +18,15 @@ MedOPL 是 OPL-Webui 的商业资源控制面，负责 owner 创建或批准账�
 | current phase | `commercial runtime storage billing business closure` |
 | current cursor | `goal-commercial-runtime-storage-billing-business-closure` |
 | latest repo closeout | `goal-commercial-storage-destroy-writeback-fix` / `64699bd3619f01a4442936b096079b3e8051733d` |
-| current blocker | `none_for_authorized_commercial_business_flow_production_canary_revalidation` |
+| current blocker | `none_for_current_scoped_commercial_business_flow` |
 | source fix | `goal-commercial-upload-file-billing-writeback-fix` landed at `34b0e3070357504b475a0bee2ff6bd4de0af23df`; `goal-commercial-storage-destroy-writeback-fix` landed at `64699bd3619f01a4442936b096079b3e8051733d` |
-| next proof | future scope expansion / ongoing operations proof must be separately authorized |
+| next proof | future scope expansion / ongoing operations proof requires a separate authorization and evidence slice |
 
-The latest repo/gate closeout is goal-commercial-storage-destroy-writeback-fix at 64699bd3619f01a4442936b096079b3e8051733d. The source line keeps `upload_file -> save_billing_event` fail-closed while using canonical runtime ledger tenant / billing attribution identity before fallback account lookup, and keeps `storage_destroy -> save_billing_event` fail-closed while using collision-resistant billing event IDs. The authorized Release Image + Cloud Rollout + OPL-Webui consumer canary rerun passed for the same commercial business flow; detailed run provenance stays in history / GitHub Actions artifact, not active product truth.
+The latest repo/gate closeout is goal-commercial-storage-destroy-writeback-fix at 64699bd3619f01a4442936b096079b3e8051733d. The source line keeps `upload_file -> save_billing_event` and `storage_destroy -> save_billing_event` fail-closed while using canonical billing identity and collision-resistant billing event IDs. The scoped canary proof is retained as operations substrate only; detailed run provenance stays in history / GitHub Actions artifact, not active product truth.
 
 ## Active Supporting Substrates
 
-- `active operations substrate`: Release Image, Cloud Rollout, redacted receipt boundary and the cloud goal runner support the current复验. They do not define product identity, business admission, recharge, plan, balance, quota, billing truth or cost ceiling.
+- `active operations substrate`: Release Image, Cloud Rollout, redacted receipt boundary and the cloud goal runner support scoped proof and future authorized revalidation. They do not define product identity, business admission, recharge, plan, balance, quota, billing truth or cost ceiling.
 - Cost ceiling for current business claims comes from account balance, plan hold amount and quota.
 - 真实云、build/push、kubectl、deploy、live-test 只能通过机器授权包、package script / workflow 和 redacted evidence sink 执行；raw workflow evidence、secrets、kubeconfig、cloud payloads、runtime artifacts、uploaded files 和 transcripts 不进入 git。
 
