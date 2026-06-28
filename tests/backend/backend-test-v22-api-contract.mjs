@@ -394,17 +394,17 @@ assert.deepEqual(
   "runtime_gate_operations_safety_workflow_input_refs_mismatch",
 );
 assert.equal(
-  operationsSafety.approval_gate,
+  operationsSafety.operator_confirmation_gate,
   "workflow_dispatch_plus_github_production_environment_deployment_operations_safety",
-  "runtime_gate_operations_safety_approval_gate_mismatch",
+  "runtime_gate_operations_safety_operator_confirmation_gate_mismatch",
 );
 assert(
   operationsSafety.cannot_claim.includes("business_or_commercial_admission_truth"),
   "runtime_gate_operations_safety_must_not_claim_business_admission",
 );
 assert(
-  operationsSafety.cannot_claim.includes("selected_user_allowlist"),
-  "runtime_gate_operations_safety_must_not_claim_selected_user_allowlist",
+  operationsSafety.cannot_claim.includes("non_commercial_business_admission"),
+  "runtime_gate_operations_safety_must_not_claim_non_commercial_business_admission",
 );
 assert(
   !runtimeGateProjectionSurface.includes("CanaryAdmission") && !runtimeGateProjectionSurface.includes('json:"canaryAdmission"'),

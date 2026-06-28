@@ -250,7 +250,7 @@
       },
       "operations_safety_boundary": {
         "intent": "production_launch_operations_safety_gate_only",
-        "approval_gate": "workflow_dispatch_plus_github_production_environment_deployment_operations_safety",
+        "operator_confirmation_gate": "workflow_dispatch_plus_github_production_environment_deployment_operations_safety",
         "workflow_input_refs": [
           "confirm_production_launch",
           "rollout_scope",
@@ -260,13 +260,13 @@
           "owner",
           "rollback_ref"
         ],
-        "receipt_ref": ".runtime/v22-cloud-authorization/run-v22-001/production-launch-approval-receipt.json",
-        "retained_because": "active_production_launch_workflow_records_one_person_approval_from_workflow_dispatch_inputs_and_github_production_environment",
+        "receipt_ref": ".runtime/v22-cloud-authorization/run-v22-001/production-launch-operator-confirmation-receipt.json",
+        "retained_because": "active_production_launch_workflow_records_one_person_operator_confirmation_from_workflow_dispatch_inputs_and_github_production_environment",
         "cannot_claim": [
           "business_or_commercial_admission_truth",
           "recharge_or_billing_rule",
           "paid_account_runtime_gate",
-          "selected_user_allowlist",
+          "non_commercial_business_admission",
           "external_psp_settlement"
         ],
         "must_not_return": [

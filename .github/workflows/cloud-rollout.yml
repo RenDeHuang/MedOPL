@@ -14,7 +14,7 @@ on:
         options:
           - production
       apply:
-        description: Run rollout mutation after production environment approval.
+        description: Run rollout mutation after workflow-dispatch operator confirmation.
         required: true
         default: false
         type: boolean
@@ -42,7 +42,7 @@ on:
         default: deploy-current
         type: string
       launch_scope:
-        description: Production launch scope recorded in the redacted approval receipt.
+        description: Production launch scope recorded in the redacted operator confirmation receipt.
         required: true
         default: owner-created-or-approved-medopl-accounts
         type: string
@@ -57,7 +57,7 @@ on:
         default: business-account-balance-plan-quota
         type: string
       owner:
-        description: Operator owner recorded in the redacted approval receipt.
+        description: Operator owner recorded in the redacted operator confirmation receipt.
         required: true
         default: huangrende
         type: string
@@ -343,7 +343,7 @@ jobs:
           console.log(JSON.stringify({
             ok: true,
             message: "deployment operations safety input shape ok",
-            operationsSafetyGate: "Cloud Rollout workflow_dispatch plus GitHub production environment approval is the deployment operations safety gate",
+            operationsSafetyGate: "Cloud Rollout workflow_dispatch plus GitHub production environment deployment gate is the deployment operations safety gate",
             launchScopeRef: "workflow_dispatch.launch_scope",
             costGuardRefPresent: true,
             rollbackRefPresent: true
@@ -357,7 +357,7 @@ jobs:
           node <<'NODE'
           const { mkdirSync, writeFileSync } = require("fs");
           const { dirname } = require("path");
-          const receiptPath = ".runtime/v22-cloud-authorization/run-v22-001/production-launch-approval-receipt.json";
+          const receiptPath = ".runtime/v22-cloud-authorization/run-v22-001/production-launch-operator-confirmation-receipt.json";
           function text(name) {
             const value = String(process.env[name] || "").trim();
             if (!value) throw new Error(`${name} missing for deployment operations safety receipt`);
@@ -378,7 +378,7 @@ jobs:
             "rawSecretsWritten": false,
             "cannotClaim": [
               "business_or_commercial_admission_truth",
-              "selected_user_allowlist",
+              "non_commercial_business_admission",
               "external_psp_settlement",
               "full_production_complete"
             ]

@@ -189,7 +189,8 @@
       ],
       "requires_post_merge_closeout": true,
       "history_truth_file": "docs/history/README.md",
-      "machine_truth_commit_field": "last_landed_commit"
+      "machine_truth_commit_field": "last_landed_commit",
+      "problem": "Commercial business flow is current: account prepare, account approval, credit, plan, open runtime/storage, billing ledger, statement reconciliation, release/destroy/stop billing. Deployment operations confirmation is not the business cursor."
     },
     {
       "leaf_id": "goal-g4-production-canary-deployment-proof",
@@ -472,7 +473,7 @@
       "requires_post_merge_closeout": true,
       "history_truth_file": "docs/history/README.md",
       "machine_truth_commit_field": "last_landed_commit",
-      "problem": "Commercial business flow is current: account prepare, account approval, credit, plan, open runtime/storage, billing ledger, statement reconciliation, release/destroy/stop billing. Launch approval decision is not the business cursor."
+      "problem": "Commercial business flow is current: account prepare, account approval, credit, plan, open runtime/storage, billing ledger, statement reconciliation, release/destroy/stop billing. Deployment operations confirmation is not the business cursor."
     }
   ],
   "suites": [

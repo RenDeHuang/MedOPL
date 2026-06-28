@@ -687,7 +687,7 @@ assert(
 assert(
   productionApplyJob.includes("Validate workflow-dispatch deployment operations safety") &&
     productionApplyJob.includes("confirm_production_launch must be deploy-current for deployment operations apply") &&
-    productionApplyJob.includes("Cloud Rollout workflow_dispatch plus GitHub production environment approval is the deployment operations safety gate") &&
+    productionApplyJob.includes("Cloud Rollout workflow_dispatch plus GitHub production environment deployment gate is the deployment operations safety gate") &&
     productionApplyJob.includes("emergency_stop=true blocks deployment operations apply") &&
     productionApplyJob.includes("deployment operations safety input shape ok") &&
     !productionApplyJob.includes("MEDOPL_PRODUCTION_LAUNCH_ENABLED required") &&
@@ -697,12 +697,12 @@ assert(
 );
 assert(
   productionApplyJob.includes("Write deployment operations safety receipt") &&
-    productionApplyJob.includes("production-launch-approval-receipt.json") &&
+    productionApplyJob.includes("production-launch-operator-confirmation-receipt.json") &&
     productionApplyJob.includes("\"operationsSafetyGate\": \"workflow_dispatch_plus_github_production_environment_deployment_operations_safety\"") &&
     productionApplyJob.includes("\"businessAdmission\": \"account_approved_plan_balance_quota\"") &&
     productionApplyJob.includes("\"costGuardRef\"") &&
     !productionApplyJob.includes("create secret generic medopl-production-launch-safety"),
-  "production_apply_must_write_redacted_approval_receipt_from_inputs_without_syncing_runtime_secret",
+  "production_apply_must_write_redacted_operator_confirmation_receipt_from_inputs_without_syncing_runtime_secret",
 );
 assert(
   productionApplyJob.includes("Validate in-cluster database secret shape") &&
@@ -743,7 +743,7 @@ assert(
   productionApplyJob.indexOf("Sync in-cluster auth boundary secret from production source") < productionApplyJob.indexOf("Validate workflow-dispatch deployment operations safety") &&
     productionApplyJob.indexOf("Validate workflow-dispatch deployment operations safety") < productionApplyJob.indexOf("Write deployment operations safety receipt") &&
     productionApplyJob.indexOf("Write deployment operations safety receipt") < productionApplyJob.indexOf("Create Goal F receipt inputs"),
-  "production_apply_must_record_workflow_dispatch_approval_before_goal_f_receipts_and_rollout",
+  "production_apply_must_record_workflow_dispatch_operator_confirmation_before_goal_f_receipts_and_rollout",
 );
 assert(
   productionApplyJob.indexOf("npm ci") < productionApplyJob.indexOf("Create Goal F receipt inputs"),
@@ -985,7 +985,7 @@ console.log(JSON.stringify({
   canClaim: [
     "MedOPL has a repo-native deployable Kubernetes shape",
     "GitHub rollout is scoped to self-hosted Tencent runner",
-    "production mutation still requires environment approval, kubeconfig secret and cloud goal receipts",
+    "production mutation still requires GitHub production environment deployment gate, kubeconfig secret and cloud goal receipts",
   ],
   cannotClaim: [
     "runner is already registered in GitHub",
