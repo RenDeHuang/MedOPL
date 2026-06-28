@@ -113,13 +113,14 @@ for (const gap of maturity.gap_matrix ?? []) {
 const roadmapIds = ids(maturity.recommended_goal_roadmap);
 assert(roadmapIds.has("goal-commercial-payment-admin-api-maturity"), "roadmap_payment_admin_goal_missing");
 assert(roadmapIds.has("goal-commercial-ops-install-package-maturity"), "roadmap_next_install_package_goal_missing");
+assert(roadmapIds.has("goal-commercial-owner-bootstrap-setup-wizard"), "roadmap_owner_bootstrap_goal_missing");
 const paymentRoadmapEntry = (maturity.recommended_goal_roadmap ?? []).find((goal) => goal.goal_id === "goal-commercial-payment-admin-api-maturity");
 assert.equal(paymentRoadmapEntry?.status, "completed_retired", "roadmap_payment_admin_goal_must_be_completed_retired");
-assert.equal(maturity.next_recommended_goal, "goal-commercial-ops-install-package-maturity", "maturity_next_goal_mismatch");
+assert.equal(maturity.next_recommended_goal, "goal-commercial-owner-bootstrap-setup-wizard", "maturity_next_goal_mismatch");
 assert.equal(
   current.goal_lifecycle?.next_recommended_goal,
-  "goal-commercial-ops-install-package-maturity",
-  "goal_lifecycle_next_goal_must_follow_payment_closeout",
+  "goal-commercial-owner-bootstrap-setup-wizard",
+  "goal_lifecycle_next_goal_must_follow_install_package_closeout",
 );
 
 const completedGoal = current.goal_lifecycle?.completed_goals?.find((goal) => goal.goal_id === "goal-commercial-production-maturity-gap-audit");
