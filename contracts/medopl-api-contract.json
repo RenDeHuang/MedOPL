@@ -398,6 +398,120 @@
         "storage_destroy_without_user_intent"
       ]
     },
+    "opl_webui_e2e_launch_contract": {
+      "goal_id": "goal-commercial-webui-medopl-e2e-launch-contract",
+      "scope": "cross_repo_local_contract_only",
+      "medopl_truth_owner": "medopl",
+      "opl_webui_consumer_owner": "opl-webui",
+      "build_push_deploy_live_test_allowed": false,
+      "does_not_replace_next_recommended_goal": "goal-commercial-release-metadata-rollback-maturity",
+      "identity_mapping": {
+        "shared_keys": ["userId", "email", "tenantId", "workspaceId"],
+        "opl_webui_session_projection_keys": ["userId", "email", "tenantId", "workspaceId", "sessionState"],
+        "medopl_truth_keys": [
+          "accountId",
+          "planId",
+          "balance",
+          "quota",
+          "runtimeBindingId",
+          "storageBindingId",
+          "billingAttributionId"
+        ],
+        "forbidden_crossings": [
+          "rawProviderKey",
+          "paymentToken",
+          "runtimeToken",
+          "storageObjectKey",
+          "artifactBody"
+        ]
+      },
+      "path_matrix": [
+        {
+          "id": "ordinary_path",
+          "owner": "opl-webui",
+          "entry": "authenticated ordinary chat or @科研 task intent",
+          "medopl_runtime_required": false,
+          "medopl_storage_required": false,
+          "medopl_projection_required": false,
+          "webui_evidence": ["session_current", "ordinary_chat_allowed", "task_intent_capture"],
+          "cannot_claim": ["runtime_execution", "storage_truth", "artifact_body_authority"]
+        },
+        {
+          "id": "specialist_blocked_handoff",
+          "owner": "medopl",
+          "entry": "runtime_required specialist task before commercial readiness",
+          "state": "blocked",
+          "medopl_runtime_required": true,
+          "medopl_storage_required": true,
+          "medopl_projection_required": true,
+          "webui_auto_run_allowed": false,
+          "medopl_readonly_projection": [
+            "account",
+            "plan",
+            "balance_quota",
+            "runtime_admission",
+            "storage_status",
+            "billing",
+            "release"
+          ],
+          "handoff_next_actions": [
+            "open_medopl_onboarding",
+            "select_plan",
+            "recharge_or_credit_required",
+            "open_runtime_storage"
+          ],
+          "deeplink_required": true,
+          "cannot_claim": ["payment_readiness", "runtime_execution", "storage_truth"]
+        },
+        {
+          "id": "specialist_onboarding_required",
+          "owner": "medopl",
+          "entry": "runtime_required specialist task without approved commercial account",
+          "state": "onboarding_required",
+          "medopl_runtime_required": true,
+          "medopl_storage_required": true,
+          "medopl_projection_required": true,
+          "webui_auto_run_allowed": false,
+          "handoff_next_actions": ["open_medopl_onboarding"],
+          "deeplink_required": true,
+          "cannot_claim": ["medopl_account_ready", "runtime_execution_readiness", "payment_readiness"]
+        },
+        {
+          "id": "specialist_ready_projection",
+          "owner": "medopl",
+          "entry": "runtime_required specialist task after MedOPL approval credit plan runtime storage",
+          "state": "ready",
+          "medopl_runtime_required": true,
+          "medopl_storage_required": true,
+          "ready_source_owner": "medopl",
+          "allowed_webui_bridge_actions": ["POST /api/opl/runtime-gate", "POST /api/opl/runs"],
+          "projection_policy": "refs_progress_deliverables_only",
+          "cannot_claim": [
+            "runtime_execution_completed",
+            "artifact_body_authority",
+            "storage_truth_ownership",
+            "domain_verdict_authority"
+          ]
+        }
+      ],
+      "can_claim": [
+        "medopl_truth_side_of_cross_repo_launch_contract_is_defined_locally",
+        "ordinary_path_is_owned_by_opl_webui_not_medopl",
+        "runtime_required_path_reads_medopl_commercial_account_plan_balance_quota_runtime_storage_billing_release_projection"
+      ],
+      "cannot_claim": [
+        "medopl_owns_ordinary_chat",
+        "opl_webui_owns_payment_truth",
+        "opl_webui_owns_billing_truth",
+        "opl_webui_owns_runtime_truth",
+        "opl_webui_owns_storage_truth",
+        "cloud_deploy_executed",
+        "build_or_push_executed",
+        "live_production_test_executed",
+        "external_psp_settlement",
+        "full_production_complete"
+      ]
+    },
     "run_result": {
       "route": "POST /api/opl/runs",
       "owner": "medopl",

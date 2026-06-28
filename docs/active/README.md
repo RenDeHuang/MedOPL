@@ -26,6 +26,8 @@ The latest repo/gate closeout is goal-commercial-owner-bootstrap-setup-wizard at
 
 Current scoped commercial canClaim is: authorized commercial business-flow cloud canary passed; internal credit + billing ledger + statement reconciliation + release/destroy/stop billing passed; Commercial Launch UI absorbed. The maturity gap matrix is machine-owned by `tests/fixtures/v22/goal-current.json` and compares the remaining production productization gaps against OPL ordinary-path boundaries and sub2api-style packaging maturity as engineering references only.
 
+Cross-repo OPL-Webui / MedOPL launch contract is fixed locally under `contracts/medopl-api-contract.json#/medopl_api_contract/opl_webui_e2e_launch_contract` and the matching OPL-Webui commercial consumer contract. It records shared `userId` / `email` / `tenantId` / `workspaceId` mapping, keeps OPL-Webui session/account projection separate from MedOPL account/plan/balance/quota/runtime/storage/billing/release truth, keeps ordinary chat/task UX with OPL-Webui, and fixes runtime_required blocked/onboarding/ready projection plus deeplink handoff states. This is local contract evidence only; it does not execute build/push/deploy/live-test and does not replace the next recommended goal `goal-commercial-release-metadata-rollback-maturity`.
+
 ## Active Supporting Substrates
 
 - `active operations substrate`: Release Image, Cloud Rollout, redacted receipt boundary and the cloud goal runner support scoped proof and future authorized revalidation. They do not define product identity, business admission, recharge, plan, balance, quota, billing truth or cost ceiling.

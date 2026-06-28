@@ -113,6 +113,79 @@ assert.deepEqual(runtimeGate.invocation_modes, ["api_only", "ordinary_chat", "ru
 assert.equal(runtimeGate.ordinary_chat_owner, "opl-webui", "runtime_gate_ordinary_chat_owner_must_be_opl_webui");
 assert.equal(runtimeGate.runtime_required_owner, "medopl", "runtime_gate_runtime_required_owner_must_be_medopl");
 
+const oplWebuiLaunchContract = apiContract.medopl_api_contract.opl_webui_e2e_launch_contract;
+assert(oplWebuiLaunchContract, "api_contract_opl_webui_e2e_launch_contract_missing");
+assert.equal(
+  oplWebuiLaunchContract.goal_id,
+  "goal-commercial-webui-medopl-e2e-launch-contract",
+  "opl_webui_launch_goal_id_mismatch",
+);
+assert.equal(oplWebuiLaunchContract.scope, "cross_repo_local_contract_only", "opl_webui_launch_scope_mismatch");
+assert.equal(oplWebuiLaunchContract.medopl_truth_owner, "medopl", "opl_webui_launch_medopl_truth_owner_mismatch");
+assert.equal(oplWebuiLaunchContract.opl_webui_consumer_owner, "opl-webui", "opl_webui_launch_consumer_owner_mismatch");
+assert.equal(oplWebuiLaunchContract.build_push_deploy_live_test_allowed, false, "opl_webui_launch_must_not_allow_live_ops");
+assert.equal(
+  oplWebuiLaunchContract.does_not_replace_next_recommended_goal,
+  "goal-commercial-release-metadata-rollback-maturity",
+  "opl_webui_launch_next_goal_boundary_mismatch",
+);
+assert.deepEqual(
+  oplWebuiLaunchContract.identity_mapping.shared_keys,
+  ["userId", "email", "tenantId", "workspaceId"],
+  "opl_webui_launch_identity_shared_keys_mismatch",
+);
+assert.deepEqual(
+  oplWebuiLaunchContract.identity_mapping.medopl_truth_keys,
+  ["accountId", "planId", "balance", "quota", "runtimeBindingId", "storageBindingId", "billingAttributionId"],
+  "opl_webui_launch_medopl_truth_keys_mismatch",
+);
+assert.deepEqual(
+  oplWebuiLaunchContract.identity_mapping.forbidden_crossings,
+  ["rawProviderKey", "paymentToken", "runtimeToken", "storageObjectKey", "artifactBody"],
+  "opl_webui_launch_forbidden_crossings_mismatch",
+);
+
+const launchPathIds = oplWebuiLaunchContract.path_matrix.map((item) => item.id);
+assert.deepEqual(
+  launchPathIds,
+  ["ordinary_path", "specialist_blocked_handoff", "specialist_onboarding_required", "specialist_ready_projection"],
+  "opl_webui_launch_path_ids_mismatch",
+);
+const launchPaths = new Map(oplWebuiLaunchContract.path_matrix.map((item) => [item.id, item]));
+assert.equal(launchPaths.get("ordinary_path").medopl_runtime_required, false, "ordinary_path_must_not_require_medopl_runtime");
+assert.equal(launchPaths.get("ordinary_path").medopl_storage_required, false, "ordinary_path_must_not_require_medopl_storage");
+assert.equal(launchPaths.get("ordinary_path").owner, "opl-webui", "ordinary_path_owner_must_be_opl_webui");
+assert.equal(launchPaths.get("specialist_blocked_handoff").owner, "medopl", "blocked_path_owner_must_be_medopl");
+assert.equal(launchPaths.get("specialist_blocked_handoff").webui_auto_run_allowed, false, "blocked_path_must_not_auto_run");
+assert.deepEqual(
+  launchPaths.get("specialist_blocked_handoff").handoff_next_actions,
+  ["open_medopl_onboarding", "select_plan", "recharge_or_credit_required", "open_runtime_storage"],
+  "blocked_path_handoff_actions_mismatch",
+);
+assert.equal(launchPaths.get("specialist_onboarding_required").state, "onboarding_required", "onboarding_state_mismatch");
+assert.equal(launchPaths.get("specialist_onboarding_required").webui_auto_run_allowed, false, "onboarding_path_must_not_auto_run");
+assert.equal(launchPaths.get("specialist_ready_projection").state, "ready", "ready_path_state_mismatch");
+assert.equal(launchPaths.get("specialist_ready_projection").ready_source_owner, "medopl", "ready_path_owner_mismatch");
+assert.deepEqual(
+  launchPaths.get("specialist_ready_projection").allowed_webui_bridge_actions,
+  ["POST /api/opl/runtime-gate", "POST /api/opl/runs"],
+  "ready_path_bridge_actions_mismatch",
+);
+assert.equal(
+  launchPaths.get("specialist_ready_projection").projection_policy,
+  "refs_progress_deliverables_only",
+  "ready_path_projection_policy_mismatch",
+);
+for (const forbiddenClaim of [
+  "medopl_owns_ordinary_chat",
+  "opl_webui_owns_payment_truth",
+  "opl_webui_owns_billing_truth",
+  "opl_webui_owns_runtime_truth",
+  "opl_webui_owns_storage_truth",
+]) {
+  assert(oplWebuiLaunchContract.cannot_claim.includes(forbiddenClaim), `opl_webui_launch_forbidden_claim_missing:${forbiddenClaim}`);
+}
+
 const accountProductization = apiContract.medopl_api_contract.account_productization;
 assert(accountProductization, "api_contract_account_productization_missing");
 assert.equal(

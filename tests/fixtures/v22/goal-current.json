@@ -1785,17 +1785,20 @@
       {
         "id": "opl_webui_consumer_bridge_deeplink_projection_boundary",
         "label": "OPL-Webui consumer bridge/deeplink/projection boundary",
-        "current_truth": "OPL-Webui triggers runtime_required and consumes refs/deeplinks/artifacts; MedOPL owns commercial resource control",
-        "gap": "ordinary chat/task UX bridge, deeplink resume and projection boundaries need a mature consumer contract aligned to OPL ordinary path",
-        "minimum_evidence_slice": "consumer bridge contract that keeps ordinary chat in OPL-Webui and commercial runtime/storage/billing in MedOPL",
+        "current_truth": "OPL-Webui triggers runtime_required and consumes refs/deeplinks/artifacts; MedOPL owns commercial resource control; the local cross-repo launch contract now fixes identity mapping, ordinary-path boundary, specialist blocked/onboarding/ready projection and deeplink handoff",
+        "gap": "strict dedicated-account browser/live E2E coverage for each blocked/onboarding/ready account state remains future evidence",
+        "minimum_evidence_slice": "local consumer bridge launch contract that keeps ordinary chat in OPL-Webui and commercial runtime/storage/billing in MedOPL",
         "repo_change_required": true,
         "cloud_execute_required": false,
         "canClaim": [
-          "runtime_required commercial bridge exists"
+          "runtime_required commercial bridge exists",
+          "local cross-repo launch contract matrix exists",
+          "ordinary chat remains OPL-Webui-owned at contract level"
         ],
         "cannotClaim": [
           "MedOPL owns ordinary chat",
-          "domain agent quality or artifact authority"
+          "domain agent quality or artifact authority",
+          "dedicated-account browser/live E2E passed"
         ],
         "status": "gap"
       }
