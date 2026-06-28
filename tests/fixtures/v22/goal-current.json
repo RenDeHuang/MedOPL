@@ -33,22 +33,22 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "goal-driven-development-system-audit",
-    "landed_commit": "bfb614ad27fb09d915dcdccd57e40d47f83c0a64",
+    "branch": "goal-goal-admission-fresh-current-truth-readout",
+    "landed_commit": "4ea2734fcde0c7ee96fd733800241cd1a2f7b1fe",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
       "node tests/health/health-check-v22-worktree-slice-orchestrator.mjs passed",
       "npm run test:run-plan -- --dry-run --json passed",
       "npm run verify passed",
       "npm run test:health passed",
-      "npm run gate:review -- --slice-id goal-lifecycle-development-rule-hardening passed",
-      "npm run repo:bloat -- --diff --slice-id goal-lifecycle-development-rule-hardening passed",
+      "npm run gate:review -- --slice-id goal-goal-admission-fresh-current-truth-readout passed",
+      "npm run repo:bloat -- --diff --slice-id goal-goal-admission-fresh-current-truth-readout passed",
       "npm run line:budget passed"
     ],
     "canClaim": [
-      "latest landed retired goal is registered in completed_goals",
-      "landing closeout generator upserts completed retired goals",
-      "slice start rejects completed retired goals"
+      "slice admission emits fresh current truth readout",
+      "completed goal admission remains fail-closed",
+      "non-recommended goal override boundary is explicit"
     ],
     "cannotClaim": [
       "business behavior changed",
@@ -64,8 +64,8 @@
         "npm run test:run-plan -- --dry-run --json passed",
         "npm run verify passed",
         "npm run test:health passed",
-        "npm run gate:review -- --slice-id goal-lifecycle-development-rule-hardening passed",
-        "npm run repo:bloat -- --diff --slice-id goal-lifecycle-development-rule-hardening passed",
+        "npm run gate:review -- --slice-id goal-goal-admission-fresh-current-truth-readout passed",
+        "npm run repo:bloat -- --diff --slice-id goal-goal-admission-fresh-current-truth-readout passed",
         "npm run line:budget passed"
       ],
       "result": "passed"
@@ -79,10 +79,10 @@
       "cannot_claim": "done"
     },
     "cleanup_result": {
-      "deleted": "manual-only latest goal retirement registration",
-      "folded": "closeout generator now upserts completed retired goals and active/history pointers",
-      "retained": "single current commercial resource-control truth no-cloud boundary and next_recommended_goal",
-      "reason": "goal lifecycle closeout must automatically make completed goals ineligible for repeated slice admission",
+      "deleted": "silent stale admission without current truth readout",
+      "folded": "fresh active current manifest readout into slice admission output",
+      "retained": "completed goal fail-closed next_recommended_goal and no-cloud no-business-change boundary",
+      "reason": "slice admission must show current cursor blocker latest closeout completed-goal status next recommendation and selected verification lane before work starts",
       "next": "goal-commercial-launch-ui-productization"
     },
     "retirement": {
@@ -101,7 +101,7 @@
   "current_blockers": [
     "none_for_current_scoped_commercial_business_flow"
   ],
-  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-driven-development-system-audit at bfb614ad27fb09d915dcdccd57e40d47f83c0a64. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-driven-development-system-audit at bfb614ad27fb09d915dcdccd57e40d47f83c0a64.",
+  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-goal-admission-fresh-current-truth-readout at 4ea2734fcde0c7ee96fd733800241cd1a2f7b1fe. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-goal-admission-fresh-current-truth-readout at 4ea2734fcde0c7ee96fd733800241cd1a2f7b1fe.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -652,9 +652,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "goal-driven-development-system-audit",
+  "last_landed_branch": "goal-goal-admission-fresh-current-truth-readout",
   "last_landed_at": "2026-06-28",
-  "history_latest_branch": "goal-driven-development-system-audit",
+  "history_latest_branch": "goal-goal-admission-fresh-current-truth-readout",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -1076,8 +1076,8 @@
     },
     "receipt_manifest_artifact_id": "7932066015"
   },
-  "base_trunk_head": "bfb614ad27fb09d915dcdccd57e40d47f83c0a64",
-  "last_landed_commit": "bfb614ad27fb09d915dcdccd57e40d47f83c0a64",
+  "base_trunk_head": "4ea2734fcde0c7ee96fd733800241cd1a2f7b1fe",
+  "last_landed_commit": "4ea2734fcde0c7ee96fd733800241cd1a2f7b1fe",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
@@ -1388,6 +1388,16 @@
       {
         "goal_id": "goal-driven-development-system-audit",
         "landed_commit": "bfb614ad27fb09d915dcdccd57e40d47f83c0a64",
+        "status": "completed_retired",
+        "retired_from": [
+          "active_blocker",
+          "current_cursor"
+        ],
+        "evidence_pointer": "docs/history/README.md"
+      },
+      {
+        "goal_id": "goal-goal-admission-fresh-current-truth-readout",
+        "landed_commit": "4ea2734fcde0c7ee96fd733800241cd1a2f7b1fe",
         "status": "completed_retired",
         "retired_from": [
           "active_blocker",
