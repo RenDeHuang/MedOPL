@@ -297,12 +297,70 @@ func TestServiceRecordFileUsesCanonicalRuntimeTenantForPostgresBillingEvent(t *t
 	}
 }
 
+func TestServiceDestroyStorageUsesCollisionResistantBillingEventID(t *testing.T) {
+	ctx := context.Background()
+	store := &billingEventIDCollisionStore{Store: memory.NewControlPlaneStore()}
+	service := NewService(store)
+	launch := bindAndOpen(t, ctx, service)
+
+	if _, err := service.Release(ctx, ReleaseInput{
+		WorkspaceID:       launch.WorkspaceID,
+		ResourceBindingID: launch.ResourceBindingID,
+		StopBilling:       true,
+		IdempotencyKey:    "release-storage-destroy-collision-rc",
+	}); err != nil {
+		t.Fatalf("Release() error = %v", err)
+	}
+	destroyIDKey := "destroy-storage-collision-rc"
+	storageBindingID := storageBindingIDForLaunch(launch)
+	storageAuditID := "audit-" + shortID(launch.ResourceBindingID+":"+storageBindingID+":"+destroyIDKey)
+	store.collidingBillingID = "billing-" + shortID(storageAuditID+":"+cpd.AuditKindStorageDestroy)
+
+	if _, err := service.DestroyStorage(ctx, DestroyStorageInput{
+		WorkspaceID:       launch.WorkspaceID,
+		ResourceBindingID: launch.ResourceBindingID,
+		StorageBindingID:  storageBindingID,
+		IdempotencyKey:    destroyIDKey,
+	}); err != nil {
+		t.Fatalf("DestroyStorage() must not collide with historical billing_events.id values: %v", err)
+	}
+
+	events, err := service.store.ListBillingEvents(ctx, launch.WorkspaceID)
+	if err != nil {
+		t.Fatalf("ListBillingEvents() error = %v", err)
+	}
+	var storageDestroyEvents []cpd.BillingEvent
+	for _, event := range events {
+		if event.SourceEventType == cpd.AuditKindStorageDestroy {
+			storageDestroyEvents = append(storageDestroyEvents, event)
+		}
+	}
+	if len(storageDestroyEvents) != 1 {
+		t.Fatalf("expected exactly one storage.destroy billing event, got %d: %+v", len(storageDestroyEvents), events)
+	}
+	if storageDestroyEvents[0].ID == store.collidingBillingID {
+		t.Fatalf("storage destroy billing event must avoid legacy short id collision: %+v legacy=%s", storageDestroyEvents[0], store.collidingBillingID)
+	}
+}
+
 type ledgerTenantLookupUnavailableStore struct {
 	cprepo.Store
 }
 
 func (store *ledgerTenantLookupUnavailableStore) ListResourceBindingLedgers(ctx context.Context, workspaceID string) ([]cpd.ResourceBindingLedger, error) {
 	return nil, nil
+}
+
+type billingEventIDCollisionStore struct {
+	cprepo.Store
+	collidingBillingID string
+}
+
+func (store *billingEventIDCollisionStore) SaveBillingEvent(ctx context.Context, event cpd.BillingEvent) error {
+	if store.collidingBillingID != "" && event.ID == store.collidingBillingID {
+		return errors.New("billing_events_pkey_violation")
+	}
+	return store.Store.SaveBillingEvent(ctx, event)
 }
 
 type postgresBillingTenantFKStore struct {

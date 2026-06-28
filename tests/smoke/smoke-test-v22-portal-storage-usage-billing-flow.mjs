@@ -22,6 +22,7 @@ runGoTest("./internal/service/controlplane", "TestServiceLocalProductRCUploadFil
 runGoTest("./internal/service/controlplane", "TestServiceStorageFileArtifactMetadataRoundTripsThroughPostgresOwnedRefs");
 runGoTest("./internal/service/controlplane", "TestServiceBillingDetailsReconcilesStoredRunCosts");
 runGoTest("./internal/service/controlplane", "TestServiceBillingLedgerEntriesCarryBusinessReconciliationRefs");
+runGoTest("./internal/service/controlplane", "TestServiceDestroyStorageUsesCollisionResistantBillingEventID");
 runGoTest("./internal/service/controlplane", "TestServiceConcurrentReleaseWritesSingleBillingAuditReceipt");
 runGoTest("./internal/service/controlplane", "TestServiceConcurrentStorageDestroyWritesSingleReceipt");
 runGoTest("./internal/service/controlplane", "TestServiceConcurrentOpenAndRunKeepSingleRuntimeAndRunLedger");
@@ -30,5 +31,5 @@ console.log(JSON.stringify({
   ok: true,
   contract: "v22_portal_storage_usage_billing_flow",
   owner: "services/medopl-go-backend",
-  evidence: "go_single_flow_local_product_rc_with_storage_file_artifact_metadata_billing_reconciliation_and_stability",
+  evidence: "go_single_flow_local_product_rc_with_storage_file_artifact_metadata_billing_reconciliation_storage_destroy_writeback_and_stability",
 }, null, 2));

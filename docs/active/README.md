@@ -17,12 +17,12 @@ MedOPL 是 OPL-Webui 的商业资源控制面，负责 owner 创建或批准账�
 | --- | --- |
 | current phase | `commercial runtime storage billing business closure` |
 | current cursor | `goal-commercial-runtime-storage-billing-business-closure` |
-| latest repo closeout | `goal-commercial-business-flow-current-closeout-sync` / `42e3b6497847d494289e1e6ff1d842b6e791bb63` |
-| current blocker | `commercial_business_closure_deploy_verification_pending_for_upload_billing_writeback_fix` |
-| source fix | `goal-commercial-upload-file-billing-writeback-fix` landed at `34b0e3070357504b475a0bee2ff6bd4de0af23df` |
-| next proof | authorized Release Image + Cloud Rollout + OPL-Webui consumer canary rerun for the same commercial business flow |
+| latest repo closeout | `cleanup/v22-active-substrate-retirement` / `1c90045023d090137f5e9d4ac3ea44505c3563bd` |
+| current blocker | `storage_destroy_billing_event_writeback_failed_in_production_canary` |
+| source fix | `goal-commercial-upload-file-billing-writeback-fix` landed at `34b0e3070357504b475a0bee2ff6bd4de0af23df`; `goal-commercial-storage-destroy-writeback-fix` is the current source slice |
+| next proof | land storage destroy billing writeback fix, then run authorized Release Image + Cloud Rollout + OPL-Webui consumer canary for the same commercial business flow |
 
-The latest repo/gate closeout is goal-commercial-business-flow-current-closeout-sync at 42e3b6497847d494289e1e6ff1d842b6e791bb63. The source fix keeps `upload_file -> save_billing_event` fail-closed while using the canonical runtime ledger tenant / billing attribution identity before fallback account lookup. The remaining proof is deployment and consumer-canary verification for that fix, not a new product truth and not a launch approval narrative.
+The latest repo/gate closeout is cleanup/v22-active-substrate-retirement at 1c90045023d090137f5e9d4ac3ea44505c3563bd. The source line keeps `upload_file -> save_billing_event` fail-closed while using canonical runtime ledger tenant / billing attribution identity before fallback account lookup. The authorized cloud rerun reached `storage_destroy` and failed closed at storage destroy billing writeback; the current source slice must fix that without bypassing billing/audit. The remaining proof is deployment and consumer-canary verification for the same commercial business flow, not a new product truth and not a launch approval narrative.
 
 ## Active Supporting Substrates
 
@@ -37,7 +37,7 @@ The latest repo/gate closeout is goal-commercial-business-flow-current-closeout-
 - 不能把 internal ledger 写成 external real payment settlement。
 - 不能把 historical deployment provenance 写回 active product truth。
 - 不能把 ordinary chat、OPL Framework/domain quality verdict 或 artifact authority 写成 MedOPL owner surface。
-- 不能绕过 billing/audit、把 upload_file 假成功、或把 projection/local UI 当真实 business ledger。
+- 不能绕过 billing/audit、把 upload_file 或 storage_destroy 假成功、或把 projection/local UI 当真实 business ledger。
 
 ## Source Of Truth Pointers
 

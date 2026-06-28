@@ -54,7 +54,7 @@ func (service *Service) saveBillingEventForAudit(ctx context.Context, audit cpd.
 		amount = 0
 	}
 	return service.store.SaveBillingEvent(ctx, cpd.BillingEvent{
-		ID:                   "billing-" + shortID(audit.ID+":"+audit.Kind),
+		ID:                   "billing-" + stableID(audit.ID+":"+audit.Kind),
 		TenantID:             tenantID,
 		WorkspaceID:          audit.WorkspaceID,
 		Type:                 eventType,

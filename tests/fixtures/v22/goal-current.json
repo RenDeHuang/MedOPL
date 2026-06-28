@@ -33,24 +33,21 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "goal-commercial-business-flow-current-closeout-sync",
-    "landed_commit": "42e3b6497847d494289e1e6ff1d842b6e791bb63",
+    "branch": "cleanup/v22-active-substrate-retirement",
+    "landed_commit": "1c90045023d090137f5e9d4ac3ea44505c3563bd",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
       "npm run test:run-plan -- --dry-run --json passed",
       "npm run test:run-plan passed",
-      "npm run test:backend passed",
-      "npm run test:cloud passed",
-      "npm run test:frontend passed",
-      "npm run test:release passed",
+      "npm run validate:active-platform passed",
       "npm run verify passed",
       "npm run test:health passed",
-      "npm run gate:review -- --slice-id goal-commercial-business-flow-current-closeout-sync passed",
-      "npm run repo:bloat -- --diff --slice-id goal-commercial-business-flow-current-closeout-sync passed",
+      "npm run gate:review -- --slice-id cleanup-v22-active-substrate-retirement passed",
+      "npm run repo:bloat -- --diff --slice-id cleanup-v22-active-substrate-retirement passed",
       "npm run line:budget passed",
       "post-push npm run verify passed",
-      "post-push npm run gate:review -- --slice-id goal-commercial-business-flow-current-closeout-sync passed",
-      "post-push npm run repo:bloat -- --diff --slice-id goal-commercial-business-flow-current-closeout-sync passed",
+      "post-push npm run gate:review -- --slice-id cleanup-v22-active-substrate-retirement passed",
+      "post-push npm run repo:bloat -- --diff --slice-id cleanup-v22-active-substrate-retirement passed",
       "post-push npm run line:budget passed"
     ],
     "plan_completion_audit": {
@@ -62,11 +59,11 @@
       "cannot_claim": "done"
     },
     "cleanup_result": {
-      "deleted": "launch approval / selected-user style wording as current business cursor or active runtime admission narrative",
-      "folded": "latest landed closeout, product truth, delivery truth, Cloud Rollout operations receipt naming and API contract operations safety into commercial business flow plus operator confirmation boundary",
-      "retained": "account_approved/account_not_approved machine runtime gate conditions, Cloud Rollout deployment operations gate, and explicit cannot-claim boundaries",
-      "reason": "MedOPL business truth is account prepare approval credit plan runtime storage upload run artifact billing statement reconciliation release destroy stop billing; deployment operations confirmation is not business admission",
-      "next": "stay on goal-commercial-runtime-storage-billing-business-closure and run authorized Release Image / Cloud Rollout / OPL-Webui consumer canary for the landed upload billing writeback fix"
+      "deleted": "long active run logs, historical Package C/D product narrative, production launch gap narrative and stale CLB/Ingress rollout notes from active product truth",
+      "folded": "Package D / production launch / Release Image / Cloud Rollout / receipt manifest into active operations substrate and compact history provenance",
+      "retained": "commercial resource-control product truth, account_approved/account_not_approved machine runtime gate conditions, Release Image / Cloud Rollout operations substrate, and explicit cannot-claim boundaries",
+      "reason": "MedOPL business truth is account prepare approval credit plan runtime storage upload run artifact billing statement reconciliation release destroy stop billing; deployment operations substrate supports proof but does not define product identity or business admission",
+      "next": "stay on goal-commercial-runtime-storage-billing-business-closure; fix storage_destroy billing writeback discovered by authorized Cloud Rollout consumer canary, then rerun Release Image / Cloud Rollout / OPL-Webui consumer canary"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "goal-commercial-runtime-storage-billing-business-closure"
@@ -76,10 +73,10 @@
   "current_stage": "commercial runtime storage billing business closure",
   "current_risk_class": "commercial_billing_boundary",
   "current_blockers": [
-    "commercial_business_closure_deploy_verification_pending_for_upload_billing_writeback_fix",
+    "storage_destroy_billing_event_writeback_failed_in_production_canary",
     "external_psp_multi_region_sla_enterprise_compliance_ongoing_authorization_and_unrestricted_full_production_remain_unclaimed"
   ],
-  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-business-flow-current-closeout-sync at 42e3b6497847d494289e1e6ff1d842b6e791bb63. The source fix for upload_file billing ledger writeback is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the remaining evidence is authorized Release Image, Cloud Rollout and OPL-Webui consumer canary rerun for the same commercial business flow. The current blocker is commercial business closure deployment verification for the landed upload billing writeback fix, not deployment operations confirmation governance. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are active operations substrate only; they are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-business-flow-current-closeout-sync at 42e3b6497847d494289e1e6ff1d842b6e791bb63.",
+  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is cleanup/v22-active-substrate-retirement at 1c90045023d090137f5e9d4ac3ea44505c3563bd. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the latest authorized Release Image / Cloud Rollout / OPL-Webui consumer canary rerun reached storage_destroy and failed closed at storage_destroy -> save_billing_event. The current source slice is goal-commercial-storage-destroy-writeback-fix; it must keep billing/audit fail-closed and cannot turn storage_destroy into a fake success. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are active operations substrate only; they are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -248,7 +245,7 @@
     "gap_id": "goal-commercial-runtime-storage-billing-business-closure",
     "stage": "commercial runtime storage billing business closure",
     "cursor_eligible": true,
-    "problem": "Prove the commercial business flow account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. The upload billing writeback source fix is landed; the remaining evidence is authorized Release Image, Cloud Rollout and OPL-Webui consumer canary rerun for the same business flow without bypassing billing/audit.",
+    "problem": "Prove the commercial business flow account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. Upload billing writeback is landed; the latest authorized consumer canary exposed storage_destroy billing writeback failure, which is the current source blocker.",
     "verification_commands": [
       "node scripts/v22-verify.mjs active-platform --json",
       "node tests/product/product-test-v22-medopl-contract-authority.mjs",
@@ -303,7 +300,7 @@
       "tests/fixtures/v22/goal-current.json",
       "tests/fixtures/v22/agent-verify-manifest.json"
     ],
-    "latest_local_evidence": "source fix landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; authorized Release Image, Cloud Rollout and OPL-Webui consumer canary rerun remain pending for the same commercial business flow"
+    "latest_local_evidence": "source fix for upload billing landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; cleanup closeout landed at 1c90045023d090137f5e9d4ac3ea44505c3563bd; storage_destroy billing writeback source fix is in progress before the next authorized Release Image / Cloud Rollout / OPL-Webui consumer canary rerun"
   },
   "release_readiness_state": {
     "status": "active_operations_substrate_for_commercial_business_flow_verification",
@@ -335,11 +332,11 @@
     "productionization_plan": [
       "Keep product truth centered on account approval, plan, balance, quota, runtime/storage, file/run ledger, billing ledger, statement reconciliation and release/destroy/stop billing",
       "Use Release Image and Cloud Rollout only as active operations substrate for authorized verification",
-      "Run OPL-Webui consumer canary for the same commercial business flow after the landed upload billing writeback fix is released",
+      "Run OPL-Webui consumer canary for the same commercial business flow after the landed storage_destroy billing writeback fix is released",
       "Keep raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts outside git"
     ],
     "readinessGaps": [
-      "Authorized Release Image / Cloud Rollout / OPL-Webui consumer canary rerun is still required for the landed upload billing writeback fix.",
+      "Authorized Release Image / Cloud Rollout / OPL-Webui consumer canary rerun is still required after the storage_destroy billing writeback fix lands.",
       "Unscoped production complete remains unclaimed until dedicated scope-expansion evidence proves multi-region/SLA, enterprise compliance, ongoing authorization and broader tenant/resource readiness.",
       "Raw evidence, credentials, uploaded files, runtime artifacts and provider/cloud payloads remain outside git."
     ],
@@ -625,9 +622,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "goal-commercial-business-flow-current-closeout-sync",
+  "last_landed_branch": "cleanup/v22-active-substrate-retirement",
   "last_landed_at": "2026-06-28",
-  "history_latest_branch": "goal-commercial-business-flow-current-closeout-sync",
+  "history_latest_branch": "cleanup/v22-active-substrate-retirement",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -1048,8 +1045,8 @@
       "cannot_claim": "multi-region production, SLA proven, enterprise compliance, ongoing authorization, or unobserved tenant/resource readiness"
     }
   },
-  "base_trunk_head": "42e3b6497847d494289e1e6ff1d842b6e791bb63",
-  "last_landed_commit": "42e3b6497847d494289e1e6ff1d842b6e791bb63",
+  "base_trunk_head": "1c90045023d090137f5e9d4ac3ea44505c3563bd",
+  "last_landed_commit": "1c90045023d090137f5e9d4ac3ea44505c3563bd",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
@@ -1103,7 +1100,7 @@
       "upload_redacted_receipt_manifest"
     ],
     "previous_live_test_blocker": "production_goal_live_test_release_runtime_failed",
-    "local_fix_status": "Operations receipt substrate remains contract-bound and fail-closed; current product proof still requires the commercial business-flow rerun for the landed upload billing writeback fix.",
+    "local_fix_status": "Operations receipt substrate remains contract-bound and fail-closed; current product proof requires the commercial business-flow rerun after the storage_destroy billing writeback source fix lands.",
     "receipt_manifest_ref": ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json",
     "receipt_manifest_hash": "sha256:3c718484f40b0bcfadf55bbafe6f97b02b22072ad801004a560bfe1f69059a0f",
     "consumer_tests": [
