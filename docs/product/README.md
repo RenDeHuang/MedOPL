@@ -17,7 +17,7 @@ MedOPL 不是云资源控制台。普通用户产品语言不展示 CVM、COS、
 
 MedOPL 不回答科研问题，不复制 OPL chatbot，不评判 OPL 科研能力质量。MedOPL 负责计算资源、存储空间、套餐、任务并发、usage/billing、release、storage destroy intent 和运维审计 receipt；OPL-Webui 负责 ordinary chat、项目 / session、文件管理、skill 上传、任务推进和结果展示体验；OPL 负责 framework、runtime semantics、agent / skill protocol 和科研执行 runtime。
 
-MedOPL 的业务准入 truth 是 account-approved commercial admission：账号存在且已由 owner/平台批准或开通，并满足 plan/balance/quota。`runtime_required` 主业务 gate 必须检查账号存在、账号已由 owner/平台批准或开通、workspace 存在、需要时已有 `providerKeyRef`、已选择套餐、余额足够、quota 可用且没有平台 emergency stop；余额或套餐不足时返回 purchase / recharge / select_plan action，余额足够后才允许开通 compute resource 和 storage space。Release Image、Cloud Rollout 和 receipt manifest 是 operations/release substrate；它们不是 recharge、billing、plan、quota、cost ceiling 或 business admission truth。
+MedOPL 的业务准入 truth 是 owner-created-or-approved MedOPL account with sufficient plan/balance/quota：账号存在且已由 owner/平台创建、批准或开通，并满足 plan/balance/quota。`runtime_required` 主业务 gate 必须检查账号存在、账号已由 owner/平台批准或开通、workspace 存在、需要时已有 `providerKeyRef`、已选择套餐、余额足够、quota 可用且没有平台 emergency stop；余额或套餐不足时返回 purchase / recharge / select_plan action，余额足够后才允许开通 compute resource 和 storage space。Release Image、Cloud Rollout 和 receipt manifest 是 operations/release substrate；它们不是 recharge、billing、plan、quota、cost ceiling 或 business admission truth。
 
 普通用户主语言优先使用：账号、工作空间、计算资源、存储空间、套餐、任务并发、余额、冻结金额、费用与用量。租户、runtime、environmentId、resourceBindingId 和 billingAttributionId 只能作为内部标签、对账标签或审计字段。
 
@@ -86,7 +86,7 @@ Figma UI repo-native absorption
 
 这六个 package 是黄金链路的后续交付顺序。当前 truth 归 `contracts/`、`docs/active/README.md`、root `specs/**`、tests/fixtures/manifest 和 `validate:active-platform`；`changes/` 已退役，不再作为每个 package 的当前入口或 archive 目标。
 
-Figma Make 只提供视觉和信息架构输入；Figma absorption、typed API boundary 和 OPL entry real preflight / launch projection 已归档为 repo-native frontend/runtime truth。Portal UI 必须通过 typed API modules 和 backend projections 读取真实 preflight、launch、providerKeyRef 和 Gateway readiness 状态，不能继续展示 page-local launch readiness。当前阻塞是 real-cloud authorization boundary；它不授权 secret、真实云、deploy、kubectl、build/push 或 live-test。
+Figma Make 只提供视觉和信息架构输入；Figma absorption、typed API boundary 和 OPL entry real preflight / launch projection 已归档为 repo-native frontend/runtime truth。Portal UI 必须通过 typed API modules 和 backend projections 读取真实 preflight、launch、providerKeyRef 和 Gateway readiness 状态，不能继续展示 page-local launch readiness。Local RC 复验商业业务流：account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing。真实云、secret、deploy、kubectl、build/push 或 live-test 仍需要单独授权，不是本地产品 truth。
 
 Go backend 是 MedOPL control-plane business truth 的本地 MVP takeover 承载面。它必须先接管用户、workspace、provider key ref、套餐、计算资源 intent、存储空间 inventory、billing/audit receipt 和 resource lifecycle command；OPL Web Gateway 与 Runtime Bridge 可以在迁移期继续作为薄 Node anti-corruption / relay 边界。`services/medopl-go-backend` 只有在 Go local RC eval 通过后才能进入 real-cloud-readiness；目录存在不等于 production backend 已完成。
 

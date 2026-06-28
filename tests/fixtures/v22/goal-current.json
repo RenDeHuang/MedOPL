@@ -271,6 +271,7 @@
     "verification_commands": [
       "node scripts/v22-verify.mjs active-platform --json",
       "node tests/product/product-test-v22-medopl-contract-authority.mjs",
+      "node tests/product/product-test-v22-commercial-business-flow-local-rc-revalidation.mjs",
       "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
       "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
       "node tests/backend/backend-test-v22-api-contract.mjs",
@@ -621,6 +622,7 @@
   "verification_commands": [
     "node scripts/v22-verify.mjs active-platform --json",
     "node tests/product/product-test-v22-medopl-contract-authority.mjs",
+    "node tests/product/product-test-v22-commercial-business-flow-local-rc-revalidation.mjs",
     "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
     "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
     "node tests/backend/backend-test-v22-api-contract.mjs",

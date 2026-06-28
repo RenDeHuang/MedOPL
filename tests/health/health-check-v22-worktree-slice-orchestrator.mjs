@@ -32,6 +32,10 @@ function goalIdForCloseoutBranch(branch) {
   return String(branch || "").replace(/-current$/u, "");
 }
 
+function defaultSliceIdFromBranch(branch) {
+  return String(branch || "").trim().replace(/[^a-zA-Z0-9._-]+/gu, "-").replace(/^-+|-+$/gu, "").slice(0, 80);
+}
+
 const [packageJson, manifest, current, classificationSource, orchestratorSource, landingCloseoutSource, verifySource, agentsSource, deliverySource, testsReadmeSource] = await Promise.all([
   readFile(path.join(repoRoot, "package.json"), "utf8").then(JSON.parse),
   readFile(path.join(repoRoot, "tests/fixtures/v22/agent-verify-manifest.json"), "utf8").then(JSON.parse),
@@ -44,6 +48,13 @@ const [packageJson, manifest, current, classificationSource, orchestratorSource,
   readFile(path.join(repoRoot, "docs/delivery/README.md"), "utf8"),
   readFile(path.join(repoRoot, "tests/README.md"), "utf8"),
 ]);
+const currentBranch = spawnSync("git", ["branch", "--show-current"], {
+  cwd: repoRoot,
+  encoding: "utf8",
+  stdio: "pipe",
+}).stdout.trim();
+const defaultRequestedGoal = defaultSliceIdFromBranch(currentBranch) || "v22-slice";
+const defaultRequestIsRecommendedGoal = defaultRequestedGoal === current.goal_lifecycle?.next_recommended_goal;
 
 assert.equal(packageJson.scripts?.["slice:start"], "node scripts/v22-worktree-slice-orchestrator.mjs start --json", "slice_start_script_must_exist");
 assert.equal(packageJson.scripts?.["slice:plan"], "node scripts/v22-worktree-slice-orchestrator.mjs plan --json", "slice_plan_script_must_exist");
@@ -152,9 +163,13 @@ assert.deepEqual(planPayload.currentTruthReadout?.verification_lane, current.goa
 assert.equal(planPayload.currentTruthReadout?.source_paths?.includes("docs/active/README.md"), true, "slice_current_truth_readout_must_read_active_truth");
 assert.equal(planPayload.currentTruthReadout?.source_paths?.includes("tests/fixtures/v22/goal-current.json"), true, "slice_current_truth_readout_must_read_goal_current");
 assert.equal(planPayload.currentTruthReadout?.source_paths?.includes("tests/fixtures/v22/agent-verify-manifest.json"), true, "slice_current_truth_readout_must_read_verify_manifest");
-assert.equal(planPayload.non_recommended_goal, true, "slice_non_recommended_goal_must_be_explicit_for_default_branch_goal");
-assert.equal(planPayload.overrideBoundary?.reason, "requested_goal_is_not_next_recommended_goal", "slice_override_boundary_reason_mismatch");
-assert.equal(planPayload.overrideBoundary?.next_recommended_goal, current.goal_lifecycle.next_recommended_goal, "slice_override_boundary_next_goal_mismatch");
+assert.equal(planPayload.non_recommended_goal, !defaultRequestIsRecommendedGoal, "slice_default_branch_recommendation_flag_mismatch");
+if (defaultRequestIsRecommendedGoal) {
+  assert.equal(planPayload.overrideBoundary, null, "recommended_default_branch_must_not_have_override_boundary");
+} else {
+  assert.equal(planPayload.overrideBoundary?.reason, "requested_goal_is_not_next_recommended_goal", "slice_override_boundary_reason_mismatch");
+  assert.equal(planPayload.overrideBoundary?.next_recommended_goal, current.goal_lifecycle.next_recommended_goal, "slice_override_boundary_next_goal_mismatch");
+}
 assert.equal(planPayload.landingPolicy?.featureBranchPushAllowed, true, "slice_landing_policy_must_allow_feature_branch_push");
 assert.equal(planPayload.landingPolicy?.trunkMergePushAllowedAfterLandingGate, true, "slice_landing_policy_must_allow_trunk_push_after_gate");
 assert.equal(planPayload.landingPolicy?.requiresFreshLandingGate, true, "slice_landing_policy_must_require_fresh_landing_gate");
@@ -211,6 +226,12 @@ assert.equal(nextGoalPlanPayload.currentTruthReadout?.next_recommended_goal, cur
 assert.equal(nextGoalPlanPayload.currentTruthReadout?.completed_goals?.requested_goal_completed, false, "next_goal_must_not_be_completed");
 assert.equal(nextGoalPlanPayload.non_recommended_goal, false, "next_goal_must_not_be_marked_non_recommended");
 assert.equal(nextGoalPlanPayload.overrideBoundary, null, "next_goal_must_not_have_override_boundary");
+const nonRecommendedGoalPlan = runSlice(["start", "--slice-id", "health-non-recommended-goal", "--json"]);
+assert.equal(nonRecommendedGoalPlan.status, 0, "non_recommended_goal_slice_start_must_succeed");
+const nonRecommendedGoalPayload = JSON.parse(nonRecommendedGoalPlan.stdout);
+assert.equal(nonRecommendedGoalPayload.non_recommended_goal, true, "non_recommended_goal_must_be_explicit");
+assert.equal(nonRecommendedGoalPayload.overrideBoundary?.reason, "requested_goal_is_not_next_recommended_goal", "non_recommended_goal_override_reason_mismatch");
+assert.equal(nonRecommendedGoalPayload.overrideBoundary?.next_recommended_goal, current.goal_lifecycle.next_recommended_goal, "non_recommended_goal_override_next_goal_mismatch");
 assert.deepEqual(planPayload.commands, [
   "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
 ], "slice_orchestrator_start_commands_mismatch");
