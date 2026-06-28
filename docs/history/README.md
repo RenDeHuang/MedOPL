@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `goal-authorized-commercial-launch-cloud-canary`
-- latest landed commit: `3de36577f91fd5b6978cf2fc4cdc2c91c0b831a2`
+- latest landed branch: `goal-commercial-production-maturity-gap-audit`
+- latest landed commit: `b9ae835790b9b7412aabf7edb27e2c1732b5fcf9`
 - next cursor: `goal-commercial-runtime-storage-billing-business-closure`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`

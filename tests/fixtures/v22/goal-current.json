@@ -33,48 +33,35 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "goal-authorized-commercial-launch-cloud-canary",
-    "landed_commit": "3de36577f91fd5b6978cf2fc4cdc2c91c0b831a2",
+    "branch": "goal-commercial-production-maturity-gap-audit",
+    "landed_commit": "b9ae835790b9b7412aabf7edb27e2c1732b5fcf9",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
-      "Release Image run 28322335961 passed for image tag 3de3657",
-      "Cloud Rollout production_launch run 28322350847 passed with OPL-Webui consumer canary availability billing/audit release receipts and receipt manifest",
-      "redacted receipt manifest artifact 7934630167 restored to .runtime and hashed sha256:ea854000438638a7b906bc5a7ddd66005e4608c5298c15ad7b3ef7a52acaab8e",
-      "npm run verify:cloud-release-candidate passed",
-      "npm run verify:production-complete-candidate passed",
       "npm run verify passed",
-      "npm run gate:review -- --slice-id goal-authorized-commercial-launch-cloud-canary passed",
-      "npm run repo:bloat -- --diff --slice-id goal-authorized-commercial-launch-cloud-canary passed",
-      "npm run line:budget passed"
+      "npm run test:product passed",
+      "post-push test:health initially failed on stale closeout and this closeout sync is the minimal remediation"
     ],
     "canClaim": [
-      "authorized commercial launch cloud canary passed for current trunk 3de3657",
-      "Release Image 28322335961 and Cloud Rollout production_launch 28322350847 completed successfully",
-      "OPL-Webui consumer canary availability billing audit release destroy stop billing and redacted receipt manifest gates passed",
-      "verify:cloud-release-candidate and verify:production-complete-candidate passed against restored redacted manifest"
+      "authorized commercial business-flow cloud canary passed",
+      "internal credit + billing ledger + statement reconciliation + release/destroy/stop billing passed",
+      "Commercial Launch UI absorbed",
+      "commercial production maturity gap matrix and roadmap established"
     ],
     "cannotClaim": [
-      "production complete product claim",
       "external PSP settlement",
+      "real payment completed",
+      "refund / invoice / tax / compliance",
       "unscoped full production",
       "all users/all tenants",
-      "SLA/multi-region",
-      "ongoing authorization",
-      "enterprise compliance",
-      "future mutations without separate authorization"
+      "SLA/multi-region/ongoing authorization",
+      "cloud/deploy/live-test execution in this slice"
     ],
     "verification": {
       "risk_class": "commercial_billing_boundary",
       "commands": [
-        "Release Image run 28322335961 passed for image tag 3de3657",
-        "Cloud Rollout production_launch run 28322350847 passed with OPL-Webui consumer canary availability billing/audit release receipts and receipt manifest",
-        "redacted receipt manifest artifact 7934630167 restored to .runtime and hashed sha256:ea854000438638a7b906bc5a7ddd66005e4608c5298c15ad7b3ef7a52acaab8e",
-        "npm run verify:cloud-release-candidate passed",
-        "npm run verify:production-complete-candidate passed",
         "npm run verify passed",
-        "npm run gate:review -- --slice-id goal-authorized-commercial-launch-cloud-canary passed",
-        "npm run repo:bloat -- --diff --slice-id goal-authorized-commercial-launch-cloud-canary passed",
-        "npm run line:budget passed"
+        "npm run test:product passed",
+        "post-push test:health initially failed on stale closeout and this closeout sync is the minimal remediation"
       ],
       "result": "passed"
     },
@@ -82,16 +69,16 @@
       "functional": "done",
       "code_cleanup": "done",
       "docs_foldback": "done",
-      "verification": "done",
+      "verification": "partial",
       "retired_entrypoints": "done",
       "cannot_claim": "done"
     },
     "cleanup_result": {
       "deleted": "none",
-      "folded": "authorized cloud canary run into compact history and machine evidence pointers",
-      "retained": "commercial business flow cursor and external PSP production complete SLA cannot-claim boundaries",
-      "reason": "Goal B passed through Release Image Cloud Rollout OPL-Webui consumer canary availability billing audit release receipts and redacted manifest gates",
-      "next": "future scope expansion or ongoing operations proof requires separate authorization"
+      "folded": "commercial production maturity gap into machine matrix and compact docs pointers",
+      "retained": "commercial business-flow current cursor and cannot-claim boundaries",
+      "reason": "business-flow is already canary-proven and next work is production maturity gap, not new business closure",
+      "next": "goal-commercial-payment-admin-api-maturity"
     },
     "retirement": {
       "active_blocker_retired": true,
@@ -109,7 +96,7 @@
   "current_blockers": [
     "none_for_current_scoped_commercial_business_flow"
   ],
-  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-authorized-commercial-launch-cloud-canary at 3de36577f91fd5b6978cf2fc4cdc2c91c0b831a2. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-authorized-commercial-launch-cloud-canary at 3de36577f91fd5b6978cf2fc4cdc2c91c0b831a2.",
+  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-production-maturity-gap-audit at b9ae835790b9b7412aabf7edb27e2c1732b5fcf9. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-production-maturity-gap-audit at b9ae835790b9b7412aabf7edb27e2c1732b5fcf9.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -666,9 +653,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "goal-authorized-commercial-launch-cloud-canary",
+  "last_landed_branch": "goal-commercial-production-maturity-gap-audit",
   "last_landed_at": "2026-06-28",
-  "history_latest_branch": "goal-authorized-commercial-launch-cloud-canary",
+  "history_latest_branch": "goal-commercial-production-maturity-gap-audit",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -1090,8 +1077,8 @@
     },
     "receipt_manifest_artifact_id": "7934630167"
   },
-  "base_trunk_head": "3de36577f91fd5b6978cf2fc4cdc2c91c0b831a2",
-  "last_landed_commit": "3de36577f91fd5b6978cf2fc4cdc2c91c0b831a2",
+  "base_trunk_head": "b9ae835790b9b7412aabf7edb27e2c1732b5fcf9",
+  "last_landed_commit": "b9ae835790b9b7412aabf7edb27e2c1732b5fcf9",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
@@ -1452,6 +1439,16 @@
       {
         "goal_id": "goal-authorized-commercial-launch-cloud-canary",
         "landed_commit": "3de36577f91fd5b6978cf2fc4cdc2c91c0b831a2",
+        "status": "completed_retired",
+        "retired_from": [
+          "active_blocker",
+          "current_cursor"
+        ],
+        "evidence_pointer": "docs/history/README.md"
+      },
+      {
+        "goal_id": "goal-commercial-production-maturity-gap-audit",
+        "landed_commit": "b9ae835790b9b7412aabf7edb27e2c1732b5fcf9",
         "status": "completed_retired",
         "retired_from": [
           "active_blocker",
