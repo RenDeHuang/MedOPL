@@ -24,7 +24,7 @@ import {
 } from "./portalFormatters";
 import { usePortalQuery } from "./portalQuery";
 
-export const adminReadOnlyMessage = "该管理面当前只展示已接入的只读数据；真实云资源、真实扣费或高风险设置仍需单独授权接口。";
+export const adminReadOnlyMessage = "该管理面服务 MedOPL 商业资源控制面；真实云资源、真实扣费或高风险设置仍需单独授权接口。";
 
 export {
   deleteAdminAnnouncement,

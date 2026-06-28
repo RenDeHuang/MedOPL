@@ -151,8 +151,9 @@ assertIncludesAll(visibleSurface, [
   "用量明细",
   "费用估算",
   "冻结金额",
-  "价格待审批",
-  "正式售价未定价",
+  "账号开通/批准、充值/授信、套餐、计算资源、存储空间和账单核对",
+  "account approved + plan/balance/quota",
+  "按套餐余额和 quota 核对",
   "审计状态",
   "gflabtoken 模型调用密钥",
 ], "frontend_beginner_surface_copy");

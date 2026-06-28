@@ -461,6 +461,7 @@
         "node scripts/v22-verify.mjs active-platform --json",
         "node tests/product/product-test-v22-medopl-contract-authority.mjs",
         "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+        "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
         "node tests/backend/backend-test-v22-api-contract.mjs",
         "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs",
         "node tests/release/release-test-v22-boundary-contract.mjs",
@@ -489,6 +490,7 @@
         "node scripts/v22-verify.mjs active-platform --json",
         "node tests/product/product-test-v22-medopl-contract-authority.mjs",
         "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+        "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
         "node tests/backend/backend-test-v22-api-contract.mjs",
         "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs",
         "node tests/release/release-test-v22-boundary-contract.mjs",
@@ -548,6 +550,7 @@
         "node tests/contracts/runtime-bridge/contract-test-v22-ai-runtime-contract.mjs",
         "node tests/contracts/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
         "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+        "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
         "node tests/health/health-check-v22-contract-conflict-boundary.mjs",
         "node tests/health/health-check-v22-dynamic-test-run-plan.mjs",
         "node tests/health/health-check-v22-production-receipt-boundary.mjs",
@@ -640,6 +643,7 @@
         "node tests/backend/backend-test-v22-api-contract.mjs",
         "node tests/contracts/contract-test-v22-validate-active-platform.mjs",
         "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+        "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
         "node tests/health/health-check-v22-dynamic-test-run-plan.mjs",
         "node tests/health/health-check-v22-verify-plan-mode.mjs",
         "node tests/hygiene/hygiene-test-v22-diff-scoped-sensitive-review-gate.mjs",
@@ -659,7 +663,8 @@
     {
       "id": "frontend",
       "commands": [
-        "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
+        "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+        "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs"
       ]
     },
     {

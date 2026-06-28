@@ -129,6 +129,9 @@ export function Overview() {
             </div>
             <h2 className="mb-3 text-2xl font-semibold text-neutral-900">{overviewHeadline(serviceStatus)}</h2>
             <p className="max-w-2xl text-sm text-neutral-600">{overviewCopy(serviceStatus)}</p>
+            <p className="mt-2 max-w-2xl text-xs text-neutral-500">
+              商业路径：账号开通/批准、充值/授信、套餐、计算资源、存储空间和账单核对。
+            </p>
           </div>
           <PrimaryOverviewAction status={serviceStatus} />
         </div>

@@ -47,7 +47,7 @@ export async function loadRuntimeEnvironmentModel() {
     storage: packageStorage(plan),
     concurrent: packageConcurrent(plan),
     recommended: plan.id === "pro_8c16g_100gb",
-    priceLabel: plan.priceLabel || plan.billing?.priceLabel || "正式售价未定价",
+    priceLabel: plan.priceLabel || plan.billing?.priceLabel || "按套餐余额和 quota 核对",
     pendingProductApproval: plan.pendingProductApproval || Boolean(plan.billing?.pendingProductApproval),
   }));
   if (plans.length === 0) throw new PortalDisplayError(PORTAL_DATA_UNAVAILABLE_MESSAGE);
@@ -58,7 +58,7 @@ export async function loadRuntimeEnvironmentModel() {
     subscriptionStatusText: statusText(subscription.status),
     entitlementMessageText: entitlement.entitlement.message && !entitlement.entitlement.message.includes("_")
       ? entitlement.entitlement.message
-      : statusText(entitlement.entitlement.status, entitlement.entitlement.enabled ? "已开通实验室套餐" : "尚未开通实验室套餐。"),
+      : statusText(entitlement.entitlement.status, entitlement.entitlement.enabled ? "已选择托管套餐" : "尚未选择托管套餐。"),
     currentPlanName: subscription.currentPackageName || entitlement.entitlement.packageName || "已开通托管套餐",
     computeSpec: activeBinding?.computeResource?.instanceType || "未返回",
     storageTotal: gb(storageCapacityGb),

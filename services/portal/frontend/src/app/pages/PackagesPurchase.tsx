@@ -38,7 +38,7 @@ export function PackagesPurchase() {
               </Badge>
             </div>
             <p className="text-neutral-600 text-sm max-w-2xl">
-              选择给 OPL 使用的计算资源、存储空间和并发任务。这里不展示云控制台配置。
+              选择给 OPL 使用的计算资源、存储空间和并发任务；套餐、余额、冻结金额和 quota 共同决定是否可以开通 runtime/storage。
             </p>
           </div>
           <Button asChild className="gap-2">

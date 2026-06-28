@@ -98,7 +98,10 @@ export const TEST_LANE_CONTRACT_REFS = Object.freeze([
 ]);
 
 const PRODUCT_FILES = Object.freeze(["tests/product/product-test-v22-medopl-contract-authority.mjs"]);
-const FRONTEND_FILES = Object.freeze(["tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"]);
+const FRONTEND_FILES = Object.freeze([
+  "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+  "tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
+]);
 const BACKEND_FILES = Object.freeze(["tests/backend/backend-test-v22-api-contract.mjs"]);
 const RUNTIME_FILES = Object.freeze(["tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs"]);
 const RELEASE_FILES = Object.freeze([

@@ -160,7 +160,7 @@ export function Workspace() {
             <div>
               <h2 className="text-2xl font-semibold text-neutral-900 mb-3">存储空间</h2>
               <p className="text-neutral-600 text-sm">
-                当前存储空间可用，可以查看输入文件、输出文件和保留期
+                当前存储空间可用，可以查看输入文件、输出文件和保留期。上传、结果回流和下载都会进入文件账本与费用核对。
               </p>
             </div>
             <div className="flex flex-wrap gap-3">
@@ -254,7 +254,7 @@ export function Workspace() {
             <div>
               <h2 className="text-2xl font-semibold text-neutral-900 mb-3">存储空间</h2>
               <p className="text-neutral-600 text-sm">
-                当前存储空间可用，可以查看输出文件资源清单或进入 OPL
+                当前存储空间可用，可以查看输出文件资源清单或进入 OPL。上传、结果回流和下载都会进入文件账本与费用核对。
               </p>
             </div>
             <div className="flex gap-3">
@@ -383,7 +383,7 @@ export function Workspace() {
           <div>
             <h2 className="text-2xl font-semibold text-neutral-900 mb-3">存储空间</h2>
             <p className="text-neutral-600 text-sm">
-              查看存储容量、已用空间、输入文件、输出文件和保留期
+              查看存储容量、已用空间、输入文件、输出文件和保留期。上传、结果回流和下载都会进入文件账本与费用核对。
             </p>
           </div>
           <div className="flex flex-wrap gap-3">

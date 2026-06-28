@@ -637,7 +637,7 @@ try {
     await assertStateFeedbackPatterns(page, "browser_overview");
     assert(lastBodyText.includes("选择套餐开通计算资源"), "browser_overview_open_compute_resource_cta_missing");
     assert(lastBodyText.includes("前往套餐与购买"), "browser_overview_packages_entry_missing");
-    assert.equal(lastBodyText.includes("商业"), false, "browser_overview_forbidden_commercial_copy");
+    assert(lastBodyText.includes("商业路径：账号开通/批准、充值/授信、套餐、计算资源、存储空间和账单核对。"), "browser_overview_commercial_resource_control_path_missing");
     await assertPrimaryActionReachable(page, "browser_overview");
     await assertNoGlobalHorizontalOverflow(page, "browser_overview");
 
@@ -697,7 +697,7 @@ try {
     await assertDisabledReasonVisible(page, "browser_runtime_environment");
     assert(lastBodyText.includes("开通服务"), "browser_runtime_open_service_cta_missing");
     assert(lastBodyText.includes("当前订阅状态"), "browser_runtime_subscription_status_missing");
-    assert(lastBodyText.includes("套餐价格尚待审批"), "browser_runtime_pricing_boundary_missing");
+    assert(lastBodyText.includes("开通前检查余额和 quota"), "browser_runtime_pricing_boundary_missing");
     assert.equal(lastBodyText.includes("CVM"), false, "browser_runtime_must_not_expose_cloud_console_copy");
     assert.equal(lastBodyText.includes("K8s"), false, "browser_runtime_must_not_expose_cloud_console_copy");
     if (lastBodyText.includes("释放与停止计费")) {
@@ -768,7 +768,7 @@ try {
     assert(lastBodyText.includes("首页文案 / 副标题"), "browser_admin_home_content_missing");
     assert(lastBodyText.includes("服务状态摘要"), "browser_admin_service_status_summary_missing");
     assert(lastBodyText.includes("真实云资源、真实扣费或高风险设置仍需单独授权接口"), "browser_admin_authorization_boundary_missing");
-    assert.equal(lastBodyText.includes("商业"), false, "browser_admin_forbidden_commercial_copy");
+    assert(lastBodyText.includes("商业资源控制面"), "browser_admin_commercial_resource_control_boundary_missing");
     await assertHeadingHierarchy(page, "browser_admin_system");
     await assertStateFeedbackPatterns(page, "browser_admin_system");
     await assertNoGlobalHorizontalOverflow(page, "browser_admin_system");

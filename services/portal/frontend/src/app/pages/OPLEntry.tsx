@@ -322,7 +322,7 @@ export function OPLEntry() {
             </h2>
           </div>
           <p className="text-neutral-600 mb-4">
-            当前余额不足或冻结金额不够，请先处理账单状态
+            当前余额不足或冻结金额不够，请先处理账单状态。runtime_required 会检查 account、plan、balance、quota、providerKeyRef 和 workspace。
           </p>
           <div className="flex gap-3">
             <Button asChild className="gap-2">

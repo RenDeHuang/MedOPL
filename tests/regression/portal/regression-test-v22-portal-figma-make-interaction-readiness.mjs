@@ -316,6 +316,59 @@ assertIncludes(billingSource, "BillingSummary", "billing_first_view_must_keep_si
 assertIncludes(billingSource, 'data-ui-pattern="billing-status-band"', "billing_first_view_must_keep_funding_status_band");
 assertExcludes(billingSource, "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6", "billing_first_view_must_not_restore_kpi_wall");
 
+for (const [label, sourceText] of [
+  ["overview", overviewSource],
+  ["packages", packagesSource],
+  ["runtime", runtimeSource],
+  ["workspace", workspaceSource],
+  ["billing", billingSource],
+  ["opl_entry", oplEntrySource],
+  ["admin_users", adminUsersSource],
+  ["admin_billing", adminBillingSource],
+  ["admin_audit", adminAuditSource],
+  ["admin_ops", adminOpsSource],
+  ["admin_alerts", adminAlertsSource],
+  ["admin_system", adminSystemSource],
+]) {
+  for (const forbidden of [
+    "免费注册",
+    "免费自动开通",
+    "秒级响应",
+    "企业级安全",
+    "AES-256",
+    "full production",
+    "all users",
+    "all tenants",
+    "platform-approved",
+    "MEDOPL_CANARY_",
+    "selected allowlist",
+  ]) {
+    assertExcludes(sourceText, forbidden, `${label}_must_not_absorb_figma_or_retired_claim`);
+  }
+}
+
+assertIncludes(overviewSource, "账号开通/批准、充值/授信、套餐、计算资源、存储空间和账单核对", "overview_must_present_commercial_launch_flow");
+assertIncludes(packagesSource, "套餐、余额、冻结金额和 quota", "packages_must_present_plan_balance_quota_purchase_model");
+assertIncludes(runtimeSource, "account approved + plan/balance/quota", "runtime_must_present_business_admission_truth");
+assertIncludes(runtimeSource, "开通前检查余额和 quota，开通后写入冻结金额与账本", "runtime_must_present_freeze_ledger_path");
+assertIncludes(workspaceSource, "上传、结果回流和下载都会进入文件账本与费用核对", "workspace_must_present_file_ledger_path");
+assertIncludes(billingSource, "扣费核对账单", "billing_must_present_reconciliation_language");
+assertIncludes(oplEntrySource, "runtime_required 会检查 account、plan、balance、quota、providerKeyRef 和 workspace", "opl_entry_must_present_runtime_required_contract");
+assertIncludes(adminUsersSource, "准备账号 -> 批准账号 -> 授信/充值 -> runtime gate allowed", "admin_users_must_present_operator_business_flow");
+
+for (const forbidden of [
+  "价格待审批",
+  "正式售价未定价",
+  "套餐价格尚待审批",
+  "价格审批",
+  "价格状态",
+  "实验室权益",
+  "待审批",
+]) {
+  assertExcludes(runtimeSource, forbidden, "runtime_page_must_retire_precommercial_approval_copy");
+  assertExcludes(runtimeModelSource, forbidden, "runtime_model_must_retire_precommercial_approval_copy");
+}
+
 for (const sourceText of [overviewSource, packagesSource, workspaceSource, runtimeSource, oplEntrySource, portalQuerySource]) {
   assertExcludes(sourceText, "Request failed with status code", "portal_user_surface_must_not_expose_transport_error");
 }

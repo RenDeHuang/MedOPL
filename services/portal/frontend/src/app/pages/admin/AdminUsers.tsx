@@ -288,6 +288,7 @@ export function AdminUsers() {
           </div>
           <div className="text-xs text-neutral-500">
             owner-created-or-approved MedOPL accounts 由真实 v22 business ledger 驱动；account_not_approved / insufficient_balance 会保持 fail-closed。
+            {"操作路径：准备账号 -> 批准账号 -> 授信/充值 -> runtime gate allowed。"}
           </div>
           {/* 搜索与筛选 */}
           <div className="flex gap-3">

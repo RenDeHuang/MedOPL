@@ -119,6 +119,13 @@ for (const suite of ["health", "local-contract", "review"]) {
     `manifest_suite_must_not_run_retired_change_package_lifecycle:${suite}`,
   );
 }
+const frontendManifestFiles = manifestSuitesById.get("frontend").commands.map(normalizeCommandTestFile).filter(Boolean).sort();
+for (const file of TEST_LANE_SUITES.frontend) {
+  assert(
+    frontendManifestFiles.includes(file),
+    `manifest_frontend_suite_missing_registry_file:${file}`,
+  );
+}
 const currentManifestFiles = manifestSuitesById.get("current").commands.map(normalizeCommandTestFile).filter(Boolean).sort();
 for (const file of TEST_LANE_SUITES.current) {
   assert(

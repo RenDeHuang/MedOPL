@@ -126,7 +126,7 @@ export function BillingAudit() {
                 </Badge>
               </div>
               <p className="text-neutral-600 text-sm">
-                查看余额、冻结金额、计算用量、存储用量、账单明细和停止计费状态
+                查看余额、冻结金额、计算用量、存储用量、账单明细和停止计费状态，用于扣费核对账单。
               </p>
             </div>
             <Button variant="outline" className="gap-2" onClick={exportBillingRecords} title="当前时间窗口没有可导出的账单流水">
@@ -186,7 +186,7 @@ export function BillingAudit() {
               </Badge>
             </div>
             <p className="text-neutral-600 text-sm">
-              余额、冻结金额、计算用量和存储用量可核对
+              余额、冻结金额、计算用量和存储用量可核对，用于扣费核对账单。
             </p>
           </div>
           <div className="flex gap-3">

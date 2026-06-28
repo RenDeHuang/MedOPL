@@ -128,7 +128,7 @@ export async function fetchPackageCatalog() {
     memory: packageMemory(plan),
     storage: packageStorage(plan),
     concurrent: packageConcurrent(plan),
-    priceLabel: plan.priceLabel || plan.billing?.priceLabel || "正式售价未定价",
+    priceLabel: plan.priceLabel || plan.billing?.priceLabel || "按套餐余额和 quota 核对",
     pendingProductApproval: plan.pendingProductApproval || Boolean(plan.billing?.pendingProductApproval),
     recommended: plan.id === "pro_8c16g_100gb",
     purchasable: true,

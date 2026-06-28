@@ -198,14 +198,14 @@ export function PlanCard({
             <SpecRow icon={<Server className="w-4 h-4" />} label="计算资源" value={computeSpec} />
             <SpecRow icon={<HardDrive className="w-4 h-4" />} label="存储空间" value={storageSize} />
             <SpecRow icon={<Clock className="w-4 h-4" />} label="并发任务" value={taskConcurrency} />
-            <SpecRow icon={<Receipt className="w-4 h-4" />} label="价格状态" value={priceState} />
+            <SpecRow icon={<Receipt className="w-4 h-4" />} label="计费规则" value={priceState} />
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <SpecTile icon={<Server className="w-4 h-4" />} label="计算资源" value={computeSpec} />
             <SpecTile icon={<HardDrive className="w-4 h-4" />} label="存储空间" value={storageSize} />
             <SpecTile icon={<Clock className="w-4 h-4" />} label="并发任务" value={taskConcurrency} />
-            <SpecTile icon={<Receipt className="w-4 h-4" />} label="价格状态" value={priceState} />
+            <SpecTile icon={<Receipt className="w-4 h-4" />} label="计费规则" value={priceState} />
           </div>
         )}
         {action && <div className={cn(isCompact ? "mt-4" : "mt-5")}>{action}</div>}

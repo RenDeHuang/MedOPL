@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Alert, AlertDescription, Badge, Button, Card, cn, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Progress } from "../components/ui/core";
+import { Alert, AlertDescription, Badge, Button, Card, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, Progress } from "../components/ui/core";
 import { Link } from "react-router";
-import { AlertCircle, Check, HardDrive, Server, Shield, Zap } from "lucide-react";
+import { AlertCircle, HardDrive, Receipt, Server, Shield } from "lucide-react";
 import { activateRuntimeEnvironmentPlan, useRuntimeEnvironmentModel } from "../data/portalRuntimeEnvironmentModel";
 import {
   PlanCard,
@@ -54,6 +54,7 @@ export function RuntimeEnvironment() {
           <h2 className="text-2xl font-semibold text-neutral-900 mb-3">计算资源</h2>
           <Badge variant="outline" className="bg-neutral-100 text-neutral-600 border-neutral-200 text-sm px-3 py-1">未开通</Badge>
           <p className="text-sm text-neutral-600 mt-3">套餐目录由平台维护，不提供云资源调整动作。</p>
+          <p className="text-sm text-neutral-600 mt-2">商业准入为 account approved + plan/balance/quota。</p>
         </div>
         <div className="mb-6">
           <ResourceStatusCard
@@ -64,8 +65,8 @@ export function RuntimeEnvironment() {
             primaryAction={<Button onClick={() => setShowConfirmDialog(true)}>开通服务</Button>}
             metrics={[
               { label: "工作空间", value: model.workspaceDisplayName },
-              { label: "实验室权益", value: model.entitlementMessageText },
-              { label: "价格状态", value: "待审批" },
+              { label: "套餐状态", value: model.entitlementMessageText },
+              { label: "准入条件", value: "plan/balance/quota" },
               { label: "存储策略", value: "随套餐开通" },
             ]}
           />
@@ -80,7 +81,7 @@ export function RuntimeEnvironment() {
               description={plan.description}
               selected={selectedPlan === plan.id}
               recommended={plan.recommended}
-              priceState={plan.priceLabel || "正式售价未定价"}
+              priceState={plan.priceLabel || "按套餐余额和 quota 核对"}
               computeSpec={`${plan.cpu} 核 / ${plan.memory} GB`}
               storageSize={`${plan.storage} GB`}
               taskConcurrency={`并发任务最多 ${plan.concurrent} 个`}
@@ -98,8 +99,8 @@ export function RuntimeEnvironment() {
           items={[
             { label: "工作空间归属", detail: model.workspaceDisplayName, state: model.workspaceId ? "ready" : "pending" },
             { label: "套餐选择", detail: current.name, state: "ready" },
-            { label: "价格审批", detail: current.priceLabel || "正式售价未定价", state: current.pendingProductApproval ? "pending" : "ready" },
-            { label: "计费边界", detail: "开通后按已审批合同计费，真实扣费以后端账本为准。", state: "protected" },
+            { label: "商业准入", detail: "account approved + plan/balance/quota", state: current.pendingProductApproval ? "pending" : "ready" },
+            { label: "计费边界", detail: "开通前检查余额和 quota，开通后写入冻结金额与账本。", state: "protected" },
           ]}
           primaryAction={<Button onClick={() => setShowConfirmDialog(true)} disabled={activationPending}>{activationPending ? "开通中..." : "确认开通所选套餐"}</Button>}
         />
@@ -109,21 +110,21 @@ export function RuntimeEnvironment() {
             <div className="font-semibold text-neutral-900">{model.subscriptionStatusText}</div>
           </Card>
           <Card className="border border-neutral-200 p-4">
-            <div className="text-xs text-neutral-600 mb-1">实验室权益</div>
+            <div className="text-xs text-neutral-600 mb-1">套餐状态</div>
             <div className="font-semibold text-neutral-900">{model.entitlementMessageText}</div>
           </Card>
         </div>
-        <Alert className="mt-6 border-teal-200 bg-teal-50"><AlertCircle className="h-4 w-4 text-teal-700" /><AlertDescription className="text-teal-900 text-sm">套餐价格尚待审批，开通后将按已审批合同计费。</AlertDescription></Alert>
+        <Alert className="mt-6 border-teal-200 bg-teal-50"><AlertCircle className="h-4 w-4 text-teal-700" /><AlertDescription className="text-teal-900 text-sm">开通前检查余额和 quota，开通后写入冻结金额与账本。</AlertDescription></Alert>
         <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
           <DialogContent className="max-w-2xl">
-            <DialogHeader><DialogTitle>确认开通服务</DialogTitle><DialogDescription>请确认配置信息。价格待审批，不展示小时售价。</DialogDescription></DialogHeader>
+            <DialogHeader><DialogTitle>确认开通服务</DialogTitle><DialogDescription>请确认套餐、余额、quota 和工作空间。真实扣费以后端账本为准。</DialogDescription></DialogHeader>
             <div className="space-y-4 py-2">
               {activationError && <Alert className="border-red-200 bg-red-50"><AlertCircle className="h-4 w-4 text-red-600" /><AlertDescription className="text-red-700 text-sm">{activationError}</AlertDescription></Alert>}
               <div className="p-4 bg-neutral-50 rounded-lg border border-neutral-200">
                 <div className="flex items-center justify-between mb-3"><h3 className="font-semibold text-neutral-900">当前配置</h3><Badge variant="outline">{current.name}</Badge></div>
                 <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="flex justify-between"><span className="text-neutral-600">价格状态</span><span className="font-semibold text-neutral-900">待审批</span></div>
-                  <div className="flex justify-between"><span className="text-neutral-600">正式售价</span><span className="font-semibold text-neutral-900">未定价</span></div>
+                  <div className="flex justify-between"><span className="text-neutral-600">准入条件</span><span className="font-semibold text-neutral-900">plan/balance/quota</span></div>
+                  <div className="flex justify-between"><span className="text-neutral-600">扣费口径</span><span className="font-semibold text-neutral-900">后端账本</span></div>
                 </div>
               </div>
             </div>
@@ -146,6 +147,7 @@ export function RuntimeEnvironment() {
             <span className="text-neutral-600">查看当前计算资源是否可用、规格、计费状态和释放状态。</span>
           </div>
           <p className="text-sm text-neutral-600 mt-3">套餐目录由平台维护，不提供云资源调整动作。</p>
+          <p className="text-sm text-neutral-600 mt-2">商业准入为 account approved + plan/balance/quota；开通前检查余额和 quota，开通后写入冻结金额与账本。</p>
         </div>
         <Button asChild variant="outline"><Link to="/usage">查看计费</Link></Button>
       </div>
@@ -179,7 +181,7 @@ export function RuntimeEnvironment() {
           <div className="font-semibold text-neutral-900">{model.subscriptionStatusText}</div>
         </Card>
         <Card className="border border-neutral-200 p-4">
-          <div className="text-xs text-neutral-600 mb-1">实验室权益</div>
+          <div className="text-xs text-neutral-600 mb-1">套餐状态</div>
           <div className="font-semibold text-neutral-900">{model.entitlementMessageText}</div>
         </Card>
       </div>
@@ -188,7 +190,7 @@ export function RuntimeEnvironment() {
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
           <div className="flex items-center gap-3"><Server className="w-5 h-5 text-neutral-400" /><div><div className="text-xs text-neutral-600">计算资源</div><div className="font-semibold text-neutral-900">{model.computeSpec}</div></div></div>
           <div className="flex items-center gap-3"><HardDrive className="w-5 h-5 text-neutral-400" /><div><div className="text-xs text-neutral-600">存储空间</div><div className="font-semibold text-neutral-900">{model.storageTotal}</div></div></div>
-          <div className="flex items-center gap-3"><Zap className="w-5 h-5 text-neutral-400" /><div><div className="text-xs text-neutral-600">价格状态</div><div className="font-semibold text-neutral-900">待审批</div></div></div>
+          <div className="flex items-center gap-3"><Receipt className="w-5 h-5 text-neutral-400" /><div><div className="text-xs text-neutral-600">扣费口径</div><div className="font-semibold text-neutral-900">后端账本</div></div></div>
           <div className="flex items-center gap-3"><Shield className="w-5 h-5 text-neutral-400" /><div><div className="text-xs text-neutral-600">审计模式</div><div className="font-semibold text-neutral-900">标准审计</div></div></div>
         </div>
       </div>
