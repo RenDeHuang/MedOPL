@@ -17,7 +17,7 @@ History 只保留短索引：
 ## Latest Machine Cursor
 
 - latest landed branch: `goal-driven-development-system-audit`
-- latest landed commit: `13e433c549ace24fd03fa40538161bbb86e000a5`
+- latest landed commit: `bfb614ad27fb09d915dcdccd57e40d47f83c0a64`
 - next cursor: `goal-commercial-runtime-storage-billing-business-closure`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
