@@ -17,12 +17,12 @@ MedOPL 是 OPL-Webui 的商业资源控制面，负责 owner 创建或批准账�
 | --- | --- |
 | current phase | `commercial runtime storage billing business closure` |
 | current cursor | `goal-commercial-runtime-storage-billing-business-closure` |
-| latest repo closeout | `goal-commercial-owner-bootstrap-setup-wizard` / `a433684d88e03705397c80b1a012f8747fe386b1` |
+| latest repo closeout | `goal-commercial-webui-medopl-e2e-launch-contract` / `6803ac7ec79197d96fedcf215cf4acf982ac19ec` |
 | current blocker | `none_for_current_scoped_commercial_business_flow` |
 | source fix | `goal-commercial-upload-file-billing-writeback-fix` landed at `34b0e3070357504b475a0bee2ff6bd4de0af23df`; `goal-commercial-storage-destroy-writeback-fix` landed at `64699bd3619f01a4442936b096079b3e8051733d` |
 | next proof | `goal-commercial-release-metadata-rollback-maturity` is the next recommended maturity implementation goal after the owner/admin bootstrap setup boundary closeout |
 
-The latest repo/gate closeout is goal-commercial-owner-bootstrap-setup-wizard at a433684d88e03705397c80b1a012f8747fe386b1. The source line keeps `upload_file -> save_billing_event` and `storage_destroy -> save_billing_event` fail-closed while using canonical billing identity and collision-resistant billing event IDs. The scoped canary proof is retained as operations substrate only; detailed run provenance stays in history / GitHub Actions artifact, not active product truth.
+The latest repo/gate closeout is goal-commercial-webui-medopl-e2e-launch-contract at 6803ac7ec79197d96fedcf215cf4acf982ac19ec. The source line keeps `upload_file -> save_billing_event` and `storage_destroy -> save_billing_event` fail-closed while using canonical billing identity and collision-resistant billing event IDs. The scoped canary proof is retained as operations substrate only; detailed run provenance stays in history / GitHub Actions artifact, not active product truth.
 
 Current scoped commercial canClaim is: authorized commercial business-flow cloud canary passed; internal credit + billing ledger + statement reconciliation + release/destroy/stop billing passed; Commercial Launch UI absorbed. The maturity gap matrix is machine-owned by `tests/fixtures/v22/goal-current.json` and compares the remaining production productization gaps against OPL ordinary-path boundaries and sub2api-style packaging maturity as engineering references only.
 

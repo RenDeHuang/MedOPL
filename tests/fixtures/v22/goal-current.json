@@ -33,46 +33,36 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "goal-commercial-owner-bootstrap-setup-wizard",
-    "landed_commit": "a433684d88e03705397c80b1a012f8747fe386b1",
+    "branch": "goal-commercial-webui-medopl-e2e-launch-contract",
+    "landed_commit": "6803ac7ec79197d96fedcf215cf4acf982ac19ec",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
-      "npm run test:run-plan -- --dry-run --json passed",
-      "npm run test:run-plan passed",
-      "npm run verify passed",
-      "npm run test:health passed",
-      "npm run gate:review -- --slice-id goal-commercial-owner-bootstrap-setup-wizard passed",
-      "npm run repo:bloat -- --diff --slice-id goal-commercial-owner-bootstrap-setup-wizard passed",
-      "npm run line:budget passed"
+      "OPL-Webui remote CI completed success at https://github.com/RenDeHuang/OPL-Webui/actions/runs/28329421777",
+      "MedOPL post-push v22 verify initially failed only on closeout cursor before this fix at https://github.com/RenDeHuang/MedOPL/actions/runs/28329421711",
+      "local MedOPL contract evidence passed before push with npm run test:contract, npm run test:health and npm run verify"
     ],
     "canClaim": [
-      "owner_admin_initial_account_bootstrap_boundary",
-      "admin_password_secret_generation_boundary",
-      "first_run_setup_flow_contract",
-      "config_validation_boundary",
-      "setup_completed_marker_boundary",
-      "install_package_setup_handoff"
+      "cross-repo OPL-Webui/MedOPL readonly projection and deeplink contract landed remotely",
+      "shared user/workspace identity mapping fixed in repo contracts",
+      "OPL-Webui ordinary path remains outside MedOPL runtime/storage blocking truth",
+      "MedOPL remains commercial account/payment/billing/runtime/storage/resource-control truth owner"
     ],
     "cannotClaim": [
-      "real secret generated or read",
-      "self-serve setup complete",
-      "host setup marker written",
-      "cloud deploy executed",
-      "build/push executed",
-      "live-test executed",
+      "MedOPL v22 post-push CI green before closeout fix",
+      "production rollout",
+      "build/push image",
+      "deploy",
+      "live-test",
       "external PSP settlement",
-      "production complete"
+      "unscoped production complete",
+      "replacing goal-commercial-release-metadata-rollback-maturity"
     ],
     "verification": {
       "risk_class": "commercial_billing_boundary",
       "commands": [
-        "npm run test:run-plan -- --dry-run --json passed",
-        "npm run test:run-plan passed",
-        "npm run verify passed",
-        "npm run test:health passed",
-        "npm run gate:review -- --slice-id goal-commercial-owner-bootstrap-setup-wizard passed",
-        "npm run repo:bloat -- --diff --slice-id goal-commercial-owner-bootstrap-setup-wizard passed",
-        "npm run line:budget passed"
+        "OPL-Webui remote CI completed success at https://github.com/RenDeHuang/OPL-Webui/actions/runs/28329421777",
+        "MedOPL post-push v22 verify initially failed only on closeout cursor before this fix at https://github.com/RenDeHuang/MedOPL/actions/runs/28329421711",
+        "local MedOPL contract evidence passed before push with npm run test:contract, npm run test:health and npm run verify"
       ],
       "result": "passed"
     },
@@ -80,15 +70,15 @@
       "functional": "done",
       "code_cleanup": "done",
       "docs_foldback": "done",
-      "verification": "done",
+      "verification": "partial",
       "retired_entrypoints": "done",
       "cannot_claim": "done"
     },
     "cleanup_result": {
       "deleted": "none",
-      "folded": "owner admin bootstrap and setup wizard boundary into release contract compose metadata delivery docs and maturity gap matrix",
-      "retained": "real setup wizard execution and host marker as future goal",
-      "reason": "this slice defines first-run setup maturity without reading secrets or executing cloud",
+      "folded": "cross-repo contract evidence folded into contracts, backend test guard, active truth and goal-current fixture",
+      "retained": "current commercial business closure cursor and release maturity queue",
+      "reason": "this integration contract does not replace MedOPL release maturity queue",
       "next": "goal-commercial-release-metadata-rollback-maturity"
     },
     "retirement": {
@@ -107,7 +97,7 @@
   "current_blockers": [
     "none_for_current_scoped_commercial_business_flow"
   ],
-  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-owner-bootstrap-setup-wizard at a433684d88e03705397c80b1a012f8747fe386b1. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-owner-bootstrap-setup-wizard at a433684d88e03705397c80b1a012f8747fe386b1.",
+  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-webui-medopl-e2e-launch-contract at 6803ac7ec79197d96fedcf215cf4acf982ac19ec. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-webui-medopl-e2e-launch-contract at 6803ac7ec79197d96fedcf215cf4acf982ac19ec.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -664,9 +654,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "goal-commercial-owner-bootstrap-setup-wizard",
+  "last_landed_branch": "goal-commercial-webui-medopl-e2e-launch-contract",
   "last_landed_at": "2026-06-28",
-  "history_latest_branch": "goal-commercial-owner-bootstrap-setup-wizard",
+  "history_latest_branch": "goal-commercial-webui-medopl-e2e-launch-contract",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -1088,8 +1078,8 @@
     },
     "receipt_manifest_artifact_id": "7934630167"
   },
-  "base_trunk_head": "a433684d88e03705397c80b1a012f8747fe386b1",
-  "last_landed_commit": "a433684d88e03705397c80b1a012f8747fe386b1",
+  "base_trunk_head": "6803ac7ec79197d96fedcf215cf4acf982ac19ec",
+  "last_landed_commit": "6803ac7ec79197d96fedcf215cf4acf982ac19ec",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
@@ -1490,6 +1480,16 @@
       {
         "goal_id": "goal-commercial-owner-bootstrap-setup-wizard",
         "landed_commit": "a433684d88e03705397c80b1a012f8747fe386b1",
+        "status": "completed_retired",
+        "retired_from": [
+          "active_blocker",
+          "current_cursor"
+        ],
+        "evidence_pointer": "docs/history/README.md"
+      },
+      {
+        "goal_id": "goal-commercial-webui-medopl-e2e-launch-contract",
+        "landed_commit": "6803ac7ec79197d96fedcf215cf4acf982ac19ec",
         "status": "completed_retired",
         "retired_from": [
           "active_blocker",
