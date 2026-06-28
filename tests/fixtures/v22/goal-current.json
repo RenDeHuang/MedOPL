@@ -33,23 +33,49 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "goal-commercial-storage-destroy-writeback-fix",
-    "landed_commit": "64699bd3619f01a4442936b096079b3e8051733d",
+    "branch": "goal-lifecycle-development-rule-hardening",
+    "landed_commit": "2b3621451fe0697a965bb61c5070e9671fc3750b",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
-      "go test ./internal/service/controlplane -run TestServiceDestroyStorageUsesCollisionResistantBillingEventID -count=1 passed",
-      "node tests/smoke/smoke-test-v22-portal-storage-usage-billing-flow.mjs passed",
+      "npm run test:run-plan -- --dry-run --json passed",
       "npm run verify passed",
-      "npm run test:health passed",
-      "npm run gate:review -- --slice-id goal-commercial-storage-destroy-writeback-fix passed",
-      "npm run repo:bloat -- --diff --slice-id goal-commercial-storage-destroy-writeback-fix passed",
+      "npm run gate:review -- --slice-id goal-lifecycle-development-rule-hardening passed",
+      "npm run repo:bloat -- --diff --slice-id goal-lifecycle-development-rule-hardening passed",
       "npm run line:budget passed",
-      "post-push npm run verify passed",
-      "post-push npm run test:health passed",
-      "post-push npm run gate:review -- --slice-id goal-commercial-storage-destroy-writeback-fix passed",
-      "post-push npm run repo:bloat -- --diff --slice-id goal-commercial-storage-destroy-writeback-fix passed",
-      "post-push npm run line:budget passed"
+      "post-push closeout-sync npm run verify passed",
+      "post-push closeout-sync npm run test:health passed",
+      "post-push closeout-sync npm run gate:review -- --slice-id goal-lifecycle-development-rule-hardening passed",
+      "post-push closeout-sync npm run repo:bloat -- --diff --slice-id goal-lifecycle-development-rule-hardening passed",
+      "post-push closeout-sync npm run line:budget passed"
     ],
+    "canClaim": [
+      "goal lifecycle admission blocks repeated completed goals",
+      "goal closeout requires canClaim cannotClaim verification retirement landed commit and next_recommended_goal",
+      "completed lifecycle hardening is retired from active blocker/current cursor"
+    ],
+    "cannotClaim": [
+      "business behavior changed",
+      "cloud executed",
+      "production complete",
+      "external PSP settlement",
+      "UI productization completed"
+    ],
+    "verification": {
+      "risk_class": "commercial_billing_boundary",
+      "commands": [
+        "npm run test:run-plan -- --dry-run --json passed",
+        "npm run verify passed",
+        "npm run gate:review -- --slice-id goal-lifecycle-development-rule-hardening passed",
+        "npm run repo:bloat -- --diff --slice-id goal-lifecycle-development-rule-hardening passed",
+        "npm run line:budget passed",
+        "post-push closeout-sync npm run verify passed",
+        "post-push closeout-sync npm run test:health passed",
+        "post-push closeout-sync npm run gate:review -- --slice-id goal-lifecycle-development-rule-hardening passed",
+        "post-push closeout-sync npm run repo:bloat -- --diff --slice-id goal-lifecycle-development-rule-hardening passed",
+        "post-push closeout-sync npm run line:budget passed"
+      ],
+      "result": "passed"
+    },
     "plan_completion_audit": {
       "functional": "done",
       "code_cleanup": "done",
@@ -59,49 +85,20 @@
       "cannot_claim": "done"
     },
     "cleanup_result": {
-      "deleted": "storage destroy billing event short-id collision risk as the active source blocker",
-      "folded": "storage destroy billing writeback source fix and regression evidence into the current commercial business-flow closure cursor",
-      "retained": "commercial resource-control product truth, billing/audit fail-closed behavior, account_approved/account_not_approved machine runtime gate conditions, Release Image / Cloud Rollout operations substrate, and explicit cannot-claim boundaries",
-      "reason": "MedOPL business truth is account prepare approval credit plan runtime storage upload run artifact billing statement reconciliation release destroy stop billing; storage_destroy billing writeback must record a real billing event and must not become a fake success",
-      "next": "stay on goal-commercial-runtime-storage-billing-business-closure and run authorized Release Image / Cloud Rollout / OPL-Webui consumer canary for the landed storage_destroy billing writeback fix"
-    },
-    "post_merge_closeout": "completed",
-    "next_cursor": "goal-commercial-runtime-storage-billing-business-closure",
-    "canClaim": [
-      "storage_destroy billing writeback source fix landed with fail-closed billing/audit behavior",
-      "current scoped commercial business-flow source blocker is retired"
-    ],
-    "cannotClaim": [
-      "production complete",
-      "external PSP settlement",
-      "multi-region/SLA",
-      "ongoing authorization",
-      "unrestricted full production for all users/tenants"
-    ],
-    "verification": {
-      "risk_class": "landing",
-      "result": "passed",
-      "commands": [
-        "go test ./internal/service/controlplane -run TestServiceDestroyStorageUsesCollisionResistantBillingEventID -count=1 passed",
-        "node tests/smoke/smoke-test-v22-portal-storage-usage-billing-flow.mjs passed",
-        "npm run verify passed",
-        "npm run test:health passed",
-        "npm run gate:review -- --slice-id goal-commercial-storage-destroy-writeback-fix passed",
-        "npm run repo:bloat -- --diff --slice-id goal-commercial-storage-destroy-writeback-fix passed",
-        "npm run line:budget passed",
-        "post-push npm run verify passed",
-        "post-push npm run test:health passed",
-        "post-push npm run gate:review -- --slice-id goal-commercial-storage-destroy-writeback-fix passed",
-        "post-push npm run repo:bloat -- --diff --slice-id goal-commercial-storage-destroy-writeback-fix passed",
-        "post-push npm run line:budget passed"
-      ]
+      "deleted": "completed goal lifecycle hardening from active blocker repetition risk",
+      "folded": "goal admission verification closeout retirement and next_recommended_goal evidence into current machine closeout pointers",
+      "retained": "current commercial resource-control product truth and no-cloud no-business-change boundary",
+      "reason": "goal lifecycle hardening is automation governance only and must retire from active blocker/current cursor after landing",
+      "next": "goal-commercial-launch-ui-productization"
     },
     "retirement": {
       "active_blocker_retired": true,
       "current_cursor_retained_reason": "ongoing_business_closure_cursor",
       "history_or_evidence_pointer": "docs/history/README.md"
     },
-    "next_recommended_goal": "goal-commercial-launch-ui-productization"
+    "post_merge_closeout": "completed",
+    "next_recommended_goal": "goal-commercial-launch-ui-productization",
+    "next_cursor": "goal-commercial-runtime-storage-billing-business-closure"
   },
   "current_cursor": "goal-commercial-runtime-storage-billing-business-closure",
   "next_leaf": "goal-commercial-runtime-storage-billing-business-closure",
@@ -110,7 +107,7 @@
   "current_blockers": [
     "none_for_current_scoped_commercial_business_flow"
   ],
-  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-storage-destroy-writeback-fix at 64699bd3619f01a4442936b096079b3e8051733d. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git.",
+  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-lifecycle-development-rule-hardening at 2b3621451fe0697a965bb61c5070e9671fc3750b. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-lifecycle-development-rule-hardening at 2b3621451fe0697a965bb61c5070e9671fc3750b.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -661,9 +658,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "goal-commercial-storage-destroy-writeback-fix",
+  "last_landed_branch": "goal-lifecycle-development-rule-hardening",
   "last_landed_at": "2026-06-28",
-  "history_latest_branch": "goal-commercial-storage-destroy-writeback-fix",
+  "history_latest_branch": "goal-lifecycle-development-rule-hardening",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -1085,8 +1082,8 @@
     },
     "receipt_manifest_artifact_id": "7932066015"
   },
-  "base_trunk_head": "64699bd3619f01a4442936b096079b3e8051733d",
-  "last_landed_commit": "64699bd3619f01a4442936b096079b3e8051733d",
+  "base_trunk_head": "2b3621451fe0697a965bb61c5070e9671fc3750b",
+  "last_landed_commit": "2b3621451fe0697a965bb61c5070e9671fc3750b",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",

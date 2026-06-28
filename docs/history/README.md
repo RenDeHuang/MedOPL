@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `goal-commercial-storage-destroy-writeback-fix`
-- latest landed commit: `64699bd3619f01a4442936b096079b3e8051733d`
+- latest landed branch: `goal-lifecycle-development-rule-hardening`
+- latest landed commit: `2b3621451fe0697a965bb61c5070e9671fc3750b`
 - next cursor: `goal-commercial-runtime-storage-billing-business-closure`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
