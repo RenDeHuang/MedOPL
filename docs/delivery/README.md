@@ -111,6 +111,48 @@ npm run gate:review
 
 `validate:active-platform` 是当前产品仓库入口：它验证 `changes/` 已退役、产品合同存在并被测试消费、Portal/Go/Runtime/Release 边界有本地证据。`test:product`、`test:frontend`、`test:backend`、`test:runtime`、`test:release`、`test:cloud` 和 `test:hygiene` 是产品化分层 lane；repo hygiene、repo bloat pressure、line budget 和 policy/discovery guard 继续作为软件工程护栏。Repo bloat 的文件数与字节数只报告 pressure；真正 block 的是 owner、consumer、lifecycle 或 policy/override 失效。
 
+## MedOPL Local / Standalone Package Maturity
+
+`compose.product.yaml` 和 `.env.demo.template` 是当前 MedOPL deploy package 的本地 / standalone 入口。它们只证明 operator package shape、env/config example、compose local / standalone profile、install / upgrade / uninstall 边界和 systemd service example 可以被 repo-local contract 消费；它们不执行 cloud deploy、build/push、kubectl、live-test 或真实 PSP。
+
+Package lifecycle intent:
+
+- `install`: operator copies `.env.demo.template` to an out-of-git env file, generates runtime secrets outside git, reviews `compose.product.yaml`, then starts the local / standalone MedOPL services with the selected profile.
+- `upgrade`: operator updates source/image refs, reruns local verification, preserves Postgres/runtime volumes, and restarts services through compose or systemd.
+- `uninstall`: operator stops the service, preserves or explicitly destroys volumes according to the local data retention decision, and keeps billing/audit export outside git.
+
+Systemd service example is intentionally documented, not installed by this slice:
+
+```ini
+[Unit]
+Description=MedOPL local standalone package
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/medopl
+EnvironmentFile=/etc/medopl/medopl.env
+ExecStart=/usr/bin/docker compose --profile product -f compose.product.yaml up -d
+ExecStop=/usr/bin/docker compose --profile product -f compose.product.yaml down
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Secret generation and admin bootstrap stay fail-closed: tracked templates keep secret values empty; generated secrets, admin bootstrap token, session bootstrap secret and webhook secret live only in `.runtime`, an operator secret store or host env file. Admin bootstrap creates or approves the owner/admin MedOPL account and credit/plan path; it does not complete external PSP settlement. The setup wizard future boundary is `goal-commercial-owner-bootstrap-setup-wizard`; this slice cannot claim self-serve setup or automatic production setup complete.
+
+Env/config example keys for this package are recorded in `compose.product.yaml` under `x-medopl-package-maturity.env_config_example_keys`. Operator env files may include:
+
+```dotenv
+MEDOPL_PACKAGE_PROFILE=local
+MEDOPL_INSTALL_ROOT=/opt/medopl
+MEDOPL_SYSTEMD_SERVICE=medopl
+MEDOPL_SECRET_GENERATION_MODE=operator_generated
+MEDOPL_ADMIN_BOOTSTRAP_MODE=owner_admin_required
+MEDOPL_SETUP_WIZARD_MODE=future_boundary
+```
+
 `local:services:plan` 是本地 SaaS 后台服务编排入口，列出 Portal frontend、Go backend、OPL Web Gateway、Runtime Bridge 和外部 clean OPL WebUI 的本地命令与 health URL。`local:services:start`、`local:services:stop`、`local:services:status` 和 `local:services:logs` 只管理 MedOPL 本地进程，PID 和日志只写入 `.runtime/local-services`；clean OPL WebUI 仍是外部 upstream endpoint，不由 MedOPL 启动、停止或读取进程日志。`local:services:check:dry-run` 与 `local:services:verify` 只验证编排计划注册，不启动服务、不读取 secret、不调用云；`local:services:check` 只探测本机 URL，可证明本地服务可达，不能升级为 production deploy、real-cloud、live provider 或 upstream ownership evidence。
 
 Go backend 的本地 RC profile 会把 Portal admin projection 的 users、finance ledger 和 announcements 写入 `MEDOPL_PORTAL_STATE_ROOT`。这只服务本地 Portal delivery 和 Router 重建验证；损坏的 state file 会让 `/config/check` fail-closed，不能静默回到 seed 数据。

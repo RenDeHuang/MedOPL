@@ -45,6 +45,68 @@
       "destroy_requires": "explicit_user_storage_destroy_intent",
       "receipt_owner": "MedOPL Data Plane"
     },
+    "medopl_deploy_install_package_maturity": {
+      "current_mode": "local_standalone_package_boundary_no_cloud_execution",
+      "required_surfaces": [
+        "deploy_package",
+        "env_config_example",
+        "compose_local",
+        "compose_standalone",
+        "install",
+        "upgrade",
+        "uninstall",
+        "systemd_service_example",
+        "secret_generation",
+        "admin_bootstrap",
+        "setup_wizard_future_boundary"
+      ],
+      "distribution_entrypoints": [
+        "compose.product.yaml",
+        ".env.demo.template",
+        "docs/delivery/README.md"
+      ],
+      "compose_profiles": [
+        "product",
+        "dev",
+        "standalone"
+      ],
+      "lifecycle_actions": [
+        "install",
+        "upgrade",
+        "uninstall"
+      ],
+      "secret_generation_policy": {
+        "tracked_templates": "empty_secret_values_only",
+        "runtime_secret_output": ".runtime or operator secret store only",
+        "raw_secret_in_git": "forbidden"
+      },
+      "admin_bootstrap_policy": {
+        "mode": "owner_admin_bootstrap_required",
+        "default_real_payment": "not_completed",
+        "account_truth": "owner-created-or-approved MedOPL account with sufficient plan/balance/quota"
+      },
+      "setup_wizard_future_boundary": {
+        "state": "future_goal",
+        "next_goal": "goal-commercial-owner-bootstrap-setup-wizard",
+        "cannot_claim_now": [
+          "self-serve setup complete",
+          "automatic production setup complete"
+        ]
+      },
+      "must_not_touch": [
+        "deploy/medopl-cloud/medopl.k8s.json",
+        ".github/workflows/cloud-rollout.yml",
+        "contracts/medopl-cloud-authorization-pack.json"
+      ],
+      "cannot_claim": [
+        "cloud deploy executed",
+        "build/push executed",
+        "live-test executed",
+        "production complete",
+        "external PSP settlement",
+        "systemd service installed on host"
+      ]
+    },
     "release_owner_readiness": {
       "receipt_type": "release_owner_receipt",
       "production_criterion": "release_owner_readiness_receipt",

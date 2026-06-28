@@ -34,7 +34,7 @@
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
     "branch": "goal-commercial-payment-admin-api-maturity",
-    "landed_commit": "36b0a34e7b5c5978eb3286b24be8b0d0e434b237",
+    "landed_commit": "bad63b052b9c8bae90b51fd610bcda19a9184635",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
       "npm run test:run-plan -- --dry-run --json passed",
@@ -105,7 +105,7 @@
   "current_blockers": [
     "none_for_current_scoped_commercial_business_flow"
   ],
-  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-payment-admin-api-maturity at 36b0a34e7b5c5978eb3286b24be8b0d0e434b237. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-payment-admin-api-maturity at 36b0a34e7b5c5978eb3286b24be8b0d0e434b237.",
+  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-payment-admin-api-maturity at bad63b052b9c8bae90b51fd610bcda19a9184635. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-payment-admin-api-maturity at bad63b052b9c8bae90b51fd610bcda19a9184635.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -1086,8 +1086,8 @@
     },
     "receipt_manifest_artifact_id": "7934630167"
   },
-  "base_trunk_head": "36b0a34e7b5c5978eb3286b24be8b0d0e434b237",
-  "last_landed_commit": "36b0a34e7b5c5978eb3286b24be8b0d0e434b237",
+  "base_trunk_head": "bad63b052b9c8bae90b51fd610bcda19a9184635",
+  "last_landed_commit": "bad63b052b9c8bae90b51fd610bcda19a9184635",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
@@ -1467,7 +1467,7 @@
       },
       {
         "goal_id": "goal-commercial-payment-admin-api-maturity",
-        "landed_commit": "36b0a34e7b5c5978eb3286b24be8b0d0e434b237",
+        "landed_commit": "bad63b052b9c8bae90b51fd610bcda19a9184635",
         "status": "completed_retired",
         "retired_from": [
           "active_blocker",
@@ -1612,19 +1612,36 @@
       {
         "id": "deploy_package_compose_install_upgrade_uninstall_systemd",
         "label": "deploy package / compose / install / upgrade / uninstall / systemd",
-        "current_truth": "Release Image and Cloud Rollout support authorized operations; local compose file exists for product shape",
-        "gap": "operator install, upgrade, uninstall, systemd and packaged deployment lifecycle are not productized as a durable distribution path",
+        "current_truth": "Release Image and Cloud Rollout support authorized operations; local / standalone deploy package boundary is now fixed through compose.product.yaml, .env.demo.template, release boundary contract and delivery docs",
+        "gap": "host installation execution, real systemd install and automated setup wizard remain future goals",
         "minimum_evidence_slice": "repo-native deploy package contract and local dry-run installer lifecycle without cloud mutation",
         "repo_change_required": true,
         "cloud_execute_required": false,
         "canClaim": [
-          "authorized cloud rollout substrate exists"
+          "local_standalone_deploy_package_boundary",
+          "env_config_example_boundary",
+          "compose_local_standalone_profile_boundary",
+          "install_upgrade_uninstall_lifecycle_contract",
+          "systemd_service_example_documented",
+          "secret_generation_admin_bootstrap_boundary"
         ],
         "cannotClaim": [
-          "general installable production package",
-          "systemd-managed production service lifecycle"
+          "cloud deploy executed",
+          "build/push executed",
+          "live-test executed",
+          "systemd service installed on host",
+          "self-serve setup wizard complete",
+          "production complete"
         ],
-        "status": "gap"
+        "status": "completed_retired",
+        "closeout_goal": "goal-commercial-ops-install-package-maturity",
+        "contract_ref": "contracts/medopl-release-boundary.json#medopl_deploy_install_package_maturity",
+        "entrypoints": [
+          "compose.product.yaml",
+          ".env.demo.template",
+          "docs/delivery/README.md#medopl-local--standalone-package-maturity"
+        ],
+        "next_cleanup_gate": "real host install/systemd execution requires separate authorization"
       },
       {
         "id": "env_config_secrets_admin_bootstrap_setup_wizard",
@@ -1770,7 +1787,21 @@
         "goal_id": "goal-commercial-ops-install-package-maturity",
         "order": 2,
         "reason": "Make deploy package, compose, install, upgrade, uninstall and systemd lifecycle explicit after payment/admin boundary.",
-        "verification_lane": "local_dry_run_no_cloud"
+        "verification_lane": "local_dry_run_no_cloud",
+        "status": "completed_retired",
+        "closeout_goal": "goal-commercial-ops-install-package-maturity",
+        "canClaim": [
+          "local_standalone_deploy_package_boundary",
+          "install_upgrade_uninstall_lifecycle_contract",
+          "systemd_service_example_documented"
+        ],
+        "cannotClaim": [
+          "cloud deploy executed",
+          "build/push executed",
+          "live-test executed",
+          "systemd service installed on host",
+          "production complete"
+        ]
       },
       {
         "goal_id": "goal-commercial-owner-bootstrap-setup-wizard",

@@ -1,5 +1,37 @@
 {
   "name": "medopl-v22-managed-workbench",
+  "x-medopl-package-maturity": {
+    "purpose": "local_standalone_deploy_install_package_boundary",
+    "profiles": [
+      "product",
+      "dev",
+      "standalone"
+    ],
+    "lifecycle_actions": [
+      "install",
+      "upgrade",
+      "uninstall"
+    ],
+    "env_file_example": ".env.demo.template",
+    "env_config_example_keys": [
+      "MEDOPL_PACKAGE_PROFILE",
+      "MEDOPL_INSTALL_ROOT",
+      "MEDOPL_SYSTEMD_SERVICE",
+      "MEDOPL_SECRET_GENERATION_MODE",
+      "MEDOPL_ADMIN_BOOTSTRAP_MODE",
+      "MEDOPL_SETUP_WIZARD_MODE"
+    ],
+    "systemd_service_example": "docs/delivery/README.md#medopl-local--standalone-package-maturity",
+    "secret_generation": "operator_generated_runtime_secrets_only",
+    "admin_bootstrap": "owner_admin_bootstrap_required",
+    "setup_wizard_future_boundary": "goal-commercial-owner-bootstrap-setup-wizard",
+    "cannot_claim": [
+      "cloud_deploy_executed",
+      "build_push_executed",
+      "live_test_executed",
+      "production_complete"
+    ]
+  },
   "services": {
     "postgres": {
       "profiles": [

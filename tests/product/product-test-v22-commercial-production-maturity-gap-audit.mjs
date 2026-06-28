@@ -18,12 +18,16 @@ function ids(items) {
   return new Set((items ?? []).map((item) => String(item?.id || item?.goal_id || "").trim()).filter(Boolean));
 }
 
-const [current, activeTruth, productTruth, historyTruth, manifest] = await Promise.all([
+const [current, activeTruth, productTruth, historyTruth, manifest, releaseBoundary, composeProduct, envDemoTemplate, deliveryTruth] = await Promise.all([
   readJson("tests/fixtures/v22/goal-current.json"),
   readRepoFile("docs/active/README.md"),
   readRepoFile("docs/product/README.md"),
   readRepoFile("docs/history/README.md"),
   readJson("tests/fixtures/v22/agent-verify-manifest.json"),
+  readJson("contracts/medopl-release-boundary.json"),
+  readJson("compose.product.yaml"),
+  readRepoFile(".env.demo.template"),
+  readRepoFile("docs/delivery/README.md"),
 ]);
 
 const maturity = current.commercial_production_maturity_gap;
@@ -86,6 +90,13 @@ for (const gap of maturity.gap_matrix ?? []) {
       "payment_admin_gap_boundary_mismatch",
     );
     assert(Array.isArray(gap.implementation_roadmap) && gap.implementation_roadmap.length >= 7, "payment_admin_implementation_roadmap_missing");
+  } else if (gap.id === "deploy_package_compose_install_upgrade_uninstall_systemd") {
+    assert.equal(gap.status, "completed_retired", "install_package_gap_must_be_completed_retired_after_maturity_goal");
+    assert.equal(
+      gap.closeout_goal,
+      "goal-commercial-ops-install-package-maturity",
+      "install_package_gap_closeout_goal_mismatch",
+    );
   } else {
     assert.equal(gap.status, "gap", `maturity_gap_status_must_remain_gap:${gap.id}`);
   }
@@ -117,6 +128,61 @@ if (completedGoal) {
 }
 const paymentCompletedGoal = current.goal_lifecycle?.completed_goals?.find((goal) => goal.goal_id === "goal-commercial-payment-admin-api-maturity");
 assert.equal(paymentCompletedGoal?.status, "completed_retired", "payment_admin_completed_goal_status_mismatch");
+
+const installPackageGap = (maturity.gap_matrix ?? []).find((gap) => gap.id === "deploy_package_compose_install_upgrade_uninstall_systemd");
+assert.equal(installPackageGap?.status, "completed_retired", "install_package_gap_must_be_completed_retired");
+assert.equal(installPackageGap?.closeout_goal, "goal-commercial-ops-install-package-maturity", "install_package_gap_closeout_goal_mismatch");
+const installRoadmapEntry = (maturity.recommended_goal_roadmap ?? []).find((goal) => goal.goal_id === "goal-commercial-ops-install-package-maturity");
+assert.equal(installRoadmapEntry?.verification_lane, "local_dry_run_no_cloud", "install_package_roadmap_lane_mismatch");
+assert.equal(installRoadmapEntry?.status, "completed_retired", "install_package_roadmap_status_mismatch");
+
+const packageBoundary = releaseBoundary.medopl_release_boundary?.medopl_deploy_install_package_maturity;
+assert(packageBoundary, "deploy_install_package_maturity_contract_missing");
+assert.equal(packageBoundary.current_mode, "local_standalone_package_boundary_no_cloud_execution", "deploy_install_package_current_mode_mismatch");
+for (const surface of [
+  "deploy_package",
+  "env_config_example",
+  "compose_local",
+  "compose_standalone",
+  "install",
+  "upgrade",
+  "uninstall",
+  "systemd_service_example",
+  "secret_generation",
+  "admin_bootstrap",
+  "setup_wizard_future_boundary",
+]) {
+  assert(packageBoundary.required_surfaces?.includes(surface), `deploy_install_package_surface_missing:${surface}`);
+}
+assert.equal(packageBoundary.must_not_touch?.includes("deploy/medopl-cloud/medopl.k8s.json"), true, "cloud_rollout_path_must_be_protected");
+assert.equal(packageBoundary.cannot_claim?.includes("cloud deploy executed"), true, "install_package_cannot_claim_cloud_deploy_missing");
+
+assert(composeProduct["x-medopl-package-maturity"], "compose_package_maturity_extension_missing");
+assert(composeProduct["x-medopl-package-maturity"].profiles?.includes("standalone"), "compose_standalone_profile_missing");
+assert(composeProduct["x-medopl-package-maturity"].lifecycle_actions?.includes("install"), "compose_install_action_missing");
+assert(composeProduct["x-medopl-package-maturity"].lifecycle_actions?.includes("upgrade"), "compose_upgrade_action_missing");
+assert(composeProduct["x-medopl-package-maturity"].lifecycle_actions?.includes("uninstall"), "compose_uninstall_action_missing");
+
+for (const envName of [
+  "MEDOPL_PACKAGE_PROFILE",
+  "MEDOPL_INSTALL_ROOT",
+  "MEDOPL_SYSTEMD_SERVICE",
+  "MEDOPL_SECRET_GENERATION_MODE",
+  "MEDOPL_ADMIN_BOOTSTRAP_MODE",
+  "MEDOPL_SETUP_WIZARD_MODE",
+]) {
+  assert(composeProduct["x-medopl-package-maturity"].env_config_example_keys?.includes(envName), `compose_env_config_key_missing:${envName}`);
+  assert(deliveryTruth.includes(envName), `delivery_env_config_key_missing:${envName}`);
+}
+for (const secretLine of envDemoTemplate.split("\n").filter((line) => /(?:SECRET|TOKEN|PASSWORD)=/u.test(line) && !line.startsWith("#"))) {
+  const [, value = ""] = secretLine.split("=");
+  assert.equal(value.trim(), "", `env_demo_must_not_ship_secret_default:${secretLine}`);
+}
+
+assert(deliveryTruth.includes("MedOPL Local / Standalone Package Maturity"), "delivery_package_maturity_section_missing");
+assert(deliveryTruth.includes("install / upgrade / uninstall"), "delivery_install_upgrade_uninstall_boundary_missing");
+assert(deliveryTruth.includes("systemd service example"), "delivery_systemd_example_missing");
+assert(deliveryTruth.includes("setup wizard future boundary"), "delivery_setup_wizard_future_boundary_missing");
 
 assert(productTruth.includes("commercial production maturity gap"), "product_truth_maturity_gap_pointer_missing");
 assert(productTruth.includes("Payment / Admin Payment API maturity boundary"), "product_truth_payment_admin_boundary_missing");
