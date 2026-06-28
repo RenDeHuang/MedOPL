@@ -97,6 +97,13 @@ for (const gap of maturity.gap_matrix ?? []) {
       "goal-commercial-ops-install-package-maturity",
       "install_package_gap_closeout_goal_mismatch",
     );
+  } else if (gap.id === "env_config_secrets_admin_bootstrap_setup_wizard") {
+    assert.equal(gap.status, "completed_retired", "owner_bootstrap_gap_must_be_completed_retired_after_maturity_goal");
+    assert.equal(
+      gap.closeout_goal,
+      "goal-commercial-owner-bootstrap-setup-wizard",
+      "owner_bootstrap_gap_closeout_goal_mismatch",
+    );
   } else {
     assert.equal(gap.status, "gap", `maturity_gap_status_must_remain_gap:${gap.id}`);
   }
@@ -114,9 +121,10 @@ const roadmapIds = ids(maturity.recommended_goal_roadmap);
 assert(roadmapIds.has("goal-commercial-payment-admin-api-maturity"), "roadmap_payment_admin_goal_missing");
 assert(roadmapIds.has("goal-commercial-ops-install-package-maturity"), "roadmap_next_install_package_goal_missing");
 assert(roadmapIds.has("goal-commercial-owner-bootstrap-setup-wizard"), "roadmap_owner_bootstrap_goal_missing");
+assert(roadmapIds.has("goal-commercial-release-metadata-rollback-maturity"), "roadmap_release_metadata_goal_missing");
 const paymentRoadmapEntry = (maturity.recommended_goal_roadmap ?? []).find((goal) => goal.goal_id === "goal-commercial-payment-admin-api-maturity");
 assert.equal(paymentRoadmapEntry?.status, "completed_retired", "roadmap_payment_admin_goal_must_be_completed_retired");
-assert.equal(maturity.next_recommended_goal, "goal-commercial-owner-bootstrap-setup-wizard", "maturity_next_goal_mismatch");
+assert.equal(maturity.next_recommended_goal, "goal-commercial-release-metadata-rollback-maturity", "maturity_next_goal_mismatch");
 assert.equal(
   current.goal_lifecycle?.next_recommended_goal,
   "goal-commercial-owner-bootstrap-setup-wizard",
@@ -136,6 +144,12 @@ assert.equal(installPackageGap?.closeout_goal, "goal-commercial-ops-install-pack
 const installRoadmapEntry = (maturity.recommended_goal_roadmap ?? []).find((goal) => goal.goal_id === "goal-commercial-ops-install-package-maturity");
 assert.equal(installRoadmapEntry?.verification_lane, "local_dry_run_no_cloud", "install_package_roadmap_lane_mismatch");
 assert.equal(installRoadmapEntry?.status, "completed_retired", "install_package_roadmap_status_mismatch");
+const ownerBootstrapGap = (maturity.gap_matrix ?? []).find((gap) => gap.id === "env_config_secrets_admin_bootstrap_setup_wizard");
+assert.equal(ownerBootstrapGap?.status, "completed_retired", "owner_bootstrap_gap_must_be_completed_retired");
+assert.equal(ownerBootstrapGap?.closeout_goal, "goal-commercial-owner-bootstrap-setup-wizard", "owner_bootstrap_gap_closeout_goal_mismatch");
+const ownerBootstrapRoadmapEntry = (maturity.recommended_goal_roadmap ?? []).find((goal) => goal.goal_id === "goal-commercial-owner-bootstrap-setup-wizard");
+assert.equal(ownerBootstrapRoadmapEntry?.verification_lane, "local_ui_backend_no_cloud", "owner_bootstrap_roadmap_lane_mismatch");
+assert.equal(ownerBootstrapRoadmapEntry?.status, "completed_retired", "owner_bootstrap_roadmap_status_mismatch");
 
 const packageBoundary = releaseBoundary.medopl_release_boundary?.medopl_deploy_install_package_maturity;
 assert(packageBoundary, "deploy_install_package_maturity_contract_missing");
@@ -183,7 +197,45 @@ for (const secretLine of envDemoTemplate.split("\n").filter((line) => /(?:SECRET
 assert(deliveryTruth.includes("MedOPL Local / Standalone Package Maturity"), "delivery_package_maturity_section_missing");
 assert(deliveryTruth.includes("install / upgrade / uninstall"), "delivery_install_upgrade_uninstall_boundary_missing");
 assert(deliveryTruth.includes("systemd service example"), "delivery_systemd_example_missing");
-assert(deliveryTruth.includes("setup wizard future boundary"), "delivery_setup_wizard_future_boundary_missing");
+
+const setupBoundary = releaseBoundary.medopl_release_boundary?.medopl_owner_bootstrap_setup_wizard_maturity;
+assert(setupBoundary, "owner_bootstrap_setup_wizard_contract_missing");
+assert.equal(setupBoundary.current_mode, "local_first_run_setup_boundary_no_secret_read_no_cloud", "owner_bootstrap_current_mode_mismatch");
+for (const surface of [
+  "owner_admin_initial_account_bootstrap",
+  "admin_password_secret_generation_boundary",
+  "first_run_setup_flow",
+  "config_validation",
+  "setup_completed_marker",
+  "install_package_setup_handoff",
+]) {
+  assert(setupBoundary.required_surfaces?.includes(surface), `owner_bootstrap_surface_missing:${surface}`);
+}
+assert.equal(setupBoundary.secret_policy?.raw_secret_read, "forbidden", "owner_bootstrap_must_forbid_raw_secret_read");
+assert.equal(setupBoundary.secret_policy?.generated_secret_output, ".runtime or operator secret store only", "owner_bootstrap_secret_sink_mismatch");
+assert.equal(setupBoundary.config_validation?.fail_closed, true, "owner_bootstrap_config_validation_must_fail_closed");
+assert.equal(setupBoundary.setup_completed_marker?.location, "operator env file or backend setup state only", "owner_bootstrap_marker_location_mismatch");
+assert.equal(setupBoundary.must_not_claim?.includes("external PSP settlement"), true, "owner_bootstrap_cannot_claim_psp_missing");
+assert.equal(setupBoundary.must_not_claim?.includes("production complete"), true, "owner_bootstrap_cannot_claim_production_missing");
+
+const setupMaturity = composeProduct["x-medopl-setup-wizard-maturity"];
+assert(setupMaturity, "compose_setup_wizard_maturity_extension_missing");
+assert.equal(setupMaturity.owner_admin_bootstrap, "required_before_runtime_commercial_operations", "compose_owner_bootstrap_policy_mismatch");
+assert(setupMaturity.config_validation_required?.includes("PORTAL_ADMIN_EMAIL"), "compose_setup_validation_admin_email_missing");
+assert(setupMaturity.config_validation_required?.includes("PORTAL_ADMIN_PASSWORD"), "compose_setup_validation_admin_password_missing");
+assert(setupMaturity.config_validation_required?.includes("MEDOPL_SETUP_COMPLETED"), "compose_setup_validation_marker_missing");
+assert.equal(setupMaturity.secret_generation_boundary, "operator_generated_no_raw_secret_in_git", "compose_setup_secret_boundary_mismatch");
+
+for (const envName of [
+  "MEDOPL_OWNER_BOOTSTRAP_EMAIL",
+  "MEDOPL_OWNER_BOOTSTRAP_PASSWORD",
+  "MEDOPL_SETUP_COMPLETED",
+  "MEDOPL_SETUP_MARKER_PATH",
+]) {
+  assert(deliveryTruth.includes(envName), `delivery_setup_env_key_missing:${envName}`);
+}
+assert(deliveryTruth.includes("MedOPL Owner Bootstrap / Setup Wizard Maturity"), "delivery_owner_bootstrap_section_missing");
+assert(deliveryTruth.includes("setup completed marker"), "delivery_setup_completed_marker_missing");
 
 assert(productTruth.includes("commercial production maturity gap"), "product_truth_maturity_gap_pointer_missing");
 assert(productTruth.includes("Payment / Admin Payment API maturity boundary"), "product_truth_payment_admin_boundary_missing");

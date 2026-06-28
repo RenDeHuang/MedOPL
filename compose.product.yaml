@@ -32,6 +32,33 @@
       "production_complete"
     ]
   },
+  "x-medopl-setup-wizard-maturity": {
+    "purpose": "owner_admin_first_run_setup_boundary",
+    "owner_admin_bootstrap": "required_before_runtime_commercial_operations",
+    "first_run_setup_flow": [
+      "validate_config",
+      "generate_or_reference_operator_secrets_outside_git",
+      "bootstrap_owner_admin_account",
+      "mark_setup_completed"
+    ],
+    "config_validation_required": [
+      "PORTAL_ADMIN_EMAIL",
+      "PORTAL_ADMIN_PASSWORD",
+      "MEDOPL_SETUP_COMPLETED",
+      "MEDOPL_SETUP_MARKER_PATH"
+    ],
+    "secret_generation_boundary": "operator_generated_no_raw_secret_in_git",
+    "setup_completed_marker": "operator_env_or_backend_setup_state_only",
+    "install_package_handoff": "x-medopl-package-maturity",
+    "cannot_claim": [
+      "real_secret_generated_or_read",
+      "cloud_deploy_executed",
+      "build_push_executed",
+      "live_test_executed",
+      "external_psp_settlement",
+      "production_complete"
+    ]
+  },
   "services": {
     "postgres": {
       "profiles": [

@@ -153,6 +153,28 @@ MEDOPL_ADMIN_BOOTSTRAP_MODE=owner_admin_required
 MEDOPL_SETUP_WIZARD_MODE=future_boundary
 ```
 
+## MedOPL Owner Bootstrap / Setup Wizard Maturity
+
+`compose.product.yaml#x-medopl-setup-wizard-maturity` and `contracts/medopl-release-boundary.json#medopl_owner_bootstrap_setup_wizard_maturity` define the first-run owner/admin setup boundary. This is a local / standalone product maturity contract: it validates config shape, records the install-package handoff, keeps raw secrets out of git and browser storage, and requires a setup completed marker before commercial runtime operations are claimed.
+
+First-run setup flow:
+
+- validate config: `PORTAL_ADMIN_EMAIL`, `PORTAL_ADMIN_PASSWORD`, `MEDOPL_SETUP_COMPLETED` and `MEDOPL_SETUP_MARKER_PATH` must be present in an out-of-git operator env or backend setup state before owner/admin bootstrap is complete.
+- generate/reference secrets: admin password, session bootstrap secret, webhook secret and setup token are generated or referenced by the operator outside git; tracked templates keep secret values empty.
+- bootstrap owner/admin account: setup creates or approves the owner/admin MedOPL account and then uses the existing account/credit/plan path; it does not replace `/api/v22/users/prepare`, `/api/v22/users/approve` or `/api/v22/users/credit`.
+- write setup completed marker: the setup completed marker is stored in an operator env file or backend setup state only. The marker must not contain raw secrets.
+
+Operator env files may include:
+
+```dotenv
+MEDOPL_OWNER_BOOTSTRAP_EMAIL=admin@medopl.local
+MEDOPL_OWNER_BOOTSTRAP_PASSWORD=
+MEDOPL_SETUP_COMPLETED=false
+MEDOPL_SETUP_MARKER_PATH=.runtime/setup/owner-bootstrap.json
+```
+
+This boundary cannot claim real secret generation/read, self-serve setup wizard complete, external PSP settlement, cloud deploy, build/push, live-test or production complete.
+
 `local:services:plan` 是本地 SaaS 后台服务编排入口，列出 Portal frontend、Go backend、OPL Web Gateway、Runtime Bridge 和外部 clean OPL WebUI 的本地命令与 health URL。`local:services:start`、`local:services:stop`、`local:services:status` 和 `local:services:logs` 只管理 MedOPL 本地进程，PID 和日志只写入 `.runtime/local-services`；clean OPL WebUI 仍是外部 upstream endpoint，不由 MedOPL 启动、停止或读取进程日志。`local:services:check:dry-run` 与 `local:services:verify` 只验证编排计划注册，不启动服务、不读取 secret、不调用云；`local:services:check` 只探测本机 URL，可证明本地服务可达，不能升级为 production deploy、real-cloud、live provider 或 upstream ownership evidence。
 
 Go backend 的本地 RC profile 会把 Portal admin projection 的 users、finance ledger 和 announcements 写入 `MEDOPL_PORTAL_STATE_ROOT`。这只服务本地 Portal delivery 和 Router 重建验证；损坏的 state file 会让 `/config/check` fail-closed，不能静默回到 seed 数据。

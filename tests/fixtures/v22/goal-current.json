@@ -1657,19 +1657,34 @@
       {
         "id": "env_config_secrets_admin_bootstrap_setup_wizard",
         "label": "env/config/secrets/admin bootstrap/setup wizard",
-        "current_truth": "secrets stay in backend/cloud authorization boundary; admin UI consumes typed business ledger APIs",
-        "gap": "first-run owner bootstrap, config validation, secret readiness and admin setup wizard are not a complete product path",
+        "current_truth": "owner/admin bootstrap and first-run setup wizard maturity boundary is fixed through release boundary contract, compose metadata and delivery docs; raw secrets remain outside git and browser storage",
+        "gap": "real setup wizard execution and host-installed setup marker remain future goals",
         "minimum_evidence_slice": "fail-closed setup wizard/API contract for owner bootstrap and secret/config readiness without exposing raw secrets",
         "repo_change_required": true,
         "cloud_execute_required": false,
         "canClaim": [
-          "secret hygiene boundary is enforced locally"
+          "owner_admin_initial_account_bootstrap_boundary",
+          "admin_password_secret_generation_boundary",
+          "first_run_setup_flow_contract",
+          "config_validation_boundary",
+          "setup_completed_marker_boundary",
+          "install_package_setup_handoff"
         ],
         "cannotClaim": [
+          "real secret generated or read",
           "self-serve setup complete",
-          "raw secret exposure safe"
+          "host setup marker written",
+          "external PSP settlement",
+          "production complete"
         ],
-        "status": "gap"
+        "status": "completed_retired",
+        "closeout_goal": "goal-commercial-owner-bootstrap-setup-wizard",
+        "contract_ref": "contracts/medopl-release-boundary.json#medopl_owner_bootstrap_setup_wizard_maturity",
+        "entrypoints": [
+          "compose.product.yaml#x-medopl-setup-wizard-maturity",
+          "docs/delivery/README.md#medopl-owner-bootstrap--setup-wizard-maturity"
+        ],
+        "next_cleanup_gate": "real setup wizard execution requires separate local implementation goal"
       },
       {
         "id": "release_workflow_version_changelog_image_tag_rollback",
@@ -1818,7 +1833,20 @@
         "goal_id": "goal-commercial-owner-bootstrap-setup-wizard",
         "order": 3,
         "reason": "Close first-run owner bootstrap, config and secret readiness without exposing raw secrets.",
-        "verification_lane": "local_ui_backend_no_cloud"
+        "verification_lane": "local_ui_backend_no_cloud",
+        "status": "completed_retired",
+        "closeout_goal": "goal-commercial-owner-bootstrap-setup-wizard",
+        "canClaim": [
+          "owner_admin_initial_account_bootstrap_boundary",
+          "config_validation_boundary",
+          "setup_completed_marker_boundary"
+        ],
+        "cannotClaim": [
+          "real secret generated or read",
+          "self-serve setup complete",
+          "host setup marker written",
+          "production complete"
+        ]
       },
       {
         "goal_id": "goal-commercial-release-metadata-rollback-maturity",
@@ -1857,7 +1885,7 @@
         "verification_lane": "frontend_runtime_local_no_cloud"
       }
     ],
-    "next_recommended_goal": "goal-commercial-owner-bootstrap-setup-wizard",
+    "next_recommended_goal": "goal-commercial-release-metadata-rollback-maturity",
     "cannot_expand_to": [
       "business closure gap",
       "cloud deployment proof without authorization",

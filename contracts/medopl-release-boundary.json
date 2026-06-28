@@ -107,6 +107,60 @@
         "systemd service installed on host"
       ]
     },
+    "medopl_owner_bootstrap_setup_wizard_maturity": {
+      "current_mode": "local_first_run_setup_boundary_no_secret_read_no_cloud",
+      "required_surfaces": [
+        "owner_admin_initial_account_bootstrap",
+        "admin_password_secret_generation_boundary",
+        "first_run_setup_flow",
+        "config_validation",
+        "setup_completed_marker",
+        "install_package_setup_handoff"
+      ],
+      "install_package_setup_handoff": {
+        "from": "compose.product.yaml#x-medopl-package-maturity",
+        "to": "compose.product.yaml#x-medopl-setup-wizard-maturity",
+        "mode": "operator_local_or_standalone_first_run"
+      },
+      "owner_admin_initial_account_bootstrap": {
+        "account_truth": "owner-created-or-approved MedOPL account with sufficient plan/balance/quota",
+        "bootstrap_action": "create_or_approve_owner_admin_account",
+        "must_not_replace": [
+          "POST /api/v22/users/prepare",
+          "POST /api/v22/users/approve",
+          "POST /api/v22/users/credit"
+        ]
+      },
+      "secret_policy": {
+        "raw_secret_read": "forbidden",
+        "tracked_templates": "empty_secret_values_only",
+        "generated_secret_output": ".runtime or operator secret store only",
+        "browser_storage": "forbidden"
+      },
+      "config_validation": {
+        "fail_closed": true,
+        "required_refs": [
+          "PORTAL_ADMIN_EMAIL",
+          "PORTAL_ADMIN_PASSWORD",
+          "MEDOPL_SETUP_COMPLETED",
+          "MEDOPL_SETUP_MARKER_PATH"
+        ]
+      },
+      "setup_completed_marker": {
+        "state": "required_after_owner_admin_bootstrap",
+        "location": "operator env file or backend setup state only",
+        "raw_secret_policy": "marker_must_not_contain_secret"
+      },
+      "must_not_claim": [
+        "cloud deploy executed",
+        "build/push executed",
+        "live-test executed",
+        "real secret generated or read",
+        "external PSP settlement",
+        "self-serve setup wizard complete",
+        "production complete"
+      ]
+    },
     "release_owner_readiness": {
       "receipt_type": "release_owner_receipt",
       "production_criterion": "release_owner_readiness_receipt",
