@@ -18,11 +18,11 @@ MedOPL 是 OPL-Webui 的商业资源控制面，负责 owner 创建或批准账�
 | current phase | `commercial runtime storage billing business closure` |
 | current cursor | `goal-commercial-runtime-storage-billing-business-closure` |
 | latest repo closeout | `goal-commercial-storage-destroy-writeback-fix` / `64699bd3619f01a4442936b096079b3e8051733d` |
-| current blocker | `commercial_business_closure_deploy_verification_pending_for_storage_destroy_billing_writeback_fix` |
+| current blocker | `none_for_authorized_commercial_business_flow_production_canary_revalidation` |
 | source fix | `goal-commercial-upload-file-billing-writeback-fix` landed at `34b0e3070357504b475a0bee2ff6bd4de0af23df`; `goal-commercial-storage-destroy-writeback-fix` landed at `64699bd3619f01a4442936b096079b3e8051733d` |
-| next proof | authorized Release Image + Cloud Rollout + OPL-Webui consumer canary for the same commercial business flow |
+| next proof | future scope expansion / ongoing operations proof must be separately authorized |
 
-The latest repo/gate closeout is goal-commercial-storage-destroy-writeback-fix at 64699bd3619f01a4442936b096079b3e8051733d. The source line keeps `upload_file -> save_billing_event` fail-closed while using canonical runtime ledger tenant / billing attribution identity before fallback account lookup, and keeps `storage_destroy -> save_billing_event` fail-closed while using collision-resistant billing event IDs. The remaining proof is deployment and consumer-canary verification for the same commercial business flow, not a new product truth and not a launch approval narrative.
+The latest repo/gate closeout is goal-commercial-storage-destroy-writeback-fix at 64699bd3619f01a4442936b096079b3e8051733d. The source line keeps `upload_file -> save_billing_event` fail-closed while using canonical runtime ledger tenant / billing attribution identity before fallback account lookup, and keeps `storage_destroy -> save_billing_event` fail-closed while using collision-resistant billing event IDs. The authorized Release Image + Cloud Rollout + OPL-Webui consumer canary rerun passed for the same commercial business flow; detailed run provenance stays in history / GitHub Actions artifact, not active product truth.
 
 ## Active Supporting Substrates
 
