@@ -33,21 +33,20 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "goal-admin-account-commercial-ledger-ui-closure",
-    "landed_commit": "51c6e0fb347bc59a1b0ccfe29a0481cf6870dfbd",
+    "branch": "goal-commercial-business-flow-current-realignment",
+    "landed_commit": "12c53bf9cb3d74c287a6d82488f918e311510cb1",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
       "npm run test:run-plan -- --dry-run --json passed",
-      "npm run test:run-plan passed after rerun",
+      "npm run test:run-plan passed",
       "npm run test:backend passed",
       "npm run test:cloud passed",
       "npm run verify passed",
       "npm run test:health passed",
-      "npm run gate:review -- --slice-id goal-admin-account-commercial-ledger-ui-closure passed",
-      "npm run repo:bloat -- --diff --slice-id goal-admin-account-commercial-ledger-ui-closure passed",
+      "npm run gate:review -- --slice-id goal-commercial-business-flow-current-realignment passed",
+      "npm run repo:bloat -- --diff --slice-id goal-commercial-business-flow-current-realignment passed",
       "npm run line:budget passed",
-      "post-push node scripts/v22-verify.mjs current passed",
-      "post-push node scripts/v22-workflow-gate.mjs review passed"
+      "post-push node scripts/v22-verify.mjs current passed"
     ],
     "plan_completion_audit": {
       "functional": "done",
@@ -58,11 +57,11 @@
       "cannot_claim": "done"
     },
     "cleanup_result": {
-      "deleted": "legacy Admin Users commercial create recharge refund projection-only interactions and commercial aliases",
-      "folded": "Figma Commercial Launch admin account billing modules into Admin Users backed by v22 business account credit ledger billing statement runtime freeze and runtime gate endpoints",
-      "retained": "/api/admin/actions only for non-commercial admin settings user profile toggle delete announcements and billing ops",
-      "reason": "commercial account operations must use owner-created-or-approved MedOPL account plus plan balance quota truth and real v22 business ledger",
-      "next": "commercial runtime/storage billing business closure continues with upload_file billing event writeback fix; the former launch-decision cursor is retired from the business path and retained only as deployment operations safety provenance"
+      "deleted": "launch approval decision as current business cursor and selected/canary/test approval admission narrative from active current path",
+      "folded": "Cloud Rollout confirmation into deployment operations safety only and commercial flow into active current plus machine cursor",
+      "retained": "account_approved/account_not_approved machine runtime gate conditions and Cloud Rollout operations safety provenance",
+      "reason": "MedOPL business truth is account prepare approval credit plan runtime storage upload run artifact billing statement release destroy stop billing",
+      "next": "fix upload_file save_billing_event in the commercial billing path without bypassing billing or audit"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "goal-commercial-runtime-storage-billing-business-closure"
@@ -75,7 +74,7 @@
     "upload_file_billing_event_writeback_failed_in_commercial_billing_path",
     "external_psp_multi_region_sla_enterprise_compliance_ongoing_authorization_and_unrestricted_full_production_remain_unclaimed"
   ],
-  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-admin-account-commercial-ledger-ui-closure at 51c6e0fb347bc59a1b0ccfe29a0481cf6870dfbd. Release Image run 28310282648 built image tag 235ea17 and Cloud Rollout run 28310293188 deployed it through rollout apply and deploy receipt; public availability probe passed, but OPL-Webui consumer canary failed closed at upload_file billing ledger writeback with errorCategory billing_event_write_failed and dbOperationStage save_billing_event. The current blocker is upload_file billing event writeback in the commercial billing path, not launch approval governance. Cloud Rollout workflow_dispatch and GitHub production environment approval remain deployment operations safety only; they are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git.",
+  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-business-flow-current-realignment at 12c53bf9cb3d74c287a6d82488f918e311510cb1. Release Image run 28310282648 built image tag 235ea17 and Cloud Rollout run 28310293188 deployed it through rollout apply and deploy receipt; public availability probe passed, but OPL-Webui consumer canary failed closed at upload_file billing ledger writeback with errorCategory billing_event_write_failed and dbOperationStage save_billing_event. The current blocker is upload_file billing event writeback in the commercial billing path, not launch approval governance. Cloud Rollout workflow_dispatch and GitHub production environment approval remain deployment operations safety only; they are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-business-flow-current-realignment at 12c53bf9cb3d74c287a6d82488f918e311510cb1.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -634,9 +633,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "goal-admin-account-commercial-ledger-ui-closure",
-  "last_landed_at": "2026-06-27",
-  "history_latest_branch": "goal-admin-account-commercial-ledger-ui-closure",
+  "last_landed_branch": "goal-commercial-business-flow-current-realignment",
+  "last_landed_at": "2026-06-28",
+  "history_latest_branch": "goal-commercial-business-flow-current-realignment",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -1059,8 +1058,8 @@
       "cannot_claim": "multi-region production, SLA proven, enterprise compliance, ongoing authorization, or unobserved tenant/resource readiness"
     }
   },
-  "base_trunk_head": "51c6e0fb347bc59a1b0ccfe29a0481cf6870dfbd",
-  "last_landed_commit": "51c6e0fb347bc59a1b0ccfe29a0481cf6870dfbd",
+  "base_trunk_head": "12c53bf9cb3d74c287a6d82488f918e311510cb1",
+  "last_landed_commit": "12c53bf9cb3d74c287a6d82488f918e311510cb1",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",

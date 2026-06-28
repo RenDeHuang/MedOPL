@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `goal-admin-account-commercial-ledger-ui-closure`
-- latest landed commit: `51c6e0fb347bc59a1b0ccfe29a0481cf6870dfbd`
+- latest landed branch: `goal-commercial-business-flow-current-realignment`
+- latest landed commit: `12c53bf9cb3d74c287a6d82488f918e311510cb1`
 - next cursor: `goal-commercial-runtime-storage-billing-business-closure`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
