@@ -2,13 +2,24 @@ package controlplane
 
 import (
 	"context"
+	"errors"
 
 	cpd "github.com/rendehuang/medopl/services/medopl-go-backend/internal/domain/controlplane"
+	cprepo "github.com/rendehuang/medopl/services/medopl-go-backend/internal/repository/controlplane"
 )
 
 func (service *Service) saveBillingEventForAudit(ctx context.Context, audit cpd.AuditEvent, refs billingEventRefs) error {
 	tenantID := refs.TenantID
 	billingAttributionID := refs.BillingAttributionID
+	if audit.ResourceBindingID != "" {
+		ledger, err := service.store.ResourceBindingLedgerByID(ctx, audit.ResourceBindingID)
+		if err == nil {
+			tenantID = firstNonEmpty(tenantID, ledger.TenantID)
+			billingAttributionID = firstNonEmpty(billingAttributionID, ledger.BillingAttributionID)
+		} else if !errors.Is(err, cprepo.ErrNotFound) {
+			return err
+		}
+	}
 	ledgers, err := service.store.ListResourceBindingLedgers(ctx, audit.WorkspaceID)
 	if err != nil {
 		return err

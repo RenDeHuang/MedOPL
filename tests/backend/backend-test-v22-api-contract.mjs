@@ -37,6 +37,9 @@ const goRouteSurface = [
 const configSurface = await readRepoFile("services/medopl-go-backend/internal/config/config.go");
 const controlplaneDomainSurface = await readRepoFile("services/medopl-go-backend/internal/domain/controlplane/controlplane.go");
 const serviceSurface = controlplaneServiceSurface;
+const billingReconciliationTestSurface = await readRepoFile(
+  "services/medopl-go-backend/internal/service/controlplane/billing_reconciliation_test.go",
+);
 const migration = await readRepoFile("services/medopl-go-backend/migrations/0001_baseline.sql");
 
 const requiredRouteMarkers = [
@@ -572,6 +575,23 @@ for (const marker of [
   "cloud_deployment_proof",
 ]) {
   assert(serviceSurface.includes(marker), `commercial_billing_service_marker_missing:${marker}`);
+}
+for (const marker of [
+  "func (service *Service) saveBillingEventForAudit",
+  "ResourceBindingLedgerByID(ctx, audit.ResourceBindingID)",
+  "errors.Is(err, cprepo.ErrNotFound)",
+]) {
+  assert(serviceSurface.includes(marker), `commercial_upload_billing_writeback_marker_missing:${marker}`);
+}
+for (const marker of [
+  "billing-event-writeback.csv",
+  "billing-fk.csv",
+  "canonical runtime tenant/workspace/resource identity",
+]) {
+  assert(
+    billingReconciliationTestSurface.includes(marker),
+    `commercial_upload_billing_writeback_test_marker_missing:${marker}`,
+  );
 }
 assert(
   !serviceSurface.includes("production_canary_commercial_closure"),

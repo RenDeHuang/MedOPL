@@ -3,6 +3,7 @@ package controlplane
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 
 	cpd "github.com/rendehuang/medopl/services/medopl-go-backend/internal/domain/controlplane"
@@ -215,12 +216,135 @@ func TestServiceRecordFileWritesBillingEventWhenLedgerTenantLookupIsUnavailable(
 	}
 }
 
+func TestServiceRecordFileUsesCanonicalRuntimeTenantForPostgresBillingEvent(t *testing.T) {
+	ctx := context.Background()
+	store := &postgresBillingTenantFKStore{Store: memory.NewControlPlaneStore(), hideWorkspaceLedgerList: true}
+	service := NewService(store)
+
+	prepareFundedWorkspace(t, ctx, service, "tenant-runtime-canonical", "user-billing-fk", "workspace-billing-fk", 200, "credit-billing-fk-once")
+	if _, err := service.BindProviderKey(ctx, BindProviderKeyInput{
+		TenantID:       "tenant-runtime-canonical",
+		PortalUserID:   "user-billing-fk",
+		WorkspaceID:    "workspace-billing-fk",
+		RawProviderKey: "local-rc-provider-key-material-that-must-stay-private",
+		IdempotencyKey: "bind-billing-fk-once",
+	}); err != nil {
+		t.Fatalf("BindProviderKey() error = %v", err)
+	}
+	launch, err := service.OpenManagedEnvironment(ctx, OpenManagedEnvironmentInput{
+		TenantID:       "tenant-runtime-canonical",
+		PortalUserID:   "user-billing-fk",
+		WorkspaceID:    "workspace-billing-fk",
+		IdempotencyKey: "open-billing-fk-once",
+	})
+	if err != nil {
+		t.Fatalf("OpenManagedEnvironment() error = %v", err)
+	}
+	if err := service.store.SaveBusinessAccount(ctx, cpd.BusinessAccount{
+		TenantID:     "tenant-business-account-stale",
+		PortalUserID: "user-billing-fk",
+		WorkspaceID:  "workspace-billing-fk",
+		Status:       "approved",
+		Balance:      170,
+		Currency:     "CNY",
+	}); err != nil {
+		t.Fatalf("SaveBusinessAccount(stale tenant) error = %v", err)
+	}
+
+	first, err := service.RecordFile(ctx, RecordFileInput{
+		LaunchID:     launch.LaunchID,
+		FileName:     "billing-fk.csv",
+		RelativePath: "inputs/billing-fk.csv",
+		ContentType:  "text/csv",
+		SizeBytes:    128,
+	})
+	if err != nil {
+		t.Fatalf("RecordFile(first) error = %v", err)
+	}
+	second, err := service.RecordFile(ctx, RecordFileInput{
+		LaunchID:     launch.LaunchID,
+		FileName:     "billing-fk.csv",
+		RelativePath: "inputs/billing-fk.csv",
+		ContentType:  "text/csv",
+		SizeBytes:    128,
+	})
+	if err != nil {
+		t.Fatalf("RecordFile(second) error = %v", err)
+	}
+	if second.FileRef != first.FileRef {
+		t.Fatalf("repeated upload must keep stable fileRef: first=%+v second=%+v", first, second)
+	}
+
+	events, err := service.store.ListBillingEvents(ctx, launch.WorkspaceID)
+	if err != nil {
+		t.Fatalf("ListBillingEvents() error = %v", err)
+	}
+	var fileUploadEvents []cpd.BillingEvent
+	for _, event := range events {
+		if event.SourceEventType == cpd.AuditKindFileUpload {
+			fileUploadEvents = append(fileUploadEvents, event)
+		}
+	}
+	if len(fileUploadEvents) != 1 {
+		t.Fatalf("expected exactly one file.upload billing event after retry, got %d: %+v", len(fileUploadEvents), events)
+	}
+	event := fileUploadEvents[0]
+	if event.TenantID != "tenant-runtime-canonical" || event.WorkspaceID != launch.WorkspaceID || event.ResourceBindingID != launch.ResourceBindingID {
+		t.Fatalf("file upload billing event must use canonical runtime tenant/workspace/resource identity: %+v launch=%+v", event, launch)
+	}
+	if event.Type != "hold" || event.Amount != 0.1 || event.FileRef != first.FileRef || event.IdempotencyKey == "" {
+		t.Fatalf("file upload billing event mismatch: %+v file=%+v", event, first)
+	}
+}
+
 type ledgerTenantLookupUnavailableStore struct {
 	cprepo.Store
 }
 
 func (store *ledgerTenantLookupUnavailableStore) ListResourceBindingLedgers(ctx context.Context, workspaceID string) ([]cpd.ResourceBindingLedger, error) {
 	return nil, nil
+}
+
+type postgresBillingTenantFKStore struct {
+	cprepo.Store
+	canonicalTenantByWorkspace map[string]string
+	hideWorkspaceLedgerList    bool
+}
+
+func (store *postgresBillingTenantFKStore) SaveResourceBindingLedger(ctx context.Context, ledger cpd.ResourceBindingLedger) error {
+	store.noteCanonicalTenant(ledger)
+	return store.Store.SaveResourceBindingLedger(ctx, ledger)
+}
+
+func (store *postgresBillingTenantFKStore) CreateResourceBindingLedger(ctx context.Context, ledger cpd.ResourceBindingLedger) error {
+	store.noteCanonicalTenant(ledger)
+	return store.Store.CreateResourceBindingLedger(ctx, ledger)
+}
+
+func (store *postgresBillingTenantFKStore) SaveBillingEvent(ctx context.Context, event cpd.BillingEvent) error {
+	if event.WorkspaceID != "" {
+		if want := store.canonicalTenantByWorkspace[event.WorkspaceID]; want != "" && event.TenantID != want {
+			return errors.New("billing_events_tenant_fk_violation")
+		}
+	}
+	return store.Store.SaveBillingEvent(ctx, event)
+}
+
+func (store *postgresBillingTenantFKStore) ListResourceBindingLedgers(ctx context.Context, workspaceID string) ([]cpd.ResourceBindingLedger, error) {
+	if store.hideWorkspaceLedgerList {
+		return nil, nil
+	}
+	return store.Store.ListResourceBindingLedgers(ctx, workspaceID)
+}
+
+func (store *postgresBillingTenantFKStore) noteCanonicalTenant(ledger cpd.ResourceBindingLedger) {
+	if ledger.WorkspaceID == "" || ledger.TenantID == "" {
+		return
+	}
+	if store.canonicalTenantByWorkspace == nil {
+		store.canonicalTenantByWorkspace = make(map[string]string)
+	}
+	store.canonicalTenantByWorkspace[ledger.WorkspaceID] = ledger.TenantID
 }
 
 func ledgerAsMaps(t *testing.T, items []LedgerItem) []map[string]any {
