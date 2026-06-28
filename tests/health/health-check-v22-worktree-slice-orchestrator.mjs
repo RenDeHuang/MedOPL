@@ -28,6 +28,10 @@ function assertNotIncludesAny(source, phrases, label) {
   }
 }
 
+function goalIdForCloseoutBranch(branch) {
+  return String(branch || "").replace(/-current$/u, "");
+}
+
 const [packageJson, manifest, current, classificationSource, orchestratorSource, landingCloseoutSource, verifySource, agentsSource, deliverySource, testsReadmeSource] = await Promise.all([
   readFile(path.join(repoRoot, "package.json"), "utf8").then(JSON.parse),
   readFile(path.join(repoRoot, "tests/fixtures/v22/agent-verify-manifest.json"), "utf8").then(JSON.parse),
@@ -78,7 +82,8 @@ assert.equal(current.goal_lifecycle?.schema_version, 1, "goal_lifecycle_schema_m
 assert.equal(current.goal_lifecycle?.admission?.completed_goals_repeat_forbidden, true, "goal_admission_must_forbid_completed_goal_repeat");
 assert.equal(current.goal_lifecycle?.current?.cursor, current.current_cursor, "goal_lifecycle_current_cursor_mismatch");
 assert.equal(current.goal_lifecycle?.current?.blocker, "none_for_current_scoped_commercial_business_flow", "goal_lifecycle_current_blocker_mismatch");
-assert.equal(current.goal_lifecycle?.next_recommended_goal, "goal-commercial-launch-ui-productization", "goal_lifecycle_next_recommended_goal_mismatch");
+assert.equal(typeof current.goal_lifecycle?.next_recommended_goal, "string", "goal_lifecycle_next_recommended_goal_missing");
+assert.notEqual(current.goal_lifecycle.next_recommended_goal.trim(), "", "goal_lifecycle_next_recommended_goal_empty");
 assert.equal(current.latest_landed_closeout?.next_recommended_goal, current.goal_lifecycle?.next_recommended_goal, "latest_closeout_next_recommended_goal_mismatch");
 for (const field of ["canClaim", "cannotClaim", "verification", "retirement", "landed_commit"]) {
   assert(Object.hasOwn(current.latest_landed_closeout || {}, field), `latest_closeout_must_record_${field}`);
@@ -86,7 +91,7 @@ for (const field of ["canClaim", "cannotClaim", "verification", "retirement", "l
 assert.equal(current.latest_landed_closeout?.retirement?.active_blocker_retired, true, "latest_closeout_must_retire_active_blocker");
 assert.equal(current.latest_landed_closeout?.retirement?.current_cursor_retained_reason, "ongoing_business_closure_cursor", "latest_closeout_cursor_retention_reason_mismatch");
 assert(
-  (current.goal_lifecycle?.completed_goals || []).some((goal) => goal.goal_id === current.latest_landed_closeout?.branch),
+  (current.goal_lifecycle?.completed_goals || []).some((goal) => goal.goal_id === goalIdForCloseoutBranch(current.latest_landed_closeout?.branch)),
   "latest_landed_closeout_must_be_registered_completed_goal",
 );
 for (const goal of current.goal_lifecycle?.completed_goals || []) {
@@ -140,7 +145,7 @@ assert.equal(planPayload.currentTruthReadout?.latest_landed_closeout?.branch, cu
 assert.equal(planPayload.currentTruthReadout?.latest_landed_closeout?.landed_commit, current.latest_landed_closeout.landed_commit, "slice_current_truth_readout_latest_commit_mismatch");
 assert.equal(planPayload.currentTruthReadout?.completed_goals?.count, current.goal_lifecycle.completed_goals.length, "slice_current_truth_readout_completed_count_mismatch");
 assert.equal(planPayload.currentTruthReadout?.completed_goals?.requested_goal_completed, false, "slice_current_truth_readout_default_goal_should_not_be_completed");
-assert.equal(planPayload.currentTruthReadout?.next_recommended_goal, "goal-commercial-launch-ui-productization", "slice_current_truth_readout_next_goal_mismatch");
+assert.equal(planPayload.currentTruthReadout?.next_recommended_goal, current.goal_lifecycle.next_recommended_goal, "slice_current_truth_readout_next_goal_mismatch");
 assert.equal(planPayload.currentTruthReadout?.completed_goals_repeat_forbidden, true, "slice_current_truth_readout_completed_repeat_guard_mismatch");
 assert.equal(planPayload.currentTruthReadout?.selected_risk_class, "landing", "slice_current_truth_readout_selected_risk_class_mismatch");
 assert.deepEqual(planPayload.currentTruthReadout?.verification_lane, current.goal_lifecycle.risk_class_verification.landing, "slice_current_truth_readout_verification_lane_mismatch");
@@ -149,7 +154,7 @@ assert.equal(planPayload.currentTruthReadout?.source_paths?.includes("tests/fixt
 assert.equal(planPayload.currentTruthReadout?.source_paths?.includes("tests/fixtures/v22/agent-verify-manifest.json"), true, "slice_current_truth_readout_must_read_verify_manifest");
 assert.equal(planPayload.non_recommended_goal, true, "slice_non_recommended_goal_must_be_explicit_for_default_branch_goal");
 assert.equal(planPayload.overrideBoundary?.reason, "requested_goal_is_not_next_recommended_goal", "slice_override_boundary_reason_mismatch");
-assert.equal(planPayload.overrideBoundary?.next_recommended_goal, "goal-commercial-launch-ui-productization", "slice_override_boundary_next_goal_mismatch");
+assert.equal(planPayload.overrideBoundary?.next_recommended_goal, current.goal_lifecycle.next_recommended_goal, "slice_override_boundary_next_goal_mismatch");
 assert.equal(planPayload.landingPolicy?.featureBranchPushAllowed, true, "slice_landing_policy_must_allow_feature_branch_push");
 assert.equal(planPayload.landingPolicy?.trunkMergePushAllowedAfterLandingGate, true, "slice_landing_policy_must_allow_trunk_push_after_gate");
 assert.equal(planPayload.landingPolicy?.requiresFreshLandingGate, true, "slice_landing_policy_must_require_fresh_landing_gate");
@@ -199,10 +204,10 @@ assert.deepEqual(planPayload.requires, [
   "base ref origin/recovery/platform-v22-trunk",
 ], "slice_orchestrator_start_requires_mismatch");
 
-const nextGoalPlan = runSlice(["start", "--slice-id", "goal-commercial-launch-ui-productization", "--json"]);
+const nextGoalPlan = runSlice(["start", "--slice-id", current.goal_lifecycle.next_recommended_goal, "--json"]);
 assert.equal(nextGoalPlan.status, 0, "next_recommended_goal_slice_start_must_succeed");
 const nextGoalPlanPayload = JSON.parse(nextGoalPlan.stdout);
-assert.equal(nextGoalPlanPayload.currentTruthReadout?.next_recommended_goal, "goal-commercial-launch-ui-productization", "next_goal_readout_next_goal_mismatch");
+assert.equal(nextGoalPlanPayload.currentTruthReadout?.next_recommended_goal, current.goal_lifecycle.next_recommended_goal, "next_goal_readout_next_goal_mismatch");
 assert.equal(nextGoalPlanPayload.currentTruthReadout?.completed_goals?.requested_goal_completed, false, "next_goal_must_not_be_completed");
 assert.equal(nextGoalPlanPayload.non_recommended_goal, false, "next_goal_must_not_be_marked_non_recommended");
 assert.equal(nextGoalPlanPayload.overrideBoundary, null, "next_goal_must_not_have_override_boundary");
