@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `goal-goal-admission-fresh-current-truth-readout`
-- latest landed commit: `4ea2734fcde0c7ee96fd733800241cd1a2f7b1fe`
+- latest landed branch: `goal-commercial-launch-ui-productization-current`
+- latest landed commit: `3f8e5cf0251d4a29bf6c9528db84a9b1c7e6373e`
 - next cursor: `goal-commercial-runtime-storage-billing-business-closure`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
