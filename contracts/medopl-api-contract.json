@@ -250,7 +250,7 @@
       },
       "operations_safety_boundary": {
         "intent": "production_launch_operations_safety_gate_only",
-        "approval_gate": "workflow_dispatch_plus_github_production_environment",
+        "approval_gate": "workflow_dispatch_plus_github_production_environment_deployment_operations_safety",
         "workflow_input_refs": [
           "confirm_production_launch",
           "rollout_scope",

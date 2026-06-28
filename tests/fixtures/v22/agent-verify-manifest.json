@@ -388,10 +388,10 @@
       "machine_truth_commit_field": "last_landed_commit"
     },
     {
-      "leaf_id": "goal-owner-created-or-approved-account-launch-approval-decision",
-      "gap_id": "goal-owner-created-or-approved-account-launch-approval-decision",
-      "stage": "owner-created-or-approved account launch approval decision after G4 production-canary evidence",
-      "risk_class": "sensitive_boundary",
+      "leaf_id": "goal-commercial-runtime-storage-billing-business-closure",
+      "gap_id": "goal-commercial-runtime-storage-billing-business-closure",
+      "stage": "commercial runtime storage billing business closure",
+      "risk_class": "commercial_billing_boundary",
       "live_external_allowed": false,
       "requires_step_local_auth_record": true,
       "contracts": [
@@ -471,7 +471,8 @@
       ],
       "requires_post_merge_closeout": true,
       "history_truth_file": "docs/history/README.md",
-      "machine_truth_commit_field": "last_landed_commit"
+      "machine_truth_commit_field": "last_landed_commit",
+      "problem": "Commercial business flow is current: account prepare, account approval, credit, plan, open runtime/storage, billing ledger, statement reconciliation, release/destroy/stop billing. Launch approval decision is not the business cursor."
     }
   ],
   "suites": [

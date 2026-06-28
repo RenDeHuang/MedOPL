@@ -37,7 +37,7 @@ on:
           - production_launch
           - g3_diagnostic
       confirm_production_launch:
-        description: One-person production launch approval confirmation. Use deploy-current for production_launch apply.
+        description: One-person deployment operations confirmation. Use deploy-current for production_launch apply.
         required: true
         default: deploy-current
         type: string
@@ -47,7 +47,7 @@ on:
         default: owner-created-or-approved-medopl-accounts
         type: string
       emergency_stop:
-        description: Block production_launch apply when true.
+        description: Block deployment operations apply when true.
         required: true
         default: false
         type: boolean
@@ -317,7 +317,7 @@ jobs:
             --dry-run=client -o yaml \
             | kubectl --kubeconfig "$TENCENT_DEPLOY_KUBECONFIG_REF" --namespace medopl apply -f -
 
-      - name: Validate workflow-dispatch production launch approval
+      - name: Validate workflow-dispatch deployment operations safety
         if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}
         shell: bash
         run: |
@@ -328,29 +328,29 @@ jobs:
           }
           function requiredText(name) {
             const value = String(process.env[name] || "").trim();
-            if (!value) fail(`${name} required for workflow-dispatch production launch approval`);
+            if (!value) fail(`${name} required for workflow-dispatch deployment operations safety`);
             if (/[\r\n]/u.test(value)) fail(`${name} must be single-line`);
             return value;
           }
           const confirmation = requiredText("V22_PRODUCTION_LAUNCH_CONFIRMATION");
-          if (confirmation !== "deploy-current") fail("confirm_production_launch must be deploy-current for production_launch apply");
+          if (confirmation !== "deploy-current") fail("confirm_production_launch must be deploy-current for deployment operations apply");
           const emergencyStopRaw = requiredText("V22_PRODUCTION_LAUNCH_EMERGENCY_STOP_INPUT").toLowerCase();
           if (!["true", "false"].includes(emergencyStopRaw)) fail("emergency_stop must be true or false");
-          if (emergencyStopRaw === "true") fail("emergency_stop=true blocks production_launch apply");
+          if (emergencyStopRaw === "true") fail("emergency_stop=true blocks deployment operations apply");
           for (const name of ["V22_PRODUCTION_LAUNCH_SCOPE_INPUT", "V22_PRODUCTION_LAUNCH_COST_GUARD_REF_INPUT", "V22_PRODUCTION_LAUNCH_OPERATOR_INPUT", "V22_PRODUCTION_LAUNCH_ROLLBACK_REF_INPUT"]) {
             requiredText(name);
           }
           console.log(JSON.stringify({
             ok: true,
-            message: "production launch approval input shape ok",
-            approvalGate: "Cloud Rollout workflow_dispatch plus GitHub production environment approval is the production launch approval gate",
+            message: "deployment operations safety input shape ok",
+            operationsSafetyGate: "Cloud Rollout workflow_dispatch plus GitHub production environment approval is the deployment operations safety gate",
             launchScopeRef: "workflow_dispatch.launch_scope",
             costGuardRefPresent: true,
             rollbackRefPresent: true
           }));
           NODE
 
-      - name: Write production launch approval receipt
+      - name: Write deployment operations safety receipt
         if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}
         shell: bash
         run: |
@@ -360,12 +360,12 @@ jobs:
           const receiptPath = ".runtime/v22-cloud-authorization/run-v22-001/production-launch-approval-receipt.json";
           function text(name) {
             const value = String(process.env[name] || "").trim();
-            if (!value) throw new Error(`${name} missing for production launch approval receipt`);
+            if (!value) throw new Error(`${name} missing for deployment operations safety receipt`);
             return value;
           }
           const receipt = {
-            "kind": "medopl_production_launch_approval_receipt",
-            "approvalGate": "workflow_dispatch_plus_github_production_environment",
+            "kind": "medopl_deployment_operations_safety_receipt",
+            "operationsSafetyGate": "workflow_dispatch_plus_github_production_environment_deployment_operations_safety",
             "confirmation": text("V22_PRODUCTION_LAUNCH_CONFIRMATION"),
             "rolloutScope": text("MEDOPL_ROLLOUT_SCOPE"),
             "launchScope": text("V22_PRODUCTION_LAUNCH_SCOPE_INPUT"),
@@ -385,7 +385,7 @@ jobs:
           };
           mkdirSync(dirname(receiptPath), { recursive: true });
           writeFileSync(receiptPath, `${JSON.stringify(receipt, null, 2)}\n`);
-          console.log(JSON.stringify({ ok: true, receiptPath, approvalGate: receipt.approvalGate }));
+          console.log(JSON.stringify({ ok: true, receiptPath, operationsSafetyGate: receipt.operationsSafetyGate }));
           NODE
 
       - name: Validate in-cluster database secret shape

@@ -23,7 +23,7 @@
       "contracts/medopl-production-receipt-boundary.json"
     ]
   },
-  "last_updated_at": "2026-06-26",
+  "last_updated_at": "2026-06-28",
   "model": "gpt-5.4",
   "branch_baseline": "origin/recovery/platform-v22-trunk",
   "current_branch": "opl-webui-runtime-production-slice",
@@ -62,20 +62,20 @@
       "folded": "Figma Commercial Launch admin account billing modules into Admin Users backed by v22 business account credit ledger billing statement runtime freeze and runtime gate endpoints",
       "retained": "/api/admin/actions only for non-commercial admin settings user profile toggle delete announcements and billing ops",
       "reason": "commercial account operations must use owner-created-or-approved MedOPL account plus plan balance quota truth and real v22 business ledger",
-      "next": "owner-created-or-approved account launch approval decision can proceed without claiming external PSP real cloud execution from this UI slice full production selected allowlist admission or projection-only fallback"
+      "next": "commercial runtime/storage billing business closure continues with upload_file billing event writeback fix; the former launch-decision cursor is retired from the business path and retained only as deployment operations safety provenance"
     },
     "post_merge_closeout": "completed",
-    "next_cursor": "goal-owner-created-or-approved-account-launch-approval-decision"
+    "next_cursor": "goal-commercial-runtime-storage-billing-business-closure"
   },
-  "current_cursor": "goal-owner-created-or-approved-account-launch-approval-decision",
-  "next_leaf": "goal-owner-created-or-approved-account-launch-approval-decision",
-  "current_stage": "owner-created-or-approved account launch approval decision after G4 production-canary evidence",
-  "current_risk_class": "sensitive_boundary",
+  "current_cursor": "goal-commercial-runtime-storage-billing-business-closure",
+  "next_leaf": "goal-commercial-runtime-storage-billing-business-closure",
+  "current_stage": "commercial runtime storage billing business closure",
+  "current_risk_class": "commercial_billing_boundary",
   "current_blockers": [
-    "owner_created_or_approved_account_launch_approval_decision_required",
+    "upload_file_billing_event_writeback_failed_in_commercial_billing_path",
     "external_psp_multi_region_sla_enterprise_compliance_ongoing_authorization_and_unrestricted_full_production_remain_unclaimed"
   ],
-  "current_problem": "MedOPL current truth for goal-owner-created-or-approved-account-launch-approval-decision within opl-webui-runtime-production-slice is a SaaS control plane for OPL-Webui logged-in users to open runtime and storage in the current workspace, upload files, run OPL tasks, receive artifacts, release runtime and stop billing, with optional storage destruction. It does not own OPL research capabilities. The latest local product RC remains feat/v22-local-product-rc-single-flow at 4f195820dcb351030cb1064172bfec2062abc279. The latest repo/gate closeout is goal-admin-account-commercial-ledger-ui-closure at 51c6e0fb347bc59a1b0ccfe29a0481cf6870dfbd. Release Image run 28286560942 built image tag 0f7c80b. Cloud Rollout production_launch run 28286621467 passed deploy receipt, OPL-Webui consumer canary, availability probe, soak, concurrency pressure, rollback drill, continuous canary, alerting, final release decision, production receipt manifest, verify:cloud-release-candidate and verify:production-complete-candidate. The redacted receipt manifest hash is sha256:16fb4289f3dd91543f083b1c1ad773e44be6d5a74f76a56b417b39974bca4612. The current authorized production-canary path can proceed to owner-created-or-approved account launch approval decision. Cost ceiling for business claims comes from account balance, plan hold amount and quota. Cloud Rollout workflow_dispatch plus GitHub production environment approval plus confirm_production_launch=deploy-current is the one-person production launch approval gate; production launch approval is not business admission, recharge, quota, cost ceiling or billing truth. External PSP settlement, full OPL-Webui resume implementation, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-admin-account-commercial-ledger-ui-closure at 51c6e0fb347bc59a1b0ccfe29a0481cf6870dfbd.",
+  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-admin-account-commercial-ledger-ui-closure at 51c6e0fb347bc59a1b0ccfe29a0481cf6870dfbd. Release Image run 28310282648 built image tag 235ea17 and Cloud Rollout run 28310293188 deployed it through rollout apply and deploy receipt; public availability probe passed, but OPL-Webui consumer canary failed closed at upload_file billing ledger writeback with errorCategory billing_event_write_failed and dbOperationStage save_billing_event. The current blocker is upload_file billing event writeback in the commercial billing path, not launch approval governance. Cloud Rollout workflow_dispatch and GitHub production environment approval remain deployment operations safety only; they are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -240,11 +240,11 @@
     }
   ],
   "current_leaf": {
-    "step_id": "goal-owner-created-or-approved-account-launch-approval-decision",
-    "gap_id": "goal-owner-created-or-approved-account-launch-approval-decision",
-    "stage": "owner-created-or-approved account launch approval decision after G4 production-canary evidence",
-    "cursor_eligible": false,
-    "problem": "Decide whether to open the authorized production-canary path to owner-created-or-approved MedOPL accounts using 0f7c80b evidence, without expanding to external PSP, unrestricted full production, multi-region/SLA, enterprise compliance, ongoing authorization or long-term stability claims.",
+    "step_id": "goal-commercial-runtime-storage-billing-business-closure",
+    "gap_id": "goal-commercial-runtime-storage-billing-business-closure",
+    "stage": "commercial runtime storage billing business closure",
+    "cursor_eligible": true,
+    "problem": "Fix and prove the commercial business flow account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. Current production-canary evidence fails closed at upload_file billing event writeback, so the next repo-change slice must fix save_billing_event without bypassing billing/audit.",
     "verification_commands": [
       "node scripts/v22-verify.mjs active-platform --json",
       "node tests/product/product-test-v22-medopl-contract-authority.mjs",
@@ -299,7 +299,7 @@
       "tests/fixtures/v22/goal-current.json",
       "tests/fixtures/v22/agent-verify-manifest.json"
     ],
-    "latest_local_evidence": "Cloud Rollout production_launch run 28286621467 / receipt manifest hash sha256:16fb4289f3dd91543f083b1c1ad773e44be6d5a74f76a56b417b39974bca4612"
+    "latest_local_evidence": "Release Image run 28310282648 built image tag 235ea17; Cloud Rollout run 28310293188 applied deployment and deploy receipt, public availability passed, OPL-Webui consumer canary failed at upload_file billing_event_write_failed save_billing_event"
   },
   "release_readiness_state": {
     "status": "cloud_release_candidate_evidence_present_production_complete_fail_closed",
@@ -1176,7 +1176,7 @@
     "schema_version": 1,
     "status": "gap6_local_controlled_business_closure_landed",
     "owner_surface": "MedOPL control plane / OPL-Webui consumer boundary",
-    "next_cursor": "goal-external-psp-settlement-boundary",
+    "next_cursor": "goal-commercial-upload-file-billing-writeback-fix",
     "gaps": [
       {
         "gap_id": "gap1",
@@ -1261,8 +1261,8 @@
     "schema_version": 1,
     "status": "g2_landed_local_closeout",
     "business_truth": "MedOPL is the OPL-Webui cloud SaaS resource control plane; commercial admission is account-approved plus plan/balance/quota, not selected allowlist or cloud rollout governance.",
-    "active_cursor": "goal-g3-real-cloud-runtime-storage-proof",
-    "next_cursor": "goal-g4-production-deployment-proof",
+    "active_cursor": "goal-commercial-runtime-storage-billing-business-closure",
+    "next_cursor": "goal-commercial-upload-file-billing-writeback-fix",
     "goals": [
       {
         "goal_id": "G1",

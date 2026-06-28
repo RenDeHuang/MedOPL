@@ -392,7 +392,7 @@ assert.deepEqual(
 );
 assert.equal(
   operationsSafety.approval_gate,
-  "workflow_dispatch_plus_github_production_environment",
+  "workflow_dispatch_plus_github_production_environment_deployment_operations_safety",
   "runtime_gate_operations_safety_approval_gate_mismatch",
 );
 assert(

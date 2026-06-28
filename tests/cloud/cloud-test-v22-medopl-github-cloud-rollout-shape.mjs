@@ -184,7 +184,7 @@ for (const expected of [
   assert(envNames.has(expected), `container_env_missing:${expected}`);
 }
 for (const name of ["MEDOPL_PRODUCTION_LAUNCH_ENABLED", "MEDOPL_PRODUCTION_EMERGENCY_STOP", "MEDOPL_PRODUCTION_LAUNCH_SCOPE", "MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID", "MEDOPL_PRODUCTION_SYNTHETIC_USER_ID", "MEDOPL_PRODUCTION_COST_GUARD_REF", "MEDOPL_PRODUCTION_LAUNCH_ENABLED_BY", "MEDOPL_PRODUCTION_MONITORING_OWNER", "MEDOPL_PRODUCTION_ROLLBACK_OWNER", "MEDOPL_PRODUCTION_DISABLE_COMMAND_REF"]) {
-  assert.equal(envNames.has(name), false, `production_launch_approval_must_not_be_control_plane_runtime_env:${name}`);
+  assert.equal(envNames.has(name), false, `deployment_operations_safety_must_not_be_control_plane_runtime_env:${name}`);
 }
 assert.equal(manifestSource.includes("medopl-production-launch-safety"), false, "deploy_manifest_must_not_reference_production_launch_safety_secret");
 assert.equal(manifestSource.includes("MEDOPL_CANARY_"), false, "deploy_manifest_must_not_reference_legacy_canary_safety_env");
@@ -529,8 +529,8 @@ for (const expected of [
   "npm run cloud:goal -- --operation storage_lifecycle",
   "npm run cloud:goal -- --operation billing_audit_writeback",
   "Create deploy plan",
-  "Validate workflow-dispatch production launch approval",
-  "Write production launch approval receipt",
+  "Validate workflow-dispatch deployment operations safety",
+  "Write deployment operations safety receipt",
   "npm run cloud:goal:preflight -- --operation kubectl",
   "npm run cloud:goal:preflight -- --operation deploy",
   "npm run cloud:goal:preflight -- --operation live_test",
@@ -685,20 +685,20 @@ assert(
   "production_apply_must_sync_auth_boundary_hashes_without_printing_secret",
 );
 assert(
-  productionApplyJob.includes("Validate workflow-dispatch production launch approval") &&
-    productionApplyJob.includes("confirm_production_launch must be deploy-current for production_launch apply") &&
-    productionApplyJob.includes("Cloud Rollout workflow_dispatch plus GitHub production environment approval is the production launch approval gate") &&
-    productionApplyJob.includes("emergency_stop=true blocks production_launch apply") &&
-    productionApplyJob.includes("production launch approval input shape ok") &&
+  productionApplyJob.includes("Validate workflow-dispatch deployment operations safety") &&
+    productionApplyJob.includes("confirm_production_launch must be deploy-current for deployment operations apply") &&
+    productionApplyJob.includes("Cloud Rollout workflow_dispatch plus GitHub production environment approval is the deployment operations safety gate") &&
+    productionApplyJob.includes("emergency_stop=true blocks deployment operations apply") &&
+    productionApplyJob.includes("deployment operations safety input shape ok") &&
     !productionApplyJob.includes("MEDOPL_PRODUCTION_LAUNCH_ENABLED required") &&
     !productionApplyJob.includes("MEDOPL_PRODUCTION_SYNTHETIC_TENANT_ID required") &&
     !productionApplyJob.includes("MEDOPL_PRODUCTION_SYNTHETIC_USER_ID required"),
   "production_apply_must_validate_workflow_dispatch_approval_without_github_production_vars",
 );
 assert(
-  productionApplyJob.includes("Write production launch approval receipt") &&
+  productionApplyJob.includes("Write deployment operations safety receipt") &&
     productionApplyJob.includes("production-launch-approval-receipt.json") &&
-    productionApplyJob.includes("\"approvalGate\": \"workflow_dispatch_plus_github_production_environment\"") &&
+    productionApplyJob.includes("\"operationsSafetyGate\": \"workflow_dispatch_plus_github_production_environment_deployment_operations_safety\"") &&
     productionApplyJob.includes("\"businessAdmission\": \"account_approved_plan_balance_quota\"") &&
     productionApplyJob.includes("\"costGuardRef\"") &&
     !productionApplyJob.includes("create secret generic medopl-production-launch-safety"),
@@ -740,9 +740,9 @@ assert(
   "production_apply_must_validate_incluster_database_auth_after_dependencies_before_goal_f_receipts",
 );
 assert(
-  productionApplyJob.indexOf("Sync in-cluster auth boundary secret from production source") < productionApplyJob.indexOf("Validate workflow-dispatch production launch approval") &&
-    productionApplyJob.indexOf("Validate workflow-dispatch production launch approval") < productionApplyJob.indexOf("Write production launch approval receipt") &&
-    productionApplyJob.indexOf("Write production launch approval receipt") < productionApplyJob.indexOf("Create Goal F receipt inputs"),
+  productionApplyJob.indexOf("Sync in-cluster auth boundary secret from production source") < productionApplyJob.indexOf("Validate workflow-dispatch deployment operations safety") &&
+    productionApplyJob.indexOf("Validate workflow-dispatch deployment operations safety") < productionApplyJob.indexOf("Write deployment operations safety receipt") &&
+    productionApplyJob.indexOf("Write deployment operations safety receipt") < productionApplyJob.indexOf("Create Goal F receipt inputs"),
   "production_apply_must_record_workflow_dispatch_approval_before_goal_f_receipts_and_rollout",
 );
 assert(

@@ -117,6 +117,44 @@ assert(manifestCurrentLeaf, "manifest_current_leaf_missing");
 assert.equal(current.current_leaf?.step_id, current.current_cursor, "current_leaf_step_must_match_current_cursor");
 assert.equal(manifestCurrentLeaf.gap_id, current.current_leaf?.gap_id, "manifest_current_leaf_gap_must_match_current_fixture");
 assert.equal(manifestCurrentLeaf.stage, current.current_leaf?.stage, "manifest_current_leaf_stage_must_match_current_fixture");
+assert.equal(
+  current.current_cursor,
+  "goal-commercial-runtime-storage-billing-business-closure",
+  "current_cursor_must_follow_commercial_business_flow_not_launch_approval",
+);
+assert.equal(
+  current.next_leaf,
+  "goal-commercial-runtime-storage-billing-business-closure",
+  "next_leaf_must_follow_commercial_business_flow_not_launch_approval",
+);
+const retiredApprovalDecisionPhrase = ["launch", "approval", "decision"].join(" ");
+const retiredApprovalDecisionId = ["launch", "approval", "decision"].join("-");
+for (const forbidden of [retiredApprovalDecisionPhrase, retiredApprovalDecisionId]) {
+  assertNotIncludes(current.current_cursor, forbidden, "current_cursor_must_not_be_launch_approval");
+  assertNotIncludes(current.current_stage, forbidden, "current_stage_must_not_be_launch_approval");
+}
+for (const marker of [
+  "account prepare",
+  "account approval",
+  "credit",
+  "plan",
+  "open runtime/storage",
+  "billing ledger",
+  "statement reconciliation",
+]) {
+  assertIncludes(current.current_problem, marker, "current_problem_must_state_commercial_business_flow");
+  assertIncludes(activeTruth, marker, "active_truth_must_state_commercial_business_flow");
+}
+assertNotIncludes(
+  current.current_problem,
+  `can proceed to owner-created-or-approved account ${retiredApprovalDecisionPhrase}`,
+  "current_problem_must_not_route_business_flow_to_launch_approval",
+);
+assertNotIncludes(
+  activeTruth,
+  `can proceed to \`goal-owner-created-or-approved-account-${retiredApprovalDecisionId}\``,
+  "active_truth_must_not_route_business_flow_to_launch_approval",
+);
 
 const lastLandedCommit = current.last_landed_commit;
 assert.match(lastLandedCommit, /^[0-9a-f]{40}$/u, "current_last_landed_commit_must_be_full_sha");
