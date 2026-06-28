@@ -70,6 +70,44 @@
         "insufficient_balance_policy"
       ]
     },
+    "payment_ledger_relationship": {
+      "intent": "separate_real_funds_payment_ledger_from_resource_usage_billing_ledger",
+      "payment_ledger_responsibility": [
+        "payment_order",
+        "payment_intent",
+        "provider_verified_payment",
+        "settlement_event",
+        "refund_event",
+        "invoice_metadata",
+        "payment_reconciliation"
+      ],
+      "billing_ledger_responsibility": [
+        "account_balance",
+        "credit",
+        "hold",
+        "debit",
+        "release",
+        "resource_usage",
+        "statement",
+        "release_destroy_stop_billing"
+      ],
+      "join_refs": [
+        "account_id",
+        "workspace_id",
+        "statement_id",
+        "payment_order_id",
+        "provider_event_ref",
+        "ledger_event_id"
+      ],
+      "current_mode": "admin_credit_internal_ledger_only",
+      "future_mode": "external_psp_adapter_and_verified_settlement_requires_separate_authorized_goal",
+      "cannot_claim": [
+        "external_psp_settlement",
+        "real_payment_completed",
+        "refund_completed_against_external_provider",
+        "invoice_tax_compliance_complete"
+      ]
+    },
     "must_fail_closed_on": [
       "negative_balance_without_policy",
       "missing_source_event",

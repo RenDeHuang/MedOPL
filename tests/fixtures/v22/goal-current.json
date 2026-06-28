@@ -898,7 +898,7 @@
   ],
   "nextAuthorizationPrompt": {
     "target": "local-codex",
-    "runIdHint": "commercial-production-maturity-gap",
+    "runIdHint": "commercial-payment-admin-api-maturity",
     "prompt": "当前授权 commercial business-flow canary 已通过。下一步不是重开 business closure，而是按 commercial production maturity gap roadmap 推进第一项 goal-commercial-payment-admin-api-maturity；不触云、不 claim external PSP/real payment/refund/invoice/tax/compliance，除非单独授权。"
   },
   "nextLocalCodexPrompt": {
@@ -1536,20 +1536,59 @@
       {
         "id": "payment_psp_admin_payment_api",
         "label": "Payment / PSP / admin payment API",
-        "current_truth": "admin recharge and internal credit ledger passed; external PSP and real settlement remain non-goal",
-        "gap": "no provider-verified payment intent, callback, settlement, refund, invoice, tax or compliance workflow",
-        "minimum_evidence_slice": "admin payment API boundary that separates internal credit from future PSP adapter and preserves cannotClaim for real settlement",
+        "current_truth": "internal admin credit + billing ledger + statement reconciliation + release/destroy/stop billing passed; Payment/Admin Payment API maturity boundary is now fixed as contract-only without external PSP settlement claim",
+        "gap": "external PSP adapter, provider-verified settlement, provider refund, invoice issuance and tax/compliance workflow remain future goals",
+        "minimum_evidence_slice": "Payment/Admin Payment API maturity contract separates internal admin credit from future PSP adapter, defines payment vs billing ledger reconciliation refs, and preserves cannotClaim for real settlement",
         "repo_change_required": true,
         "cloud_execute_required": false,
         "canClaim": [
-          "internal admin credit production mode remains explicit"
+          "payment_admin_api_maturity_contract",
+          "internal_admin_credit_mode_explicit",
+          "payment_vs_billing_ledger_boundary"
         ],
         "cannotClaim": [
           "external PSP settlement",
           "real payment completed",
           "refund / invoice / tax / compliance"
         ],
-        "status": "gap"
+        "status": "completed_retired",
+        "closeout_goal": "goal-commercial-payment-admin-api-maturity",
+        "payment_boundary": "admin_credit_internal_mode_only_future_psp_contract_without_real_settlement_claim",
+        "payment_ledger_responsibility": [
+          "payment order",
+          "payment intent",
+          "provider config",
+          "PSP webhook intake",
+          "settlement event",
+          "refund event",
+          "invoice metadata",
+          "payment reconciliation",
+          "admin payment operation audit"
+        ],
+        "billing_ledger_responsibility": [
+          "account balance",
+          "credit",
+          "hold",
+          "debit",
+          "usage statement",
+          "release/destroy/stop billing"
+        ],
+        "reconciliation_refs": [
+          "account",
+          "statement",
+          "payment order",
+          "provider event ref",
+          "ledger event"
+        ],
+        "implementation_roadmap": [
+          "payment contract",
+          "admin payment UI/API",
+          "PSP adapter",
+          "webhook verification",
+          "reconciliation",
+          "refund/invoice",
+          "docs"
+        ]
       },
       {
         "id": "deploy_package_compose_install_upgrade_uninstall_systemd",
@@ -1694,7 +1733,19 @@
         "order": 1,
         "reason": "Payment/admin API boundary is the highest business-risk maturity gap because internal credit is proven but external PSP, real payment, refund, invoice, tax and compliance remain cannotClaim.",
         "owner_surface": "contracts/medopl-api-contract.json, contracts/medopl-billing-ledger-contract.json, Go backend billing API tests, Portal admin billing ops UI tests",
-        "verification_lane": "landing_local_no_cloud"
+        "verification_lane": "landing_local_no_cloud",
+        "status": "completed_retired",
+        "closeout_goal": "goal-commercial-payment-admin-api-maturity",
+        "canClaim": [
+          "payment_admin_api_maturity_contract",
+          "internal_admin_credit_mode_explicit",
+          "payment_vs_billing_ledger_boundary"
+        ],
+        "cannotClaim": [
+          "external PSP settlement",
+          "real payment completed",
+          "refund / invoice / tax / compliance"
+        ]
       },
       {
         "goal_id": "goal-commercial-ops-install-package-maturity",
@@ -1745,7 +1796,7 @@
         "verification_lane": "frontend_runtime_local_no_cloud"
       }
     ],
-    "next_recommended_goal": "goal-commercial-payment-admin-api-maturity",
+    "next_recommended_goal": "goal-commercial-ops-install-package-maturity",
     "cannot_expand_to": [
       "business closure gap",
       "cloud deployment proof without authorization",

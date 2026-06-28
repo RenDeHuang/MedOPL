@@ -96,6 +96,107 @@
         "full_production_complete"
       ]
     },
+    "payment_admin_api_maturity": {
+      "intent": "payment_admin_api_maturity_boundary_without_external_psp_settlement_claim",
+      "current_truth": [
+        "internal_credit_billing_ledger_statement_reconciliation_release_destroy_stop_billing_passed",
+        "external_psp_settlement_not_completed",
+        "real_payment_refund_invoice_tax_compliance_not_completed"
+      ],
+      "required_surfaces": [
+        "payment_order",
+        "payment_intent",
+        "payment_provider_config",
+        "psp_webhook_intake",
+        "settlement_event",
+        "refund_event",
+        "invoice_metadata",
+        "payment_reconciliation",
+        "admin_payment_operation_audit"
+      ],
+      "routes": [
+        "POST /api/v22/billing/payment-orders",
+        "POST /api/v22/billing/payment-paid",
+        "POST /api/v22/billing/refund",
+        "POST /api/v22/billing/adjustment",
+        "GET /api/v22/billing/statement"
+      ],
+      "payment_ledger": {
+        "owner": "future_payment_provider_settlement_boundary",
+        "responsibilities": [
+          "payment_intent",
+          "provider_verified_payment",
+          "settlement_event",
+          "refund_event",
+          "invoice_metadata",
+          "payment_reconciliation_refs"
+        ],
+        "state": "contract_boundary_only_not_connected_to_external_psp"
+      },
+      "billing_ledger": {
+        "owner": "medopl_resource_usage_billing_boundary",
+        "responsibilities": [
+          "account_balance",
+          "credit",
+          "hold",
+          "debit",
+          "release",
+          "usage",
+          "statement",
+          "release_destroy_stop_billing"
+        ],
+        "state": "active_internal_credit_and_resource_usage_ledger"
+      },
+      "reconciliation_refs": [
+        "account_id",
+        "workspace_id",
+        "statement_id",
+        "payment_order_id",
+        "provider_event_ref",
+        "ledger_event_id"
+      ],
+      "admin_operation_audit": {
+        "required": true,
+        "event_kinds": [
+          "payment_order_created",
+          "admin_credit_recorded",
+          "payment_mark_paid_recorded",
+          "refund_recorded",
+          "adjustment_recorded",
+          "payment_reconciliation_recorded"
+        ],
+        "boundary": "admin_operation_audit_records_operator_action_without_claiming_provider_settlement"
+      },
+      "mock_payment_policy": "mock_or_admin_credit_must_not_claim_real_payment",
+      "secret_boundary": "provider_secret_refs_only_no_raw_secret_in_contract_or_ui",
+      "forbidden_response_fields": [
+        "cardNumber",
+        "bankAccount",
+        "paymentProviderSecret",
+        "rawProviderWebhookSecret"
+      ],
+      "can_claim": [
+        "payment_admin_api_maturity_contract",
+        "internal_admin_credit_mode_explicit",
+        "payment_vs_billing_ledger_boundary"
+      ],
+      "cannot_claim": [
+        "external_psp_settlement",
+        "real_payment_completed",
+        "refund_completed_against_external_provider",
+        "invoice_tax_compliance_complete",
+        "tax_compliance_complete"
+      ],
+      "implementation_roadmap": [
+        "payment contract",
+        "admin payment UI/API",
+        "PSP adapter",
+        "webhook verification",
+        "reconciliation",
+        "refund/invoice",
+        "docs"
+      ]
+    },
     "runtime_gate": {
       "route": "POST /api/opl/runtime-gate",
       "product_owner": "medopl",

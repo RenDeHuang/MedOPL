@@ -170,6 +170,114 @@ assert(
     !serviceSurface.includes("case \"prepared\", \"approved\", \"active\", \"provisioned\""),
   "prepared_account_must_not_be_treated_as_approved",
 );
+const paymentAdminMaturity = apiContract.medopl_api_contract.payment_admin_api_maturity;
+assert(paymentAdminMaturity, "api_contract_payment_admin_api_maturity_missing");
+assert.equal(
+  paymentAdminMaturity.intent,
+  "payment_admin_api_maturity_boundary_without_external_psp_settlement_claim",
+  "payment_admin_maturity_intent_mismatch",
+);
+assert.deepEqual(
+  paymentAdminMaturity.current_truth,
+  [
+    "internal_credit_billing_ledger_statement_reconciliation_release_destroy_stop_billing_passed",
+    "external_psp_settlement_not_completed",
+    "real_payment_refund_invoice_tax_compliance_not_completed",
+  ],
+  "payment_admin_current_truth_mismatch",
+);
+assert.deepEqual(
+  paymentAdminMaturity.required_surfaces,
+  [
+    "payment_order",
+    "payment_intent",
+    "payment_provider_config",
+    "psp_webhook_intake",
+    "settlement_event",
+    "refund_event",
+    "invoice_metadata",
+    "payment_reconciliation",
+    "admin_payment_operation_audit",
+  ],
+  "payment_admin_required_surfaces_mismatch",
+);
+assert.deepEqual(
+  paymentAdminMaturity.routes,
+  [
+    "POST /api/v22/billing/payment-orders",
+    "POST /api/v22/billing/payment-paid",
+    "POST /api/v22/billing/refund",
+    "POST /api/v22/billing/adjustment",
+    "GET /api/v22/billing/statement",
+  ],
+  "payment_admin_routes_mismatch",
+);
+assert.equal(paymentAdminMaturity.payment_ledger.owner, "future_payment_provider_settlement_boundary", "payment_ledger_owner_mismatch");
+assert.deepEqual(
+  paymentAdminMaturity.payment_ledger.responsibilities,
+  [
+    "payment_intent",
+    "provider_verified_payment",
+    "settlement_event",
+    "refund_event",
+    "invoice_metadata",
+    "payment_reconciliation_refs",
+  ],
+  "payment_ledger_responsibilities_mismatch",
+);
+assert.equal(paymentAdminMaturity.billing_ledger.owner, "medopl_resource_usage_billing_boundary", "billing_ledger_owner_mismatch");
+assert.deepEqual(
+  paymentAdminMaturity.billing_ledger.responsibilities,
+  [
+    "account_balance",
+    "credit",
+    "hold",
+    "debit",
+    "release",
+    "usage",
+    "statement",
+    "release_destroy_stop_billing",
+  ],
+  "billing_ledger_responsibilities_mismatch",
+);
+assert.deepEqual(
+  paymentAdminMaturity.reconciliation_refs,
+  ["account_id", "workspace_id", "statement_id", "payment_order_id", "provider_event_ref", "ledger_event_id"],
+  "payment_admin_reconciliation_refs_mismatch",
+);
+assert.deepEqual(
+  paymentAdminMaturity.can_claim,
+  [
+    "payment_admin_api_maturity_contract",
+    "internal_admin_credit_mode_explicit",
+    "payment_vs_billing_ledger_boundary",
+  ],
+  "payment_admin_can_claim_mismatch",
+);
+for (const claim of [
+  "external_psp_settlement",
+  "real_payment_completed",
+  "refund_completed_against_external_provider",
+  "invoice_tax_compliance_complete",
+]) {
+  assert(paymentAdminMaturity.cannot_claim.includes(claim), `payment_admin_cannot_claim_missing:${claim}`);
+}
+assert.equal(paymentAdminMaturity.mock_payment_policy, "mock_or_admin_credit_must_not_claim_real_payment", "payment_admin_mock_policy_mismatch");
+assert.equal(paymentAdminMaturity.secret_boundary, "provider_secret_refs_only_no_raw_secret_in_contract_or_ui", "payment_admin_secret_boundary_mismatch");
+for (const forbidden of ["cardNumber", "bankAccount", "paymentProviderSecret", "rawProviderWebhookSecret"]) {
+  assert(paymentAdminMaturity.forbidden_response_fields.includes(forbidden), `payment_admin_forbidden_field_missing:${forbidden}`);
+}
+for (const marker of [
+  "func (service *Service) CreatePaymentOrder",
+  "func (service *Service) MarkPaymentPaid",
+  "func (service *Service) RefundBusinessAccount",
+  "func (service *Service) AdjustBusinessAccount",
+]) {
+  assert(serviceSurface.includes(marker), `payment_admin_service_marker_missing:${marker}`);
+}
+for (const route of paymentAdminMaturity.routes) {
+  assert(goRouteSurface.includes(route.replace("POST /api", "").replace("GET /api", "")), `payment_admin_route_missing:${route}`);
+}
 assert(runtimeGate.commercial_action_contract, "runtime_gate_commercial_action_contract_missing");
 assert.deepEqual(
   runtimeGate.commercial_action_contract.actions,

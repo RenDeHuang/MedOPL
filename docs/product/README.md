@@ -94,7 +94,9 @@ Go backend 是 MedOPL control-plane business truth 的本地 MVP takeover 承载
 
 当前 business-flow 已完成，不再重开 business closure gap。当前 canClaim 只有：authorized commercial business-flow cloud canary passed；internal credit + billing ledger + statement reconciliation + release/destroy/stop billing passed；Commercial Launch UI absorbed。当前 cannotClaim 仍包括 external PSP settlement、real payment completed、refund / invoice / tax / compliance、unscoped full production、all users/all tenants、SLA/multi-region/ongoing authorization。
 
-临时 commercial production maturity gap 由 `tests/fixtures/v22/goal-current.json` 持有机器矩阵。矩阵参考 OPL ordinary path 的 consumer bridge/deeplink/projection 边界，以及 sub2api-style 成熟项目结构里的 packaging、install、config、release、CI/security 和 operations 维度；这些只是工程成熟度参考，不改变 MedOPL 的业务 truth，也不把 MedOPL 写成 OPL-Webui 本体或外部 PSP。推荐路线从 `goal-commercial-payment-admin-api-maturity` 开始，先固定 internal admin credit 与 future PSP/payment/refund/invoice/tax/compliance 的边界，再进入 install package、setup wizard、release metadata、CI/security、operations runbook、billing incident、ops sidecar 和 OPL-Webui bridge maturity。
+临时 commercial production maturity gap 由 `tests/fixtures/v22/goal-current.json` 持有机器矩阵。矩阵参考 OPL ordinary path 的 consumer bridge/deeplink/projection 边界，以及 sub2api-style 成熟项目结构里的 packaging、install、config、release、CI/security 和 operations 维度；这些只是工程成熟度参考，不改变 MedOPL 的业务 truth，也不把 MedOPL 写成 OPL-Webui 本体或外部 PSP。
+
+Payment / Admin Payment API maturity boundary 已固定：当前 production mode 仍是 owner/admin recharge 或 internal credit；Payment ledger 只作为真实资金流的未来边界，负责 payment order、payment intent、provider config、PSP webhook intake、settlement event、refund event、invoice metadata、payment reconciliation 和 admin payment operation audit。Billing ledger 继续负责资源使用流：account balance、credit、hold、debit、usage statement、release/destroy/stop billing。两者通过 account、statement、payment order、provider event ref 和 ledger event refs 对齐。当前不能 claim external PSP settlement、real payment completed、provider refund completed、invoice issuance 或 tax/compliance complete。下一步推荐进入 `goal-commercial-ops-install-package-maturity`。
 
 ## Optional Resource Lifecycle
 
