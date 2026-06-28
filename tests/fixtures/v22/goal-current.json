@@ -33,45 +33,47 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "goal-commercial-business-flow-local-rc-revalidation",
-    "landed_commit": "65673b1e2713104134fdc6e9ea8c6fb80382a50f",
+    "branch": "goal-authorized-commercial-launch-cloud-canary",
+    "landed_commit": "3de36577f91fd5b6978cf2fc4cdc2c91c0b831a2",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
-      "npm run test:run-plan -- --dry-run --json passed",
+      "Release Image run 28322335961 passed for image tag 3de3657",
+      "Cloud Rollout production_launch run 28322350847 passed with OPL-Webui consumer canary availability billing/audit release receipts and receipt manifest",
+      "redacted receipt manifest artifact 7934630167 restored to .runtime and hashed sha256:ea854000438638a7b906bc5a7ddd66005e4608c5298c15ad7b3ef7a52acaab8e",
+      "npm run verify:cloud-release-candidate passed",
+      "npm run verify:production-complete-candidate passed",
       "npm run verify passed",
-      "npm run test:frontend passed",
-      "npm run test:backend passed",
-      "npm run verify:local-release-candidate passed",
-      "npm run gate:review -- --slice-id goal-commercial-business-flow-local-rc-revalidation passed",
-      "npm run repo:bloat -- --diff --slice-id goal-commercial-business-flow-local-rc-revalidation passed",
+      "npm run gate:review -- --slice-id goal-authorized-commercial-launch-cloud-canary passed",
+      "npm run repo:bloat -- --diff --slice-id goal-authorized-commercial-launch-cloud-canary passed",
       "npm run line:budget passed"
     ],
     "canClaim": [
-      "Commercial Launch UI plus typed API plus Go backend plus business ledger local RC revalidated",
-      "account approval credit plan balance quota runtime storage upload run artifact billing statement reconciliation release destroy stop billing are covered by local lanes",
-      "unsupported claims and projection-only mock-only commercial paths remain blocked"
+      "authorized commercial launch cloud canary passed for current trunk 3de3657",
+      "Release Image 28322335961 and Cloud Rollout production_launch 28322350847 completed successfully",
+      "OPL-Webui consumer canary availability billing audit release destroy stop billing and redacted receipt manifest gates passed",
+      "verify:cloud-release-candidate and verify:production-complete-candidate passed against restored redacted manifest"
     ],
     "cannotClaim": [
-      "cloud executed",
-      "build/push/deploy/live-test executed",
-      "production complete",
+      "production complete product claim",
       "external PSP settlement",
       "unscoped full production",
       "all users/all tenants",
       "SLA/multi-region",
       "ongoing authorization",
-      "enterprise compliance"
+      "enterprise compliance",
+      "future mutations without separate authorization"
     ],
     "verification": {
       "risk_class": "commercial_billing_boundary",
       "commands": [
-        "npm run test:run-plan -- --dry-run --json passed",
+        "Release Image run 28322335961 passed for image tag 3de3657",
+        "Cloud Rollout production_launch run 28322350847 passed with OPL-Webui consumer canary availability billing/audit release receipts and receipt manifest",
+        "redacted receipt manifest artifact 7934630167 restored to .runtime and hashed sha256:ea854000438638a7b906bc5a7ddd66005e4608c5298c15ad7b3ef7a52acaab8e",
+        "npm run verify:cloud-release-candidate passed",
+        "npm run verify:production-complete-candidate passed",
         "npm run verify passed",
-        "npm run test:frontend passed",
-        "npm run test:backend passed",
-        "npm run verify:local-release-candidate passed",
-        "npm run gate:review -- --slice-id goal-commercial-business-flow-local-rc-revalidation passed",
-        "npm run repo:bloat -- --diff --slice-id goal-commercial-business-flow-local-rc-revalidation passed",
+        "npm run gate:review -- --slice-id goal-authorized-commercial-launch-cloud-canary passed",
+        "npm run repo:bloat -- --diff --slice-id goal-authorized-commercial-launch-cloud-canary passed",
         "npm run line:budget passed"
       ],
       "result": "passed"
@@ -85,11 +87,11 @@
       "cannot_claim": "done"
     },
     "cleanup_result": {
-      "deleted": "old product blocker wording in docs/product/README.md",
-      "folded": "commercial local RC evidence into product test lane and current manifest",
-      "retained": "business closure cursor and cloud operations substrate as separate authorization boundary",
-      "reason": "Goal A local RC passed and should retire from active blocker while preserving no-cloud boundary",
-      "next": "wait for explicit authorized commercial launch cloud canary"
+      "deleted": "none",
+      "folded": "authorized cloud canary run into compact history and machine evidence pointers",
+      "retained": "commercial business flow cursor and external PSP production complete SLA cannot-claim boundaries",
+      "reason": "Goal B passed through Release Image Cloud Rollout OPL-Webui consumer canary availability billing audit release receipts and redacted manifest gates",
+      "next": "future scope expansion or ongoing operations proof requires separate authorization"
     },
     "retirement": {
       "active_blocker_retired": true,
@@ -97,7 +99,7 @@
       "history_or_evidence_pointer": "docs/history/README.md"
     },
     "post_merge_closeout": "completed",
-    "next_recommended_goal": "goal-authorized-commercial-launch-cloud-canary",
+    "next_recommended_goal": "goal-future-scope-expansion-or-ongoing-operations-proof",
     "next_cursor": "goal-commercial-runtime-storage-billing-business-closure"
   },
   "current_cursor": "goal-commercial-runtime-storage-billing-business-closure",
@@ -107,7 +109,7 @@
   "current_blockers": [
     "none_for_current_scoped_commercial_business_flow"
   ],
-  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-business-flow-local-rc-revalidation at 65673b1e2713104134fdc6e9ea8c6fb80382a50f. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-business-flow-local-rc-revalidation at 65673b1e2713104134fdc6e9ea8c6fb80382a50f.",
+  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-authorized-commercial-launch-cloud-canary at 3de36577f91fd5b6978cf2fc4cdc2c91c0b831a2. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-authorized-commercial-launch-cloud-canary at 3de36577f91fd5b6978cf2fc4cdc2c91c0b831a2.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -579,17 +581,17 @@
         "all-tenant long-running stability proven"
       ],
       "receipt_manifest_schema": "seven_owner_receipts_plus_required_lifecycle_sections_plus_fourteen_production_complete_criteria",
-      "receipt_manifest_hash": "sha256:01ae9e5b4ae2a54b1c18aebf7f94fac5ab2a077864c29d55edcd59bc49ac1660",
+      "receipt_manifest_hash": "sha256:ea854000438638a7b906bc5a7ddd66005e4608c5298c15ad7b3ef7a52acaab8e",
       "business_db_persistence_receipt": {
         "status": "accepted",
         "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/live_test.json",
-        "evidence_hash": "sha256:77555180d9db24120515881082c54539a5d4f334ca8a188c460def5f022fe29f",
+        "evidence_hash": "sha256:d8f4be331668cd613563155abae4c34ec52e6a3a83e179f471feb721605dce25",
         "summary": "live_test redacted proof reports PostgreSQL business metadata persistence across nine record kinds and object ref hash keys artifactRef/fileRef/resourceBindingId/runRef; raw workspace IDs, DATABASE_URL and row payloads stay outside manifest."
       },
-      "workflow_run_id": "28314565929",
-      "release_image_run_id": "28314552457",
-      "image_tag": "691cc10",
-      "receipt_manifest_artifact_id": "7932066015",
+      "workflow_run_id": "28322350847",
+      "release_image_run_id": "28322335961",
+      "image_tag": "3de3657",
+      "receipt_manifest_artifact_id": "7934630167",
       "raw_evidence_committed": false
     },
     "latest_trunk_cloud_runs": {
@@ -662,9 +664,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "goal-commercial-business-flow-local-rc-revalidation",
+  "last_landed_branch": "goal-authorized-commercial-launch-cloud-canary",
   "last_landed_at": "2026-06-28",
-  "history_latest_branch": "goal-commercial-business-flow-local-rc-revalidation",
+  "history_latest_branch": "goal-authorized-commercial-launch-cloud-canary",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -976,7 +978,7 @@
       "consumer_canary"
     ],
     "receipt_manifest_ref": ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json",
-    "receipt_manifest_hash": "sha256:01ae9e5b4ae2a54b1c18aebf7f94fac5ab2a077864c29d55edcd59bc49ac1660",
+    "receipt_manifest_hash": "sha256:ea854000438638a7b906bc5a7ddd66005e4608c5298c15ad7b3ef7a52acaab8e",
     "release_owner_readiness_binding": {
       "criterion": "release_owner_readiness_receipt",
       "required_gate": "release_owner_receipt",
@@ -1052,7 +1054,7 @@
       "evidence_ref_policy": "runtime_pointer_summary_only",
       "evidence_hash_policy": "sha256_pointer_hash_required",
       "raw_database_payload_policy": "forbidden",
-      "accepted_evidence_hash": "sha256:77555180d9db24120515881082c54539a5d4f334ca8a188c460def5f022fe29f",
+      "accepted_evidence_hash": "sha256:d8f4be331668cd613563155abae4c34ec52e6a3a83e179f471feb721605dce25",
       "can_claim": "business metadata persistence proof can be bound into the scoped receipt manifest when authorized redacted evidence is restored",
       "cannot_claim": "long-running persistence, all tenants/resources, normalized typed tables for every projection, or production complete final release decision"
     },
@@ -1084,10 +1086,10 @@
       "can_claim": "operational stability receipts are contract-bound to the redacted receipt manifest when authorized evidence is restored",
       "cannot_claim": "multi-region production, SLA proven, enterprise compliance, ongoing authorization, or unobserved tenant/resource readiness"
     },
-    "receipt_manifest_artifact_id": "7932066015"
+    "receipt_manifest_artifact_id": "7934630167"
   },
-  "base_trunk_head": "65673b1e2713104134fdc6e9ea8c6fb80382a50f",
-  "last_landed_commit": "65673b1e2713104134fdc6e9ea8c6fb80382a50f",
+  "base_trunk_head": "3de36577f91fd5b6978cf2fc4cdc2c91c0b831a2",
+  "last_landed_commit": "3de36577f91fd5b6978cf2fc4cdc2c91c0b831a2",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
@@ -1143,7 +1145,7 @@
     "previous_live_test_blocker": "production_goal_live_test_release_runtime_failed",
     "local_fix_status": "Operations receipt substrate remains contract-bound and fail-closed; authorized commercial business-flow production-canary rerun passed after the storage_destroy billing writeback source fix landed.",
     "receipt_manifest_ref": ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json",
-    "receipt_manifest_hash": "sha256:01ae9e5b4ae2a54b1c18aebf7f94fac5ab2a077864c29d55edcd59bc49ac1660",
+    "receipt_manifest_hash": "sha256:ea854000438638a7b906bc5a7ddd66005e4608c5298c15ad7b3ef7a52acaab8e",
     "consumer_tests": [
       "node tests/release/release-test-v22-production-receipt-boundary.mjs",
       "node tests/cloud/cloud-test-v22-cloud-authorized-executor.mjs",
@@ -1175,7 +1177,7 @@
     ],
     "business_db_persistence_receipt": {
       "status": "accepted",
-      "evidence_hash": "sha256:77555180d9db24120515881082c54539a5d4f334ca8a188c460def5f022fe29f",
+      "evidence_hash": "sha256:d8f4be331668cd613563155abae4c34ec52e6a3a83e179f471feb721605dce25",
       "record_kind_count": 9,
       "raw_evidence_committed": false
     },
@@ -1195,10 +1197,10 @@
       "post_release_monitoring_receipt",
       "final_release_decision_receipt"
     ],
-    "workflow_run_id": "28314565929",
-    "release_image_run_id": "28314552457",
-    "image_tag": "691cc10",
-    "receipt_manifest_artifact_id": "7932066015"
+    "workflow_run_id": "28322350847",
+    "release_image_run_id": "28322335961",
+    "image_tag": "3de3657",
+    "receipt_manifest_artifact_id": "7934630167"
   },
   "commercial_runtime_business_closure_goal_gap_map": {
     "schema_version": 1,
@@ -1444,6 +1446,16 @@
           "current_cursor"
         ],
         "evidence_pointer": "docs/history/README.md"
+      },
+      {
+        "goal_id": "goal-authorized-commercial-launch-cloud-canary",
+        "landed_commit": "3de36577f91fd5b6978cf2fc4cdc2c91c0b831a2",
+        "status": "completed_retired",
+        "retired_from": [
+          "active_blocker",
+          "current_cursor"
+        ],
+        "evidence_pointer": "docs/history/README.md"
       }
     ],
     "risk_class_verification": {
@@ -1485,7 +1497,7 @@
       "retirement",
       "next_recommended_goal"
     ],
-    "next_recommended_goal": "goal-authorized-commercial-launch-cloud-canary",
+    "next_recommended_goal": "goal-future-scope-expansion-or-ongoing-operations-proof",
     "cannot_claim": [
       "historical proof in active truth",
       "completed goals as active blockers",

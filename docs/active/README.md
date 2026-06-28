@@ -17,12 +17,12 @@ MedOPL 是 OPL-Webui 的商业资源控制面，负责 owner 创建或批准账�
 | --- | --- |
 | current phase | `commercial runtime storage billing business closure` |
 | current cursor | `goal-commercial-runtime-storage-billing-business-closure` |
-| latest repo closeout | `goal-commercial-business-flow-local-rc-revalidation` / `65673b1e2713104134fdc6e9ea8c6fb80382a50f` |
+| latest repo closeout | `goal-authorized-commercial-launch-cloud-canary` / `3de36577f91fd5b6978cf2fc4cdc2c91c0b831a2` |
 | current blocker | `none_for_current_scoped_commercial_business_flow` |
 | source fix | `goal-commercial-upload-file-billing-writeback-fix` landed at `34b0e3070357504b475a0bee2ff6bd4de0af23df`; `goal-commercial-storage-destroy-writeback-fix` landed at `64699bd3619f01a4442936b096079b3e8051733d` |
 | next proof | future scope expansion / ongoing operations proof requires a separate authorization and evidence slice |
 
-The latest repo/gate closeout is goal-commercial-business-flow-local-rc-revalidation at 65673b1e2713104134fdc6e9ea8c6fb80382a50f. The source line keeps `upload_file -> save_billing_event` and `storage_destroy -> save_billing_event` fail-closed while using canonical billing identity and collision-resistant billing event IDs. The scoped canary proof is retained as operations substrate only; detailed run provenance stays in history / GitHub Actions artifact, not active product truth.
+The latest repo/gate closeout is goal-authorized-commercial-launch-cloud-canary at 3de36577f91fd5b6978cf2fc4cdc2c91c0b831a2. The source line keeps `upload_file -> save_billing_event` and `storage_destroy -> save_billing_event` fail-closed while using canonical billing identity and collision-resistant billing event IDs. The scoped canary proof is retained as operations substrate only; detailed run provenance stays in history / GitHub Actions artifact, not active product truth.
 
 ## Active Supporting Substrates
 
