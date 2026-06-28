@@ -33,21 +33,21 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "cleanup/v22-active-substrate-retirement",
-    "landed_commit": "1c90045023d090137f5e9d4ac3ea44505c3563bd",
+    "branch": "goal-commercial-storage-destroy-writeback-fix",
+    "landed_commit": "64699bd3619f01a4442936b096079b3e8051733d",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
-      "npm run test:run-plan -- --dry-run --json passed",
-      "npm run test:run-plan passed",
-      "npm run validate:active-platform passed",
+      "go test ./internal/service/controlplane -run TestServiceDestroyStorageUsesCollisionResistantBillingEventID -count=1 passed",
+      "node tests/smoke/smoke-test-v22-portal-storage-usage-billing-flow.mjs passed",
       "npm run verify passed",
       "npm run test:health passed",
-      "npm run gate:review -- --slice-id cleanup-v22-active-substrate-retirement passed",
-      "npm run repo:bloat -- --diff --slice-id cleanup-v22-active-substrate-retirement passed",
+      "npm run gate:review -- --slice-id goal-commercial-storage-destroy-writeback-fix passed",
+      "npm run repo:bloat -- --diff --slice-id goal-commercial-storage-destroy-writeback-fix passed",
       "npm run line:budget passed",
       "post-push npm run verify passed",
-      "post-push npm run gate:review -- --slice-id cleanup-v22-active-substrate-retirement passed",
-      "post-push npm run repo:bloat -- --diff --slice-id cleanup-v22-active-substrate-retirement passed",
+      "post-push npm run test:health passed",
+      "post-push npm run gate:review -- --slice-id goal-commercial-storage-destroy-writeback-fix passed",
+      "post-push npm run repo:bloat -- --diff --slice-id goal-commercial-storage-destroy-writeback-fix passed",
       "post-push npm run line:budget passed"
     ],
     "plan_completion_audit": {
@@ -59,11 +59,11 @@
       "cannot_claim": "done"
     },
     "cleanup_result": {
-      "deleted": "long active run logs, historical Package C/D product narrative, production launch gap narrative and stale CLB/Ingress rollout notes from active product truth",
-      "folded": "Package D / production launch / Release Image / Cloud Rollout / receipt manifest into active operations substrate and compact history provenance",
-      "retained": "commercial resource-control product truth, account_approved/account_not_approved machine runtime gate conditions, Release Image / Cloud Rollout operations substrate, and explicit cannot-claim boundaries",
-      "reason": "MedOPL business truth is account prepare approval credit plan runtime storage upload run artifact billing statement reconciliation release destroy stop billing; deployment operations substrate supports proof but does not define product identity or business admission",
-      "next": "stay on goal-commercial-runtime-storage-billing-business-closure; fix storage_destroy billing writeback discovered by authorized Cloud Rollout consumer canary, then rerun Release Image / Cloud Rollout / OPL-Webui consumer canary"
+      "deleted": "storage destroy billing event short-id collision risk as the active source blocker",
+      "folded": "storage destroy billing writeback source fix and regression evidence into the current commercial business-flow closure cursor",
+      "retained": "commercial resource-control product truth, billing/audit fail-closed behavior, account_approved/account_not_approved machine runtime gate conditions, Release Image / Cloud Rollout operations substrate, and explicit cannot-claim boundaries",
+      "reason": "MedOPL business truth is account prepare approval credit plan runtime storage upload run artifact billing statement reconciliation release destroy stop billing; storage_destroy billing writeback must record a real billing event and must not become a fake success",
+      "next": "stay on goal-commercial-runtime-storage-billing-business-closure and run authorized Release Image / Cloud Rollout / OPL-Webui consumer canary for the landed storage_destroy billing writeback fix"
     },
     "post_merge_closeout": "completed",
     "next_cursor": "goal-commercial-runtime-storage-billing-business-closure"
@@ -73,10 +73,10 @@
   "current_stage": "commercial runtime storage billing business closure",
   "current_risk_class": "commercial_billing_boundary",
   "current_blockers": [
-    "storage_destroy_billing_event_writeback_failed_in_production_canary",
+    "commercial_business_closure_deploy_verification_pending_for_storage_destroy_billing_writeback_fix",
     "external_psp_multi_region_sla_enterprise_compliance_ongoing_authorization_and_unrestricted_full_production_remain_unclaimed"
   ],
-  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is cleanup/v22-active-substrate-retirement at 1c90045023d090137f5e9d4ac3ea44505c3563bd. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the latest authorized Release Image / Cloud Rollout / OPL-Webui consumer canary rerun reached storage_destroy and failed closed at storage_destroy -> save_billing_event. The current source slice is goal-commercial-storage-destroy-writeback-fix; it must keep billing/audit fail-closed and cannot turn storage_destroy into a fake success. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are active operations substrate only; they are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git.",
+  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-storage-destroy-writeback-fix at 64699bd3619f01a4442936b096079b3e8051733d. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The remaining evidence is authorized Release Image, Cloud Rollout and OPL-Webui consumer canary rerun for the same commercial business flow. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are active operations substrate only; they are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -245,7 +245,7 @@
     "gap_id": "goal-commercial-runtime-storage-billing-business-closure",
     "stage": "commercial runtime storage billing business closure",
     "cursor_eligible": true,
-    "problem": "Prove the commercial business flow account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. Upload billing writeback is landed; the latest authorized consumer canary exposed storage_destroy billing writeback failure, which is the current source blocker.",
+    "problem": "Prove the commercial business flow account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. Upload billing writeback and storage_destroy billing writeback source fixes are landed; the remaining evidence is authorized Release Image, Cloud Rollout and OPL-Webui consumer canary rerun for the same business flow without bypassing billing/audit.",
     "verification_commands": [
       "node scripts/v22-verify.mjs active-platform --json",
       "node tests/product/product-test-v22-medopl-contract-authority.mjs",
@@ -300,7 +300,7 @@
       "tests/fixtures/v22/goal-current.json",
       "tests/fixtures/v22/agent-verify-manifest.json"
     ],
-    "latest_local_evidence": "source fix for upload billing landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; cleanup closeout landed at 1c90045023d090137f5e9d4ac3ea44505c3563bd; storage_destroy billing writeback source fix is in progress before the next authorized Release Image / Cloud Rollout / OPL-Webui consumer canary rerun"
+    "latest_local_evidence": "source fix for upload billing landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; cleanup closeout landed at 1c90045023d090137f5e9d4ac3ea44505c3563bd; storage_destroy billing writeback source fix landed at 64699bd3619f01a4442936b096079b3e8051733d; authorized Release Image / Cloud Rollout / OPL-Webui consumer canary rerun remains pending for the same commercial business flow"
   },
   "release_readiness_state": {
     "status": "active_operations_substrate_for_commercial_business_flow_verification",
@@ -336,7 +336,7 @@
       "Keep raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts outside git"
     ],
     "readinessGaps": [
-      "Authorized Release Image / Cloud Rollout / OPL-Webui consumer canary rerun is still required after the storage_destroy billing writeback fix lands.",
+      "Authorized Release Image / Cloud Rollout / OPL-Webui consumer canary rerun is still required for the landed storage_destroy billing writeback fix.",
       "Unscoped production complete remains unclaimed until dedicated scope-expansion evidence proves multi-region/SLA, enterprise compliance, ongoing authorization and broader tenant/resource readiness.",
       "Raw evidence, credentials, uploaded files, runtime artifacts and provider/cloud payloads remain outside git."
     ],
@@ -622,9 +622,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "cleanup/v22-active-substrate-retirement",
+  "last_landed_branch": "goal-commercial-storage-destroy-writeback-fix",
   "last_landed_at": "2026-06-28",
-  "history_latest_branch": "cleanup/v22-active-substrate-retirement",
+  "history_latest_branch": "goal-commercial-storage-destroy-writeback-fix",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -1045,8 +1045,8 @@
       "cannot_claim": "multi-region production, SLA proven, enterprise compliance, ongoing authorization, or unobserved tenant/resource readiness"
     }
   },
-  "base_trunk_head": "1c90045023d090137f5e9d4ac3ea44505c3563bd",
-  "last_landed_commit": "1c90045023d090137f5e9d4ac3ea44505c3563bd",
+  "base_trunk_head": "64699bd3619f01a4442936b096079b3e8051733d",
+  "last_landed_commit": "64699bd3619f01a4442936b096079b3e8051733d",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",

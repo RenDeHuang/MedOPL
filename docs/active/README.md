@@ -17,12 +17,12 @@ MedOPL 是 OPL-Webui 的商业资源控制面，负责 owner 创建或批准账�
 | --- | --- |
 | current phase | `commercial runtime storage billing business closure` |
 | current cursor | `goal-commercial-runtime-storage-billing-business-closure` |
-| latest repo closeout | `cleanup/v22-active-substrate-retirement` / `1c90045023d090137f5e9d4ac3ea44505c3563bd` |
-| current blocker | `storage_destroy_billing_event_writeback_failed_in_production_canary` |
-| source fix | `goal-commercial-upload-file-billing-writeback-fix` landed at `34b0e3070357504b475a0bee2ff6bd4de0af23df`; `goal-commercial-storage-destroy-writeback-fix` is the current source slice |
-| next proof | land storage destroy billing writeback fix, then run authorized Release Image + Cloud Rollout + OPL-Webui consumer canary for the same commercial business flow |
+| latest repo closeout | `goal-commercial-storage-destroy-writeback-fix` / `64699bd3619f01a4442936b096079b3e8051733d` |
+| current blocker | `commercial_business_closure_deploy_verification_pending_for_storage_destroy_billing_writeback_fix` |
+| source fix | `goal-commercial-upload-file-billing-writeback-fix` landed at `34b0e3070357504b475a0bee2ff6bd4de0af23df`; `goal-commercial-storage-destroy-writeback-fix` landed at `64699bd3619f01a4442936b096079b3e8051733d` |
+| next proof | authorized Release Image + Cloud Rollout + OPL-Webui consumer canary for the same commercial business flow |
 
-The latest repo/gate closeout is cleanup/v22-active-substrate-retirement at 1c90045023d090137f5e9d4ac3ea44505c3563bd. The source line keeps `upload_file -> save_billing_event` fail-closed while using canonical runtime ledger tenant / billing attribution identity before fallback account lookup. The authorized cloud rerun reached `storage_destroy` and failed closed at storage destroy billing writeback; the current source slice must fix that without bypassing billing/audit. The remaining proof is deployment and consumer-canary verification for the same commercial business flow, not a new product truth and not a launch approval narrative.
+The latest repo/gate closeout is goal-commercial-storage-destroy-writeback-fix at 64699bd3619f01a4442936b096079b3e8051733d. The source line keeps `upload_file -> save_billing_event` fail-closed while using canonical runtime ledger tenant / billing attribution identity before fallback account lookup, and keeps `storage_destroy -> save_billing_event` fail-closed while using collision-resistant billing event IDs. The remaining proof is deployment and consumer-canary verification for the same commercial business flow, not a new product truth and not a launch approval narrative.
 
 ## Active Supporting Substrates
 
