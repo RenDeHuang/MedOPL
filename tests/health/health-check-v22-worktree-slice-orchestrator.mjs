@@ -103,6 +103,10 @@ assertIncludesAll(orchestratorSource, [
   "completed_goals_repeat_forbidden",
   "slice_goal_already_completed",
   "goal-current.json",
+  "docs/active/README.md",
+  "agent-verify-manifest.json",
+  "buildCurrentTruthReadout",
+  "non_recommended_goal",
 ], "slice_orchestrator_goal_admission");
 assertIncludesAll(verifySource, [
   "goal_lifecycle",
@@ -130,6 +134,22 @@ assert.equal(planPayload.executesCommands, false, "slice_orchestrator_must_not_e
 assert.equal(planPayload.executionMode, "plan-only", "slice_orchestrator_must_be_plan_only");
 assert.equal(planPayload.usesRealMergePush, false, "slice_orchestrator_must_not_use_real_merge_push");
 assert.equal(planPayload.executionAllowed, false, "slice_orchestrator_default_must_not_allow_execution");
+assert.equal(planPayload.currentTruthReadout?.current_cursor, current.current_cursor, "slice_current_truth_readout_cursor_mismatch");
+assert.equal(planPayload.currentTruthReadout?.current_blocker, "none_for_current_scoped_commercial_business_flow", "slice_current_truth_readout_blocker_mismatch");
+assert.equal(planPayload.currentTruthReadout?.latest_landed_closeout?.branch, current.latest_landed_closeout.branch, "slice_current_truth_readout_latest_branch_mismatch");
+assert.equal(planPayload.currentTruthReadout?.latest_landed_closeout?.landed_commit, current.latest_landed_closeout.landed_commit, "slice_current_truth_readout_latest_commit_mismatch");
+assert.equal(planPayload.currentTruthReadout?.completed_goals?.count, current.goal_lifecycle.completed_goals.length, "slice_current_truth_readout_completed_count_mismatch");
+assert.equal(planPayload.currentTruthReadout?.completed_goals?.requested_goal_completed, false, "slice_current_truth_readout_default_goal_should_not_be_completed");
+assert.equal(planPayload.currentTruthReadout?.next_recommended_goal, "goal-commercial-launch-ui-productization", "slice_current_truth_readout_next_goal_mismatch");
+assert.equal(planPayload.currentTruthReadout?.completed_goals_repeat_forbidden, true, "slice_current_truth_readout_completed_repeat_guard_mismatch");
+assert.equal(planPayload.currentTruthReadout?.selected_risk_class, "landing", "slice_current_truth_readout_selected_risk_class_mismatch");
+assert.deepEqual(planPayload.currentTruthReadout?.verification_lane, current.goal_lifecycle.risk_class_verification.landing, "slice_current_truth_readout_verification_lane_mismatch");
+assert.equal(planPayload.currentTruthReadout?.source_paths?.includes("docs/active/README.md"), true, "slice_current_truth_readout_must_read_active_truth");
+assert.equal(planPayload.currentTruthReadout?.source_paths?.includes("tests/fixtures/v22/goal-current.json"), true, "slice_current_truth_readout_must_read_goal_current");
+assert.equal(planPayload.currentTruthReadout?.source_paths?.includes("tests/fixtures/v22/agent-verify-manifest.json"), true, "slice_current_truth_readout_must_read_verify_manifest");
+assert.equal(planPayload.non_recommended_goal, true, "slice_non_recommended_goal_must_be_explicit_for_default_branch_goal");
+assert.equal(planPayload.overrideBoundary?.reason, "requested_goal_is_not_next_recommended_goal", "slice_override_boundary_reason_mismatch");
+assert.equal(planPayload.overrideBoundary?.next_recommended_goal, "goal-commercial-launch-ui-productization", "slice_override_boundary_next_goal_mismatch");
 assert.equal(planPayload.landingPolicy?.featureBranchPushAllowed, true, "slice_landing_policy_must_allow_feature_branch_push");
 assert.equal(planPayload.landingPolicy?.trunkMergePushAllowedAfterLandingGate, true, "slice_landing_policy_must_allow_trunk_push_after_gate");
 assert.equal(planPayload.landingPolicy?.requiresFreshLandingGate, true, "slice_landing_policy_must_require_fresh_landing_gate");
@@ -178,6 +198,14 @@ assert.deepEqual(planPayload.requires, [
   "clean worktree or isolated feature worktree",
   "base ref origin/recovery/platform-v22-trunk",
 ], "slice_orchestrator_start_requires_mismatch");
+
+const nextGoalPlan = runSlice(["start", "--slice-id", "goal-commercial-launch-ui-productization", "--json"]);
+assert.equal(nextGoalPlan.status, 0, "next_recommended_goal_slice_start_must_succeed");
+const nextGoalPlanPayload = JSON.parse(nextGoalPlan.stdout);
+assert.equal(nextGoalPlanPayload.currentTruthReadout?.next_recommended_goal, "goal-commercial-launch-ui-productization", "next_goal_readout_next_goal_mismatch");
+assert.equal(nextGoalPlanPayload.currentTruthReadout?.completed_goals?.requested_goal_completed, false, "next_goal_must_not_be_completed");
+assert.equal(nextGoalPlanPayload.non_recommended_goal, false, "next_goal_must_not_be_marked_non_recommended");
+assert.equal(nextGoalPlanPayload.overrideBoundary, null, "next_goal_must_not_have_override_boundary");
 assert.deepEqual(planPayload.commands, [
   "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
 ], "slice_orchestrator_start_commands_mismatch");

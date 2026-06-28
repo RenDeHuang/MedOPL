@@ -46,7 +46,9 @@ const RETIRED_CHANGE_SURFACE_PREFIXES = Object.freeze([
   ["changes", "active", "**"].join("/"),
   ["changes", "archive", "**"].join("/"),
 ]);
+const ACTIVE_TRUTH_PATH = "docs/active/README.md";
 const GOAL_CURRENT_PATH = "tests/fixtures/v22/goal-current.json";
+const AGENT_VERIFY_MANIFEST_PATH = "tests/fixtures/v22/agent-verify-manifest.json";
 const SLICE_TYPES = Object.freeze(["product", "automation", "cloud", "cleanup"]);
 const DEFAULT_SLICE_OWNER_BY_TYPE = Object.freeze({
   product: "backend",
@@ -324,6 +326,14 @@ function readGoalCurrent() {
   return JSON.parse(readFileSync(currentPath, "utf8"));
 }
 
+function readCurrentTruthBundle() {
+  return {
+    activeTruth: readFileSync(path.join(repoRoot, ACTIVE_TRUTH_PATH), "utf8"),
+    current: readGoalCurrent(),
+    verifyManifest: JSON.parse(readFileSync(path.join(repoRoot, AGENT_VERIFY_MANIFEST_PATH), "utf8")),
+  };
+}
+
 function completedGoalIds(current = readGoalCurrent()) {
   const goals = Array.isArray(current?.goal_lifecycle?.completed_goals)
     ? current.goal_lifecycle.completed_goals
@@ -336,6 +346,40 @@ function isCompletedGoalRepeat(sliceId, current = readGoalCurrent()) {
   return completedGoalIds(current).has(sliceId);
 }
 
+function selectedRiskClassForSlice({ phase, sliceType, current }) {
+  if (sliceType === "cloud") return "cloud";
+  if (phase === "land" || phase === "post-push-verify" || phase === "cleanup") return "landing";
+  if (current?.current_risk_class === "release_candidate") return "release_candidate";
+  return "landing";
+}
+
+function buildCurrentTruthReadout({ current, verifyManifest, sliceId, phase, sliceType }) {
+  const completedIds = completedGoalIds(current);
+  const riskClass = selectedRiskClassForSlice({ phase, sliceType, current });
+  return {
+    source_paths: [
+      ACTIVE_TRUTH_PATH,
+      GOAL_CURRENT_PATH,
+      AGENT_VERIFY_MANIFEST_PATH,
+    ],
+    current_cursor: current?.current_cursor || "",
+    current_blocker: current?.goal_lifecycle?.current?.blocker || current?.current_blockers?.[0] || "",
+    latest_landed_closeout: {
+      branch: current?.latest_landed_closeout?.branch || "",
+      landed_commit: current?.latest_landed_closeout?.landed_commit || "",
+    },
+    completed_goals: {
+      count: completedIds.size,
+      requested_goal_completed: completedIds.has(sliceId),
+    },
+    next_recommended_goal: current?.goal_lifecycle?.next_recommended_goal || "",
+    completed_goals_repeat_forbidden: current?.goal_lifecycle?.admission?.completed_goals_repeat_forbidden === true,
+    selected_risk_class: riskClass,
+    verification_lane: current?.goal_lifecycle?.risk_class_verification?.[riskClass] || [],
+    verify_manifest_leaf_count: Array.isArray(verifyManifest?.leaves) ? verifyManifest.leaves.length : 0,
+  };
+}
+
 function buildPlan(phase, options = {}) {
   if (!PHASES.includes(phase)) throw new Error(`unknown_slice_phase:${phase || "(missing)"}`);
   const phaseIndex = PHASES.indexOf(phase);
@@ -345,8 +389,16 @@ function buildPlan(phase, options = {}) {
   const sliceId = sanitizeId(options["slice-id"]) || defaultSliceId();
   const paths = slicePaths(sliceId);
   const admission = buildAdmission(options);
-  const current = readGoalCurrent();
+  const { current, verifyManifest } = readCurrentTruthBundle();
   const completedGoalRepeat = phase === "start" && isCompletedGoalRepeat(sliceId, current);
+  const currentTruthReadout = buildCurrentTruthReadout({
+    current,
+    verifyManifest,
+    sliceId,
+    phase,
+    sliceType: admission.slice_type,
+  });
+  const nonRecommendedGoal = Boolean(sliceId && currentTruthReadout.next_recommended_goal && sliceId !== currentTruthReadout.next_recommended_goal);
   const goalLifecycle = current?.goal_lifecycle
     ? {
       currentCursor: current.goal_lifecycle.current?.cursor || current.current_cursor || "",
@@ -376,6 +428,16 @@ function buildPlan(phase, options = {}) {
       manifestPath: paths.publicManifestPath,
     },
     admission,
+    currentTruthReadout,
+    non_recommended_goal: nonRecommendedGoal,
+    overrideBoundary: nonRecommendedGoal
+      ? {
+        reason: "requested_goal_is_not_next_recommended_goal",
+        requested_goal: sliceId,
+        next_recommended_goal: currentTruthReadout.next_recommended_goal,
+        allowed: !completedGoalRepeat,
+      }
+      : null,
     goalLifecycle,
     ...(completedGoalRepeat ? { blockers: ["slice_goal_already_completed"] } : {}),
     workflowDependencies: [
