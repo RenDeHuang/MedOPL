@@ -208,6 +208,15 @@ assert.equal(
   false,
   "current_problem_must_not_keep_resolved_public_go_api_static_html_blocker",
 );
+for (const [regex, label] of [
+  [/\b(?:Release Image|Cloud Rollout) run\s+28\d{8,}\b/u, "current_problem_must_not_embed_historical_workflow_run_ledger"],
+  [/\bimage tag\s+[0-9a-f]{6,}\b/iu, "current_problem_must_not_embed_image_tag_ledger"],
+  [/\bPackage [CD]\b/u, "current_problem_must_not_embed_package_provenance"],
+  [/\b(?:Ingress|NodePort)\b/u, "current_problem_must_not_embed_routing_diagnostics"],
+  [/\bproduction-complete candidate\b/iu, "current_problem_must_not_embed_full_production_candidate_narrative"],
+]) {
+  assert.equal(regex.test(current.current_problem), false, label);
+}
 assert.equal(
   current.public_api_availability?.status,
   "go_health_ready_available",

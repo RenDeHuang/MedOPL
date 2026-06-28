@@ -7,7 +7,7 @@ Machine boundary: 本文是产品视角入口，不是第二份 current truth。
 
 ## Product View
 
-MedOPL v22 是 `platform-provisioned / customer-dedicated` 的 One Person Lab SaaS 资源控制面：用户在 MedOPL 购买和管理 OPL 需要的计算资源、存储空间、套餐、任务并发、费用与释放能力。OPL-Webui 是主要 consumer / entry surface：登录用户日常 ordinary chat、项目 / session、skill 上传、文件管理和科研任务体验留在 OPL-Webui；只有数据分析、文件任务、长任务或其他 `runtime_required` 能力才通过 runtime gate 进入 MedOPL 控制面。MedOPL 不把自己写成 OPL-Webui，也不复制 OPL chatbot。
+MedOPL v22 是 OPL-Webui 的商业资源控制面：用户在 MedOPL 完成账号创建/批准、充值/授信、套餐选择、计算资源、存储空间、任务并发、费用与释放能力管理。OPL-Webui 是主要 consumer / entry surface：登录用户日常 ordinary chat、项目 / session、skill 上传、文件管理和科研任务体验留在 OPL-Webui；只有数据分析、文件任务、长任务或其他 `runtime_required` 能力才通过 runtime gate 进入 MedOPL 控制面。MedOPL 不把自己写成 OPL-Webui，也不复制 OPL chatbot。
 
 当前愿景收口到一条明确 slice：OPL-Webui 登录用户在当前 workspace 通过 MedOPL 选择套餐、开通计算资源和存储空间；MedOPL 返回 resourceBinding、storageBinding、billing/freeze/release 状态给 OPL-Webui；用户回到 OPL-Webui 做科研，MedOPL 只从资源视角展示存储空间清单、用量、费用、释放计算资源和按显式意图销毁存储空间。这个 slice 是 current 产品目标，不等于已经取得 production owner receipt。
 
@@ -17,7 +17,7 @@ MedOPL 不是云资源控制台。普通用户产品语言不展示 CVM、COS、
 
 MedOPL 不回答科研问题，不复制 OPL chatbot，不评判 OPL 科研能力质量。MedOPL 负责计算资源、存储空间、套餐、任务并发、usage/billing、release、storage destroy intent 和运维审计 receipt；OPL-Webui 负责 ordinary chat、项目 / session、文件管理、skill 上传、任务推进和结果展示体验；OPL 负责 framework、runtime semantics、agent / skill protocol 和科研执行 runtime。
 
-MedOPL 的业务准入 truth 是 account-approved commercial admission：账号存在且已由 owner/平台批准或开通，并满足 plan/balance/quota。`runtime_required` 主业务 gate 必须检查账号存在、账号已由 owner/平台批准或开通、workspace 存在、需要时已有 `providerKeyRef`、已选择套餐、余额足够、quota 可用且没有平台 emergency stop；余额或套餐不足时返回 purchase / recharge / select_plan action，余额足够后才允许开通 compute resource 和 storage space。production launch safety is recorded from Cloud Rollout workflow inputs and GitHub production environment deployment gate; it is not recharge, billing, plan, quota or business admission truth, and it does not require `MEDOPL_PRODUCTION_*` GitHub vars/secrets.
+MedOPL 的业务准入 truth 是 account-approved commercial admission：账号存在且已由 owner/平台批准或开通，并满足 plan/balance/quota。`runtime_required` 主业务 gate 必须检查账号存在、账号已由 owner/平台批准或开通、workspace 存在、需要时已有 `providerKeyRef`、已选择套餐、余额足够、quota 可用且没有平台 emergency stop；余额或套餐不足时返回 purchase / recharge / select_plan action，余额足够后才允许开通 compute resource 和 storage space。Release Image、Cloud Rollout 和 receipt manifest 是 operations/release substrate；它们不是 recharge、billing、plan、quota、cost ceiling 或 business admission truth。
 
 普通用户主语言优先使用：账号、工作空间、计算资源、存储空间、套餐、任务并发、余额、冻结金额、费用与用量。租户、runtime、environmentId、resourceBindingId 和 billingAttributionId 只能作为内部标签、对账标签或审计字段。
 

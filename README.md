@@ -1,16 +1,17 @@
 # MedOPL v22
 
-MedOPL 是 One Person Lab / OPL-Webui 的 SaaS 资源控制面，面向需要托管计算资源、存储空间、套餐、费用与释放能力的用户，同时服务平台运维人员进行账单、审计和资源状态治理。
+MedOPL 是 OPL-Webui 的商业资源控制面，面向需要 owner 创建或批准账号、充值/授信、套餐、托管计算资源、存储空间、费用核对与释放能力的用户，同时服务平台运维人员进行账单、审计和资源状态治理。
 
-普通用户看到的是资源购买与计算资源管理 Portal，不是云资源控制台，不是用户自配云资源，也不是科研执行主界面。产品主语言是账号、OPL workspace、计算资源、存储空间、套餐、任务并发、输入文件、输出文件、余额、消费、账单、预扣费、冻结金额、停止计费和审计状态。
+普通用户看到的是资源购买与计算资源管理 Portal，不是云资源控制台，不是用户自配云资源，不是 OPL-Webui 本体，也不是 ordinary chat 或科研执行主界面。产品主语言是账号、OPL workspace、计算资源、存储空间、套餐、任务并发、输入文件、输出文件、余额、消费、账单、预扣费、冻结金额、停止计费和审计状态。
 
 One Person Lab 是 clean upstream：不修改 upstream 源码，不 import upstream 内部模块。MedOPL 只通过 OPL Web Gateway、Runtime Bridge / Runtime Agent、公开 API/CLI 和必要的内部 anti-corruption mapping 接入。
 
-当前完成层级是 contract-level + Portal API/domain + Portal UI MVP。它不代表真实云资源、Gateway、Runtime Bridge、one-person-lab upstream、真实价格审批、真实账单核对或真实部署已全部上线。
+当前 current truth 是商业业务流复验：账号开通/批准、充值/授信、套餐、runtime/storage、upload/run/artifact、billing ledger、statement reconciliation、release/destroy/stop billing。Release Image、Cloud Rollout 和 receipt manifest 是 operations/release substrate；它们不定义用户产品主线，也不代表 external PSP、SLA/multi-region 或 unscoped full production 已完成。
 
 ## Active Surface
 
-- `services/portal`: Portal SaaS 资源控制面，包括 API/domain 小闭包和 Portal UI MVP。
+- `services/portal/frontend`: Portal 商业资源控制面前端。
+- `services/medopl-go-backend`: MedOPL v22 business account、runtime/storage、billing/audit 和 release 控制面。
 - `services/opl-web-gateway`: OPL Web entry/preflight 与统一身份边界，当前不作为本分支修改范围。
 - `services/opl-runtime-bridge`: Runtime Bridge / Runtime Agent 合同边界，当前不作为本分支修改范围。
 - `contracts/medopl-*.json`: consumer-first 产品、Portal、API、runtime、data-plane、billing、release 和 cloud boundary 机器合同。

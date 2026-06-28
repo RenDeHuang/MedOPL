@@ -61,7 +61,9 @@ assertIncludesAll(productSpec, [
 ], "mvp_loop_product_spec");
 
 assertIncludesAll(productTruth, [
-  "MedOPL v22 是 `platform-provisioned / customer-dedicated`",
+  "MedOPL v22 是 OPL-Webui 的商业资源控制面",
+  "账号创建/批准",
+  "充值/授信",
   "MedOPL 不是云资源控制台",
   "OPL-Webui 是主要 consumer / entry surface",
   "OPL-Webui 负责 ordinary chat",

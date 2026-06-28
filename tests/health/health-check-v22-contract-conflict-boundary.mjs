@@ -139,14 +139,31 @@ for (const liveScript of liveCanaryScripts) {
 }
 
 const activeTruth = docEntries.find(([filePath]) => filePath === "docs/active/README.md")?.[1] ?? "";
-if (!activeTruth.includes("future-authorized") || !activeTruth.includes("真实云、deploy、kubectl、live-test")) {
+if (!activeTruth.includes("active operations substrate") || !activeTruth.includes("真实云、build/push、kubectl、deploy、live-test")) {
   findings.push({
-    type: "active_truth_future_authorized_boundary_missing",
+    type: "active_truth_operations_substrate_boundary_missing",
     file: "docs/active/README.md",
     line: 1,
-    match: "future-authorized / true cloud boundary",
-    detail: "Active truth must keep future-authorized/live execution separate from current local product truth.",
+    match: "active operations substrate / true cloud boundary",
+    detail: "Active truth must keep release operations substrate separate from current product truth and explicit cloud execution authorization.",
   });
+}
+
+for (const [regex, type, detail] of [
+  [/\bPackage [CD]\b/g, "active_truth_must_not_host_historical_package_ledger", "Package C/D provenance belongs in delivery/history, not active product truth."],
+  [/\b(?:Release Image|Cloud Rollout) run\s+28\d{8,}\b/g, "active_truth_must_not_host_workflow_run_ledger", "Specific historical workflow run ids belong in history or runtime evidence, not active product truth."],
+  [/\bimage tag\s+[0-9a-f]{6,}\b/giu, "active_truth_must_not_host_image_tag_ledger", "Image-tag provenance belongs in history/runtime evidence, not active product truth."],
+  [/\b(?:CLB|Ingress|NodePort)\b/g, "active_truth_must_not_host_routing_diagnostics", "Routing diagnostics belong in history/provenance, not active product truth."],
+  [/\bproduction-complete candidate\b/giu, "active_truth_must_not_host_full_production_candidate_narrative", "Production-complete candidate narrative must not define current product truth."],
+]) {
+  addRegexFindings(
+    findings,
+    "docs/active/README.md",
+    activeTruth,
+    regex,
+    type,
+    detail,
+  );
 }
 
 assertNoFindings(findings);

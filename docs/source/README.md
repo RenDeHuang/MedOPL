@@ -37,7 +37,7 @@ Machine boundary: 本文是 source surface 视角入口，不是第二份 curren
 Immediate cleanup order:
 
 1. Keep file count as pressure only; block only on missing owner, consumer, lifecycle or registry.
-2. Keep root `contracts/**` consumer-first and small; oversized Package D / production launch payloads have been physically retired from active contracts.
+2. Keep root `contracts/**` consumer-first and small; oversized production launch payloads have been physically retired from active product contracts and remain only as operations/release substrate or history provenance when they still have a runner consumer.
 3. Keep future-authorized cloud as a small explicit boundary lane; deleted one-off cloud gates must not return as current truth.
 4. Split active backend/frontend/runtime files by owner boundary; do not treat active product/source pages as historical cleanup candidates.
 5. Keep lockfiles and stable human design source unless their owner changes; they are not cleanup targets merely because they are long.
@@ -56,7 +56,7 @@ Go / pre-cloud deployment surface：
 - `services/medopl-go-backend` is the local pre-cloud SaaS backend deployment surface before real-cloud readiness.
 - `services/portal/frontend` is the Portal frontend deployment surface.
 - `scripts/v22-local-services.mjs` owns the repo-native local service plan, start/stop/status/logs lifecycle, local URL health probe and dry-run RC verification for Portal frontend, Go backend, OPL Web Gateway, Runtime Bridge and external clean OPL WebUI. PID and logs stay under `.runtime/local-services`; clean OPL WebUI is only an external endpoint and is never started or stopped by MedOPL. It does not read secrets, deploy, kubectl, build/push or call real cloud.
-- `tests/support/cloud-prework` owns only bounded Tencent/TKE pre-cloud test support that still has active consumers: readonly inventory support, Tencent official SDK readonly adapter shape, Package C dry-run create/release plan and TKE bootstrap preflight plan. Package D deploy/external access runners, production-launch runners, CLB diagnostics, Package C live canary runner and PostgreSQL live ledger sink support are physically retired from the active source surface.
+- `tests/support/cloud-prework` owns only bounded Tencent/TKE pre-cloud test support that still has active consumers: readonly inventory support, Tencent official SDK readonly adapter shape, dry-run create/release plan and TKE bootstrap preflight plan. Historical deploy/external access runners, production-launch runners, routing diagnostics, live canary runner and PostgreSQL live ledger sink support are not active product source; any remaining consumer must be described as operations/release substrate and cannot define product truth.
 - `services/medopl-go-backend/internal/domain/controlplane`, `internal/repository/controlplane`, `internal/repository/memory`, `migrations/0001_baseline.sql` and `ent/schema/{resourcebinding,cloudoperation}.go` own the current PostgreSQL `resource_bindings` / `cloud_operations` ledger lower bound for tenant runtime lifecycle. The repository contract exposes create resource binding, append cloud operation event, node pool id update, lifecycle status update, released, failed and cleanupRequired writes; the memory implementation is the local/dry-run contract store. This source surface records canonical ownership / billing truth in MedOPL ledger shape. It does not implement authorized successful real PostgreSQL canary execution, production billing reconciliation, deploy, kubectl or new Tencent mutation.
 
 `services/medopl-go-backend` 必须通过 source、tests、fixtures、manifest、workflow review、package verification 和 pre-cloud deployable RC 进入 real-cloud-readiness；不能只靠目录存在或 prose claim 成为 production truth。当前 authoring branch 的 pre-cloud deployable RC 只覆盖 Portal frontend -> Go `/api`、provider/preflight/launch、workspace/file/run/artifact、billing/audit、resource projection、release/stop-billing 和 cloud connector fail-closed 的 deterministic local proof，不证明 live provider、真实 upstream OPL、real cloud 或 production billing。
@@ -87,7 +87,7 @@ Retirement surface：
 - `services/portal/src/app/portal-runtime.mjs` 已物理删除，不得作为部署入口、typed API owner 或当前 verify owner。
 - `services/opl-web-gateway` 继续作为 Gateway / clean upstream anti-corruption boundary，优先保持薄边界。
 - `services/opl-web-gateway/src/launch-client-script.mjs` 是 gateway launch bridge browser script 的稳定 public entrypoint；carrier 细节拆分到 `services/opl-web-gateway/src/launch-client-script/**`，避免把 direct entry shell、provider key panel、portal API client、native bridge 和 telemetry 长期堆叠在一个千行模板文件里。
-- `services/opl-runtime-bridge` 继续作为 Runtime Bridge / Runtime Agent integration boundary；它不是 billing ledger truth 或 cloud inventory truth。容器默认 state root 是 `/tmp/medopl-runtime/.runtime`，Package D manifest 必须通过非 secret env 和 writable volume 保持该路径可写，不能默认写 `/.runtime`。
+- `services/opl-runtime-bridge` 继续作为 Runtime Bridge / Runtime Agent integration boundary；它不是 billing ledger truth 或 cloud inventory truth。容器默认 state root 是 `/tmp/medopl-runtime/.runtime`；部署形状必须通过非 secret env 和 writable volume 保持该路径可写，不能默认写 `/.runtime`。
 - `real-cloud-authorization-boundary` 仍是单独 Operations cursor；本地 Portal/OPL delivery source 不能授权 secret、真实云、deploy、kubectl、build/push 或 live-test。
 
 Backend physical removal gate：

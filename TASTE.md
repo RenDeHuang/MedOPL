@@ -13,12 +13,12 @@ Machine boundary: 本文是人读协作偏好。项目事实、接口约束、�
 
 ## 总则
 
-MedOPL v22 的上位原则是 `managed OPL SaaS resource-control first`：平台为 clean upstream OPL 提供开箱即用、可购买、可管理、可计费、可审计、可释放的计算资源和存储空间。Portal 做资源购买与控制面；OPL 做科研执行；Runtime/Gateway 做边界适配；测试和 runner 守住 truth 闭环。
+MedOPL v22 的上位原则是 `OPL-Webui commercial resource-control first`：MedOPL 是 OPL-Webui 的商业资源控制面，为 clean upstream OPL 提供开箱即用、可购买、可管理、可计费、可审计、可释放的账号、套餐、余额、计算资源和存储空间。OPL-Webui 做 ordinary chat、科研交互和任务体验；MedOPL 做资源购买、开通、计费、账单核对和释放；Runtime/Gateway 做边界适配；测试和 runner 守住 truth 闭环。
 
 ## 原则
 
 1. **资源控制面优先**
-   用户看到的是账号、OPL workspace、计算资源、存储空间、套餐、任务并发、余额、账单、用量和释放状态，不是云资源控制台。云资源、runtime、secret、对象存储和审计都应被平台边界吸收，不暴露为普通用户主叙事。
+   用户看到的是账号、OPL workspace、计算资源、存储空间、套餐、任务并发、余额、账单、用量和释放状态，不是云资源控制台，也不是 OPL-Webui 本体或 ordinary chat。云资源、runtime、secret、对象存储和审计都应被 MedOPL 平台边界吸收，不暴露为普通用户主叙事。
 
 2. **clean upstream 优先**
    one-person-lab 是 upstream reference，不是 MedOPL active source。平台通过 Gateway、Runtime Bridge / Runtime Agent、公开 API/CLI 和 anti-corruption mapping 接入；不要把 Portal、Gateway 或 Runtime 逻辑写回 upstream。

@@ -66,8 +66,8 @@ assertIncludesAll(productSpec, [
 ], "saas_control_plane_product_spec");
 
 assertIncludesAll(productTruth, [
-  "One Person Lab SaaS 资源控制面",
-  "用户在 MedOPL 购买和管理 OPL 需要的计算资源、存储空间、套餐、任务并发、费用与释放能力",
+  "OPL-Webui 的商业资源控制面",
+  "账号创建/批准、充值/授信、套餐选择、计算资源、存储空间、任务并发、费用与释放能力管理",
   "MedOPL 不是云资源控制台",
   "OPL-Webui 是主要 consumer / entry surface",
   "OPL-Webui 负责 ordinary chat",

@@ -79,7 +79,7 @@
     "commercial_business_closure_deploy_verification_pending_for_upload_billing_writeback_fix",
     "external_psp_multi_region_sla_enterprise_compliance_ongoing_authorization_and_unrestricted_full_production_remain_unclaimed"
   ],
-  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-business-flow-current-closeout-sync at 42e3b6497847d494289e1e6ff1d842b6e791bb63. Release Image run 28310282648 built image tag 235ea17 and Cloud Rollout run 28310293188 deployed the older image through rollout apply and deploy receipt; public availability probe passed, but OPL-Webui consumer canary failed closed at upload_file billing ledger writeback with errorCategory billing_event_write_failed and dbOperationStage save_billing_event. The source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the remaining evidence is authorized Release Image, Cloud Rollout and OPL-Webui consumer canary rerun for the same commercial business flow. The current blocker is commercial business closure deployment verification for the landed upload billing writeback fix, not deployment operations confirmation governance. Cloud Rollout workflow_dispatch and GitHub production environment deployment gate remain deployment operations safety only; they are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-business-flow-current-closeout-sync at 42e3b6497847d494289e1e6ff1d842b6e791bb63.",
+  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-business-flow-current-closeout-sync at 42e3b6497847d494289e1e6ff1d842b6e791bb63. The source fix for upload_file billing ledger writeback is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the remaining evidence is authorized Release Image, Cloud Rollout and OPL-Webui consumer canary rerun for the same commercial business flow. The current blocker is commercial business closure deployment verification for the landed upload billing writeback fix, not deployment operations confirmation governance. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are active operations substrate only; they are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-business-flow-current-closeout-sync at 42e3b6497847d494289e1e6ff1d842b6e791bb63.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -177,7 +177,7 @@
       "depends_on": [
         "precloud-deployable-rc"
       ],
-      "history_summary": "Active cursor remains blocked at the OPL-Webui runtime production slice. Historical Package C/Package D/cloud evidence stays provenance only; active verification keeps readonly inventory, Package C dry-run plan and TKE bootstrap preflight as small registered cloud lanes. First proof is real local product RC, cloud proof is cloud-deployable RC, and production proof requires explicit authorization plus runtime/storage/billing/audit/release owner receipts. No secret, provider call, Tencent mutation, kubectl, deploy, build/push, production ledger write, live-test or public access is authorized by default.",
+      "history_summary": "Closed historical cloud/package provenance is history only. Current product proof remains the commercial business flow, with production proof gated by explicit authorization plus runtime/storage/billing/audit/release owner receipts.",
       "landed_commit": "a272e07c2b462c4e61315536c701f03069b5f474"
     },
     {
@@ -238,7 +238,7 @@
         "local-portal-opl-delivery-rc",
         "opl-webui-runtime-production-slice"
       ],
-      "history_summary": "Local AI MVP baseline, real-cloud vision docs, real-cloud readiness lane, legacy runtime cloud cleanup, Package B readonly inventory, TC3 diagnostic cleanup, Package C dry-run create/release plan, TKE bootstrap preflight, repo governance closeout, Package C live canary readiness gate, Package C non-secret cloud parameters input contract, Package C live canary runner, unsupported tke:nodepool tag skip strategy, authorized Package C create/scale/delete canary, PostgreSQL resource_bindings / cloud_operations lower bound, Package C local state-machine evidence, Package C repository write wiring contract, gated PostgreSQL sink support path, explicit live canary runner contract, Package D local shape gate, reviewable release plan shape, execution preflight gate, in-cluster runner shape gate, non-executing runner manifest materialization / authorization pack, bootstrap authorization pack, repo-native Kubernetes API server-side dry-run preflight runner and repo-native bootstrap apply runner have landed as pre-cloud / scoped local evidence. Stabilization now uses Package D deploy readiness planning before deploy execution; productionization is now blocked on Package D PostgreSQL/runtime env/combined in-cluster preflight from the platform runner, DB connectivity smoke, rollback evidence, service-in-VPC PostgreSQL live canary, billing/audit ledger, Portal opening entry and workspace storage quota.",
+      "history_summary": "Real-cloud readiness prework is historical provenance. Bounded readonly/dry-run/TKE preflight support remains operations substrate only and must not define current product truth, business admission or production completion.",
       "closed_at": "2026-06-13",
       "landed_commit": "db0f9f1653fa46ffbbc399af7b963b288212023b"
     }
@@ -303,10 +303,10 @@
       "tests/fixtures/v22/goal-current.json",
       "tests/fixtures/v22/agent-verify-manifest.json"
     ],
-    "latest_local_evidence": "Release Image run 28310282648 built image tag 235ea17; Cloud Rollout run 28310293188 applied the older deployment and deploy receipt, public availability passed, OPL-Webui consumer canary failed at upload_file billing_event_write_failed save_billing_event; source fix landed at 34b0e30 and needs authorized deploy rerun evidence"
+    "latest_local_evidence": "source fix landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; authorized Release Image, Cloud Rollout and OPL-Webui consumer canary rerun remain pending for the same commercial business flow"
   },
   "release_readiness_state": {
-    "status": "cloud_release_candidate_evidence_present_production_complete_fail_closed",
+    "status": "active_operations_substrate_for_commercial_business_flow_verification",
     "cursor_eligible": false,
     "blocked_before_risky_execution": true,
     "forbidden_until_executable": [
@@ -314,7 +314,7 @@
       "new true cloud mutation outside current Release Image / Cloud Rollout workflows",
       "new build/push/kubectl/deploy/live-test outside the active authorization pack and receipt manifest flow"
     ],
-    "next_cursor": "production-complete-owner-receipt-gate",
+    "next_cursor": "goal-commercial-runtime-storage-billing-business-closure",
     "authorization_required_before": [
       "new secret read beyond current GitHub production environment",
       "new true cloud mutation beyond current Release Image / Cloud Rollout workflows",
@@ -331,18 +331,15 @@
       "ledger / billing / audit writeback",
       "canary / QA / status update"
     ],
-    "latest_local_evidence": "cloud-taxonomy-and-consumer-first-contract-cleanup",
+    "latest_local_evidence": "active operations substrate supports authorized Release Image, Cloud Rollout, receipt manifest and cloud goal runner verification; detailed historical run provenance lives in docs/history and runtime evidence",
     "productionization_plan": [
-      "Keep opl-webui-runtime-production-slice fail-closed until production owner receipts exist",
-      "Run readonly inventory boundary only through real-cloud-readiness lane",
-      "Run Package C tenant runtime dry-run plan with no real cloud calls through npm run cloud:goal -- --operation dry_run_plan",
-      "Run TKE bootstrap preflight with no secret, kubectl, deploy or mutation",
-      "Use the active cloud authorization pack single cloud:goal -- --operation map before any provider execution or production claim",
-      "After authorized execution, write MedOPL runtime / storage / billing / audit / release evidence through the backend owner surface",
-      "Then run canary / QA / status update with redacted evidence outside git"
+      "Keep product truth centered on account approval, plan, balance, quota, runtime/storage, file/run ledger, billing ledger, statement reconciliation and release/destroy/stop billing",
+      "Use Release Image and Cloud Rollout only as active operations substrate for authorized verification",
+      "Run OPL-Webui consumer canary for the same commercial business flow after the landed upload billing writeback fix is released",
+      "Keep raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts outside git"
     ],
     "readinessGaps": [
-      "Cloud release candidate and scoped production-complete candidate evidence exists for the current authorized OPL-Webui runtime-required canary path via Release Image run 28116660385, Cloud Rollout run 28116700519 and redacted receipt manifest sha256:3c718484f40b0bcfadf55bbafe6f97b02b22072ad801004a560bfe1f69059a0f; the current availability probe includes Portal public entry, HTTP-to-HTTPS redirect, Go health and Go readiness, and the 14 production-complete candidate criteria include business_db_persistence_receipt backed by live_test evidence hash sha256:77555180d9db24120515881082c54539a5d4f334ca8a188c460def5f022fe29f.",
+      "Authorized Release Image / Cloud Rollout / OPL-Webui consumer canary rerun is still required for the landed upload billing writeback fix.",
       "Unscoped production complete remains unclaimed until dedicated scope-expansion evidence proves multi-region/SLA, enterprise compliance, ongoing authorization and broader tenant/resource readiness.",
       "Raw evidence, credentials, uploaded files, runtime artifacts and provider/cloud payloads remain outside git."
     ],
@@ -527,11 +524,7 @@
       ]
     },
     "goal_f_cloud_release_candidate": {
-      "status": "production_complete_candidate_verified_current_trunk_14_criteria",
-      "feature_commit": "90a89b75b2a4613719ce9c424367fb35ed51495c",
-      "trunk_commit_with_ci_fixes": "b83d555de3c3ad77e95f5c80421ba56cacb638b2",
-      "release_image_run_id": "28116660385",
-      "cloud_rollout_run_id": "28116700519",
+      "status": "historical_receipt_manifest_substrate_pointer",
       "receipt_manifest_artifact": "medopl-production-receipt-manifest",
       "receipt_manifest_ref": ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json",
       "required_receipts": [
@@ -544,8 +537,8 @@
         "production_deploy_receipt"
       ],
       "required_lifecycle_sections_count": 12,
-      "local_gate_behavior": "passes with redacted manifest artifact copied to .runtime pointer path after Cloud Rollout run 28116700519",
-      "can_claim": "cloud release candidate and scoped production-complete candidate evidence for the current authorized canary path when the redacted manifest artifact is present and verify gates pass, including Portal public entry, HTTP redirect availability, live DB persistence proof and operational stability receipts",
+      "local_gate_behavior": "passes with redacted manifest artifact copied to the runtime pointer path when the authorized artifact is restored",
+      "can_claim": "scoped cloud receipt boundary evidence is available as operations substrate when the redacted manifest artifact is present and verify gates pass; it does not define current product truth",
       "cannot_claim": [
         "unscoped production complete",
         "multi-region production",
@@ -565,14 +558,8 @@
       }
     },
     "latest_trunk_cloud_runs": {
-      "trunk_commit": "b83d555de3c3ad77e95f5c80421ba56cacb638b2",
-      "release_image_run_id": "28116660385",
-      "release_image_tag": "b83d555",
-      "cloud_rollout_run_id": "28116700519",
-      "cloud_rollout_workflow_conclusion": "success_production_complete_candidate_verified_14_criteria",
-      "public_api_blocker": "none_for_current_authorized_canary_path",
-      "fixed_by_this_slice": "Phase E billing idempotency and Phase F operational stability are deployed: production DB auth and in-cluster secret sync passed, runtime/storage/billing-audit/kubectl/deploy/live canary receipt lanes passed, and the redacted manifest accepted business DB persistence plus soak, concurrency pressure, rollback drill, continuous canary, alerting and final release decision criteria.",
-      "public_api_availability": "portal_entry_http_redirect_go_health_ready_live_db_persistence_billing_idempotency_and_operational_stability_available_during_rollout",
+      "status": "historical_provenance_moved_to_history",
+      "current_role": "active_operations_substrate_not_product_truth",
       "raw_evidence_committed": false
     }
   },
@@ -883,12 +870,12 @@
   ],
   "nextAuthorizationPrompt": {
     "target": "cloud-codex",
-    "runIdHint": "production-complete-owner-receipt-gate-next",
-    "prompt": "当前 cloud release candidate 和 scoped production-complete candidate evidence 已由 Release Image run 28116660385、Cloud Rollout run 28116700519、14-criteria redacted receipt manifest 和 business_db_persistence_receipt 证明。若要推进 unscoped production complete，必须继续使用 active authorization pack，并补多区域/SLA/企业合规/长期所有租户观测或明确非目标证据；不得把单次授权 canary 自动扩大成所有租户/资源长期稳定。"
+    "runIdHint": "commercial-business-flow-rerun-after-upload-billing-writeback-fix",
+    "prompt": "下一步是授权 Release Image + Cloud Rollout + OPL-Webui consumer canary 复验当前商业业务流，覆盖 upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing。不要把 operations substrate 写成产品 truth，不提交 raw evidence，不 claim production complete 或 external PSP。"
   },
   "nextLocalCodexPrompt": {
     "target": "local-codex",
-    "prompt": "下一步不是再补 14-criteria canary gate；它已由 Cloud Rollout run 28116700519 证明。若要扩大生产声明，只能在现有 contracts/tests/docs owners 中定义多区域、SLA、企业合规、长期租户观测或明确排除项，并由 consumer tests 消费。不要新增 phase 包，不提交 .runtime 原始证据。"
+    "prompt": "本地 current truth 已收敛到 MedOPL commercial resource-control plane。若继续开发，按 account approval、plan、balance、quota、runtime/storage、billing ledger、statement reconciliation、release/destroy/stop billing 的业务流推进；不要恢复 Package/run-ledger narrative，不新增 change package。"
   },
   "cloud_deploy_readiness_contract_ref": {
     "schema_version": 1,
@@ -913,7 +900,7 @@
       "production_deploy_receipt"
     ],
     "receipt_manifest_policy": "small_pointer_and_summary_only",
-    "can_claim": "current authorized canary path has a 14-criteria redacted production-complete candidate manifest accepted by verify gates after Cloud Rollout run 28116700519",
+    "can_claim": "redacted receipt manifest evidence can satisfy the scoped cloud release-candidate gate when restored through the authorized evidence path",
     "cannot_claim": "unscoped production complete, multi-region production, SLA proven, enterprise compliance, ongoing authorization, or unobserved tenant/resource readiness without dedicated scope-expansion evidence",
     "receipt_operation_binding_required": true,
     "receipt_authorization_ref_required": true,
@@ -953,8 +940,6 @@
     ],
     "receipt_manifest_ref": ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json",
     "receipt_manifest_hash": "sha256:3c718484f40b0bcfadf55bbafe6f97b02b22072ad801004a560bfe1f69059a0f",
-    "release_image_run_id": "28116660385",
-    "cloud_rollout_run_id": "28116700519",
     "release_owner_readiness_binding": {
       "criterion": "release_owner_readiness_receipt",
       "required_gate": "release_owner_receipt",
@@ -1031,7 +1016,7 @@
       "evidence_hash_policy": "sha256_pointer_hash_required",
       "raw_database_payload_policy": "forbidden",
       "accepted_evidence_hash": "sha256:77555180d9db24120515881082c54539a5d4f334ca8a188c460def5f022fe29f",
-      "can_claim": "current authorized canary path persisted PostgreSQL business metadata proof into the 14-criteria production-complete candidate manifest",
+      "can_claim": "business metadata persistence proof can be bound into the scoped receipt manifest when authorized redacted evidence is restored",
       "cannot_claim": "long-running persistence, all tenants/resources, normalized typed tables for every projection, or production complete final release decision"
     },
     "operational_stability_receipt_binding": {
@@ -1043,7 +1028,7 @@
         "alerting_receipt",
         "final_release_decision_receipt"
       ],
-      "required_gate": "observability_receipt / release_owner_receipt through production-complete candidate manifest",
+      "required_gate": "observability_receipt / release_owner_receipt through scoped receipt manifest",
       "evidence_source": "scripts/cloud-rollout/medopl.mjs",
       "runbook": [
         "node scripts/cloud-rollout/medopl.mjs --availability-probe --soak",
@@ -1059,7 +1044,7 @@
       "receipt_source_policy": "cloud_rollout_summary_only",
       "raw_log_policy": "forbidden",
       "runner_cross_check": "scripts/v22-production-receipt-boundary.mjs#validateProductionReceiptBoundary and scripts/v22-cloud-authorized-executor.mjs#manifest-only",
-      "can_claim": "current authorized canary path produced accepted soak, concurrency pressure, rollback drill, continuous canary monitoring, alerting and final release decision receipts in the redacted production-complete candidate manifest",
+      "can_claim": "operational stability receipts are contract-bound to the redacted receipt manifest when authorized evidence is restored",
       "cannot_claim": "multi-region production, SLA proven, enterprise compliance, ongoing authorization, or unobserved tenant/resource readiness"
     }
   },
@@ -1087,10 +1072,7 @@
   },
   "live_test_progress": {
     "schema_version": 1,
-    "status": "phase_f_operational_stability_gate_remote_rollout_verified_14_criteria",
-    "release_image_run_id": "28116660385",
-    "cloud_rollout_run_id": "28116700519",
-    "deployed_image_tag": "b83d555",
+    "status": "historical_operations_receipt_substrate_pointer",
     "passed_steps_before_blocker": [
       "release_image",
       "runtime_receipt_preflight",
@@ -1121,7 +1103,7 @@
       "upload_redacted_receipt_manifest"
     ],
     "previous_live_test_blocker": "production_goal_live_test_release_runtime_failed",
-    "local_fix_status": "Phase F local gates and remote Cloud Rollout both require and accepted 14 production-complete candidate criteria for the current authorized canary path.",
+    "local_fix_status": "Operations receipt substrate remains contract-bound and fail-closed; current product proof still requires the commercial business-flow rerun for the landed upload billing writeback fix.",
     "receipt_manifest_ref": ".runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json",
     "receipt_manifest_hash": "sha256:3c718484f40b0bcfadf55bbafe6f97b02b22072ad801004a560bfe1f69059a0f",
     "consumer_tests": [
@@ -1144,7 +1126,7 @@
       "keeps_go_json_contract": true
     },
     "raw_evidence_committed": false,
-    "can_claim": "current authorized canary path passed remote Cloud Rollout with 14 production-complete candidate criteria and local manifest-only verify gates.",
+    "can_claim": "redacted operations receipt shape and manifest-only gates remain available as release substrate when authorized evidence is restored",
     "cannot_claim": [
       "unscoped production complete",
       "multi-region production",
