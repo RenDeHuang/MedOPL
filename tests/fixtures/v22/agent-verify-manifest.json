@@ -461,6 +461,7 @@
         "node scripts/v22-verify.mjs active-platform --json",
         "node tests/product/product-test-v22-medopl-contract-authority.mjs",
         "node tests/product/product-test-v22-commercial-business-flow-local-rc-revalidation.mjs",
+        "node tests/product/product-test-v22-commercial-production-maturity-gap-audit.mjs",
         "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
         "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
         "node tests/backend/backend-test-v22-api-contract.mjs",
@@ -491,6 +492,7 @@
         "node scripts/v22-verify.mjs active-platform --json",
         "node tests/product/product-test-v22-medopl-contract-authority.mjs",
         "node tests/product/product-test-v22-commercial-business-flow-local-rc-revalidation.mjs",
+        "node tests/product/product-test-v22-commercial-production-maturity-gap-audit.mjs",
         "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
         "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
         "node tests/backend/backend-test-v22-api-contract.mjs",
@@ -572,6 +574,7 @@
         "node tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs",
         "node tests/product/product-test-v22-medopl-contract-authority.mjs",
         "node tests/product/product-test-v22-commercial-business-flow-local-rc-revalidation.mjs",
+        "node tests/product/product-test-v22-commercial-production-maturity-gap-audit.mjs",
         "node tests/release/release-test-v22-boundary-contract.mjs",
         "node tests/release/release-test-v22-production-receipt-boundary.mjs",
         "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs",
@@ -653,6 +656,7 @@
         "node tests/hygiene/hygiene-test-v22-secret-and-retired-changes-boundary.mjs",
         "node tests/product/product-test-v22-medopl-contract-authority.mjs",
         "node tests/product/product-test-v22-commercial-business-flow-local-rc-revalidation.mjs",
+        "node tests/product/product-test-v22-commercial-production-maturity-gap-audit.mjs",
         "node tests/release/release-test-v22-boundary-contract.mjs",
         "node tests/release/release-test-v22-production-receipt-boundary.mjs",
         "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs"
@@ -662,7 +666,8 @@
       "id": "product",
       "commands": [
         "node tests/product/product-test-v22-medopl-contract-authority.mjs",
-        "node tests/product/product-test-v22-commercial-business-flow-local-rc-revalidation.mjs"
+        "node tests/product/product-test-v22-commercial-business-flow-local-rc-revalidation.mjs",
+        "node tests/product/product-test-v22-commercial-production-maturity-gap-audit.mjs"
       ]
     },
     {

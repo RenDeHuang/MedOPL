@@ -99,7 +99,7 @@
       "history_or_evidence_pointer": "docs/history/README.md"
     },
     "post_merge_closeout": "completed",
-    "next_recommended_goal": "goal-future-scope-expansion-or-ongoing-operations-proof",
+    "next_recommended_goal": "goal-commercial-payment-admin-api-maturity",
     "next_cursor": "goal-commercial-runtime-storage-billing-business-closure"
   },
   "current_cursor": "goal-commercial-runtime-storage-billing-business-closure",
@@ -283,6 +283,7 @@
       "node scripts/v22-verify.mjs active-platform --json",
       "node tests/product/product-test-v22-medopl-contract-authority.mjs",
       "node tests/product/product-test-v22-commercial-business-flow-local-rc-revalidation.mjs",
+      "node tests/product/product-test-v22-commercial-production-maturity-gap-audit.mjs",
       "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
       "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
       "node tests/backend/backend-test-v22-api-contract.mjs",
@@ -634,6 +635,7 @@
     "node scripts/v22-verify.mjs active-platform --json",
     "node tests/product/product-test-v22-medopl-contract-authority.mjs",
     "node tests/product/product-test-v22-commercial-business-flow-local-rc-revalidation.mjs",
+    "node tests/product/product-test-v22-commercial-production-maturity-gap-audit.mjs",
     "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
     "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
     "node tests/backend/backend-test-v22-api-contract.mjs",
@@ -908,13 +910,13 @@
     "Keep canary credentials/session, uploaded files, runtime artifacts, cloud payloads and raw evidence outside git; commit only contract/test/source changes and small redacted pointers."
   ],
   "nextAuthorizationPrompt": {
-    "target": "cloud-codex",
-    "runIdHint": "future-scope-expansion-or-ongoing-operations-proof",
-    "prompt": "当前只保留 scoped commercial business-flow canary proof 作为 operations substrate。下一步如需扩大范围、长期运行证明、外部 PSP、SLA/multi-region 或 full production，必须单独授权并保持 raw evidence outside git。"
+    "target": "local-codex",
+    "runIdHint": "commercial-production-maturity-gap",
+    "prompt": "当前授权 commercial business-flow canary 已通过。下一步不是重开 business closure，而是按 commercial production maturity gap roadmap 推进第一项 goal-commercial-payment-admin-api-maturity；不触云、不 claim external PSP/real payment/refund/invoice/tax/compliance，除非单独授权。"
   },
   "nextLocalCodexPrompt": {
     "target": "local-codex",
-    "prompt": "本地 current truth 已收敛到 MedOPL commercial resource-control plane。若继续开发，按 account approval、plan、balance、quota、runtime/storage、billing ledger、statement reconciliation、release/destroy/stop billing 的业务流推进；不要恢复 Package/run-ledger narrative，不新增 change package。"
+    "prompt": "继续开发时按 maturity gap roadmap 走：先固定 admin payment/internal credit 与 future PSP 的边界，再推进安装包、setup wizard、release metadata、CI/security、ops runbook、billing incident、ops sidecar 和 OPL-Webui bridge maturity。"
   },
   "cloud_deploy_readiness_contract_ref": {
     "schema_version": 1,
@@ -1497,11 +1499,261 @@
       "retirement",
       "next_recommended_goal"
     ],
-    "next_recommended_goal": "goal-future-scope-expansion-or-ongoing-operations-proof",
+    "next_recommended_goal": "goal-commercial-payment-admin-api-maturity",
     "cannot_claim": [
       "historical proof in active truth",
       "completed goals as active blockers",
       "completed goals as current cursor"
+    ]
+  },
+  "commercial_production_maturity_gap": {
+    "schema_version": 1,
+    "goal_id": "goal-commercial-production-maturity-gap-audit",
+    "status": "temporary_gap_matrix",
+    "created_at": "2026-06-28",
+    "business_closure_goal_completed": true,
+    "current_canClaim": [
+      "authorized commercial business-flow cloud canary passed",
+      "internal credit + billing ledger + statement reconciliation + release/destroy/stop billing passed",
+      "Commercial Launch UI absorbed"
+    ],
+    "canClaim": [
+      "authorized commercial business-flow cloud canary passed",
+      "internal credit + billing ledger + statement reconciliation + release/destroy/stop billing passed",
+      "Commercial Launch UI absorbed"
+    ],
+    "cannotClaim": [
+      "external PSP settlement",
+      "real payment completed",
+      "refund / invoice / tax / compliance",
+      "unscoped full production",
+      "all users/all tenants",
+      "SLA/multi-region/ongoing authorization"
+    ],
+    "reference_scope": {
+      "sub2api": "production_packaging_structure_reference_only",
+      "opl_ordinary_path": "consumer_bridge_boundary_reference_only",
+      "medopl_boundary": "commercial_resource_control_plane_not_opl_webui_or_cloud_console"
+    },
+    "gap_matrix": [
+      {
+        "id": "payment_psp_admin_payment_api",
+        "label": "Payment / PSP / admin payment API",
+        "current_truth": "admin recharge and internal credit ledger passed; external PSP and real settlement remain non-goal",
+        "gap": "no provider-verified payment intent, callback, settlement, refund, invoice, tax or compliance workflow",
+        "minimum_evidence_slice": "admin payment API boundary that separates internal credit from future PSP adapter and preserves cannotClaim for real settlement",
+        "repo_change_required": true,
+        "cloud_execute_required": false,
+        "canClaim": [
+          "internal admin credit production mode remains explicit"
+        ],
+        "cannotClaim": [
+          "external PSP settlement",
+          "real payment completed",
+          "refund / invoice / tax / compliance"
+        ],
+        "status": "gap"
+      },
+      {
+        "id": "deploy_package_compose_install_upgrade_uninstall_systemd",
+        "label": "deploy package / compose / install / upgrade / uninstall / systemd",
+        "current_truth": "Release Image and Cloud Rollout support authorized operations; local compose file exists for product shape",
+        "gap": "operator install, upgrade, uninstall, systemd and packaged deployment lifecycle are not productized as a durable distribution path",
+        "minimum_evidence_slice": "repo-native deploy package contract and local dry-run installer lifecycle without cloud mutation",
+        "repo_change_required": true,
+        "cloud_execute_required": false,
+        "canClaim": [
+          "authorized cloud rollout substrate exists"
+        ],
+        "cannotClaim": [
+          "general installable production package",
+          "systemd-managed production service lifecycle"
+        ],
+        "status": "gap"
+      },
+      {
+        "id": "env_config_secrets_admin_bootstrap_setup_wizard",
+        "label": "env/config/secrets/admin bootstrap/setup wizard",
+        "current_truth": "secrets stay in backend/cloud authorization boundary; admin UI consumes typed business ledger APIs",
+        "gap": "first-run owner bootstrap, config validation, secret readiness and admin setup wizard are not a complete product path",
+        "minimum_evidence_slice": "fail-closed setup wizard/API contract for owner bootstrap and secret/config readiness without exposing raw secrets",
+        "repo_change_required": true,
+        "cloud_execute_required": false,
+        "canClaim": [
+          "secret hygiene boundary is enforced locally"
+        ],
+        "cannotClaim": [
+          "self-serve setup complete",
+          "raw secret exposure safe"
+        ],
+        "status": "gap"
+      },
+      {
+        "id": "release_workflow_version_changelog_image_tag_rollback",
+        "label": "release workflow / VERSION / CHANGELOG / image tag / rollback",
+        "current_truth": "Release Image, Cloud Rollout and rollback receipts exist as operations substrate",
+        "gap": "VERSION, CHANGELOG, image tag policy and rollback playbook are not compacted into a product release lifecycle",
+        "minimum_evidence_slice": "release metadata contract tying version, changelog, image tag, rollback ref and cannotClaim boundaries",
+        "repo_change_required": true,
+        "cloud_execute_required": false,
+        "canClaim": [
+          "authorized rollout receipt can record rollback command"
+        ],
+        "cannotClaim": [
+          "ongoing authorization",
+          "full production release train"
+        ],
+        "status": "gap"
+      },
+      {
+        "id": "ci_security_dependency_secret_scan",
+        "label": "backend/frontend CI / security scan / dependency audit / secret scan",
+        "current_truth": "local verify, health, repo hygiene, bloat and production dependency receipt gates exist",
+        "gap": "maturity lane for backend/frontend CI, security scan, dependency audit and secret scan is not a single release-readiness matrix",
+        "minimum_evidence_slice": "CI/security scan matrix using existing package scripts and redacted summaries only",
+        "repo_change_required": true,
+        "cloud_execute_required": false,
+        "canClaim": [
+          "local gates cover current source truth"
+        ],
+        "cannotClaim": [
+          "enterprise compliance",
+          "continuous security monitoring"
+        ],
+        "status": "gap"
+      },
+      {
+        "id": "operations_docs_troubleshooting_backup_migration",
+        "label": "operations docs / troubleshooting / backup / migration",
+        "current_truth": "delivery docs describe operations substrate and evidence boundaries",
+        "gap": "operator troubleshooting, backup, restore and migration runbooks are not compact product operations docs",
+        "minimum_evidence_slice": "small operations runbook index for backup/migration/troubleshooting with no secret/raw evidence",
+        "repo_change_required": true,
+        "cloud_execute_required": false,
+        "canClaim": [
+          "operations substrate is documented"
+        ],
+        "cannotClaim": [
+          "disaster recovery proven",
+          "SLA/multi-region"
+        ],
+        "status": "gap"
+      },
+      {
+        "id": "billing_incident_stop_billing_reconciliation_storage_destroy_protection",
+        "label": "billing incident / stop billing reconciliation / storage destroy protection",
+        "current_truth": "billing ledger, statement reconciliation, release/destroy/stop billing passed in scoped canary",
+        "gap": "billing incident workflow, stop-billing exception queue and storage destroy protection are not productized for operators",
+        "minimum_evidence_slice": "incident model and admin queue for billing/release/destroy reconciliation using existing ledger truth",
+        "repo_change_required": true,
+        "cloud_execute_required": false,
+        "canClaim": [
+          "current ledger path fails closed and reconciles in scoped proof"
+        ],
+        "cannotClaim": [
+          "all incident classes handled",
+          "long-running operations stability"
+        ],
+        "status": "gap"
+      },
+      {
+        "id": "ops_data_management_sidecar",
+        "label": "ops data management sidecar",
+        "current_truth": "Go backend owns business ledger; no separate ops data sidecar is product truth",
+        "gap": "support data export, redacted inspection, retention and repair helpers are not available as a bounded sidecar",
+        "minimum_evidence_slice": "read-only/redacted ops data sidecar contract with no business truth ownership or secret leakage",
+        "repo_change_required": true,
+        "cloud_execute_required": false,
+        "canClaim": [
+          "Go backend remains ledger authority"
+        ],
+        "cannotClaim": [
+          "sidecar owns billing truth",
+          "raw data export safe by default"
+        ],
+        "status": "gap"
+      },
+      {
+        "id": "opl_webui_consumer_bridge_deeplink_projection_boundary",
+        "label": "OPL-Webui consumer bridge/deeplink/projection boundary",
+        "current_truth": "OPL-Webui triggers runtime_required and consumes refs/deeplinks/artifacts; MedOPL owns commercial resource control",
+        "gap": "ordinary chat/task UX bridge, deeplink resume and projection boundaries need a mature consumer contract aligned to OPL ordinary path",
+        "minimum_evidence_slice": "consumer bridge contract that keeps ordinary chat in OPL-Webui and commercial runtime/storage/billing in MedOPL",
+        "repo_change_required": true,
+        "cloud_execute_required": false,
+        "canClaim": [
+          "runtime_required commercial bridge exists"
+        ],
+        "cannotClaim": [
+          "MedOPL owns ordinary chat",
+          "domain agent quality or artifact authority"
+        ],
+        "status": "gap"
+      }
+    ],
+    "recommended_goal_roadmap": [
+      {
+        "goal_id": "goal-commercial-payment-admin-api-maturity",
+        "order": 1,
+        "reason": "Payment/admin API boundary is the highest business-risk maturity gap because internal credit is proven but external PSP, real payment, refund, invoice, tax and compliance remain cannotClaim.",
+        "owner_surface": "contracts/medopl-api-contract.json, contracts/medopl-billing-ledger-contract.json, Go backend billing API tests, Portal admin billing ops UI tests",
+        "verification_lane": "landing_local_no_cloud"
+      },
+      {
+        "goal_id": "goal-commercial-ops-install-package-maturity",
+        "order": 2,
+        "reason": "Make deploy package, compose, install, upgrade, uninstall and systemd lifecycle explicit after payment/admin boundary.",
+        "verification_lane": "local_dry_run_no_cloud"
+      },
+      {
+        "goal_id": "goal-commercial-owner-bootstrap-setup-wizard",
+        "order": 3,
+        "reason": "Close first-run owner bootstrap, config and secret readiness without exposing raw secrets.",
+        "verification_lane": "local_ui_backend_no_cloud"
+      },
+      {
+        "goal_id": "goal-commercial-release-metadata-rollback-maturity",
+        "order": 4,
+        "reason": "Bind VERSION, CHANGELOG, image tag and rollback policy into the release substrate without claiming ongoing authorization.",
+        "verification_lane": "landing_local_no_cloud"
+      },
+      {
+        "goal_id": "goal-commercial-ci-security-audit-maturity",
+        "order": 5,
+        "reason": "Consolidate CI, dependency audit, security scan and secret scan as release readiness evidence.",
+        "verification_lane": "landing_local_no_cloud"
+      },
+      {
+        "goal_id": "goal-commercial-operations-runbook-backup-migration",
+        "order": 6,
+        "reason": "Add compact operator backup, migration and troubleshooting runbooks after package/release surfaces stabilize.",
+        "verification_lane": "light_docs_and_local_gates"
+      },
+      {
+        "goal_id": "goal-commercial-billing-incident-reconciliation-maturity",
+        "order": 7,
+        "reason": "Productize billing incident, stop-billing reconciliation and storage destroy protection workflows on top of the proven ledger.",
+        "verification_lane": "backend_frontend_local_rc"
+      },
+      {
+        "goal_id": "goal-commercial-ops-data-sidecar-boundary",
+        "order": 8,
+        "reason": "Define read-only/redacted ops data sidecar only after ledger incident boundaries are fixed.",
+        "verification_lane": "local_contract_no_cloud"
+      },
+      {
+        "goal_id": "goal-opl-webui-consumer-bridge-maturity",
+        "order": 9,
+        "reason": "Mature OPL-Webui bridge/deeplink/projection after commercial platform maturity gaps have stable contracts.",
+        "verification_lane": "frontend_runtime_local_no_cloud"
+      }
+    ],
+    "next_recommended_goal": "goal-commercial-payment-admin-api-maturity",
+    "cannot_expand_to": [
+      "business closure gap",
+      "cloud deployment proof without authorization",
+      "external PSP settlement claim",
+      "unscoped full production claim"
     ]
   }
 }

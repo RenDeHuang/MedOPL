@@ -90,6 +90,12 @@ Figma Make 只提供视觉和信息架构输入；Figma absorption、typed API b
 
 Go backend 是 MedOPL control-plane business truth 的本地 MVP takeover 承载面。它必须先接管用户、workspace、provider key ref、套餐、计算资源 intent、存储空间 inventory、billing/audit receipt 和 resource lifecycle command；OPL Web Gateway 与 Runtime Bridge 可以在迁移期继续作为薄 Node anti-corruption / relay 边界。`services/medopl-go-backend` 只有在 Go local RC eval 通过后才能进入 real-cloud-readiness；目录存在不等于 production backend 已完成。
 
+## Commercial Production Maturity Gap
+
+当前 business-flow 已完成，不再重开 business closure gap。当前 canClaim 只有：authorized commercial business-flow cloud canary passed；internal credit + billing ledger + statement reconciliation + release/destroy/stop billing passed；Commercial Launch UI absorbed。当前 cannotClaim 仍包括 external PSP settlement、real payment completed、refund / invoice / tax / compliance、unscoped full production、all users/all tenants、SLA/multi-region/ongoing authorization。
+
+临时 commercial production maturity gap 由 `tests/fixtures/v22/goal-current.json` 持有机器矩阵。矩阵参考 OPL ordinary path 的 consumer bridge/deeplink/projection 边界，以及 sub2api-style 成熟项目结构里的 packaging、install、config、release、CI/security 和 operations 维度；这些只是工程成熟度参考，不改变 MedOPL 的业务 truth，也不把 MedOPL 写成 OPL-Webui 本体或外部 PSP。推荐路线从 `goal-commercial-payment-admin-api-maturity` 开始，先固定 internal admin credit 与 future PSP/payment/refund/invoice/tax/compliance 的边界，再进入 install package、setup wizard、release metadata、CI/security、operations runbook、billing incident、ops sidecar 和 OPL-Webui bridge maturity。
+
 ## Optional Resource Lifecycle
 
 计算资源和存储空间不是默认强制能力。未开通计算资源时，账号可以充值、管理工作空间、上传文件、绑定自己的 gflabtoken 模型调用密钥、进入 OPL 或受限 OPL 界面，但不能跑平台托管计算任务。

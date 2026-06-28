@@ -20,9 +20,11 @@ MedOPL 是 OPL-Webui 的商业资源控制面，负责 owner 创建或批准账�
 | latest repo closeout | `goal-authorized-commercial-launch-cloud-canary` / `3de36577f91fd5b6978cf2fc4cdc2c91c0b831a2` |
 | current blocker | `none_for_current_scoped_commercial_business_flow` |
 | source fix | `goal-commercial-upload-file-billing-writeback-fix` landed at `34b0e3070357504b475a0bee2ff6bd4de0af23df`; `goal-commercial-storage-destroy-writeback-fix` landed at `64699bd3619f01a4442936b096079b3e8051733d` |
-| next proof | future scope expansion / ongoing operations proof requires a separate authorization and evidence slice |
+| next proof | `goal-commercial-production-maturity-gap-audit` sets the temporary production maturity matrix; first recommended implementation goal is `goal-commercial-payment-admin-api-maturity` |
 
 The latest repo/gate closeout is goal-authorized-commercial-launch-cloud-canary at 3de36577f91fd5b6978cf2fc4cdc2c91c0b831a2. The source line keeps `upload_file -> save_billing_event` and `storage_destroy -> save_billing_event` fail-closed while using canonical billing identity and collision-resistant billing event IDs. The scoped canary proof is retained as operations substrate only; detailed run provenance stays in history / GitHub Actions artifact, not active product truth.
+
+Current scoped commercial canClaim is: authorized commercial business-flow cloud canary passed; internal credit + billing ledger + statement reconciliation + release/destroy/stop billing passed; Commercial Launch UI absorbed. The maturity gap matrix is machine-owned by `tests/fixtures/v22/goal-current.json` and compares the remaining production productization gaps against OPL ordinary-path boundaries and sub2api-style packaging maturity as engineering references only.
 
 ## Active Supporting Substrates
 
@@ -33,6 +35,7 @@ The latest repo/gate closeout is goal-authorized-commercial-launch-cloud-canary 
 ## Cannot Claim
 
 - 不能 claim production complete、unscoped full production、ongoing authorization、external PSP settlement、multi-region/SLA 或 enterprise compliance。
+- 不能 claim real payment completed、refund / invoice / tax / compliance、all users/all tenants、SLA/multi-region/ongoing authorization 或 unscoped full production。
 - 不能把 Release Image / Cloud Rollout / receipt manifest 写成用户产品主线或商业准入 truth。
 - 不能把 internal ledger 写成 external real payment settlement。
 - 不能把 historical deployment provenance 写回 active product truth。

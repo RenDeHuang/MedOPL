@@ -100,6 +100,7 @@ export const TEST_LANE_CONTRACT_REFS = Object.freeze([
 const PRODUCT_FILES = Object.freeze([
   "tests/product/product-test-v22-medopl-contract-authority.mjs",
   "tests/product/product-test-v22-commercial-business-flow-local-rc-revalidation.mjs",
+  "tests/product/product-test-v22-commercial-production-maturity-gap-audit.mjs",
 ]);
 const FRONTEND_FILES = Object.freeze([
   "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
