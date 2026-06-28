@@ -114,6 +114,8 @@ assertIncludesAll(landingCloseoutSource, [
   "cannotClaim",
   "next-recommended-goal",
   "retirement",
+  "upsertCompletedGoal",
+  "completed_retired",
 ], "landing_closeout_goal_lifecycle_generation");
 
 const runResult = runSlice(["start", "--json"]);

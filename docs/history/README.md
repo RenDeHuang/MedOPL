@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `goal-lifecycle-development-rule-hardening`
-- latest landed commit: `2b3621451fe0697a965bb61c5070e9671fc3750b`
+- latest landed branch: `goal-driven-development-system-audit`
+- latest landed commit: `13e433c549ace24fd03fa40538161bbb86e000a5`
 - next cursor: `goal-commercial-runtime-storage-billing-business-closure`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`

@@ -407,6 +407,32 @@ function renderHistoryIndex({ history, branch, landedCommit, nextCursor }) {
   return replaceRequired(history, pattern, replacement, "history_latest_machine_cursor");
 }
 
+function upsertCompletedGoal({ current, branch, landedCommit, retirement }) {
+  const lifecycle = current.goal_lifecycle;
+  if (!lifecycle) return lifecycle;
+  const completedGoals = Array.isArray(lifecycle.completed_goals) ? [...lifecycle.completed_goals] : [];
+  const completedGoal = {
+    goal_id: branch,
+    landed_commit: landedCommit,
+    status: "completed_retired",
+    retired_from: ["active_blocker", "current_cursor"],
+    evidence_pointer: retirement.history_or_evidence_pointer,
+  };
+  const existingIndex = completedGoals.findIndex((goal) => goal.goal_id === branch);
+  if (existingIndex >= 0) {
+    completedGoals[existingIndex] = {
+      ...completedGoals[existingIndex],
+      ...completedGoal,
+    };
+  } else {
+    completedGoals.push(completedGoal);
+  }
+  return {
+    ...lifecycle,
+    completed_goals: completedGoals,
+  };
+}
+
 function generateCloseout({
   branch,
   landedCommit,
@@ -472,7 +498,7 @@ function generateCloseout({
     },
     goal_lifecycle: current.goal_lifecycle
       ? {
-        ...current.goal_lifecycle,
+        ...upsertCompletedGoal({ current, branch, landedCommit, retirement }),
         current: {
           ...(current.goal_lifecycle.current || {}),
           cursor: nextCursor,
