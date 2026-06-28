@@ -46,6 +46,7 @@ const RETIRED_CHANGE_SURFACE_PREFIXES = Object.freeze([
   ["changes", "active", "**"].join("/"),
   ["changes", "archive", "**"].join("/"),
 ]);
+const GOAL_CURRENT_PATH = "tests/fixtures/v22/goal-current.json";
 const SLICE_TYPES = Object.freeze(["product", "automation", "cloud", "cleanup"]);
 const DEFAULT_SLICE_OWNER_BY_TYPE = Object.freeze({
   product: "backend",
@@ -317,6 +318,24 @@ function readPackageScripts() {
   return JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8")).scripts || {};
 }
 
+function readGoalCurrent() {
+  const currentPath = path.join(repoRoot, GOAL_CURRENT_PATH);
+  if (!existsSync(currentPath)) return null;
+  return JSON.parse(readFileSync(currentPath, "utf8"));
+}
+
+function completedGoalIds(current = readGoalCurrent()) {
+  const goals = Array.isArray(current?.goal_lifecycle?.completed_goals)
+    ? current.goal_lifecycle.completed_goals
+    : [];
+  return new Set(goals.map((goal) => String(goal?.goal_id || "").trim()).filter(Boolean));
+}
+
+function isCompletedGoalRepeat(sliceId, current = readGoalCurrent()) {
+  if (current?.goal_lifecycle?.admission?.completed_goals_repeat_forbidden !== true) return false;
+  return completedGoalIds(current).has(sliceId);
+}
+
 function buildPlan(phase, options = {}) {
   if (!PHASES.includes(phase)) throw new Error(`unknown_slice_phase:${phase || "(missing)"}`);
   const phaseIndex = PHASES.indexOf(phase);
@@ -326,8 +345,17 @@ function buildPlan(phase, options = {}) {
   const sliceId = sanitizeId(options["slice-id"]) || defaultSliceId();
   const paths = slicePaths(sliceId);
   const admission = buildAdmission(options);
+  const current = readGoalCurrent();
+  const completedGoalRepeat = phase === "start" && isCompletedGoalRepeat(sliceId, current);
+  const goalLifecycle = current?.goal_lifecycle
+    ? {
+      currentCursor: current.goal_lifecycle.current?.cursor || current.current_cursor || "",
+      nextRecommendedGoal: current.goal_lifecycle.next_recommended_goal || "",
+      completedGoalRepeatForbidden: current.goal_lifecycle.admission?.completed_goals_repeat_forbidden === true,
+    }
+    : null;
   return {
-    ok: true,
+    ok: !completedGoalRepeat,
     kind: "v22_worktree_slice_orchestrator_plan",
     phase,
     phases: PHASES,
@@ -348,6 +376,8 @@ function buildPlan(phase, options = {}) {
       manifestPath: paths.publicManifestPath,
     },
     admission,
+    goalLifecycle,
+    ...(completedGoalRepeat ? { blockers: ["slice_goal_already_completed"] } : {}),
     workflowDependencies: [
       "scripts/v22-verify.mjs",
       "scripts/v22-workflow-gate.mjs",
@@ -382,6 +412,15 @@ function buildPlan(phase, options = {}) {
 function executePhase(phase, options) {
   const payload = buildPlan(phase, { ...options, execute: true });
   const sliceId = payload.slice.id;
+  if (payload.blockers?.includes("slice_goal_already_completed")) {
+    return {
+      ...payload,
+      ok: false,
+      executesCommands: false,
+      usesRealMergePush: false,
+      blockers: ["slice_goal_already_completed"],
+    };
+  }
   if (GIT_MUTATION_PHASES.has(phase) && !options["allow-git-mutation"]) {
     return {
       ...payload,

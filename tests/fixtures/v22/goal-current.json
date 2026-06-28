@@ -66,7 +66,42 @@
       "next": "stay on goal-commercial-runtime-storage-billing-business-closure and run authorized Release Image / Cloud Rollout / OPL-Webui consumer canary for the landed storage_destroy billing writeback fix"
     },
     "post_merge_closeout": "completed",
-    "next_cursor": "goal-commercial-runtime-storage-billing-business-closure"
+    "next_cursor": "goal-commercial-runtime-storage-billing-business-closure",
+    "canClaim": [
+      "storage_destroy billing writeback source fix landed with fail-closed billing/audit behavior",
+      "current scoped commercial business-flow source blocker is retired"
+    ],
+    "cannotClaim": [
+      "production complete",
+      "external PSP settlement",
+      "multi-region/SLA",
+      "ongoing authorization",
+      "unrestricted full production for all users/tenants"
+    ],
+    "verification": {
+      "risk_class": "landing",
+      "result": "passed",
+      "commands": [
+        "go test ./internal/service/controlplane -run TestServiceDestroyStorageUsesCollisionResistantBillingEventID -count=1 passed",
+        "node tests/smoke/smoke-test-v22-portal-storage-usage-billing-flow.mjs passed",
+        "npm run verify passed",
+        "npm run test:health passed",
+        "npm run gate:review -- --slice-id goal-commercial-storage-destroy-writeback-fix passed",
+        "npm run repo:bloat -- --diff --slice-id goal-commercial-storage-destroy-writeback-fix passed",
+        "npm run line:budget passed",
+        "post-push npm run verify passed",
+        "post-push npm run test:health passed",
+        "post-push npm run gate:review -- --slice-id goal-commercial-storage-destroy-writeback-fix passed",
+        "post-push npm run repo:bloat -- --diff --slice-id goal-commercial-storage-destroy-writeback-fix passed",
+        "post-push npm run line:budget passed"
+      ]
+    },
+    "retirement": {
+      "active_blocker_retired": true,
+      "current_cursor_retained_reason": "ongoing_business_closure_cursor",
+      "history_or_evidence_pointer": "docs/history/README.md"
+    },
+    "next_recommended_goal": "goal-commercial-launch-ui-productization"
   },
   "current_cursor": "goal-commercial-runtime-storage-billing-business-closure",
   "next_leaf": "goal-commercial-runtime-storage-billing-business-closure",
@@ -1315,6 +1350,85 @@
         "target_business_capability": "external PSP boundary",
         "status": "future_boundary_non_goal_without_provider_authorization"
       }
+    ]
+  },
+  "goal_lifecycle": {
+    "schema_version": 1,
+    "admission": {
+      "completed_goals_repeat_forbidden": true,
+      "owner_surface_required": true,
+      "allowed_paths_required": true
+    },
+    "current": {
+      "cursor": "goal-commercial-runtime-storage-billing-business-closure",
+      "blocker": "none_for_current_scoped_commercial_business_flow",
+      "active_truth_owner": "docs/active/README.md"
+    },
+    "completed_goals": [
+      {
+        "goal_id": "goal-commercial-storage-destroy-writeback-fix",
+        "landed_commit": "64699bd3619f01a4442936b096079b3e8051733d",
+        "status": "completed_retired",
+        "retired_from": [
+          "active_blocker",
+          "current_cursor"
+        ],
+        "evidence_pointer": "docs/history/README.md"
+      },
+      {
+        "goal_id": "goal-post-canary-governance-compaction",
+        "landed_commit": "2c99ab686749d88c7b373705183e636f6f15c85d",
+        "status": "completed_retired",
+        "retired_from": [
+          "active_product_narrative"
+        ],
+        "evidence_pointer": "docs/history/README.md"
+      }
+    ],
+    "risk_class_verification": {
+      "light": [
+        "npm run test:run-plan -- --dry-run --json",
+        "npm run verify",
+        "npm run gate:review",
+        "npm run repo:bloat",
+        "npm run line:budget"
+      ],
+      "landing": [
+        "npm run test:run-plan",
+        "npm run verify",
+        "npm run test:health",
+        "npm run gate:review",
+        "npm run repo:bloat",
+        "npm run line:budget"
+      ],
+      "release_candidate": [
+        "npm run verify",
+        "npm run test:release",
+        "npm run verify:cloud-release-candidate",
+        "npm run gate:review",
+        "npm run repo:bloat",
+        "npm run line:budget"
+      ],
+      "cloud": [
+        "npm run cloud:goal -- --operation <authorized_operation>",
+        "npm run verify:cloud-release-candidate",
+        "npm run verify:production-complete-candidate",
+        "npm run gate:review"
+      ]
+    },
+    "closeout_required": [
+      "canClaim",
+      "cannotClaim",
+      "verification",
+      "landed_commit",
+      "retirement",
+      "next_recommended_goal"
+    ],
+    "next_recommended_goal": "goal-commercial-launch-ui-productization",
+    "cannot_claim": [
+      "historical proof in active truth",
+      "completed goals as active blockers",
+      "completed goals as current cursor"
     ]
   }
 }

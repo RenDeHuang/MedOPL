@@ -33,6 +33,18 @@ const PRODUCT_AUTHORITY_CONTRACTS = Object.freeze([
   "contracts/medopl-cloud-authorization-pack.json",
   "contracts/medopl-production-receipt-boundary.json",
 ]);
+const LIFECYCLE_REQUIRED_CLOSEOUT_FIELDS = Object.freeze([
+  "landed_commit",
+  "landing_gate_result",
+  "post_push_verification",
+  "post_merge_closeout",
+  "canClaim",
+  "cannotClaim",
+  "verification",
+  "retirement",
+  "next_recommended_goal",
+  "next_cursor",
+]);
 
 function parseArgs(argv) {
   const [mode, maybeTarget, ...tail] = argv;
@@ -364,6 +376,7 @@ async function validateActivePlatform({ manifest, current }) {
   assert.equal(current.current_truth_role, "machine_cursor_fixture", "goal_current_role_mismatch");
   assert.equal(current.verify_manifest, "tests/fixtures/v22/agent-verify-manifest.json", "goal_current_manifest_pointer_mismatch");
   assert.equal(manifest.runner, "scripts/v22-verify.mjs", "manifest_runner_mismatch");
+  assert.deepEqual(manifest.required_post_merge_fields, LIFECYCLE_REQUIRED_CLOSEOUT_FIELDS, "manifest_goal_lifecycle_required_closeout_fields_mismatch");
 
   assert.equal(packageJson.scripts["validate:active-platform"], "node scripts/v22-verify.mjs active-platform", "active_platform_script_mismatch");
   assert.equal(packageJson.scripts.verify, "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk", "verify_script_mismatch");
@@ -379,6 +392,31 @@ async function validateActivePlatform({ manifest, current }) {
   assert(currentLeaf, `manifest_current_leaf_missing:${current.current_cursor}`);
   assert.equal(current.current_leaf.step_id, current.current_cursor, "current_leaf_step_mismatch");
   assert.equal(currentLeaf.gap_id, current.current_leaf.gap_id, "manifest_current_leaf_gap_mismatch");
+  assert.equal(current.goal_lifecycle?.schema_version, 1, "goal_lifecycle_schema_missing");
+  assert.equal(current.goal_lifecycle?.admission?.completed_goals_repeat_forbidden, true, "goal_lifecycle_admission_must_forbid_completed_goal_repeat");
+  assert.equal(current.goal_lifecycle?.current?.cursor, current.current_cursor, "goal_lifecycle_current_cursor_mismatch");
+  assert.equal(current.goal_lifecycle?.current?.blocker, "none_for_current_scoped_commercial_business_flow", "goal_lifecycle_current_blocker_mismatch");
+  assert.equal(typeof current.goal_lifecycle?.next_recommended_goal, "string", "goal_lifecycle_next_recommended_goal_missing");
+  assert.notEqual(current.goal_lifecycle.next_recommended_goal.trim(), "", "goal_lifecycle_next_recommended_goal_empty");
+  assert.equal(current.latest_landed_closeout?.next_recommended_goal, current.goal_lifecycle?.next_recommended_goal, "latest_closeout_next_recommended_goal_mismatch");
+  for (const field of ["canClaim", "cannotClaim", "verification", "retirement", "landed_commit"]) {
+    assert(Object.hasOwn(current.latest_landed_closeout || {}, field), `latest_closeout_must_record_${field}`);
+  }
+  assert(Array.isArray(current.latest_landed_closeout?.canClaim), "latest_closeout_can_claim_must_be_list");
+  assert(Array.isArray(current.latest_landed_closeout?.cannotClaim), "latest_closeout_cannot_claim_must_be_list");
+  assert.equal(current.latest_landed_closeout?.verification?.result, "passed", "latest_closeout_verification_result_must_pass");
+  assert.equal(current.latest_landed_closeout?.retirement?.active_blocker_retired, true, "latest_closeout_must_retire_active_blocker");
+  assert.equal(current.latest_landed_closeout?.retirement?.current_cursor_retained_reason, "ongoing_business_closure_cursor", "latest_closeout_cursor_retention_reason_mismatch");
+  for (const riskClass of ["light", "landing", "release_candidate", "cloud"]) {
+    assert(Array.isArray(current.goal_lifecycle?.risk_class_verification?.[riskClass]), `goal_lifecycle_risk_class_verification_missing:${riskClass}`);
+  }
+  for (const completed of current.goal_lifecycle?.completed_goals || []) {
+    assert.equal(typeof completed.goal_id, "string", "goal_lifecycle_completed_goal_id_missing");
+    assert.match(completed.landed_commit, /^[0-9a-f]{40}$/u, "goal_lifecycle_completed_goal_landed_commit_must_be_full_sha");
+    assert.equal(completed.status, "completed_retired", "goal_lifecycle_completed_goal_status_must_be_retired");
+    assert.notEqual(completed.goal_id, current.current_cursor, "goal_lifecycle_completed_goal_must_not_remain_current_cursor");
+    assert.equal((current.current_blockers || []).includes(completed.goal_id), false, "goal_lifecycle_completed_goal_must_not_remain_current_blocker");
+  }
 
   const manifestSuites = new Map(manifest.suites.map((suite) => [suite.id, suite]));
   for (const suiteId of ["current", "product", "frontend", "backend", "runtime", "release", "cloud", "hygiene", "health", "smoke", "local-contract", "local-regression", "real-cloud-readiness", "cloud-future-authorized", "review"]) {

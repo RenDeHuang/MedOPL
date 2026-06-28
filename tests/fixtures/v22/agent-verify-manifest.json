@@ -24,6 +24,11 @@
     "landing_gate_result",
     "post_push_verification",
     "post_merge_closeout",
+    "canClaim",
+    "cannotClaim",
+    "verification",
+    "retirement",
+    "next_recommended_goal",
     "next_cursor"
   ],
   "purpose": "Centralize v22 framework-repo verification after OPL-style cleanup lifecycle and current-state index-loop normalization. docs/active/README.md is the only human current truth; docs/specs/README.md is the only contract/spec truth; tests/fixtures/v22/goal-current.json is the machine cursor; docs/history/README.md records post-merge closeout.",

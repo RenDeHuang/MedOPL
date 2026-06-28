@@ -20,6 +20,11 @@ const defaultRequiredPostMergeFields = Object.freeze([
   "landing_gate_result",
   "post_push_verification",
   "post_merge_closeout",
+  "canClaim",
+  "cannotClaim",
+  "verification",
+  "retirement",
+  "next_recommended_goal",
   "next_cursor",
 ]);
 
@@ -171,6 +176,14 @@ function parseCleanupResult(value) {
   return cleanup;
 }
 
+function csvListOption(value, fallback = []) {
+  const items = String(value || "")
+    .split(";")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return items.length > 0 ? items : [...fallback];
+}
+
 function missingCloseoutFields(closeout, requiredPostMergeFields) {
   return requiredPostMergeFields.filter((field) => {
     if (field === "landed_commit") return !closeout?.landed_commit;
@@ -178,6 +191,11 @@ function missingCloseoutFields(closeout, requiredPostMergeFields) {
     if (field === "post_push_verification") {
       return !Array.isArray(closeout?.post_push_verification) || closeout.post_push_verification.length === 0;
     }
+    if (field === "canClaim") return !Array.isArray(closeout?.canClaim) || closeout.canClaim.length === 0;
+    if (field === "cannotClaim") return !Array.isArray(closeout?.cannotClaim) || closeout.cannotClaim.length === 0;
+    if (field === "verification") return !closeout?.verification || typeof closeout.verification !== "object";
+    if (field === "retirement") return !closeout?.retirement || typeof closeout.retirement !== "object";
+    if (field === "next_recommended_goal") return !closeout?.next_recommended_goal;
     if (field === "post_merge_closeout") return !closeout?.post_merge_closeout;
     if (field === "next_cursor") return !closeout?.next_cursor;
     return !Object.hasOwn(closeout || {}, field);
@@ -393,10 +411,13 @@ function generateCloseout({
   branch,
   landedCommit,
   nextCursor,
+  nextRecommendedGoal,
   trunkRef,
   verificationSummary,
   completionAudit: completionAuditInput,
   cleanupResult: cleanupResultInput,
+  canClaim: canClaimInput,
+  cannotClaim: cannotClaimInput,
   dryRun = false,
 } = {}) {
   if (!branch) throw new Error("missing_branch");
@@ -407,9 +428,22 @@ function generateCloseout({
   const completionAudit = parseCompletionAudit(completionAuditInput);
   const cleanupResult = parseCleanupResult(cleanupResultInput);
   const current = readJson(files.current);
+  const recommendedGoal = nextRecommendedGoal || current.goal_lifecycle?.next_recommended_goal || nextCursor;
   const active = readRepoFile(files.active);
   const history = readRepoFile(files.history);
   const postPushVerification = parseVerificationSummary(verificationSummary);
+  const canClaim = csvListOption(canClaimInput, ["landed source change with recorded verification"]);
+  const cannotClaim = csvListOption(cannotClaimInput, ["production complete", "external PSP settlement", "ongoing authorization"]);
+  const verification = {
+    risk_class: current.current_risk_class || "light",
+    commands: postPushVerification,
+    result: "passed",
+  };
+  const retirement = {
+    active_blocker_retired: true,
+    current_cursor_retained_reason: nextCursor === current.current_cursor ? "ongoing_business_closure_cursor" : "advanced_to_next_cursor",
+    history_or_evidence_pointer: "docs/history/README.md",
+  };
   const updatedHistory = renderHistoryIndex({ history, branch, landedCommit, nextCursor });
   const updatedCurrent = {
     ...current,
@@ -426,11 +460,27 @@ function generateCloseout({
       landed_commit: landedCommit,
       landing_gate_result: "passed / ff-only landed / pushed",
       post_push_verification: postPushVerification,
+      canClaim,
+      cannotClaim,
+      verification,
       plan_completion_audit: completionAudit,
       cleanup_result: cleanupResult,
+      retirement,
       post_merge_closeout: "completed",
+      next_recommended_goal: recommendedGoal,
       next_cursor: nextCursor,
     },
+    goal_lifecycle: current.goal_lifecycle
+      ? {
+        ...current.goal_lifecycle,
+        current: {
+          ...(current.goal_lifecycle.current || {}),
+          cursor: nextCursor,
+          blocker: "none_for_current_scoped_commercial_business_flow",
+        },
+        next_recommended_goal: recommendedGoal,
+      }
+      : current.goal_lifecycle,
     current_problem: renderCurrentProblem({ currentProblem: current.current_problem, branch, landedCommit }),
   };
   const updatedActive = renderActiveTruth({ active, branch, landedCommit });
@@ -449,10 +499,15 @@ function generateCloseout({
     branchHead: validation.branchHead,
     expectedCommit: validation.expectedCommit,
     nextCursor,
+    nextRecommendedGoal: recommendedGoal,
     trunkRef: trunkRef || "",
     dryRun,
+    canClaim,
+    cannotClaim,
+    verification,
     completionAudit,
     cleanupResult,
+    retirement,
     updatedCurrentProblem: updatedCurrent.current_problem,
     files: [files.history, files.current, files.active],
   };
@@ -462,7 +517,7 @@ function printUsage() {
   process.stderr.write([
     "Usage:",
     "  node scripts/v22-landing-closeout.mjs check [--trunk-ref origin/recovery/platform-v22-trunk] [--json]",
-    "  node scripts/v22-landing-closeout.mjs generate --branch <branch> --landed-commit <sha> --next-cursor <leaf> --completion-audit <functional:done;...> --cleanup-result <deleted:x;...> [--trunk-ref <ref>] [--verification-summary <a; b>] [--dry-run] [--json]",
+    "  node scripts/v22-landing-closeout.mjs generate --branch <branch> --landed-commit <sha> --next-cursor <leaf> --next-recommended-goal <goal> --completion-audit <functional:done;...> --cleanup-result <deleted:x;...> [--can-claim <a; b>] [--cannot-claim <a; b>] [--trunk-ref <ref>] [--verification-summary <a; b>] [--dry-run] [--json]",
     "",
   ].join("\n"));
 }
@@ -479,10 +534,13 @@ try {
       branch: options.branch,
       landedCommit: options["landed-commit"],
       nextCursor: options["next-cursor"],
+      nextRecommendedGoal: options["next-recommended-goal"],
       trunkRef: options["trunk-ref"] || "",
       verificationSummary: options["verification-summary"] || "",
       completionAudit: options["completion-audit"] || "",
       cleanupResult: options["cleanup-result"] || "",
+      canClaim: options["can-claim"] || "",
+      cannotClaim: options["cannot-claim"] || "",
       dryRun: Boolean(options["dry-run"]),
     });
     process.stdout.write(options.json ? `${JSON.stringify(payload, null, 2)}\n` : `${JSON.stringify(payload, null, 2)}\n`);

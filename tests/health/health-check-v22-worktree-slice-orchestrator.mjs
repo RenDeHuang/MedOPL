@@ -28,11 +28,14 @@ function assertNotIncludesAny(source, phrases, label) {
   }
 }
 
-const [packageJson, manifest, classificationSource, orchestratorSource, agentsSource, deliverySource, testsReadmeSource] = await Promise.all([
+const [packageJson, manifest, current, classificationSource, orchestratorSource, landingCloseoutSource, verifySource, agentsSource, deliverySource, testsReadmeSource] = await Promise.all([
   readFile(path.join(repoRoot, "package.json"), "utf8").then(JSON.parse),
   readFile(path.join(repoRoot, "tests/fixtures/v22/agent-verify-manifest.json"), "utf8").then(JSON.parse),
+  readFile(path.join(repoRoot, "tests/fixtures/v22/goal-current.json"), "utf8").then(JSON.parse),
   readFile(path.join(repoRoot, "scripts/v22-test-classification.mjs"), "utf8"),
   readFile(path.join(repoRoot, "scripts/v22-worktree-slice-orchestrator.mjs"), "utf8"),
+  readFile(path.join(repoRoot, "scripts/v22-landing-closeout.mjs"), "utf8"),
+  readFile(path.join(repoRoot, "scripts/v22-verify.mjs"), "utf8"),
   readFile(path.join(repoRoot, "AGENTS.md"), "utf8"),
   readFile(path.join(repoRoot, "docs/delivery/README.md"), "utf8"),
   readFile(path.join(repoRoot, "tests/README.md"), "utf8"),
@@ -54,6 +57,60 @@ assert(
   classificationSource.includes("tests/health/health-check-v22-worktree-slice-orchestrator.mjs"),
   "slice_orchestrator_test_must_be_registered_in_classification",
 );
+
+assert.deepEqual(
+  manifest.required_post_merge_fields,
+  [
+    "landed_commit",
+    "landing_gate_result",
+    "post_push_verification",
+    "post_merge_closeout",
+    "canClaim",
+    "cannotClaim",
+    "verification",
+    "retirement",
+    "next_recommended_goal",
+    "next_cursor",
+  ],
+  "goal_lifecycle_required_closeout_fields_mismatch",
+);
+assert.equal(current.goal_lifecycle?.schema_version, 1, "goal_lifecycle_schema_missing");
+assert.equal(current.goal_lifecycle?.admission?.completed_goals_repeat_forbidden, true, "goal_admission_must_forbid_completed_goal_repeat");
+assert.equal(current.goal_lifecycle?.current?.cursor, current.current_cursor, "goal_lifecycle_current_cursor_mismatch");
+assert.equal(current.goal_lifecycle?.current?.blocker, "none_for_current_scoped_commercial_business_flow", "goal_lifecycle_current_blocker_mismatch");
+assert.equal(current.goal_lifecycle?.next_recommended_goal, "goal-commercial-launch-ui-productization", "goal_lifecycle_next_recommended_goal_mismatch");
+assert.equal(current.latest_landed_closeout?.next_recommended_goal, current.goal_lifecycle?.next_recommended_goal, "latest_closeout_next_recommended_goal_mismatch");
+for (const field of ["canClaim", "cannotClaim", "verification", "retirement", "landed_commit"]) {
+  assert(Object.hasOwn(current.latest_landed_closeout || {}, field), `latest_closeout_must_record_${field}`);
+}
+assert.equal(current.latest_landed_closeout?.retirement?.active_blocker_retired, true, "latest_closeout_must_retire_active_blocker");
+assert.equal(current.latest_landed_closeout?.retirement?.current_cursor_retained_reason, "ongoing_business_closure_cursor", "latest_closeout_cursor_retention_reason_mismatch");
+for (const goal of current.goal_lifecycle?.completed_goals || []) {
+  assert.equal(typeof goal.goal_id, "string", "completed_goal_id_missing");
+  assert.match(goal.landed_commit, /^[0-9a-f]{40}$/u, "completed_goal_landed_commit_must_be_full_sha");
+  assert.equal(goal.status, "completed_retired", "completed_goal_status_must_be_retired");
+  assert.notEqual(goal.goal_id, current.current_cursor, "completed_goal_must_not_remain_current_cursor");
+  assert.equal((current.current_blockers || []).includes(goal.goal_id), false, "completed_goal_must_not_remain_current_blocker");
+}
+for (const riskClass of ["light", "landing", "release_candidate", "cloud"]) {
+  assert(Array.isArray(current.goal_lifecycle?.risk_class_verification?.[riskClass]), `risk_class_verification_missing:${riskClass}`);
+}
+assertIncludesAll(orchestratorSource, [
+  "completed_goals_repeat_forbidden",
+  "slice_goal_already_completed",
+  "goal-current.json",
+], "slice_orchestrator_goal_admission");
+assertIncludesAll(verifySource, [
+  "goal_lifecycle",
+  "next_recommended_goal",
+  "risk_class_verification",
+], "active_platform_goal_lifecycle_validation");
+assertIncludesAll(landingCloseoutSource, [
+  "canClaim",
+  "cannotClaim",
+  "next-recommended-goal",
+  "retirement",
+], "landing_closeout_goal_lifecycle_generation");
 
 const runResult = runSlice(["start", "--json"]);
 assert.equal(runResult.status, 0, "slice_orchestrator_json_run_must_succeed");
@@ -258,6 +315,32 @@ assert.equal(automationManifest.admission?.owner_surface, "workflow", "automatio
 assert.equal(automationManifest.admission?.target_claim, "slice executor admission control", "automation_slice_manifest_target_claim");
 assert.equal(automationManifest.admission?.minimum_evidence_slice, "workflow gate self-test", "automation_slice_manifest_minimum_evidence");
 assert.equal(automationManifest.admission?.new_top_level_scripts_allowed, false, "automation_slice_must_still_default_no_new_top_level_scripts");
+
+const completedGoalId = current.goal_lifecycle?.completed_goals?.[0]?.goal_id;
+assert(completedGoalId, "completed_goal_fixture_required");
+const completedGoalPlan = runSlice([
+  "start",
+  "--slice-id",
+  completedGoalId,
+  "--json",
+]);
+assert.equal(completedGoalPlan.status, 1, "completed_goal_dry_run_start_must_fail_closed");
+const completedGoalPlanPayload = JSON.parse(completedGoalPlan.stdout);
+assert.equal(completedGoalPlanPayload.ok, false, "completed_goal_dry_run_payload_must_fail");
+assert.equal(completedGoalPlanPayload.blockers?.includes("slice_goal_already_completed"), true, "completed_goal_dry_run_blocker_mismatch");
+assert.equal(existsSync(path.join(repoRoot, ".runtime", "slices", completedGoalId, "slice.json")), false, "completed_goal_dry_run_must_not_write_manifest");
+const completedGoalStart = runSlice([
+  "start",
+  "--execute",
+  "--slice-id",
+  completedGoalId,
+  "--json",
+]);
+assert.equal(completedGoalStart.status, 1, "completed_goal_start_must_fail_closed");
+const completedGoalPayload = JSON.parse(completedGoalStart.stdout);
+assert.equal(completedGoalPayload.ok, false, "completed_goal_start_payload_must_fail");
+assert.equal(completedGoalPayload.blockers?.includes("slice_goal_already_completed"), true, "completed_goal_start_blocker_mismatch");
+assert.equal(existsSync(path.join(repoRoot, ".runtime", "slices", completedGoalId, "slice.json")), false, "completed_goal_start_must_not_write_manifest");
 assert.equal(automationManifest.admission?.new_health_tests_allowed, false, "automation_slice_must_still_default_no_new_health_tests");
 assert(automationManifest.admission?.allowed_paths?.includes("scripts/"), "automation_slice_must_allow_scripts_surface");
 assert(automationManifest.admission?.allowed_paths?.includes("tests/hygiene/"), "automation_slice_must_allow_hygiene_surface");
