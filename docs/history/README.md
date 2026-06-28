@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `goal-commercial-ops-install-package-maturity`
-- latest landed commit: `9616013f84016cb73631da026bbcf282d8b90b01`
+- latest landed branch: `goal-commercial-owner-bootstrap-setup-wizard`
+- latest landed commit: `0e64a7f6fb69760d2487326b985b48279d1357ff`
 - next cursor: `goal-commercial-runtime-storage-billing-business-closure`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`

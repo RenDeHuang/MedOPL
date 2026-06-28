@@ -127,8 +127,8 @@ assert.equal(paymentRoadmapEntry?.status, "completed_retired", "roadmap_payment_
 assert.equal(maturity.next_recommended_goal, "goal-commercial-release-metadata-rollback-maturity", "maturity_next_goal_mismatch");
 assert.equal(
   current.goal_lifecycle?.next_recommended_goal,
-  "goal-commercial-owner-bootstrap-setup-wizard",
-  "goal_lifecycle_next_goal_must_follow_install_package_closeout",
+  "goal-commercial-release-metadata-rollback-maturity",
+  "goal_lifecycle_next_goal_must_follow_owner_bootstrap_closeout",
 );
 
 const completedGoal = current.goal_lifecycle?.completed_goals?.find((goal) => goal.goal_id === "goal-commercial-production-maturity-gap-audit");

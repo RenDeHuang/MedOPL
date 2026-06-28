@@ -33,34 +33,35 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "goal-commercial-ops-install-package-maturity",
-    "landed_commit": "9616013f84016cb73631da026bbcf282d8b90b01",
+    "branch": "goal-commercial-owner-bootstrap-setup-wizard",
+    "landed_commit": "0e64a7f6fb69760d2487326b985b48279d1357ff",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
       "npm run test:run-plan -- --dry-run --json passed",
       "npm run test:run-plan passed",
       "npm run verify passed",
       "npm run test:health passed",
-      "npm run gate:review -- --slice-id goal-commercial-ops-install-package-maturity passed",
-      "npm run repo:bloat -- --diff --slice-id goal-commercial-ops-install-package-maturity passed",
+      "npm run gate:review -- --slice-id goal-commercial-owner-bootstrap-setup-wizard passed",
+      "npm run repo:bloat -- --diff --slice-id goal-commercial-owner-bootstrap-setup-wizard passed",
       "npm run line:budget passed"
     ],
     "canClaim": [
-      "local_standalone_deploy_package_boundary",
-      "env_config_example_boundary",
-      "compose_local_standalone_profile_boundary",
-      "install_upgrade_uninstall_lifecycle_contract",
-      "systemd_service_example_documented",
-      "secret_generation_admin_bootstrap_boundary"
+      "owner_admin_initial_account_bootstrap_boundary",
+      "admin_password_secret_generation_boundary",
+      "first_run_setup_flow_contract",
+      "config_validation_boundary",
+      "setup_completed_marker_boundary",
+      "install_package_setup_handoff"
     ],
     "cannotClaim": [
+      "real secret generated or read",
+      "self-serve setup complete",
+      "host setup marker written",
       "cloud deploy executed",
       "build/push executed",
       "live-test executed",
-      "systemd service installed on host",
-      "self-serve setup wizard complete",
-      "production complete",
-      "external PSP settlement"
+      "external PSP settlement",
+      "production complete"
     ],
     "verification": {
       "risk_class": "commercial_billing_boundary",
@@ -69,8 +70,8 @@
         "npm run test:run-plan passed",
         "npm run verify passed",
         "npm run test:health passed",
-        "npm run gate:review -- --slice-id goal-commercial-ops-install-package-maturity passed",
-        "npm run repo:bloat -- --diff --slice-id goal-commercial-ops-install-package-maturity passed",
+        "npm run gate:review -- --slice-id goal-commercial-owner-bootstrap-setup-wizard passed",
+        "npm run repo:bloat -- --diff --slice-id goal-commercial-owner-bootstrap-setup-wizard passed",
         "npm run line:budget passed"
       ],
       "result": "passed"
@@ -85,10 +86,10 @@
     },
     "cleanup_result": {
       "deleted": "none",
-      "folded": "local standalone package maturity boundary into release contract compose delivery docs and maturity gap matrix",
-      "retained": "deploy/medopl-cloud and Cloud Rollout substrate untouched",
-      "reason": "this slice defines install package maturity without executing host install cloud deploy build push or live test",
-      "next": "goal-commercial-owner-bootstrap-setup-wizard"
+      "folded": "owner admin bootstrap and setup wizard boundary into release contract compose metadata delivery docs and maturity gap matrix",
+      "retained": "real setup wizard execution and host marker as future goal",
+      "reason": "this slice defines first-run setup maturity without reading secrets or executing cloud",
+      "next": "goal-commercial-release-metadata-rollback-maturity"
     },
     "retirement": {
       "active_blocker_retired": true,
@@ -96,7 +97,7 @@
       "history_or_evidence_pointer": "docs/history/README.md"
     },
     "post_merge_closeout": "completed",
-    "next_recommended_goal": "goal-commercial-owner-bootstrap-setup-wizard",
+    "next_recommended_goal": "goal-commercial-release-metadata-rollback-maturity",
     "next_cursor": "goal-commercial-runtime-storage-billing-business-closure"
   },
   "current_cursor": "goal-commercial-runtime-storage-billing-business-closure",
@@ -106,7 +107,7 @@
   "current_blockers": [
     "none_for_current_scoped_commercial_business_flow"
   ],
-  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-ops-install-package-maturity at 9616013f84016cb73631da026bbcf282d8b90b01. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-ops-install-package-maturity at 9616013f84016cb73631da026bbcf282d8b90b01.",
+  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-owner-bootstrap-setup-wizard at 0e64a7f6fb69760d2487326b985b48279d1357ff. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-owner-bootstrap-setup-wizard at 0e64a7f6fb69760d2487326b985b48279d1357ff.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -663,9 +664,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "goal-commercial-ops-install-package-maturity",
+  "last_landed_branch": "goal-commercial-owner-bootstrap-setup-wizard",
   "last_landed_at": "2026-06-28",
-  "history_latest_branch": "goal-commercial-ops-install-package-maturity",
+  "history_latest_branch": "goal-commercial-owner-bootstrap-setup-wizard",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -1087,8 +1088,8 @@
     },
     "receipt_manifest_artifact_id": "7934630167"
   },
-  "base_trunk_head": "9616013f84016cb73631da026bbcf282d8b90b01",
-  "last_landed_commit": "9616013f84016cb73631da026bbcf282d8b90b01",
+  "base_trunk_head": "0e64a7f6fb69760d2487326b985b48279d1357ff",
+  "last_landed_commit": "0e64a7f6fb69760d2487326b985b48279d1357ff",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
@@ -1485,6 +1486,16 @@
           "current_cursor"
         ],
         "evidence_pointer": "docs/history/README.md"
+      },
+      {
+        "goal_id": "goal-commercial-owner-bootstrap-setup-wizard",
+        "landed_commit": "0e64a7f6fb69760d2487326b985b48279d1357ff",
+        "status": "completed_retired",
+        "retired_from": [
+          "active_blocker",
+          "current_cursor"
+        ],
+        "evidence_pointer": "docs/history/README.md"
       }
     ],
     "risk_class_verification": {
@@ -1526,7 +1537,7 @@
       "retirement",
       "next_recommended_goal"
     ],
-    "next_recommended_goal": "goal-commercial-owner-bootstrap-setup-wizard",
+    "next_recommended_goal": "goal-commercial-release-metadata-rollback-maturity",
     "cannot_claim": [
       "historical proof in active truth",
       "completed goals as active blockers",
