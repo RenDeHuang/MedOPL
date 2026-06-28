@@ -33,24 +33,28 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "goal-commercial-production-maturity-gap-audit",
-    "landed_commit": "b9ae835790b9b7412aabf7edb27e2c1732b5fcf9",
+    "branch": "goal-commercial-payment-admin-api-maturity",
+    "landed_commit": "36b0a34e7b5c5978eb3286b24be8b0d0e434b237",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
+      "npm run test:run-plan -- --dry-run --json passed",
+      "npm run test:run-plan passed",
       "npm run verify passed",
       "npm run test:product passed",
-      "post-push test:health initially failed on stale closeout and this closeout sync is the minimal remediation"
+      "npm run test:backend passed",
+      "npm run gate:review -- --slice-id goal-commercial-payment-admin-api-maturity passed",
+      "npm run repo:bloat -- --diff --slice-id goal-commercial-payment-admin-api-maturity passed",
+      "npm run line:budget passed"
     ],
     "canClaim": [
-      "authorized commercial business-flow cloud canary passed",
-      "internal credit + billing ledger + statement reconciliation + release/destroy/stop billing passed",
-      "Commercial Launch UI absorbed",
-      "commercial production maturity gap matrix and roadmap established"
+      "payment_admin_api_maturity_contract",
+      "internal_admin_credit_mode_explicit",
+      "payment_vs_billing_ledger_boundary"
     ],
     "cannotClaim": [
       "external PSP settlement",
       "real payment completed",
-      "refund / invoice / tax / compliance",
+      "refund / invoice / tax / compliance complete",
       "unscoped full production",
       "all users/all tenants",
       "SLA/multi-region/ongoing authorization",
@@ -59,9 +63,14 @@
     "verification": {
       "risk_class": "commercial_billing_boundary",
       "commands": [
+        "npm run test:run-plan -- --dry-run --json passed",
+        "npm run test:run-plan passed",
         "npm run verify passed",
         "npm run test:product passed",
-        "post-push test:health initially failed on stale closeout and this closeout sync is the minimal remediation"
+        "npm run test:backend passed",
+        "npm run gate:review -- --slice-id goal-commercial-payment-admin-api-maturity passed",
+        "npm run repo:bloat -- --diff --slice-id goal-commercial-payment-admin-api-maturity passed",
+        "npm run line:budget passed"
       ],
       "result": "passed"
     },
@@ -69,16 +78,16 @@
       "functional": "done",
       "code_cleanup": "done",
       "docs_foldback": "done",
-      "verification": "partial",
+      "verification": "done",
       "retired_entrypoints": "done",
       "cannot_claim": "done"
     },
     "cleanup_result": {
       "deleted": "none",
-      "folded": "commercial production maturity gap into machine matrix and compact docs pointers",
-      "retained": "commercial business-flow current cursor and cannot-claim boundaries",
-      "reason": "business-flow is already canary-proven and next work is production maturity gap, not new business closure",
-      "next": "goal-commercial-payment-admin-api-maturity"
+      "folded": "Payment/Admin Payment API maturity boundary into contracts, product truth and maturity gap matrix",
+      "retained": "internal credit plus billing ledger production mode and external PSP cannotClaim boundary",
+      "reason": "Payment maturity is contract/API boundary only and does not connect a real PSP",
+      "next": "goal-commercial-ops-install-package-maturity"
     },
     "retirement": {
       "active_blocker_retired": true,
@@ -86,7 +95,7 @@
       "history_or_evidence_pointer": "docs/history/README.md"
     },
     "post_merge_closeout": "completed",
-    "next_recommended_goal": "goal-commercial-payment-admin-api-maturity",
+    "next_recommended_goal": "goal-commercial-ops-install-package-maturity",
     "next_cursor": "goal-commercial-runtime-storage-billing-business-closure"
   },
   "current_cursor": "goal-commercial-runtime-storage-billing-business-closure",
@@ -96,7 +105,7 @@
   "current_blockers": [
     "none_for_current_scoped_commercial_business_flow"
   ],
-  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-production-maturity-gap-audit at b9ae835790b9b7412aabf7edb27e2c1732b5fcf9. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-production-maturity-gap-audit at b9ae835790b9b7412aabf7edb27e2c1732b5fcf9.",
+  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-payment-admin-api-maturity at 36b0a34e7b5c5978eb3286b24be8b0d0e434b237. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-payment-admin-api-maturity at 36b0a34e7b5c5978eb3286b24be8b0d0e434b237.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -653,9 +662,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "goal-commercial-production-maturity-gap-audit",
+  "last_landed_branch": "goal-commercial-payment-admin-api-maturity",
   "last_landed_at": "2026-06-28",
-  "history_latest_branch": "goal-commercial-production-maturity-gap-audit",
+  "history_latest_branch": "goal-commercial-payment-admin-api-maturity",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -898,12 +907,12 @@
   ],
   "nextAuthorizationPrompt": {
     "target": "local-codex",
-    "runIdHint": "commercial-payment-admin-api-maturity",
-    "prompt": "当前授权 commercial business-flow canary 已通过。下一步不是重开 business closure，而是按 commercial production maturity gap roadmap 推进第一项 goal-commercial-payment-admin-api-maturity；不触云、不 claim external PSP/real payment/refund/invoice/tax/compliance，除非单独授权。"
+    "runIdHint": "commercial-ops-install-package-maturity",
+    "prompt": "当前授权 commercial business-flow canary 已通过，Payment/Admin Payment API maturity boundary 已 closeout。下一步不是重开 business closure，而是按 commercial production maturity gap roadmap 推进 goal-commercial-ops-install-package-maturity；不触云、不 build/push/deploy/live-test，除非单独授权。"
   },
   "nextLocalCodexPrompt": {
     "target": "local-codex",
-    "prompt": "继续开发时按 maturity gap roadmap 走：先固定 admin payment/internal credit 与 future PSP 的边界，再推进安装包、setup wizard、release metadata、CI/security、ops runbook、billing incident、ops sidecar 和 OPL-Webui bridge maturity。"
+    "prompt": "继续开发时按 maturity gap roadmap 走：下一项是安装包、compose/install/upgrade/uninstall/systemd maturity；Payment/Admin Payment API maturity boundary 已完成，后续真实 PSP、refund、invoice、tax/compliance 仍需单独授权 goal。"
   },
   "cloud_deploy_readiness_contract_ref": {
     "schema_version": 1,
@@ -1077,8 +1086,8 @@
     },
     "receipt_manifest_artifact_id": "7934630167"
   },
-  "base_trunk_head": "b9ae835790b9b7412aabf7edb27e2c1732b5fcf9",
-  "last_landed_commit": "b9ae835790b9b7412aabf7edb27e2c1732b5fcf9",
+  "base_trunk_head": "36b0a34e7b5c5978eb3286b24be8b0d0e434b237",
+  "last_landed_commit": "36b0a34e7b5c5978eb3286b24be8b0d0e434b237",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
@@ -1455,6 +1464,16 @@
           "current_cursor"
         ],
         "evidence_pointer": "docs/history/README.md"
+      },
+      {
+        "goal_id": "goal-commercial-payment-admin-api-maturity",
+        "landed_commit": "36b0a34e7b5c5978eb3286b24be8b0d0e434b237",
+        "status": "completed_retired",
+        "retired_from": [
+          "active_blocker",
+          "current_cursor"
+        ],
+        "evidence_pointer": "docs/history/README.md"
       }
     ],
     "risk_class_verification": {
@@ -1496,7 +1515,7 @@
       "retirement",
       "next_recommended_goal"
     ],
-    "next_recommended_goal": "goal-commercial-payment-admin-api-maturity",
+    "next_recommended_goal": "goal-commercial-ops-install-package-maturity",
     "cannot_claim": [
       "historical proof in active truth",
       "completed goals as active blockers",

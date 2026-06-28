@@ -107,14 +107,16 @@ assert.equal(paymentRoadmapEntry?.status, "completed_retired", "roadmap_payment_
 assert.equal(maturity.next_recommended_goal, "goal-commercial-ops-install-package-maturity", "maturity_next_goal_mismatch");
 assert.equal(
   current.goal_lifecycle?.next_recommended_goal,
-  "goal-commercial-payment-admin-api-maturity",
-  "goal_lifecycle_next_goal_advances_only_after_landing_closeout",
+  "goal-commercial-ops-install-package-maturity",
+  "goal_lifecycle_next_goal_must_follow_payment_closeout",
 );
 
 const completedGoal = current.goal_lifecycle?.completed_goals?.find((goal) => goal.goal_id === "goal-commercial-production-maturity-gap-audit");
 if (completedGoal) {
   assert.equal(completedGoal.status, "completed_retired", "maturity_gap_completed_goal_status_mismatch");
 }
+const paymentCompletedGoal = current.goal_lifecycle?.completed_goals?.find((goal) => goal.goal_id === "goal-commercial-payment-admin-api-maturity");
+assert.equal(paymentCompletedGoal?.status, "completed_retired", "payment_admin_completed_goal_status_mismatch");
 
 assert(productTruth.includes("commercial production maturity gap"), "product_truth_maturity_gap_pointer_missing");
 assert(productTruth.includes("Payment / Admin Payment API maturity boundary"), "product_truth_payment_admin_boundary_missing");
