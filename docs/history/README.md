@@ -16,14 +16,15 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `goal-commercial-upload-file-billing-writeback-fix`
-- latest landed commit: `34b0e3070357504b475a0bee2ff6bd4de0af23df`
+- latest landed branch: `goal-commercial-business-flow-current-closeout-sync`
+- latest landed commit: `42e3b6497847d494289e1e6ff1d842b6e791bb63`
 - next cursor: `goal-commercial-runtime-storage-billing-business-closure`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
 
 ## Archive Pointers
 
+- Commercial business current closeout sync: `goal-commercial-business-flow-current-closeout-sync` / `42e3b6497847d494289e1e6ff1d842b6e791bb63` keeps the machine cursor on `goal-commercial-runtime-storage-billing-business-closure`, folds deployment operations confirmation into operations safety only, renames the rollout receipt to operator confirmation, and keeps the next evidence as Release Image / Cloud Rollout / OPL-Webui consumer canary rerun for the landed upload billing writeback fix. It can claim current/product/contract/workflow narrative alignment only; it cannot claim deploy completion, live-test pass, external PSP, unrestricted production, multi-region/SLA, enterprise compliance or ongoing authorization.
 - Commercial current realignment: `goal-commercial-business-flow-current-realignment` retires the former launch-decision cursor from the business path and restores the current line to `account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing`. Cloud Rollout confirmation remains deployment operations safety only. Current blocker is `upload_file -> save_billing_event` in the commercial billing path; external PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and long-term stability remain unclaimed.
 - Commercial upload billing writeback fix: `goal-commercial-upload-file-billing-writeback-fix` / `34b0e3070357504b475a0bee2ff6bd4de0af23df` makes upload-file billing events use canonical runtime ledger tenant and billing attribution identity before falling back to account lookup, keeping billing/audit fail-closed. This closes the source bug only; Release Image / Cloud Rollout / OPL-Webui consumer canary rerun remains the next evidence inside the same commercial business closure cursor. It cannot claim external PSP, unrestricted production, multi-region/SLA, enterprise compliance or ongoing authorization.
 - G4 production-canary closeout sync: `goal-g4-upload-file-billing-event-writeback-fix` / `0f7c80b1c3062ddc33e612b37cdeeb9c7e483be1` previously fixed `upload_file -> save_billing_event` tenant ownership with `BusinessAccountByWorkspace(ctx, audit.WorkspaceID)` while keeping billing/audit fail-closed. Release Image run `28286560942` built image tag `0f7c80b`; Cloud Rollout production_launch run `28286621467` passed deploy receipt, OPL-Webui consumer canary, availability probe, soak, concurrency pressure, rollback drill, continuous canary, alerting, final release decision, production receipt manifest, `verify:cloud-release-candidate` and `verify:production-complete-candidate`. The redacted manifest hash is `sha256:16fb4289f3dd91543f083b1c1ad773e44be6d5a74f76a56b417b39974bca4612`. Later image tag `235ea17` re-exposed `billing_event_write_failed` at `upload_file -> save_billing_event`, so this remains provenance rather than current completion evidence.
