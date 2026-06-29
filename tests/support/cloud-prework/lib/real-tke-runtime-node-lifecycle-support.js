@@ -492,12 +492,15 @@ async function deriveRealTkePlanFromClusterFoundation({ plan, env, root, operati
       }, 65);
     }
   }
-  const imageResponse = await cvmClient.DescribeImages({
-    Filters: [{ Name: "image-type", Values: ["PUBLIC_IMAGE"] }],
-    Limit: 100,
-  });
-  const imageId = foundation.imageId || pickImage(imageResponse?.ImageSet || [], foundation.imageNamePattern || "TencentOS");
-  if (!imageId) failClosed("production_goal_real_tke_cluster_foundation_image_missing", { operationClass: operation }, 65);
+  let imageId = String(foundation.imageId || "").trim();
+  if (!imageId && foundation.discoverImage === true) {
+    const imageResponse = await cvmClient.DescribeImages({
+      Filters: [{ Name: "image-type", Values: ["PUBLIC_IMAGE"] }],
+      Limit: 100,
+    });
+    imageId = pickImage(imageResponse?.ImageSet || [], foundation.imageNamePattern || "TencentOS");
+    if (!imageId) failClosed("production_goal_real_tke_cluster_foundation_image_missing", { operationClass: operation }, 65);
+  }
   let securityGroupId = String(foundation.securityGroupId || "").trim();
   if (securityGroupId || foundation.validateSecurityGroup === true) {
     const VpcClient = root?.vpc?.v20170312?.Client;
@@ -522,7 +525,7 @@ async function deriveRealTkePlanFromClusterFoundation({ plan, env, root, operati
       DefaultCooldown: 300,
     },
     launchConfiguration: {
-      ImageId: imageId,
+      ImageId: imageId || undefined,
       SystemDisk: foundation.systemDisk || { DiskType: "CLOUD_PREMIUM", DiskSize: 50 },
       SecurityGroupIds: securityGroupId ? [securityGroupId] : undefined,
       InternetAccessible: foundation.internetAccessible || { InternetChargeType: "TRAFFIC_POSTPAID_BY_HOUR", InternetMaxBandwidthOut: 1, PublicIpAssigned: false },
