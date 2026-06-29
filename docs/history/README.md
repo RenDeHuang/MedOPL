@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `ci-playwright-workspace-loader-fix`
-- latest landed commit: `706b45ebec8947420de84cae8d243864c0e90bb2`
+- latest landed branch: `recovery/platform-v22-trunk`
+- latest landed commit: `f0b767da9bf5a2e2c22b69c134351696f5f32531`
 - next cursor: `goal-commercial-runtime-storage-billing-business-closure`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
