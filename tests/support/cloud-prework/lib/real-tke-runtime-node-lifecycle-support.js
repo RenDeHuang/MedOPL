@@ -81,6 +81,48 @@ function nodePoolReadyNodeCount(nodePool = {}) {
     + extractNumber(manual, ["Normal", "Ready", "Total"]);
 }
 
+function tagValue(item = {}, keys = []) {
+  const sources = [
+    item.Tags,
+    item.TagSet,
+    item.Labels,
+    item.LabelSet,
+    item.TagSpecification?.Tags,
+  ].filter(Array.isArray);
+  for (const source of sources) {
+    for (const tag of source) {
+      const key = String(tag?.Key ?? tag?.key ?? tag?.Name ?? tag?.name ?? "").trim();
+      const value = String(tag?.Value ?? tag?.value ?? "").trim();
+      if (keys.includes(key) && value) return value;
+    }
+  }
+  return "";
+}
+
+function classifyNodePool(nodePool = {}) {
+  const role = tagValue(nodePool, ["medopl.io/pool", "medopl.io/role", "medopl_pool", "medopl_role"]);
+  if (["platform", "platform_service", "platform_services"].includes(role)) return "platform_service";
+  if (["tenant", "tenant_node_pool", "tenant_workspace"].includes(role)) return "tenant";
+  if (["shared", "shared_user_compute"].includes(role)) return "shared_user_compute_forbidden";
+  return "unclassified";
+}
+
+function summarizeNodePoolCandidate(nodePool = {}) {
+  return withoutEmpty({
+    nodePoolRef: publicRef(extractFirstString(nodePool, ["NodePoolId", "NodePoolID", "Id", "ID"])),
+    name: publicRef(extractFirstString(nodePool, ["Name", "NodePoolName"])),
+    role: classifyNodePool(nodePool),
+    lifeState: publicRef(extractFirstString(nodePool, ["LifeState", "Status", "State"])),
+    nodeTotal: nodePoolNodeTotal(nodePool),
+    readyNodeCount: nodePoolReadyNodeCount(nodePool),
+  });
+}
+
+function isNodePoolNotFound(error) {
+  const text = `${String(error?.code || "")} ${String(error?.message || "")}`;
+  return /DBRecordNotFound|record not found|get nodepool .* failed/iu.test(text);
+}
+
 function tierById(tiers, id, operation) {
   const found = tiers.find((item) => item?.id === id);
   if (!found) failClosed("production_goal_real_tke_tier_missing", { operationClass: operation, tier: id }, 65);
@@ -260,7 +302,31 @@ async function deriveRealTkePlanFromPlatformNodePool({ plan, env, root, operatio
   const tkeClient = new TkeClient(clientConfig);
   const asClient = new AsClient(clientConfig);
   const cvmClient = new CvmClient(clientConfig);
-  const detail = await tkeClient.DescribeClusterNodePoolDetail({ ClusterId: clusterId, NodePoolId: platformNodePoolId });
+  let detail;
+  try {
+    detail = await tkeClient.DescribeClusterNodePoolDetail({ ClusterId: clusterId, NodePoolId: platformNodePoolId });
+  } catch (error) {
+    let candidateNodePools = [];
+    try {
+      const response = await tkeClient.DescribeClusterNodePools({ ClusterId: clusterId });
+      candidateNodePools = (Array.isArray(response?.NodePoolSet) ? response.NodePoolSet : [])
+        .map((item) => summarizeNodePoolCandidate(item))
+        .filter((item) => item.nodePoolRef)
+        .slice(0, 12);
+    } catch {
+      candidateNodePools = [];
+    }
+    failClosed(isNodePoolNotFound(error)
+      ? "production_goal_real_tke_platform_node_pool_not_found"
+      : "production_goal_real_tke_platform_node_pool_detail_failed", {
+      operationClass: operation,
+      clusterRef: "TENCENT_MUTATION_TKE_CLUSTER_ID",
+      sourceNodePoolRef: "TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID",
+      requestedNodePoolRef: publicRef(platformNodePoolId),
+      candidateNodePools,
+      nextAction: "update TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID from a verified platform_service candidate or provide TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_JSON",
+    }, 65);
+  }
   const nodePool = detail?.NodePool || {};
   const autoScalingGroupId = nodePool.AutoscalingGroupId || "";
   const launchConfigurationId = nodePool.LaunchConfigurationId || "";
