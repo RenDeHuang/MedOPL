@@ -34,24 +34,21 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "goal-commercial-launch-freeze-baseline",
-    "landed_commit": "f9a717b3cd7faee9c5c39e99b4178b4c9d6636f7",
+    "branch": "goal-commercial-freeze-admission-gate",
+    "landed_commit": "de3c40dfd96739bbe9cb981100987ac5055d1660",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
-      "npm run test:run-plan -- --dry-run --json passed",
-      "npm run test:run-plan passed",
+      "node tests/health/health-check-v22-workflow-gate.mjs passed",
       "npm run verify passed",
       "npm run test:health passed",
       "npm run test:contract passed",
       "npm run gate:review passed",
-      "npm run repo:bloat passed",
-      "npm run line:budget passed",
       "post-push closeout check failed before this closeout-only cursor update; closeout check passed after update"
     ],
     "canClaim": [
-      "Commercial Launch freeze/admission matrix is machine-owned and consumed by frontend/product/contract gates",
-      "approved Commercial Launch UI baseline replacement is frozen as repo-native contracts/source/tests truth",
-      "old UI absorption high-fidelity denial wording is retired"
+      "Commercial Launch surface changes are blocked by workflow review without freeze admission",
+      "valid freeze_surface and required new-surface admission fields are enforced by health tests",
+      "closeout-only diffs remain allowed without false commercial freeze blocking"
     ],
     "cannotClaim": [
       "rollout complete",
@@ -66,14 +63,11 @@
     "verification": {
       "risk_class": "commercial_billing_boundary",
       "commands": [
-        "npm run test:run-plan -- --dry-run --json passed",
-        "npm run test:run-plan passed",
+        "node tests/health/health-check-v22-workflow-gate.mjs passed",
         "npm run verify passed",
         "npm run test:health passed",
         "npm run test:contract passed",
         "npm run gate:review passed",
-        "npm run repo:bloat passed",
-        "npm run line:budget passed",
         "post-push closeout check failed before this closeout-only cursor update; closeout check passed after update"
       ],
       "result": "passed"
@@ -87,10 +81,10 @@
       "cannot_claim": "done"
     },
     "cleanup_result": {
-      "deleted": "old Commercial Launch high-fidelity denial wording retired from active/product/history/machine cursor",
-      "folded": "Commercial Launch freeze matrix folded into contracts/docs/manifest/tests",
+      "deleted": "no compatibility layer or temporary change package added",
+      "folded": "Commercial Launch freeze admission gate folded into workflow review and health tests",
       "retained": "production rollout, PSP, all-tenant, SLA, compliance and ongoing authorization cannot-claim boundaries",
-      "reason": "freeze baseline is machine-owned and consumed without temporary change package or compatibility layer",
+      "reason": "commercial UI/contract changes now require freeze_surface and new-surface admission fields before review passes",
       "next": "goal-commercial-release-metadata-rollback-maturity"
     },
     "retirement": {
@@ -109,7 +103,7 @@
   "current_blockers": [
     "none_for_current_scoped_commercial_business_flow"
   ],
-  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-launch-freeze-baseline at f9a717b3cd7faee9c5c39e99b4178b4c9d6636f7. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-launch-freeze-baseline at f9a717b3cd7faee9c5c39e99b4178b4c9d6636f7.",
+  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-freeze-admission-gate at de3c40dfd96739bbe9cb981100987ac5055d1660. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-freeze-admission-gate at de3c40dfd96739bbe9cb981100987ac5055d1660.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -666,9 +660,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "goal-commercial-launch-freeze-baseline",
+  "last_landed_branch": "goal-commercial-freeze-admission-gate",
   "last_landed_at": "2026-06-29",
-  "history_latest_branch": "goal-commercial-launch-freeze-baseline",
+  "history_latest_branch": "goal-commercial-freeze-admission-gate",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -1090,8 +1084,8 @@
     },
     "receipt_manifest_artifact_id": "7937559220"
   },
-  "base_trunk_head": "f9a717b3cd7faee9c5c39e99b4178b4c9d6636f7",
-  "last_landed_commit": "f9a717b3cd7faee9c5c39e99b4178b4c9d6636f7",
+  "base_trunk_head": "de3c40dfd96739bbe9cb981100987ac5055d1660",
+  "last_landed_commit": "de3c40dfd96739bbe9cb981100987ac5055d1660",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
@@ -1771,6 +1765,16 @@
       {
         "goal_id": "goal-commercial-launch-freeze-baseline",
         "landed_commit": "f9a717b3cd7faee9c5c39e99b4178b4c9d6636f7",
+        "status": "completed_retired",
+        "retired_from": [
+          "active_blocker",
+          "current_cursor"
+        ],
+        "evidence_pointer": "docs/history/README.md"
+      },
+      {
+        "goal_id": "goal-commercial-freeze-admission-gate",
+        "landed_commit": "de3c40dfd96739bbe9cb981100987ac5055d1660",
         "status": "completed_retired",
         "retired_from": [
           "active_blocker",
