@@ -295,6 +295,15 @@ function pickSecurityGroup(securityGroups = [], vpcId = "") {
   return String(candidates[0]?.SecurityGroupId || "").trim();
 }
 
+function pickZone(configs = [], allowedZones = []) {
+  const zones = new Set((Array.isArray(allowedZones) ? allowedZones : []).filter(Boolean));
+  const candidates = (Array.isArray(configs) ? configs : [])
+    .map((config) => String(config.Zone || "").trim())
+    .filter((zone) => zone && (!zones.size || zones.has(zone)))
+    .sort();
+  return candidates[0] || "";
+}
+
 async function importTencentCloudSdkForRealTkeLifecycle() {
   const moduleOverride = String(process.env.V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_SDK_MODULE || "").trim();
   if (moduleOverride) {
@@ -432,9 +441,8 @@ async function deriveRealTkePlanFromClusterFoundation({ plan, env, root, operati
   const region = plan.region || (env.TENCENT_MUTATION_REGIONS || env.TENCENT_MUTATION_COS_REGION || "").split(",")[0].trim();
   const foundation = plan.deriveFromClusterFoundation || {};
   const TkeClient = root?.tke?.v20180525?.Client;
-  const VpcClient = root?.vpc?.v20170312?.Client;
   const CvmClient = root?.cvm?.v20170312?.Client;
-  if (typeof TkeClient !== "function" || typeof VpcClient !== "function" || typeof CvmClient !== "function") {
+  if (typeof TkeClient !== "function" || typeof CvmClient !== "function") {
     failClosed("production_goal_real_tke_sdk_missing", { operationClass: operation }, 65);
   }
   if (!clusterId || !region) {
@@ -446,7 +454,6 @@ async function deriveRealTkePlanFromClusterFoundation({ plan, env, root, operati
     profile: { httpProfile: { reqTimeout: 60 } },
   };
   const tkeClient = new TkeClient(clientConfig);
-  const vpcClient = new VpcClient(clientConfig);
   const cvmClient = new CvmClient(clientConfig);
   const clusterResponse = await tkeClient.DescribeClusters({ ClusterIds: [clusterId], Limit: 20 });
   const cluster = (Array.isArray(clusterResponse?.Clusters) ? clusterResponse.Clusters : [])
@@ -463,27 +470,15 @@ async function deriveRealTkePlanFromClusterFoundation({ plan, env, root, operati
       ],
     }, 65);
   }
-  const subnetResponse = await vpcClient.DescribeSubnets({ SubnetIds: [subnetId] });
-  const subnet = (Array.isArray(subnetResponse?.SubnetSet) ? subnetResponse.SubnetSet : [])
-    .find((item) => item?.SubnetId === subnetId && item?.VpcId === vpcId) || {};
-  const zone = String(foundation.zone || subnet.Zone || "").trim();
-  if (!zone) failClosed("production_goal_real_tke_cluster_foundation_subnet_incomplete", { operationClass: operation }, 65);
-  if (Number(subnet.AvailableIpAddressCount ?? 1) <= 0) {
-    failClosed("production_goal_real_tke_cluster_foundation_subnet_no_available_ip", { operationClass: operation }, 65);
-  }
-  const securityGroupResponse = await vpcClient.DescribeSecurityGroups(foundation.securityGroupId
-    ? { SecurityGroupIds: [foundation.securityGroupId] }
-    : { VpcId: vpcId, Limit: "100" });
-  const securityGroupId = foundation.securityGroupId || pickSecurityGroup(securityGroupResponse?.SecurityGroupSet || [], vpcId);
-  const securityGroup = (Array.isArray(securityGroupResponse?.SecurityGroupSet) ? securityGroupResponse.SecurityGroupSet : [])
-    .find((item) => item?.SecurityGroupId === securityGroupId) || {};
-  if (!securityGroup.SecurityGroupId) {
-    failClosed("production_goal_real_tke_cluster_foundation_security_group_missing", { operationClass: operation }, 65);
-  }
   const instanceTypeResponse = await cvmClient.DescribeInstanceTypeConfigs({
     Filters: [{ Name: "instance-charge-type", Values: ["POSTPAID_BY_HOUR"] }],
   });
   const instanceTypes = instanceTypeResponse?.InstanceTypeConfigSet || [];
+  const clusterSubnetZones = Array.isArray(clusterNetwork.SubnetIdSet)
+    ? clusterNetwork.SubnetIdSet.map((item) => String(item?.Zone || item?.zone || "").trim()).filter(Boolean)
+    : [];
+  const zone = String(foundation.zone || pickZone(instanceTypes, clusterSubnetZones)).trim();
+  if (!zone) failClosed("production_goal_real_tke_cluster_foundation_zone_missing", { operationClass: operation }, 65);
   const derivedTiers = (Array.isArray(plan.tiers) ? plan.tiers : []).map((tier) => ({
     ...tier,
     instanceType: tier.instanceType || pickInstanceType(instanceTypes, tier, [zone]),
@@ -505,6 +500,21 @@ async function deriveRealTkePlanFromClusterFoundation({ plan, env, root, operati
   });
   const imageId = foundation.imageId || pickImage(imageResponse?.ImageSet || [], foundation.imageNamePattern || "TencentOS");
   if (!imageId) failClosed("production_goal_real_tke_cluster_foundation_image_missing", { operationClass: operation }, 65);
+  let securityGroupId = String(foundation.securityGroupId || "").trim();
+  if (securityGroupId || foundation.validateSecurityGroup === true) {
+    const VpcClient = root?.vpc?.v20170312?.Client;
+    if (typeof VpcClient !== "function") failClosed("production_goal_real_tke_sdk_missing", { operationClass: operation }, 65);
+    const vpcClient = new VpcClient(clientConfig);
+    const securityGroupResponse = await vpcClient.DescribeSecurityGroups(securityGroupId
+      ? { SecurityGroupIds: [securityGroupId] }
+      : { VpcId: vpcId, Limit: "100" });
+    securityGroupId ||= pickSecurityGroup(securityGroupResponse?.SecurityGroupSet || [], vpcId);
+    const securityGroup = (Array.isArray(securityGroupResponse?.SecurityGroupSet) ? securityGroupResponse.SecurityGroupSet : [])
+      .find((item) => item?.SecurityGroupId === securityGroupId) || {};
+    if (!securityGroup.SecurityGroupId) {
+      failClosed("production_goal_real_tke_cluster_foundation_security_group_missing", { operationClass: operation }, 65);
+    }
+  }
   const source = {
     autoScalingGroup: {
       VpcId: vpcId,
@@ -516,7 +526,7 @@ async function deriveRealTkePlanFromClusterFoundation({ plan, env, root, operati
     launchConfiguration: {
       ImageId: imageId,
       SystemDisk: foundation.systemDisk || { DiskType: "CLOUD_PREMIUM", DiskSize: 50 },
-      SecurityGroupIds: [securityGroupId],
+      SecurityGroupIds: securityGroupId ? [securityGroupId] : undefined,
       InternetAccessible: foundation.internetAccessible || { InternetChargeType: "TRAFFIC_POSTPAID_BY_HOUR", InternetMaxBandwidthOut: 1, PublicIpAssigned: false },
       EnhancedService: foundation.enhancedService || { SecurityService: { Enabled: true }, MonitorService: { Enabled: true } },
       InstanceChargeType: "POSTPAID_BY_HOUR",
