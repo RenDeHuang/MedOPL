@@ -95,6 +95,18 @@ assert(
   "real_tke_lifecycle_must_cover_real_instance_type_upgrade_path",
 );
 assert(
+  realTkeSupportSource.includes("deriveRealTkePlanFromClusterFoundation") &&
+    realTkeSupportSource.includes("DescribeSubnets") &&
+    realTkeSupportSource.includes("DescribeSecurityGroups") &&
+    realTkeSupportSource.includes("DescribeImages"),
+  "real_tke_lifecycle_must_support_cluster_foundation_plan_derivation",
+);
+assert(
+  realTkeSupportSource.includes("production_goal_real_tke_platform_node_pool_not_found") &&
+    realTkeSupportSource.includes("candidateNodePools"),
+  "real_tke_lifecycle_must_fail_closed_on_stale_platform_node_pool_with_candidates",
+);
+assert(
   realTkeSupportSource.includes("try {") && realTkeSupportSource.includes("finally") && realTkeSupportSource.includes("createdNodePoolIds"),
   "real_tke_lifecycle_must_cleanup_created_node_pools_on_failure",
 );
