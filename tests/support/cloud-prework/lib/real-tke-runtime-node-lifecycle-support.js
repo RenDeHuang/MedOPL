@@ -470,9 +470,7 @@ async function deriveRealTkePlanFromClusterFoundation({ plan, env, root, operati
       ],
     }, 65);
   }
-  const instanceTypeResponse = await cvmClient.DescribeInstanceTypeConfigs({
-    Filters: [{ Name: "instance-charge-type", Values: ["POSTPAID_BY_HOUR"] }],
-  });
+  const instanceTypeResponse = await cvmClient.DescribeInstanceTypeConfigs({});
   const instanceTypes = instanceTypeResponse?.InstanceTypeConfigSet || [];
   const clusterSubnetZones = Array.isArray(clusterNetwork.SubnetIdSet)
     ? clusterNetwork.SubnetIdSet.map((item) => String(item?.Zone || item?.zone || "").trim()).filter(Boolean)
