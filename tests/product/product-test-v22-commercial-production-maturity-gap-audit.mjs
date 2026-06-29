@@ -48,6 +48,16 @@ for (const claim of [
   assert(activeTruth.includes(claim), `active_truth_can_claim_missing:${claim}`);
 }
 
+const figmaUiBoundary =
+  "Commercial Launch UI absorbed means repo-native resource-control information architecture and copy were absorbed; it does not claim the approved Figma Make UI is high-fidelity replaced or rollout-complete.";
+assert(
+  maturity.ui_boundary?.includes(figmaUiBoundary),
+  "maturity_gap_ui_boundary_must_distinguish_repo_absorption_from_figma_make_replacement",
+);
+assert(activeTruth.includes(figmaUiBoundary), "active_truth_ui_boundary_missing");
+assert(productTruth.includes(figmaUiBoundary), "product_truth_ui_boundary_missing");
+assert(historyTruth.includes(figmaUiBoundary), "history_truth_ui_boundary_missing");
+
 for (const claim of [
   "external PSP settlement",
   "real payment completed",

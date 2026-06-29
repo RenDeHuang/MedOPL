@@ -92,7 +92,7 @@ Go backend 是 MedOPL control-plane business truth 的本地 MVP takeover 承载
 
 ## Commercial Production Maturity Gap
 
-当前 business-flow 已完成，不再重开 business closure gap。当前 canClaim 只有：authorized commercial business-flow cloud canary passed；internal credit + billing ledger + statement reconciliation + release/destroy/stop billing passed；Commercial Launch UI absorbed。当前 cannotClaim 仍包括 external PSP settlement、real payment completed、refund / invoice / tax / compliance、unscoped full production、all users/all tenants、SLA/multi-region/ongoing authorization。
+当前 business-flow 已完成，不再重开 business closure gap。当前 canClaim 只有：authorized commercial business-flow cloud canary passed；internal credit + billing ledger + statement reconciliation + release/destroy/stop billing passed；Commercial Launch UI absorbed。Commercial Launch UI absorbed means repo-native resource-control information architecture and copy were absorbed; it does not claim the approved Figma Make UI is high-fidelity replaced or rollout-complete. 当前 cannotClaim 仍包括 external PSP settlement、real payment completed、refund / invoice / tax / compliance、unscoped full production、all users/all tenants、SLA/multi-region/ongoing authorization。
 
 临时 commercial production maturity gap 由 `tests/fixtures/v22/goal-current.json` 持有机器矩阵。矩阵参考 OPL ordinary path 的 consumer bridge/deeplink/projection 边界，以及 sub2api-style 成熟项目结构里的 packaging、install、config、release、CI/security 和 operations 维度；这些只是工程成熟度参考，不改变 MedOPL 的业务 truth，也不把 MedOPL 写成 OPL-Webui 本体或外部 PSP。
 
