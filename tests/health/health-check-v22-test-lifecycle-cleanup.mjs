@@ -27,6 +27,7 @@ const allowedLifecycleRoles = [
   "negative-retirement-guard",
   "suite-wrapper",
   "real-cloud-readiness-boundary",
+  "cloud-release-candidate-boundary",
   "future-authorized-boundary",
 ];
 

@@ -11,6 +11,7 @@ const expectedOperations = Object.freeze([
   "readonly_inventory",
   "dry_run_plan",
   "tenant_runtime_provisioning",
+  "real_tke_runtime_node_lifecycle",
   "storage_lifecycle",
   "billing_audit_writeback",
   "build_push",
@@ -63,6 +64,7 @@ assert.deepEqual(dryRun.phases.map((phase) => phase.operationClass), [
   "readonly_inventory",
   "dry_run_plan",
   "tenant_runtime_provisioning",
+  "real_tke_runtime_node_lifecycle",
   "storage_lifecycle",
   "billing_audit_writeback",
   "build_push",
@@ -168,6 +170,7 @@ try {
   const productionGoalExecutor = "tests/support/cloud-prework/cloud-authorized-production-goal-executor.js";
   const mutationSecretFile = path.join(tempDir, "mutation.env");
   const runtimePlanFile = path.join(tempDir, "runtime-plan.json");
+  const realTkePlanFile = path.join(tempDir, "real-tke-node-lifecycle-plan.json");
   const storagePlanFile = path.join(tempDir, "storage-plan.json");
   const billingAuditReceiptFile = path.join(tempDir, "billing-audit-request.json");
   const deployPlanFile = path.join(tempDir, "deploy-plan.json");
@@ -192,6 +195,35 @@ try {
     "",
   ].join("\n"));
   writeFileSync(runtimePlanFile, JSON.stringify({ runtimeBindingId: "runtime-binding-test" }));
+  writeFileSync(realTkePlanFile, JSON.stringify({
+    clusterId: "cls-test",
+    region: "na-siliconvalley",
+    tiers: [
+      { id: "starter_2c4g_10gb", cpuCores: 2, memoryGb: 4, storageGb: 10 },
+      { id: "pro_8c16g_100gb", cpuCores: 8, memoryGb: 16, storageGb: 100 },
+    ],
+    createClusterNodePool: {
+      starter_2c4g_10gb: {
+        Name: "medopl-real-tke-test-starter",
+        AutoScalingGroupPara: "{}",
+        LaunchConfigurePara: "{}",
+        InstanceAdvancedSettings: {},
+        EnableAutoscale: true,
+      },
+      pro_8c16g_100gb: {
+        Name: "medopl-real-tke-test-pro",
+        AutoScalingGroupPara: "{}",
+        LaunchConfigurePara: "{}",
+        InstanceAdvancedSettings: {},
+        EnableAutoscale: true,
+      },
+    },
+    upgradeClusterNodePool: {
+      modifyNodePoolInstanceTypes: { InstanceTypes: ["S5.2XLARGE16"] },
+      modifyClusterNodePool: { Name: "medopl-real-tke-test-pro-upgrade" },
+    },
+    deleteClusterNodePool: { KeepInstance: false },
+  }));
   writeFileSync(storagePlanFile, JSON.stringify({ storageBindingId: "storage-binding-test" }));
   writeFileSync(billingAuditReceiptFile, JSON.stringify({ billingReceiptRequestId: "billing-audit-test" }));
   writeFileSync(deployPlanFile, JSON.stringify({ deployPlanId: "deploy-test" }));
@@ -229,6 +261,8 @@ try {
     V22_TENCENT_MUTATION_SECRET_FILE: mutationSecretFile,
     V22_TENCENT_RUNTIME_PLAN_FILE: runtimePlanFile,
     V22_TENCENT_RUNTIME_PROVISIONING_RUNNER: receiptBackedRunner,
+    V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_FILE: realTkePlanFile,
+    V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_RUNNER: receiptBackedRunner,
     V22_TENCENT_STORAGE_PLAN_FILE: storagePlanFile,
     V22_TENCENT_STORAGE_LIFECYCLE_RUNNER: receiptBackedRunner,
     V22_MEDOPL_BILLING_AUDIT_RECEIPT_FILE: billingAuditReceiptFile,
@@ -501,14 +535,31 @@ try {
     "production_goal_runtime_receipt_backed_runner",
   );
   assert.equal(
-    runtimeLive.phases.find((phase) => phase.operationClass === "tenant_runtime_provisioning").results[0].summary.receiptsWritten.includes("runtime_owner_receipt"),
-    true,
-    "production_goal_runtime_must_write_runtime_receipt",
+    runtimeLive.phases.find((phase) => phase.operationClass === "tenant_runtime_provisioning").results[0].summary.receiptsWritten.length,
+    0,
+    "production_goal_legacy_runtime_observation_must_not_write_runtime_receipt",
   );
   assert.deepEqual(
     runtimeLive.phases.find((phase) => phase.operationClass === "tenant_runtime_provisioning").results[0].summary.inputKeys,
     ["operationClass", "planFile", "secretFile"],
     "production_goal_runtime_input_refs_mismatch",
+  );
+
+  const realTkeLive = jsonFrom(
+    runExecutor(["--execute", "--operation", "real_tke_runtime_node_lifecycle", "--json"], {
+      V22_CLOUD_COMMAND_EXECUTOR: productionGoalExecutor,
+      V22_TENCENT_MUTATION_SECRET_FILE: mutationSecretFile,
+      V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_FILE: realTkePlanFile,
+      V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_RUNNER: receiptBackedRunner,
+    }),
+    "production_goal_real_tke_lifecycle_receipt_backed_runner",
+  );
+  const realTkeResult = realTkeLive.phases.find((phase) => phase.operationClass === "real_tke_runtime_node_lifecycle").results[0].summary;
+  assert.equal(realTkeResult.receiptsWritten.includes("runtime_owner_receipt"), true, "production_goal_real_tke_must_write_runtime_receipt");
+  assert.deepEqual(
+    realTkeResult.inputKeys,
+    ["operationClass", "planFile", "secretFile"],
+    "production_goal_real_tke_input_refs_mismatch",
   );
 
   const liveTest = jsonFrom(

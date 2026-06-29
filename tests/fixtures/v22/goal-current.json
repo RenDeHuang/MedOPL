@@ -599,10 +599,10 @@
     },
     "goal_d_runtime_provisioning": {
       "status": "executed",
-      "operation_class": "tenant_runtime_provisioning",
-      "runner_id": "tencent_tke_runtime_provisioning_runner",
+      "operation_class": "real_tke_runtime_node_lifecycle",
+      "runner_id": "tencent_tke_real_runtime_node_lifecycle_runner",
       "authorization_ref": "contracts/medopl-cloud-authorization-pack.json#run-v22-001",
-      "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/tenant_runtime_provisioning.json",
+      "evidence_ref": ".runtime/v22-cloud-authorization/run-v22-001/real_tke_runtime_node_lifecycle.json",
       "evidence_hash": "sha256:4bdead44ac97bab8530811bb444bc3490ccc1af31275d932bc2951d97af8332f",
       "runtime_owner_receipt_ref": ".runtime/v22-cloud-authorization/run-v22-001/runtime_owner_receipt.json",
       "runtime_owner_receipt_hash": "sha256:20a8141e1551baa950167f252856a2bf80782aa1f48adfbe913d9c1a6dddddf9",

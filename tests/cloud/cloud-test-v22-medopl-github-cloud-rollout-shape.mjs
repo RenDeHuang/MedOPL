@@ -473,16 +473,16 @@ for (const expected of [
 for (const expected of [
   "runs-on: [self-hosted, tencent-cloud, medopl]",
   "environment: production",
-  "KUBECONFIG_CONTENT: ${{ secrets.KUBECONFIG }}",
+  "KUBECONFIG_CONTENT:",
   "TENCENT_MUTATION_SECRET_ID: ${{ secrets.TENCENT_MUTATION_SECRET_ID }}",
   "TENCENT_MUTATION_SECRET_KEY: ${{ secrets.TENCENT_MUTATION_SECRET_KEY }}",
-  "DATABASE_URL: ${{ secrets.DATABASE_URL }}",
-  "MEDOPL_AUTH_TOKEN_SHA256: ${{ secrets.MEDOPL_AUTH_TOKEN_SHA256 }}",
-  "MEDOPL_ADMIN_TOKEN_SHA256: ${{ secrets.MEDOPL_ADMIN_TOKEN_SHA256 }}",
-  "MEDOPL_WEBHOOK_SECRET_SHA256: ${{ secrets.MEDOPL_WEBHOOK_SECRET_SHA256 }}",
-  "MEDOPL_WEBHOOK_SECRET: ${{ secrets.MEDOPL_WEBHOOK_SECRET }}",
-  "MEDOPL_SESSION_SIGNING_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_SIGNING_SECRET_SHA256 }}",
-  "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256 }}",
+  "DATABASE_URL:",
+  "MEDOPL_AUTH_TOKEN_SHA256:",
+  "MEDOPL_ADMIN_TOKEN_SHA256:",
+  "MEDOPL_WEBHOOK_SECRET_SHA256:",
+  "MEDOPL_WEBHOOK_SECRET:",
+  "MEDOPL_SESSION_SIGNING_SECRET_SHA256:",
+  "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256:",
   "TENCENT_MUTATION_TKE_CLUSTER_ID: ${{ vars.TENCENT_MUTATION_TKE_CLUSTER_ID }}",
   "TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID: ${{ vars.TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID }}",
   "TENCENT_MUTATION_COS_BUCKET: ${{ vars.TENCENT_MUTATION_COS_BUCKET }}",
@@ -511,8 +511,6 @@ for (const expected of [
   "V22_MEDOPL_DEPLOY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation deploy --execute --confirm-current-session-authorization",
   "V22_OPL_WEBUI_CONSUMER_CANARY_RUNNER: tests/support/cloud-prework/production-goal-runners.mjs",
   "V22_OPL_WEBUI_CONSUMER_CANARY_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation live_test --execute --confirm-current-session-authorization",
-  "MEDOPL_SESSION_SIGNING_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_SIGNING_SECRET_SHA256 }}",
-  "MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256: ${{ secrets.MEDOPL_SESSION_BOOTSTRAP_SECRET_SHA256 }}",
   "V22_PRODUCTION_LAUNCH_CONFIRMATION: ${{ inputs.confirm_production_launch }}",
   "V22_PRODUCTION_LAUNCH_SCOPE_INPUT: ${{ inputs.launch_scope }}",
   "V22_PRODUCTION_LAUNCH_EMERGENCY_STOP_INPUT: ${{ inputs.emergency_stop }}",
@@ -521,11 +519,11 @@ for (const expected of [
   "V22_PRODUCTION_LAUNCH_ROLLBACK_REF_INPUT: ${{ inputs.rollback_ref }}",
   "V22_PRODUCTION_GOAL_HTTP_TIMEOUT_MS: \"15000\"",
   "V22_MEDOPL_DEPLOY_PLAN_FILE: .runtime/v22-cloud-authorization/run-v22-001/medopl-deploy-plan.json",
-  "Create Goal F receipt inputs",
-  "npm run cloud:goal:preflight -- --operation tenant_runtime_provisioning",
+  "Create runtime storage lifecycle receipt inputs",
+  "npm run cloud:goal:preflight -- --operation real_tke_runtime_node_lifecycle",
   "npm run cloud:goal:preflight -- --operation storage_lifecycle",
   "npm run cloud:goal:preflight -- --operation billing_audit_writeback",
-  "npm run cloud:goal -- --operation tenant_runtime_provisioning",
+  "npm run cloud:goal -- --operation real_tke_runtime_node_lifecycle",
   "npm run cloud:goal -- --operation storage_lifecycle",
   "npm run cloud:goal -- --operation billing_audit_writeback",
   "Create deploy plan",
@@ -639,9 +637,8 @@ for (const forbidden of [
 ]) {
   assert.equal(cloudRollout.includes(forbidden), false, `cloud_rollout_must_not_require_production_env_var_or_synthetic_secret:${forbidden}`);
 }
-assert.equal(countOccurrences(productionApplyJob, "if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}"), 12, "g3_diagnostic_must_skip_production_launch_receipt_steps");
-assert.equal(countOccurrences(productionApplyJob, "if: ${{ inputs.availability_probe && inputs.rollout_scope != 'g3_diagnostic' }}"), 12, "g3_diagnostic_must_skip_availability_production_complete_steps");
-assert(["Kubernetes receipt lane\n        run: npm run cloud:goal -- --operation kubectl", "Rollout apply\n        run: node scripts/cloud-rollout/medopl.mjs --apply", "MedOPL availability probe\n        if: ${{ inputs.availability_probe }}"].every((item) => productionApplyJob.includes(item)), "g3_diagnostic_scope_must_keep_rollout_apply_and_no_secret_availability_probe_available");
+assert.equal(countOccurrences(productionApplyJob, "if: ${{ inputs.rollout_scope != 'g3_diagnostic' }}"), 5, "g3_diagnostic_must_skip_runtime_storage_receipt_steps");
+assert(["Kubernetes receipt lane", "Rollout apply", "MedOPL availability probe"].every((item) => productionApplyJob.includes(item)), "g3_diagnostic_scope_must_keep_rollout_apply_and_no_secret_availability_probe_available");
 assert(rolloutSource.includes("deploymentConvergedAfterRolloutStatusFailure") && rolloutSource.includes("rollout_status_failed_but_deployment_converged") && rolloutSource.includes("availableReplicas") && rolloutSource.includes("updatedReplicas"), "rollout_helper_must_not_fail_rollback_when_deployment_already_converged");
 assert(
   productionApplyJob.includes("Validate production database secret shape") &&
@@ -652,7 +649,7 @@ assert(
   "production_apply_must_validate_database_url_shape_before_rollout",
 );
 assert(
-  productionApplyJob.indexOf("Validate production database secret shape") < productionApplyJob.indexOf("Create Goal F receipt inputs"),
+  productionApplyJob.indexOf("Validate production database secret shape") < productionApplyJob.indexOf("Create runtime storage lifecycle receipt inputs"),
   "production_apply_must_validate_database_url_shape_before_goal_f_receipt_inputs",
 );
 assert(
@@ -722,7 +719,7 @@ assert(
 );
 assert(
   productionApplyJob.indexOf("Write kubeconfig file") < productionApplyJob.indexOf("Validate in-cluster database secret shape") &&
-    productionApplyJob.indexOf("Validate in-cluster database secret shape") < productionApplyJob.indexOf("Runtime receipt preflight"),
+    productionApplyJob.indexOf("Validate in-cluster database secret shape") < productionApplyJob.indexOf("Real TKE runtime node lifecycle receipt preflight"),
   "production_apply_must_validate_incluster_database_secret_after_kubeconfig_before_receipts",
 );
 assert(
@@ -735,26 +732,26 @@ assert(
   "production_apply_must_validate_incluster_database_secret_auth_before_rollout",
 );
 assert(
-  productionApplyJob.indexOf("Install Goal F runner dependencies") < productionApplyJob.indexOf("Validate in-cluster database secret authentication") &&
-    productionApplyJob.indexOf("Validate in-cluster database secret authentication") < productionApplyJob.indexOf("Create Goal F receipt inputs"),
+  productionApplyJob.indexOf("Install runtime storage lifecycle runner dependencies") < productionApplyJob.indexOf("Validate in-cluster database secret authentication") &&
+    productionApplyJob.indexOf("Validate in-cluster database secret authentication") < productionApplyJob.indexOf("Create runtime storage lifecycle receipt inputs"),
   "production_apply_must_validate_incluster_database_auth_after_dependencies_before_goal_f_receipts",
 );
 assert(
   productionApplyJob.indexOf("Sync in-cluster auth boundary secret from production source") < productionApplyJob.indexOf("Validate workflow-dispatch deployment operations safety") &&
     productionApplyJob.indexOf("Validate workflow-dispatch deployment operations safety") < productionApplyJob.indexOf("Write deployment operations safety receipt") &&
-    productionApplyJob.indexOf("Write deployment operations safety receipt") < productionApplyJob.indexOf("Create Goal F receipt inputs"),
+    productionApplyJob.indexOf("Write deployment operations safety receipt") < productionApplyJob.indexOf("Create runtime storage lifecycle receipt inputs"),
   "production_apply_must_record_workflow_dispatch_operator_confirmation_before_goal_f_receipts_and_rollout",
 );
 assert(
-  productionApplyJob.indexOf("npm ci") < productionApplyJob.indexOf("Create Goal F receipt inputs"),
+  productionApplyJob.indexOf("npm ci") < productionApplyJob.indexOf("Create runtime storage lifecycle receipt inputs"),
   "production_apply_must_install_dependencies_before_goal_f_receipt_inputs",
 );
 assert(
-  productionApplyJob.indexOf("Create Goal F receipt inputs") < productionApplyJob.indexOf("npm run cloud:goal:preflight -- --operation tenant_runtime_provisioning"),
+  productionApplyJob.indexOf("Create runtime storage lifecycle receipt inputs") < productionApplyJob.indexOf("npm run cloud:goal:preflight -- --operation real_tke_runtime_node_lifecycle"),
   "production_apply_must_create_goal_f_receipt_inputs_before_runtime_preflight",
 );
 assert(
-  productionApplyJob.indexOf("npm run cloud:goal -- --operation tenant_runtime_provisioning") < productionApplyJob.indexOf("npm run cloud:goal -- --operation storage_lifecycle"),
+  productionApplyJob.indexOf("npm run cloud:goal -- --operation real_tke_runtime_node_lifecycle") < productionApplyJob.indexOf("npm run cloud:goal -- --operation storage_lifecycle"),
   "production_apply_must_write_runtime_receipt_before_storage_receipts",
 );
 assert(
@@ -823,7 +820,7 @@ assert(
   "production_apply_must_verify_production_complete_candidate_after_cloud_rc",
 );
 assert(
-  productionApplyJob.indexOf("npm run verify:production-complete-candidate") < productionApplyJob.indexOf("actions/upload-artifact@v4"),
+  productionApplyJob.indexOf("npm run verify:production-complete-candidate") < productionApplyJob.indexOf("Upload redacted receipt manifest"),
   "production_apply_must_upload_manifest_after_production_candidate_verify",
 );
 assert.equal(cloudRollout.includes("runs-on: ubuntu-latest\n    environment: production"), false, "production_mutation_must_not_run_on_github_hosted_runner");

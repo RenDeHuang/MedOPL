@@ -71,7 +71,7 @@ const ALLOWED_PRODUCTION_COMPLETE_CRITERIA_FIELDS = Object.freeze([
 ]);
 
 const RECEIPT_OPERATION_CLASSES = Object.freeze({
-  runtime_owner_receipt: "tenant_runtime_provisioning",
+  runtime_owner_receipt: "real_tke_runtime_node_lifecycle",
   storage_owner_receipt: "storage_lifecycle",
   billing_owner_receipt: "billing_audit_writeback",
   audit_owner_receipt: "billing_audit_writeback",

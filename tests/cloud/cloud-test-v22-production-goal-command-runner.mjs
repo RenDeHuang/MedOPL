@@ -9,6 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
 const runner = "tests/support/cloud-prework/production-goal-command-runner.mjs";
 const runnerSource = readFileSync(path.join(repoRoot, runner), "utf8");
+const realTkeSupportSource = readFileSync(path.join(repoRoot, "tests/support/cloud-prework/lib/real-tke-runtime-node-lifecycle-support.js"), "utf8");
 
 assert.equal(
   runnerSource.includes("DescribeClusterNodePools({ ClusterId: clusterId, NodePoolIds"),
@@ -50,6 +51,11 @@ assert(
 assert(
   runnerSource.includes("SELECT count(*)::int AS count FROM billing_events WHERE workspace_id = $1"),
   "live_db_persistence_proof_must_read_typed_billing_events",
+);
+assert(
+  runnerSource.includes("runRealTkeRuntimeNodeLifecycleCommand") &&
+    realTkeSupportSource.includes("V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_SDK_MODULE"),
+  "real_tke_runner_must_support_fake_sdk_module_for_local_proof_without_cloud_calls",
 );
 assert.equal(
   runnerSource.includes("control_plane_records WHERE kind = 'file'"),
@@ -411,6 +417,9 @@ try {
   const mutationSecretFile = path.join(tempDir, "mutation.env");
   const runtimePlan = path.join(tempDir, "runtime-plan.json");
   const storagePlan = path.join(tempDir, "storage-plan.json");
+  const realTkeDerivedPlan = path.join(tempDir, "real-tke-derived-plan.json");
+  const realTkeFakeSdk = path.join(tempDir, "fake-tencentcloud-sdk-nodejs.mjs");
+  const realTkeEvidenceRef = `.runtime/v22-cloud-authorization/test-${Date.now()}/real_tke_runtime_node_lifecycle.json`;
   const receiptFile = path.join(tempDir, "receipt.json");
   const deployPlan = path.join(tempDir, "deploy-plan.json");
   const shortDeployPlan = path.join(tempDir, "deploy-plan-short-name.json");
@@ -444,6 +453,127 @@ try {
     "",
   ].join("\n"));
   writeFileSync(runtimePlan, JSON.stringify({ runtime_plan: "starter", workspace_id: "workspace-test" }));
+  writeFileSync(realTkeDerivedPlan, JSON.stringify({
+    clusterId: "cls-test",
+    region: "na-siliconvalley",
+    requireNodeTotal: 1,
+    requireReadyNodeCount: 1,
+    createObserveAttempts: 1,
+    upgradeObserveAttempts: 1,
+    deleteObserveAttempts: 1,
+    tiers: [
+      { id: "starter_2c4g_10gb", cpuCores: 2, memoryGb: 4, storageGb: 10 },
+      { id: "pro_8c16g_100gb", cpuCores: 8, memoryGb: 16, storageGb: 100 },
+    ],
+    deriveFromPlatformNodePool: {
+      enabled: true,
+      nodePoolId: "np-platform",
+    },
+  }));
+  writeFileSync(realTkeFakeSdk, `
+const calls = [];
+const pools = new Map();
+async function persist() {
+  const { writeFileSync } = await import("node:fs");
+  writeFileSync(process.env.TEST_REAL_TKE_FAKE_SDK_LOG, JSON.stringify(calls, null, 2));
+}
+class TkeClient {
+  async DescribeClusterNodePoolDetail(request) {
+    calls.push({ api: "DescribeClusterNodePoolDetail", request });
+    await persist();
+    return { NodePool: {
+      AutoscalingGroupId: "asg-platform",
+      LaunchConfigurationId: "lc-platform",
+      RuntimeConfig: { RuntimeType: "containerd", RuntimeVersion: "1.6.0" },
+      NodePoolOs: "tlinux3.1x86_64",
+      Labels: [{ Name: "medopl-owner", Value: "platform" }],
+      Taints: [],
+      Annotations: [],
+    } };
+  }
+  async CreateClusterNodePool(request) {
+    calls.push({ api: "CreateClusterNodePool", request });
+    const nodePoolId = request.Name.includes("pro") ? "np-pro-created" : "np-starter-created";
+    const launch = JSON.parse(request.LaunchConfigurePara);
+    pools.set(nodePoolId, {
+      NodePoolId: nodePoolId,
+      LifeState: "normal",
+      DesiredNodesNum: 1,
+      MinNodesNum: 1,
+      MaxNodesNum: 1,
+      InstanceTypes: launch.InstanceTypes || [launch.InstanceType].filter(Boolean),
+      NodeCountSummary: { AutoscalingAdded: { Total: 1, Normal: 1 }, ManuallyAdded: { Total: 0, Normal: 0 } },
+    });
+    await persist();
+    return { NodePoolId: nodePoolId };
+  }
+  async ModifyNodePoolInstanceTypes(request) {
+    calls.push({ api: "ModifyNodePoolInstanceTypes", request });
+    const pool = pools.get(request.NodePoolId);
+    if (pool) pool.InstanceTypes = request.InstanceTypes;
+    await persist();
+    return { RequestId: "modify-instance-types" };
+  }
+  async ModifyClusterNodePool(request) {
+    calls.push({ api: "ModifyClusterNodePool", request });
+    await persist();
+    return { RequestId: "modify-node-pool" };
+  }
+  async DescribeClusterNodePools(request) {
+    calls.push({ api: "DescribeClusterNodePools", request });
+    await persist();
+    return { NodePoolSet: Array.from(pools.values()) };
+  }
+  async DeleteClusterNodePool(request) {
+    calls.push({ api: "DeleteClusterNodePool", request });
+    for (const id of request.NodePoolIds || []) pools.delete(id);
+    await persist();
+    return { RequestId: "delete-node-pool" };
+  }
+}
+class AsClient {
+  async DescribeAutoScalingGroups(request) {
+    calls.push({ api: "DescribeAutoScalingGroups", request });
+    await persist();
+    return { AutoScalingGroupSet: [{
+      AutoScalingGroupId: "asg-platform",
+      VpcId: "vpc-test",
+      SubnetIdSet: ["subnet-test"],
+      ZoneSet: ["na-siliconvalley-1"],
+      ProjectId: 0,
+      DefaultCooldown: 300,
+    }] };
+  }
+  async DescribeLaunchConfigurations(request) {
+    calls.push({ api: "DescribeLaunchConfigurations", request });
+    await persist();
+    return { LaunchConfigurationSet: [{
+      LaunchConfigurationId: "lc-platform",
+      ImageId: "img-test",
+      SystemDisk: { DiskType: "CLOUD_PREMIUM", DiskSize: 50 },
+      SecurityGroupIds: ["sg-test"],
+      InternetAccessible: { InternetChargeType: "TRAFFIC_POSTPAID_BY_HOUR", InternetMaxBandwidthOut: 1 },
+      EnhancedService: { SecurityService: { Enabled: true }, MonitorService: { Enabled: true } },
+      InstanceChargeType: "POSTPAID_BY_HOUR",
+    }] };
+  }
+}
+class CvmClient {
+  async DescribeInstanceTypeConfigs(request) {
+    calls.push({ api: "DescribeInstanceTypeConfigs", request });
+    await persist();
+    return { InstanceTypeConfigSet: [
+      { Zone: "na-siliconvalley-1", InstanceType: "S5.MEDIUM4", CPU: 2, Memory: 4 },
+      { Zone: "na-siliconvalley-1", InstanceType: "S5.2XLARGE16", CPU: 8, Memory: 16 },
+    ] };
+  }
+}
+export default {
+  tke: { v20180525: { Client: TkeClient } },
+  as: { v20180419: { Client: AsClient } },
+  cvm: { v20170312: { Client: CvmClient } },
+};
+`);
   writeFileSync(storagePlan, JSON.stringify({ storage_plan: "workspace", workspace_id: "workspace-test" }));
   writeFileSync(receiptFile, JSON.stringify({ events: ["runtime_owner_receipt_accepted"] }));
   writeFileSync(deployPlan, JSON.stringify({ namespace: "np-6l4nkdto-2cdtm", deployments: ["medopl"] }));
@@ -452,6 +582,8 @@ try {
   const baseEnv = {
     V22_TENCENT_MUTATION_SECRET_FILE: mutationSecretFile,
     V22_TENCENT_RUNTIME_PLAN_FILE: runtimePlan,
+    V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_FILE: realTkeDerivedPlan,
+    V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_SDK_MODULE: realTkeFakeSdk,
     V22_TENCENT_STORAGE_PLAN_FILE: storagePlan,
     V22_MEDOPL_BILLING_AUDIT_RECEIPT_FILE: receiptFile,
     V22_MEDOPL_DEPLOY_PLAN_FILE: deployPlan,
@@ -466,9 +598,11 @@ try {
     MEDOPL_WEBHOOK_SECRET: "webhook-secret-test",
     TENCENT_DEPLOY_KUBECONFIG_REF: "kubeconfig-ref-test",
     TEST_KUBECTL_LOG: kubectlLog,
+    TEST_REAL_TKE_FAKE_SDK_LOG: path.join(tempDir, "real-tke-fake-sdk.log"),
     V22_OPL_WEBUI_CONSUMER_CANARY_URL: "https://opl.medopl.cn",
     V22_MEDOPL_PUBLIC_BASE_URL: "https://portal.medopl.cn",
     V22_MEDOPL_LIVE_DB_PERSISTENCE_PROOF: "",
+    V22_GOAL_EVIDENCE_REF: realTkeEvidenceRef,
     PATH: `${binDir}${path.delimiter}${process.env.PATH || ""}`,
   };
 
@@ -496,6 +630,40 @@ try {
   const billingCheck = parseJson(run(["--operation", "billing_audit_writeback", "--check-config"], baseEnv), "billing_check_config");
   assert.equal(billingCheck.summary.requiredEnvMissing.length, 0, "billing_required_env");
   assert.equal(billingCheck.summary.requiredPathMissing.length, 0, "billing_required_paths");
+
+  const realTkeCheck = parseJson(run(["--operation", "real_tke_runtime_node_lifecycle", "--check-config"], baseEnv), "real_tke_check_config");
+  assert.equal(realTkeCheck.summary.requiredEnvMissing.length, 0, "real_tke_required_env");
+  assert.equal(realTkeCheck.summary.requiredPathMissing.length, 0, "real_tke_required_paths");
+
+  const realTkeExecute = parseJson(run(["--operation", "real_tke_runtime_node_lifecycle", "--execute", "--confirm-current-session-authorization"], baseEnv), "real_tke_execute");
+  assert.equal(realTkeExecute.summary.realProviderMutationExecuted, true, "real_tke_must_execute_provider_mutation");
+  assert.deepEqual(realTkeExecute.summary.tierCoverage, ["starter_2c4g_10gb", "pro_8c16g_100gb"], "real_tke_must_cover_starter_and_pro");
+  assert.equal(realTkeExecute.summary.upgradeVerified, true, "real_tke_must_verify_upgrade");
+  assert.equal(realTkeExecute.summary.cleanupVerified, true, "real_tke_must_verify_cleanup");
+  assert.equal(realTkeExecute.summary.nodePoolDestroyed, true, "real_tke_must_destroy_created_node_pools");
+  assertNoSensitiveText(JSON.stringify(realTkeExecute), "real_tke_execute");
+  const realTkeCalls = JSON.parse(readFileSync(baseEnv.TEST_REAL_TKE_FAKE_SDK_LOG, "utf8"));
+  assert.deepEqual(realTkeCalls.map((call) => call.api).filter((api) => api !== "DescribeClusterNodePools"), [
+    "DescribeClusterNodePoolDetail",
+    "DescribeAutoScalingGroups",
+    "DescribeLaunchConfigurations",
+    "DescribeInstanceTypeConfigs",
+    "CreateClusterNodePool",
+    "ModifyNodePoolInstanceTypes",
+    "CreateClusterNodePool",
+    "DeleteClusterNodePool",
+    "DeleteClusterNodePool",
+  ], "real_tke_must_derive_create_upgrade_and_destroy");
+  const createdRequests = realTkeCalls.filter((call) => call.api === "CreateClusterNodePool").map((call) => call.request);
+  assert.equal(createdRequests.length, 2, "real_tke_must_create_two_node_pools");
+  assert.equal(JSON.parse(createdRequests[0].LaunchConfigurePara).InstanceTypes[0], "S5.MEDIUM4", "starter_tier_instance_type");
+  assert.equal(JSON.parse(createdRequests[1].LaunchConfigurePara).InstanceTypes[0], "S5.2XLARGE16", "pro_tier_instance_type");
+  const upgradeCall = realTkeCalls.find((call) => call.api === "ModifyNodePoolInstanceTypes");
+  assert.deepEqual(upgradeCall.request.InstanceTypes, ["S5.2XLARGE16"], "starter_upgrade_must_target_pro_instance_type");
+  assert.deepEqual(realTkeCalls.filter((call) => call.api === "DeleteClusterNodePool").map((call) => call.request.NodePoolIds), [
+    ["np-pro-created"],
+    ["np-starter-created"],
+  ], "real_tke_cleanup_must_delete_all_created_node_pools");
 
   const buildCheck = parseJson(run(["--operation", "build_push", "--check-config"], baseEnv), "build_check_config");
   assert.equal(buildCheck.summary.requiredEnvMissing.length, 0, "build_required_env");

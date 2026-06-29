@@ -6,6 +6,7 @@ import path from "node:path";
 
 const COMMAND_ENV_BY_OPERATION = Object.freeze({
   tenant_runtime_provisioning: "V22_TENCENT_RUNTIME_PROVISIONING_COMMAND",
+  real_tke_runtime_node_lifecycle: "V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_COMMAND",
   storage_lifecycle: "V22_TENCENT_STORAGE_LIFECYCLE_COMMAND",
   billing_audit_writeback: "V22_MEDOPL_BILLING_AUDIT_WRITEBACK_COMMAND",
   build_push: "V22_CONTAINER_BUILD_PUSH_COMMAND",
@@ -26,6 +27,7 @@ const RECEIPT_OWNER_BY_TYPE = Object.freeze({
 
 const EXPECTED_INPUT_KEYS = Object.freeze({
   tenant_runtime_provisioning: Object.freeze(["operationClass", "planFile", "secretFile"]),
+  real_tke_runtime_node_lifecycle: Object.freeze(["operationClass", "planFile", "secretFile"]),
   storage_lifecycle: Object.freeze(["operationClass", "planFile", "secretFile"]),
   billing_audit_writeback: Object.freeze(["databaseUrlRef", "operationClass", "receiptFile"]),
   build_push: Object.freeze(["buildContext", "imageRef", "operationClass", "registryCredentialRef"]),

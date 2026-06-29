@@ -274,6 +274,8 @@ assert.deepEqual(cloudReleaseCandidateSuite.commands, [
   "node tests/cloud/cloud-test-v22-medopl-github-cloud-rollout-shape.mjs",
   "node tests/cloud/cloud-test-v22-production-goal-command-runner.mjs",
   "node tests/cloud/cloud-test-v22-production-goal-runners.mjs",
+  "node tests/cloud/cloud-test-v22-real-tke-runtime-node-lifecycle-proof.mjs",
+  "node tests/cloud/cloud-test-v22-runtime-storage-lifecycle-rollout-scope.mjs",
   "node tests/release/release-test-v22-production-receipt-boundary.mjs",
   "node scripts/v22-verify.mjs cloud-release-candidate --base origin/recovery/platform-v22-trunk --json",
 ], "cloud_release_candidate_package_suite_commands_mismatch");

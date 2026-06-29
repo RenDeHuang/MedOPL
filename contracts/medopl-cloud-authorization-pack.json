@@ -31,6 +31,7 @@
       "readonly_inventory",
       "dry_run_plan",
       "tenant_runtime_provisioning",
+      "real_tke_runtime_node_lifecycle",
       "storage_lifecycle",
       "billing_audit_writeback",
       "build_push",
@@ -57,6 +58,7 @@
     "api_allowlist": [
       "tencentcloud:readonly_inventory",
       "tencentcloud:tke_node_pool_lifecycle",
+      "tencentcloud:tke_real_node_pool_lifecycle",
       "tencentcloud:cos_workspace_storage_lifecycle",
       "kubernetes:server_side_dry_run",
       "kubernetes:apply",
@@ -85,12 +87,21 @@
       {
         "operation_class": "tenant_runtime_provisioning",
         "runner_id": "tencent_tke_runtime_provisioning_runner",
+        "receipt_types": [],
+        "package_script": "cloud:goal",
+        "commands": [
+          "npm run cloud:goal -- --operation tenant_runtime_provisioning"
+        ]
+      },
+      {
+        "operation_class": "real_tke_runtime_node_lifecycle",
+        "runner_id": "tencent_tke_real_runtime_node_lifecycle_runner",
         "receipt_types": [
           "runtime_owner_receipt"
         ],
         "package_script": "cloud:goal",
         "commands": [
-          "npm run cloud:goal -- --operation tenant_runtime_provisioning"
+          "npm run cloud:goal -- --operation real_tke_runtime_node_lifecycle"
         ]
       },
       {
@@ -184,6 +195,10 @@
         "TENCENT_MUTATION_SECRET_ID",
         "TENCENT_MUTATION_SECRET_KEY"
       ],
+      "real_tke_runtime_node_lifecycle": [
+        "TENCENT_MUTATION_SECRET_ID",
+        "TENCENT_MUTATION_SECRET_KEY"
+      ],
       "storage_lifecycle": [
         "TENCENT_MUTATION_SECRET_ID",
         "TENCENT_MUTATION_SECRET_KEY"
@@ -213,6 +228,7 @@
     "api_allowlist_required": [
       "tencentcloud:readonly_inventory",
       "tencentcloud:tke_node_pool_lifecycle",
+      "tencentcloud:tke_real_node_pool_lifecycle",
       "tencentcloud:cos_workspace_storage_lifecycle",
       "kubernetes:server_side_dry_run",
       "kubernetes:apply",
@@ -228,6 +244,9 @@
       ],
       "tenant_runtime_provisioning": [
         "tencentcloud:tke_node_pool_lifecycle"
+      ],
+      "real_tke_runtime_node_lifecycle": [
+        "tencentcloud:tke_real_node_pool_lifecycle"
       ],
       "storage_lifecycle": [
         "tencentcloud:cos_workspace_storage_lifecycle"
