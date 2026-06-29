@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `goal-commercial-freeze-admission-gate`
-- latest landed commit: `de3c40dfd96739bbe9cb981100987ac5055d1660`
+- latest landed branch: `goal-commercial-launch-product-contract-matrix`
+- latest landed commit: `63f1986071c26810746b2477c2ef9e1f886724c0`
 - next cursor: `goal-commercial-runtime-storage-billing-business-closure`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
