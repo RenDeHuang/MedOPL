@@ -22,6 +22,10 @@ async function readJson(repoPath) {
   return JSON.parse(await readRepoFile(repoPath));
 }
 
+function goalIdForCloseoutBranch(branch) {
+  return String(branch || "").replace(/-current$/u, "");
+}
+
 const apiContract = await readJson("contracts/medopl-api-contract.json");
 const goalCurrent = await readJson("tests/fixtures/v22/goal-current.json");
 const controlplaneServiceSurface = await readRepoGoDir("services/medopl-go-backend/internal/service/controlplane");
@@ -262,16 +266,21 @@ assert.deepEqual(currentDynamicSync.dynamic_sync_triggers, dynamicSync.dynamic_s
 assert.deepEqual(currentDynamicSync.fail_closed_rule, dynamicSync.fail_closed_rule, "goal_current_dynamic_sync_fail_closed_rule_mismatch");
 const dynamicCompletedGoal = goalCurrent.goal_lifecycle.completed_goals.find((goal) => goal.goal_id === dynamicSync.goal_id);
 assert(dynamicCompletedGoal, "dynamic_sync_completed_goal_missing_after_closeout");
-assert.equal(
-  dynamicCompletedGoal.landed_commit,
-  goalCurrent.latest_landed_closeout.landed_commit,
-  "dynamic_sync_completed_goal_commit_must_match_latest_closeout",
-);
 assert.match(dynamicCompletedGoal.landed_commit, /^[0-9a-f]{40}$/u, "dynamic_sync_completed_goal_commit_must_be_full_sha");
 assert.notEqual(
   dynamicCompletedGoal.landed_commit,
   "0000000000000000000000000000000000000000",
   "dynamic_sync_completed_goal_must_not_use_placeholder_sha",
+);
+const latestCloseoutGoalId = goalIdForCloseoutBranch(goalCurrent.latest_landed_closeout.branch);
+const latestCloseoutCompletedGoal = goalCurrent.goal_lifecycle.completed_goals.find(
+  (goal) => goal.goal_id === latestCloseoutGoalId,
+);
+assert(latestCloseoutCompletedGoal, "latest_closeout_completed_goal_missing_after_closeout");
+assert.equal(
+  latestCloseoutCompletedGoal.landed_commit,
+  goalCurrent.latest_landed_closeout.landed_commit,
+  "latest_closeout_completed_goal_commit_must_match_latest_closeout",
 );
 assert.equal(goalCurrent.goal_lifecycle.next_recommended_goal, "goal-commercial-release-metadata-rollback-maturity", "dynamic_sync_must_not_replace_medopl_next_goal");
 
