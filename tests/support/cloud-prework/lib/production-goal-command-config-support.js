@@ -6,6 +6,10 @@ const OPERATION_CONFIG = Object.freeze({
     requiredEnv: ["V22_TENCENT_MUTATION_SECRET_FILE", "V22_TENCENT_RUNTIME_PLAN_FILE"],
     requiredPaths: ["V22_TENCENT_MUTATION_SECRET_FILE", "V22_TENCENT_RUNTIME_PLAN_FILE"],
   },
+  real_tke_runtime_node_lifecycle: {
+    requiredEnv: ["V22_TENCENT_MUTATION_SECRET_FILE", "V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_FILE"],
+    requiredPaths: ["V22_TENCENT_MUTATION_SECRET_FILE", "V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_FILE"],
+  },
   storage_lifecycle: {
     requiredEnv: ["V22_TENCENT_MUTATION_SECRET_FILE", "V22_TENCENT_STORAGE_PLAN_FILE"],
     requiredPaths: ["V22_TENCENT_MUTATION_SECRET_FILE", "V22_TENCENT_STORAGE_PLAN_FILE"],
@@ -46,6 +50,17 @@ export function parseEnvFile(file) {
     env[key] = value;
   }
   return env;
+}
+
+export function readJsonFile(file) {
+  return JSON.parse(readFileSync(file, "utf8"));
+}
+
+export function diagnosticReceiptFromPayload(payload = {}) {
+  if (!payload || typeof payload !== "object") return null;
+  const allowed = "errorCategory correlationId operationId workspaceIdHash storageBindingIdHash runtimeBindingIdHash currentStorageState releaseState billingStopped destroyIntentState auditEventWritten providerRefPresent dbOperationStage handlerStage retryable runtimeState expectedReleaseTransition resourceBindingPresent billingAttributionPresent stopBillingState idempotencyKeyPresent alreadyReleased providerReleaseCategory migrationState workspaceBindingMatch authSessionMatch launchIdPresent launchLookupSucceeded resourceBindingIdHash providerKeyRefPresent storageState fileNamePresent relativePathHash fileRefHash objectRefHash saveFileStageSucceeded saveAuditEventStageSucceeded billingEventStageSucceeded duplicateCategory".split(" ");
+  const receipt = Object.fromEntries(allowed.filter((key) => Object.hasOwn(payload, key)).map((key) => [key, payload[key]]));
+  return receipt.errorCategory || receipt.correlationId ? receipt : null;
 }
 
 function operationConfig(operation, fail) {

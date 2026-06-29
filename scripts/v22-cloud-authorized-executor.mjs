@@ -24,7 +24,7 @@ const RECEIPT_OWNERS = Object.freeze({
 });
 
 const RECEIPT_OPERATION_CLASSES = Object.freeze({
-  runtime_owner_receipt: "tenant_runtime_provisioning",
+  runtime_owner_receipt: "real_tke_runtime_node_lifecycle",
   storage_owner_receipt: "storage_lifecycle",
   billing_owner_receipt: "billing_audit_writeback",
   audit_owner_receipt: "billing_audit_writeback",
@@ -40,6 +40,10 @@ const OPERATION_REQUIRED_ENV = Object.freeze({
     "V22_TENCENT_MUTATION_SECRET_FILE",
     "V22_TENCENT_RUNTIME_PLAN_FILE",
     "V22_TENCENT_RUNTIME_PROVISIONING_RUNNER",
+  ]),
+  real_tke_runtime_node_lifecycle: Object.freeze([
+    "V22_TENCENT_MUTATION_SECRET_FILE",
+    "V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_FILE",
   ]),
   storage_lifecycle: Object.freeze([
     "V22_TENCENT_MUTATION_SECRET_FILE",
@@ -603,9 +607,9 @@ function lifecycleOperationClass(id) {
     authorization: "cloud_authorization",
     provider_inventory: "readonly_inventory",
     provision_plan: "dry_run_plan",
-    mutation: "tenant_runtime_provisioning",
+    mutation: "real_tke_runtime_node_lifecycle",
     data_plane: "storage_lifecycle",
-    runtime_execution: "tenant_runtime_provisioning",
+    runtime_execution: "real_tke_runtime_node_lifecycle",
     artifact: "live_test",
     billing: "billing_audit_writeback",
     audit: "billing_audit_writeback",

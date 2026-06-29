@@ -32,6 +32,7 @@ export const SMOKE_EVAL_TIERS = Object.freeze([
   "contract-local",
   "local-regression",
   "real-cloud-readiness",
+  "cloud-release-candidate",
   "future-authorized",
 ]);
 export const SMOKE_EVAL_SURFACES = Object.freeze(["control-plane", "portal", "opl", "runtime-bridge", "cloud"]);
@@ -42,6 +43,7 @@ export const SMOKE_EVAL_LIFECYCLE_ROLES = Object.freeze([
   "negative-retirement-guard",
   "suite-wrapper",
   "real-cloud-readiness-boundary",
+  "cloud-release-candidate-boundary",
   "future-authorized-boundary",
 ]);
 export const TEST_LANES = Object.freeze([
@@ -59,6 +61,7 @@ export const TEST_LANES = Object.freeze([
   "regression-opl",
   "regression-runtime-bridge",
   "real-cloud-readiness",
+  "cloud-release-candidate",
   "future-authorized",
   "journey-product-evidence",
 ]);
@@ -161,6 +164,10 @@ const CLOUD_FUTURE_FILES = Object.freeze([
   "tests/cloud/cloud-test-v22-tencent-resource-lifecycle-dry-run-plan-local-gate.mjs",
   "tests/cloud/cloud-test-v22-tke-bootstrap-preflight-local-gate.mjs",
 ]);
+const CLOUD_RELEASE_CANDIDATE_FILES = Object.freeze([
+  "tests/cloud/cloud-test-v22-real-tke-runtime-node-lifecycle-proof.mjs",
+  "tests/cloud/cloud-test-v22-runtime-storage-lifecycle-rollout-scope.mjs",
+]);
 const CLOUD_FUTURE_SUPPORT_FILES = Object.freeze([
   "tests/support/cloud-prework/production-goal-command-runner.mjs",
   "tests/support/cloud-prework/production-goal-runners.mjs",
@@ -203,6 +210,7 @@ function idForFile(file) {
 function lifecycleRoleForEntry({ authorization, entryKind, lane }) {
   if (authorization === "future-authorized") return "future-authorized-boundary";
   if (lane === "real-cloud-readiness") return "real-cloud-readiness-boundary";
+  if (lane === "cloud-release-candidate") return "cloud-release-candidate-boundary";
   if (entryKind === "suite-wrapper") return "suite-wrapper";
   if (entryKind === "gate-self-test" || lane === "health" || lane === "hygiene") return "negative-retirement-guard";
   return "current-owner";
@@ -252,7 +260,7 @@ function entryKindForFile(file) {
 
 function categoryForEntry({ file, lane }) {
   if (file.startsWith("tests/suites/")) return "suite-wrapper";
-  if (lane === "real-cloud-readiness" || lane === "future-authorized") return "cloud";
+  if (lane === "real-cloud-readiness" || lane === "future-authorized" || lane === "cloud-release-candidate") return "cloud";
   if (lane.startsWith("regression-")) return "regression";
   if (lane === "health") return "hygiene";
   if (lane === "contract") return "contract";
@@ -316,6 +324,7 @@ function explicitEntries() {
     baseEntry("tests/cloud/cloud-test-v22-medopl-github-cloud-rollout-shape.mjs", "cloud", "cloud-boundary", ["cloud-release-candidate"]),
     ...CLOUD_READINESS_FILES.map((file) => baseEntry(file, "real-cloud-readiness", "real-cloud-readiness", ["cloud", "real-cloud-readiness"])),
     ...CLOUD_FUTURE_FILES.map((file) => baseEntry(file, "future-authorized", "future-authorized", ["cloud-future-authorized"])),
+    ...CLOUD_RELEASE_CANDIDATE_FILES.map((file) => baseEntry(file, "cloud-release-candidate", "cloud-release-candidate", ["cloud-release-candidate"])),
     ...CLOUD_FUTURE_SUPPORT_FILES.map((file) => baseEntry(file, "future-authorized", "future-authorized", ["cloud-future-authorized"])),
     ...CURRENT_GATE_FILES.map((file) => gateSelfTestEntry(file, "contract", "contract-local", ["health", "local-contract", "current", "review"])),
     ...CURRENT_CONTRACT_FILES.map((file) => baseEntry(file, "contract", "contract-local", ["local-contract", "current", "review"])),

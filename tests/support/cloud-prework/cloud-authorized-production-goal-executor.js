@@ -8,6 +8,7 @@ const OPERATION_SCRIPTS = Object.freeze({
   readonly_inventory: "cloud:goal -- --operation readonly_inventory",
   dry_run_plan: "cloud:goal -- --operation dry_run_plan",
   tenant_runtime_provisioning: "cloud:goal -- --operation tenant_runtime_provisioning",
+  real_tke_runtime_node_lifecycle: "cloud:goal -- --operation real_tke_runtime_node_lifecycle",
   storage_lifecycle: "cloud:goal -- --operation storage_lifecycle",
   billing_audit_writeback: "cloud:goal -- --operation billing_audit_writeback",
   build_push: "cloud:goal -- --operation build_push",
@@ -20,6 +21,10 @@ const OPERATION_REQUIRED_ENV = Object.freeze({
   tenant_runtime_provisioning: Object.freeze([
     "V22_TENCENT_MUTATION_SECRET_FILE",
     "V22_TENCENT_RUNTIME_PLAN_FILE",
+  ]),
+  real_tke_runtime_node_lifecycle: Object.freeze([
+    "V22_TENCENT_MUTATION_SECRET_FILE",
+    "V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_FILE",
   ]),
   storage_lifecycle: Object.freeze([
     "V22_TENCENT_MUTATION_SECRET_FILE",
@@ -51,6 +56,7 @@ const OPERATION_REQUIRED_ENV = Object.freeze({
 
 const OPERATION_EXTERNAL_RUNNER_ENV = Object.freeze({
   tenant_runtime_provisioning: "V22_TENCENT_RUNTIME_PROVISIONING_RUNNER",
+  real_tke_runtime_node_lifecycle: "V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_RUNNER",
   storage_lifecycle: "V22_TENCENT_STORAGE_LIFECYCLE_RUNNER",
   billing_audit_writeback: "V22_MEDOPL_BILLING_AUDIT_WRITEBACK_RUNNER",
   build_push: "V22_CONTAINER_BUILD_PUSH_RUNNER",
@@ -304,6 +310,9 @@ function operationInputRefs(operationClass = "") {
   if (operationClass === "tenant_runtime_provisioning") {
     inputs.secretFile = process.env.V22_TENCENT_MUTATION_SECRET_FILE || "";
     inputs.planFile = process.env.V22_TENCENT_RUNTIME_PLAN_FILE || "";
+  } else if (operationClass === "real_tke_runtime_node_lifecycle") {
+    inputs.secretFile = process.env.V22_TENCENT_MUTATION_SECRET_FILE || "";
+    inputs.planFile = process.env.V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_FILE || "";
   } else if (operationClass === "storage_lifecycle") {
     inputs.secretFile = process.env.V22_TENCENT_MUTATION_SECRET_FILE || "";
     inputs.planFile = process.env.V22_TENCENT_STORAGE_PLAN_FILE || "";

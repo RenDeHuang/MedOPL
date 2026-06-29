@@ -59,6 +59,7 @@ try {
   const failCommand = `${process.execPath} -e "console.error('mutation-secret-key failed'); process.exit(9)"`;
   const malformedCommand = `${process.execPath} -e "process.stdout.write('{not json')"`; 
   const runtimePlan = path.join(tempDir, "runtime-plan.json");
+  const realTkePlan = path.join(tempDir, "real-tke-plan.json");
   const storagePlan = path.join(tempDir, "storage-plan.json");
   const deployPlan = path.join(tempDir, "deploy-plan.json");
   const receiptFile = path.join(tempDir, "billing-audit-request.json");
@@ -67,6 +68,7 @@ try {
   mkdirSync(manifestDir);
   mkdirSync(buildContext);
   writeFileSync(runtimePlan, JSON.stringify({ runtimePlan: "starter" }));
+  writeFileSync(realTkePlan, JSON.stringify({ runtimePlan: "real-tke" }));
   writeFileSync(storagePlan, JSON.stringify({ storagePlan: "workspace" }));
   writeFileSync(deployPlan, JSON.stringify({ deployPlan: "production-canary" }));
   writeFileSync(receiptFile, JSON.stringify({ receiptRequest: "billing-audit" }));
@@ -133,11 +135,21 @@ try {
     ...baseEnv,
     V22_PRODUCTION_GOAL_COMMAND: command,
     V22_GOAL_RUNNER_ID: "tencent_tke_runtime_provisioning_runner",
-    V22_GOAL_RECEIPT_TYPES: JSON.stringify(["runtime_owner_receipt"]),
+    V22_GOAL_RECEIPT_TYPES: JSON.stringify([]),
     V22_GOAL_INPUTS: JSON.stringify({ operationClass: "tenant_runtime_provisioning", planFile: runtimePlan, secretFile: "TENCENT_MUTATION_SECRET_FILE" }),
   }), "runtime_runner");
   assert.deepEqual(runtime.summary.inputKeys, ["operationClass", "planFile", "secretFile"], "runtime_input_keys");
-  assert.deepEqual(runtime.receipts.map((receipt) => receipt.type), ["runtime_owner_receipt"], "runtime_receipt_type");
+  assert.deepEqual(runtime.receipts.map((receipt) => receipt.type), [], "legacy_runtime_observation_must_not_write_runtime_receipt");
+
+  const realTkeRuntime = parseJson(run(["--operation", "real_tke_runtime_node_lifecycle"], {
+    ...baseEnv,
+    V22_PRODUCTION_GOAL_COMMAND: command,
+    V22_GOAL_RUNNER_ID: "tencent_tke_real_runtime_node_lifecycle_runner",
+    V22_GOAL_RECEIPT_TYPES: JSON.stringify(["runtime_owner_receipt"]),
+    V22_GOAL_INPUTS: JSON.stringify({ operationClass: "real_tke_runtime_node_lifecycle", planFile: realTkePlan, secretFile: "TENCENT_MUTATION_SECRET_FILE" }),
+  }), "real_tke_runtime_runner");
+  assert.deepEqual(realTkeRuntime.summary.inputKeys, ["operationClass", "planFile", "secretFile"], "real_tke_runtime_input_keys");
+  assert.deepEqual(realTkeRuntime.receipts.map((receipt) => receipt.type), ["runtime_owner_receipt"], "real_tke_runtime_receipt_type");
 
   const billing = parseJson(run(["--operation", "billing_audit_writeback"], {
     ...baseEnv,
@@ -191,6 +203,7 @@ try {
   const log = readFileSync(commandLog, "utf8");
   assert(log.includes("storage_lifecycle:tencent_cos_workspace_storage_runner"), "command_log_storage");
   assert(log.includes("tenant_runtime_provisioning:tencent_tke_runtime_provisioning_runner"), "command_log_runtime");
+  assert(log.includes("real_tke_runtime_node_lifecycle:tencent_tke_real_runtime_node_lifecycle_runner"), "command_log_real_tke_runtime");
   assertNoSensitiveText(log, "command_log");
 } finally {
   rmSync(tempDir, { recursive: true, force: true });

@@ -5,10 +5,13 @@ import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import {
+  diagnosticReceiptFromPayload,
   ensureConfig,
   getConfigCheck,
   parseEnvFile,
+  readJsonFile,
 } from "./lib/production-goal-command-config-support.js";
+import { runRealTkeRuntimeNodeLifecycleCommand } from "./lib/real-tke-runtime-node-lifecycle-support.js";
 import {
   hashPublicRef,
   identityScopeHeaders,
@@ -104,17 +107,6 @@ function fail(blocker, details = {}, status = 1) {
       productionComplete: false,
     },
   }, status);
-}
-
-function diagnosticReceiptFromPayload(payload = {}) {
-  if (!payload || typeof payload !== "object") return null;
-  const allowed = "errorCategory correlationId operationId workspaceIdHash storageBindingIdHash runtimeBindingIdHash currentStorageState releaseState billingStopped destroyIntentState auditEventWritten providerRefPresent dbOperationStage handlerStage retryable runtimeState expectedReleaseTransition resourceBindingPresent billingAttributionPresent stopBillingState idempotencyKeyPresent alreadyReleased providerReleaseCategory migrationState workspaceBindingMatch authSessionMatch launchIdPresent launchLookupSucceeded resourceBindingIdHash providerKeyRefPresent storageState fileNamePresent relativePathHash fileRefHash objectRefHash saveFileStageSucceeded saveAuditEventStageSucceeded billingEventStageSucceeded duplicateCategory".split(" ");
-  const receipt = Object.fromEntries(allowed.filter((key) => Object.hasOwn(payload, key)).map((key) => [key, payload[key]]));
-  return receipt.errorCategory || receipt.correlationId ? receipt : null;
-}
-
-function readJsonFile(file) {
-  return JSON.parse(readFileSync(file, "utf8"));
 }
 
 function safeWriteRuntimeEvidence(operation, payload) {
@@ -855,6 +847,7 @@ async function runLiveTest(operation) {
 
 async function runOperation(operation) {
   if (operation === "tenant_runtime_provisioning") return runRuntimeProvisioning(operation);
+  if (operation === "real_tke_runtime_node_lifecycle") return runRealTkeRuntimeNodeLifecycleCommand({ operation, fail, writeEvidence: safeWriteRuntimeEvidence });
   if (operation === "storage_lifecycle") return runStorageLifecycle(operation);
   if (operation === "billing_audit_writeback") return runBillingAudit(operation);
   if (operation === "build_push") return runBuildPush(operation);
