@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { access, readFile } from "node:fs/promises";
+import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
   evaluateCheckpoint,
   evaluateReview,
+  resolveDefaultSliceAdmission,
 } from "../../scripts/v22-workflow-gate.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -235,6 +236,7 @@ const reviewCommercialLaunchWithoutFreezeAdmission = evaluateReview({
   base: "origin/recovery/platform-v22-trunk",
   changedFiles: [
     "services/portal/frontend/src/app/pages/Overview.tsx",
+    "contracts/medopl-commercial-launch-product-contract-matrix.json",
     "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
   ],
   missingLocalCommandReferences: [],
@@ -246,6 +248,10 @@ assert(missingFreezeAdmission, "commercial_launch_missing_freeze_admission_findi
 assert(
   missingFreezeAdmission.files.includes("services/portal/frontend/src/app/pages/Overview.tsx"),
   "commercial_launch_missing_freeze_admission_must_name_changed_surface_file",
+);
+assert(
+  missingFreezeAdmission.files.includes("contracts/medopl-commercial-launch-product-contract-matrix.json"),
+  "commercial_launch_missing_freeze_admission_must_name_product_contract_matrix_file",
 );
 assert(
   missingFreezeAdmission.requiredFields.includes("freeze_surface"),
@@ -267,6 +273,7 @@ const reviewCommercialLaunchIncompleteFreezeAdmission = evaluateReview({
   base: "origin/recovery/platform-v22-trunk",
   changedFiles: [
     "services/portal/frontend/src/app/pages/Overview.tsx",
+    "contracts/medopl-commercial-launch-product-contract-matrix.json",
     "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
   ],
   sliceAdmission: incompleteCommercialLaunchAdmission,
@@ -303,6 +310,7 @@ const reviewCommercialLaunchInvalidFreezeAdmission = evaluateReview({
   base: "origin/recovery/platform-v22-trunk",
   changedFiles: [
     "services/portal/frontend/src/app/pages/Overview.tsx",
+    "contracts/medopl-commercial-launch-product-contract-matrix.json",
     "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
   ],
   sliceAdmission: invalidCommercialLaunchAdmission,
@@ -328,10 +336,27 @@ const completeCommercialLaunchAdmission = {
   receipt_or_cannot_claim: "cannot_claim_production_complete",
   regression_gate: "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
 };
+const autoAdmissionSliceId = "workflow-gate-auto-admission-test";
+const autoAdmissionDir = path.join(repoRoot, ".runtime", "slices", autoAdmissionSliceId);
+await mkdir(autoAdmissionDir, { recursive: true });
+await writeFile(path.join(autoAdmissionDir, "slice.json"), JSON.stringify({
+  admission: completeCommercialLaunchAdmission,
+}, null, 2));
+try {
+  const resolvedAdmission = resolveDefaultSliceAdmission({ "slice-id": autoAdmissionSliceId });
+  assert.equal(
+    resolvedAdmission.freeze_surface,
+    "page_state_matrix",
+    "workflow_gate_must_resolve_slice_admission_from_runtime_slice",
+  );
+} finally {
+  await rm(autoAdmissionDir, { recursive: true, force: true });
+}
 const reviewCommercialLaunchAllowed = evaluateReview({
   base: "origin/recovery/platform-v22-trunk",
   changedFiles: [
     "services/portal/frontend/src/app/pages/Overview.tsx",
+    "contracts/medopl-commercial-launch-product-contract-matrix.json",
     "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
   ],
   sliceAdmission: completeCommercialLaunchAdmission,
@@ -426,6 +451,7 @@ assertIncludesAll(gateSource, [
   "from \"./workflow-gate/policy.mjs\"",
   "from \"./workflow-gate/command-reference.mjs\"",
   "from \"./workflow-gate/report.mjs\"",
+  "resolveDefaultSliceAdmission(options)",
   "export {",
   "findMissingLocalCommandReferences",
   "evaluateReview",

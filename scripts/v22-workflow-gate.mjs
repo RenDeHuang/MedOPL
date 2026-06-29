@@ -60,6 +60,18 @@ export function findMissingLocalCommandReferences(options = {}) {
 
 export const findMissingLocalTestCommandReferences = (options = {}) => findMissingLocalCommandReferences(options);
 
+export function resolveDefaultSliceAdmission(options = {}) {
+  const explicitSliceId = options["slice-id"] || process.env.V22_SLICE_ID || "";
+  if (explicitSliceId) return readSliceAdmission(repoRoot, explicitSliceId);
+  const branchSliceId = currentBranchName(repoRoot);
+  try {
+    return readSliceAdmission(repoRoot, branchSliceId);
+  } catch (error) {
+    if (error?.message?.startsWith("slice_manifest_not_found:")) return null;
+    throw error;
+  }
+}
+
 export function evaluateReview({
   base = "recovery/platform-v22-trunk",
   changedFiles = changedFilesSince(repoRoot, base),
@@ -175,7 +187,7 @@ async function main() {
     return void process.stdout.write(renderReviewReport(evaluateReview({
       base,
       changedFiles,
-      sliceAdmission: readSliceAdmission(repoRoot, options["slice-id"]),
+      sliceAdmission: resolveDefaultSliceAdmission(options),
       lineBudgetDiff: lineBudgetDiffForChangedFiles(repoRoot, { base, changedFiles }),
     })));
   }

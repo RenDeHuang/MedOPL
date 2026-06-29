@@ -13,6 +13,7 @@ MedOPL 的产品权威是 `platform-provisioned / customer-dedicated` 的 OPL Sa
 | --- | --- | --- |
 | `contracts/medopl-product-profile.json` | active platform product identity checks | Product profile and non-responsibility boundary |
 | `contracts/medopl-commercial-launch-freeze-matrix.json` | Commercial Launch freeze/admission matrix checks | Commercial Launch product/UI/rollout freeze baseline, not raw Figma, pixel or production-complete truth |
+| `contracts/medopl-commercial-launch-product-contract-matrix.json` | Commercial Launch product contract conformance checks | Persona, business step, interaction, backend truth, regression and legacy-retirement matrix, not UI-only freeze |
 | `contracts/medopl-portal-page-state-matrix.json` | Portal page/state coverage checks | Customer control-plane states, not cloud console states |
 | `contracts/medopl-portal-interaction-flow-contract.json` | Portal interaction flow checks | Customer flow states, not chat/workbench ownership |
 | `contracts/medopl-portal-ui-quality-contract.json` | Portal UI quality checks | Measurable visual/accessibility floor, not screenshot truth |

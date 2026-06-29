@@ -11,6 +11,7 @@
     "product_contracts": [
       "contracts/medopl-product-profile.json",
       "contracts/medopl-commercial-launch-freeze-matrix.json",
+      "contracts/medopl-commercial-launch-product-contract-matrix.json",
       "contracts/medopl-portal-page-state-matrix.json",
       "contracts/medopl-portal-interaction-flow-contract.json",
       "contracts/medopl-portal-ui-quality-contract.json",
@@ -275,6 +276,7 @@
     "problem": "Prove the commercial business flow account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. Upload billing writeback and storage_destroy billing writeback source fixes are landed; the scoped canary proof is retained as operations substrate without bypassing billing/audit. Future scope expansion or ongoing operations proof requires separate authorization.",
     "verification_commands": [
       "node scripts/v22-verify.mjs active-platform --json",
+      "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
       "node tests/product/product-test-v22-medopl-contract-authority.mjs",
       "node tests/product/product-test-v22-commercial-business-flow-local-rc-revalidation.mjs",
       "node tests/product/product-test-v22-commercial-production-maturity-gap-audit.mjs",
@@ -627,6 +629,7 @@
   },
   "verification_commands": [
     "node scripts/v22-verify.mjs active-platform --json",
+    "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
     "node tests/product/product-test-v22-medopl-contract-authority.mjs",
     "node tests/product/product-test-v22-commercial-business-flow-local-rc-revalidation.mjs",
     "node tests/product/product-test-v22-commercial-production-maturity-gap-audit.mjs",

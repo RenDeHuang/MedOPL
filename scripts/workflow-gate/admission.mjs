@@ -51,6 +51,7 @@ function isCommercialLaunchFile(file) {
     /^services\/portal\/frontend\/src\/app\/routes\.tsx$/u,
     /^services\/portal\/frontend\/src\/app\/components\/Layout\.tsx$/u,
     /^contracts\/medopl-commercial-launch-freeze-matrix\.json$/u,
+    /^contracts\/medopl-commercial-launch-product-contract-matrix\.json$/u,
     /^contracts\/medopl-portal-(?:page-state-matrix|interaction-flow-contract|ui-quality-contract)\.json$/u,
     /^contracts\/medopl-(?:product-profile|api-contract|billing-ledger-contract|release-boundary|production-receipt-boundary)\.json$/u,
     /^docs\/(?:active|product|specs)\/README\.md$/u,

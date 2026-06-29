@@ -22,6 +22,7 @@ const currentStatePath = "tests/fixtures/v22/goal-current.json";
 const PRODUCT_AUTHORITY_CONTRACTS = Object.freeze([
   "contracts/medopl-product-profile.json",
   "contracts/medopl-commercial-launch-freeze-matrix.json",
+  "contracts/medopl-commercial-launch-product-contract-matrix.json",
   "contracts/medopl-portal-page-state-matrix.json",
   "contracts/medopl-portal-interaction-flow-contract.json",
   "contracts/medopl-portal-ui-quality-contract.json",

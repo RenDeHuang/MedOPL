@@ -18,6 +18,7 @@ const matrix = await readJson("contracts/medopl-portal-page-state-matrix.json");
 const interactionFlowContract = await readJson("contracts/medopl-portal-interaction-flow-contract.json");
 const uiQualityContract = await readJson("contracts/medopl-portal-ui-quality-contract.json");
 const commercialLaunchFreezeMatrix = await readJson("contracts/medopl-commercial-launch-freeze-matrix.json");
+const commercialLaunchProductContractMatrix = await readJson("contracts/medopl-commercial-launch-product-contract-matrix.json");
 const productProfile = await readJson("contracts/medopl-product-profile.json");
 const routes = await readRepoFile("services/portal/frontend/src/app/routes.tsx");
 const layout = await readRepoFile("services/portal/frontend/src/app/components/Layout.tsx");
@@ -41,6 +42,15 @@ const overviewPage = await readRepoFile("services/portal/frontend/src/app/pages/
 const oplEntryPage = await readRepoFile("services/portal/frontend/src/app/pages/OPLEntry.tsx");
 
 assert.equal(commercialLaunchFreezeMatrix.schema_version, 1, "commercial_launch_freeze_schema_version_mismatch");
+assert.equal(
+  commercialLaunchProductContractMatrix.purpose,
+  "commercial_launch_product_contract_matrix",
+  "commercial_launch_product_contract_matrix_purpose_mismatch",
+);
+assert(
+  commercialLaunchProductContractMatrix.commercial_launch_product_contract_matrix?.journeys?.some((journey) => journey.id === "enter_opl"),
+  "commercial_launch_product_contract_matrix_must_cover_enter_opl_journey",
+);
 assert.equal(commercialLaunchFreezeMatrix.state, "active", "commercial_launch_freeze_state_must_be_active");
 assert(commercialLaunchFreezeMatrix.owner, "commercial_launch_freeze_owner_missing");
 assert.equal(

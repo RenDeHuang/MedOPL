@@ -78,6 +78,7 @@ export const TEST_LIFECYCLE_CLEANUP_POLICY = Object.freeze({
 export const TEST_LANE_CONTRACT_REFS = Object.freeze([
   "contracts/medopl-product-profile.json",
   "contracts/medopl-commercial-launch-freeze-matrix.json",
+  "contracts/medopl-commercial-launch-product-contract-matrix.json",
   "contracts/medopl-portal-page-state-matrix.json",
   "contracts/medopl-portal-interaction-flow-contract.json",
   "contracts/medopl-portal-ui-quality-contract.json",
@@ -157,6 +158,7 @@ const CLOUD_FUTURE_SUPPORT_FILES = Object.freeze([
   "tests/support/cloud-prework/production-goal-runners.mjs",
 ]);
 const CURRENT_GATE_FILES = Object.freeze(["tests/contracts/contract-test-v22-validate-active-platform.mjs"]);
+const CURRENT_CONTRACT_FILES = Object.freeze(["tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs"]);
 const REVIEW_HEALTH_FILES = Object.freeze([
   "tests/health/health-check-v22-dynamic-test-run-plan.mjs",
   "tests/health/health-check-v22-verify-plan-mode.mjs",
@@ -209,6 +211,9 @@ function surfaceForFile(file) {
 
 function contractsForFile(file, surface) {
   const refs = new Set(["specs/framework/spec.md"]);
+  if (file === "tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs") {
+    refs.add("contracts/medopl-commercial-launch-product-contract-matrix.json");
+  }
   if (file.startsWith("tests/product/")) refs.add("contracts/medopl-product-profile.json");
   if (file.startsWith("tests/frontend/")) {
     refs.add("contracts/medopl-portal-page-state-matrix.json");
@@ -291,6 +296,7 @@ function explicitEntries() {
     ...CLOUD_FUTURE_FILES.map((file) => baseEntry(file, "future-authorized", "future-authorized", ["cloud-future-authorized"])),
     ...CLOUD_FUTURE_SUPPORT_FILES.map((file) => baseEntry(file, "future-authorized", "future-authorized", ["cloud-future-authorized"])),
     ...CURRENT_GATE_FILES.map((file) => gateSelfTestEntry(file, "contract", "contract-local", ["health", "local-contract", "current", "review"])),
+    ...CURRENT_CONTRACT_FILES.map((file) => baseEntry(file, "contract", "contract-local", ["local-contract", "current", "review"])),
     ...["tests/suites/suite-test-v22-golden-smoke.mjs", "tests/suites/suite-test-v22-mvp.mjs"]
       .map((file) => baseEntry(file, "contract", "contract-local", file.includes("golden") ? ["golden-path", "smoke"] : ["local-contract"])),
   ];

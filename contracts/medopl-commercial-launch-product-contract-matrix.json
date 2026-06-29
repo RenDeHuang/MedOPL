@@ -1,0 +1,596 @@
+{
+  "schema_version": 1,
+  "owner": "MedOPL Commercial Launch",
+  "purpose": "commercial_launch_product_contract_matrix",
+  "state": "active",
+  "authority_boundary": {
+    "surface": "commercial_launch_product_contract",
+    "allowed_view": "persona_business_interaction_state_truth_regression_legacy_retirement_matrix",
+    "forbidden_view": "ui_only_freeze_raw_figma_pixel_truth_or_docs_only_claim"
+  },
+  "consumers": [
+    "validate:active-platform",
+    "tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
+    "tests/product/product-test-v22-medopl-contract-authority.mjs",
+    "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
+  ],
+  "consumer_tests": [
+    "npm run validate:active-platform -- --quick --json",
+    "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
+    "npm run test:product",
+    "npm run test:frontend",
+    "npm run test:contract"
+  ],
+  "commercial_launch_product_contract_matrix": {
+    "grain": "persona_to_business_step_to_page_action_to_backend_truth_to_receipt_to_regression_to_legacy_retirement",
+    "required_axes": [
+      "persona",
+      "user_job",
+      "business_step",
+      "freeze_surface",
+      "page",
+      "primary_action",
+      "allowed_states",
+      "backend_truth",
+      "receipt_or_cannot_claim",
+      "regression_gate",
+      "legacy_retirement"
+    ],
+    "personas": [
+      {
+        "id": "ordinary_user",
+        "scope": "buys_and_operates_platform_provisioned_customer_dedicated_opl_resources",
+        "cannot_claim": [
+          "cloud_operator_console_access",
+          "upstream_opl_admin_authority"
+        ]
+      },
+      {
+        "id": "owner_admin",
+        "scope": "approves_accounts_credit_plan_catalog_billing_reconciliation_and_audit",
+        "cannot_claim": [
+          "enterprise_compliance_complete",
+          "external_psp_settlement"
+        ]
+      },
+      {
+        "id": "platform_operator",
+        "scope": "runs_authorized_release_rollout_receipt_and_recovery_operations",
+        "cannot_claim": [
+          "ongoing_authorization_from_past_receipt",
+          "production_complete_without_receipt_manifest"
+        ]
+      },
+      {
+        "id": "opl_webui_consumer",
+        "scope": "receives_runtime_required_projection_and_artifact_refs_from_medopl",
+        "cannot_claim": [
+          "medopl_owns_ordinary_chat",
+          "medopl_owns_research_quality"
+        ]
+      }
+    ],
+    "journeys": [
+      {
+        "id": "account_prepare",
+        "persona": "owner_admin",
+        "user_job": "prepare_a_customer_account_before_it_can_buy_or_open_resources",
+        "business_step": "account_prepare",
+        "freeze_surface": "admin_owner_surface",
+        "page": "admin_owner_surface",
+        "primary_action": "admin_owner_action",
+        "allowed_states": [
+          "loading",
+          "empty",
+          "ready",
+          "blocked",
+          "failed",
+          "pending"
+        ],
+        "backend_truth": {
+          "owner": "services/medopl-go-backend",
+          "api": "POST /api/v22/users/prepare",
+          "contracts": [
+            "contracts/medopl-api-contract.json",
+            "contracts/medopl-product-profile.json"
+          ]
+        },
+        "receipt_or_cannot_claim": {
+          "receipt": "audit_owner_receipt_after_authorized_owner_action",
+          "cannot_claim": "account_approved_or_paid_until_approval_and_credit_are_recorded"
+        },
+        "regression_gate": [
+          "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
+          "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs"
+        ],
+        "legacy_retirement": {
+          "old_surface": "manual_customer_account_copy_without_owner_action",
+          "replacement_owner": "contracts/medopl-api-contract.json#/medopl_api_contract/account_productization",
+          "deletion_condition": "admin prepare action and audit path are covered by contract/frontend tests"
+        }
+      },
+      {
+        "id": "account_approval",
+        "persona": "owner_admin",
+        "user_job": "approve_the_prepared_account_before_commercial_resource_admission",
+        "business_step": "account_approval",
+        "freeze_surface": "commercial_admission_truth",
+        "page": "admin_owner_surface",
+        "primary_action": "admin_owner_action",
+        "allowed_states": [
+          "loading",
+          "ready",
+          "blocked",
+          "failed",
+          "pending"
+        ],
+        "backend_truth": {
+          "owner": "services/medopl-go-backend",
+          "api": "POST /api/v22/users/approve",
+          "contracts": [
+            "contracts/medopl-api-contract.json",
+            "contracts/medopl-portal-interaction-flow-contract.json"
+          ]
+        },
+        "receipt_or_cannot_claim": {
+          "receipt": "audit_owner_receipt",
+          "cannot_claim": "runtime_or_storage_can_open_until_balance_plan_and_quota_are_ready"
+        },
+        "regression_gate": [
+          "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
+          "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs"
+        ],
+        "legacy_retirement": {
+          "old_surface": "ui_only_readiness_claim",
+          "replacement_owner": "contracts/medopl-api-contract.json",
+          "deletion_condition": "frontend readiness copy points at backend account approval truth"
+        }
+      },
+      {
+        "id": "credit_balance",
+        "persona": "owner_admin",
+        "user_job": "credit_the_account_and_make_cost_ceiling_visible_before_resource_open",
+        "business_step": "credit_balance",
+        "freeze_surface": "billing_cost_control",
+        "page": "usage_billing",
+        "primary_action": "export_billing",
+        "allowed_states": [
+          "loading",
+          "empty",
+          "ready",
+          "blocked",
+          "failed"
+        ],
+        "backend_truth": {
+          "owner": "services/medopl-go-backend",
+          "api": "POST /api/v22/users/credit and GET /api/v22/billing/statement",
+          "contracts": [
+            "contracts/medopl-api-contract.json",
+            "contracts/medopl-billing-ledger-contract.json"
+          ]
+        },
+        "receipt_or_cannot_claim": {
+          "receipt": "billing_owner_receipt_after_credit_ledger_entry",
+          "cannot_claim": "external_psp_settlement_or_real_payment_completed"
+        },
+        "regression_gate": [
+          "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
+          "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
+        ],
+        "legacy_retirement": {
+          "old_surface": "external_psp_claim_without_provider_receipt",
+          "replacement_owner": "contracts/medopl-billing-ledger-contract.json#/medopl_billing_ledger_contract/payment_ledger_relationship",
+          "deletion_condition": "UI and docs say internal credit ledger only until PSP receipt exists"
+        }
+      },
+      {
+        "id": "plan_selection",
+        "persona": "ordinary_user",
+        "user_job": "select_or_upgrade_a_package_that_controls_compute_storage_and_concurrency",
+        "business_step": "plan_selection",
+        "freeze_surface": "customer_information_architecture",
+        "page": "packages_purchase",
+        "primary_action": "purchase_or_upgrade_plan",
+        "allowed_states": [
+          "loading",
+          "empty",
+          "ready",
+          "blocked",
+          "failed",
+          "pending"
+        ],
+        "backend_truth": {
+          "owner": "services/medopl-go-backend",
+          "api": "GET /api/server-plans and commercial account projection",
+          "contracts": [
+            "contracts/medopl-portal-page-state-matrix.json",
+            "contracts/medopl-api-contract.json"
+          ]
+        },
+        "receipt_or_cannot_claim": {
+          "receipt": "audit_owner_receipt_when_plan_change_is_owner_recorded",
+          "cannot_claim": "real_payment_or_tax_invoice_completed"
+        },
+        "regression_gate": [
+          "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
+          "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
+        ],
+        "legacy_retirement": {
+          "old_surface": "cloud_console_resource_order_surface",
+          "replacement_owner": "contracts/medopl-portal-page-state-matrix.json#/medopl_portal_page_state_matrix/pages/packages_purchase",
+          "deletion_condition": "package page no longer exposes cloud node pool or direct resource order controls"
+        }
+      },
+      {
+        "id": "open_compute_resource",
+        "persona": "ordinary_user",
+        "user_job": "open_a_platform_provisioned_compute_resource_when_account_plan_balance_and_quota_pass",
+        "business_step": "open_compute_resource",
+        "freeze_surface": "commercial_admission_truth",
+        "page": "compute_resource",
+        "primary_action": "open_compute_resource",
+        "allowed_states": [
+          "loading",
+          "empty",
+          "ready",
+          "blocked",
+          "failed",
+          "pending"
+        ],
+        "backend_truth": {
+          "owner": "services/medopl-go-backend",
+          "api": "POST /api/v22/managed-environment/open",
+          "contracts": [
+            "contracts/medopl-api-contract.json",
+            "contracts/medopl-portal-interaction-flow-contract.json",
+            "contracts/medopl-billing-ledger-contract.json"
+          ]
+        },
+        "receipt_or_cannot_claim": {
+          "receipt": "runtime_owner_receipt_when_authorized_cloud_runner_completes",
+          "cannot_claim": "live_provider_capacity_or_production_complete"
+        },
+        "regression_gate": [
+          "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
+          "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+          "node tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs"
+        ],
+        "legacy_retirement": {
+          "old_surface": "direct_compute_instance_create_surface",
+          "replacement_owner": "contracts/medopl-portal-interaction-flow-contract.json#/medopl_portal_interaction_flow_contract/flows/open_compute_resource",
+          "deletion_condition": "ordinary user can only open platform package-backed compute through admission truth"
+        }
+      },
+      {
+        "id": "open_storage_space",
+        "persona": "ordinary_user",
+        "user_job": "confirm_storage_space_exists_and_is_bound_before_upload_or_opl_entry",
+        "business_step": "open_storage_space",
+        "freeze_surface": "golden_business_flow",
+        "page": "storage_space",
+        "primary_action": "upload_workspace_file",
+        "allowed_states": [
+          "loading",
+          "empty",
+          "ready",
+          "blocked",
+          "failed",
+          "pending"
+        ],
+        "backend_truth": {
+          "owner": "services/medopl-go-backend",
+          "api": "workspace storage projection and file inventory API",
+          "contracts": [
+            "contracts/medopl-data-plane-contract.json",
+            "contracts/medopl-portal-page-state-matrix.json",
+            "contracts/medopl-api-contract.json"
+          ]
+        },
+        "receipt_or_cannot_claim": {
+          "receipt": "storage_owner_receipt_when_authorized_storage_lifecycle_runs",
+          "cannot_claim": "storage_destroy_or_release_complete_without_owner_receipt"
+        },
+        "regression_gate": [
+          "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
+          "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+          "node tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs"
+        ],
+        "legacy_retirement": {
+          "old_surface": "direct_storage_bucket_create_surface",
+          "replacement_owner": "contracts/medopl-data-plane-contract.json",
+          "deletion_condition": "storage page shows platform storage projection rather than cloud bucket controls"
+        }
+      },
+      {
+        "id": "upload_run_artifact",
+        "persona": "ordinary_user",
+        "user_job": "upload_workspace_files_and_keep_artifact_refs_bound_to_the_platform_data_plane",
+        "business_step": "upload_run_artifact",
+        "freeze_surface": "golden_business_flow",
+        "page": "storage_space",
+        "primary_action": "upload_workspace_file",
+        "allowed_states": [
+          "loading",
+          "empty",
+          "ready",
+          "blocked",
+          "failed",
+          "pending"
+        ],
+        "backend_truth": {
+          "owner": "services/medopl-go-backend",
+          "api": "POST /api/workspace/files/local-transfer",
+          "contracts": [
+            "contracts/medopl-data-plane-contract.json",
+            "contracts/medopl-api-contract.json",
+            "contracts/medopl-runtime-bridge-contract.json"
+          ]
+        },
+        "receipt_or_cannot_claim": {
+          "receipt": "audit_owner_receipt_for_file_and_artifact_ref",
+          "cannot_claim": "research_quality_or_all_upstream_opl_tasks_work"
+        },
+        "regression_gate": [
+          "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
+          "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
+        ],
+        "legacy_retirement": {
+          "old_surface": "raw_trace_or_skill_upload_as_primary_surface",
+          "replacement_owner": "contracts/medopl-data-plane-contract.json",
+          "deletion_condition": "Portal copy and tests keep file/artifact refs as data plane, not research trace UI"
+        }
+      },
+      {
+        "id": "usage_billing_reconciliation",
+        "persona": "ordinary_user",
+        "user_job": "see_balance_freeze_usage_ledger_and_export_billing_without_internal_runner_terms",
+        "business_step": "usage_billing_reconciliation",
+        "freeze_surface": "billing_cost_control",
+        "page": "usage_billing",
+        "primary_action": "export_billing",
+        "allowed_states": [
+          "loading",
+          "empty",
+          "ready",
+          "blocked",
+          "failed",
+          "pending"
+        ],
+        "backend_truth": {
+          "owner": "services/medopl-go-backend",
+          "api": "GET /api/v22/billing/statement and GET /api/billing/export.csv",
+          "contracts": [
+            "contracts/medopl-billing-ledger-contract.json",
+            "contracts/medopl-api-contract.json",
+            "contracts/medopl-portal-interaction-flow-contract.json"
+          ]
+        },
+        "receipt_or_cannot_claim": {
+          "receipt": "billing_owner_receipt_and_audit_owner_receipt",
+          "cannot_claim": "tax_invoice_or_external_payment_reconciliation"
+        },
+        "regression_gate": [
+          "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
+          "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+          "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs"
+        ],
+        "legacy_retirement": {
+          "old_surface": "user_visible_internal_runner_terms",
+          "replacement_owner": "contracts/medopl-portal-ui-quality-contract.json",
+          "deletion_condition": "billing UI exposes customer billing language and hides runner/receipt internals"
+        }
+      },
+      {
+        "id": "enter_opl",
+        "persona": "ordinary_user",
+        "user_job": "enter_opl_only_when_compute_storage_balance_provider_key_and_gateway_are_ready",
+        "business_step": "enter_opl",
+        "freeze_surface": "opl_entry_handoff",
+        "page": "opl_entry",
+        "primary_action": "enter_opl",
+        "allowed_states": [
+          "loading",
+          "empty",
+          "ready",
+          "blocked",
+          "failed",
+          "pending"
+        ],
+        "backend_truth": {
+          "owner": "services/medopl-go-backend and services/opl-web-gateway",
+          "api": "POST /api/opl/launch",
+          "contracts": [
+            "contracts/medopl-api-contract.json",
+            "contracts/medopl-runtime-bridge-contract.json",
+            "contracts/medopl-portal-interaction-flow-contract.json"
+          ]
+        },
+        "receipt_or_cannot_claim": {
+          "receipt": "opl_webui_consumer_receipt_after_authorized_live_test",
+          "cannot_claim": "all_upstream_opl_tasks_work_or_live_gateway_authorization"
+        },
+        "regression_gate": [
+          "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
+          "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+          "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs"
+        ],
+        "legacy_retirement": {
+          "old_surface": "launch_token_or_runtime_token_in_browser_state",
+          "replacement_owner": "contracts/medopl-api-contract.json#/medopl_api_contract/opl_webui_e2e_launch_contract",
+          "deletion_condition": "OPL entry uses providerKeyRef and gateway readiness projection only"
+        }
+      },
+      {
+        "id": "release_compute_resource",
+        "persona": "ordinary_user",
+        "user_job": "release_compute_billing_without_destroying_storage_or_claiming_completion_before_receipt",
+        "business_step": "release_compute_resource",
+        "freeze_surface": "release_lifecycle",
+        "page": "compute_resource",
+        "primary_action": "release_compute_resource",
+        "allowed_states": [
+          "loading",
+          "ready",
+          "blocked",
+          "failed",
+          "pending"
+        ],
+        "backend_truth": {
+          "owner": "MedOPL Release",
+          "api": "POST /api/v22/managed-environment/release",
+          "contracts": [
+            "contracts/medopl-release-boundary.json",
+            "contracts/medopl-portal-interaction-flow-contract.json",
+            "contracts/medopl-production-receipt-boundary.json"
+          ]
+        },
+        "receipt_or_cannot_claim": {
+          "receipt": "release_owner_receipt",
+          "cannot_claim": "release_complete_from_disabled_ui_or_local_rc"
+        },
+        "regression_gate": [
+          "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
+          "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+          "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs"
+        ],
+        "legacy_retirement": {
+          "old_surface": "release_claim_without_owner_receipt",
+          "replacement_owner": "contracts/medopl-release-boundary.json",
+          "deletion_condition": "release UI remains partial fail-closed until owner receipt exists"
+        }
+      },
+      {
+        "id": "destroy_or_retain_storage",
+        "persona": "ordinary_user",
+        "user_job": "retain_storage_by_default_and_destroy_only_after_explicit_intent",
+        "business_step": "destroy_or_retain_storage",
+        "freeze_surface": "release_lifecycle",
+        "page": "storage_space",
+        "primary_action": "download_workspace_file",
+        "allowed_states": [
+          "loading",
+          "ready",
+          "blocked",
+          "failed",
+          "pending"
+        ],
+        "backend_truth": {
+          "owner": "MedOPL Data Plane",
+          "api": "storage destroy receipt boundary",
+          "contracts": [
+            "contracts/medopl-release-boundary.json",
+            "contracts/medopl-data-plane-contract.json",
+            "contracts/medopl-production-receipt-boundary.json"
+          ]
+        },
+        "receipt_or_cannot_claim": {
+          "receipt": "storage_owner_receipt_and_release_owner_receipt",
+          "cannot_claim": "auto_destroy_storage_during_compute_release"
+        },
+        "regression_gate": [
+          "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
+          "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
+        ],
+        "legacy_retirement": {
+          "old_surface": "auto_destroy_storage_during_compute_release",
+          "replacement_owner": "contracts/medopl-release-boundary.json#/medopl_release_boundary/storage_destroy_policy",
+          "deletion_condition": "storage destroy remains separate explicit-intent lifecycle"
+        }
+      },
+      {
+        "id": "admin_audit_receipt",
+        "persona": "platform_operator",
+        "user_job": "prove_rollout_or_production_claims_only_with_owner_receipts_and_small_manifest_pointers",
+        "business_step": "admin_audit_receipt",
+        "freeze_surface": "rollout_receipt_boundary",
+        "page": "admin_owner_surface",
+        "primary_action": "admin_owner_action",
+        "allowed_states": [
+          "loading",
+          "ready",
+          "blocked",
+          "failed",
+          "pending"
+        ],
+        "backend_truth": {
+          "owner": "MedOPL Release",
+          "api": "receipt manifest evaluator",
+          "contracts": [
+            "contracts/medopl-production-receipt-boundary.json",
+            "contracts/medopl-cloud-authorization-pack.json",
+            "contracts/medopl-commercial-launch-product-contract-matrix.json"
+          ]
+        },
+        "receipt_or_cannot_claim": {
+          "receipt": "complete_receipt_manifest",
+          "cannot_claim": "rollout_complete_or_production_complete_from_ui_green_contract_green_or_single_canary"
+        },
+        "regression_gate": [
+          "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
+          "node tests/release/release-test-v22-production-receipt-boundary.mjs"
+        ],
+        "legacy_retirement": {
+          "old_surface": "raw_figma_pixel_truth",
+          "replacement_owner": "contracts/medopl-commercial-launch-freeze-matrix.json#/commercial_launch_freeze_matrix/surfaces/figma_launch_ui_baseline",
+          "deletion_condition": "Figma remains visual and IA baseline; repo-native contracts/tests remain machine truth"
+        }
+      },
+      {
+        "id": "opl_webui_runtime_required",
+        "persona": "opl_webui_consumer",
+        "user_job": "receive_runtime_required_projection_without_medopl_owning_ordinary_chat",
+        "business_step": "enter_opl",
+        "freeze_surface": "product_identity",
+        "page": "opl_webui_runtime_required_surface",
+        "primary_action": "external_opl_handoff",
+        "allowed_states": [
+          "loading",
+          "ready",
+          "blocked",
+          "failed",
+          "pending"
+        ],
+        "backend_truth": {
+          "owner": "OPL-Webui consumer contract plus MedOPL runtime gate",
+          "api": "POST /api/opl/runtime-gate",
+          "contracts": [
+            "contracts/medopl-product-profile.json",
+            "contracts/medopl-api-contract.json",
+            "contracts/medopl-runtime-bridge-contract.json"
+          ]
+        },
+        "receipt_or_cannot_claim": {
+          "receipt": "opl_webui_consumer_receipt",
+          "cannot_claim": "medopl_owns_ordinary_chat_or_research_quality"
+        },
+        "regression_gate": [
+          "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
+          "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs"
+        ],
+        "legacy_retirement": {
+          "old_surface": "ordinary_chat_as_medopl_primary_surface",
+          "replacement_owner": "contracts/medopl-product-profile.json#/medopl_product_profile/primary_consumer_surface",
+          "deletion_condition": "MedOPL Portal remains resource control plane and OPL-Webui owns ordinary chat"
+        }
+      }
+    ],
+    "retirement_policy": {
+      "mode": "replacement_led_deletion",
+      "no_compatibility_layer": true,
+      "legacy_surface_must_have_replacement_owner": true,
+      "deletion_requires_regression_gate": true,
+      "active_docs_must_not_keep_legacy_as_current_truth": true
+    },
+    "cannot_claim": [
+      "full_experience_replacement_complete",
+      "all_legacy_experience_physically_deleted",
+      "rollout_complete",
+      "production_complete",
+      "external_psp_settlement",
+      "all_users_all_tenants",
+      "multi_region_sla",
+      "enterprise_compliance",
+      "ongoing_authorization"
+    ]
+  }
+}

@@ -66,6 +66,7 @@ for (const marker of [
   "contracts/README.md",
   "contracts/medopl-product-profile.json",
   "contracts/medopl-commercial-launch-freeze-matrix.json",
+  "contracts/medopl-commercial-launch-product-contract-matrix.json",
   "contracts/medopl-portal-page-state-matrix.json",
   "contracts/medopl-portal-interaction-flow-contract.json",
   "contracts/medopl-portal-ui-quality-contract.json",
