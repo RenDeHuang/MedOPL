@@ -163,6 +163,8 @@ assert.equal(result.summary.cleanupVerified, true, "cluster_foundation_must_clea
 assertNoSensitiveText(JSON.stringify(result), "cluster_foundation_execute");
 
 const calls = JSON.parse(readFileSync(fakeSdkLog, "utf8"));
+const instanceTypeDiscovery = calls.find((call) => call.api === "DescribeInstanceTypeConfigs");
+assert.deepEqual(instanceTypeDiscovery.request, {}, "cluster_foundation_must_not_use_unsupported_instance_charge_type_filter");
 assert.deepEqual(calls.map((call) => call.api).filter((api) => api !== "DescribeClusterNodePools"), [
   "DescribeClusters",
   "DescribeInstanceTypeConfigs",
