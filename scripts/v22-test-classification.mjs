@@ -60,9 +60,10 @@ export const TEST_LANES = Object.freeze([
   "regression-runtime-bridge",
   "real-cloud-readiness",
   "future-authorized",
+  "journey-product-evidence",
 ]);
 export const DEFAULT_SMOKE_CATEGORIES = Object.freeze(["product", "frontend", "backend", "runtime", "release", "hygiene", "smoke", "suite-wrapper"]);
-export const HEALTH_CHECK_MAX = 16;
+export const HEALTH_CHECK_MAX = 17;
 export const SMOKE_GOLDEN_MIN = 8;
 export const SMOKE_GOLDEN_MAX = 15;
 const UNCLASSIFIED_TEST_LANE = "unclassified";
@@ -107,6 +108,10 @@ const PRODUCT_FILES = Object.freeze([
 const FRONTEND_FILES = Object.freeze([
   "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
   "tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
+  "tests/frontend/frontend-test-v22-portal-journey-registry.mjs",
+]);
+const JOURNEY_EVIDENCE_FRONTEND_FILES = new Set([
+  "tests/frontend/frontend-test-v22-portal-journey-registry.mjs",
 ]);
 const BACKEND_FILES = Object.freeze(["tests/backend/backend-test-v22-api-contract.mjs"]);
 const RUNTIME_FILES = Object.freeze(["tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs"]);
@@ -118,6 +123,7 @@ const HYGIENE_FILES = Object.freeze(["tests/hygiene/hygiene-test-v22-secret-and-
 const REVIEW_HYGIENE_FILES = Object.freeze(["tests/hygiene/hygiene-test-v22-diff-scoped-sensitive-review-gate.mjs"]);
 const HEALTH_FILES = Object.freeze([
   "tests/health/health-check-v22-contract-conflict-boundary.mjs",
+  "tests/health/health-check-v22-journey-product-evidence-and-test-weight.mjs",
   "tests/health/health-check-v22-line-budget-gate.mjs",
   "tests/health/health-check-v22-production-receipt-boundary.mjs",
   "tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
@@ -282,7 +288,18 @@ function gateSelfTestEntry(file, lane, tier, verifySuites = []) {
 function explicitEntries() {
   return [
     ...PRODUCT_FILES.map((file) => baseEntry(file, "product", "product-contract", ["product", "current", "local-contract", "review"])),
-    ...FRONTEND_FILES.map((file) => baseEntry(file, "frontend", "frontend-contract", ["frontend", "current", "local-contract", "review"])),
+    ...FRONTEND_FILES.map((file) => baseEntry(
+      file,
+      "frontend",
+      "frontend-contract",
+      [
+        "frontend",
+        "current",
+        "local-contract",
+        "review",
+        ...(JOURNEY_EVIDENCE_FRONTEND_FILES.has(file) ? ["journey-product-evidence"] : []),
+      ],
+    )),
     ...BACKEND_FILES.map((file) => baseEntry(file, "backend", "backend-contract", ["backend", "current", "local-contract", "review"])),
     ...RUNTIME_FILES.map((file) => baseEntry(file, "runtime", "runtime-contract", ["runtime", "current", "local-contract", "review"])),
     ...RELEASE_FILES.map((file) => baseEntry(file, "release", "release-boundary", ["release", "current", "local-contract", "review"])),
@@ -297,6 +314,7 @@ function explicitEntries() {
     ...CLOUD_FUTURE_SUPPORT_FILES.map((file) => baseEntry(file, "future-authorized", "future-authorized", ["cloud-future-authorized"])),
     ...CURRENT_GATE_FILES.map((file) => gateSelfTestEntry(file, "contract", "contract-local", ["health", "local-contract", "current", "review"])),
     ...CURRENT_CONTRACT_FILES.map((file) => baseEntry(file, "contract", "contract-local", ["local-contract", "current", "review"])),
+    baseEntry("tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs", "regression-portal", "local-regression", ["local-regression", "journey-product-evidence"]),
     ...["tests/suites/suite-test-v22-golden-smoke.mjs", "tests/suites/suite-test-v22-mvp.mjs"]
       .map((file) => baseEntry(file, "contract", "contract-local", file.includes("golden") ? ["golden-path", "smoke"] : ["local-contract"])),
   ];
@@ -342,6 +360,7 @@ export const TEST_LANE_SUITES = Object.freeze({
   "local-regression": suiteFiles("local-regression"),
   "real-cloud-readiness": suiteFiles("real-cloud-readiness"),
   "cloud-future-authorized": suiteFiles("cloud-future-authorized"),
+  "journey-product-evidence": suiteFiles("journey-product-evidence"),
   review: suiteFiles("review"),
   "golden-path": suiteFiles("golden-path"),
 });
@@ -362,6 +381,7 @@ const ACTIVE_MANIFEST_SUITE_IDS = Object.freeze([
   "hygiene",
   "real-cloud-readiness",
   "cloud-future-authorized",
+  "journey-product-evidence",
 ]);
 
 const SUITE_WRAPPER_MANIFEST_ALIASES = Object.freeze({

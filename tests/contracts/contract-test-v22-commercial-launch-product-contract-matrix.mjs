@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -20,6 +20,21 @@ async function readRepoFile(repoPath) {
 
 async function readJson(repoPath) {
   return JSON.parse(await readRepoFile(repoPath));
+}
+
+async function pathExists(repoPath) {
+  try {
+    await stat(path.join(repoRoot, repoPath));
+    return true;
+  } catch (error) {
+    if (error?.code === "ENOENT") return false;
+    throw error;
+  }
+}
+
+function commandPath(command) {
+  assert(command.startsWith("node "), `command_must_be_node_test:${command}`);
+  return command.slice("node ".length);
 }
 
 function assertNonEmptyArray(value, label) {
@@ -199,6 +214,23 @@ for (const journey of journeys) {
   assert(journey.legacy_retirement?.old_surface, `commercial_launch_product_contract_matrix_legacy_old_surface_missing:${journey.id}`);
   assert(journey.legacy_retirement?.replacement_owner, `commercial_launch_product_contract_matrix_legacy_replacement_owner_missing:${journey.id}`);
   assert(journey.legacy_retirement?.deletion_condition, `commercial_launch_product_contract_matrix_legacy_deletion_condition_missing:${journey.id}`);
+  assert(
+    journey.legacy_retirement?.negative_regression_guard,
+    `commercial_launch_product_contract_matrix_legacy_negative_guard_missing:${journey.id}`,
+  );
+  const guardPath = commandPath(journey.legacy_retirement.negative_regression_guard);
+  assert(
+    await pathExists(guardPath),
+    `commercial_launch_product_contract_matrix_legacy_negative_guard_path_missing:${journey.id}:${guardPath}`,
+  );
+  assert(
+    journey.regression_gate.includes(journey.legacy_retirement.negative_regression_guard),
+    `commercial_launch_product_contract_matrix_legacy_negative_guard_must_be_regression_gate:${journey.id}`,
+  );
+  assert(
+    Object.values(TEST_LANE_SUITES).some((suite) => suite.includes(guardPath)),
+    `commercial_launch_product_contract_matrix_legacy_negative_guard_must_be_laned:${journey.id}:${guardPath}`,
+  );
   allLegacyTargets.push(journey.legacy_retirement.old_surface);
 }
 

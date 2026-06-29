@@ -476,6 +476,7 @@
         "node tests/product/product-test-v22-commercial-production-maturity-gap-audit.mjs",
         "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
         "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
+        "node tests/frontend/frontend-test-v22-portal-journey-registry.mjs",
         "node tests/backend/backend-test-v22-api-contract.mjs",
         "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs",
         "node tests/release/release-test-v22-boundary-contract.mjs",
@@ -508,6 +509,7 @@
         "node tests/product/product-test-v22-commercial-production-maturity-gap-audit.mjs",
         "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
         "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
+        "node tests/frontend/frontend-test-v22-portal-journey-registry.mjs",
         "node tests/backend/backend-test-v22-api-contract.mjs",
         "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs",
         "node tests/release/release-test-v22-boundary-contract.mjs",
@@ -524,6 +526,7 @@
         "node tests/contracts/contract-test-v22-validate-active-platform.mjs",
         "node tests/health/health-check-v22-contract-conflict-boundary.mjs",
         "node tests/health/health-check-v22-dynamic-test-run-plan.mjs",
+        "node tests/health/health-check-v22-journey-product-evidence-and-test-weight.mjs",
         "node tests/health/health-check-v22-production-receipt-boundary.mjs",
         "node tests/health/health-check-v22-line-budget-gate.mjs",
         "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
@@ -569,8 +572,10 @@
         "node tests/contracts/runtime-bridge/contract-test-v22-runtime-gate-contract.mjs",
         "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
         "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
+        "node tests/frontend/frontend-test-v22-portal-journey-registry.mjs",
         "node tests/health/health-check-v22-contract-conflict-boundary.mjs",
         "node tests/health/health-check-v22-dynamic-test-run-plan.mjs",
+        "node tests/health/health-check-v22-journey-product-evidence-and-test-weight.mjs",
         "node tests/health/health-check-v22-production-receipt-boundary.mjs",
         "node tests/health/health-check-v22-line-budget-gate.mjs",
         "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
@@ -641,6 +646,13 @@
       ]
     },
     {
+      "id": "journey-product-evidence",
+      "commands": [
+        "node tests/frontend/frontend-test-v22-portal-journey-registry.mjs",
+        "node tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs"
+      ]
+    },
+    {
       "id": "real-cloud-readiness",
       "commands": [
         "node tests/cloud/cloud-test-v22-tencent-readonly-inventory-boundary.mjs"
@@ -665,6 +677,7 @@
         "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
         "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
         "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
+        "node tests/frontend/frontend-test-v22-portal-journey-registry.mjs",
         "node tests/health/health-check-v22-dynamic-test-run-plan.mjs",
         "node tests/health/health-check-v22-verify-plan-mode.mjs",
         "node tests/hygiene/hygiene-test-v22-diff-scoped-sensitive-review-gate.mjs",
@@ -689,7 +702,8 @@
       "id": "frontend",
       "commands": [
         "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
-        "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs"
+        "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
+        "node tests/frontend/frontend-test-v22-portal-journey-registry.mjs"
       ]
     },
     {
@@ -722,6 +736,7 @@
       "commands": [
         "node tests/health/health-check-v22-contract-conflict-boundary.mjs",
         "node tests/health/health-check-v22-dynamic-test-run-plan.mjs",
+        "node tests/health/health-check-v22-journey-product-evidence-and-test-weight.mjs",
         "node tests/health/health-check-v22-production-receipt-boundary.mjs",
         "node tests/health/health-check-v22-line-budget-gate.mjs",
         "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",

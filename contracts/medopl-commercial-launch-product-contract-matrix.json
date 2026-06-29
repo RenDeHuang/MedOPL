@@ -10,13 +10,17 @@
   },
   "consumers": [
     "validate:active-platform",
+    "services/portal/frontend/src/app/registry/portalJourneyRegistry.json",
     "tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
     "tests/product/product-test-v22-medopl-contract-authority.mjs",
+    "tests/frontend/frontend-test-v22-portal-journey-registry.mjs",
     "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
   ],
   "consumer_tests": [
     "npm run validate:active-platform -- --quick --json",
     "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
+    "node tests/frontend/frontend-test-v22-portal-journey-registry.mjs",
+    "npm run test:journey-evidence",
     "npm run test:product",
     "npm run test:frontend",
     "npm run test:contract"
@@ -101,12 +105,14 @@
         },
         "regression_gate": [
           "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
-          "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs"
+          "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
+          "node tests/regression/portal/regression-test-v22-portal-figma-make-interaction-readiness.mjs"
         ],
         "legacy_retirement": {
           "old_surface": "manual_customer_account_copy_without_owner_action",
           "replacement_owner": "contracts/medopl-api-contract.json#/medopl_api_contract/account_productization",
-          "deletion_condition": "admin prepare action and audit path are covered by contract/frontend tests"
+          "deletion_condition": "admin prepare action and audit path are covered by contract/frontend tests",
+          "negative_regression_guard": "node tests/regression/portal/regression-test-v22-portal-figma-make-interaction-readiness.mjs"
         }
       },
       {
@@ -138,12 +144,14 @@
         },
         "regression_gate": [
           "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
-          "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs"
+          "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
+          "node tests/regression/portal/regression-test-v22-portal-figma-make-interaction-readiness.mjs"
         ],
         "legacy_retirement": {
           "old_surface": "ui_only_readiness_claim",
           "replacement_owner": "contracts/medopl-api-contract.json",
-          "deletion_condition": "frontend readiness copy points at backend account approval truth"
+          "deletion_condition": "frontend readiness copy points at backend account approval truth",
+          "negative_regression_guard": "node tests/regression/portal/regression-test-v22-portal-figma-make-interaction-readiness.mjs"
         }
       },
       {
@@ -175,12 +183,14 @@
         },
         "regression_gate": [
           "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
-          "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
+          "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+          "node tests/product/product-test-v22-commercial-production-maturity-gap-audit.mjs"
         ],
         "legacy_retirement": {
           "old_surface": "external_psp_claim_without_provider_receipt",
           "replacement_owner": "contracts/medopl-billing-ledger-contract.json#/medopl_billing_ledger_contract/payment_ledger_relationship",
-          "deletion_condition": "UI and docs say internal credit ledger only until PSP receipt exists"
+          "deletion_condition": "UI and docs say internal credit ledger only until PSP receipt exists",
+          "negative_regression_guard": "node tests/product/product-test-v22-commercial-production-maturity-gap-audit.mjs"
         }
       },
       {
@@ -213,12 +223,14 @@
         },
         "regression_gate": [
           "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
-          "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
+          "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+          "node tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs"
         ],
         "legacy_retirement": {
           "old_surface": "cloud_console_resource_order_surface",
           "replacement_owner": "contracts/medopl-portal-page-state-matrix.json#/medopl_portal_page_state_matrix/pages/packages_purchase",
-          "deletion_condition": "package page no longer exposes cloud node pool or direct resource order controls"
+          "deletion_condition": "package page no longer exposes cloud node pool or direct resource order controls",
+          "negative_regression_guard": "node tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs"
         }
       },
       {
@@ -258,7 +270,8 @@
         "legacy_retirement": {
           "old_surface": "direct_compute_instance_create_surface",
           "replacement_owner": "contracts/medopl-portal-interaction-flow-contract.json#/medopl_portal_interaction_flow_contract/flows/open_compute_resource",
-          "deletion_condition": "ordinary user can only open platform package-backed compute through admission truth"
+          "deletion_condition": "ordinary user can only open platform package-backed compute through admission truth",
+          "negative_regression_guard": "node tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs"
         }
       },
       {
@@ -298,7 +311,8 @@
         "legacy_retirement": {
           "old_surface": "direct_storage_bucket_create_surface",
           "replacement_owner": "contracts/medopl-data-plane-contract.json",
-          "deletion_condition": "storage page shows platform storage projection rather than cloud bucket controls"
+          "deletion_condition": "storage page shows platform storage projection rather than cloud bucket controls",
+          "negative_regression_guard": "node tests/regression/portal/regression-test-v22-retire-legacy-resource-user-surface.mjs"
         }
       },
       {
@@ -332,12 +346,14 @@
         },
         "regression_gate": [
           "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
-          "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
+          "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+          "node tests/regression/portal/regression-test-v22-portal-role-surface-boundaries.mjs"
         ],
         "legacy_retirement": {
           "old_surface": "raw_trace_or_skill_upload_as_primary_surface",
           "replacement_owner": "contracts/medopl-data-plane-contract.json",
-          "deletion_condition": "Portal copy and tests keep file/artifact refs as data plane, not research trace UI"
+          "deletion_condition": "Portal copy and tests keep file/artifact refs as data plane, not research trace UI",
+          "negative_regression_guard": "node tests/regression/portal/regression-test-v22-portal-role-surface-boundaries.mjs"
         }
       },
       {
@@ -377,7 +393,8 @@
         "legacy_retirement": {
           "old_surface": "user_visible_internal_runner_terms",
           "replacement_owner": "contracts/medopl-portal-ui-quality-contract.json",
-          "deletion_condition": "billing UI exposes customer billing language and hides runner/receipt internals"
+          "deletion_condition": "billing UI exposes customer billing language and hides runner/receipt internals",
+          "negative_regression_guard": "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
         }
       },
       {
@@ -412,12 +429,14 @@
         "regression_gate": [
           "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
           "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
-          "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs"
+          "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
+          "node tests/regression/portal/regression-test-v22-saas-portal-opl-ops-surface-contract.mjs"
         ],
         "legacy_retirement": {
           "old_surface": "launch_token_or_runtime_token_in_browser_state",
           "replacement_owner": "contracts/medopl-api-contract.json#/medopl_api_contract/opl_webui_e2e_launch_contract",
-          "deletion_condition": "OPL entry uses providerKeyRef and gateway readiness projection only"
+          "deletion_condition": "OPL entry uses providerKeyRef and gateway readiness projection only",
+          "negative_regression_guard": "node tests/regression/portal/regression-test-v22-saas-portal-opl-ops-surface-contract.mjs"
         }
       },
       {
@@ -451,12 +470,14 @@
         "regression_gate": [
           "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
           "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
-          "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs"
+          "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
+          "node tests/release/release-test-v22-boundary-contract.mjs"
         ],
         "legacy_retirement": {
           "old_surface": "release_claim_without_owner_receipt",
           "replacement_owner": "contracts/medopl-release-boundary.json",
-          "deletion_condition": "release UI remains partial fail-closed until owner receipt exists"
+          "deletion_condition": "release UI remains partial fail-closed until owner receipt exists",
+          "negative_regression_guard": "node tests/release/release-test-v22-boundary-contract.mjs"
         }
       },
       {
@@ -489,12 +510,14 @@
         },
         "regression_gate": [
           "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
-          "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
+          "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+          "node tests/release/release-test-v22-boundary-contract.mjs"
         ],
         "legacy_retirement": {
           "old_surface": "auto_destroy_storage_during_compute_release",
           "replacement_owner": "contracts/medopl-release-boundary.json#/medopl_release_boundary/storage_destroy_policy",
-          "deletion_condition": "storage destroy remains separate explicit-intent lifecycle"
+          "deletion_condition": "storage destroy remains separate explicit-intent lifecycle",
+          "negative_regression_guard": "node tests/release/release-test-v22-boundary-contract.mjs"
         }
       },
       {
@@ -527,12 +550,14 @@
         },
         "regression_gate": [
           "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
-          "node tests/release/release-test-v22-production-receipt-boundary.mjs"
+          "node tests/release/release-test-v22-production-receipt-boundary.mjs",
+          "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
         ],
         "legacy_retirement": {
           "old_surface": "raw_figma_pixel_truth",
           "replacement_owner": "contracts/medopl-commercial-launch-freeze-matrix.json#/commercial_launch_freeze_matrix/surfaces/figma_launch_ui_baseline",
-          "deletion_condition": "Figma remains visual and IA baseline; repo-native contracts/tests remain machine truth"
+          "deletion_condition": "Figma remains visual and IA baseline; repo-native contracts/tests remain machine truth",
+          "negative_regression_guard": "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
         }
       },
       {
@@ -565,12 +590,14 @@
         },
         "regression_gate": [
           "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
-          "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs"
+          "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs",
+          "node tests/regression/portal/regression-test-v22-saas-portal-opl-ops-surface-contract.mjs"
         ],
         "legacy_retirement": {
           "old_surface": "ordinary_chat_as_medopl_primary_surface",
           "replacement_owner": "contracts/medopl-product-profile.json#/medopl_product_profile/primary_consumer_surface",
-          "deletion_condition": "MedOPL Portal remains resource control plane and OPL-Webui owns ordinary chat"
+          "deletion_condition": "MedOPL Portal remains resource control plane and OPL-Webui owns ordinary chat",
+          "negative_regression_guard": "node tests/regression/portal/regression-test-v22-saas-portal-opl-ops-surface-contract.mjs"
         }
       }
     ],

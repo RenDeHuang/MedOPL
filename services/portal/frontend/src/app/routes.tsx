@@ -1,4 +1,5 @@
 import { Navigate, createBrowserRouter } from "react-router";
+import { journeysForRoute } from "./registry/portalJourneyRegistry";
 
 type PageModule = Record<string, React.ComponentType>;
 
@@ -50,15 +51,15 @@ export const router = createBrowserRouter([
 
       // 普通用户路由
       { path: "overview", lazy: overviewRoute },
-      { path: "packages", lazy: packagesPurchaseRoute },
-      { path: "compute", lazy: runtimeEnvironmentRoute },
-      { path: "storage", lazy: workspaceRoute },
-      { path: "usage", lazy: billingAuditRoute },
-      { path: "opl", lazy: oplEntryRoute },
+      { path: "packages", lazy: packagesPurchaseRoute, handle: { journeys: journeysForRoute("/packages") } },
+      { path: "compute", lazy: runtimeEnvironmentRoute, handle: { journeys: journeysForRoute("/compute") } },
+      { path: "storage", lazy: workspaceRoute, handle: { journeys: journeysForRoute("/storage") } },
+      { path: "usage", lazy: billingAuditRoute, handle: { journeys: journeysForRoute("/usage") } },
+      { path: "opl", lazy: oplEntryRoute, handle: { journeys: journeysForRoute("/opl") } },
 
       // 管理台路由
       { path: "admin/dashboard", lazy: adminDashboardRoute },
-      { path: "admin/users", lazy: adminUsersRoute },
+      { path: "admin/users", lazy: adminUsersRoute, handle: { journeys: journeysForRoute("/admin/users") } },
       { path: "admin/alerts", lazy: adminAlertsRoute },
       { path: "admin/billing-ops", lazy: adminBillingOpsRoute },
       { path: "admin/audit", lazy: adminAuditRoute },

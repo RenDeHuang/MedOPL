@@ -193,6 +193,7 @@ export const TEST_SURFACES = Object.freeze([
   "docs",
   "smoke",
   "regression",
+  "journey-product-evidence",
 ]);
 
 export const TEST_PLAN_BASE_COMMANDS = Object.freeze([
@@ -486,6 +487,7 @@ export const TEST_POLICY_SURFACE_COVERAGE = Object.freeze({
     "regression-runtime-bridge": Object.freeze(["regression", "runtime"]),
     "real-cloud-readiness": Object.freeze(["cloud"]),
     "future-authorized": Object.freeze(["cloud"]),
+    "journey-product-evidence": Object.freeze(["frontend", "regression"]),
   }),
   categoryToSurfaces: Object.freeze({
     product: Object.freeze(["product"]),
@@ -498,6 +500,7 @@ export const TEST_POLICY_SURFACE_COVERAGE = Object.freeze({
     smoke: Object.freeze(["smoke"]),
     contract: Object.freeze(["contract"]),
     regression: Object.freeze(["regression", "frontend", "runtime"]),
+    "journey-product-evidence": Object.freeze(["frontend", "regression"]),
     "suite-wrapper": Object.freeze(["smoke", "contract"]),
   }),
   registrySurfaceToPolicySurfaces: Object.freeze({
@@ -521,6 +524,7 @@ export const TEST_SURFACE_RULES = Object.freeze([
     ]),
     commands: Object.freeze([
       "npm run test:frontend",
+      "npm run test:journey-evidence",
       "npm run test:regression",
     ]),
     reason: "frontend surface changed",

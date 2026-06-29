@@ -4,13 +4,14 @@ import net from "node:net";
 import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { mkdtemp, rm, stat } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { setTimeout as sleep } from "node:timers/promises";
 
 const repoRoot = process.cwd();
 const goBackendRoot = path.join(repoRoot, "services", "medopl-go-backend");
 const frontendRoot = path.join(repoRoot, "services", "portal", "frontend");
 const viteEntrypoint = path.join(frontendRoot, "node_modules", "vite", "bin", "vite.js");
+const journeyEvidenceRoot = path.join(repoRoot, ".runtime", "journey-product-evidence");
 
 async function exists(targetPath) {
   try {
@@ -135,6 +136,10 @@ async function assertNoBadConsole(consoleMessages, failedRequests) {
   const filteredRequests = failedRequests.filter((message) => !message.includes("net::ERR_ABORTED"));
   assert.deepEqual(filteredConsole, [], `browser_console_warning_or_error:${JSON.stringify(filteredConsole)}`);
   assert.deepEqual(filteredRequests, [], `browser_failed_requests:${JSON.stringify(filteredRequests)}`);
+}
+
+async function readPortalJourneyRegistry() {
+  return JSON.parse(await readFile(path.join(repoRoot, "services", "portal", "frontend", "src", "app", "registry", "portalJourneyRegistry.json"), "utf8"));
 }
 
 function assertResourceControlCopy(bodyText, label, markers = ["资源总览", "计算资源", "存储空间"]) {
@@ -551,6 +556,37 @@ async function assertCustomerPageBaseline(page, path, expectedH1, label, copyMar
   await assertNoGlobalHorizontalOverflow(page, label);
 }
 
+async function recordJourneyProductEvidence(page, {
+  route,
+  journeyIds,
+  viewport,
+  stateEvidence,
+  taskCompletionAssertion,
+  consoleMessages,
+  failedRequests,
+}) {
+  await mkdir(journeyEvidenceRoot, { recursive: true });
+  const safeRoute = route.replace(/[^a-z0-9]+/giu, "-").replace(/^-|-$/gu, "") || "root";
+  const screenshotName = `${safeRoute}-${viewport}.png`;
+  await page.screenshot({
+    path: path.join(journeyEvidenceRoot, screenshotName),
+    fullPage: true,
+  });
+  return {
+    route,
+    journeyIds,
+    viewport,
+    desktop_screenshot: viewport === "desktop" ? screenshotName : "covered_by_mobile_artifact",
+    mobile_screenshot: viewport === "mobile" ? screenshotName : "covered_by_desktop_artifact",
+    empty_or_error_state: stateEvidence.empty_or_error_state,
+    disabled_reason: stateEvidence.disabled_reason,
+    task_completion_assertion: taskCompletionAssertion,
+    console_request_clean: consoleMessages.length === 0 && failedRequests.length === 0,
+    artifact_sink: ".runtime/journey-product-evidence",
+    git_truth: false,
+  };
+}
+
 const { chromium } = await loadPlaywright();
 const backendPort = await freePort();
 const vitePort = await freePort();
@@ -566,9 +602,11 @@ let viteStderr = "";
 let lastBodyText = "";
 let consoleMessages = [];
 let failedRequests = [];
+const journeyProductEvidence = [];
 
 try {
   await withRuntime(async (runtimeRoot) => {
+    const portalJourneyRegistry = await readPortalJourneyRegistry();
     backend = spawn("go", ["run", "./cmd/server"], {
       cwd: goBackendRoot,
       env: {
@@ -640,11 +678,35 @@ try {
     assert(lastBodyText.includes("商业路径：账号开通/批准、充值/授信、套餐、计算资源、存储空间和账单核对。"), "browser_overview_commercial_resource_control_path_missing");
     await assertPrimaryActionReachable(page, "browser_overview");
     await assertNoGlobalHorizontalOverflow(page, "browser_overview");
+    journeyProductEvidence.push(await recordJourneyProductEvidence(page, {
+      route: "/overview",
+      journeyIds: [],
+      viewport: "desktop",
+      stateEvidence: {
+        empty_or_error_state: "overview_ready_state_visible",
+        disabled_reason: "not_applicable",
+      },
+      taskCompletionAssertion: "overview_resource_control_path_and_primary_cta_visible",
+      consoleMessages: [],
+      failedRequests: [],
+    }));
 
     await page.setViewportSize({ width: 390, height: 844 });
     await assertNoGlobalHorizontalOverflow(page, "browser_overview_mobile");
     await assertPrimaryActionReachable(page, "browser_overview_mobile");
     await assertOverviewMobileHeroPolish(page, "browser_overview_mobile");
+    journeyProductEvidence.push(await recordJourneyProductEvidence(page, {
+      route: "/overview",
+      journeyIds: [],
+      viewport: "mobile",
+      stateEvidence: {
+        empty_or_error_state: "overview_mobile_ready_state_visible",
+        disabled_reason: "not_applicable",
+      },
+      taskCompletionAssertion: "overview_mobile_primary_cta_visible_without_horizontal_overflow",
+      consoleMessages: [],
+      failedRequests: [],
+    }));
     await page.setViewportSize({ width: 1440, height: 920 });
 
     await assertCustomerPageBaseline(
@@ -654,6 +716,18 @@ try {
       "browser_packages",
       ["套餐与购买", "计算资源", "存储空间", "费用"],
     );
+    journeyProductEvidence.push(await recordJourneyProductEvidence(page, {
+      route: "/packages",
+      journeyIds: portalJourneyRegistry.routes["/packages"],
+      viewport: "desktop",
+      stateEvidence: {
+        empty_or_error_state: "packages_ready_state_visible",
+        disabled_reason: "not_applicable",
+      },
+      taskCompletionAssertion: "plan_selection_package_cards_and_primary_action_visible",
+      consoleMessages: [],
+      failedRequests: [],
+    }));
 
     const overviewErrorConsoleStart = consoleMessages.length;
     await page.route("**/api/overview*", async (route) => {
@@ -671,6 +745,18 @@ try {
     await assertHeadingHierarchy(page, "browser_overview_error_recovery");
     await assertAgradeInteractionSystem(page, "browser_overview_error_recovery");
     await assertNoGlobalHorizontalOverflow(page, "browser_overview_error_recovery");
+    journeyProductEvidence.push(await recordJourneyProductEvidence(page, {
+      route: "/overview",
+      journeyIds: [],
+      viewport: "desktop",
+      stateEvidence: {
+        empty_or_error_state: "overview_error_recovery_visible",
+        disabled_reason: "not_applicable",
+      },
+      taskCompletionAssertion: "overview_error_state_shows_retry_recovery_without_technical_copy",
+      consoleMessages: [],
+      failedRequests: [],
+    }));
     await page.unroute("**/api/overview*");
     const expectedOverviewFetchError = "error:Failed to load resource: the server responded with a status of 500 (Internal Server Error)";
     const overviewErrorConsoleMessages = consoleMessages.slice(overviewErrorConsoleStart);
@@ -710,6 +796,18 @@ try {
     await assertRuntimePlanDensity(page, "browser_runtime_environment");
     await assertPrimaryActionReachable(page, "browser_runtime_environment");
     await assertNoGlobalHorizontalOverflow(page, "browser_runtime_environment");
+    journeyProductEvidence.push(await recordJourneyProductEvidence(page, {
+      route: "/compute",
+      journeyIds: portalJourneyRegistry.routes["/compute"],
+      viewport: "desktop",
+      stateEvidence: {
+        empty_or_error_state: "compute_ready_state_visible",
+        disabled_reason: lastBodyText.includes("释放交互接入中") ? "release_owner_receipt_pending_reason_visible" : "not_applicable",
+      },
+      taskCompletionAssertion: "open_compute_resource_entry_and_release_fail_closed_boundary_visible",
+      consoleMessages: [],
+      failedRequests: [],
+    }));
 
     await assertCustomerPageBaseline(
       page,
@@ -718,6 +816,18 @@ try {
       "browser_workspace",
       ["存储空间", "输入文件", "输出文件"],
     );
+    journeyProductEvidence.push(await recordJourneyProductEvidence(page, {
+      route: "/storage",
+      journeyIds: portalJourneyRegistry.routes["/storage"],
+      viewport: "desktop",
+      stateEvidence: {
+        empty_or_error_state: "storage_ready_state_visible",
+        disabled_reason: "not_applicable",
+      },
+      taskCompletionAssertion: "storage_space_upload_artifact_and_destroy_retention_boundary_visible",
+      consoleMessages: [],
+      failedRequests: [],
+    }));
 
     await page.goto(`${frontendBaseUrl}/usage`, { waitUntil: "domcontentloaded" });
     await waitReady(page, "正在读取费用与用量数据");
@@ -731,6 +841,18 @@ try {
     await assertBillingFirstViewDensity(page, "browser_billing");
     await assertBillingSummaryLedgerShape(page, "browser_billing");
     await assertNoGlobalHorizontalOverflow(page, "browser_billing");
+    journeyProductEvidence.push(await recordJourneyProductEvidence(page, {
+      route: "/usage",
+      journeyIds: portalJourneyRegistry.routes["/usage"],
+      viewport: "desktop",
+      stateEvidence: {
+        empty_or_error_state: "billing_ready_state_visible",
+        disabled_reason: "not_applicable",
+      },
+      taskCompletionAssertion: "credit_balance_and_usage_reconciliation_summary_visible",
+      consoleMessages: [],
+      failedRequests: [],
+    }));
 
     await assertCustomerPageBaseline(
       page,
@@ -739,6 +861,18 @@ try {
       "browser_opl_entry",
       ["进入 OPL", "启动阶段"],
     );
+    journeyProductEvidence.push(await recordJourneyProductEvidence(page, {
+      route: "/opl",
+      journeyIds: portalJourneyRegistry.routes["/opl"],
+      viewport: "desktop",
+      stateEvidence: {
+        empty_or_error_state: "opl_entry_ready_or_blocked_state_visible",
+        disabled_reason: "runtime_gate_or_provider_binding_reason_visible_when_blocked",
+      },
+      taskCompletionAssertion: "enter_opl_handoff_state_visible_without_token_leak",
+      consoleMessages: [],
+      failedRequests: [],
+    }));
 
     const userContext = await browser.newContext({
       viewport: { width: 390, height: 844 },
@@ -774,6 +908,20 @@ try {
     await assertNoGlobalHorizontalOverflow(page, "browser_admin_system");
 
     await assertNoBadConsole(consoleMessages, failedRequests);
+    for (const evidence of journeyProductEvidence) {
+      evidence.console_request_clean = true;
+    }
+    await mkdir(journeyEvidenceRoot, { recursive: true });
+    await writeFile(
+      path.join(journeyEvidenceRoot, "summary.json"),
+      `${JSON.stringify({
+        ok: true,
+        contract: "v22_journey_product_value_browser_evidence",
+        artifact_sink: ".runtime/journey-product-evidence",
+        git_truth: false,
+        evidence: journeyProductEvidence,
+      }, null, 2)}\n`,
+    );
     await page.close();
   });
 
@@ -792,7 +940,9 @@ try {
       "opl_entry_accessibility_coverage",
       "customer_user_nav_visual_gate",
       "admin_system_authorization_boundary",
+      "journey_product_value_evidence_artifacts",
     ],
+    journeyProductEvidence,
   }, null, 2));
 } catch (error) {
   console.error(JSON.stringify({

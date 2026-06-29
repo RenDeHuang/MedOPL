@@ -128,6 +128,77 @@
   "next_leaf": "goal-commercial-runtime-storage-billing-business-closure",
   "current_stage": "commercial runtime storage billing business closure",
   "current_risk_class": "commercial_billing_boundary",
+  "current_authoring_goal": {
+    "schema_version": 1,
+    "goal_id": "goal-commercial-journey-product-evidence-system",
+    "branch": "goal-commercial-journey-product-evidence-system",
+    "status": "authoring_branch_verified_not_landed",
+    "affected_journeys": [
+      "account_prepare",
+      "account_approval",
+      "credit_balance",
+      "plan_selection",
+      "open_compute_resource",
+      "open_storage_space",
+      "upload_run_artifact",
+      "usage_billing_reconciliation",
+      "enter_opl",
+      "release_compute_resource",
+      "destroy_or_retain_storage",
+      "admin_audit_receipt",
+      "opl_webui_runtime_required"
+    ],
+    "can_claim": [
+      "portalJourneyRegistry binds commercial journey ids to route, page, primary action, backend truth, cannot-claim, regression gate and legacy retirement target",
+      "commercial product matrix requires a negative_regression_guard for every journey legacy retirement target",
+      "Portal routes declare the journeys they serve through source-level route handles",
+      "journey-product-evidence lane emits desktop/mobile/browser value evidence to .runtime/journey-product-evidence without making raw screenshots git truth",
+      "Playwright is pinned in the Portal frontend workspace instead of runtime-installed into .runtime/browser-test"
+    ],
+    "cleanup_result": {
+      "deleted": "runtime Playwright dependency install path under .runtime/browser-test",
+      "folded": "journey route/page/action/backend/cannot-claim/regression/legacy retirement bindings into the product contract, portalJourneyRegistry, route handles, test lane registry and verify manifest",
+      "retained": "existing active Portal pages and existing negative-retirement tests as replacement owners and guards; raw screenshot artifacts remain outside git",
+      "next_retirement_gate": "physical deletion of any remaining old experience is only closeable per journey when legacy_retirement.negative_regression_guard and replacement owner prove the old surface cannot return"
+    },
+    "plan_completion_audit": {
+      "functional": "done",
+      "code_cleanup": "partial",
+      "docs_foldback": "done",
+      "verification": "done",
+      "retired_entrypoints": "done",
+      "cannot_claim": "done"
+    },
+    "cannot_claim": [
+      "full experience replacement complete",
+      "all legacy experience physically deleted",
+      "rollout complete",
+      "production complete",
+      "external PSP settlement",
+      "real payment completed",
+      "all users/all tenants",
+      "multi-region/SLA",
+      "enterprise compliance",
+      "ongoing authorization"
+    ],
+    "artifact_policy": {
+      "journey_product_evidence_sink": ".runtime/journey-product-evidence",
+      "raw_visual_git_truth": false
+    },
+    "verification_commands": [
+      "npm run test:run-plan -- --dry-run --json",
+      "npm run test:health",
+      "npm run test:smoke",
+      "npm run test:contract",
+      "npm run test:fast",
+      "npm run test:lanes",
+      "npm run test:hygiene",
+      "npm run test:frontend",
+      "npm run test:journey-evidence",
+      "npm run test:regression"
+    ],
+    "next_recommended_goal": "goal-commercial-release-metadata-rollback-maturity"
+  },
   "current_blockers": [
     "none_for_current_scoped_commercial_business_flow"
   ],
@@ -324,6 +395,7 @@
       "node tests/product/product-test-v22-commercial-production-maturity-gap-audit.mjs",
       "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
       "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
+      "node tests/frontend/frontend-test-v22-portal-journey-registry.mjs",
       "node tests/backend/backend-test-v22-api-contract.mjs",
       "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs",
       "node tests/release/release-test-v22-boundary-contract.mjs",
@@ -677,6 +749,7 @@
     "node tests/product/product-test-v22-commercial-production-maturity-gap-audit.mjs",
     "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
     "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
+    "node tests/frontend/frontend-test-v22-portal-journey-registry.mjs",
     "node tests/backend/backend-test-v22-api-contract.mjs",
     "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs",
     "node tests/release/release-test-v22-boundary-contract.mjs",
