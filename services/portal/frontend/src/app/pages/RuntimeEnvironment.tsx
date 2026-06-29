@@ -195,7 +195,9 @@ export function RuntimeEnvironment() {
         </div>
       </div>
       <Card
-        className="border border-neutral-200 p-5 mb-8"
+        className="border border-neutral-200 p-5 mb-8 shadow-sm shadow-slate-200/40"
+        data-ui-section="commercial-launch-release-readiness"
+        data-ui-component="ReleaseReadinessCard"
         data-release-owner-readiness="partial_fail_closed_pending_owner_receipt"
       >
         <div className="flex items-center justify-between gap-3 mb-4">
@@ -205,11 +207,39 @@ export function RuntimeEnvironment() {
           </div>
           <Badge variant="outline" className="bg-white text-neutral-700 border-neutral-200">接入中 / T+1 审计</Badge>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-          <div><div className="text-xs text-neutral-600 mb-1">释放状态</div><div className="font-semibold text-neutral-900">{model.releaseLifecycle.releaseStatus}</div></div>
-          <div><div className="text-xs text-neutral-600 mb-1">停止计费核对</div><div className="font-semibold text-neutral-900">{model.releaseLifecycle.stopBillingStatus}</div><div className="text-xs text-neutral-500 mt-1">{model.releaseLifecycle.stopBillingWindow} / {model.releaseLifecycle.stopBillingConfirmBy}</div></div>
-          <div><div className="text-xs text-neutral-600 mb-1">审计状态</div><div className="font-semibold text-neutral-900">{model.releaseLifecycle.auditStatus}</div><div className="text-xs text-neutral-500 mt-1">{model.releaseLifecycle.auditPolicy} / {model.releaseLifecycle.auditReadyAt}</div></div>
-          <div><div className="text-xs text-neutral-600 mb-1">存储空间策略</div><div className="font-semibold text-neutral-900">{model.releaseLifecycle.fileSpacePolicy}</div></div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-md border border-amber-100 bg-amber-50 p-3">
+            <div className="mb-2 flex items-center gap-2 text-xs font-medium text-amber-800">
+              <AlertCircle className="h-3.5 w-3.5" />
+              释放状态
+            </div>
+            <div className="font-semibold text-neutral-900">{model.releaseLifecycle.releaseStatus}</div>
+            <div className="mt-1 text-xs text-amber-800">确认交互等待 owner receipt</div>
+          </div>
+          <div className="rounded-md border border-teal-100 bg-teal-50 p-3">
+            <div className="mb-2 flex items-center gap-2 text-xs font-medium text-teal-800">
+              <Receipt className="h-3.5 w-3.5" />
+              停止计费核对
+            </div>
+            <div className="font-semibold text-neutral-900">{model.releaseLifecycle.stopBillingStatus}</div>
+            <div className="mt-1 text-xs text-teal-800">{model.releaseLifecycle.stopBillingWindow} / {model.releaseLifecycle.stopBillingConfirmBy}</div>
+          </div>
+          <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+            <div className="mb-2 flex items-center gap-2 text-xs font-medium text-slate-700">
+              <Shield className="h-3.5 w-3.5" />
+              审计状态
+            </div>
+            <div className="font-semibold text-neutral-900">{model.releaseLifecycle.auditStatus}</div>
+            <div className="mt-1 text-xs text-neutral-500">{model.releaseLifecycle.auditPolicy} / {model.releaseLifecycle.auditReadyAt}</div>
+          </div>
+          <div className="rounded-md border border-slate-200 bg-white p-3">
+            <div className="mb-2 flex items-center gap-2 text-xs font-medium text-slate-700">
+              <HardDrive className="h-3.5 w-3.5" />
+              存储空间策略
+            </div>
+            <div className="font-semibold text-neutral-900">{model.releaseLifecycle.fileSpacePolicy}</div>
+            <div className="mt-1 text-xs text-neutral-500">释放计算不删除存储空间</div>
+          </div>
         </div>
       </Card>
       <Card className="border border-neutral-200 p-5 mb-8">

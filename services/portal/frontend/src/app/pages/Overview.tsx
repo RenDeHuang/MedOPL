@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { ArrowRight, FileText } from "lucide-react";
+import { ArrowRight, CheckCircle2, FileText, Receipt, Server } from "lucide-react";
 import { useOverviewModel } from "../data/portalOverviewModel";
 import {
   BillingSummary,
@@ -115,8 +115,8 @@ export function Overview() {
   const billingState: ResourceControlState = serviceStatus === "restricted" ? "blocked" : state;
 
   return (
-    <div className="mx-auto max-w-7xl p-8" data-ui-template="resource-console-overview">
-      <div className="mb-8 border-b border-neutral-200 pb-8">
+    <div className="mx-auto max-w-7xl p-5 sm:p-8" data-ui-template="resource-console-overview">
+      <div className="mb-6 border-b border-slate-200 pb-6">
         <div data-ui-section="overview-primary-hero" className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
             <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -137,7 +137,8 @@ export function Overview() {
         </div>
       </div>
 
-      <div data-ui-section="overview-core-resources" className="mb-8 grid grid-cols-1 gap-5 xl:grid-cols-3">
+      <div data-ui-section="overview-core-resources" className="mb-6">
+      <div data-ui-section="commercial-launch-core-cards" className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         <ResourceStatusCard
           status={state}
           title={computeTitle}
@@ -167,17 +168,20 @@ export function Overview() {
           retentionState={serviceStatus === "unprovisioned" ? "开通存储空间后显示输入文件、输出文件和保留期。" : "输入文件和输出文件按存储空间保留策略管理。"}
         />
 
-        <BillingSummary
-          status={billingState}
-          balance={model.availableBalance}
-          freeze={model.frozenAmount}
-          usage={model.todayCost}
-          usageLabel="费用估算"
-          auditState={serviceStatus === "restricted" ? "待处理" : "标准审计"}
-        />
+        <div className="min-w-0">
+          <BillingSummary
+            status={billingState}
+            balance={model.availableBalance}
+            freeze={model.frozenAmount}
+            usage={model.todayCost}
+            usageLabel="费用估算"
+            auditState={serviceStatus === "restricted" ? "待处理" : "标准审计"}
+          />
+        </div>
+      </div>
       </div>
 
-      <div className="mb-8 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
+      <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(320px,420px)]">
         <ReadinessChecklist
           status={state}
           items={[
@@ -207,10 +211,10 @@ export function Overview() {
           }
         />
 
-        <Card className="border border-neutral-200 p-5">
+        <Card className="border border-neutral-200 p-5 shadow-sm shadow-slate-200/40">
           <div className="mb-4 flex items-center justify-between gap-3">
             <div>
-              <h2 className="font-semibold text-neutral-900">存储文件摘要</h2>
+              <h2 className="font-semibold text-neutral-900">商业化首屏摘要</h2>
               <p className="mt-1 text-sm text-neutral-600">这里只展示资源视角的输入文件和输出文件。</p>
             </div>
             <Button asChild variant="ghost" size="sm">
@@ -218,6 +222,20 @@ export function Overview() {
             </Button>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="rounded-md border border-neutral-200 bg-slate-50 p-3">
+              <div className="mb-1 flex items-center gap-2 text-xs text-neutral-600">
+                <Server className="h-3.5 w-3.5" />
+                计算资源
+              </div>
+              <div className="text-lg font-semibold text-neutral-900">{statusLabel(serviceStatus)}</div>
+            </div>
+            <div className="rounded-md border border-neutral-200 bg-slate-50 p-3">
+              <div className="mb-1 flex items-center gap-2 text-xs text-neutral-600">
+                <Receipt className="h-3.5 w-3.5" />
+                账本状态
+              </div>
+              <div className="text-lg font-semibold text-neutral-900">{serviceStatus === "restricted" ? "待处理" : "标准审计"}</div>
+            </div>
             <div className="rounded-md border border-neutral-200 p-3">
               <div className="mb-1 flex items-center gap-2 text-xs text-neutral-600">
                 <FileText className="h-3.5 w-3.5" />
@@ -233,7 +251,8 @@ export function Overview() {
               <div className="text-lg font-semibold text-neutral-900">{model.outputFiles} 个</div>
             </div>
           </div>
-          <div className="mt-4 border-t border-neutral-200 pt-4 text-xs text-neutral-600">
+          <div className="mt-4 flex items-start gap-2 border-t border-neutral-200 pt-4 text-xs text-neutral-600">
+            <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-teal-700" />
             科研对话、项目、session 和 skill 上传仍在 OPL；MedOPL 只显示资源、存储和费用。
           </div>
         </Card>

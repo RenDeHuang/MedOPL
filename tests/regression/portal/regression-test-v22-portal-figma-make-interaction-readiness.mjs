@@ -59,6 +59,7 @@ const [
   oplEntryModelSource,
   runtimeModelSource,
   displayErrorsSource,
+  themeSource,
 ] = await Promise.all([
   source(`${appRoot}/components/ui/core.tsx`),
   source(`${appRoot}/components/ui/sheet.tsx`),
@@ -86,6 +87,7 @@ const [
   source(`${appRoot}/data/portalOplEntryModel.ts`),
   source(`${appRoot}/data/portalRuntimeEnvironmentModel.ts`),
   source(`${appRoot}/data/portalDisplayErrors.ts`),
+  source("services/portal/frontend/src/styles/theme.css"),
 ]);
 
 assertRefForwarded(coreSource, "Button");
@@ -162,13 +164,16 @@ assertIncludes(billingSource, 'role="status"', "billing_empty_export_notice_must
 assertExcludes(billingSource, 'disabled title="当前时间窗口没有可导出的账单流水"', "billing_empty_export_must_not_be_dead_disabled_button");
 
 assertIncludes(layoutSource, "flex-col md:flex-row", "layout_shell_must_reflow_mobile");
-assertIncludes(layoutSource, "w-full md:w-64", "layout_sidebar_must_not_force_mobile_width");
+assertIncludes(layoutSource, 'data-ui-template="commercial-launch-shell"', "layout_must_absorb_commercial_launch_shell_template");
+assertIncludes(layoutSource, "w-full md:w-56", "layout_sidebar_must_absorb_figma_shell_width");
 assertIncludes(layoutSource, "overflow-x-auto", "layout_navigation_must_scroll_on_mobile");
 assertIncludes(layoutSource, "帮助中心暂未接入", "layout_help_button_must_not_be_empty_action");
 assertIncludes(layoutSource, 'name: "用户管理"', "layout_admin_users_nav_must_use_user_management_copy");
 assertIncludes(layoutSource, '"/admin/users": "用户管理"', "layout_admin_users_title_must_use_user_management_copy");
 assertExcludes(layoutSource, "客户账户", "layout_must_not_use_old_customer_account_copy");
 assertIncludes(adminAuditSource, "overflow-x-auto", "admin_audit_table_must_be_scrollable_instead_of_layout_overflow");
+assertIncludes(themeSource, "--radius: 0.5rem;", "theme_radius_must_match_commercial_launch_8px_max");
+assertIncludes(themeSource, "--primary: #0F766E;", "theme_primary_must_match_commercial_launch_teal");
 
 assertIncludes(adminApiSource, "toggleAdminUser", "admin_user_toggle_api_helper_missing");
 assertIncludes(adminApiSource, "approve-user", "admin_user_platform_approve_action_missing");
@@ -315,6 +320,11 @@ assertIncludes(billingSource, 'data-ui-section="billing-first-view"', "billing_f
 assertIncludes(billingSource, "BillingSummary", "billing_first_view_must_keep_single_summary_component");
 assertIncludes(billingSource, 'data-ui-pattern="billing-status-band"', "billing_first_view_must_keep_funding_status_band");
 assertExcludes(billingSource, "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6", "billing_first_view_must_not_restore_kpi_wall");
+assertIncludes(overviewSource, 'data-ui-section="commercial-launch-core-cards"', "overview_must_absorb_commercial_launch_three_card_first_view");
+assertIncludes(overviewSource, "BillingSummary", "overview_must_keep_billing_as_first_view_resource_card");
+assertIncludes(overviewSource, "ReadinessChecklist", "overview_must_keep_opl_readiness_first_view");
+assertIncludes(runtimeSource, 'data-ui-section="commercial-launch-release-readiness"', "runtime_must_absorb_release_dialog_state_model_without_claiming_completion");
+assertIncludes(runtimeSource, 'data-ui-component="ReleaseReadinessCard"', "runtime_release_readiness_must_have_named_component_marker");
 
 for (const [label, sourceText] of [
   ["overview", overviewSource],

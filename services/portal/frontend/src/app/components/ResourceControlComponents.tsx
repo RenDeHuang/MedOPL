@@ -17,45 +17,53 @@ export type ResourceControlState =
   | "released"
   | "protected";
 
-const stateTone: Record<ResourceControlState, { badge: string; panel: string; label: string }> = {
+const stateTone: Record<ResourceControlState, { badge: string; panel: string; iconPanel: string; label: string }> = {
   loading: {
     badge: "bg-teal-50 text-teal-700 border-teal-200",
-    panel: "border-teal-200 bg-teal-50",
+    panel: "border-teal-100 bg-white",
+    iconPanel: "bg-teal-50 text-teal-700",
     label: "读取中",
   },
   empty: {
     badge: "bg-neutral-100 text-neutral-700 border-neutral-200",
     panel: "border-neutral-200 bg-white",
+    iconPanel: "bg-slate-100 text-slate-500",
     label: "待开通",
   },
   ready: {
     badge: "bg-[var(--resource-active-background)] text-[var(--resource-active)] border-green-200",
-    panel: "border-green-200 bg-[var(--resource-active-background)]",
+    panel: "border-green-100 bg-white",
+    iconPanel: "bg-emerald-50 text-emerald-700",
     label: "可用",
   },
   blocked: {
     badge: "bg-[var(--billing-warning-background)] text-[var(--billing-warning)] border-amber-200",
-    panel: "border-amber-200 bg-[var(--billing-warning-background)]",
+    panel: "border-amber-100 bg-white",
+    iconPanel: "bg-amber-50 text-amber-700",
     label: "受限",
   },
   failed: {
     badge: "bg-[var(--resource-blocked-background)] text-[var(--resource-blocked)] border-red-200",
-    panel: "border-red-200 bg-[var(--resource-blocked-background)]",
+    panel: "border-red-100 bg-white",
+    iconPanel: "bg-red-50 text-red-700",
     label: "失败",
   },
   pending: {
     badge: "bg-[var(--release-pending-background)] text-[var(--release-pending)] border-teal-200",
-    panel: "border-teal-200 bg-[var(--release-pending-background)]",
+    panel: "border-teal-100 bg-white",
+    iconPanel: "bg-teal-50 text-teal-700",
     label: "处理中",
   },
   released: {
     badge: "bg-neutral-100 text-neutral-700 border-neutral-200",
-    panel: "border-neutral-200 bg-neutral-50",
+    panel: "border-neutral-200 bg-white",
+    iconPanel: "bg-slate-100 text-slate-600",
     label: "已释放",
   },
   protected: {
     badge: "bg-[var(--storage-protected-background)] text-[var(--storage-protected)] border-slate-200",
-    panel: "border-slate-200 bg-[var(--storage-protected-background)]",
+    panel: "border-slate-200 bg-white",
+    iconPanel: "bg-slate-100 text-slate-600",
     label: "保护期",
   },
 };
@@ -100,7 +108,7 @@ export function ResourceStatusCard({
 }) {
   return (
     <Card
-      className={cn("border p-5", stateTone[status].panel)}
+      className={cn("border p-5 shadow-sm shadow-slate-200/40", stateTone[status].panel)}
       data-ui-component="ResourceStatusCard"
       data-ui-pattern="state-feedback"
       role="status"
@@ -110,6 +118,9 @@ export function ResourceStatusCard({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="mb-3 flex flex-wrap items-center gap-2">
+            <span className={cn("flex h-8 w-8 items-center justify-center rounded-lg", stateTone[status].iconPanel)}>
+              {stateIcon(status)}
+            </span>
             <StateBadge status={status} />
             <Badge variant="outline" className="bg-white text-neutral-700 border-neutral-200">
               {receiptState}
@@ -123,7 +134,7 @@ export function ResourceStatusCard({
       {metrics.length > 0 && (
         <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {metrics.map((metric) => (
-            <div key={metric.label} className="min-w-0 rounded-md border border-white/70 bg-white/70 p-3">
+            <div key={metric.label} className="min-w-0 rounded-md border border-slate-200 bg-slate-50 p-3">
               <div className="text-xs text-neutral-600">{metric.label}</div>
               <div className="mt-1 break-words font-semibold text-neutral-900">{metric.value}</div>
               {metric.hint && <div className="mt-1 break-words text-xs text-neutral-500">{metric.hint}</div>}
