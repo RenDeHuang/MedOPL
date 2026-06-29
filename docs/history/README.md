@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `goal-commercial-current-truth-stale-pointer-cleanup`
-- latest landed commit: `1160301d58d51214c587f84f0560cb52b7df9fef`
+- latest landed branch: `goal-commercial-cross-repo-dynamic-current-truth-sync`
+- latest landed commit: `7a817101adef843184113750cb2dd3e815ca52c8`
 - next cursor: `goal-commercial-runtime-storage-billing-business-closure`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`

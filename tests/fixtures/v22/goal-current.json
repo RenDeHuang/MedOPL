@@ -33,47 +33,44 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "goal-commercial-current-truth-stale-pointer-cleanup",
-    "landed_commit": "1160301d58d51214c587f84f0560cb52b7df9fef",
+    "branch": "goal-commercial-cross-repo-dynamic-current-truth-sync",
+    "landed_commit": "7a817101adef843184113750cb2dd3e815ca52c8",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
-      "npm run test:run-plan -- --dry-run --json",
-      "npm run test:run-plan",
-      "npm run validate:active-platform -- --json",
-      "npm run test:product",
+      "npm run verify",
       "npm run test:health",
-      "npm run gate:review -- --slice-id goal-commercial-current-truth-stale-pointer-cleanup",
-      "npm run repo:bloat -- --diff --slice-id goal-commercial-current-truth-stale-pointer-cleanup",
-      "npm run line:budget"
+      "npm run test:contract",
+      "npm run test:run-plan",
+      "npm run gate:review",
+      "npm run repo:bloat",
+      "npm run line:budget",
+      "npm run check:diff"
     ],
     "canClaim": [
-      "stale product next-goal pointer no longer recommends completed install package goal",
-      "goal-current prompt points to goal-commercial-release-metadata-rollback-maturity",
-      "current cursor is documented as umbrella product spine rather than unfinished blocker",
-      "existing product test guards retired install/bootstrap goals from returning as active next prompts"
+      "dynamic MedOPL WebUI current truth sync matrix recorded",
+      "owner truth split preserved",
+      "fail-closed mismatch policy recorded"
     ],
     "cannotClaim": [
+      "live E2E executed",
+      "rollout executed",
       "production complete",
       "external PSP settlement",
-      "real payment completed",
+      "all users/all tenants",
       "SLA/multi-region",
-      "ongoing authorization",
-      "build/push image",
-      "deploy",
-      "live-test",
-      "new product boundary or billing/runtime behavior change"
+      "ongoing authorization"
     ],
     "verification": {
-      "risk_class": "local_doc_eval",
+      "risk_class": "commercial_billing_boundary",
       "commands": [
-        "npm run test:run-plan -- --dry-run --json",
-        "npm run test:run-plan",
-        "npm run validate:active-platform -- --json",
-        "npm run test:product",
+        "npm run verify",
         "npm run test:health",
-        "npm run gate:review -- --slice-id goal-commercial-current-truth-stale-pointer-cleanup",
-        "npm run repo:bloat -- --diff --slice-id goal-commercial-current-truth-stale-pointer-cleanup",
-        "npm run line:budget"
+        "npm run test:contract",
+        "npm run test:run-plan",
+        "npm run gate:review",
+        "npm run repo:bloat",
+        "npm run line:budget",
+        "npm run check:diff"
       ],
       "result": "passed"
     },
@@ -87,9 +84,9 @@
     },
     "cleanup_result": {
       "deleted": "none",
-      "folded": "stale product next-goal sentence and local-codex prompt folded into current machine next_recommended_goal",
-      "retained": "commercial business closure cursor as umbrella product spine; operations substrate remains delivery/history only",
-      "reason": "truth cleanup only; no product boundary or runtime/billing behavior change",
+      "folded": "dynamic current truth sync pointer into contracts goal-current active and history",
+      "retained": "business maturity next cursor",
+      "reason": "sync goal is closed pointer not product maturity replacement",
       "next": "goal-commercial-release-metadata-rollback-maturity"
     },
     "retirement": {
@@ -108,7 +105,7 @@
   "current_blockers": [
     "none_for_current_scoped_commercial_business_flow"
   ],
-  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-current-truth-stale-pointer-cleanup at 1160301d58d51214c587f84f0560cb52b7df9fef. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-current-truth-stale-pointer-cleanup at 1160301d58d51214c587f84f0560cb52b7df9fef.",
+  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-cross-repo-dynamic-current-truth-sync at 7a817101adef843184113750cb2dd3e815ca52c8. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-cross-repo-dynamic-current-truth-sync at 7a817101adef843184113750cb2dd3e815ca52c8.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -665,9 +662,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "goal-commercial-current-truth-stale-pointer-cleanup",
+  "last_landed_branch": "goal-commercial-cross-repo-dynamic-current-truth-sync",
   "last_landed_at": "2026-06-29",
-  "history_latest_branch": "goal-commercial-current-truth-stale-pointer-cleanup",
+  "history_latest_branch": "goal-commercial-cross-repo-dynamic-current-truth-sync",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -1089,8 +1086,8 @@
     },
     "receipt_manifest_artifact_id": "7937559220"
   },
-  "base_trunk_head": "1160301d58d51214c587f84f0560cb52b7df9fef",
-  "last_landed_commit": "1160301d58d51214c587f84f0560cb52b7df9fef",
+  "base_trunk_head": "7a817101adef843184113750cb2dd3e815ca52c8",
+  "last_landed_commit": "7a817101adef843184113750cb2dd3e815ca52c8",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
@@ -1346,8 +1343,14 @@
         "id": "ordinary_path",
         "owner": "opl-webui",
         "runtime_storage_required": false,
-        "required_truth": ["OPL-Webui session/account projection"],
-        "cannot_claim": ["runtime_truth", "storage_truth", "billing_truth"]
+        "required_truth": [
+          "OPL-Webui session/account projection"
+        ],
+        "cannot_claim": [
+          "runtime_truth",
+          "storage_truth",
+          "billing_truth"
+        ]
       },
       {
         "id": "specialist_blocked_onboarding",
@@ -1387,7 +1390,11 @@
     ],
     "fail_closed_rule": {
       "on_mismatch": true,
-      "blocked_actions": ["live_e2e", "rollout", "production_complete_claim"],
+      "blocked_actions": [
+        "live_e2e",
+        "rollout",
+        "production_complete_claim"
+      ],
       "mismatch_report_fields": [
         "ownership_conflict",
         "claim_inconsistency",
@@ -1730,6 +1737,16 @@
       {
         "goal_id": "goal-commercial-current-truth-stale-pointer-cleanup",
         "landed_commit": "1160301d58d51214c587f84f0560cb52b7df9fef",
+        "status": "completed_retired",
+        "retired_from": [
+          "active_blocker",
+          "current_cursor"
+        ],
+        "evidence_pointer": "docs/history/README.md"
+      },
+      {
+        "goal_id": "goal-commercial-cross-repo-dynamic-current-truth-sync",
+        "landed_commit": "7a817101adef843184113750cb2dd3e815ca52c8",
         "status": "completed_retired",
         "retired_from": [
           "active_blocker",

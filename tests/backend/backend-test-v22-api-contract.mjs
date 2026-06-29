@@ -260,11 +260,20 @@ assert.equal(currentDynamicSync.repo_identity.opl_webui.remote_head, dynamicSync
 assert.deepEqual(currentDynamicSync.e2e_state_matrix, dynamicSync.e2e_state_matrix, "goal_current_dynamic_sync_e2e_matrix_mismatch");
 assert.deepEqual(currentDynamicSync.dynamic_sync_triggers, dynamicSync.dynamic_sync_triggers, "goal_current_dynamic_sync_triggers_mismatch");
 assert.deepEqual(currentDynamicSync.fail_closed_rule, dynamicSync.fail_closed_rule, "goal_current_dynamic_sync_fail_closed_rule_mismatch");
+const dynamicCompletedGoal = goalCurrent.goal_lifecycle.completed_goals.find((goal) => goal.goal_id === dynamicSync.goal_id);
+assert(dynamicCompletedGoal, "dynamic_sync_completed_goal_missing_after_closeout");
 assert.equal(
-  goalCurrent.goal_lifecycle.completed_goals.some((goal) => goal.goal_id === dynamicSync.goal_id),
-  false,
-  "dynamic_sync_must_not_register_completed_goal_before_landing_closeout",
+  dynamicCompletedGoal.landed_commit,
+  goalCurrent.latest_landed_closeout.landed_commit,
+  "dynamic_sync_completed_goal_commit_must_match_latest_closeout",
 );
+assert.match(dynamicCompletedGoal.landed_commit, /^[0-9a-f]{40}$/u, "dynamic_sync_completed_goal_commit_must_be_full_sha");
+assert.notEqual(
+  dynamicCompletedGoal.landed_commit,
+  "0000000000000000000000000000000000000000",
+  "dynamic_sync_completed_goal_must_not_use_placeholder_sha",
+);
+assert.equal(goalCurrent.goal_lifecycle.next_recommended_goal, "goal-commercial-release-metadata-rollback-maturity", "dynamic_sync_must_not_replace_medopl_next_goal");
 
 const accountProductization = apiContract.medopl_api_contract.account_productization;
 assert(accountProductization, "api_contract_account_productization_missing");
