@@ -665,6 +665,94 @@ export default {
     ["np-starter-created"],
   ], "real_tke_cleanup_must_delete_all_created_node_pools");
 
+  const missingSourcePlan = path.join(tempDir, "real-tke-missing-source-plan.json");
+  const missingSourceFakeSdk = path.join(tempDir, "fake-tencentcloud-sdk-nodejs-missing-source.mjs");
+  const missingSourceLog = path.join(tempDir, "real-tke-missing-source-fake-sdk.log");
+  writeFileSync(missingSourcePlan, JSON.stringify({
+    clusterId: "cls-test",
+    region: "na-siliconvalley",
+    requireNodeTotal: 1,
+    requireReadyNodeCount: 1,
+    tiers: [
+      { id: "starter_2c4g_10gb", cpuCores: 2, memoryGb: 4, storageGb: 10 },
+      { id: "pro_8c16g_100gb", cpuCores: 8, memoryGb: 16, storageGb: 100 },
+    ],
+    deriveFromPlatformNodePool: {
+      enabled: true,
+      nodePoolId: "np-missing",
+    },
+  }));
+  writeFileSync(missingSourceFakeSdk, `
+const calls = [];
+async function persist() {
+  const { writeFileSync } = await import("node:fs");
+  writeFileSync(process.env.TEST_REAL_TKE_MISSING_SOURCE_FAKE_SDK_LOG, JSON.stringify(calls, null, 2));
+}
+class TkeClient {
+  async DescribeClusterNodePoolDetail(request) {
+    calls.push({ api: "DescribeClusterNodePoolDetail", request });
+    await persist();
+    const error = new Error("related node pool query err(get nodepool 'np-missing' failed: [E501001 DBRecordNotFound] record not found)");
+    error.code = "DBRecordNotFound";
+    throw error;
+  }
+  async DescribeClusterNodePools(request) {
+    calls.push({ api: "DescribeClusterNodePools", request });
+    await persist();
+    return { NodePoolSet: [{
+      NodePoolId: "np-platform-candidate",
+      Name: "medopl-platform-service",
+      LifeState: "normal",
+      NodeCountSummary: { AutoscalingAdded: { Total: 1, Normal: 1 }, ManuallyAdded: { Total: 0, Normal: 0 } },
+      Labels: [{ Name: "medopl.io/pool", Value: "platform" }],
+      TagSpecification: { Tags: [{ Key: "medopl.io/pool", Value: "platform" }] },
+    }] };
+  }
+  async CreateClusterNodePool(request) {
+    calls.push({ api: "CreateClusterNodePool", request });
+    await persist();
+    return { NodePoolId: "np-should-not-create" };
+  }
+}
+class AsClient {}
+class CvmClient {}
+export default {
+  tke: { v20180525: { Client: TkeClient } },
+  as: { v20180419: { Client: AsClient } },
+  cvm: { v20170312: { Client: CvmClient } },
+};
+`);
+  const missingSource = run(["--operation", "real_tke_runtime_node_lifecycle", "--execute", "--confirm-current-session-authorization"], {
+    ...baseEnv,
+    V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_FILE: missingSourcePlan,
+    V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_SDK_MODULE: missingSourceFakeSdk,
+    TEST_REAL_TKE_MISSING_SOURCE_FAKE_SDK_LOG: missingSourceLog,
+  });
+  assert.notEqual(missingSource.status, 0, "real_tke_missing_source_pool_must_fail_closed");
+  const missingSourcePayload = JSON.parse(missingSource.stdout);
+  assert.equal(
+    missingSourcePayload.summary.blocker,
+    "production_goal_real_tke_platform_node_pool_not_found",
+    "real_tke_missing_source_pool_blocker",
+  );
+  assert.equal(
+    missingSourcePayload.summary.sourceNodePoolRef,
+    "TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID",
+    "real_tke_missing_source_pool_ref",
+  );
+  assert.deepEqual(
+    missingSourcePayload.summary.candidateNodePools.map((item) => item.nodePoolRef),
+    ["np-platform-candidate"],
+    "real_tke_missing_source_pool_candidates",
+  );
+  assertNoSensitiveText(missingSource.stdout + missingSource.stderr, "real_tke_missing_source");
+  const missingSourceCalls = JSON.parse(readFileSync(missingSourceLog, "utf8"));
+  assert.deepEqual(
+    missingSourceCalls.map((call) => call.api),
+    ["DescribeClusterNodePoolDetail", "DescribeClusterNodePools"],
+    "real_tke_missing_source_must_not_create_before_valid_source_pool",
+  );
+
   const buildCheck = parseJson(run(["--operation", "build_push", "--check-config"], baseEnv), "build_check_config");
   assert.equal(buildCheck.summary.requiredEnvMissing.length, 0, "build_required_env");
   assert.equal(buildCheck.summary.requiredPathMissing.length, 0, "build_required_paths");
