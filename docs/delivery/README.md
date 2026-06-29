@@ -40,12 +40,16 @@ node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-tr
 - **Run**：确认计划后执行 `npm run test:run-plan`，runner 只执行 `recommendedCommands`。不自动执行 `authorizedCommands`，不执行 cloud/live/deploy/kubectl，也不把 future authorized profile 写成当前已经落地。
 - **Report/Completion Gate**：report、`cannotClaim` 和 preflight 结果都是完成判断的一部分；没有这些输出，只能说明计划存在，不能说明闭环或 production 级完成。
 
+- **scoped profile**：小修、复现问题和单 surface 调试先用 `npm run test:run-plan -- --profile scoped --files <path> --dry-run --json`，确认计划后再执行 `npm run test:run-plan -- --profile scoped --files <path>`。`--profile scoped` 只跑 changed-file surface 的 targeted commands，不能替代 review、landing、release 或 deploy 证明。
+- **changed-surface profile**：默认 review / landing 计划使用 `--profile changed-surface`，保留 main lane、fast lane、lane registry gate 和 targeted commands，避免局部修复绕过 trunk 前常规验证。
+- **full-local profile**：大改动、release candidate、deploy 前本地证明使用 `--profile full-local`，在 changed-surface 基础上叠加 local regression 和 local release-candidate commands。它不授权真实云、kubectl、deploy、build/push 或 live-test。
+
 - **main lane**：面向默认产品主线的基础 gate，默认 base 覆盖 `test:health`、`test:smoke` 和 `test:contract`；`test:regression` 由相关 surface 或 full/local RC 触发。
 - **targeted lane**：按 discovery 命中的改动 surface 选最小相关面；例如前端改动看 `test:frontend`，后端改动看 `test:backend`，runtime / gateway 改动看 `test:runtime`，release / claim 边界改动看 `test:release`，治理或 policy/discovery 改动看 `test:hygiene`。
 - **full/local RC lane**：发布前或大改动时跑更完整的本地 RC / release-candidate 验证，至少覆盖 main lane，并补 `verify:local-release-candidate`、`verify:golden-path` 和与变更面相关的 targeted lane。
 - **authorized lane**：只有在显式授权包存在时才进入；它只代表受控 cloud / provider / mutation 边界，不自动等于真实云可用，也不自动等于 production。
 
-正式 review 前，开发者至少应先跑 `npm run test:run-plan -- --dry-run --json`，查看 `changedFiles`、`matchedSurfaces`、`environments`、`authorizedEnvironments`、`reasons`、`recommendedCommands`、`authorizedCommands`、`preflight` 和 `cannotClaim`，再跑 `npm run test:run-plan` 执行本地推荐命令；发布或大改动时，再提升到 full/local RC lane。local / full / RC 证明的是本地或受控环境下的可交付性，不是 production claim。authorized cloud lane 只授予被写明的授权范围，不授予真实云、deploy、kubectl 或 live-test 的默认权限，也不会被该本地动态测试系统自动执行。
+小修和问题复现可以先跑 `--profile scoped --files <path>` 缩短反馈环；正式 review 前，开发者至少应回到 `--profile changed-surface`，查看 `changedFiles`、`matchedSurfaces`、`environments`、`authorizedEnvironments`、`reasons`、`recommendedCommands`、`authorizedCommands`、`preflight` 和 `cannotClaim`，再跑 run-plan 执行本地推荐命令；发布或大改动时，再提升到 `--profile full-local` 或 full/local RC lane。local / full / RC 证明的是本地或受控环境下的可交付性，不是 production claim。authorized cloud lane 只授予被写明的授权范围，不授予真实云、deploy、kubectl 或 live-test 的默认权限，也不会被该本地动态测试系统自动执行。
 
 ## Worktree Slice Flow
 

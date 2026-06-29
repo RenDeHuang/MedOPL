@@ -103,6 +103,9 @@ for (const command of [
 
 for (const expected of [
   "Test Policy -> Discovery -> Preflight -> Run -> Report/Completion Gate",
+  "`--profile scoped`",
+  "`--profile changed-surface`",
+  "`--profile full-local`",
   "`npm run test:run-plan`",
   "`recommendedCommands`",
   "`authorizedCommands`",
@@ -117,6 +120,9 @@ for (const expected of [
 }
 for (const expected of [
   "Test Policy -> Discovery -> Preflight -> Run -> Report/Completion Gate",
+  "`--profile scoped`",
+  "`--profile changed-surface`",
+  "`--profile full-local`",
   "`npm run test:run-plan`",
   "`recommendedCommands`",
   "`authorizedCommands`",

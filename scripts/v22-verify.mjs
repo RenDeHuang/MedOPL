@@ -177,7 +177,7 @@ function planForOptions({ options, base }) {
   const explicitFiles = csvOption(options.files);
   const changedFiles = explicitFiles.length > 0 ? explicitFiles : changedFilesSince(base);
   const profile = String(options.profile || "changed-surface");
-  const allowedProfiles = new Set(["changed-surface", "full-local"]);
+  const allowedProfiles = new Set(["scoped", "changed-surface", "full-local"]);
   if (!allowedProfiles.has(profile)) throw new Error(`unknown_plan_profile:${profile}`);
   const planned = planCommandsForFiles(changedFiles, { profile });
   return {
@@ -608,8 +608,8 @@ function printUsage() {
     "Usage:",
     "  node scripts/v22-verify.mjs list [--json]",
     "  node scripts/v22-verify.mjs active-platform [--quick] [--json]",
-    "  node scripts/v22-verify.mjs plan [--base origin/recovery/platform-v22-trunk] [--files a,b] [--profile changed-surface|full-local] [--json]",
-    "  node scripts/v22-verify.mjs run-plan [--base origin/recovery/platform-v22-trunk] [--files a,b] [--profile changed-surface|full-local] [--dry-run] [--include-authorized] [--json]",
+    "  node scripts/v22-verify.mjs plan [--base origin/recovery/platform-v22-trunk] [--files a,b] [--profile scoped|changed-surface|full-local] [--json]",
+    "  node scripts/v22-verify.mjs run-plan [--base origin/recovery/platform-v22-trunk] [--files a,b] [--profile scoped|changed-surface|full-local] [--dry-run] [--include-authorized] [--json]",
     "  node scripts/v22-verify.mjs cloud-release-candidate [--base origin/recovery/platform-v22-trunk] [--receipt-manifest .runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json] [--json]",
     "  node scripts/v22-verify.mjs production-complete-candidate [--base origin/recovery/platform-v22-trunk] [--receipt-manifest .runtime/v22-cloud-authorization/run-v22-001/receipt-manifest.json] [--json]",
     "  node scripts/v22-verify.mjs current [--base origin/recovery/platform-v22-trunk] [--dry-run] [--json]",

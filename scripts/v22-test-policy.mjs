@@ -764,7 +764,7 @@ export function planCommandsForFiles(files, { profile = "changed-surface", exist
   const matchedSurfaces = [];
   const environments = [];
   const authorizedEnvironments = [];
-  const recommendedCommands = [...TEST_PLAN_BASE_COMMANDS];
+  const recommendedCommands = profile === "scoped" ? [] : [...TEST_PLAN_BASE_COMMANDS];
   const authorizedCommands = [];
   const cannotClaim = [...TEST_PLAN_CANNOT_CLAIM];
   const reasons = [];
