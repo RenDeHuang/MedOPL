@@ -95,6 +95,8 @@ export function evaluateReview({
     changedStatuses,
     sliceAdmission,
     lineBudgetDiff,
+    repoRoot,
+    skipCommercialLaunchFreezeAdmission: closeoutOnly,
   }));
 
   if (retiredChangePathWrites.length > 0) findings.push({ code: "retired_changes_path_write", severity: "blocker", files: retiredChangePathWrites });

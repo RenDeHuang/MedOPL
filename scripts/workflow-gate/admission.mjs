@@ -1,6 +1,8 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
+const commercialLaunchFreezeMatrixPath = "contracts/medopl-commercial-launch-freeze-matrix.json";
+
 function sanitizeSliceId(sliceId) {
   return String(sliceId || "").trim().replace(/[^a-zA-Z0-9._-]+/gu, "-").replace(/^-+|-+$/gu, "");
 }
@@ -24,6 +26,39 @@ function fileAllowedByAdmission(file, admission) {
   return allowedPaths.some((pattern) => pathMatchesAdmissionPattern(file, pattern));
 }
 
+function readCommercialLaunchFreezeMatrix(repoRoot) {
+  const matrixPath = path.join(repoRoot, commercialLaunchFreezeMatrixPath);
+  if (!existsSync(matrixPath)) return null;
+  return JSON.parse(readFileSync(matrixPath, "utf8"));
+}
+
+function commercialLaunchSurfaceIds(freezeMatrix) {
+  return (freezeMatrix?.commercial_launch_freeze_matrix?.surfaces || [])
+    .map((surface) => String(surface?.id || "").trim())
+    .filter(Boolean);
+}
+
+function commercialLaunchRequiredFields(freezeMatrix) {
+  return (freezeMatrix?.new_surface_admission?.required_fields || [])
+    .map((field) => String(field || "").trim())
+    .filter(Boolean);
+}
+
+function isCommercialLaunchFile(file) {
+  return [
+    /^services\/portal\/frontend\/src\/app\/pages(?:\/|$)/u,
+    /^services\/portal\/frontend\/src\/app\/components(?:\/|$)/u,
+    /^services\/portal\/frontend\/src\/app\/routes\.tsx$/u,
+    /^services\/portal\/frontend\/src\/app\/components\/Layout\.tsx$/u,
+    /^contracts\/medopl-commercial-launch-freeze-matrix\.json$/u,
+    /^contracts\/medopl-portal-(?:page-state-matrix|interaction-flow-contract|ui-quality-contract)\.json$/u,
+    /^contracts\/medopl-(?:product-profile|api-contract|billing-ledger-contract|release-boundary|production-receipt-boundary)\.json$/u,
+    /^docs\/(?:active|product|specs)\/README\.md$/u,
+    /^tests\/frontend\/frontend-test-v22-portal-page-state-matrix\.mjs$/u,
+    /^tests\/regression\/portal\/regression-test-v22-portal-resource-control-ui-browser\.mjs$/u,
+  ].some((pattern) => pattern.test(file));
+}
+
 export function readSliceAdmission(repoRoot, sliceId) {
   if (!sliceId || sliceId === true) return null;
   const safeSliceId = sanitizeSliceId(sliceId);
@@ -39,10 +74,53 @@ export function evaluateSliceAdmission({
   changedStatuses = new Map(),
   sliceAdmission,
   lineBudgetDiff = {},
+  repoRoot = process.cwd(),
+  skipCommercialLaunchFreezeAdmission = false,
 } = {}) {
-  if (!sliceAdmission) return [];
   const normalizedFiles = changedFiles.map((file) => String(file || "").replaceAll("\\", "/").replace(/^\.\//, "")).filter(Boolean);
   const findings = [];
+  const commercialLaunchFiles = normalizedFiles.filter(isCommercialLaunchFile);
+  if (!skipCommercialLaunchFreezeAdmission && commercialLaunchFiles.length > 0) {
+    const freezeMatrix = readCommercialLaunchFreezeMatrix(repoRoot);
+    const availableSurfaces = commercialLaunchSurfaceIds(freezeMatrix);
+    const requiredFields = commercialLaunchRequiredFields(freezeMatrix);
+    if (!sliceAdmission) {
+      findings.push({
+        code: "commercial_launch_freeze_admission_missing",
+        severity: "blocker",
+        files: commercialLaunchFiles,
+        requiredFields,
+        availableSurfaces,
+        matrix: commercialLaunchFreezeMatrixPath,
+      });
+    } else {
+      const missing = requiredFields.filter((field) => {
+        const value = sliceAdmission[field];
+        return Array.isArray(value) ? value.length === 0 : !String(value || "").trim();
+      });
+      if (missing.length > 0) {
+        findings.push({
+          code: "commercial_launch_freeze_admission_incomplete",
+          severity: "blocker",
+          files: commercialLaunchFiles,
+          missing,
+          requiredFields,
+          matrix: commercialLaunchFreezeMatrixPath,
+        });
+      }
+      if (sliceAdmission.freeze_surface && !availableSurfaces.includes(sliceAdmission.freeze_surface)) {
+        findings.push({
+          code: "commercial_launch_freeze_surface_unknown",
+          severity: "blocker",
+          files: commercialLaunchFiles,
+          freezeSurface: sliceAdmission.freeze_surface,
+          availableSurfaces,
+          matrix: commercialLaunchFreezeMatrixPath,
+        });
+      }
+    }
+  }
+  if (!sliceAdmission) return findings;
   const sliceType = sliceAdmission.slice_type || "product";
 
   const forbiddenByAdmission = normalizedFiles.filter((file) =>

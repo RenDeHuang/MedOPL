@@ -231,6 +231,118 @@ assert.equal(
   "product_slice_allowed_owner_paths_must_not_raise_slice_findings",
 );
 
+const reviewCommercialLaunchWithoutFreezeAdmission = evaluateReview({
+  base: "origin/recovery/platform-v22-trunk",
+  changedFiles: [
+    "services/portal/frontend/src/app/pages/Overview.tsx",
+    "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+  ],
+  missingLocalCommandReferences: [],
+});
+assert.equal(reviewCommercialLaunchWithoutFreezeAdmission.ok, false, "commercial_launch_change_without_freeze_admission_must_block");
+const missingFreezeAdmission = reviewCommercialLaunchWithoutFreezeAdmission.findings.find((finding) =>
+  finding.code === "commercial_launch_freeze_admission_missing");
+assert(missingFreezeAdmission, "commercial_launch_missing_freeze_admission_finding_missing");
+assert(
+  missingFreezeAdmission.files.includes("services/portal/frontend/src/app/pages/Overview.tsx"),
+  "commercial_launch_missing_freeze_admission_must_name_changed_surface_file",
+);
+assert(
+  missingFreezeAdmission.requiredFields.includes("freeze_surface"),
+  "commercial_launch_missing_freeze_admission_must_name_required_fields",
+);
+assert(
+  missingFreezeAdmission.availableSurfaces.includes("page_state_matrix"),
+  "commercial_launch_missing_freeze_admission_must_expose_available_surfaces",
+);
+
+const incompleteCommercialLaunchAdmission = {
+  slice_type: "product",
+  owner_surface: "portal_frontend",
+  user_visible_purpose: "tighten_resource_overview_state_copy",
+  freeze_surface: "page_state_matrix",
+  regression_gate: "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+};
+const reviewCommercialLaunchIncompleteFreezeAdmission = evaluateReview({
+  base: "origin/recovery/platform-v22-trunk",
+  changedFiles: [
+    "services/portal/frontend/src/app/pages/Overview.tsx",
+    "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+  ],
+  sliceAdmission: incompleteCommercialLaunchAdmission,
+  missingLocalCommandReferences: [],
+});
+assert.equal(reviewCommercialLaunchIncompleteFreezeAdmission.ok, false, "commercial_launch_incomplete_freeze_admission_must_block");
+const incompleteFreezeAdmission = reviewCommercialLaunchIncompleteFreezeAdmission.findings.find((finding) =>
+  finding.code === "commercial_launch_freeze_admission_incomplete");
+assert(incompleteFreezeAdmission, "commercial_launch_incomplete_freeze_admission_finding_missing");
+assert(
+  incompleteFreezeAdmission.missing.includes("state_machine"),
+  "commercial_launch_incomplete_freeze_admission_must_require_state_machine",
+);
+assert(
+  incompleteFreezeAdmission.missing.includes("backend_truth"),
+  "commercial_launch_incomplete_freeze_admission_must_require_backend_truth",
+);
+assert(
+  incompleteFreezeAdmission.missing.includes("receipt_or_cannot_claim"),
+  "commercial_launch_incomplete_freeze_admission_must_require_receipt_or_cannot_claim",
+);
+
+const invalidCommercialLaunchAdmission = {
+  slice_type: "product",
+  owner_surface: "portal_frontend",
+  user_visible_purpose: "tighten_resource_overview_state_copy",
+  freeze_surface: "unknown_surface",
+  state_machine: "loading_empty_ready_blocked_failed",
+  backend_truth: "contracts/medopl-portal-page-state-matrix.json",
+  receipt_or_cannot_claim: "cannot_claim_production_complete",
+  regression_gate: "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+};
+const reviewCommercialLaunchInvalidFreezeAdmission = evaluateReview({
+  base: "origin/recovery/platform-v22-trunk",
+  changedFiles: [
+    "services/portal/frontend/src/app/pages/Overview.tsx",
+    "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+  ],
+  sliceAdmission: invalidCommercialLaunchAdmission,
+  missingLocalCommandReferences: [],
+});
+assert.equal(reviewCommercialLaunchInvalidFreezeAdmission.ok, false, "commercial_launch_invalid_freeze_surface_must_block");
+const invalidFreezeSurface = reviewCommercialLaunchInvalidFreezeAdmission.findings.find((finding) =>
+  finding.code === "commercial_launch_freeze_surface_unknown");
+assert(invalidFreezeSurface, "commercial_launch_invalid_freeze_surface_finding_missing");
+assert.equal(invalidFreezeSurface.freezeSurface, "unknown_surface", "commercial_launch_invalid_freeze_surface_mismatch");
+assert(
+  invalidFreezeSurface.availableSurfaces.includes("visual_grammar"),
+  "commercial_launch_invalid_freeze_surface_must_expose_available_surfaces",
+);
+
+const completeCommercialLaunchAdmission = {
+  slice_type: "product",
+  owner_surface: "portal_frontend",
+  user_visible_purpose: "tighten_resource_overview_state_copy",
+  freeze_surface: "page_state_matrix",
+  state_machine: "loading_empty_ready_blocked_failed",
+  backend_truth: "contracts/medopl-portal-page-state-matrix.json",
+  receipt_or_cannot_claim: "cannot_claim_production_complete",
+  regression_gate: "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+};
+const reviewCommercialLaunchAllowed = evaluateReview({
+  base: "origin/recovery/platform-v22-trunk",
+  changedFiles: [
+    "services/portal/frontend/src/app/pages/Overview.tsx",
+    "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+  ],
+  sliceAdmission: completeCommercialLaunchAdmission,
+  missingLocalCommandReferences: [],
+});
+assert.equal(
+  reviewCommercialLaunchAllowed.findings.some((finding) => finding.code?.startsWith("commercial_launch_freeze_")),
+  false,
+  "commercial_launch_complete_freeze_admission_must_not_raise_freeze_findings",
+);
+
 const cloudAdmission = {
   slice_type: "cloud",
   owner_surface: "cloud",
