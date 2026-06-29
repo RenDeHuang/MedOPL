@@ -4,7 +4,8 @@ import { RoleProvider } from "./contexts/RoleContext";
 import { fetchCurrentUser } from "../api/portal/commercial";
 
 export default function App() {
-  if (typeof window !== "undefined" && window.location.pathname === "/login") {
+  const pathname = typeof window !== "undefined" ? window.location.pathname : "";
+  if (pathname === "/" || pathname === "/login") {
     return <RouterProvider router={router} />;
   }
 

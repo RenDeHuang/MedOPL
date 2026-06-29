@@ -49,12 +49,13 @@ export const router = createBrowserRouter([
   },
   {
     path: "/",
+    element: <Navigate to="/login" replace />,
+  },
+  {
+    path: "/",
     lazy: layoutRoute,
     hydrateFallbackElement: <div className="min-h-screen bg-white" />,
     children: [
-      // Redirect root to overview
-      { index: true, element: <Navigate to="/overview" replace /> },
-
       // 普通用户路由
       { path: "overview", lazy: overviewRoute },
       { path: "packages", lazy: packagesPurchaseRoute, handle: { journeys: journeysForRoute("/packages") } },

@@ -111,6 +111,26 @@ async function assertNoGlobalHorizontalOverflow(page, label) {
   );
 }
 
+async function assertProductionAuthEntryVisible(page, label) {
+  const bodyText = await page.locator("body").innerText();
+  assert(bodyText.includes("登录你的 MedOPL 账户"), `${label}_login_subtitle_missing`);
+  assert(bodyText.includes("邮箱"), `${label}_email_field_missing`);
+  assert(bodyText.includes("密码"), `${label}_password_field_missing`);
+  assert(bodyText.includes("忘记密码？"), `${label}_forgot_password_action_missing`);
+  assert(bodyText.includes("还没有账户？"), `${label}_register_prompt_missing`);
+  assert(bodyText.includes("免费注册"), `${label}_register_action_missing`);
+  assert(bodyText.includes("登录"), `${label}_primary_action_missing`);
+  assert(bodyText.includes("owner 创建或批准 MedOPL 账号"), `${label}_owner_approval_missing`);
+  assert(bodyText.includes("按需使用算力，弹性存储数据"), `${label}_figma_brand_panel_missing`);
+  assert(bodyText.includes("计算资源"), `${label}_compute_card_missing`);
+  assert(bodyText.includes("存储空间"), `${label}_storage_card_missing`);
+  assert(bodyText.includes("费用与用量"), `${label}_billing_card_missing`);
+  assert.equal(bodyText.includes("张伟"), false, `${label}_must_not_show_mock_user`);
+  assert.equal(bodyText.includes("Chat"), false, `${label}_must_not_show_chat_copy`);
+  assert.equal(bodyText.includes("SecretId"), false, `${label}_must_not_show_cloud_secret_copy`);
+  assert.equal(bodyText.includes("kubeconfig"), false, `${label}_must_not_show_kubeconfig_copy`);
+}
+
 function badConsoleMessages(messages) {
   return messages.filter((message) => {
     if (message.includes("[vite] connected")) return false;
@@ -196,23 +216,7 @@ try {
     await page.goto(`${frontendBaseUrl}/login`, { waitUntil: "domcontentloaded" });
     await page.waitForSelector("text=欢迎回来", { timeout: 30000 });
     await page.waitForTimeout(1500);
-    const bodyText = await page.locator("body").innerText();
-    assert(bodyText.includes("登录你的 MedOPL 账户"), "production_auth_entry_login_subtitle_missing");
-    assert(bodyText.includes("邮箱"), "production_auth_entry_email_field_missing");
-    assert(bodyText.includes("密码"), "production_auth_entry_password_field_missing");
-    assert(bodyText.includes("忘记密码？"), "production_auth_entry_forgot_password_action_missing");
-    assert(bodyText.includes("还没有账户？"), "production_auth_entry_register_prompt_missing");
-    assert(bodyText.includes("免费注册"), "production_auth_entry_register_action_missing");
-    assert(bodyText.includes("登录"), "production_auth_entry_primary_action_missing");
-    assert(bodyText.includes("owner 创建或批准 MedOPL 账号"), "production_auth_entry_owner_approval_missing");
-    assert(bodyText.includes("按需使用算力，弹性存储数据"), "production_auth_entry_figma_brand_panel_missing");
-    assert(bodyText.includes("计算资源"), "production_auth_entry_compute_card_missing");
-    assert(bodyText.includes("存储空间"), "production_auth_entry_storage_card_missing");
-    assert(bodyText.includes("费用与用量"), "production_auth_entry_billing_card_missing");
-    assert.equal(bodyText.includes("张伟"), false, "production_auth_entry_must_not_show_mock_user");
-    assert.equal(bodyText.includes("Chat"), false, "production_auth_entry_must_not_show_chat_copy");
-    assert.equal(bodyText.includes("SecretId"), false, "production_auth_entry_must_not_show_cloud_secret_copy");
-    assert.equal(bodyText.includes("kubeconfig"), false, "production_auth_entry_must_not_show_kubeconfig_copy");
+    await assertProductionAuthEntryVisible(page, "production_auth_entry");
     assert.equal(
       failedRequests.some((message) => message.includes("/api/me")),
       false,
@@ -232,6 +236,22 @@ try {
     const primaryAction = page.getByRole("button", { name: "登录" });
     const primaryBox = await primaryAction.boundingBox();
     assert(primaryBox && primaryBox.width >= 44 && primaryBox.height >= 44, `production_auth_entry_primary_action_touch_target:${JSON.stringify(primaryBox)}`);
+
+    consoleMessages.length = 0;
+    failedRequests.length = 0;
+    navigations.length = 0;
+    await page.setViewportSize({ width: 1440, height: 920 });
+    await page.goto(`${frontendBaseUrl}/`, { waitUntil: "domcontentloaded" });
+    await page.waitForSelector("text=欢迎回来", { timeout: 30000 });
+    await page.waitForTimeout(1500);
+    await assertProductionAuthEntryVisible(page, "production_root_auth_entry");
+    assert.equal(page.url(), `${frontendBaseUrl}/login`, `production_root_auth_entry_url:${page.url()}`);
+    assert.equal(
+      failedRequests.some((message) => message.includes("/api/me")),
+      false,
+      `production_root_auth_entry_must_not_fetch_me_or_loop:${JSON.stringify(failedRequests)}`,
+    );
+    assert.deepEqual(badConsoleMessages(consoleMessages), [], `production_root_auth_entry_console_must_be_clean:${JSON.stringify(consoleMessages)}`);
   });
 
   console.log(JSON.stringify({
