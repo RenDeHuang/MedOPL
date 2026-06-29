@@ -528,6 +528,7 @@
         "node tests/health/health-check-v22-dynamic-test-run-plan.mjs",
         "node tests/health/health-check-v22-journey-product-evidence-and-test-weight.mjs",
         "node tests/health/health-check-v22-production-receipt-boundary.mjs",
+        "node tests/health/health-check-v22-problem-driven-development-lifecycle.mjs",
         "node tests/health/health-check-v22-line-budget-gate.mjs",
         "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
         "node tests/health/health-check-v22-repo-hygiene-gate.mjs",
@@ -577,6 +578,7 @@
         "node tests/health/health-check-v22-dynamic-test-run-plan.mjs",
         "node tests/health/health-check-v22-journey-product-evidence-and-test-weight.mjs",
         "node tests/health/health-check-v22-production-receipt-boundary.mjs",
+        "node tests/health/health-check-v22-problem-driven-development-lifecycle.mjs",
         "node tests/health/health-check-v22-line-budget-gate.mjs",
         "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
         "node tests/health/health-check-v22-repo-hygiene-gate.mjs",
@@ -738,6 +740,7 @@
         "node tests/health/health-check-v22-dynamic-test-run-plan.mjs",
         "node tests/health/health-check-v22-journey-product-evidence-and-test-weight.mjs",
         "node tests/health/health-check-v22-production-receipt-boundary.mjs",
+        "node tests/health/health-check-v22-problem-driven-development-lifecycle.mjs",
         "node tests/health/health-check-v22-line-budget-gate.mjs",
         "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
         "node tests/health/health-check-v22-repo-hygiene-gate.mjs",
@@ -842,5 +845,19 @@
       ]
     }
   ],
-  "branch_override_suites": []
+  "branch_override_suites": [],
+  "problem_driven_development_lifecycle": {
+    "contract": "contracts/medopl-problem-driven-development-lifecycle-contract.json",
+    "gate": "tests/health/health-check-v22-problem-driven-development-lifecycle.mjs",
+    "raw_evidence_git_truth": false,
+    "process_truth": "issue_or_runtime_state",
+    "lifecycle_states": [
+      "observed",
+      "reproducible",
+      "fixed",
+      "institutionalized",
+      "cleared"
+    ],
+    "closeout_asset_policy": "source_test_contract_boundary_or_compact_history_only_then_periodic_cleanup"
+  }
 }

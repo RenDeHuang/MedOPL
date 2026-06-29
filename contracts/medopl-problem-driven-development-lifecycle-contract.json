@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "medopl_problem_driven_development_lifecycle_contract": {
+    "owner": "MedOPL Engineering",
+    "purpose": "problem_driven_development_without_repo_bloat",
+    "state": "active",
+    "authority_boundary": {
+      "problem_process_truth": "issue_or_runtime_state",
+      "repo_truth": "source_tests_contracts_small_history_summary",
+      "raw_evidence_git_truth": false,
+      "raw_evidence_sink": ".runtime/problem-driven-development"
+    },
+    "reproducible_problem": {
+      "required_fields": [
+        "journey_id",
+        "preconditions",
+        "steps_to_reproduce",
+        "expected_result",
+        "actual_result",
+        "evidence_pointer",
+        "severity",
+        "environment"
+      ],
+      "journey_id_source": "contracts/medopl-commercial-launch-product-contract-matrix.json",
+      "observation_without_required_fields": "not_reproducible"
+    },
+    "dedupe_key": {
+      "fields": [
+        "journey_id",
+        "invariant_violated",
+        "failure_mode",
+        "likely_root_cause"
+      ],
+      "root_cause_optional_until_triage": true,
+      "missing_root_cause_value": "unknown_pending_triage"
+    },
+    "repeat_thresholds": {
+      "same_key_within_30_days": 2,
+      "same_key_within_90_days": 3,
+      "single_occurrence_escalates_for": [
+        "P0",
+        "P1"
+      ]
+    },
+    "lifecycle_states": [
+      "observed",
+      "reproducible",
+      "fixed",
+      "institutionalized",
+      "cleared"
+    ],
+    "state_rules": {
+      "observed": {
+        "repo_truth_allowed": false,
+        "allowed_sink": "issue_or_runtime_state"
+      },
+      "reproducible": {
+        "minimum_long_lived_asset": "minimal_regression_test_if_core_journey"
+      },
+      "fixed": {
+        "requires_legacy_retirement_check": true,
+        "requires_targeted_regression": true
+      },
+      "institutionalized": {
+        "allowed_only_when": "repeated_or_p0_p1",
+        "allowed_assets": [
+          "contract",
+          "schema",
+          "gate",
+          "runtime_guard"
+        ]
+      },
+      "cleared": {
+        "requires_transient_evidence_removed": true,
+        "requires_closeout_assets_reviewed": true
+      }
+    },
+    "closeout_assets": {
+      "allowed_long_lived_assets": [
+        "source_fix",
+        "minimal_regression_test",
+        "required_contract_or_schema_constraint",
+        "cannot_claim_or_owner_boundary",
+        "compact_history_summary_when_product_relevant"
+      ],
+      "forbidden_long_lived_assets": [
+        "raw_screenshot",
+        "raw_trace",
+        "temporary_debug_log",
+        "one_off_reproduction_payload",
+        "full_issue_transcript",
+        "closeout_evidence_only_test"
+      ],
+      "long_lived_assets_are_permanent": false,
+      "cleanup_policy": "merge_delete_or_fold_when_owner_or_journey_retires"
+    },
+    "cadence": {
+      "weekly": "triage_observed_reproducible_duplicate_not_a_bug",
+      "biweekly": "clear_stale_observed_and_runtime_evidence",
+      "monthly": "merge_or_delete_stale_regression_contract_history_assets",
+      "release": "review_p0_p1_billing_runtime_storage_release_and_cannot_claim"
+    },
+    "cannot_claim": [
+      "every_observed_issue_is_reproducible",
+      "every_fixed_issue_requires_new_contract",
+      "raw_evidence_is_git_truth",
+      "long_lived_assets_are_permanent"
+    ]
+  }
+}

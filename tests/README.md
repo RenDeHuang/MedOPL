@@ -90,6 +90,14 @@ Test lifecycle cleanup gate 是 `node tests/health/health-check-v22-test-lifecyc
 - suite-wrapper entries remain active registry entries or explicit override entries;
 - the zero-compat active surface gate remains in health and local-contract.
 
+## Problem-driven Development Lifecycle
+
+问题驱动开发必须走 `observed -> reproducible -> fixed -> institutionalized -> cleared`。问题过程默认留在 issue / `.runtime`，不能把 raw screenshot、trace、debug log、一次性 reproduction payload 或完整 transcript 写成 git truth。
+
+可复现问题必须绑定 `journey_id`、preconditions、steps、expected/actual result、evidence pointer、severity 和 environment；重复问题按 `journey_id + invariant_violated + failure_mode + likely_root_cause` 去重。只有 repeated 或 P0/P1 问题才能升级为 contract/schema/gate/runtime guard。修复 closeout 后长期资产也必须周期性合并、删除或折叠，不能把 closeout evidence-only test 或历史证明作为 active test 保留。
+
+Problem lifecycle gate 是 `node tests/health/health-check-v22-problem-driven-development-lifecycle.mjs`。机器规则归 `contracts/medopl-problem-driven-development-lifecycle-contract.json` 和 `tests/fixtures/v22/agent-verify-manifest.json#/problem_driven_development_lifecycle`；本 README 只做人读导航。
+
 ## Product Gate Boundary
 
 Product gates must verify machine contracts, API/schema behavior, page-state matrix coverage, runtime/data/release boundary, retired-path protection, manifest consistency and evidence state. They must not assert prose wording as machine truth beyond stable owner/purpose/state/machine-boundary markers that protect taxonomy drift.

@@ -184,6 +184,17 @@ function csvListOption(value, fallback = []) {
   return items.length > 0 ? items : [...fallback];
 }
 
+function affectedJourneysForCurrentGoal(current) {
+  const candidates = [
+    current.goal_lifecycle?.current?.affected_journeys,
+    current.current_leaf?.affected_journeys,
+  ];
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate) && candidate.length > 0) return [...candidate];
+  }
+  return [];
+}
+
 function missingCloseoutFields(closeout, requiredPostMergeFields) {
   return requiredPostMergeFields.filter((field) => {
     if (field === "landed_commit") return !closeout?.landed_commit;
@@ -465,6 +476,7 @@ function generateCloseout({
   const postPushVerification = parseVerificationSummary(verificationSummary);
   const canClaim = csvListOption(canClaimInput, ["landed source change with recorded verification"]);
   const cannotClaim = csvListOption(cannotClaimInput, ["production complete", "external PSP settlement", "ongoing authorization"]);
+  const affectedJourneys = affectedJourneysForCurrentGoal(current);
   const verification = {
     risk_class: current.current_risk_class || "light",
     commands: postPushVerification,
@@ -491,6 +503,7 @@ function generateCloseout({
       landed_commit: landedCommit,
       landing_gate_result: "passed / ff-only landed / pushed",
       post_push_verification: postPushVerification,
+      affected_journeys: affectedJourneys,
       canClaim,
       cannotClaim,
       verification,
