@@ -635,6 +635,7 @@
         "node tests/regression/portal/regression-test-v22-portal-mobile-table-usability.mjs",
         "node tests/regression/portal/regression-test-v22-portal-mobile-usability.mjs",
         "node tests/regression/portal/regression-test-v22-portal-package-surface-isolation.mjs",
+        "node tests/regression/portal/regression-test-v22-portal-production-auth-entry-browser.mjs",
         "node tests/regression/portal/regression-test-v22-portal-role-surface-boundaries.mjs",
         "node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs",
         "node tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs",

@@ -82,6 +82,7 @@ func TestProductionRouterSecurityBoundary(t *testing.T) {
 		t.Fatalf("unauthenticated mutation status = %d body = %s", unauthenticated.Code, unauthenticated.Body.String())
 	}
 	assertSecurityBody(t, unauthenticated, "authentication_required")
+	assertSecurityBody(t, unauthenticated, `"loginUrl":"/login"`)
 
 	crossWorkspace := serveSecurityRequest(
 		router,
@@ -159,6 +160,16 @@ func TestProductionRouterSecurityBoundary(t *testing.T) {
 	}
 	assertSecurityBody(t, webhookOnly, "webhook_signature_required")
 
+}
+
+func TestProductionCurrentUserUnauthenticatedPointsToLoginRoute(t *testing.T) {
+	router := productionRouterForSecurityTest(t)
+	rec := serveSecurityRequest(router, http.MethodGet, "/api/me", "", "", "", "")
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("unauthenticated /api/me status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	assertSecurityBody(t, rec, `"error":"unauthenticated"`)
+	assertSecurityBody(t, rec, `"loginUrl":"/login"`)
 }
 
 func TestProductionSecurityMiddlewareAuthorizesRolesBeforeHandlers(t *testing.T) {
