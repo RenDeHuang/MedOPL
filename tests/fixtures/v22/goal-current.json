@@ -1268,6 +1268,160 @@
       "unscoped production complete"
     ]
   },
+  "commercial_cross_repo_dynamic_current_truth_sync": {
+    "schema_version": 1,
+    "goal_id": "goal-commercial-cross-repo-dynamic-current-truth-sync",
+    "status": "fresh_sync_recorded_fail_closed",
+    "synced_at": "2026-06-29",
+    "operation_boundary": {
+      "cloud_allowed": false,
+      "build_push_image_allowed": false,
+      "deploy_live_test_allowed": false,
+      "secret_read_allowed": false
+    },
+    "repo_identity": {
+      "medopl": {
+        "repo": "RenDeHuang/MedOPL",
+        "branch": "recovery/platform-v22-trunk",
+        "remote_head": "e6d2e7ae54ee3bcb2fd86fd21d56c35492ac7b35",
+        "latest_closeout": {
+          "goal_id": "goal-commercial-current-truth-stale-pointer-cleanup",
+          "commit": "1160301d58d51214c587f84f0560cb52b7df9fef"
+        },
+        "next_recommended_goal": "goal-commercial-release-metadata-rollback-maturity"
+      },
+      "opl_webui": {
+        "repo": "RenDeHuang/OPL-Webui",
+        "branch": "main",
+        "remote_head": "94704dc55b9d689655d6e0a34625e8dd10d73b4a",
+        "latest_closeout": {
+          "goal_id": "gap-registry-compaction-v1",
+          "commit": "94704dc55b9d689655d6e0a34625e8dd10d73b4a"
+        },
+        "next_recommended_goal": "goal-commercial-webui-ha-resilience-error-budget-readiness"
+      }
+    },
+    "ownership_boundary": {
+      "medopl_owns": [
+        "account",
+        "plan",
+        "balance",
+        "quota",
+        "runtime",
+        "storage",
+        "billing_ledger",
+        "statement_reconciliation",
+        "release",
+        "destroy",
+        "stop_billing",
+        "future_payment_psp_truth"
+      ],
+      "opl_webui_owns": [
+        "ordinary_chat",
+        "research_interaction",
+        "task_experience",
+        "page_state",
+        "readonly_medopl_projection_rendering",
+        "deeplink_handoff"
+      ]
+    },
+    "cannot_claim_boundary": {
+      "opl_webui_cannot_claim": [
+        "payment_truth",
+        "billing_truth",
+        "runtime_truth",
+        "storage_truth",
+        "artifact_body_authority"
+      ],
+      "medopl_cannot_claim": [
+        "ordinary_chat_task_ux_ownership",
+        "opl_webui_page_state_ownership",
+        "external_psp_settlement",
+        "all_users_all_tenants",
+        "sla_multi_region_production_complete"
+      ]
+    },
+    "e2e_state_matrix": [
+      {
+        "id": "ordinary_path",
+        "owner": "opl-webui",
+        "runtime_storage_required": false,
+        "required_truth": ["OPL-Webui session/account projection"],
+        "cannot_claim": ["runtime_truth", "storage_truth", "billing_truth"]
+      },
+      {
+        "id": "specialist_blocked_onboarding",
+        "owner": "medopl",
+        "runtime_storage_required": true,
+        "requires_medopl_projection": true,
+        "requires_deeplink": true,
+        "states": [
+          "account not approved",
+          "balance insufficient",
+          "plan missing",
+          "runtime/storage not ready"
+        ]
+      },
+      {
+        "id": "specialist_ready",
+        "owner": "medopl",
+        "runtime_storage_required": true,
+        "ready_requires": [
+          "MedOPL approved account",
+          "MedOPL plan",
+          "MedOPL balance/quota",
+          "MedOPL runtime ready",
+          "MedOPL storage ready"
+        ],
+        "webui_mode": "readonly ready projection plus refs/deeplink continuation"
+      }
+    ],
+    "dynamic_sync_triggers": [
+      "public_contract_changed",
+      "current_truth_or_next_recommended_goal_changed",
+      "can_claim_or_cannot_claim_changed",
+      "payment_psp_billing_runtime_storage_release_boundary_changed",
+      "opl_webui_projection_deeplink_runtime_bridge_changed",
+      "ha_rollback_production_evidence_or_broader_tenant_canary_completed",
+      "live_e2e_evidence_added_or_expired"
+    ],
+    "fail_closed_rule": {
+      "on_mismatch": true,
+      "blocked_actions": ["live_e2e", "rollout", "production_complete_claim"],
+      "mismatch_report_fields": [
+        "ownership_conflict",
+        "claim_inconsistency",
+        "head_mismatch",
+        "contract_field_missing",
+        "cannot_claim_upgraded"
+      ]
+    },
+    "next_live_e2e_prerequisites": [
+      "MedOPL release metadata / rollback maturity",
+      "OPL-Webui HA / resilience / error-budget readiness",
+      "future PSP goal before payment-to-runtime E2E"
+    ],
+    "canClaim": [
+      "dynamic current truth sync matrix exists for MedOPL and OPL-Webui",
+      "owner truth split remains unchanged",
+      "mismatch policy fails closed before live E2E, rollout, or production-complete claims"
+    ],
+    "cannotClaim": [
+      "live E2E executed by this sync",
+      "rollout executed by this sync",
+      "production complete",
+      "external PSP settlement",
+      "all users/all tenants",
+      "SLA/multi-region",
+      "ongoing authorization"
+    ],
+    "raw_evidence_committed": false,
+    "retirement": {
+      "closeout_after_sync": true,
+      "long_term_active_blocker": false,
+      "rerun_policy": "rerun this sync goal or follow-up sync when any dynamic_sync_triggers item changes"
+    }
+  },
   "commercial_runtime_business_closure_goal_gap_map": {
     "schema_version": 1,
     "status": "gap6_local_controlled_business_closure_landed",

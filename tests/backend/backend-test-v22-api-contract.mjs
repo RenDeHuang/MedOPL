@@ -23,6 +23,7 @@ async function readJson(repoPath) {
 }
 
 const apiContract = await readJson("contracts/medopl-api-contract.json");
+const goalCurrent = await readJson("tests/fixtures/v22/goal-current.json");
 const controlplaneServiceSurface = await readRepoGoDir("services/medopl-go-backend/internal/service/controlplane");
 assert.equal(controlplaneServiceSurface.includes("func Test"), false, "api_contract_surface_must_exclude_go_test_files");
 assert.equal(controlplaneServiceSurface.includes("t.Fatalf"), false, "api_contract_surface_must_exclude_go_test_assertions");
@@ -185,6 +186,85 @@ for (const forbiddenClaim of [
 ]) {
   assert(oplWebuiLaunchContract.cannot_claim.includes(forbiddenClaim), `opl_webui_launch_forbidden_claim_missing:${forbiddenClaim}`);
 }
+
+const dynamicSync = apiContract.medopl_api_contract.commercial_cross_repo_dynamic_current_truth_sync;
+assert(dynamicSync, "api_contract_dynamic_cross_repo_sync_missing");
+assert.equal(dynamicSync.goal_id, "goal-commercial-cross-repo-dynamic-current-truth-sync", "dynamic_sync_goal_id_mismatch");
+assert.equal(dynamicSync.mode, "contract_pointer_remote_head_current_truth_readout_validation_gate", "dynamic_sync_mode_mismatch");
+assert.equal(dynamicSync.state, "fresh_sync_recorded_2026-06-29", "dynamic_sync_state_mismatch");
+assert.equal(dynamicSync.operation_boundary.cloud_allowed, false, "dynamic_sync_must_not_allow_cloud");
+assert.equal(dynamicSync.operation_boundary.build_push_image_allowed, false, "dynamic_sync_must_not_allow_build_push");
+assert.equal(dynamicSync.operation_boundary.deploy_live_test_allowed, false, "dynamic_sync_must_not_allow_deploy_live_test");
+assert.equal(dynamicSync.operation_boundary.secret_read_allowed, false, "dynamic_sync_must_not_read_secret");
+assert.equal(dynamicSync.raw_evidence_policy.commits_raw_evidence, false, "dynamic_sync_must_not_commit_raw_evidence");
+assert.equal(dynamicSync.repo_identity.medopl.branch, "recovery/platform-v22-trunk", "dynamic_sync_medopl_branch_mismatch");
+assert.equal(dynamicSync.repo_identity.medopl.remote_head, "e6d2e7ae54ee3bcb2fd86fd21d56c35492ac7b35", "dynamic_sync_medopl_head_mismatch");
+assert.equal(dynamicSync.repo_identity.medopl.latest_closeout.goal_id, "goal-commercial-current-truth-stale-pointer-cleanup", "dynamic_sync_medopl_closeout_mismatch");
+assert.equal(dynamicSync.repo_identity.medopl.next_recommended_goal, "goal-commercial-release-metadata-rollback-maturity", "dynamic_sync_medopl_next_goal_mismatch");
+assert.equal(dynamicSync.repo_identity.opl_webui.branch, "main", "dynamic_sync_webui_branch_mismatch");
+assert.equal(dynamicSync.repo_identity.opl_webui.remote_head, "94704dc55b9d689655d6e0a34625e8dd10d73b4a", "dynamic_sync_webui_head_mismatch");
+assert.equal(dynamicSync.repo_identity.opl_webui.latest_closeout.goal_id, "gap-registry-compaction-v1", "dynamic_sync_webui_closeout_mismatch");
+assert.equal(dynamicSync.repo_identity.opl_webui.next_recommended_goal, "goal-commercial-webui-ha-resilience-error-budget-readiness", "dynamic_sync_webui_next_goal_mismatch");
+for (const owner of ["account", "plan", "balance", "quota", "runtime", "storage", "billing_ledger", "statement_reconciliation", "release", "destroy", "stop_billing", "future_payment_psp_truth"]) {
+  assert(dynamicSync.ownership_boundary.medopl_owns.includes(owner), `dynamic_sync_medopl_owner_missing:${owner}`);
+}
+for (const owner of ["ordinary_chat", "research_interaction", "task_experience", "page_state", "readonly_medopl_projection_rendering", "deeplink_handoff"]) {
+  assert(dynamicSync.ownership_boundary.opl_webui_owns.includes(owner), `dynamic_sync_webui_owner_missing:${owner}`);
+}
+for (const cannotClaim of ["payment_truth", "billing_truth", "runtime_truth", "storage_truth", "artifact_body_authority"]) {
+  assert(dynamicSync.cannot_claim_boundary.opl_webui_cannot_claim.includes(cannotClaim), `dynamic_sync_webui_cannot_claim_missing:${cannotClaim}`);
+}
+for (const cannotClaim of ["ordinary_chat_task_ux_ownership", "opl_webui_page_state_ownership", "external_psp_settlement", "all_users_all_tenants", "sla_multi_region_production_complete"]) {
+  assert(dynamicSync.cannot_claim_boundary.medopl_cannot_claim.includes(cannotClaim), `dynamic_sync_medopl_cannot_claim_missing:${cannotClaim}`);
+}
+const dynamicStates = new Map(dynamicSync.e2e_state_matrix.map((state) => [state.id, state]));
+assert.equal(dynamicStates.get("ordinary_path").runtime_storage_required, false, "dynamic_sync_ordinary_path_must_not_require_runtime_storage");
+assert.equal(dynamicStates.get("specialist_blocked_onboarding").requires_medopl_projection, true, "dynamic_sync_blocked_must_require_projection");
+assert.equal(dynamicStates.get("specialist_blocked_onboarding").requires_deeplink, true, "dynamic_sync_blocked_must_require_deeplink");
+assert.deepEqual(
+  dynamicStates.get("specialist_ready").ready_requires,
+  ["MedOPL approved account", "MedOPL plan", "MedOPL balance/quota", "MedOPL runtime ready", "MedOPL storage ready"],
+  "dynamic_sync_ready_requirements_mismatch",
+);
+for (const trigger of [
+  "public_contract_changed",
+  "current_truth_or_next_recommended_goal_changed",
+  "can_claim_or_cannot_claim_changed",
+  "payment_psp_billing_runtime_storage_release_boundary_changed",
+  "opl_webui_projection_deeplink_runtime_bridge_changed",
+  "ha_rollback_production_evidence_or_broader_tenant_canary_completed",
+  "live_e2e_evidence_added_or_expired",
+]) {
+  assert(dynamicSync.dynamic_sync_triggers.includes(trigger), `dynamic_sync_trigger_missing:${trigger}`);
+}
+assert.equal(dynamicSync.fail_closed_rule.on_mismatch, true, "dynamic_sync_mismatch_must_fail_closed");
+for (const blocked of ["live_e2e", "rollout", "production_complete_claim"]) {
+  assert(dynamicSync.fail_closed_rule.blocked_actions.includes(blocked), `dynamic_sync_fail_closed_action_missing:${blocked}`);
+}
+assert.deepEqual(
+  dynamicSync.next_live_e2e_prerequisites,
+  [
+    "MedOPL release metadata / rollback maturity",
+    "OPL-Webui HA / resilience / error-budget readiness",
+    "future PSP goal before payment-to-runtime E2E",
+  ],
+  "dynamic_sync_next_live_prerequisites_mismatch",
+);
+assert.equal(dynamicSync.retirement.closeout_after_sync, true, "dynamic_sync_must_closeout_after_sync");
+assert.equal(dynamicSync.retirement.long_term_active_blocker, false, "dynamic_sync_must_not_be_long_term_blocker");
+const currentDynamicSync = goalCurrent.commercial_cross_repo_dynamic_current_truth_sync;
+assert(currentDynamicSync, "goal_current_dynamic_cross_repo_sync_missing");
+assert.equal(currentDynamicSync.goal_id, dynamicSync.goal_id, "goal_current_dynamic_sync_goal_id_mismatch");
+assert.equal(currentDynamicSync.repo_identity.medopl.remote_head, dynamicSync.repo_identity.medopl.remote_head, "goal_current_dynamic_sync_medopl_head_mismatch");
+assert.equal(currentDynamicSync.repo_identity.opl_webui.remote_head, dynamicSync.repo_identity.opl_webui.remote_head, "goal_current_dynamic_sync_webui_head_mismatch");
+assert.deepEqual(currentDynamicSync.e2e_state_matrix, dynamicSync.e2e_state_matrix, "goal_current_dynamic_sync_e2e_matrix_mismatch");
+assert.deepEqual(currentDynamicSync.dynamic_sync_triggers, dynamicSync.dynamic_sync_triggers, "goal_current_dynamic_sync_triggers_mismatch");
+assert.deepEqual(currentDynamicSync.fail_closed_rule, dynamicSync.fail_closed_rule, "goal_current_dynamic_sync_fail_closed_rule_mismatch");
+assert.equal(
+  goalCurrent.goal_lifecycle.completed_goals.some((goal) => goal.goal_id === dynamicSync.goal_id),
+  false,
+  "dynamic_sync_must_not_register_completed_goal_before_landing_closeout",
+);
 
 const accountProductization = apiContract.medopl_api_contract.account_productization;
 assert(accountProductization, "api_contract_account_productization_missing");
