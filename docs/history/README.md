@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `goal-scoped-test-profile`
-- latest landed commit: `b5606a55bdd0d665d2831f9d596eb09202d60ffd`
+- latest landed branch: `ci-playwright-workspace-loader-fix`
+- latest landed commit: `706b45ebec8947420de84cae8d243864c0e90bb2`
 - next cursor: `goal-commercial-runtime-storage-billing-business-closure`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`

@@ -35,18 +35,21 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "goal-scoped-test-profile",
-    "landed_commit": "b5606a55bdd0d665d2831f9d596eb09202d60ffd",
+    "branch": "ci-playwright-workspace-loader-fix",
+    "landed_commit": "706b45ebec8947420de84cae8d243864c0e90bb2",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
+      "node tests/health/health-check-v22-journey-product-evidence-and-test-weight.mjs passed",
+      "npm run test:journey-evidence passed",
       "npm run test:run-plan -- --dry-run --json passed",
       "npm run test:run-plan passed",
       "npm run verify passed",
       "npm run test:health passed",
-      "npm run gate:review -- --slice-id goal-scoped-test-profile passed",
-      "npm run repo:bloat -- --diff --slice-id goal-scoped-test-profile passed",
+      "npm run gate:review passed",
       "npm run repo:bloat passed",
-      "npm run line:budget passed"
+      "npm run line:budget passed",
+      "git diff --check passed",
+      "GitHub v22 verify regression lane 28384748165 passed"
     ],
     "affected_journeys": [
       "account_prepare",
@@ -64,31 +67,34 @@
       "opl_webui_runtime_required"
     ],
     "canClaim": [
-      "scoped run-plan profile exists for small fixes and reproducible issue debugging",
-      "changed-surface remains the default landing/review profile",
-      "full-local remains the heavier release/local RC profile",
-      "scoped profile does not auto-run main lane, fast lane or lane registry gate"
+      "GitHub regression lane can load Playwright from the Portal frontend workspace",
+      "journey evidence browser regression uses the same workspace dependency installed by pretest:regression"
     ],
     "cannotClaim": [
       "product behavior changed",
+      "UI changed",
+      "deploy executed",
       "production complete",
       "real cloud executed",
-      "deploy executed",
       "live-test executed",
-      "scoped profile replaces landing/release gates",
-      "all tests are lightweight"
+      "external PSP settlement",
+      "all users/all tenants",
+      "ongoing authorization"
     ],
     "verification": {
       "risk_class": "commercial_billing_boundary",
       "commands": [
+        "node tests/health/health-check-v22-journey-product-evidence-and-test-weight.mjs passed",
+        "npm run test:journey-evidence passed",
         "npm run test:run-plan -- --dry-run --json passed",
         "npm run test:run-plan passed",
         "npm run verify passed",
         "npm run test:health passed",
-        "npm run gate:review -- --slice-id goal-scoped-test-profile passed",
-        "npm run repo:bloat -- --diff --slice-id goal-scoped-test-profile passed",
+        "npm run gate:review passed",
         "npm run repo:bloat passed",
-        "npm run line:budget passed"
+        "npm run line:budget passed",
+        "git diff --check passed",
+        "GitHub v22 verify regression lane 28384748165 passed"
       ],
       "result": "passed"
     },
@@ -102,9 +108,9 @@
     },
     "cleanup_result": {
       "deleted": "none_required",
-      "folded": "scoped changed-surface and full-local test profile rules into v22 verify runner, test policy, health gates, delivery docs, tests docs, and machine cursor",
-      "retained": "changed-surface as default landing profile and full-local as release/local RC profile",
-      "reason": "small fixes need fast targeted feedback while landing and release still require heavier gates",
+      "folded": "Playwright workspace loader closeout into machine cursor and active latest repo closeout",
+      "retained": "frontend workspace pinned Playwright install and runtime browser evidence sink",
+      "reason": "CI regression loader must match pretest regression install owner",
       "next": "goal-commercial-release-metadata-rollback-maturity"
     },
     "retirement": {
@@ -195,7 +201,7 @@
   "current_blockers": [
     "none_for_current_scoped_commercial_business_flow"
   ],
-  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-scoped-test-profile at b5606a55bdd0d665d2831f9d596eb09202d60ffd; it binds goal-driven development to affected_journeys from the Commercial Launch Product Contract Matrix without replacing goals with journeys. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-scoped-test-profile at b5606a55bdd0d665d2831f9d596eb09202d60ffd.",
+  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is ci-playwright-workspace-loader-fix at 706b45ebec8947420de84cae8d243864c0e90bb2; it binds goal-driven development to affected_journeys from the Commercial Launch Product Contract Matrix without replacing goals with journeys. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is ci-playwright-workspace-loader-fix at 706b45ebec8947420de84cae8d243864c0e90bb2.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -771,9 +777,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "goal-scoped-test-profile",
+  "last_landed_branch": "ci-playwright-workspace-loader-fix",
   "last_landed_at": "2026-06-29",
-  "history_latest_branch": "goal-scoped-test-profile",
+  "history_latest_branch": "ci-playwright-workspace-loader-fix",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -1195,8 +1201,8 @@
     },
     "receipt_manifest_artifact_id": "7937559220"
   },
-  "base_trunk_head": "b5606a55bdd0d665d2831f9d596eb09202d60ffd",
-  "last_landed_commit": "b5606a55bdd0d665d2831f9d596eb09202d60ffd",
+  "base_trunk_head": "706b45ebec8947420de84cae8d243864c0e90bb2",
+  "last_landed_commit": "706b45ebec8947420de84cae8d243864c0e90bb2",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
@@ -1951,6 +1957,16 @@
       {
         "goal_id": "goal-scoped-test-profile",
         "landed_commit": "b5606a55bdd0d665d2831f9d596eb09202d60ffd",
+        "status": "completed_retired",
+        "retired_from": [
+          "active_blocker",
+          "current_cursor"
+        ],
+        "evidence_pointer": "docs/history/README.md"
+      },
+      {
+        "goal_id": "ci-playwright-workspace-loader-fix",
+        "landed_commit": "706b45ebec8947420de84cae8d243864c0e90bb2",
         "status": "completed_retired",
         "retired_from": [
           "active_blocker",
