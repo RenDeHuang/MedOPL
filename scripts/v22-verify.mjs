@@ -44,6 +44,7 @@ const LIFECYCLE_REQUIRED_CLOSEOUT_FIELDS = Object.freeze([
   "cannotClaim",
   "verification",
   "retirement",
+  "affected_journeys",
   "next_recommended_goal",
   "next_cursor",
 ]);
@@ -102,6 +103,23 @@ function readRepoText(repoPath) {
 
 function readRepoJsonSync(repoPath) {
   return JSON.parse(readRepoText(repoPath));
+}
+
+function commercialLaunchJourneyIds() {
+  const matrix = readRepoJsonSync("contracts/medopl-commercial-launch-product-contract-matrix.json");
+  return new Set(
+    matrix.commercial_launch_product_contract_matrix.journeys.map((journey) => journey.id),
+  );
+}
+
+function assertAffectedJourneys(value, label, knownJourneyIds) {
+  assert(Array.isArray(value), `${label}_affected_journeys_must_be_list`);
+  assert(value.length > 0, `${label}_affected_journeys_must_not_be_empty`);
+  assert.deepEqual([...new Set(value)], value, `${label}_affected_journeys_must_be_unique`);
+  for (const journeyId of value) {
+    assert.equal(typeof journeyId, "string", `${label}_affected_journey_id_must_be_string`);
+    assert(knownJourneyIds.has(journeyId), `${label}_affected_journey_unknown:${journeyId}`);
+  }
 }
 
 function listTopLevelDirs(repoPath) {
@@ -372,6 +390,7 @@ async function verifyProductionCompleteCandidate({ base, receiptManifestPath = "
 
 async function validateActivePlatform({ manifest, current }) {
   const packageJson = await readJson("package.json");
+  const knownJourneyIds = commercialLaunchJourneyIds();
 
   assert.equal(current.canonical, true, "goal_current_must_be_canonical");
   assert.equal(manifest.canonical, true, "manifest_must_be_canonical");
@@ -398,6 +417,18 @@ async function validateActivePlatform({ manifest, current }) {
   assert.equal(current.goal_lifecycle?.admission?.completed_goals_repeat_forbidden, true, "goal_lifecycle_admission_must_forbid_completed_goal_repeat");
   assert.equal(current.goal_lifecycle?.current?.cursor, current.current_cursor, "goal_lifecycle_current_cursor_mismatch");
   assert.equal(current.goal_lifecycle?.current?.blocker, "none_for_current_scoped_commercial_business_flow", "goal_lifecycle_current_blocker_mismatch");
+  assertAffectedJourneys(current.goal_lifecycle?.current?.affected_journeys, "goal_lifecycle_current", knownJourneyIds);
+  assertAffectedJourneys(current.current_leaf?.affected_journeys, "current_leaf", knownJourneyIds);
+  assert.deepEqual(
+    current.goal_lifecycle.current.affected_journeys,
+    current.current_leaf.affected_journeys,
+    "goal_lifecycle_current_affected_journeys_must_match_current_leaf",
+  );
+  assertAffectedJourneys(current.latest_landed_closeout?.affected_journeys, "latest_closeout", knownJourneyIds);
+  assert(
+    current.goal_lifecycle.closeout_required.includes("affected_journeys"),
+    "goal_lifecycle_closeout_required_must_include_affected_journeys",
+  );
   assert.equal(typeof current.goal_lifecycle?.next_recommended_goal, "string", "goal_lifecycle_next_recommended_goal_missing");
   assert.notEqual(current.goal_lifecycle.next_recommended_goal.trim(), "", "goal_lifecycle_next_recommended_goal_empty");
   assert.equal(current.latest_landed_closeout?.next_recommended_goal, current.goal_lifecycle?.next_recommended_goal, "latest_closeout_next_recommended_goal_mismatch");

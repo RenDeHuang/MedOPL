@@ -37,6 +37,21 @@
     "status": "landed / pushed / post-push verified",
     "branch": "goal-commercial-launch-product-contract-matrix",
     "landed_commit": "63f1986071c26810746b2477c2ef9e1f886724c0",
+    "affected_journeys": [
+      "account_prepare",
+      "account_approval",
+      "credit_balance",
+      "plan_selection",
+      "open_compute_resource",
+      "open_storage_space",
+      "upload_run_artifact",
+      "usage_billing_reconciliation",
+      "enter_opl",
+      "release_compute_resource",
+      "destroy_or_retain_storage",
+      "admin_audit_receipt",
+      "opl_webui_runtime_required"
+    ],
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
       "npm run test:run-plan -- --dry-run --json passed",
@@ -282,6 +297,21 @@
     "stage": "commercial runtime storage billing business closure",
     "cursor_eligible": true,
     "problem": "Prove the commercial business flow account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. Upload billing writeback and storage_destroy billing writeback source fixes are landed; the scoped canary proof is retained as operations substrate without bypassing billing/audit. Future scope expansion or ongoing operations proof requires separate authorization.",
+    "affected_journeys": [
+      "account_prepare",
+      "account_approval",
+      "credit_balance",
+      "plan_selection",
+      "open_compute_resource",
+      "open_storage_space",
+      "upload_run_artifact",
+      "usage_billing_reconciliation",
+      "enter_opl",
+      "release_compute_resource",
+      "destroy_or_retain_storage",
+      "admin_audit_receipt",
+      "opl_webui_runtime_required"
+    ],
     "verification_commands": [
       "node scripts/v22-verify.mjs active-platform --json",
       "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
@@ -1601,6 +1631,21 @@
     "current": {
       "cursor": "goal-commercial-runtime-storage-billing-business-closure",
       "blocker": "none_for_current_scoped_commercial_business_flow",
+      "affected_journeys": [
+        "account_prepare",
+        "account_approval",
+        "credit_balance",
+        "plan_selection",
+        "open_compute_resource",
+        "open_storage_space",
+        "upload_run_artifact",
+        "usage_billing_reconciliation",
+        "enter_opl",
+        "release_compute_resource",
+        "destroy_or_retain_storage",
+        "admin_audit_receipt",
+        "opl_webui_runtime_required"
+      ],
       "active_truth_owner": "docs/active/README.md"
     },
     "completed_goals": [
@@ -1841,6 +1886,7 @@
       "verification",
       "landed_commit",
       "retirement",
+      "affected_journeys",
       "next_recommended_goal"
     ],
     "next_recommended_goal": "goal-commercial-release-metadata-rollback-maturity",

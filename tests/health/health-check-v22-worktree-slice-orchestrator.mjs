@@ -84,6 +84,7 @@ assert.deepEqual(
     "cannotClaim",
     "verification",
     "retirement",
+    "affected_journeys",
     "next_recommended_goal",
     "next_cursor",
   ],

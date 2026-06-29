@@ -53,6 +53,20 @@ const [packageJson, scriptSource, landingCloseoutSource, manifest, current] = aw
   readJson("tests/fixtures/v22/goal-current.json"),
 ]);
 const activeTruth = await readRepoFile("docs/active/README.md");
+const commercialLaunchProductMatrix = await readJson("contracts/medopl-commercial-launch-product-contract-matrix.json");
+const commercialJourneyIds = new Set(
+  commercialLaunchProductMatrix.commercial_launch_product_contract_matrix.journeys.map((journey) => journey.id),
+);
+
+function assertAffectedJourneys(value, label) {
+  assert(Array.isArray(value), `${label}_affected_journeys_must_be_list`);
+  assert(value.length > 0, `${label}_affected_journeys_must_not_be_empty`);
+  assert.deepEqual([...new Set(value)], value, `${label}_affected_journeys_must_be_unique`);
+  for (const journeyId of value) {
+    assert.equal(typeof journeyId, "string", `${label}_affected_journey_id_must_be_string`);
+    assert(commercialJourneyIds.has(journeyId), `${label}_affected_journey_unknown:${journeyId}`);
+  }
+}
 
 assert.equal(packageJson.scripts["validate:active-platform"], "node scripts/v22-verify.mjs active-platform", "package_script_mismatch");
 assert.equal(packageJson.scripts.verify, "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk", "verify_script_mismatch");
@@ -119,6 +133,18 @@ assert(manifestCurrentLeaf, "manifest_current_leaf_missing");
 assert.equal(current.current_leaf?.step_id, current.current_cursor, "current_leaf_step_must_match_current_cursor");
 assert.equal(manifestCurrentLeaf.gap_id, current.current_leaf?.gap_id, "manifest_current_leaf_gap_must_match_current_fixture");
 assert.equal(manifestCurrentLeaf.stage, current.current_leaf?.stage, "manifest_current_leaf_stage_must_match_current_fixture");
+assertAffectedJourneys(current.goal_lifecycle?.current?.affected_journeys, "goal_lifecycle_current");
+assertAffectedJourneys(current.current_leaf?.affected_journeys, "current_leaf");
+assert.deepEqual(
+  current.goal_lifecycle.current.affected_journeys,
+  current.current_leaf.affected_journeys,
+  "goal_lifecycle_current_affected_journeys_must_match_current_leaf",
+);
+assertAffectedJourneys(current.latest_landed_closeout?.affected_journeys, "latest_closeout");
+assert(
+  current.goal_lifecycle.closeout_required.includes("affected_journeys"),
+  "goal_lifecycle_closeout_required_must_include_affected_journeys",
+);
 assert.equal(
   current.current_cursor,
   "goal-commercial-runtime-storage-billing-business-closure",
