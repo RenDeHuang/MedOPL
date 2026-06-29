@@ -77,6 +77,7 @@ export const TEST_LIFECYCLE_CLEANUP_POLICY = Object.freeze({
 });
 export const TEST_LANE_CONTRACT_REFS = Object.freeze([
   "contracts/medopl-product-profile.json",
+  "contracts/medopl-commercial-launch-freeze-matrix.json",
   "contracts/medopl-portal-page-state-matrix.json",
   "contracts/medopl-portal-interaction-flow-contract.json",
   "contracts/medopl-portal-ui-quality-contract.json",

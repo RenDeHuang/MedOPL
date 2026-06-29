@@ -1,0 +1,590 @@
+{
+  "schema_version": 1,
+  "owner": "MedOPL Commercial Launch",
+  "purpose": "commercial_launch_freeze_matrix",
+  "state": "active",
+  "authority_boundary": {
+    "surface": "commercial_launch_freeze_baseline",
+    "allowed_view": "product_truth_user_journey_page_state_interaction_visual_grammar_rollout_receipt_freeze",
+    "forbidden_view": "raw_figma_pixel_truth_temporary_change_package_or_production_complete_claim"
+  },
+  "consumers": [
+    "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+    "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs",
+    "tests/contracts/contract-test-v22-validate-active-platform.mjs"
+  ],
+  "consumer_tests": [
+    "npm run test:frontend",
+    "npm run test:regression",
+    "npm run test:contract"
+  ],
+  "freeze_levels": [
+    "hard_freeze",
+    "controlled_freeze",
+    "soft_freeze",
+    "blocked_until_receipt"
+  ],
+  "commercial_launch_freeze_matrix": {
+    "surfaces": [
+      {
+        "id": "product_identity",
+        "owner": "contracts/medopl-product-profile.json",
+        "freeze_level": "hard_freeze",
+        "frozen_truth": [
+          "platform_provisioned_customer_dedicated_opl_saas",
+          "ordinary_user_resource_control_plane",
+          "medopl_owns_compute_storage_package_billing_audit_release"
+        ],
+        "allowed_changes": [
+          "clarify_copy_without_changing_owner_boundary",
+          "add_tests_that_enforce_same_identity"
+        ],
+        "blocked_changes": [
+          "user_owned_cloud_console_framing",
+          "upstream_opl_as_active_platform_source",
+          "ordinary_chat_as_medopl_primary_surface"
+        ],
+        "source_of_truth": [
+          "contracts/medopl-product-profile.json",
+          "docs/product/README.md",
+          "TASTE.md"
+        ],
+        "consumer_tests": [
+          "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+          "tests/contracts/contract-test-v22-validate-active-platform.mjs"
+        ],
+        "cannot_claim": [
+          "research_quality",
+          "medical_quality",
+          "upstream_opl_ownership"
+        ],
+        "next_unfreeze_gate": "explicit_product_authority_contract_change_plus_review_gate"
+      },
+      {
+        "id": "customer_questions",
+        "owner": "docs/product/README.md",
+        "freeze_level": "hard_freeze",
+        "frozen_truth": [
+          "can_i_buy_or_upgrade_a_package",
+          "is_my_compute_resource_available",
+          "is_my_storage_space_available",
+          "what_will_this_cost",
+          "can_i_enter_opl_now",
+          "can_i_release_without_losing_storage"
+        ],
+        "allowed_changes": [
+          "add_page_copy_that_answers_existing_questions",
+          "add_test_coverage_for_existing_questions"
+        ],
+        "blocked_changes": [
+          "new_primary_question_without_freeze_surface",
+          "cloud_console_or_runtime_operator_question_as_customer_primary",
+          "research_quality_question_as_medopl_responsibility"
+        ],
+        "source_of_truth": [
+          "docs/product/README.md",
+          "contracts/medopl-portal-page-state-matrix.json"
+        ],
+        "consumer_tests": [
+          "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
+        ],
+        "cannot_claim": [
+          "all_customer_support_questions_covered",
+          "all_tenant_personas_covered"
+        ],
+        "next_unfreeze_gate": "new_surface_admission_with_owner_surface_and_regression_gate"
+      },
+      {
+        "id": "golden_business_flow",
+        "owner": "tests/fixtures/v22/goal-current.json",
+        "freeze_level": "hard_freeze",
+        "frozen_truth": [
+          "account_prepare_to_owner_approval",
+          "credit_plan_open_runtime_storage",
+          "upload_run_artifact",
+          "billing_ledger_statement_reconciliation",
+          "release_destroy_stop_billing",
+          "return_to_opl_task",
+          "insufficient_balance_fail_closed"
+        ],
+        "allowed_changes": [
+          "tighten_evidence_for_existing_steps",
+          "improve_ui_affordance_for_existing_steps"
+        ],
+        "blocked_changes": [
+          "skip_account_approval",
+          "bypass_balance_or_quota_admission",
+          "claim_external_psp_settlement_without_receipt",
+          "merge_release_compute_with_destroy_storage"
+        ],
+        "source_of_truth": [
+          "tests/fixtures/v22/goal-current.json",
+          "contracts/medopl-billing-ledger-contract.json",
+          "contracts/medopl-release-boundary.json"
+        ],
+        "consumer_tests": [
+          "npm run test:run-plan",
+          "npm run test:contract",
+          "npm run test:regression"
+        ],
+        "cannot_claim": [
+          "external_psp_settlement",
+          "real_payment_completed",
+          "refund_invoice_tax_compliance"
+        ],
+        "next_unfreeze_gate": "new_business_step_receipt_contract_and_run_plan_lane"
+      },
+      {
+        "id": "commercial_admission_truth",
+        "owner": "contracts/medopl-api-contract.json",
+        "freeze_level": "hard_freeze",
+        "frozen_truth": [
+          "account_approved_required",
+          "plan_selected_required",
+          "balance_sufficient_required",
+          "quota_available_required",
+          "providerKeyRef_required_for_managed_run",
+          "admission_fail_closed"
+        ],
+        "allowed_changes": [
+          "add_stricter_fail_closed_reason",
+          "add_backend_projection_for_existing_admission_state"
+        ],
+        "blocked_changes": [
+          "frontend_page_local_readiness_as_truth",
+          "raw_provider_key_in_browser_storage",
+          "optimistic_open_without_backend_admission"
+        ],
+        "source_of_truth": [
+          "contracts/medopl-api-contract.json",
+          "contracts/medopl-billing-ledger-contract.json",
+          "services/medopl-go-backend"
+        ],
+        "consumer_tests": [
+          "npm run test:contract",
+          "npm run test:regression"
+        ],
+        "cannot_claim": [
+          "live_provider_capacity",
+          "ongoing_cloud_authorization"
+        ],
+        "next_unfreeze_gate": "api_contract_change_plus_backend_contract_regression"
+      },
+      {
+        "id": "customer_information_architecture",
+        "owner": "contracts/medopl-portal-page-state-matrix.json",
+        "freeze_level": "controlled_freeze",
+        "frozen_truth": [
+          "resource_overview",
+          "packages_purchase",
+          "compute_resource",
+          "storage_space",
+          "usage_billing",
+          "opl_entry"
+        ],
+        "allowed_changes": [
+          "reorder_secondary_sections_with_browser_review",
+          "rename_nav_copy_without_changing_page_owner",
+          "add_admin_only_route_outside_customer_ia"
+        ],
+        "blocked_changes": [
+          "remove_customer_primary_page_without_replacement",
+          "combine_billing_with_unrelated_task_kpi_wall",
+          "move_opl_entry_before_resource_readiness"
+        ],
+        "source_of_truth": [
+          "contracts/medopl-portal-page-state-matrix.json",
+          "services/portal/frontend/src/app/routes.tsx",
+          "services/portal/frontend/src/app/components/Layout.tsx"
+        ],
+        "consumer_tests": [
+          "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+          "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs"
+        ],
+        "cannot_claim": [
+          "all_future_user_roles_covered",
+          "production_information_architecture_signed_off"
+        ],
+        "next_unfreeze_gate": "page_state_matrix_update_plus_browser_regression"
+      },
+      {
+        "id": "page_state_matrix",
+        "owner": "contracts/medopl-portal-page-state-matrix.json",
+        "freeze_level": "controlled_freeze",
+        "frozen_truth": [
+          "loading_empty_ready_blocked_failed_pending_released_protected_states",
+          "disabled_reason_required",
+          "first_view_card_budget",
+          "page_content_h1_owner"
+        ],
+        "allowed_changes": [
+          "add_state_copy_for_existing_state",
+          "add_page_specific_variant_with_matrix_entry"
+        ],
+        "blocked_changes": [
+          "new_page_without_state_matrix_entry",
+          "disabled_action_without_visible_reason",
+          "user_visible_internal_runner_or_claim_terms"
+        ],
+        "source_of_truth": [
+          "contracts/medopl-portal-page-state-matrix.json",
+          "contracts/medopl-portal-ui-quality-contract.json"
+        ],
+        "consumer_tests": [
+          "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
+        ],
+        "cannot_claim": [
+          "runtime_receipt_complete",
+          "production_ready_from_ui_green"
+        ],
+        "next_unfreeze_gate": "state_matrix_update_plus_frontend_and_browser_regression"
+      },
+      {
+        "id": "interaction_flow",
+        "owner": "contracts/medopl-portal-interaction-flow-contract.json",
+        "freeze_level": "controlled_freeze",
+        "frozen_truth": [
+          "open_compute_resource",
+          "purchase_or_upgrade_plan",
+          "bind_provider_key",
+          "enter_opl",
+          "upload_workspace_file",
+          "download_workspace_file",
+          "export_billing",
+          "release_compute_resource"
+        ],
+        "allowed_changes": [
+          "improve_feedback_for_existing_flow",
+          "add_confirmation_to_dangerous_action"
+        ],
+        "blocked_changes": [
+          "new_primary_action_without_interaction_contract",
+          "dangerous_action_without_confirmation",
+          "release_action_claimable_before_owner_receipt"
+        ],
+        "source_of_truth": [
+          "contracts/medopl-portal-interaction-flow-contract.json",
+          "services/portal/frontend/src/app/pages"
+        ],
+        "consumer_tests": [
+          "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+          "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs"
+        ],
+        "cannot_claim": [
+          "all_mutations_connected",
+          "release_owner_receipt"
+        ],
+        "next_unfreeze_gate": "interaction_contract_update_plus_mutation_owner_receipt_when_required"
+      },
+      {
+        "id": "visual_grammar",
+        "owner": "contracts/medopl-portal-ui-quality-contract.json",
+        "freeze_level": "soft_freeze",
+        "frozen_truth": [
+          "teal_primary_brand",
+          "clean_restrained_resource_control_plane",
+          "principles_not_pixels",
+          "card_radius_max_8px",
+          "touch_target_min_44px",
+          "no_marketing_hero_or_gradient_orb"
+        ],
+        "allowed_changes": [
+          "polish_spacing_density_or_composition_with_browser_review",
+          "adjust_component_composition_without_breaking_state_coverage"
+        ],
+        "blocked_changes": [
+          "raw_screenshot_pixel_lock",
+          "default_blue_or_purple_primary_hue",
+          "nested_cards",
+          "transition_all"
+        ],
+        "source_of_truth": [
+          "contracts/medopl-portal-ui-quality-contract.json",
+          "DESIGN.md",
+          "services/portal/frontend/src/styles/theme.css"
+        ],
+        "consumer_tests": [
+          "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+          "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs"
+        ],
+        "cannot_claim": [
+          "pixel_perfect_figma_match",
+          "s_level_polish_without_browser_gate"
+        ],
+        "next_unfreeze_gate": "ui_quality_contract_update_plus_browser_visual_review"
+      },
+      {
+        "id": "copy_lexicon",
+        "owner": "contracts/medopl-portal-ui-quality-contract.json",
+        "freeze_level": "controlled_freeze",
+        "frozen_truth": [
+          "zh_CN_resource_control_plane_language",
+          "account_workspace_compute_resource_storage_space_package_balance_freeze_usage_billing_release",
+          "internal_terms_not_user_visible"
+        ],
+        "allowed_changes": [
+          "shorten_user_visible_copy",
+          "replace_internal_term_with_preferred_term"
+        ],
+        "blocked_changes": [
+          "workspace_as_english_visible_term",
+          "Runtime_as_user_visible_term",
+          "claim_future_authorized_or_runner_phase_visible",
+          "cloud_console_copy"
+        ],
+        "source_of_truth": [
+          "contracts/medopl-portal-ui-quality-contract.json",
+          "services/portal/frontend/src/app/pages"
+        ],
+        "consumer_tests": [
+          "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs"
+        ],
+        "cannot_claim": [
+          "final_marketing_copy",
+          "legal_or_tax_copy_approved"
+        ],
+        "next_unfreeze_gate": "copy_contract_update_plus_forbidden_visible_terms_test"
+      },
+      {
+        "id": "billing_cost_control",
+        "owner": "contracts/medopl-billing-ledger-contract.json",
+        "freeze_level": "controlled_freeze",
+        "frozen_truth": [
+          "internal_credit_ledger",
+          "resource_preauth_freeze",
+          "debit_ledger_audit_receipt",
+          "statement_reconciliation",
+          "release_destroy_stop_billing"
+        ],
+        "allowed_changes": [
+          "add_receipt_field_for_existing_ledger_event",
+          "improve_billing_ui_for_existing_statement_shape"
+        ],
+        "blocked_changes": [
+          "external_psp_settlement_claim_without_psp_receipt",
+          "manual_balance_mutation_without_audit",
+          "stop_billing_without_release_or_destroy_receipt"
+        ],
+        "source_of_truth": [
+          "contracts/medopl-billing-ledger-contract.json",
+          "contracts/medopl-api-contract.json",
+          "services/medopl-go-backend"
+        ],
+        "consumer_tests": [
+          "npm run test:contract",
+          "npm run test:regression"
+        ],
+        "cannot_claim": [
+          "real_payment_completed",
+          "refund_invoice_tax_compliance",
+          "external_psp_settlement"
+        ],
+        "next_unfreeze_gate": "billing_contract_update_plus_owner_receipt"
+      },
+      {
+        "id": "release_lifecycle",
+        "owner": "contracts/medopl-release-boundary.json",
+        "freeze_level": "blocked_until_receipt",
+        "receipt_required": "release_owner_receipt",
+        "frozen_truth": [
+          "release_compute_and_destroy_storage_are_separate",
+          "release_stops_compute_billing_only_after_receipt",
+          "storage_destroy_requires_explicit_intent",
+          "ui_state_is_partial_fail_closed_pending_owner_receipt"
+        ],
+        "allowed_changes": [
+          "show_disabled_reason",
+          "add_receipt_display_after_owner_exists"
+        ],
+        "blocked_changes": [
+          "enable_release_mutation_without_release_owner_receipt",
+          "claim_release_complete_from_disabled_ui",
+          "auto_destroy_storage_during_compute_release"
+        ],
+        "source_of_truth": [
+          "contracts/medopl-release-boundary.json",
+          "contracts/medopl-portal-interaction-flow-contract.json",
+          "contracts/medopl-portal-ui-quality-contract.json"
+        ],
+        "consumer_tests": [
+          "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+          "npm run test:contract"
+        ],
+        "cannot_claim": [
+          "release_owner_receipt",
+          "production_release_lifecycle_complete"
+        ],
+        "next_unfreeze_gate": "release_owner_receipt_manifest_plus_release_contract_regression"
+      },
+      {
+        "id": "opl_entry_handoff",
+        "owner": "contracts/medopl-api-contract.json",
+        "freeze_level": "controlled_freeze",
+        "frozen_truth": [
+          "opl_entry_requires_account_workspace_gateway_upstream_entry",
+          "managed_run_requires_compute_storage_balance_providerKeyRef_runtime_bridge",
+          "providerKeyRef_not_raw_provider_key"
+        ],
+        "allowed_changes": [
+          "improve_preflight_copy",
+          "add_backend_reason_for_existing_readiness_check"
+        ],
+        "blocked_changes": [
+          "browser_storage_raw_provider_key",
+          "launchToken_or_runtimeToken_in_global_js_state",
+          "opl_entry_claim_without_gateway_readiness"
+        ],
+        "source_of_truth": [
+          "contracts/medopl-api-contract.json",
+          "contracts/medopl-runtime-bridge-contract.json",
+          "services/portal/frontend/src/app/pages/OPLEntry.tsx"
+        ],
+        "consumer_tests": [
+          "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+          "npm run test:contract"
+        ],
+        "cannot_claim": [
+          "all_upstream_opl_tasks_work",
+          "live_gateway_authorization"
+        ],
+        "next_unfreeze_gate": "runtime_bridge_receipt_plus_opl_entry_contract_regression"
+      },
+      {
+        "id": "admin_owner_surface",
+        "owner": "contracts/medopl-api-contract.json",
+        "freeze_level": "controlled_freeze",
+        "frozen_truth": [
+          "owner_approval",
+          "admin_recharge_credit",
+          "plan_catalog",
+          "billing_reconciliation",
+          "audit_receipt",
+          "system_status"
+        ],
+        "allowed_changes": [
+          "add_admin_projection_for_existing_owner_action",
+          "improve_ops_table_hierarchy"
+        ],
+        "blocked_changes": [
+          "ordinary_user_admin_action",
+          "admin_route_without_owner_boundary",
+          "manual_override_without_audit_receipt"
+        ],
+        "source_of_truth": [
+          "contracts/medopl-api-contract.json",
+          "contracts/medopl-portal-page-state-matrix.json",
+          "services/portal/frontend/src/app/pages/admin"
+        ],
+        "consumer_tests": [
+          "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+          "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs"
+        ],
+        "cannot_claim": [
+          "enterprise_admin_compliance",
+          "all_ops_workflows_complete"
+        ],
+        "next_unfreeze_gate": "admin_owner_contract_update_plus_role_boundary_regression"
+      },
+      {
+        "id": "rollout_receipt_boundary",
+        "owner": "contracts/medopl-production-receipt-boundary.json",
+        "freeze_level": "hard_freeze",
+        "frozen_truth": [
+          "ui_green_is_not_rollout_complete",
+          "contract_green_is_not_production_complete",
+          "production_complete_requires_owner_receipts",
+          "ongoing_authorization_not_implied_by_past_canary"
+        ],
+        "allowed_changes": [
+          "add_receipt_manifest_pointer",
+          "tighten_cannot_claim_language"
+        ],
+        "blocked_changes": [
+          "rollout_complete_claim_without_receipt_manifest",
+          "production_complete_claim_from_local_rc",
+          "ongoing_authorization_claim_from_past_run"
+        ],
+        "source_of_truth": [
+          "contracts/medopl-production-receipt-boundary.json",
+          "contracts/medopl-cloud-authorization-pack.json",
+          "tests/fixtures/v22/goal-current.json"
+        ],
+        "consumer_tests": [
+          "npm run test:contract",
+          "npm run verify",
+          "npm run gate:review"
+        ],
+        "cannot_claim": [
+          "rollout_complete",
+          "production_complete",
+          "all_users_all_tenants",
+          "sla_multi_region",
+          "ongoing_authorization"
+        ],
+        "next_unfreeze_gate": "production_receipt_manifest_with_all_required_owner_receipts"
+      },
+      {
+        "id": "figma_launch_ui_baseline",
+        "owner": "contracts/medopl-commercial-launch-freeze-matrix.json",
+        "freeze_level": "soft_freeze",
+        "frozen_truth": [
+          "approved_figma_make_direction_is_visual_and_information_architecture_baseline",
+          "repo_native_contracts_source_tests_are_machine_truth",
+          "approved_ui_baseline_replacement_can_be_claimed"
+        ],
+        "allowed_changes": [
+          "repo_native_refinement_that_preserves_approved_direction",
+          "browser_regression_backed_polish",
+          "contract_update_for_non_pixel_design_principle"
+        ],
+        "blocked_changes": [
+          "raw_figma_export_as_machine_truth",
+          "pixel_freeze",
+          "rollout_complete_claim",
+          "temporary_screenshot_evidence_in_git"
+        ],
+        "source_of_truth": [
+          "contracts/medopl-commercial-launch-freeze-matrix.json",
+          "contracts/medopl-portal-page-state-matrix.json",
+          "contracts/medopl-portal-ui-quality-contract.json",
+          "services/portal/frontend/src"
+        ],
+        "consumer_tests": [
+          "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+          "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs"
+        ],
+        "cannot_claim": [
+          "pixel_perfect_figma_match",
+          "rollout_complete",
+          "production_complete"
+        ],
+        "next_unfreeze_gate": "approved_design_delta_mapped_to_contracts_and_browser_regression"
+      }
+    ]
+  },
+  "new_surface_admission": {
+    "owner": "contracts/medopl-commercial-launch-freeze-matrix.json",
+    "policy": "every_new_customer_or_admin_surface_must_select_existing_freeze_surface_or_add_one_before_source_change",
+    "required_fields": [
+      "owner_surface",
+      "user_visible_purpose",
+      "freeze_surface",
+      "state_machine",
+      "backend_truth",
+      "receipt_or_cannot_claim",
+      "regression_gate"
+    ],
+    "blocked_without": [
+      "contract_entry",
+      "consumer_test",
+      "cannot_claim_boundary",
+      "old_surface_retirement_decision"
+    ]
+  },
+  "retirement_policy": {
+    "old_ui_absorption_narrative": "retired",
+    "compatibility_layer_allowed": false,
+    "temporary_change_package_allowed": false,
+    "raw_figma_or_screenshot_evidence_in_git": false
+  }
+}

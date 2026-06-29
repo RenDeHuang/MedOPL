@@ -17,10 +17,14 @@ async function readJson(repoPath) {
 const matrix = await readJson("contracts/medopl-portal-page-state-matrix.json");
 const interactionFlowContract = await readJson("contracts/medopl-portal-interaction-flow-contract.json");
 const uiQualityContract = await readJson("contracts/medopl-portal-ui-quality-contract.json");
+const commercialLaunchFreezeMatrix = await readJson("contracts/medopl-commercial-launch-freeze-matrix.json");
 const productProfile = await readJson("contracts/medopl-product-profile.json");
 const routes = await readRepoFile("services/portal/frontend/src/app/routes.tsx");
 const layout = await readRepoFile("services/portal/frontend/src/app/components/Layout.tsx");
 const designSource = await readRepoFile("DESIGN.md");
+const activeDocsSource = await readRepoFile("docs/active/README.md");
+const productDocsSource = await readRepoFile("docs/product/README.md");
+const goalCurrentSource = await readRepoFile("tests/fixtures/v22/goal-current.json");
 const themeSource = await readRepoFile("services/portal/frontend/src/styles/theme.css");
 const repoHygieneSource = await readRepoFile("scripts/v22-repo-hygiene.mjs");
 const coreUiSource = await readRepoFile("services/portal/frontend/src/app/components/ui/core.tsx");
@@ -35,6 +39,135 @@ const workspacePage = await readRepoFile("services/portal/frontend/src/app/pages
 const billingAuditPage = await readRepoFile("services/portal/frontend/src/app/pages/BillingAudit.tsx");
 const overviewPage = await readRepoFile("services/portal/frontend/src/app/pages/Overview.tsx");
 const oplEntryPage = await readRepoFile("services/portal/frontend/src/app/pages/OPLEntry.tsx");
+
+assert.equal(commercialLaunchFreezeMatrix.schema_version, 1, "commercial_launch_freeze_schema_version_mismatch");
+assert.equal(commercialLaunchFreezeMatrix.state, "active", "commercial_launch_freeze_state_must_be_active");
+assert(commercialLaunchFreezeMatrix.owner, "commercial_launch_freeze_owner_missing");
+assert.equal(
+  commercialLaunchFreezeMatrix.purpose,
+  "commercial_launch_freeze_matrix",
+  "commercial_launch_freeze_purpose_mismatch",
+);
+assert.equal(
+  commercialLaunchFreezeMatrix.authority_boundary?.surface,
+  "commercial_launch_freeze_baseline",
+  "commercial_launch_freeze_authority_surface_mismatch",
+);
+assert.equal(
+  commercialLaunchFreezeMatrix.authority_boundary?.forbidden_view,
+  "raw_figma_pixel_truth_temporary_change_package_or_production_complete_claim",
+  "commercial_launch_freeze_forbidden_view_mismatch",
+);
+for (const consumer of [
+  "tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
+  "tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs",
+]) {
+  assert(
+    commercialLaunchFreezeMatrix.consumers?.includes(consumer) ||
+      commercialLaunchFreezeMatrix.consumer_tests?.includes(consumer),
+    `commercial_launch_freeze_consumer_missing:${consumer}`,
+  );
+}
+assert.deepEqual(
+  commercialLaunchFreezeMatrix.freeze_levels,
+  ["hard_freeze", "controlled_freeze", "soft_freeze", "blocked_until_receipt"],
+  "commercial_launch_freeze_levels_mismatch",
+);
+
+const freezeSurfaces = commercialLaunchFreezeMatrix.commercial_launch_freeze_matrix?.surfaces || [];
+const freezeSurfaceById = new Map(freezeSurfaces.map((surface) => [surface.id, surface]));
+const expectedFreezeLevels = new Map([
+  ["product_identity", "hard_freeze"],
+  ["customer_questions", "hard_freeze"],
+  ["golden_business_flow", "hard_freeze"],
+  ["commercial_admission_truth", "hard_freeze"],
+  ["customer_information_architecture", "controlled_freeze"],
+  ["page_state_matrix", "controlled_freeze"],
+  ["interaction_flow", "controlled_freeze"],
+  ["visual_grammar", "soft_freeze"],
+  ["copy_lexicon", "controlled_freeze"],
+  ["billing_cost_control", "controlled_freeze"],
+  ["release_lifecycle", "blocked_until_receipt"],
+  ["opl_entry_handoff", "controlled_freeze"],
+  ["admin_owner_surface", "controlled_freeze"],
+  ["rollout_receipt_boundary", "hard_freeze"],
+  ["figma_launch_ui_baseline", "soft_freeze"],
+]);
+for (const [surfaceId, freezeLevel] of expectedFreezeLevels) {
+  const surface = freezeSurfaceById.get(surfaceId);
+  assert(surface, `commercial_launch_freeze_surface_missing:${surfaceId}`);
+  assert.equal(surface.freeze_level, freezeLevel, `commercial_launch_freeze_surface_level_mismatch:${surfaceId}`);
+  for (const field of [
+    "owner",
+    "frozen_truth",
+    "allowed_changes",
+    "blocked_changes",
+    "source_of_truth",
+    "consumer_tests",
+    "cannot_claim",
+    "next_unfreeze_gate",
+  ]) {
+    assert(surface[field], `commercial_launch_freeze_surface_field_missing:${surfaceId}:${field}`);
+  }
+  for (const listField of [
+    "frozen_truth",
+    "allowed_changes",
+    "blocked_changes",
+    "source_of_truth",
+    "consumer_tests",
+    "cannot_claim",
+  ]) {
+    assert(
+      Array.isArray(surface[listField]) && surface[listField].length > 0,
+      `commercial_launch_freeze_surface_list_empty:${surfaceId}:${listField}`,
+    );
+  }
+}
+const figmaBaseline = freezeSurfaceById.get("figma_launch_ui_baseline");
+assert(
+  figmaBaseline?.frozen_truth?.includes("approved_figma_make_direction_is_visual_and_information_architecture_baseline"),
+  "commercial_launch_figma_baseline_truth_missing",
+);
+for (const blocked of [
+  "raw_figma_export_as_machine_truth",
+  "pixel_freeze",
+  "rollout_complete_claim",
+]) {
+  assert(
+    figmaBaseline?.blocked_changes?.includes(blocked),
+    `commercial_launch_figma_baseline_blocked_change_missing:${blocked}`,
+  );
+}
+const releaseLifecycle = freezeSurfaceById.get("release_lifecycle");
+assert.equal(
+  releaseLifecycle?.receipt_required,
+  "release_owner_receipt",
+  "commercial_launch_release_lifecycle_receipt_missing",
+);
+assert.deepEqual(
+  commercialLaunchFreezeMatrix.new_surface_admission?.required_fields,
+  [
+    "owner_surface",
+    "user_visible_purpose",
+    "freeze_surface",
+    "state_machine",
+    "backend_truth",
+    "receipt_or_cannot_claim",
+    "regression_gate",
+  ],
+  "commercial_launch_new_surface_admission_required_fields_mismatch",
+);
+for (const [sourceName, source] of [
+  ["docs_active", activeDocsSource],
+  ["docs_product", productDocsSource],
+  ["goal_current", goalCurrentSource],
+]) {
+  assert.equal(
+    source.includes("does not claim the approved Figma Make UI is high-fidelity replaced"),
+    false,
+    `commercial_launch_old_figma_absorption_narrative_must_be_retired:${sourceName}`,
+  );
+}
 
 const userVisibleSource = [
   layout,

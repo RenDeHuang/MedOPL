@@ -65,6 +65,7 @@ for (const marker of [
   "scripts/v22-workflow-gate.mjs",
   "contracts/README.md",
   "contracts/medopl-product-profile.json",
+  "contracts/medopl-commercial-launch-freeze-matrix.json",
   "contracts/medopl-portal-page-state-matrix.json",
   "contracts/medopl-portal-interaction-flow-contract.json",
   "contracts/medopl-portal-ui-quality-contract.json",

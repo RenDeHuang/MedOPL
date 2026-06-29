@@ -38,6 +38,7 @@ Machine boundary: 本文是人读 spec 导航入口，不是稳定机器接口�
 | Anchor | Domain spec |
 | --- | --- |
 | <a id="spec-v22-commercial-package-model"></a>`spec:v22-commercial-package-model` | [specs/product/spec.md](../../specs/product/spec.md) |
+| <a id="spec-v22-commercial-launch-freeze-baseline"></a>`spec:v22-commercial-launch-freeze-baseline` | [specs/product/spec.md](../../specs/product/spec.md) |
 | <a id="spec-v22-commercial-ui-impact-decision"></a>`spec:v22-commercial-ui-impact-decision` | [specs/product/spec.md](../../specs/product/spec.md) |
 | <a id="spec-v22-managed-environment-open-boundary"></a>`spec:v22-managed-environment-open-boundary` | [specs/product/spec.md](../../specs/product/spec.md) |
 | <a id="spec-v22-portal-user-surface-boundary"></a>`spec:v22-portal-user-surface-boundary` | [specs/product/spec.md](../../specs/product/spec.md) |

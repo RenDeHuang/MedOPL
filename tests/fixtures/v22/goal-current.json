@@ -10,6 +10,7 @@
     "changes_retired": true,
     "product_contracts": [
       "contracts/medopl-product-profile.json",
+      "contracts/medopl-commercial-launch-freeze-matrix.json",
       "contracts/medopl-portal-page-state-matrix.json",
       "contracts/medopl-portal-interaction-flow-contract.json",
       "contracts/medopl-portal-ui-quality-contract.json",
@@ -1822,15 +1823,15 @@
     "current_canClaim": [
       "authorized commercial business-flow cloud canary passed",
       "internal credit + billing ledger + statement reconciliation + release/destroy/stop billing passed",
-      "Commercial Launch UI absorbed"
+      "approved Commercial Launch UI baseline replacement absorbed into repo-native Portal contracts/source/tests"
     ],
     "canClaim": [
       "authorized commercial business-flow cloud canary passed",
       "internal credit + billing ledger + statement reconciliation + release/destroy/stop billing passed",
-      "Commercial Launch UI absorbed"
+      "approved Commercial Launch UI baseline replacement absorbed into repo-native Portal contracts/source/tests"
     ],
     "ui_boundary": [
-      "Commercial Launch UI absorbed means repo-native resource-control information architecture and copy were absorbed; it does not claim the approved Figma Make UI is high-fidelity replaced or rollout-complete."
+      "Commercial Launch freeze matrix is machine-owned by contracts/medopl-commercial-launch-freeze-matrix.json: approved Figma Make direction is the visual and information-architecture baseline, while repo-native contracts/source/tests remain machine truth. It can claim approved UI baseline replacement only; it cannot claim rollout complete or production complete."
     ],
     "cannotClaim": [
       "external PSP settlement",

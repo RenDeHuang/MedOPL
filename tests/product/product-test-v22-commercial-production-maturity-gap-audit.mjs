@@ -42,21 +42,42 @@ assert.equal(maturity.reference_scope?.opl_ordinary_path, "consumer_bridge_bound
 for (const claim of [
   "authorized commercial business-flow cloud canary passed",
   "internal credit + billing ledger + statement reconciliation + release/destroy/stop billing passed",
-  "Commercial Launch UI absorbed",
+  "approved Commercial Launch UI baseline replacement absorbed into repo-native Portal contracts/source/tests",
 ]) {
   assert(maturity.canClaim?.includes(claim), `maturity_gap_can_claim_missing:${claim}`);
   assert(activeTruth.includes(claim), `active_truth_can_claim_missing:${claim}`);
 }
 
 const figmaUiBoundary =
-  "Commercial Launch UI absorbed means repo-native resource-control information architecture and copy were absorbed; it does not claim the approved Figma Make UI is high-fidelity replaced or rollout-complete.";
+  "Commercial Launch freeze matrix is machine-owned by contracts/medopl-commercial-launch-freeze-matrix.json: approved Figma Make direction is the visual and information-architecture baseline, while repo-native contracts/source/tests remain machine truth. It can claim approved UI baseline replacement only; it cannot claim rollout complete or production complete.";
 assert(
   maturity.ui_boundary?.includes(figmaUiBoundary),
-  "maturity_gap_ui_boundary_must_distinguish_repo_absorption_from_figma_make_replacement",
+  "maturity_gap_ui_boundary_must_point_to_commercial_launch_freeze_matrix",
 );
-assert(activeTruth.includes(figmaUiBoundary), "active_truth_ui_boundary_missing");
-assert(productTruth.includes(figmaUiBoundary), "product_truth_ui_boundary_missing");
-assert(historyTruth.includes(figmaUiBoundary), "history_truth_ui_boundary_missing");
+for (const [truthName, source, marker] of [
+  [
+    "active_truth",
+    activeTruth,
+    "The Commercial Launch freeze/admission matrix is machine-owned by `contracts/medopl-commercial-launch-freeze-matrix.json`",
+  ],
+  [
+    "product_truth",
+    productTruth,
+    "Commercial Launch UI baseline 已由 `contracts/medopl-commercial-launch-freeze-matrix.json` 冻结",
+  ],
+  [
+    "history_truth",
+    historyTruth,
+    "That old wording is retired by `contracts/medopl-commercial-launch-freeze-matrix.json`",
+  ],
+]) {
+  assert(source.includes(marker), `${truthName}_ui_freeze_matrix_pointer_missing`);
+  assert.equal(
+    source.includes("does not claim the approved Figma Make UI is high-fidelity replaced"),
+    false,
+    `${truthName}_old_figma_absorption_boundary_must_be_retired`,
+  );
+}
 
 for (const claim of [
   "external PSP settlement",
