@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `goal-commercial-launch-ui-approved-replacement`
-- latest landed commit: `0efcd5ca7b898dee135ae67e0cf0a3204827aba8`
+- latest landed branch: `goal-commercial-launch-freeze-baseline`
+- latest landed commit: `f9a717b3cd7faee9c5c39e99b4178b4c9d6636f7`
 - next cursor: `goal-commercial-runtime-storage-billing-business-closure`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
