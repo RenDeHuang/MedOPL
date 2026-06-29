@@ -38,7 +38,7 @@ export function Workspace() {
 
   if (query.status === "loading") {
     return (
-      <div className="p-8 max-w-7xl mx-auto">
+      <div data-ui-template="commercial-launch-storage" className="p-5 sm:p-8 max-w-7xl mx-auto">
         <Card className="border border-neutral-200 p-6 text-sm text-neutral-600">正在读取存储空间数据...</Card>
       </div>
     );
@@ -155,7 +155,7 @@ export function Workspace() {
           onChange={(event) => handleUploadFileSelected(event.target.files?.[0] || null)}
         />
         {/* Header */}
-        <div className="mb-8 pb-8 border-b border-neutral-200">
+        <div className="mb-6 pb-6 border-b border-slate-200">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h2 className="text-2xl font-semibold text-neutral-900 mb-3">存储空间</h2>
@@ -181,8 +181,7 @@ export function Workspace() {
           <Card className="border border-teal-200 bg-teal-50 p-4 mb-6 text-sm text-teal-800">{actionMessage}</Card>
         )}
 
-        {/* Workspace Info */}
-        <Card className="border border-neutral-200 mb-6">
+        <Card data-ui-section="commercial-launch-storage-first-view" className="border border-neutral-200 mb-6 shadow-sm shadow-slate-200/40">
           <div className="p-5 border-b border-neutral-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -247,9 +246,9 @@ export function Workspace() {
   // Empty Outputs State
   if (pageState === "empty-outputs") {
     return (
-      <div className="p-8 max-w-7xl mx-auto">
+      <div data-ui-template="commercial-launch-storage" className="p-5 sm:p-8 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8 pb-8 border-b border-neutral-200">
+        <div className="mb-6 pb-6 border-b border-slate-200">
           <div className="flex items-start justify-between">
             <div>
               <h2 className="text-2xl font-semibold text-neutral-900 mb-3">存储空间</h2>
@@ -269,8 +268,7 @@ export function Workspace() {
           <Card className="border border-teal-200 bg-teal-50 p-4 mb-6 text-sm text-teal-800">{actionMessage}</Card>
         )}
 
-        {/* Workspace Info */}
-        <Card className="border border-neutral-200 mb-6">
+        <Card data-ui-section="commercial-launch-storage-first-view" className="border border-neutral-200 mb-6 shadow-sm shadow-slate-200/40">
           <div className="p-5 border-b border-neutral-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -330,9 +328,9 @@ export function Workspace() {
   // File Space Unavailable State
   if (pageState === "file-space-unavailable") {
     return (
-      <div className="p-8 max-w-7xl mx-auto">
+      <div data-ui-template="commercial-launch-storage" className="p-5 sm:p-8 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8 pb-8 border-b border-neutral-200">
+        <div className="mb-6 pb-6 border-b border-slate-200">
           <div className="flex items-start justify-between">
             <div>
               <h2 className="text-2xl font-semibold text-neutral-900 mb-3">存储空间</h2>
@@ -346,7 +344,7 @@ export function Workspace() {
           </div>
         </div>
 
-        <Card className="border border-amber-200 bg-amber-50">
+        <Card data-ui-section="commercial-launch-storage-first-view" className="border border-amber-200 bg-amber-50">
           <div className="p-6">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
@@ -370,7 +368,7 @@ export function Workspace() {
 
   // Ready State
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div data-ui-template="commercial-launch-storage" className="p-5 sm:p-8 max-w-7xl mx-auto">
       <input
         ref={uploadFileInputRef}
         type="file"
@@ -378,7 +376,7 @@ export function Workspace() {
         onChange={(event) => handleUploadFileSelected(event.target.files?.[0] || null)}
       />
       {/* Header - Workspace Summary */}
-      <div className="mb-8 pb-8 border-b border-neutral-200">
+      <div className="mb-6 pb-6 border-b border-slate-200">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className="text-2xl font-semibold text-neutral-900 mb-3">存储空间</h2>
@@ -404,7 +402,7 @@ export function Workspace() {
         <Card className="border border-teal-200 bg-teal-50 p-4 mb-6 text-sm text-teal-800">{actionMessage}</Card>
       )}
 
-      <div className="mb-6">
+      <div data-ui-section="commercial-launch-storage-first-view" className="mb-6">
         <StorageInventoryPanel
           status="ready"
           capacity={model.fileSpaceTotal}
@@ -416,8 +414,7 @@ export function Workspace() {
         />
       </div>
 
-      {/* Workspace Info Card */}
-      <Card className="border border-neutral-200 mb-6">
+      <Card className="border border-neutral-200 mb-6 shadow-sm shadow-slate-200/40">
         <div className="p-5 border-b border-neutral-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

@@ -27,8 +27,8 @@ export function PackagesPurchase() {
   const filteredPlans = model.plans;
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="mb-8 pb-8 border-b border-neutral-200">
+    <div data-ui-template="commercial-launch-packages" className="p-5 sm:p-8 max-w-7xl mx-auto">
+      <div className="mb-6 pb-6 border-b border-slate-200">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex items-center gap-2 mb-3">
@@ -50,24 +50,24 @@ export function PackagesPurchase() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 mb-8">
-        <Card className="border border-neutral-200 p-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4 mb-6">
+        <Card className="border border-neutral-200 p-4 shadow-sm shadow-slate-200/40">
           <div className="text-sm text-neutral-600 mb-1">我买了什么资源</div>
           <div className="text-xl font-semibold text-neutral-900">{model.currentPackageName}</div>
         </Card>
-        <Card className="border border-neutral-200 p-4">
+        <Card className="border border-neutral-200 p-4 shadow-sm shadow-slate-200/40">
           <div className="text-sm text-neutral-600 mb-1">资源是否可用</div>
           <div className="text-xl font-semibold text-neutral-900">{model.subscriptionStatusText}</div>
         </Card>
-        <Card className="border border-neutral-200 p-4">
+        <Card className="border border-neutral-200 p-4 shadow-sm shadow-slate-200/40">
           <div className="text-sm text-neutral-600 mb-1">存储空间里有什么</div>
           <div className="text-xl font-semibold text-neutral-900">输入文件 / 输出文件</div>
         </Card>
-        <Card className="border border-neutral-200 p-4">
+        <Card className="border border-neutral-200 p-4 shadow-sm shadow-slate-200/40">
           <div className="text-sm text-neutral-600 mb-1">费用是多少</div>
           <div className="text-xl font-semibold text-neutral-900">余额 ¥ {model.balance.toFixed(2)}</div>
         </Card>
-        <Card className="border border-neutral-200 p-4">
+        <Card className="border border-neutral-200 p-4 shadow-sm shadow-slate-200/40">
           <div className="text-sm text-neutral-600 mb-1">冻结金额</div>
           <div className="text-xl font-semibold text-neutral-900">¥ {model.frozenAmount.toFixed(2)}</div>
         </Card>
@@ -84,7 +84,7 @@ export function PackagesPurchase() {
         />
       </div>
 
-      <Card className="border border-neutral-200 p-5 mb-8">
+      <Card data-ui-section="commercial-launch-purchase-path" className="border border-neutral-200 p-5 mb-8 shadow-sm shadow-slate-200/40">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <div className="text-sm font-semibold text-neutral-900">OPL 任务购买路径</div>
@@ -115,7 +115,7 @@ export function PackagesPurchase() {
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
         {filteredPlans.map((plan) => {
           const current = plan.id === model.currentPackageId;
           return (

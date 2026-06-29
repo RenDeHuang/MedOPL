@@ -114,9 +114,8 @@ export function BillingAudit() {
   // Empty Ledger State
   if (pageState === "empty-ledger") {
     return (
-      <div className="p-8 max-w-7xl mx-auto">
-        {/* Hero */}
-        <div className="mb-8 pb-8 border-b border-neutral-200">
+      <div data-ui-template="commercial-launch-billing" className="p-5 sm:p-8 max-w-7xl mx-auto">
+        <div className="mb-6 pb-6 border-b border-slate-200">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div className="flex items-center gap-2 mb-3">
@@ -143,6 +142,7 @@ export function BillingAudit() {
         )}
 
         <div data-page-id="usage_billing" data-ui-section="billing-first-view" className="mb-8 space-y-4">
+          <div data-ui-section="commercial-launch-ledger-first-view">
           <BillingSummary
             status={canStartPaidRun ? "ready" : "blocked"}
             balance={model.balance}
@@ -150,6 +150,7 @@ export function BillingAudit() {
             usage="¥ 0.00"
             auditState={billingStateLabel}
           />
+          </div>
           <div data-ui-pattern="billing-status-band" className={`rounded-lg border px-4 py-3 text-sm ${fundingTone}`}>
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <span className="font-medium">{billingStateLabel}</span>
@@ -173,9 +174,8 @@ export function BillingAudit() {
 
   // Ready State
   return (
-    <div data-page-id="usage_billing" className="p-8 max-w-7xl mx-auto">
-      {/* Hero - Billing Status and Financial Summary */}
-      <div className="mb-8 pb-8 border-b border-neutral-200">
+    <div data-page-id="usage_billing" data-ui-template="commercial-launch-billing" className="p-5 sm:p-8 max-w-7xl mx-auto">
+      <div className="mb-6 pb-6 border-b border-slate-200">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex items-center gap-2 mb-3">
@@ -200,7 +200,7 @@ export function BillingAudit() {
 
       <div data-ui-section="billing-first-view" className="mb-8 space-y-4">
         <h2 className="font-semibold text-neutral-900">资金摘要</h2>
-        <div>
+        <div data-ui-section="commercial-launch-ledger-first-view">
           <BillingSummary
             status={canStartPaidRun ? "ready" : "blocked"}
             balance={model.balance}
@@ -219,7 +219,6 @@ export function BillingAudit() {
         </div>
       </div>
 
-      {/* Cost Breakdown and Filters */}
       <div className="mb-8">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-4">
           <h2 className="font-semibold text-neutral-900">费用拆分与趋势</h2>

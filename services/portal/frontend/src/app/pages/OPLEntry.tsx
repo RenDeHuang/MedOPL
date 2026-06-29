@@ -536,12 +536,14 @@ export function OPLEntry() {
   };
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
+    <div data-ui-template="commercial-launch-opl-entry" className="p-5 sm:p-8 max-w-4xl mx-auto">
+      <div data-ui-section="commercial-launch-opl-readiness">
       {/* 区块 1: 启动状态摘要区 */}
       {renderStatusHero()}
 
       {/* 区块 2: 阶段进度区 */}
       {renderLaunchSteps()}
+      </div>
 
       {/* 区块 3: 失败原因与回流操作区 */}
       {renderFailurePanel()}

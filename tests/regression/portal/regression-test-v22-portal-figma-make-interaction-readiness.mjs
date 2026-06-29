@@ -323,8 +323,18 @@ assertExcludes(billingSource, "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl
 assertIncludes(overviewSource, 'data-ui-section="commercial-launch-core-cards"', "overview_must_absorb_commercial_launch_three_card_first_view");
 assertIncludes(overviewSource, "BillingSummary", "overview_must_keep_billing_as_first_view_resource_card");
 assertIncludes(overviewSource, "ReadinessChecklist", "overview_must_keep_opl_readiness_first_view");
+assertIncludes(packagesSource, 'data-ui-template="commercial-launch-packages"', "packages_must_absorb_commercial_launch_template");
+assertIncludes(packagesSource, 'data-ui-section="commercial-launch-purchase-path"', "packages_must_make_purchase_path_first_class");
+assertIncludes(workspaceSource, 'data-ui-template="commercial-launch-storage"', "workspace_must_absorb_commercial_launch_template");
+assertIncludes(workspaceSource, 'data-ui-section="commercial-launch-storage-first-view"', "workspace_must_prioritize_storage_inventory_first_view");
+assertIncludes(billingSource, 'data-ui-template="commercial-launch-billing"', "billing_must_absorb_commercial_launch_template");
+assertIncludes(billingSource, 'data-ui-section="commercial-launch-ledger-first-view"', "billing_must_prioritize_ledger_first_view");
+assertIncludes(oplEntrySource, 'data-ui-template="commercial-launch-opl-entry"', "opl_entry_must_absorb_commercial_launch_template");
+assertIncludes(oplEntrySource, 'data-ui-section="commercial-launch-opl-readiness"', "opl_entry_must_prioritize_opl_readiness_first_view");
 assertIncludes(runtimeSource, 'data-ui-section="commercial-launch-release-readiness"', "runtime_must_absorb_release_dialog_state_model_without_claiming_completion");
 assertIncludes(runtimeSource, 'data-ui-component="ReleaseReadinessCard"', "runtime_release_readiness_must_have_named_component_marker");
+assertExcludes(workspaceSource, "Workspace Info", "workspace_must_retire_old_workspace_info_comment_surface");
+assertExcludes(billingSource, "Cost Breakdown and Filters", "billing_must_retire_old_kpi_wall_comment_surface");
 
 for (const [label, sourceText] of [
   ["overview", overviewSource],
