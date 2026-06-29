@@ -89,7 +89,7 @@ export function AdminSystem() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div data-ui-template="commercial-launch-admin-system" className="p-6 space-y-6">
       {/* 站点设置区 */}
       <Card>
         <CardHeader>
@@ -154,9 +154,9 @@ export function AdminSystem() {
 
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <Label htmlFor="registration">用户注册</Label>
+                <Label htmlFor="registration">账号申请入口</Label>
                 <p className="text-sm text-neutral-500">
-                  允许新用户自主注册账号
+                  开启后只允许提交账号申请；账号批准、授信、套餐、quota 和 runtime gate 仍由 owner/admin 审核。
                 </p>
               </div>
               <Switch

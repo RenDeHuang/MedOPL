@@ -50,6 +50,11 @@ const [
   adminBillingSource,
   adminSystemSource,
   adminOpsSource,
+  systemEmptySource,
+  systemErrorSource,
+  systemLoadingSource,
+  systemRestrictedSource,
+  clientSource,
   dialogSource,
   adminApiSource,
   resourceApiSource,
@@ -78,6 +83,11 @@ const [
   source(`${appRoot}/pages/admin/AdminBillingOps.tsx`),
   source(`${appRoot}/pages/admin/AdminSystem.tsx`),
   source(`${appRoot}/pages/admin/AdminOps.tsx`),
+  source(`${appRoot}/pages/system/Empty.tsx`),
+  source(`${appRoot}/pages/system/Error.tsx`),
+  source(`${appRoot}/pages/system/Loading.tsx`),
+  source(`${appRoot}/pages/system/Restricted.tsx`),
+  source("services/portal/frontend/src/api/client.ts"),
   source(`${appRoot}/components/ui/dialog.tsx`),
   source("services/portal/frontend/src/api/portal/admin.ts"),
   source("services/portal/frontend/src/api/portal/resources.ts"),
@@ -292,6 +302,24 @@ assertExcludes(adminSystemSource, "disabled={savePending}", "admin_system_save_b
 for (const fieldName of ["siteName", "homeTitle", "registration"]) {
   assertIncludes(adminSystemSource, `name="${fieldName}"`, "admin_system_site_settings_must_be_controlled_form");
 }
+assertIncludes(adminDashboardSource, 'data-ui-template="commercial-launch-admin-dashboard"', "admin_dashboard_must_absorb_commercial_launch_admin_template");
+assertIncludes(adminDashboardSource, 'data-ui-section="commercial-launch-admin-pending-queue"', "admin_dashboard_must_prioritize_pending_queue");
+assertIncludes(adminDashboardSource, 'data-ui-section="commercial-launch-admin-ops-summary"', "admin_dashboard_must_keep_ops_summary_secondary");
+assert(
+  adminDashboardSource.indexOf('data-ui-section="commercial-launch-admin-pending-queue"') <
+    adminDashboardSource.indexOf('data-ui-section="commercial-launch-admin-ops-summary"'),
+  "admin_dashboard_pending_queue_must_come_before_kpi_summary",
+);
+assertIncludes(adminSystemSource, 'data-ui-template="commercial-launch-admin-system"', "admin_system_must_absorb_commercial_launch_template");
+assertIncludes(adminSystemSource, "账号申请入口", "admin_system_registration_copy_must_be_owner_approval_oriented");
+assertExcludes(adminSystemSource, "允许新用户自主注册账号", "admin_system_must_not_imply_self_service_public_registration");
+assertIncludes(systemEmptySource, 'data-ui-template="commercial-launch-empty-state"', "system_empty_must_absorb_commercial_launch_empty_state");
+assertIncludes(systemErrorSource, 'data-ui-template="commercial-launch-error-state"', "system_error_must_absorb_commercial_launch_error_state");
+assertIncludes(systemLoadingSource, 'data-ui-template="commercial-launch-loading-state"', "system_loading_must_absorb_commercial_launch_loading_state");
+assertIncludes(systemRestrictedSource, 'data-ui-template="commercial-launch-restricted-state"', "system_restricted_must_absorb_commercial_launch_restricted_state");
+assertIncludes(clientSource, "window.location.assign(loginUrl)", "auth_redirect_must_use_backend_login_url");
+assertExcludes(clientSource, "setScreen(\"login\")", "auth_must_not_restore_figma_make_mock_login_state");
+assertExcludes(clientSource, "setScreen(\"register\")", "auth_must_not_restore_figma_make_mock_register_state");
 
 assertIncludes(adminBillingSource, "markAdminBillingOp", "admin_billing_ops_must_wire_local_mark_action");
 assertIncludes(adminBillingSource, "runBillingOpAction", "admin_billing_ops_must_handle_status_action");

@@ -15,7 +15,11 @@ export function Restricted({
   onAction,
 }: RestrictedProps) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
+    <div
+      data-ui-template="commercial-launch-restricted-state"
+      data-ui-pattern="empty-error-recovery"
+      className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center"
+    >
       <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mb-4">
         <Shield className="w-8 h-8 text-orange-600" />
       </div>

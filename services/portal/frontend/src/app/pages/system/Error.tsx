@@ -15,6 +15,7 @@ export function Error({
 }: ErrorProps) {
   return (
     <div
+      data-ui-template="commercial-launch-error-state"
       data-ui-pattern="empty-error-recovery"
       role="alert"
       aria-live="assertive"

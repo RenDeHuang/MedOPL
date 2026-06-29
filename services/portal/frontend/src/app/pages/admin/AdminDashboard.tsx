@@ -28,9 +28,46 @@ export function AdminDashboard() {
   const { stats, pendingItems } = query.data;
 
   return (
-    <div className="p-6 space-y-6">
-      {/* 平台运营摘要 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div data-ui-template="commercial-launch-admin-dashboard" className="p-6 space-y-6">
+      <Card data-ui-section="commercial-launch-admin-pending-queue">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>待处理事项</CardTitle>
+            <Button asChild variant="ghost" size="sm">
+              <Link to="/admin/alerts">查看全部</Link>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {pendingItems.length === 0 && (
+              <div className="p-3 rounded-md border border-neutral-200 bg-neutral-50 text-sm text-neutral-500">
+                当前没有待处理事项
+              </div>
+            )}
+            {pendingItems.map((item) => (
+              <div key={item.rowKey} className="flex items-start justify-between p-3 rounded-md border border-neutral-200 bg-neutral-50">
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    {getSeverityBadge(item.severity)}
+                    <span className="text-sm font-medium text-neutral-900">{item.message}</span>
+                  </div>
+                  <div className="text-xs text-neutral-500">
+                    {item.user && `用户: ${item.user}`}
+                    {item.user && item.workspace && " • "}
+                    {item.workspace && `工作空间: ${item.workspace}`}
+                  </div>
+                </div>
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/admin/alerts">处理</Link>
+                </Button>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <div data-ui-section="commercial-launch-admin-ops-summary" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-neutral-600 flex items-center gap-2">
@@ -103,45 +140,6 @@ export function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
-
-      {/* 待处理事项摘要 */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>待处理事项</CardTitle>
-            <Button asChild variant="ghost" size="sm">
-              <Link to="/admin/alerts">查看全部</Link>
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {pendingItems.length === 0 && (
-              <div className="p-3 rounded-md border border-neutral-200 bg-neutral-50 text-sm text-neutral-500">
-                当前没有待处理事项
-              </div>
-            )}
-            {pendingItems.map((item) => (
-              <div key={item.rowKey} className="flex items-start justify-between p-3 rounded-md border border-neutral-200 bg-neutral-50">
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center gap-2">
-                    {getSeverityBadge(item.severity)}
-                    <span className="text-sm font-medium text-neutral-900">{item.message}</span>
-                  </div>
-                  <div className="text-xs text-neutral-500">
-                    {item.user && `用户: ${item.user}`}
-                    {item.user && item.workspace && " • "}
-                    {item.workspace && `工作空间: ${item.workspace}`}
-                  </div>
-                </div>
-                <Button asChild variant="ghost" size="sm">
-                  <Link to="/admin/alerts">处理</Link>
-                </Button>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
 
       {/* 快速入口 */}
       <Card>
