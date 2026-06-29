@@ -67,12 +67,17 @@ for (const expected of [
   "V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_COMMAND: node tests/support/cloud-prework/production-goal-command-runner.mjs --operation real_tke_runtime_node_lifecycle --execute --confirm-current-session-authorization",
   "V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_FILE: .runtime/v22-cloud-authorization/run-v22-001/real-tke-node-lifecycle-plan.json",
   "Create runtime storage lifecycle receipt inputs",
-  "\"deriveFromPlatformNodePool\":",
+  "\"deriveFromClusterFoundation\":",
   "npm run cloud:goal:preflight -- --operation real_tke_runtime_node_lifecycle",
   "npm run cloud:goal -- --operation real_tke_runtime_node_lifecycle",
 ]) {
   assert(cloudRollout.includes(expected), `runtime_storage_lifecycle_rollout_missing:${expected}`);
 }
+
+assert(
+  cloudRollout.includes("if (!parsed.deriveFromPlatformNodePool?.enabled && !parsed.deriveFromClusterFoundation?.enabled)"),
+  "cluster_foundation_derived_plan_must_skip_prebuilt_node_pool_request_validation",
+);
 
 console.log(JSON.stringify({
   ok: true,

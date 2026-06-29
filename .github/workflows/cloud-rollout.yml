@@ -529,9 +529,9 @@ jobs:
                 { "id": "starter_2c4g_10gb", "cpuCores": 2, "memoryGb": 4, "storageGb": 10 },
                 { "id": "pro_8c16g_100gb", "cpuCores": 8, "memoryGb": 16, "storageGb": 100 }
               ],
-              "deriveFromPlatformNodePool": {
+              "deriveFromClusterFoundation": {
                 "enabled": true,
-                "nodePoolId": process.env.TENCENT_MUTATION_TKE_PLATFORM_SERVICE_NODE_POOL_ID
+                "imageNamePattern": "TencentOS"
               }
             };
           }
@@ -541,7 +541,7 @@ jobs:
           if (!Array.isArray(parsed.tiers) || !parsed.tiers.some((tier) => tier.id === "starter_2c4g_10gb") || !parsed.tiers.some((tier) => tier.id === "pro_8c16g_100gb")) {
             fail("TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_JSON must cover starter_2c4g_10gb and pro_8c16g_100gb");
           }
-          if (!parsed.deriveFromPlatformNodePool?.enabled) {
+          if (!parsed.deriveFromPlatformNodePool?.enabled && !parsed.deriveFromClusterFoundation?.enabled) {
             for (const key of ["createClusterNodePool", "upgradeClusterNodePool", "deleteClusterNodePool"]) {
               if (!parsed[key]) fail(`TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_JSON missing ${key}`);
             }

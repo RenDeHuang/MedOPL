@@ -266,6 +266,35 @@ function pickInstanceType(configs = [], tier = {}, allowedZones = []) {
   return candidates[0] || "";
 }
 
+function pickImage(images = [], pattern = "") {
+  const normalizedPattern = String(pattern || "").trim().toLowerCase();
+  const candidates = (Array.isArray(images) ? images : [])
+    .filter((image) => String(image.ImageId || "").trim())
+    .filter((image) => !image.ImageState || String(image.ImageState).toUpperCase() === "NORMAL")
+    .filter((image) => {
+      if (!normalizedPattern) return true;
+      return `${image.ImageName || ""} ${image.OsName || ""} ${image.Platform || ""}`.toLowerCase().includes(normalizedPattern);
+    })
+    .map((image) => String(image.ImageId || "").trim())
+    .sort();
+  return candidates[0] || "";
+}
+
+function pickSecurityGroup(securityGroups = [], vpcId = "") {
+  const candidates = (Array.isArray(securityGroups) ? securityGroups : [])
+    .filter((group) => String(group.SecurityGroupId || "").trim())
+    .filter((group) => !vpcId || !group.VpcId || group.VpcId === vpcId)
+    .sort((left, right) => {
+      const leftName = String(left.SecurityGroupName || left.GroupName || "").toLowerCase();
+      const rightName = String(right.SecurityGroupName || right.GroupName || "").toLowerCase();
+      const leftPreferred = /medopl|runtime|tke|default/u.test(leftName) ? 0 : 1;
+      const rightPreferred = /medopl|runtime|tke|default/u.test(rightName) ? 0 : 1;
+      if (leftPreferred !== rightPreferred) return leftPreferred - rightPreferred;
+      return String(left.SecurityGroupId).localeCompare(String(right.SecurityGroupId));
+    });
+  return String(candidates[0]?.SecurityGroupId || "").trim();
+}
+
 async function importTencentCloudSdkForRealTkeLifecycle() {
   const moduleOverride = String(process.env.V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_SDK_MODULE || "").trim();
   if (moduleOverride) {
@@ -398,6 +427,140 @@ async function deriveRealTkePlanFromPlatformNodePool({ plan, env, root, operatio
   };
 }
 
+async function deriveRealTkePlanFromClusterFoundation({ plan, env, root, operation }) {
+  const clusterId = plan.clusterId || env.TENCENT_MUTATION_TKE_CLUSTER_ID || "";
+  const region = plan.region || (env.TENCENT_MUTATION_REGIONS || env.TENCENT_MUTATION_COS_REGION || "").split(",")[0].trim();
+  const foundation = plan.deriveFromClusterFoundation || {};
+  const TkeClient = root?.tke?.v20180525?.Client;
+  const VpcClient = root?.vpc?.v20170312?.Client;
+  const CvmClient = root?.cvm?.v20170312?.Client;
+  if (typeof TkeClient !== "function" || typeof VpcClient !== "function" || typeof CvmClient !== "function") {
+    failClosed("production_goal_real_tke_sdk_missing", { operationClass: operation }, 65);
+  }
+  if (!clusterId || !region) {
+    failClosed("production_goal_real_tke_cluster_foundation_missing", { operationClass: operation }, 65);
+  }
+  const clientConfig = {
+    credential: { secretId: env.TENCENT_MUTATION_SECRET_ID, secretKey: env.TENCENT_MUTATION_SECRET_KEY },
+    region,
+    profile: { httpProfile: { reqTimeout: 60 } },
+  };
+  const tkeClient = new TkeClient(clientConfig);
+  const vpcClient = new VpcClient(clientConfig);
+  const cvmClient = new CvmClient(clientConfig);
+  const clusterResponse = await tkeClient.DescribeClusters({ ClusterIds: [clusterId], Limit: 20 });
+  const cluster = (Array.isArray(clusterResponse?.Clusters) ? clusterResponse.Clusters : [])
+    .find((item) => item?.ClusterId === clusterId) || {};
+  const clusterNetwork = cluster.ClusterNetworkSettings || {};
+  const vpcId = foundation.vpcId || clusterNetwork.VpcId || "";
+  const subnetId = foundation.subnetId || (Array.isArray(clusterNetwork.Subnets) ? clusterNetwork.Subnets[0] : "") || "";
+  if (!vpcId || !subnetId) {
+    failClosed("production_goal_real_tke_cluster_foundation_missing", {
+      operationClass: operation,
+      missing: [
+        ...(!vpcId ? ["vpcId"] : []),
+        ...(!subnetId ? ["subnetId"] : []),
+      ],
+    }, 65);
+  }
+  const subnetResponse = await vpcClient.DescribeSubnets({ SubnetIds: [subnetId] });
+  const subnet = (Array.isArray(subnetResponse?.SubnetSet) ? subnetResponse.SubnetSet : [])
+    .find((item) => item?.SubnetId === subnetId && item?.VpcId === vpcId) || {};
+  const zone = String(foundation.zone || subnet.Zone || "").trim();
+  if (!zone) failClosed("production_goal_real_tke_cluster_foundation_subnet_incomplete", { operationClass: operation }, 65);
+  if (Number(subnet.AvailableIpAddressCount ?? 1) <= 0) {
+    failClosed("production_goal_real_tke_cluster_foundation_subnet_no_available_ip", { operationClass: operation }, 65);
+  }
+  const securityGroupResponse = await vpcClient.DescribeSecurityGroups(foundation.securityGroupId
+    ? { SecurityGroupIds: [foundation.securityGroupId] }
+    : { VpcId: vpcId, Limit: "100" });
+  const securityGroupId = foundation.securityGroupId || pickSecurityGroup(securityGroupResponse?.SecurityGroupSet || [], vpcId);
+  const securityGroup = (Array.isArray(securityGroupResponse?.SecurityGroupSet) ? securityGroupResponse.SecurityGroupSet : [])
+    .find((item) => item?.SecurityGroupId === securityGroupId) || {};
+  if (!securityGroup.SecurityGroupId) {
+    failClosed("production_goal_real_tke_cluster_foundation_security_group_missing", { operationClass: operation }, 65);
+  }
+  const instanceTypeResponse = await cvmClient.DescribeInstanceTypeConfigs({
+    Filters: [{ Name: "instance-charge-type", Values: ["POSTPAID_BY_HOUR"] }],
+  });
+  const instanceTypes = instanceTypeResponse?.InstanceTypeConfigSet || [];
+  const derivedTiers = (Array.isArray(plan.tiers) ? plan.tiers : []).map((tier) => ({
+    ...tier,
+    instanceType: tier.instanceType || pickInstanceType(instanceTypes, tier, [zone]),
+  }));
+  for (const tier of derivedTiers) {
+    if (!tier.instanceType) {
+      failClosed("production_goal_real_tke_instance_type_unavailable", {
+        operationClass: operation,
+        tier: tier.id || "unknown",
+        cpuCores: tier.cpuCores,
+        memoryGb: tier.memoryGb,
+        zone,
+      }, 65);
+    }
+  }
+  const imageResponse = await cvmClient.DescribeImages({
+    Filters: [{ Name: "image-type", Values: ["PUBLIC_IMAGE"] }],
+    Limit: 100,
+  });
+  const imageId = foundation.imageId || pickImage(imageResponse?.ImageSet || [], foundation.imageNamePattern || "TencentOS");
+  if (!imageId) failClosed("production_goal_real_tke_cluster_foundation_image_missing", { operationClass: operation }, 65);
+  const source = {
+    autoScalingGroup: {
+      VpcId: vpcId,
+      SubnetIdSet: [subnetId],
+      ZoneSet: [zone],
+      ProjectId: Number(foundation.projectId || 0),
+      DefaultCooldown: 300,
+    },
+    launchConfiguration: {
+      ImageId: imageId,
+      SystemDisk: foundation.systemDisk || { DiskType: "CLOUD_PREMIUM", DiskSize: 50 },
+      SecurityGroupIds: [securityGroupId],
+      InternetAccessible: foundation.internetAccessible || { InternetChargeType: "TRAFFIC_POSTPAID_BY_HOUR", InternetMaxBandwidthOut: 1, PublicIpAssigned: false },
+      EnhancedService: foundation.enhancedService || { SecurityService: { Enabled: true }, MonitorService: { Enabled: true } },
+      InstanceChargeType: "POSTPAID_BY_HOUR",
+    },
+    instanceAdvancedSettings: foundation.instanceAdvancedSettings || {
+      DesiredPodNumber: 32,
+      Taints: [],
+      Labels: [],
+      DataDisks: [],
+      ExtraArgs: {},
+    },
+    labels: foundation.labels || [{ Name: "medopl.io/pool", Value: "tenant_workspace" }],
+    taints: foundation.taints || [],
+    annotations: foundation.annotations || [],
+    containerRuntime: foundation.containerRuntime || "containerd",
+    runtimeVersion: foundation.runtimeVersion || undefined,
+    nodePoolOs: foundation.nodePoolOs || "tlinux3.1x86_64",
+    tags: foundation.tags || [{ Key: "medopl.io/pool", Value: "tenant" }],
+  };
+  return {
+    ...plan,
+    clusterId,
+    region,
+    tiers: derivedTiers,
+    createClusterNodePool: {
+      starter_2c4g_10gb: createRequestFromDerivedPlan({ ...plan, tiers: derivedTiers }, source, "starter_2c4g_10gb", "starter"),
+      pro_8c16g_100gb: createRequestFromDerivedPlan({ ...plan, tiers: derivedTiers }, source, "pro_8c16g_100gb", "pro"),
+    },
+    upgradeClusterNodePool: plan.upgradeClusterNodePool || {
+      modifyNodePoolInstanceTypes: {
+        InstanceTypes: [derivedTiers.find((tier) => tier.id === "pro_8c16g_100gb")?.instanceType].filter(Boolean),
+      },
+    },
+    deleteClusterNodePool: plan.deleteClusterNodePool || { KeepInstance: false },
+    derivedFromClusterFoundation: {
+      enabled: true,
+      vpcRef: "cluster_foundation_vpc_ref",
+      subnetRef: "cluster_foundation_subnet_ref",
+      securityGroupRef: "cluster_foundation_security_group_ref",
+      imageRef: "cluster_foundation_image_ref",
+    },
+  };
+}
+
 async function waitForTkeNodePool(client, clusterId, nodePoolId, operation, stage, maxAttempts = 12, options = {}) {
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const response = await client.DescribeClusterNodePools({ ClusterId: clusterId });
@@ -452,6 +615,8 @@ export async function runRealTkeRuntimeNodeLifecycle({ operation, env, plan: inp
   const root = sdkRoot.default || sdkRoot;
   if (plan.deriveFromPlatformNodePool?.enabled === true) {
     plan = await deriveRealTkePlanFromPlatformNodePool({ plan, env, root, operation });
+  } else if (plan.deriveFromClusterFoundation?.enabled === true) {
+    plan = await deriveRealTkePlanFromClusterFoundation({ plan, env, root, operation });
   }
   const clusterId = plan.clusterId || env.TENCENT_MUTATION_TKE_CLUSTER_ID || "";
   const region = plan.region || (env.TENCENT_MUTATION_REGIONS || env.TENCENT_MUTATION_COS_REGION || "").split(",")[0].trim();
@@ -538,6 +703,7 @@ export async function runRealTkeRuntimeNodeLifecycle({ operation, env, plan: inp
     tierCoverage,
     lifecycle: {
       derivedFromPlatformNodePool: Boolean(plan.derivedFromPlatformNodePool?.enabled),
+      derivedFromClusterFoundation: Boolean(plan.derivedFromClusterFoundation?.enabled),
       ...lifecycle,
       destroy: { api: "DeleteClusterNodePool", cleanupResults },
     },
@@ -551,6 +717,7 @@ export async function runRealTkeRuntimeNodeLifecycle({ operation, env, plan: inp
     realProviderMutationExecuted: true,
     nodePoolRefs: createdNodePoolIds.map(publicRef),
     tierCoverage: tierCoverage.map((tier) => tier.id),
+    derivedFromClusterFoundation: Boolean(plan.derivedFromClusterFoundation?.enabled),
     upgradeVerified: true,
     cleanupVerified,
     nodePoolDestroyed: cleanupVerified,
