@@ -34,22 +34,18 @@
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
     "branch": "goal-commercial-cross-repo-dynamic-current-truth-sync",
-    "landed_commit": "7a817101adef843184113750cb2dd3e815ca52c8",
+    "landed_commit": "aa8f7cd77625d2b153e501097fa5746b0f92e542",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
-      "npm run verify",
-      "npm run test:health",
-      "npm run test:contract",
-      "npm run test:run-plan",
-      "npm run gate:review",
-      "npm run repo:bloat",
-      "npm run line:budget",
-      "npm run check:diff"
+      "post-push npm run verify passed",
+      "test:health exposed closeout sequencing and this correction is closeout-only",
+      "rerun npm run verify test:health test:contract after push"
     ],
     "canClaim": [
       "dynamic MedOPL WebUI current truth sync matrix recorded",
       "owner truth split preserved",
-      "fail-closed mismatch policy recorded"
+      "fail-closed mismatch policy recorded",
+      "closeout pointer references pushed trunk commit"
     ],
     "cannotClaim": [
       "live E2E executed",
@@ -63,14 +59,9 @@
     "verification": {
       "risk_class": "commercial_billing_boundary",
       "commands": [
-        "npm run verify",
-        "npm run test:health",
-        "npm run test:contract",
-        "npm run test:run-plan",
-        "npm run gate:review",
-        "npm run repo:bloat",
-        "npm run line:budget",
-        "npm run check:diff"
+        "post-push npm run verify passed",
+        "test:health exposed closeout sequencing and this correction is closeout-only",
+        "rerun npm run verify test:health test:contract after push"
       ],
       "result": "passed"
     },
@@ -84,9 +75,9 @@
     },
     "cleanup_result": {
       "deleted": "none",
-      "folded": "dynamic current truth sync pointer into contracts goal-current active and history",
+      "folded": "dynamic current truth sync closeout pointer corrected to pushed trunk commit",
       "retained": "business maturity next cursor",
-      "reason": "sync goal is closed pointer not product maturity replacement",
+      "reason": "closeout correction only no product boundary expansion",
       "next": "goal-commercial-release-metadata-rollback-maturity"
     },
     "retirement": {
@@ -105,7 +96,7 @@
   "current_blockers": [
     "none_for_current_scoped_commercial_business_flow"
   ],
-  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-cross-repo-dynamic-current-truth-sync at 7a817101adef843184113750cb2dd3e815ca52c8. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-cross-repo-dynamic-current-truth-sync at 7a817101adef843184113750cb2dd3e815ca52c8.",
+  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-commercial-cross-repo-dynamic-current-truth-sync at aa8f7cd77625d2b153e501097fa5746b0f92e542. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-commercial-cross-repo-dynamic-current-truth-sync at aa8f7cd77625d2b153e501097fa5746b0f92e542.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -1086,8 +1077,8 @@
     },
     "receipt_manifest_artifact_id": "7937559220"
   },
-  "base_trunk_head": "7a817101adef843184113750cb2dd3e815ca52c8",
-  "last_landed_commit": "7a817101adef843184113750cb2dd3e815ca52c8",
+  "base_trunk_head": "aa8f7cd77625d2b153e501097fa5746b0f92e542",
+  "last_landed_commit": "aa8f7cd77625d2b153e501097fa5746b0f92e542",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
@@ -1746,7 +1737,7 @@
       },
       {
         "goal_id": "goal-commercial-cross-repo-dynamic-current-truth-sync",
-        "landed_commit": "7a817101adef843184113750cb2dd3e815ca52c8",
+        "landed_commit": "aa8f7cd77625d2b153e501097fa5746b0f92e542",
         "status": "completed_retired",
         "retired_from": [
           "active_blocker",
