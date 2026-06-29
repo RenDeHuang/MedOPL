@@ -139,7 +139,7 @@ class CvmClient {
   async DescribeImages(request) {
     calls.push({ api: "DescribeImages", request });
     await persist();
-    return { ImageSet: [{ ImageId: "img-tencentos-test", ImageName: "TencentOS Server", ImageType: "PUBLIC_IMAGE", ImageState: "NORMAL" }] };
+    throw new Error("unexpected DescribeImages " + JSON.stringify(request));
   }
 }
 export default {
@@ -168,7 +168,6 @@ assert.deepEqual(instanceTypeDiscovery.request, {}, "cluster_foundation_must_not
 assert.deepEqual(calls.map((call) => call.api).filter((api) => api !== "DescribeClusterNodePools"), [
   "DescribeClusters",
   "DescribeInstanceTypeConfigs",
-  "DescribeImages",
   "CreateClusterNodePool",
   "ModifyNodePoolInstanceTypes",
   "CreateClusterNodePool",
@@ -176,7 +175,8 @@ assert.deepEqual(calls.map((call) => call.api).filter((api) => api !== "Describe
   "DeleteClusterNodePool",
 ], "cluster_foundation_must_discover_create_upgrade_and_destroy");
 const created = calls.filter((call) => call.api === "CreateClusterNodePool").map((call) => call.request);
-assert.equal(JSON.parse(created[0].LaunchConfigurePara).ImageId, "img-tencentos-test", "cluster_foundation_image_id");
+assert.equal(JSON.parse(created[0].LaunchConfigurePara).ImageId, undefined, "cluster_foundation_default_must_not_require_cvm_image_permission");
+assert.equal(created[0].NodePoolOs, "tlinux3.1x86_64", "cluster_foundation_default_node_pool_os");
 assert.deepEqual(JSON.parse(created[0].AutoScalingGroupPara).SubnetIds, ["subnet-test"], "cluster_foundation_subnet");
 assert.equal(JSON.parse(created[0].LaunchConfigurePara).SecurityGroupIds, undefined, "cluster_foundation_default_must_not_require_vpc_security_group_permission");
 assert.deepEqual(

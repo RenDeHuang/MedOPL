@@ -530,8 +530,7 @@ jobs:
                 { "id": "pro_8c16g_100gb", "cpuCores": 8, "memoryGb": 16, "storageGb": 100 }
               ],
               "deriveFromClusterFoundation": {
-                "enabled": true,
-                "imageNamePattern": "TencentOS"
+                "enabled": true
               }
             };
           }
