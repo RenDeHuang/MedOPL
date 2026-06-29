@@ -133,6 +133,7 @@ assertIncludesAll(verifySource, [
 assertIncludesAll(landingCloseoutSource, [
   "canClaim",
   "cannotClaim",
+  "affected_journeys",
   "next-recommended-goal",
   "retirement",
   "upsertCompletedGoal",

@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `goal-runtime-provisioning-proof-boundary-correction`
-- latest landed commit: `6498e4cd8fa92a932debe797383caddfcf357b4c`
+- latest landed branch: `goal-problem-driven-development-lifecycle-gate`
+- latest landed commit: `215bd86267d892406a03f248ec169ff05b93a5dc`
 - next cursor: `goal-commercial-runtime-storage-billing-business-closure`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
