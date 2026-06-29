@@ -16,8 +16,8 @@ History 只保留短索引：
 
 ## Latest Machine Cursor
 
-- latest landed branch: `goal-commercial-launch-product-contract-matrix`
-- latest landed commit: `63f1986071c26810746b2477c2ef9e1f886724c0`
+- latest landed branch: `goal-journey-bound-goal-development`
+- latest landed commit: `11672a6b87b7ab4198579d5189d201f68b8091c5`
 - next cursor: `goal-commercial-runtime-storage-billing-business-closure`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
