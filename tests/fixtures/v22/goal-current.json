@@ -36,26 +36,18 @@
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
     "branch": "recovery/platform-v22-trunk",
-    "landed_commit": "f0b767da9bf5a2e2c22b69c134351696f5f32531",
+    "landed_commit": "ef52dec6ee0d1713446b03cce3d9e7fbd693ba1d",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
-      "node tests/regression/portal/regression-test-v22-portal-production-auth-entry-browser.mjs passed",
-      "go test ./internal/server -run 'TestProduction(CurrentUserUnauthenticatedPointsToLoginRoute|RouterSecurityBoundary)$' passed",
+      "node tests/regression/portal/regression-test-v22-portal-production-auth-entry-browser.mjs passed red-green root auth entry",
       "npm --prefix services/portal/frontend run build passed",
+      "npm run test:run-plan passed",
       "npm run verify passed",
-      "npm run test:health passed",
-      "npm run test:smoke passed",
-      "npm run test:contract passed",
-      "npm run test:fast passed",
-      "npm run test:lanes passed",
-      "npm run test:backend passed",
-      "npm run test:frontend passed",
-      "npm run test:journey-evidence passed",
-      "npm run test:regression passed",
-      "npm run test:hygiene passed",
       "npm run gate:review passed",
       "npm run repo:bloat passed",
       "npm run line:budget passed",
+      "npm --prefix services/portal run check passed",
+      "npm --prefix services/portal run frontend:typecheck passed",
       "git diff --check passed"
     ],
     "affected_journeys": [
@@ -74,19 +66,20 @@
       "opl_webui_runtime_required"
     ],
     "canClaim": [
-      "production unauthenticated users have a public /login route",
-      "Figma-aligned login/register entry renders without authenticated session bootstrap",
-      "unauthenticated /api/me points clients to /login",
-      "/login does not request /api/me or reload loop",
-      "old demo user/secret/cloud-console surfaces are guarded by regression"
+      "root domain routes unauthenticated users to the public /login entry",
+      "root auth entry does not fetch /api/me before session exists",
+      "/login and / render the Figma-aligned commercial admission UI",
+      "regression covers desktop/mobile login plus root entry"
     ],
     "cannotClaim": [
       "self-serve password login",
       "account provisioned",
-      "rollout complete",
-      "production complete",
       "external PSP settlement",
       "real payment completed",
+      "full experience replacement complete",
+      "all legacy experience physically deleted",
+      "rollout complete before Cloud Rollout",
+      "production complete",
       "all users/all tenants",
       "multi-region/SLA",
       "enterprise compliance",
@@ -95,23 +88,15 @@
     "verification": {
       "risk_class": "commercial_billing_boundary",
       "commands": [
-        "node tests/regression/portal/regression-test-v22-portal-production-auth-entry-browser.mjs passed",
-        "go test ./internal/server -run 'TestProduction(CurrentUserUnauthenticatedPointsToLoginRoute|RouterSecurityBoundary)$' passed",
+        "node tests/regression/portal/regression-test-v22-portal-production-auth-entry-browser.mjs passed red-green root auth entry",
         "npm --prefix services/portal/frontend run build passed",
+        "npm run test:run-plan passed",
         "npm run verify passed",
-        "npm run test:health passed",
-        "npm run test:smoke passed",
-        "npm run test:contract passed",
-        "npm run test:fast passed",
-        "npm run test:lanes passed",
-        "npm run test:backend passed",
-        "npm run test:frontend passed",
-        "npm run test:journey-evidence passed",
-        "npm run test:regression passed",
-        "npm run test:hygiene passed",
         "npm run gate:review passed",
         "npm run repo:bloat passed",
         "npm run line:budget passed",
+        "npm --prefix services/portal run check passed",
+        "npm --prefix services/portal run frontend:typecheck passed",
         "git diff --check passed"
       ],
       "result": "passed"
@@ -125,11 +110,11 @@
       "cannot_claim": "done"
     },
     "cleanup_result": {
-      "deleted": "root login redirect loop and inline CSP style surface removed",
-      "folded": "production auth entry closeout into machine cursor and active latest repo closeout",
-      "retained": "protected authenticated routes and session bootstrap owner boundary",
-      "reason": "production unauthenticated entry must be visible without claiming self-serve auth",
-      "next": "production rollout after CI verify green"
+      "deleted": "root protected-shell pre-auth path retired for unauthenticated visitors",
+      "folded": "root auth entry behavior into production auth browser regression and machine cursor",
+      "retained": "authenticated resource routes behind RoleProvider and /api/me",
+      "reason": "root domain must show the Figma-aligned commercial auth entry without first requesting /api/me",
+      "next": "production rollout and live /login plus / root browser verification"
     },
     "retirement": {
       "active_blocker_retired": true,
@@ -219,7 +204,7 @@
   "current_blockers": [
     "none_for_current_scoped_commercial_business_flow"
   ],
-  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is recovery/platform-v22-trunk at f0b767da9bf5a2e2c22b69c134351696f5f32531; it binds goal-driven development to affected_journeys from the Commercial Launch Product Contract Matrix without replacing goals with journeys. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is recovery/platform-v22-trunk at f0b767da9bf5a2e2c22b69c134351696f5f32531.",
+  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is recovery/platform-v22-trunk at ef52dec6ee0d1713446b03cce3d9e7fbd693ba1d; it binds goal-driven development to affected_journeys from the Commercial Launch Product Contract Matrix without replacing goals with journeys. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is recovery/platform-v22-trunk at ef52dec6ee0d1713446b03cce3d9e7fbd693ba1d.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -1219,8 +1204,8 @@
     },
     "receipt_manifest_artifact_id": "7937559220"
   },
-  "base_trunk_head": "f0b767da9bf5a2e2c22b69c134351696f5f32531",
-  "last_landed_commit": "f0b767da9bf5a2e2c22b69c134351696f5f32531",
+  "base_trunk_head": "ef52dec6ee0d1713446b03cce3d9e7fbd693ba1d",
+  "last_landed_commit": "ef52dec6ee0d1713446b03cce3d9e7fbd693ba1d",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
@@ -1994,7 +1979,7 @@
       },
       {
         "goal_id": "recovery/platform-v22-trunk",
-        "landed_commit": "f0b767da9bf5a2e2c22b69c134351696f5f32531",
+        "landed_commit": "ef52dec6ee0d1713446b03cce3d9e7fbd693ba1d",
         "status": "completed_retired",
         "retired_from": [
           "active_blocker",
