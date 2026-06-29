@@ -119,12 +119,12 @@ class VpcClient {
   async DescribeSubnets(request) {
     calls.push({ api: "DescribeSubnets", request });
     await persist();
-    return { SubnetSet: [{ SubnetId: "subnet-test", VpcId: "vpc-test", Zone: "na-siliconvalley-1", AvailableIpAddressCount: 8 }] };
+    throw new Error("unexpected DescribeSubnets " + JSON.stringify(request));
   }
   async DescribeSecurityGroups(request) {
     calls.push({ api: "DescribeSecurityGroups", request });
     await persist();
-    return { SecurityGroupSet: [{ SecurityGroupId: "sg-test", SecurityGroupName: "medopl-runtime", VpcId: "vpc-test" }] };
+    throw new Error("unexpected DescribeSecurityGroups " + JSON.stringify(request));
   }
 }
 class CvmClient {
@@ -165,8 +165,6 @@ assertNoSensitiveText(JSON.stringify(result), "cluster_foundation_execute");
 const calls = JSON.parse(readFileSync(fakeSdkLog, "utf8"));
 assert.deepEqual(calls.map((call) => call.api).filter((api) => api !== "DescribeClusterNodePools"), [
   "DescribeClusters",
-  "DescribeSubnets",
-  "DescribeSecurityGroups",
   "DescribeInstanceTypeConfigs",
   "DescribeImages",
   "CreateClusterNodePool",
@@ -178,14 +176,12 @@ assert.deepEqual(calls.map((call) => call.api).filter((api) => api !== "Describe
 const created = calls.filter((call) => call.api === "CreateClusterNodePool").map((call) => call.request);
 assert.equal(JSON.parse(created[0].LaunchConfigurePara).ImageId, "img-tencentos-test", "cluster_foundation_image_id");
 assert.deepEqual(JSON.parse(created[0].AutoScalingGroupPara).SubnetIds, ["subnet-test"], "cluster_foundation_subnet");
-assert.deepEqual(JSON.parse(created[0].LaunchConfigurePara).SecurityGroupIds, ["sg-test"], "cluster_foundation_security_group");
+assert.equal(JSON.parse(created[0].LaunchConfigurePara).SecurityGroupIds, undefined, "cluster_foundation_default_must_not_require_vpc_security_group_permission");
 assert.deepEqual(
   calls.filter((call) => call.api === "DeleteClusterNodePool").map((call) => call.request.NodePoolIds),
   [["np-pro-foundation"], ["np-starter-foundation"]],
   "cluster_foundation_cleanup_must_delete_all_created_node_pools",
 );
-const securityGroupDiscovery = calls.find((call) => call.api === "DescribeSecurityGroups");
-assert.deepEqual(securityGroupDiscovery.request, { VpcId: "vpc-test", Limit: "100" }, "cluster_foundation_must_discover_security_group_from_vpc");
 
 console.log(JSON.stringify({
   ok: true,

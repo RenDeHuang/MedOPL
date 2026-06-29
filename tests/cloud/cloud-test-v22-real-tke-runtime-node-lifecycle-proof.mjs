@@ -96,10 +96,15 @@ assert(
 );
 assert(
   realTkeSupportSource.includes("deriveRealTkePlanFromClusterFoundation") &&
-    realTkeSupportSource.includes("DescribeSubnets") &&
-    realTkeSupportSource.includes("DescribeSecurityGroups") &&
-    realTkeSupportSource.includes("DescribeImages"),
+    realTkeSupportSource.includes("pickZone") &&
+    realTkeSupportSource.includes("DescribeImages") &&
+    realTkeSupportSource.includes("validateSecurityGroup"),
   "real_tke_lifecycle_must_support_cluster_foundation_plan_derivation",
+);
+assert(
+  realTkeSupportSource.includes("DescribeSecurityGroups") &&
+    !realTkeSupportSource.includes("DescribeSubnets"),
+  "cluster_foundation_default_must_not_require_vpc_subnet_permission",
 );
 assert(
   realTkeSupportSource.includes("production_goal_real_tke_platform_node_pool_not_found") &&
