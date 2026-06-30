@@ -17,14 +17,14 @@ MedOPL 是 OPL-Webui 的商业资源控制面，负责 owner 创建或批准账�
 | --- | --- |
 | current phase | `commercial runtime storage billing business closure` |
 | current cursor | `goal-commercial-runtime-storage-billing-business-closure` |
-| latest repo closeout | `recovery/platform-v22-trunk` / `f46fc85fc1611f7a0b8a8ca33c77555de9b82e92` |
+| latest repo closeout | `recovery/platform-v22-trunk` / `97ed4a6856d856d4ca9811350aef5df064cdc690` |
 | current blocker | `none_for_current_scoped_commercial_business_flow` |
 | source fix | `goal-commercial-upload-file-billing-writeback-fix` landed at `34b0e3070357504b475a0bee2ff6bd4de0af23df`; `goal-commercial-storage-destroy-writeback-fix` landed at `64699bd3619f01a4442936b096079b3e8051733d` |
 | next proof | `goal-commercial-release-metadata-rollback-maturity` is the next recommended maturity implementation goal after the owner/admin bootstrap setup boundary closeout |
 
 `goal-commercial-runtime-storage-billing-business-closure` is retained as the umbrella product spine for the commercial resource-control flow. It is not an unfinished blocker, and completed retired leaf goals must not be re-entered through stale next-goal prompts.
 
-The latest repo/gate closeout is recovery/platform-v22-trunk at f46fc85fc1611f7a0b8a8ca33c77555de9b82e92. The Commercial Launch Product Contract Matrix is machine-owned at `contracts/medopl-commercial-launch-product-contract-matrix.json` and binds persona, business step, page action, backend truth, receipt/cannot-claim, regression gate and legacy retirement for the commercial launch journey. The scoped canary proof is retained as operations substrate only; detailed run provenance stays in history / GitHub Actions artifact, not active product truth.
+The latest repo/gate closeout is recovery/platform-v22-trunk at 97ed4a6856d856d4ca9811350aef5df064cdc690. The Commercial Launch Product Contract Matrix is machine-owned at `contracts/medopl-commercial-launch-product-contract-matrix.json` and binds persona, business step, page action, backend truth, receipt/cannot-claim, regression gate and legacy retirement for the commercial launch journey. The scoped canary proof is retained as operations substrate only; detailed run provenance stays in history / GitHub Actions artifact, not active product truth.
 
 Goal-driven development remains the project management layer: `goal` declares the delivery slice, owner surfaces, verification and closeout, while `journey.id` declares the affected commercial product path. Current machine cursor fields now bind the active commercial closure goal to `affected_journeys` from `contracts/medopl-commercial-launch-product-contract-matrix.json`; future product-facing goals must keep that binding instead of treating goal development and journey development as separate processes.
 
