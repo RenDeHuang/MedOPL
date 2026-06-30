@@ -41,7 +41,26 @@
       "duplicate_policy": "merge_by_dedupe_key",
       "full_issue_body_git_truth": false,
       "raw_evidence_git_truth": false,
-      "source_of_next_work": "goal_or_journey_triage_queue_after_reproducible"
+      "source_of_next_work": "goal_or_journey_triage_queue_after_reproducible",
+      "truth_impact_classes": [
+        "no_truth_change",
+        "current_truth_pointer",
+        "ux_truth_challenge",
+        "journey_truth_challenge",
+        "product_boundary_challenge",
+        "release_evidence_gap"
+      ],
+      "test_profiles": [
+        "daily_scoped",
+        "ci_landing",
+        "release_candidate",
+        "authorized_deploy_canary"
+      ],
+      "development_cadence": {
+        "daily": "issue_goal_scoped_fix_targeted_tests_no_deploy",
+        "ci": "landing_health_contract_review_bloat_line_budget_no_cloud_mutation",
+        "release": "completed_goals_batch_release_metadata_rollback_receipt_authorized_canary"
+      }
     },
     "dedupe_key": {
       "fields": [

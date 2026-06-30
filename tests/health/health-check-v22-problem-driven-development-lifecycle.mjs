@@ -11,10 +11,21 @@ function commandFor(file) {
 
 const contractPath = "contracts/medopl-problem-driven-development-lifecycle-contract.json";
 const gatePath = "tests/health/health-check-v22-problem-driven-development-lifecycle.mjs";
-const [contract, manifest, testReadme] = await Promise.all([
+async function readOptionalText(repoPath) {
+  try {
+    return await readFile(repoPath, "utf8");
+  } catch (error) {
+    if (error?.code === "ENOENT") return "";
+    throw error;
+  }
+}
+
+const issueTemplatePath = ".github/ISSUE_TEMPLATE/problem.yml";
+const [contract, manifest, testReadme, issueTemplate] = await Promise.all([
   readJson(contractPath),
   readJson("tests/fixtures/v22/agent-verify-manifest.json"),
   readFile("tests/README.md", "utf8"),
+  readOptionalText(issueTemplatePath),
 ]);
 
 const lifecycle = contract.medopl_problem_driven_development_lifecycle_contract;
@@ -65,6 +76,37 @@ assert.equal(lifecycle.github_issue_intake.duplicate_policy, "merge_by_dedupe_ke
 assert.equal(lifecycle.github_issue_intake.full_issue_body_git_truth, false, "github_issue_body_must_not_be_git_truth");
 assert.equal(lifecycle.github_issue_intake.raw_evidence_git_truth, false, "github_issue_raw_evidence_must_not_be_git_truth");
 assert.equal(lifecycle.github_issue_intake.source_of_next_work, "goal_or_journey_triage_queue_after_reproducible", "github_issue_next_work_source_mismatch");
+assert.deepEqual(
+  lifecycle.github_issue_intake.truth_impact_classes,
+  [
+    "no_truth_change",
+    "current_truth_pointer",
+    "ux_truth_challenge",
+    "journey_truth_challenge",
+    "product_boundary_challenge",
+    "release_evidence_gap",
+  ],
+  "github_issue_truth_impact_classes_mismatch",
+);
+assert.deepEqual(
+  lifecycle.github_issue_intake.test_profiles,
+  [
+    "daily_scoped",
+    "ci_landing",
+    "release_candidate",
+    "authorized_deploy_canary",
+  ],
+  "github_issue_test_profiles_mismatch",
+);
+assert.deepEqual(
+  lifecycle.github_issue_intake.development_cadence,
+  {
+    daily: "issue_goal_scoped_fix_targeted_tests_no_deploy",
+    ci: "landing_health_contract_review_bloat_line_budget_no_cloud_mutation",
+    release: "completed_goals_batch_release_metadata_rollback_receipt_authorized_canary",
+  },
+  "github_issue_development_cadence_mismatch",
+);
 
 assert.deepEqual(
   lifecycle.dedupe_key.fields,
@@ -155,6 +197,36 @@ assert.equal(
   "external_pointer_only",
   "manifest_problem_lifecycle_github_issue_intake_mismatch",
 );
+assert.equal(
+  manifest.problem_driven_development_lifecycle?.github_issue_template,
+  issueTemplatePath,
+  "manifest_problem_lifecycle_issue_template_pointer_mismatch",
+);
+assert.deepEqual(
+  manifest.problem_driven_development_lifecycle?.truth_impact_classes,
+  lifecycle.github_issue_intake.truth_impact_classes,
+  "manifest_problem_lifecycle_truth_impact_classes_mismatch",
+);
+assert.deepEqual(
+  manifest.problem_driven_development_lifecycle?.test_profiles,
+  lifecycle.github_issue_intake.test_profiles,
+  "manifest_problem_lifecycle_test_profiles_mismatch",
+);
+
+assert(issueTemplate.includes("name: MedOPL reproducible problem"), "github_issue_template_name_missing");
+for (const requiredField of lifecycle.reproducible_problem.required_fields) {
+  assert(issueTemplate.includes(`id: ${requiredField}`), `github_issue_template_reproducible_field_missing:${requiredField}`);
+}
+for (const triageField of lifecycle.github_issue_intake.required_triage_fields) {
+  assert(issueTemplate.includes(`id: ${triageField}`), `github_issue_template_triage_field_missing:${triageField}`);
+}
+for (const truthImpactClass of lifecycle.github_issue_intake.truth_impact_classes) {
+  assert(issueTemplate.includes(truthImpactClass), `github_issue_template_truth_impact_class_missing:${truthImpactClass}`);
+}
+for (const testProfile of lifecycle.github_issue_intake.test_profiles) {
+  assert(issueTemplate.includes(testProfile), `github_issue_template_test_profile_missing:${testProfile}`);
+}
+assert(issueTemplate.includes("Issue is intake, not product truth."), "github_issue_template_truth_boundary_missing");
 
 assert(testReadme.includes("Problem-driven Development Lifecycle"), "tests_readme_problem_lifecycle_section_missing");
 assert(testReadme.includes("observed -> reproducible -> fixed -> institutionalized -> cleared"), "tests_readme_problem_lifecycle_states_missing");

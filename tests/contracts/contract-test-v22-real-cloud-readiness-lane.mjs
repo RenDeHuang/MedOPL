@@ -59,6 +59,7 @@ const cloudTestSources = await Promise.all([...readinessFiles, ...futureBoundary
 
 for (const [file, source] of cloudTestSources) {
   assert(!source.includes("contract-test-v22-mvp-contract-suite.mjs"), `cloud_lane_test_must_not_anchor_old_mvp_suite:${file}`);
+  assert(!source.includes("suite-test-v22-mvp.mjs"), `cloud_lane_test_must_not_anchor_old_mvp_suite_wrapper:${file}`);
   assert(!source.includes("smoke-test-v22-"), `cloud_lane_test_must_not_anchor_legacy_smoke_name:${file}`);
 }
 
@@ -90,6 +91,7 @@ for (const command of [
   assert(!command.includes("suite cloud-future-authorized"), "current_verify_must_not_run_future_authorized_cloud_suite");
   assert(!command.includes("suite cloud-future-authorized --base origin/recovery/platform-v22-trunk --dry-run"), "current_readiness_must_not_be_hidden_behind_future_authorized_dry_run");
   assert(!command.includes("contract-test-v22-mvp-contract-suite.mjs") || !command.includes("cloud"), "cloud_readiness_must_not_use_old_mvp_suite_anchor");
+  assert(!command.includes("suite-test-v22-mvp.mjs") || !command.includes("cloud"), "cloud_readiness_must_not_use_old_mvp_suite_wrapper");
   for (const pattern of retiredCloudCommandPatterns) {
     assert(!pattern.test(command), `current_verify_must_not_run_retired_cloud_pattern:${pattern}:${command}`);
   }

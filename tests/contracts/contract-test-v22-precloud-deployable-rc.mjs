@@ -27,12 +27,22 @@ function assertNotMatches(source, pattern, label) {
 }
 
 async function assertNodeBackendRetiredFromDeployableSurface() {
-  const packageJson = JSON.parse(await readRepoFile("services/portal/package.json"));
+  await assert.rejects(
+    readRepoFile("services/portal/package.json"),
+    /ENOENT/u,
+    "portal_root_wrapper_package_must_be_removed_from_deployable_surface",
+  );
+  await assert.rejects(
+    readRepoFile("services/portal/package-lock.json"),
+    /ENOENT/u,
+    "portal_root_wrapper_lockfile_must_be_removed_from_deployable_surface",
+  );
+  const packageJson = JSON.parse(await readRepoFile("services/portal/frontend/package.json"));
   const scripts = packageJson.scripts ?? {};
   const dependencies = packageJson.dependencies ?? {};
-  assertNotIncludes(scripts.start ?? "", "src/server.mjs", "portal_root_start_must_not_launch_node_backend");
-  assertNotIncludes(scripts.check ?? "", "src/server.mjs", "portal_root_check_must_not_check_node_backend_entry");
-  assertNotIncludes(scripts["migrate:schema"] ?? "", "src/migrate-schema.mjs", "portal_root_migrate_must_not_keep_node_schema_entry");
+  assertNotIncludes(scripts.dev ?? "", "src/server.mjs", "portal_frontend_dev_must_not_launch_node_backend");
+  assertNotIncludes(scripts.typecheck ?? "", "src/server.mjs", "portal_frontend_typecheck_must_not_check_node_backend_entry");
+  assertNotIncludes(scripts["migrate:schema"] ?? "", "src/migrate-schema.mjs", "portal_frontend_migrate_must_not_keep_node_schema_entry");
   for (const dependency of ["cos-nodejs-sdk-v5", "pg", "redis", "tencentcloud-sdk-nodejs"]) {
     assert.equal(Object.hasOwn(dependencies, dependency), false, `portal_root_backend_dependency_must_be_retired:${dependency}`);
   }

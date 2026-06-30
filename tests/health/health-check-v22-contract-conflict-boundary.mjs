@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, "../..");
 
-const mvpSuitePath = "tests/suites/suite-test-v22-mvp.mjs";
+const localAcceptanceSuitePath = "tests/suites/suite-test-v22-local-acceptance.mjs";
 
 async function readRepoFile(filePath) {
   return readFile(path.join(repoRoot, filePath), "utf8");
@@ -58,7 +58,7 @@ const docEntries = await Promise.all(
   ].map(async (filePath) => [filePath, await readRepoFile(filePath)]),
 );
 const docsToScan = docEntries.map(([filePath]) => filePath);
-const mvpSuite = await readRepoFile(mvpSuitePath);
+const localAcceptanceSuite = await readRepoFile(localAcceptanceSuitePath);
 
 const findings = [];
 
@@ -125,15 +125,15 @@ const liveCanaryScripts = [
   "smoke-test-v22-tencent-authorized-deploy-execution-runner.mjs",
 ];
 
-const defaultSuiteNames = defaultSuiteScriptNames(mvpSuite);
+const defaultSuiteNames = defaultSuiteScriptNames(localAcceptanceSuite);
 for (const liveScript of liveCanaryScripts) {
   if (defaultSuiteNames.includes(liveScript)) {
     findings.push({
-      type: "default_mvp_suite_includes_authorized_live_canary",
-      file: mvpSuitePath,
-      line: lineOf(mvpSuite, mvpSuite.indexOf(liveScript)),
+      type: "default_local_acceptance_suite_includes_authorized_live_canary",
+      file: localAcceptanceSuitePath,
+      line: lineOf(localAcceptanceSuite, localAcceptanceSuite.indexOf(liveScript)),
       match: liveScript,
-      detail: "Default local MVP suite must not execute authorized live canary scripts.",
+      detail: "Default local acceptance suite must not execute authorized live canary scripts.",
     });
   }
 }
@@ -173,6 +173,6 @@ console.log(JSON.stringify({
   contract: "v22_contract_conflict_boundary",
   checked: {
     docs: docsToScan,
-    defaultSuite: mvpSuitePath,
+    defaultSuite: localAcceptanceSuitePath,
   },
 }, null, 2));

@@ -121,8 +121,8 @@ export function evaluateReview({
   if (formalEngineeringChanged && !evalChanged && !contractsChanged && !closeoutOnly) findings.push({ code: "formal_change_without_machine_evidence_update", severity: "blocker", message: "正式工程变更必须绑定 source/test/runner/fixture/contract evidence；不得新增 change package。" });
 
   const recommendedCommands = [...reviewRequiredCommands];
-  if (normalizedFiles.some((file) => file.startsWith("services/portal/"))) recommendedCommands.push("npm --prefix services/portal run check");
-  if (normalizedFiles.some((file) => file.startsWith("services/portal/frontend/"))) recommendedCommands.push("npm --prefix services/portal run frontend:typecheck");
+  if (normalizedFiles.some((file) => file.startsWith("services/portal/"))) recommendedCommands.push("npm --prefix services/portal/frontend run typecheck");
+  if (normalizedFiles.some((file) => file.startsWith("services/portal/frontend/"))) recommendedCommands.push("npm --prefix services/portal/frontend run typecheck");
   if (normalizedFiles.some((file) => file.startsWith("services/opl-web-gateway/"))) {
     recommendedCommands.push("npm --prefix services/opl-web-gateway run check");
     recommendedCommands.push("node tests/regression/opl/regression-test-v22-opl-gateway-upstream-proxy-local.mjs");

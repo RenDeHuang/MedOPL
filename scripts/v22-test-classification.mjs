@@ -330,7 +330,7 @@ function explicitEntries() {
     ...CURRENT_GATE_FILES.map((file) => gateSelfTestEntry(file, "contract", "contract-local", ["health", "local-contract", "current", "review"])),
     ...CURRENT_CONTRACT_FILES.map((file) => baseEntry(file, "contract", "contract-local", ["local-contract", "current", "review"])),
     baseEntry("tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs", "regression-portal", "local-regression", ["local-regression", "journey-product-evidence"]),
-    ...["tests/suites/suite-test-v22-golden-smoke.mjs", "tests/suites/suite-test-v22-mvp.mjs"]
+    ...["tests/suites/suite-test-v22-golden-smoke.mjs", "tests/suites/suite-test-v22-local-acceptance.mjs"]
       .map((file) => baseEntry(file, "contract", "contract-local", file.includes("golden") ? ["golden-path", "smoke"] : ["local-contract"])),
   ];
 }
@@ -428,7 +428,7 @@ function wrapperCoverageFiles(wrapperFile) {
       .map((entry) => entry.file)
       .sort());
   }
-  if (wrapperFile === "tests/suites/suite-test-v22-mvp.mjs") {
+  if (wrapperFile === "tests/suites/suite-test-v22-local-acceptance.mjs") {
     return Object.freeze(TEST_LANE_REGISTRY
       .filter((entry) => ["health-check", "smoke-golden", "contract-local"].includes(entry.tier) && entry.entryKind !== "suite-wrapper")
       .map((entry) => entry.file)

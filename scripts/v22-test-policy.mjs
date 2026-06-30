@@ -539,7 +539,7 @@ export const TEST_SURFACE_RULES = Object.freeze([
       return file.startsWith("services/portal/") && !file.startsWith("services/portal/frontend/");
     },
     commands: Object.freeze([
-      "npm --prefix services/portal run check",
+      "npm --prefix services/portal/frontend run typecheck",
       "npm run test:regression",
     ]),
     reason: "portal control-plane changed",

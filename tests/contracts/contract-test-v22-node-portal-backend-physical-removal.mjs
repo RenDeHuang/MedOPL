@@ -32,17 +32,19 @@ async function assertNodeBackendPhysicallyRemoved() {
   assert.equal(await exists("services/portal/src"), false, "node_portal_backend_src_must_be_physically_removed");
   assert.equal(await exists("services/portal/src/server.mjs"), false, "node_portal_server_entry_must_be_physically_removed");
   assert.equal(await exists("services/portal/src/services/portal-workflow-facade.service.mjs"), false, "node_portal_facade_must_not_remain_as_shell");
+  assert.equal(await exists("services/portal/package.json"), false, "portal_root_wrapper_package_must_be_physically_removed");
+  assert.equal(await exists("services/portal/package-lock.json"), false, "portal_root_wrapper_lockfile_must_be_physically_removed");
 }
 
 async function assertPortalPackageCannotLaunchNodeBackend() {
-  const packageJson = JSON.parse(await readRepoFile("services/portal/package.json"));
+  const packageJson = JSON.parse(await readRepoFile("services/portal/frontend/package.json"));
   const scripts = packageJson.scripts ?? {};
   for (const [name, command] of Object.entries(scripts)) {
     assertNotIncludes(command, "src/server.mjs", `portal_script_must_not_launch_node_backend:${name}`);
     assertNotIncludes(command, "migrate-schema.mjs", `portal_script_must_not_run_node_schema_migration:${name}`);
   }
-  assertIncludes(scripts.start, "frontend run dev", "portal_start_must_be_frontend_only");
-  assertIncludes(scripts.check, "frontend run typecheck", "portal_check_must_be_frontend_only");
+  assertIncludes(scripts.dev, "vite", "portal_frontend_dev_must_be_repo_native");
+  assertIncludes(scripts.typecheck, "tsc -p tsconfig.app.json --noEmit", "portal_frontend_typecheck_must_be_repo_native");
 }
 
 async function assertFrontendUsesGoApiOnly() {

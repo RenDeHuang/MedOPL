@@ -77,7 +77,7 @@ for (const id of ["portal-frontend", "go-backend", "opl-web-gateway", "runtime-b
   assert(services.has(id), `local_service_plan_missing:${id}`);
 }
 
-assert.equal(services.get("portal-frontend").command, "npm --prefix services/portal run start", "portal_command_must_use_frontend_only_package");
+assert.equal(services.get("portal-frontend").command, "npm --prefix services/portal/frontend run dev -- --host 127.0.0.1", "portal_command_must_use_frontend_package_directly");
 assert.equal(services.get("go-backend").command, "go run ./cmd/server", "go_backend_command_must_be_go_server");
 assert.equal(services.get("go-backend").cwd, "services/medopl-go-backend", "go_backend_cwd");
 assert.equal(services.get("opl-web-gateway").command, "npm --prefix services/opl-web-gateway run start", "gateway_command_must_have_repo_native_start");

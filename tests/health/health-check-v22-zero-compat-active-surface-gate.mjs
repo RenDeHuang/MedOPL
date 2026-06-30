@@ -116,15 +116,15 @@ for (const file of activeTruthFiles) {
 }
 assert.deepEqual(truthFindings, [], `zero_compat_current_truth_findings:${JSON.stringify(truthFindings, null, 2)}`);
 
-const [portalPackage, viteConfig, frontendClient, router, manifest] = await Promise.all([
-  readRepoFile("services/portal/package.json"),
+const [viteConfig, frontendClient, router, manifest] = await Promise.all([
   readRepoFile("services/portal/frontend/vite.config.ts"),
   readRepoFile("services/portal/frontend/src/api/client.ts"),
   readRepoFile("services/medopl-go-backend/internal/server/router.go"),
   readRepoFile("tests/fixtures/v22/agent-verify-manifest.json").then(JSON.parse),
 ]);
 
-assert.equal(JSON.parse(portalPackage).scripts.start.includes("frontend run dev"), true, "portal_start_must_be_frontend_only");
+assert.equal(await exists("services/portal/package.json"), false, "portal_root_wrapper_package_must_be_removed");
+assert.equal(await exists("services/portal/package-lock.json"), false, "portal_root_wrapper_lockfile_must_be_removed");
 assert.equal(viteConfig.includes('"/api": goControlPlaneTarget'), true, "frontend_must_proxy_only_go_api");
 assert.equal(frontendClient.includes("goControlPlaneClient"), true, "frontend_client_must_export_go_client");
 assert.equal(router.includes('router.GET("/api/me"'), true, "go_router_must_own_portal_projection");

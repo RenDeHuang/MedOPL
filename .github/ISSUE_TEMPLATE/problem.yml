@@ -1,0 +1,155 @@
+name: MedOPL reproducible problem
+description: Report a reproducible MedOPL problem without making the issue product truth.
+title: "[Problem]: "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Issue is intake, not product truth. Product, UX, journey, current, release, and evidence truth only change after triage/admission, verified goal closeout, or an explicit truth-change goal.
+  - type: input
+    id: journey_id
+    attributes:
+      label: journey_id
+      description: Use an id from contracts/medopl-commercial-launch-product-contract-matrix.json.
+      placeholder: plan_selection
+    validations:
+      required: true
+  - type: textarea
+    id: preconditions
+    attributes:
+      label: preconditions
+      description: Account, route, environment, data, flags, and any state required before reproducing.
+    validations:
+      required: true
+  - type: textarea
+    id: steps_to_reproduce
+    attributes:
+      label: steps_to_reproduce
+      description: Minimal numbered steps that reproduce the issue.
+    validations:
+      required: true
+  - type: textarea
+    id: expected_result
+    attributes:
+      label: expected_result
+      description: What should happen according to current product or journey truth.
+    validations:
+      required: true
+  - type: textarea
+    id: actual_result
+    attributes:
+      label: actual_result
+      description: What actually happened.
+    validations:
+      required: true
+  - type: input
+    id: evidence_pointer
+    attributes:
+      label: evidence_pointer
+      description: Link or .runtime pointer. Do not paste secrets, raw tokens, or large traces into git.
+      placeholder: .runtime/problem-driven-development/...
+    validations:
+      required: true
+  - type: dropdown
+    id: severity
+    attributes:
+      label: severity
+      options:
+        - P0
+        - P1
+        - P2
+        - P3
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: environment
+      description: Local/CI/canary/live surface, browser, commit, route, and service state.
+    validations:
+      required: true
+  - type: input
+    id: issue_pointer
+    attributes:
+      label: issue_pointer
+      description: Maintainer-filled pointer after creation, such as GitHub issue URL.
+      placeholder: https://github.com/RenDeHuang/MedOPL/issues/...
+    validations:
+      required: false
+  - type: input
+    id: dedupe_key
+    attributes:
+      label: dedupe_key
+      description: journey_id + invariant_violated + failure_mode + likely_root_cause. Use unknown_pending_triage until root cause is known.
+      placeholder: plan_selection|price_truth|wrong_disabled_reason|unknown_pending_triage
+    validations:
+      required: true
+  - type: input
+    id: affected_journey_ids
+    attributes:
+      label: affected_journey_ids
+      description: Comma-separated journey ids affected by this issue.
+      placeholder: plan_selection,credit_balance
+    validations:
+      required: true
+  - type: dropdown
+    id: reproducibility
+    attributes:
+      label: reproducibility
+      options:
+        - observed
+        - reproducible
+        - repeated
+        - not_reproducible
+    validations:
+      required: true
+  - type: input
+    id: owner_surface
+    attributes:
+      label: owner_surface
+      description: Expected owner surface, such as portal, backend, runtime, release, cloud, docs, contract, or unknown_pending_triage.
+      placeholder: portal
+    validations:
+      required: true
+  - type: dropdown
+    id: truth_impact_class
+    attributes:
+      label: truth_impact_class
+      description: Issues challenge truth; they do not update truth directly.
+      options:
+        - no_truth_change
+        - current_truth_pointer
+        - ux_truth_challenge
+        - journey_truth_challenge
+        - product_boundary_challenge
+        - release_evidence_gap
+    validations:
+      required: true
+  - type: dropdown
+    id: test_profile
+    attributes:
+      label: test_profile
+      description: Intended validation weight before triage can refine it.
+      options:
+        - daily_scoped
+        - ci_landing
+        - release_candidate
+        - authorized_deploy_canary
+    validations:
+      required: true
+  - type: textarea
+    id: minimum_repo_delta
+    attributes:
+      label: minimum_repo_delta
+      description: Smallest expected source/test/contract/doc change if this is admitted.
+    validations:
+      required: true
+  - type: textarea
+    id: closeout_assets_policy
+    attributes:
+      label: closeout_assets_policy
+      description: Long-lived assets allowed after closeout; no raw screenshots, traces, debug logs, or full issue transcript in git.
+      value: source_fix + minimal_regression_test + required_contract_or_schema_constraint + cannot_claim_or_owner_boundary + compact_history_summary_when_product_relevant
+    validations:
+      required: true
