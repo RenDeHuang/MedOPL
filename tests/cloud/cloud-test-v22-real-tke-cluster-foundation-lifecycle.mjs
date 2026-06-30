@@ -184,6 +184,10 @@ for (const request of created) {
   );
 }
 assert.equal(JSON.parse(created[0].LaunchConfigurePara).ImageId, undefined, "cluster_foundation_default_must_not_require_cvm_image_permission");
+assert.equal(JSON.parse(created[0].LaunchConfigurePara).InstanceType, "S5.MEDIUM4", "cluster_foundation_starter_must_use_single_instance_type");
+assert.equal(JSON.parse(created[0].LaunchConfigurePara).InstanceTypes, undefined, "cluster_foundation_create_must_not_use_instance_types_array");
+assert.equal(JSON.parse(created[1].LaunchConfigurePara).InstanceType, "S5.2XLARGE16", "cluster_foundation_pro_must_use_single_instance_type");
+assert.equal(JSON.parse(created[1].LaunchConfigurePara).InstanceTypes, undefined, "cluster_foundation_pro_create_must_not_use_instance_types_array");
 assert.equal(created[0].NodePoolOs, "tlinux3.1x86_64", "cluster_foundation_default_node_pool_os");
 assert.deepEqual(JSON.parse(created[0].AutoScalingGroupPara).SubnetIds, ["subnet-test"], "cluster_foundation_subnet");
 assert.equal(JSON.parse(created[0].LaunchConfigurePara).SecurityGroupIds, undefined, "cluster_foundation_default_must_not_require_vpc_security_group_permission");
