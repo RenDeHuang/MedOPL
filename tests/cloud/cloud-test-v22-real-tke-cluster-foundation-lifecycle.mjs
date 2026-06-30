@@ -184,6 +184,8 @@ for (const request of created) {
   );
 }
 assert.equal(JSON.parse(created[0].LaunchConfigurePara).ImageId, undefined, "cluster_foundation_default_must_not_require_cvm_image_permission");
+assert.equal(JSON.parse(created[0].LaunchConfigurePara).LaunchConfigurationName, undefined, "cluster_foundation_tke_create_must_not_set_launch_configuration_name");
+assert.equal(JSON.parse(created[1].LaunchConfigurePara).LaunchConfigurationName, undefined, "cluster_foundation_pro_tke_create_must_not_set_launch_configuration_name");
 assert.equal(JSON.parse(created[0].LaunchConfigurePara).InstanceType, "S5.MEDIUM4", "cluster_foundation_starter_must_use_single_instance_type");
 assert.equal(JSON.parse(created[0].LaunchConfigurePara).InstanceTypes, undefined, "cluster_foundation_create_must_not_use_instance_types_array");
 assert.equal(JSON.parse(created[1].LaunchConfigurePara).InstanceType, "S5.2XLARGE16", "cluster_foundation_pro_must_use_single_instance_type");

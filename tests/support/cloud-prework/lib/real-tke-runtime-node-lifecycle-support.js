@@ -177,7 +177,6 @@ function cloneLaunchConfiguration(source = {}, overrides = {}, suffix = "runtime
     ? overrides.InstanceTypes
     : (Array.isArray(source.InstanceTypes) && source.InstanceTypes.length ? source.InstanceTypes : undefined);
   return withoutEmpty({
-    LaunchConfigurationName: `medopl-${suffix}-${Date.now()}`.slice(0, 60),
     ImageId: source.ImageId,
     ImageFamily: source.ImageFamily,
     ProjectId: source.ProjectId,
