@@ -336,6 +336,287 @@ assert.deepEqual(
   "cluster_foundation_blocked_must_cleanup_after_create_observe_failure",
 );
 
+const proBlockedPlanFile = path.join(tempDir, "real-tke-cluster-foundation-pro-blocked-plan.json");
+const proBlockedFakeSdk = path.join(tempDir, "fake-tencentcloud-sdk-nodejs-cluster-foundation-pro-blocked.mjs");
+const proBlockedSdkLog = path.join(tempDir, "real-tke-cluster-foundation-pro-blocked-fake-sdk.log");
+const proBlockedRuntimeDir = path.join(repoRoot, ".runtime", "v22-cloud-authorization", `cluster-foundation-pro-blocked-${Date.now()}`);
+const proBlockedEvidenceRef = path.join(".runtime", "v22-cloud-authorization", path.basename(proBlockedRuntimeDir), "real_tke_runtime_node_lifecycle.json");
+mkdirSync(proBlockedRuntimeDir, { recursive: true });
+writeFileSync(proBlockedPlanFile, JSON.stringify({
+  clusterId: "cls-test",
+  region: "na-siliconvalley",
+  requireNodeTotal: 1,
+  requireReadyNodeCount: 1,
+  createObserveAttempts: 1,
+  deleteObserveAttempts: 2,
+  tiers: [
+    { id: "starter_2c4g_10gb", cpuCores: 2, memoryGb: 4, storageGb: 10 },
+    { id: "pro_8c16g_100gb", cpuCores: 8, memoryGb: 16, storageGb: 100 },
+  ],
+  deriveFromClusterFoundation: {
+    enabled: true,
+    vpcId: "vpc-test",
+    subnetId: "subnet-test",
+    requireSecurityGroup: true,
+  },
+}, null, 2));
+writeFileSync(proBlockedFakeSdk, `
+const calls = [];
+const pools = new Map();
+async function persist() {
+  const { writeFileSync } = await import("node:fs");
+  writeFileSync(process.env.TEST_REAL_TKE_CLUSTER_FOUNDATION_PRO_BLOCKED_FAKE_SDK_LOG, JSON.stringify(calls, null, 2));
+}
+class TkeClient {
+  async DescribeClusters(request) {
+    calls.push({ api: "DescribeClusters", request });
+    await persist();
+    return { Clusters: [{ ClusterId: "cls-test", ClusterNetworkSettings: { VpcId: "vpc-test", Subnets: ["subnet-test"] } }] };
+  }
+  async CreateNodePool(request) {
+    calls.push({ api: "CreateNodePool", request });
+    const nodePoolId = request.Name.includes("pro") ? "np-pro-no-cvm" : "np-starter-ready";
+    pools.set(nodePoolId, {
+      NodePoolId: nodePoolId,
+      Type: "Native",
+      LifeState: "Running",
+      Name: request.Name,
+      Native: {
+        Scaling: request.Native.Scaling,
+        Replicas: request.Native.Replicas,
+        InstanceTypes: request.Native.InstanceTypes,
+        ReadyReplicas: request.Name.includes("pro") ? 0 : 1,
+        NodeCountSummary: request.Name.includes("pro")
+          ? { AutoscalingAdded: { Total: 0, Normal: 0 }, ManuallyAdded: { Total: 0, Normal: 0 } }
+          : { AutoscalingAdded: { Total: 1, Normal: 1 }, ManuallyAdded: { Total: 0, Normal: 0 } },
+      },
+    });
+    await persist();
+    return { NodePoolId: nodePoolId };
+  }
+  async DescribeNodePools(request) {
+    calls.push({ api: "DescribeNodePools", request });
+    await persist();
+    const requested = new Set(request.Filters.find((filter) => filter.Name === "NodePoolsId").Values);
+    return { NodePools: Array.from(pools.values()).filter((pool) => requested.has(pool.NodePoolId)) };
+  }
+  async DeleteNodePool(request) {
+    calls.push({ api: "DeleteNodePool", request });
+    pools.delete(request.NodePoolId);
+    await persist();
+    return { RequestId: "delete-node-pool" };
+  }
+}
+class VpcClient {
+  async DescribeSecurityGroups(request) {
+    calls.push({ api: "DescribeSecurityGroups", request });
+    await persist();
+    return { SecurityGroupSet: [{ SecurityGroupId: "sg-foundation", SecurityGroupName: "medopl-runtime", VpcId: "vpc-test" }] };
+  }
+}
+class CvmClient {
+  async DescribeInstanceTypeConfigs(request) {
+    calls.push({ api: "DescribeInstanceTypeConfigs", request });
+    await persist();
+    return { InstanceTypeConfigSet: [
+      { Zone: "na-siliconvalley-1", InstanceType: "S5.MEDIUM4", CPU: 2, Memory: 4 },
+      { Zone: "na-siliconvalley-1", InstanceType: "S5.2XLARGE16", CPU: 8, Memory: 16 },
+    ] };
+  }
+}
+export default {
+  tke: { v20180525: { Client: TkeClient }, v20220501: { Client: TkeClient } },
+  vpc: { v20170312: { Client: VpcClient } },
+  cvm: { v20170312: { Client: CvmClient } },
+};
+`);
+const proBlocked = run(["--operation", "real_tke_runtime_node_lifecycle", "--execute", "--confirm-current-session-authorization"], {
+  V22_TENCENT_MUTATION_SECRET_FILE: mutationSecretFile,
+  V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_FILE: proBlockedPlanFile,
+  V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_SDK_MODULE: proBlockedFakeSdk,
+  V22_GOAL_EVIDENCE_REF: proBlockedEvidenceRef,
+  TEST_REAL_TKE_CLUSTER_FOUNDATION_PRO_BLOCKED_FAKE_SDK_LOG: proBlockedSdkLog,
+});
+assert.notEqual(proBlocked.status, 0, "cluster_foundation_pro_without_cvm_must_fail_closed");
+const proBlockedPayload = JSON.parse(proBlocked.stdout);
+assert.equal(
+  proBlockedPayload.summary.blocker,
+  "production_goal_real_tke_node_pool_not_observed",
+  "cluster_foundation_pro_without_cvm_blocker",
+);
+const proBlockedEvidence = JSON.parse(readFileSync(path.join(repoRoot, proBlockedEvidenceRef), "utf8"));
+assert.equal(proBlockedEvidence.lifecycle.createStarter.observed.readyNodeCount, 1, "pro_blocked_evidence_must_keep_starter_ready_observation");
+assert.equal(proBlockedEvidence.lifecycle.createPro.observed.readyNodeCount, 0, "pro_blocked_evidence_must_keep_pro_blocked_observation");
+assert.deepEqual(proBlockedEvidence.nodePoolRefs, ["np-starter-ready", "np-pro-no-cvm"], "pro_blocked_evidence_must_keep_all_created_refs");
+assert.equal(proBlockedEvidence.cleanupVerified, true, "pro_blocked_evidence_must_verify_cleanup");
+assert.equal(proBlockedEvidence.nodePoolDestroyed, true, "pro_blocked_evidence_must_verify_destroy");
+assertNoSensitiveText(proBlocked.stdout + proBlocked.stderr + JSON.stringify(proBlockedEvidence), "cluster_foundation_pro_blocked");
+
+const stockAwarePlanFile = path.join(tempDir, "real-tke-cluster-foundation-stock-aware-plan.json");
+const stockAwareFakeSdk = path.join(tempDir, "fake-tencentcloud-sdk-nodejs-cluster-foundation-stock-aware.mjs");
+const stockAwareSdkLog = path.join(tempDir, "real-tke-cluster-foundation-stock-aware-fake-sdk.log");
+const stockAwareRuntimeDir = path.join(repoRoot, ".runtime", "v22-cloud-authorization", `cluster-foundation-stock-aware-${Date.now()}`);
+mkdirSync(stockAwareRuntimeDir, { recursive: true });
+writeFileSync(stockAwarePlanFile, JSON.stringify({
+  clusterId: "cls-test",
+  region: "na-siliconvalley",
+  requireNodeTotal: 1,
+  requireReadyNodeCount: 1,
+  createObserveAttempts: 1,
+  deleteObserveAttempts: 1,
+  tiers: [
+    { id: "starter_2c4g_10gb", cpuCores: 2, memoryGb: 4, storageGb: 10 },
+    { id: "pro_8c16g_100gb", cpuCores: 8, memoryGb: 16, storageGb: 100 },
+  ],
+  deriveFromClusterFoundation: {
+    enabled: true,
+    vpcId: "vpc-test",
+    subnetId: "subnet-test",
+    requireSecurityGroup: true,
+  },
+}, null, 2));
+writeFileSync(stockAwareFakeSdk, `
+const calls = [];
+const pools = new Map();
+async function persist() {
+  const { writeFileSync } = await import("node:fs");
+  writeFileSync(process.env.TEST_REAL_TKE_CLUSTER_FOUNDATION_STOCK_AWARE_FAKE_SDK_LOG, JSON.stringify(calls, null, 2));
+}
+class TkeClient {
+  async DescribeClusters(request) {
+    calls.push({ api: "DescribeClusters", request });
+    await persist();
+    return { Clusters: [{ ClusterId: "cls-test", ClusterNetworkSettings: { VpcId: "vpc-test", Subnets: ["subnet-test"] } }] };
+  }
+  async CreateNodePool(request) {
+    calls.push({ api: "CreateNodePool", request });
+    const nodePoolId = request.Name.includes("pro") ? "np-pro-stock" : "np-starter-stock";
+    pools.set(nodePoolId, {
+      NodePoolId: nodePoolId,
+      Type: "Native",
+      LifeState: "Running",
+      Name: request.Name,
+      Native: {
+        Scaling: request.Native.Scaling,
+        Replicas: request.Native.Replicas,
+        InstanceTypes: request.Native.InstanceTypes,
+        ReadyReplicas: 1,
+        NodeCountSummary: { AutoscalingAdded: { Total: 1, Normal: 1 }, ManuallyAdded: { Total: 0, Normal: 0 } },
+      },
+    });
+    await persist();
+    return { NodePoolId: nodePoolId };
+  }
+  async DescribeNodePools(request) {
+    calls.push({ api: "DescribeNodePools", request });
+    await persist();
+    const requested = new Set(request.Filters.find((filter) => filter.Name === "NodePoolsId").Values);
+    return { NodePools: Array.from(pools.values()).filter((pool) => requested.has(pool.NodePoolId)) };
+  }
+  async DeleteNodePool(request) {
+    calls.push({ api: "DeleteNodePool", request });
+    pools.delete(request.NodePoolId);
+    await persist();
+    return { RequestId: "delete-node-pool" };
+  }
+}
+class VpcClient {
+  async DescribeSecurityGroups(request) {
+    calls.push({ api: "DescribeSecurityGroups", request });
+    await persist();
+    return { SecurityGroupSet: [{ SecurityGroupId: "sg-foundation", SecurityGroupName: "medopl-runtime", VpcId: "vpc-test" }] };
+  }
+}
+class CvmClient {
+  async DescribeInstanceTypeConfigs(request) {
+    calls.push({ api: "DescribeInstanceTypeConfigs", request });
+    await persist();
+    return { InstanceTypeConfigSet: [
+      { Zone: "na-siliconvalley-1", InstanceType: "S2.MEDIUM4", CPU: 2, Memory: 4 },
+      { Zone: "na-siliconvalley-1", InstanceType: "S5.MEDIUM4", CPU: 2, Memory: 4 },
+      { Zone: "na-siliconvalley-1", InstanceType: "S2.2XLARGE16", CPU: 8, Memory: 16 },
+      { Zone: "na-siliconvalley-1", InstanceType: "S5.2XLARGE16", CPU: 8, Memory: 16 },
+    ] };
+  }
+  async DescribeZoneInstanceConfigInfos(request) {
+    calls.push({ api: "DescribeZoneInstanceConfigInfos", request });
+    await persist();
+    return { InstanceTypeQuotaSet: [
+      { Zone: "na-siliconvalley-1", InstanceType: "S2.MEDIUM4", Cpu: 2, Memory: 4, StatusCategory: "WithoutStock" },
+      { Zone: "na-siliconvalley-1", InstanceType: "S5.MEDIUM4", Cpu: 2, Memory: 4, StatusCategory: "EnoughStock" },
+      { Zone: "na-siliconvalley-1", InstanceType: "S2.2XLARGE16", Cpu: 8, Memory: 16, StatusCategory: "WithoutStock" },
+      { Zone: "na-siliconvalley-1", InstanceType: "S5.2XLARGE16", Cpu: 8, Memory: 16, StatusCategory: "EnoughStock" },
+    ] };
+  }
+}
+export default {
+  tke: { v20180525: { Client: TkeClient }, v20220501: { Client: TkeClient } },
+  vpc: { v20170312: { Client: VpcClient } },
+  cvm: { v20170312: { Client: CvmClient } },
+};
+`);
+const stockAware = parseJson(run(["--operation", "real_tke_runtime_node_lifecycle", "--execute", "--confirm-current-session-authorization"], {
+  V22_TENCENT_MUTATION_SECRET_FILE: mutationSecretFile,
+  V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_FILE: stockAwarePlanFile,
+  V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_SDK_MODULE: stockAwareFakeSdk,
+  V22_GOAL_EVIDENCE_REF: path.join(".runtime", "v22-cloud-authorization", path.basename(stockAwareRuntimeDir), "real_tke_runtime_node_lifecycle.json"),
+  TEST_REAL_TKE_CLUSTER_FOUNDATION_STOCK_AWARE_FAKE_SDK_LOG: stockAwareSdkLog,
+}), "real_tke_cluster_foundation_stock_aware_execute");
+assert.equal(stockAware.summary.realProviderMutationExecuted, true, "stock_aware_must_execute_provider_mutation");
+const stockAwareCalls = JSON.parse(readFileSync(stockAwareSdkLog, "utf8"));
+assert(stockAwareCalls.some((call) => call.api === "DescribeZoneInstanceConfigInfos"), "stock_aware_must_query_zone_instance_stock");
+const stockCreated = stockAwareCalls.filter((call) => call.api === "CreateNodePool").map((call) => call.request);
+assert.equal(stockCreated[0].Native.InstanceTypes[0], "S5.MEDIUM4", "stock_aware_starter_must_avoid_without_stock_type");
+assert.equal(stockCreated[1].Native.InstanceTypes[0], "S5.2XLARGE16", "stock_aware_pro_must_avoid_without_stock_type");
+
+const cleanupOnlyPlanFile = path.join(tempDir, "real-tke-cleanup-only-plan.json");
+const cleanupOnlyFakeSdk = path.join(tempDir, "fake-tencentcloud-sdk-nodejs-cleanup-only.mjs");
+const cleanupOnlySdkLog = path.join(tempDir, "real-tke-cleanup-only-fake-sdk.log");
+const cleanupOnlyRuntimeDir = path.join(repoRoot, ".runtime", "v22-cloud-authorization", `cleanup-only-${Date.now()}`);
+mkdirSync(cleanupOnlyRuntimeDir, { recursive: true });
+writeFileSync(cleanupOnlyPlanFile, JSON.stringify({
+  clusterId: "cls-test",
+  region: "na-siliconvalley",
+  cleanupOnlyNodePoolRefs: ["np-leftover-pro"],
+  deleteObserveAttempts: 2,
+}, null, 2));
+writeFileSync(cleanupOnlyFakeSdk, `
+const calls = [];
+const pools = new Map([["np-leftover-pro", { NodePoolId: "np-leftover-pro", LifeState: "Deleting", Native: { ReadyReplicas: 0 } }]]);
+async function persist() {
+  const { writeFileSync } = await import("node:fs");
+  writeFileSync(process.env.TEST_REAL_TKE_CLEANUP_ONLY_FAKE_SDK_LOG, JSON.stringify(calls, null, 2));
+}
+class TkeClient {
+  async DeleteNodePool(request) {
+    calls.push({ api: "DeleteNodePool", request });
+    pools.delete(request.NodePoolId);
+    await persist();
+    return { RequestId: "delete-leftover" };
+  }
+  async DescribeNodePools(request) {
+    calls.push({ api: "DescribeNodePools", request });
+    await persist();
+    const requested = new Set(request.Filters.find((filter) => filter.Name === "NodePoolsId").Values);
+    return { NodePools: Array.from(pools.values()).filter((pool) => requested.has(pool.NodePoolId)) };
+  }
+}
+export default {
+  tke: { v20220501: { Client: TkeClient } },
+};
+`);
+const cleanupOnly = parseJson(run(["--operation", "real_tke_runtime_node_lifecycle", "--execute", "--confirm-current-session-authorization"], {
+  V22_TENCENT_MUTATION_SECRET_FILE: mutationSecretFile,
+  V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_FILE: cleanupOnlyPlanFile,
+  V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_SDK_MODULE: cleanupOnlyFakeSdk,
+  V22_GOAL_EVIDENCE_REF: path.join(".runtime", "v22-cloud-authorization", path.basename(cleanupOnlyRuntimeDir), "real_tke_runtime_node_lifecycle.json"),
+  TEST_REAL_TKE_CLEANUP_ONLY_FAKE_SDK_LOG: cleanupOnlySdkLog,
+}), "real_tke_cleanup_only_execute");
+assert.equal(cleanupOnly.summary.cleanupOnly, true, "cleanup_only_summary");
+assert.equal(cleanupOnly.summary.cleanupVerified, true, "cleanup_only_must_verify_cleanup");
+const cleanupOnlyCalls = JSON.parse(readFileSync(cleanupOnlySdkLog, "utf8"));
+assert.deepEqual(cleanupOnlyCalls.map((call) => call.api), ["DeleteNodePool", "DescribeNodePools"], "cleanup_only_must_only_delete_and_observe");
+
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_real_tke_cluster_foundation_lifecycle",
