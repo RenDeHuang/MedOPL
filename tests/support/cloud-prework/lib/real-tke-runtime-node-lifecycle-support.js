@@ -365,7 +365,7 @@ function createNativeNodePoolRequestFromDerivedPlan(plan, source = {}, tierId = 
       DataDisks: tierOverride.dataDisks || source.launchConfiguration?.DataDisks,
       EnableAutoscaling: true,
       Replicas: replicas,
-      MachineType: tierOverride.machineType || source.machineType,
+      MachineType: tierOverride.machineType || source.machineType || "NativeCVM",
     }),
   };
 }
@@ -376,12 +376,18 @@ function filterFirst(items = [], keys = []) {
 
 function pickInstanceType(configs = [], tier = {}, allowedZones = []) {
   const zones = new Set((Array.isArray(allowedZones) ? allowedZones : []).filter(Boolean));
+  const supportedNativeCvmFamilies = /^(?:S|SA|C|M|IT|GN|GT|GA)\d*\./u;
   const candidates = (Array.isArray(configs) ? configs : [])
     .filter((config) => Number(config.CPU) === Number(tier.cpuCores) && Number(config.Memory) === Number(tier.memoryGb))
     .filter((config) => !zones.size || !config.Zone || zones.has(config.Zone))
     .map((config) => String(config.InstanceType || "").trim())
     .filter(Boolean)
-    .sort();
+    .sort((left, right) => {
+      const leftSupported = supportedNativeCvmFamilies.test(left) ? 0 : 1;
+      const rightSupported = supportedNativeCvmFamilies.test(right) ? 0 : 1;
+      if (leftSupported !== rightSupported) return leftSupported - rightSupported;
+      return left.localeCompare(right);
+    });
   return candidates[0] || "";
 }
 
