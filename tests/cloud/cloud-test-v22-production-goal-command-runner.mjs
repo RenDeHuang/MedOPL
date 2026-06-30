@@ -495,6 +495,9 @@ class TkeClient {
     calls.push({ api: "CreateClusterNodePool", request });
     const nodePoolId = request.Name.includes("pro") ? "np-pro-created" : "np-starter-created";
     const launch = JSON.parse(request.LaunchConfigurePara);
+    if (request.InstanceAdvancedSettings?.DesiredPodNumber !== undefined) {
+      throw new Error("cluster cls-test doesn't support customized Pod CIDR");
+    }
     if (!Array.isArray(launch.SecurityGroupIds) || launch.SecurityGroupIds[0] !== "sg-test") {
       throw new Error("security group ids is not set");
     }
