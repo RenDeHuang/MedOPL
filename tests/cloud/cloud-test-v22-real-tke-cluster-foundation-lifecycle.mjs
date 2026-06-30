@@ -110,17 +110,13 @@ class TkeClient {
   }
   async ScaleNodePool(request) {
     calls.push({ api: "ScaleNodePool", request });
-    const pool = pools.get(request.NodePoolId);
-    if (pool) pool.Native.Replicas = request.Replicas;
     await persist();
-    return { RequestId: "scale-node-pool" };
+    throw new Error("cluster foundation replacement upgrade must not scale starter node pool in place " + JSON.stringify(request));
   }
   async ModifyNodePool(request) {
     calls.push({ api: "ModifyNodePool", request });
-    const pool = pools.get(request.NodePoolId);
-    if (pool && request.Native?.InstanceTypes) pool.Native.InstanceTypes = request.Native.InstanceTypes;
     await persist();
-    return { RequestId: "modify-node-pool" };
+    throw new Error("cluster foundation replacement upgrade must not modify starter node pool in place " + JSON.stringify(request));
   }
   async DescribeNodePools(request) {
     calls.push({ api: "DescribeNodePools", request });
@@ -200,12 +196,10 @@ assert.deepEqual(calls.map((call) => call.api).filter((api) => api !== "Describe
   "DescribeInstanceTypeConfigs",
   "DescribeSecurityGroups",
   "CreateNodePool",
-  "ModifyNodePool",
-  "ScaleNodePool",
   "CreateNodePool",
   "DeleteNodePool",
   "DeleteNodePool",
-], "cluster_foundation_must_discover_create_upgrade_and_destroy_with_native_node_pool");
+], "cluster_foundation_must_discover_create_replacement_upgrade_and_destroy_with_native_node_pool");
 const created = calls.filter((call) => call.api === "CreateNodePool").map((call) => call.request);
 for (const request of created) {
   assert.equal(request.Tags, undefined, "cluster_foundation_default_must_not_send_tke_node_pool_tags");
@@ -224,9 +218,9 @@ assert.deepEqual(created[1].Native.SecurityGroupIds, ["sg-foundation"], "cluster
 assert.equal(created[1].Native.MachineType, "NativeCVM", "cluster_foundation_pro_create_must_use_cvm_backed_native_nodes");
 assert.equal(created[1].Native.InternetAccessible, undefined, "cluster_foundation_pro_default_must_not_send_legacy_internet_accessible_shape");
 const modifyCall = calls.find((call) => call.api === "ModifyNodePool");
-assert.deepEqual(modifyCall.request.Native.InstanceTypes, ["S5.2XLARGE16"], "cluster_foundation_upgrade_must_target_pro_instance_type");
+assert.equal(modifyCall, undefined, "cluster_foundation_replacement_upgrade_must_not_modify_starter_in_place");
 const scaleCall = calls.find((call) => call.api === "ScaleNodePool");
-assert.equal(scaleCall.request.Replicas, 1, "cluster_foundation_upgrade_scale_must_keep_one_real_node");
+assert.equal(scaleCall, undefined, "cluster_foundation_replacement_upgrade_must_not_scale_starter_in_place");
 assert.deepEqual(
   calls.filter((call) => call.api === "DeleteNodePool").map((call) => call.request.NodePoolId),
   ["np-pro-foundation", "np-starter-foundation"],

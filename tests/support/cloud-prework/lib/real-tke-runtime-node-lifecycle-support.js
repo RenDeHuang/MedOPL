@@ -891,13 +891,14 @@ export async function runRealTkeRuntimeNodeLifecycle({ operation, env, plan: inp
       requireNodeTotal: Number(plan.requireNodeTotal || 1),
       requireReadyNodeCount: Number(plan.requireReadyNodeCount || plan.requireNodeTotal || 1),
     });
-    if (upgradeRequest.modifyClusterNodePool) await client.ModifyClusterNodePool({ ClusterId: clusterId, NodePoolId: starterNodePoolId, ...upgradeRequest.modifyClusterNodePool });
-    if (upgradeRequest.modifyNodePoolInstanceTypes) await client.ModifyNodePoolInstanceTypes({ ClusterId: clusterId, NodePoolId: starterNodePoolId, ...upgradeRequest.modifyNodePoolInstanceTypes });
-    if (upgradeRequest.modifyNodePool) await client.ModifyNodePool({ ClusterId: clusterId, NodePoolId: starterNodePoolId, ...upgradeRequest.modifyNodePool });
-    if (upgradeRequest.scaleNodePool) await client.ScaleNodePool({ ClusterId: clusterId, NodePoolId: starterNodePoolId, ...upgradeRequest.scaleNodePool });
-    const starterUpgradeObserved = await (useNativeNodePool ? waitForNativeTkeNodePool : waitForTkeNodePool)(client, clusterId, starterNodePoolId, operation, "starter_upgrade_checked", upgradeObserveAttempts, {
-      requireInstanceType: upgradeTargetInstanceType(upgradeRequest, proTier),
-    });
+    let starterUpgradeObserved = null;
+    if (!useNativeNodePool) {
+      if (upgradeRequest.modifyClusterNodePool) await client.ModifyClusterNodePool({ ClusterId: clusterId, NodePoolId: starterNodePoolId, ...upgradeRequest.modifyClusterNodePool });
+      if (upgradeRequest.modifyNodePoolInstanceTypes) await client.ModifyNodePoolInstanceTypes({ ClusterId: clusterId, NodePoolId: starterNodePoolId, ...upgradeRequest.modifyNodePoolInstanceTypes });
+      starterUpgradeObserved = await waitForTkeNodePool(client, clusterId, starterNodePoolId, operation, "starter_upgrade_checked", upgradeObserveAttempts, {
+        requireInstanceType: upgradeTargetInstanceType(upgradeRequest, proTier),
+      });
+    }
     const proCreated = useNativeNodePool
       ? await client.CreateNodePool({ ClusterId: clusterId, ...withNodePoolName(proCreateRequest, "pro") })
       : await client.CreateClusterNodePool({ ClusterId: clusterId, ...withNodePoolName(proCreateRequest, "pro") });
@@ -909,13 +910,15 @@ export async function runRealTkeRuntimeNodeLifecycle({ operation, env, plan: inp
       requireNodeTotal: Number(plan.requireNodeTotal || 1),
       requireReadyNodeCount: Number(plan.requireReadyNodeCount || plan.requireNodeTotal || 1),
     });
+    if (useNativeNodePool) starterUpgradeObserved = proObserved;
     lifecycle.createStarter = { api: useNativeNodePool ? "CreateNodePool" : "CreateClusterNodePool", tier: starterTier.id, observed: starterObserved };
     lifecycle.upgradeStarter = {
       api: useNativeNodePool
-        ? (upgradeRequest.modifyNodePool ? "ModifyNodePool" : "ScaleNodePool")
+        ? "CreateNodePool"
         : (upgradeRequest.modifyNodePoolInstanceTypes ? "ModifyNodePoolInstanceTypes" : "ModifyClusterNodePool"),
       tierFrom: starterTier.id,
       tierTo: proTier.id,
+      mode: useNativeNodePool ? "replacement_node_pool" : "in_place_instance_type_update",
       observed: starterUpgradeObserved,
     };
     lifecycle.createPro = { api: useNativeNodePool ? "CreateNodePool" : "CreateClusterNodePool", tier: proTier.id, observed: proObserved };
