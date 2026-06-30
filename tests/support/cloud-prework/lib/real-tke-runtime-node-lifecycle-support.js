@@ -236,7 +236,6 @@ function createRequestFromDerivedPlan(plan, source = {}, tierId = "", suffix = "
     source.launchConfiguration,
     {
       InstanceType: tierOverride.instanceType || tier.instanceType || "",
-      InstanceTypes: tierOverride.instanceTypes || (tier.instanceType ? [tier.instanceType] : undefined),
       DataDisks: tierOverride.dataDisks,
     },
     suffix,
