@@ -153,6 +153,25 @@ function withoutEmpty(value = {}) {
   return Object.fromEntries(Object.entries(value).filter(([, child]) => child !== undefined && child !== null && child !== ""));
 }
 
+function normalizeTencentCloudTagKey(value = "") {
+  return String(value || "")
+    .trim()
+    .replace(/[^A-Za-z0-9_.:-]/gu, "_")
+    .replace(/^_+/u, "")
+    .slice(0, 127);
+}
+
+function normalizeTencentCloudTags(tags = [], fallback = []) {
+  const safe = (Array.isArray(tags) && tags.length ? tags : fallback)
+    .map((tag) => {
+      const key = normalizeTencentCloudTagKey(tag?.Key ?? tag?.key ?? tag?.Name ?? tag?.name ?? "");
+      const value = String(tag?.Value ?? tag?.value ?? "").trim().slice(0, 255);
+      return key && value ? { Key: key, Value: value } : null;
+    })
+    .filter(Boolean);
+  return safe.length ? safe : undefined;
+}
+
 function cloneLaunchConfiguration(source = {}, overrides = {}, suffix = "runtime") {
   const instanceTypes = Array.isArray(overrides.InstanceTypes) && overrides.InstanceTypes.length
     ? overrides.InstanceTypes
@@ -172,7 +191,7 @@ function cloneLaunchConfiguration(source = {}, overrides = {}, suffix = "runtime
     InstanceChargeType: source.InstanceChargeType || "POSTPAID_BY_HOUR",
     InstanceTypesCheckPolicy: source.LastOperationInstanceTypesCheckPolicy || source.InstanceTypesCheckPolicy || "ANY",
     InstanceTags: source.InstanceTags,
-    Tags: source.Tags,
+    Tags: normalizeTencentCloudTags(source.Tags),
     CamRoleName: source.CamRoleName,
     HostNameSettings: source.HostNameSettings,
     InstanceNameSettings: source.InstanceNameSettings,
@@ -197,7 +216,7 @@ function cloneAutoScalingGroup(source = {}, launchConfigurationId = "", override
     DefaultCooldown: source.DefaultCooldown,
     TerminationPolicySet: source.TerminationPolicySet,
     RetryPolicy: source.RetryPolicy,
-    Tags: source.Tags,
+    Tags: normalizeTencentCloudTags(source.Tags),
     ServiceSettings: source.ServiceSettings,
     MultiZoneSubnetPolicy: source.MultiZoneSubnetPolicy,
     HealthCheckType: source.HealthCheckType,
@@ -246,7 +265,7 @@ function createRequestFromDerivedPlan(plan, source = {}, tierId = "", suffix = "
     RuntimeVersion: source.runtimeVersion,
     NodePoolOs: source.nodePoolOs,
     OsCustomizeType: source.osCustomizeType,
-    Tags: source.tags,
+    Tags: normalizeTencentCloudTags(source.tags),
     DeletionProtection: false,
   };
 }
@@ -410,7 +429,7 @@ async function deriveRealTkePlanFromPlatformNodePool({ plan, env, root, operatio
     containerRuntime: nodePool.RuntimeConfig?.RuntimeType || undefined,
     runtimeVersion: nodePool.RuntimeConfig?.RuntimeVersion || undefined,
     nodePoolOs: nodePool.NodePoolOs || undefined,
-    tags: nodePool.TagSpecification?.Tags || undefined,
+    tags: normalizeTencentCloudTags(nodePool.TagSpecification?.Tags, [{ Key: "medopl_pool", Value: "tenant" }]),
   };
   return {
     ...plan,
@@ -545,7 +564,7 @@ async function deriveRealTkePlanFromClusterFoundation({ plan, env, root, operati
     containerRuntime: foundation.containerRuntime || "containerd",
     runtimeVersion: foundation.runtimeVersion || undefined,
     nodePoolOs: foundation.nodePoolOs || "tlinux3.1x86_64",
-    tags: foundation.tags || [{ Key: "medopl.io/pool", Value: "tenant" }],
+    tags: normalizeTencentCloudTags(foundation.tags, [{ Key: "medopl_pool", Value: "tenant" }]),
   };
   return {
     ...plan,
