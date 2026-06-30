@@ -81,43 +81,52 @@ class TkeClient {
     await persist();
     return { Clusters: [{ ClusterId: "cls-test", ClusterNetworkSettings: { VpcId: "vpc-test", Subnets: ["subnet-test"] } }] };
   }
-  async CreateClusterNodePool(request) {
-    calls.push({ api: "CreateClusterNodePool", request });
+  async CreateNodePool(request) {
+    calls.push({ api: "CreateNodePool", request });
     const nodePoolId = request.Name.includes("pro") ? "np-pro-foundation" : "np-starter-foundation";
-    const launch = JSON.parse(request.LaunchConfigurePara);
-    if (request.InstanceAdvancedSettings?.DesiredPodNumber !== undefined) {
-      throw new Error("cluster cls-test doesn't support customized Pod CIDR");
+    if (request.Type !== "Native") {
+      throw new Error("cluster foundation real proof must use native node pool");
     }
-    if (!Array.isArray(launch.SecurityGroupIds) || launch.SecurityGroupIds[0] !== "sg-foundation") {
+    if (!Array.isArray(request.Native?.SecurityGroupIds) || request.Native.SecurityGroupIds[0] !== "sg-foundation") {
       throw new Error("security group ids is not set");
     }
     pools.set(nodePoolId, {
       NodePoolId: nodePoolId,
+      Type: "Native",
       LifeState: "normal",
-      DesiredNodesNum: 1,
-      MinNodesNum: 1,
-      MaxNodesNum: 1,
-      InstanceTypes: launch.InstanceTypes || [launch.InstanceType].filter(Boolean),
-      NodeCountSummary: { AutoscalingAdded: { Total: 1, Normal: 1 }, ManuallyAdded: { Total: 0, Normal: 0 } },
+      Name: request.Name,
+      Native: {
+        Scaling: request.Native.Scaling,
+        Replicas: request.Native.Replicas,
+        InstanceTypes: request.Native.InstanceTypes,
+        NodeCountSummary: { AutoscalingAdded: { Total: 1, Normal: 1 }, ManuallyAdded: { Total: 0, Normal: 0 } },
+      },
     });
     await persist();
     return { NodePoolId: nodePoolId };
   }
-  async ModifyNodePoolInstanceTypes(request) {
-    calls.push({ api: "ModifyNodePoolInstanceTypes", request });
+  async ScaleNodePool(request) {
+    calls.push({ api: "ScaleNodePool", request });
     const pool = pools.get(request.NodePoolId);
-    if (pool) pool.InstanceTypes = request.InstanceTypes;
+    if (pool) pool.Native.Replicas = request.Replicas;
     await persist();
-    return { RequestId: "modify-instance-types" };
+    return { RequestId: "scale-node-pool" };
   }
-  async DescribeClusterNodePools(request) {
-    calls.push({ api: "DescribeClusterNodePools", request });
+  async ModifyNodePool(request) {
+    calls.push({ api: "ModifyNodePool", request });
+    const pool = pools.get(request.NodePoolId);
+    if (pool && request.Native?.InstanceTypes) pool.Native.InstanceTypes = request.Native.InstanceTypes;
     await persist();
-    return { NodePoolSet: Array.from(pools.values()) };
+    return { RequestId: "modify-node-pool" };
   }
-  async DeleteClusterNodePool(request) {
-    calls.push({ api: "DeleteClusterNodePool", request });
-    for (const id of request.NodePoolIds || []) pools.delete(id);
+  async DescribeNodePools(request) {
+    calls.push({ api: "DescribeNodePools", request });
+    await persist();
+    return { NodePools: Array.from(pools.values()) };
+  }
+  async DeleteNodePool(request) {
+    calls.push({ api: "DeleteNodePool", request });
+    pools.delete(request.NodePoolId);
     await persist();
     return { RequestId: "delete-node-pool" };
   }
@@ -153,7 +162,7 @@ class CvmClient {
   }
 }
 export default {
-  tke: { v20180525: { Client: TkeClient } },
+  tke: { v20180525: { Client: TkeClient }, v20220501: { Client: TkeClient } },
   vpc: { v20170312: { Client: VpcClient } },
   cvm: { v20170312: { Client: CvmClient } },
 };
@@ -175,41 +184,37 @@ assertNoSensitiveText(JSON.stringify(result), "cluster_foundation_execute");
 const calls = JSON.parse(readFileSync(fakeSdkLog, "utf8"));
 const instanceTypeDiscovery = calls.find((call) => call.api === "DescribeInstanceTypeConfigs");
 assert.deepEqual(instanceTypeDiscovery.request, {}, "cluster_foundation_must_not_use_unsupported_instance_charge_type_filter");
-assert.deepEqual(calls.map((call) => call.api).filter((api) => api !== "DescribeClusterNodePools"), [
+assert.deepEqual(calls.map((call) => call.api).filter((api) => api !== "DescribeNodePools"), [
   "DescribeClusters",
   "DescribeInstanceTypeConfigs",
   "DescribeSecurityGroups",
-  "CreateClusterNodePool",
-  "ModifyNodePoolInstanceTypes",
-  "CreateClusterNodePool",
-  "DeleteClusterNodePool",
-  "DeleteClusterNodePool",
-], "cluster_foundation_must_discover_create_upgrade_and_destroy");
-const created = calls.filter((call) => call.api === "CreateClusterNodePool").map((call) => call.request);
+  "CreateNodePool",
+  "ModifyNodePool",
+  "ScaleNodePool",
+  "CreateNodePool",
+  "DeleteNodePool",
+  "DeleteNodePool",
+], "cluster_foundation_must_discover_create_upgrade_and_destroy_with_native_node_pool");
+const created = calls.filter((call) => call.api === "CreateNodePool").map((call) => call.request);
 for (const request of created) {
   assert.equal(request.Tags, undefined, "cluster_foundation_default_must_not_send_tke_node_pool_tags");
-  assert.equal(
-    JSON.parse(request.AutoScalingGroupPara).AutoScalingGroupName,
-    undefined,
-    "cluster_foundation_tke_create_must_not_set_auto_scaling_group_name",
-  );
+  assert.equal(request.Type, "Native", "cluster_foundation_must_use_native_node_pool");
+  assert.equal(request.AutoScalingGroupPara, undefined, "cluster_foundation_native_create_must_not_set_asg_para");
+  assert.equal(request.LaunchConfigurePara, undefined, "cluster_foundation_native_create_must_not_set_launch_para");
 }
-assert.equal(JSON.parse(created[0].LaunchConfigurePara).ImageId, undefined, "cluster_foundation_default_must_not_require_cvm_image_permission");
-assert.equal(JSON.parse(created[0].LaunchConfigurePara).LaunchConfigurationName, undefined, "cluster_foundation_tke_create_must_not_set_launch_configuration_name");
-assert.equal(JSON.parse(created[1].LaunchConfigurePara).LaunchConfigurationName, undefined, "cluster_foundation_pro_tke_create_must_not_set_launch_configuration_name");
-assert.equal(JSON.parse(created[0].LaunchConfigurePara).InstanceType, "S5.MEDIUM4", "cluster_foundation_starter_must_use_single_instance_type");
-assert.equal(JSON.parse(created[0].LaunchConfigurePara).InstanceTypes, undefined, "cluster_foundation_create_must_not_use_instance_types_array");
-assert.deepEqual(JSON.parse(created[0].LaunchConfigurePara).SecurityGroupIds, ["sg-foundation"], "cluster_foundation_create_must_set_security_group_ids");
-assert.equal(created[0].InstanceAdvancedSettings.DesiredPodNumber, undefined, "cluster_foundation_default_must_not_customize_pod_cidr");
-assert.equal(JSON.parse(created[1].LaunchConfigurePara).InstanceType, "S5.2XLARGE16", "cluster_foundation_pro_must_use_single_instance_type");
-assert.equal(JSON.parse(created[1].LaunchConfigurePara).InstanceTypes, undefined, "cluster_foundation_pro_create_must_not_use_instance_types_array");
-assert.deepEqual(JSON.parse(created[1].LaunchConfigurePara).SecurityGroupIds, ["sg-foundation"], "cluster_foundation_pro_create_must_set_security_group_ids");
-assert.equal(created[1].InstanceAdvancedSettings.DesiredPodNumber, undefined, "cluster_foundation_pro_default_must_not_customize_pod_cidr");
-assert.equal(created[0].NodePoolOs, "tlinux3.1x86_64", "cluster_foundation_default_node_pool_os");
-assert.deepEqual(JSON.parse(created[0].AutoScalingGroupPara).SubnetIds, ["subnet-test"], "cluster_foundation_subnet");
+assert.equal(created[0].Native.InstanceTypes[0], "S5.MEDIUM4", "cluster_foundation_starter_must_use_instance_type");
+assert.deepEqual(created[0].Native.SecurityGroupIds, ["sg-foundation"], "cluster_foundation_create_must_set_security_group_ids");
+assert.equal(created[0].Native.SystemDisk.DiskType, "CLOUD_PREMIUM", "cluster_foundation_default_system_disk");
+assert.deepEqual(created[0].Native.SubnetIds, ["subnet-test"], "cluster_foundation_subnet");
+assert.equal(created[1].Native.InstanceTypes[0], "S5.2XLARGE16", "cluster_foundation_pro_must_use_instance_type");
+assert.deepEqual(created[1].Native.SecurityGroupIds, ["sg-foundation"], "cluster_foundation_pro_create_must_set_security_group_ids");
+const modifyCall = calls.find((call) => call.api === "ModifyNodePool");
+assert.deepEqual(modifyCall.request.Native.InstanceTypes, ["S5.2XLARGE16"], "cluster_foundation_upgrade_must_target_pro_instance_type");
+const scaleCall = calls.find((call) => call.api === "ScaleNodePool");
+assert.equal(scaleCall.request.Replicas, 1, "cluster_foundation_upgrade_scale_must_keep_one_real_node");
 assert.deepEqual(
-  calls.filter((call) => call.api === "DeleteClusterNodePool").map((call) => call.request.NodePoolIds),
-  [["np-pro-foundation"], ["np-starter-foundation"]],
+  calls.filter((call) => call.api === "DeleteNodePool").map((call) => call.request.NodePoolId),
+  ["np-pro-foundation", "np-starter-foundation"],
   "cluster_foundation_cleanup_must_delete_all_created_node_pools",
 );
 

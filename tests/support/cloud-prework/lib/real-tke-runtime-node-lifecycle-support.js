@@ -66,19 +66,44 @@ function parseJsonObject(value, blocker, operation) {
 }
 
 function nodePoolNodeTotal(nodePool = {}) {
-  const summary = nodePool.NodeCountSummary || {};
+  const summary = nodePool.NodeCountSummary || nodePool.Native?.NodeCountSummary || {};
   const autoscaling = summary.AutoscalingAdded || {};
   const manual = summary.ManuallyAdded || {};
-  return extractNumber(autoscaling, ["Total", "Normal", "Joining", "Initializing"])
+  const total = extractNumber(autoscaling, ["Total", "Normal", "Joining", "Initializing"])
     + extractNumber(manual, ["Total", "Normal", "Joining", "Initializing"]);
+  return total || extractNumber(nodePool.Native || {}, ["ReadyReplicas"]);
 }
 
 function nodePoolReadyNodeCount(nodePool = {}) {
-  const summary = nodePool.NodeCountSummary || {};
+  const summary = nodePool.NodeCountSummary || nodePool.Native?.NodeCountSummary || {};
   const autoscaling = summary.AutoscalingAdded || {};
   const manual = summary.ManuallyAdded || {};
-  return extractNumber(autoscaling, ["Normal", "Ready", "Total"])
+  const ready = extractNumber(autoscaling, ["Normal", "Ready", "Total"])
     + extractNumber(manual, ["Normal", "Ready", "Total"]);
+  return ready || extractNumber(nodePool.Native || {}, ["ReadyReplicas"]);
+}
+
+function nodePoolInstanceTypes(nodePool = {}) {
+  const sources = [
+    nodePool.InstanceTypes,
+    nodePool.Native?.InstanceTypes,
+    nodePool.Regular?.InstanceTypes,
+    nodePool.LaunchConfiguration?.InstanceTypes,
+  ];
+  for (const source of sources) {
+    if (Array.isArray(source) && source.length) return source.map((item) => String(item || "").trim()).filter(Boolean);
+  }
+  const single = extractFirstString(nodePool, ["InstanceType"]);
+  return single ? [single] : [];
+}
+
+function upgradeTargetInstanceType(upgradeRequest = {}, proTier = {}) {
+  return String(
+    upgradeRequest.modifyNodePoolInstanceTypes?.InstanceTypes?.[0]
+      || upgradeRequest.modifyNodePool?.Native?.InstanceTypes?.[0]
+      || proTier.instanceType
+      || "",
+  ).trim();
 }
 
 function tagValue(item = {}, keys = []) {
@@ -263,6 +288,37 @@ function createRequestFromDerivedPlan(plan, source = {}, tierId = "", suffix = "
     NodePoolOs: source.nodePoolOs,
     OsCustomizeType: source.osCustomizeType,
     DeletionProtection: false,
+  };
+}
+
+function createNativeNodePoolRequestFromDerivedPlan(plan, source = {}, tierId = "", suffix = "runtime") {
+  const tier = (Array.isArray(plan.tiers) ? plan.tiers : []).find((item) => item?.id === tierId) || {};
+  const tierOverride = plan.deriveFromClusterFoundation?.tierOverrides?.[tierId] || {};
+  const replicas = Number(tierOverride.replicas || tierOverride.desiredCapacity || plan.requireNodeTotal || 1);
+  return {
+    Name: `medopl-${suffix}-${tierId}`.slice(0, 63),
+    Type: "Native",
+    Labels: source.labels,
+    Taints: source.taints,
+    Annotations: source.annotations,
+    DeletionProtection: false,
+    Native: withoutEmpty({
+      Scaling: {
+        MinReplicas: Number(tierOverride.minReplicas || tierOverride.minSize || replicas),
+        MaxReplicas: Number(tierOverride.maxReplicas || tierOverride.maxSize || replicas),
+        CreatePolicy: tierOverride.createPolicy || "ZonePriority",
+      },
+      SubnetIds: source.autoScalingGroup?.SubnetIdSet,
+      InstanceChargeType: source.launchConfiguration?.InstanceChargeType || "POSTPAID_BY_HOUR",
+      SystemDisk: source.launchConfiguration?.SystemDisk || { DiskType: "CLOUD_PREMIUM", DiskSize: 50 },
+      InstanceTypes: [tierOverride.instanceType || tier.instanceType].filter(Boolean),
+      SecurityGroupIds: source.launchConfiguration?.SecurityGroupIds,
+      InternetAccessible: source.launchConfiguration?.InternetAccessible,
+      DataDisks: tierOverride.dataDisks || source.launchConfiguration?.DataDisks,
+      EnableAutoscaling: true,
+      Replicas: replicas,
+      MachineType: tierOverride.machineType || source.machineType,
+    }),
   };
 }
 
@@ -567,16 +623,21 @@ async function deriveRealTkePlanFromClusterFoundation({ plan, env, root, operati
     clusterId,
     region,
     tiers: derivedTiers,
-    createClusterNodePool: {
-      starter_2c4g_10gb: createRequestFromDerivedPlan({ ...plan, tiers: derivedTiers }, source, "starter_2c4g_10gb", "starter"),
-      pro_8c16g_100gb: createRequestFromDerivedPlan({ ...plan, tiers: derivedTiers }, source, "pro_8c16g_100gb", "pro"),
+    createNativeNodePool: {
+      starter_2c4g_10gb: createNativeNodePoolRequestFromDerivedPlan({ ...plan, tiers: derivedTiers }, source, "starter_2c4g_10gb", "starter"),
+      pro_8c16g_100gb: createNativeNodePoolRequestFromDerivedPlan({ ...plan, tiers: derivedTiers }, source, "pro_8c16g_100gb", "pro"),
     },
-    upgradeClusterNodePool: plan.upgradeClusterNodePool || {
-      modifyNodePoolInstanceTypes: {
-        InstanceTypes: [derivedTiers.find((tier) => tier.id === "pro_8c16g_100gb")?.instanceType].filter(Boolean),
+    upgradeNativeNodePool: plan.upgradeNativeNodePool || {
+      modifyNodePool: {
+        Native: {
+          InstanceTypes: [derivedTiers.find((tier) => tier.id === "pro_8c16g_100gb")?.instanceType].filter(Boolean),
+        },
+      },
+      scaleNodePool: {
+        Replicas: Number(plan.requireNodeTotal || 1),
       },
     },
-    deleteClusterNodePool: plan.deleteClusterNodePool || { KeepInstance: false },
+    deleteNativeNodePool: plan.deleteNativeNodePool || {},
     derivedFromClusterFoundation: {
       enabled: true,
       vpcRef: "cluster_foundation_vpc_ref",
@@ -604,6 +665,7 @@ async function waitForTkeNodePool(client, clusterId, nodePoolId, operation, stag
         desiredNodesNum: extractNumber(found, ["DesiredNodesNum", "DesiredCapacity"]),
         minNodesNum: extractNumber(found, ["MinNodesNum", "MinSize"]),
         maxNodesNum: extractNumber(found, ["MaxNodesNum", "MaxSize"]),
+        instanceTypes: nodePoolInstanceTypes(found),
       };
       if (options.requireNodeTotal && observed.nodeTotal < Number(options.requireNodeTotal)) {
         await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -614,6 +676,10 @@ async function waitForTkeNodePool(client, clusterId, nodePoolId, operation, stag
         continue;
       }
       if (options.requireDesiredNodesNum && observed.desiredNodesNum !== Number(options.requireDesiredNodesNum)) {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        continue;
+      }
+      if (options.requireInstanceType && !observed.instanceTypes.includes(String(options.requireInstanceType))) {
         await new Promise((resolve) => setTimeout(resolve, 5000));
         continue;
       }
@@ -635,6 +701,59 @@ async function waitForTkeNodePoolDeleted(client, clusterId, nodePoolId, operatio
   failClosed("production_goal_real_tke_node_pool_destroy_not_verified", { operationClass: operation, nodePoolRef: "created_node_pool_ref" }, 1);
 }
 
+async function waitForNativeTkeNodePool(client, clusterId, nodePoolId, operation, stage, maxAttempts = 12, options = {}) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const response = await client.DescribeNodePools({ ClusterId: clusterId });
+    const nodePools = Array.isArray(response?.NodePools) ? response.NodePools : [];
+    const found = nodePools.find((item) => extractFirstString(item, ["NodePoolId", "NodePoolID", "Id", "ID"]) === nodePoolId);
+    if (found) {
+      const observed = {
+        found: true,
+        nodePoolId,
+        stage,
+        attempt,
+        lifeState: extractFirstString(found, ["LifeState", "Status", "State"]),
+        nodeTotal: nodePoolNodeTotal(found),
+        readyNodeCount: nodePoolReadyNodeCount(found),
+        desiredNodesNum: extractNumber(found.Native || found, ["Replicas", "DesiredNodesNum", "DesiredCapacity"]),
+        minNodesNum: extractNumber(found.Native?.Scaling || found, ["MinReplicas", "MinNodesNum", "MinSize"]),
+        maxNodesNum: extractNumber(found.Native?.Scaling || found, ["MaxReplicas", "MaxNodesNum", "MaxSize"]),
+        instanceTypes: nodePoolInstanceTypes(found),
+      };
+      if (options.requireNodeTotal && observed.nodeTotal < Number(options.requireNodeTotal)) {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        continue;
+      }
+      if (options.requireReadyNodeCount && observed.readyNodeCount < Number(options.requireReadyNodeCount)) {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        continue;
+      }
+      if (options.requireDesiredNodesNum && observed.desiredNodesNum !== Number(options.requireDesiredNodesNum)) {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        continue;
+      }
+      if (options.requireInstanceType && !observed.instanceTypes.includes(String(options.requireInstanceType))) {
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        continue;
+      }
+      return observed;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+  }
+  failClosed("production_goal_real_tke_node_pool_not_observed", { operationClass: operation, stage, nodePoolRef: "created_node_pool_ref" }, 1);
+}
+
+async function waitForNativeTkeNodePoolDeleted(client, clusterId, nodePoolId, operation, maxAttempts = 18) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const response = await client.DescribeNodePools({ ClusterId: clusterId });
+    const found = (Array.isArray(response?.NodePools) ? response.NodePools : [])
+      .some((item) => extractFirstString(item, ["NodePoolId", "NodePoolID", "Id", "ID"]) === nodePoolId);
+    if (!found) return { cleanupVerified: true, nodePoolDestroyed: true, attempt };
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+  }
+  failClosed("production_goal_real_tke_node_pool_destroy_not_verified", { operationClass: operation, nodePoolRef: "created_node_pool_ref" }, 1);
+}
+
 export async function runRealTkeRuntimeNodeLifecycle({ operation, env, plan: inputPlan, writeEvidence }) {
   let plan = inputPlan;
   const sdkRoot = await importTencentCloudSdkForRealTkeLifecycle();
@@ -647,21 +766,29 @@ export async function runRealTkeRuntimeNodeLifecycle({ operation, env, plan: inp
   const clusterId = plan.clusterId || env.TENCENT_MUTATION_TKE_CLUSTER_ID || "";
   const region = plan.region || (env.TENCENT_MUTATION_REGIONS || env.TENCENT_MUTATION_COS_REGION || "").split(",")[0].trim();
   const tiers = requirePlanArray(plan, "tiers", "production_goal_real_tke_tiers_required", operation);
-  const starterCreateRequest = tierRequest(plan, "createClusterNodePool", "starter_2c4g_10gb", operation);
-  const proCreateRequest = tierRequest(plan, "createClusterNodePool", "pro_8c16g_100gb", operation);
-  const upgradeRequest = requirePlanObject(plan, "upgradeClusterNodePool", "production_goal_real_tke_upgrade_request_required", operation);
-  const deleteRequest = requirePlanObject(plan, "deleteClusterNodePool", "production_goal_real_tke_delete_request_required", operation);
+  const useNativeNodePool = Boolean(plan.createNativeNodePool);
+  const starterCreateRequest = tierRequest(plan, useNativeNodePool ? "createNativeNodePool" : "createClusterNodePool", "starter_2c4g_10gb", operation);
+  const proCreateRequest = tierRequest(plan, useNativeNodePool ? "createNativeNodePool" : "createClusterNodePool", "pro_8c16g_100gb", operation);
+  const upgradeRequest = requirePlanObject(plan, useNativeNodePool ? "upgradeNativeNodePool" : "upgradeClusterNodePool", "production_goal_real_tke_upgrade_request_required", operation);
+  const deleteRequest = requirePlanObject(plan, useNativeNodePool ? "deleteNativeNodePool" : "deleteClusterNodePool", "production_goal_real_tke_delete_request_required", operation);
   if (!clusterId || !region) failClosed("production_goal_real_tke_foundation_missing", { operationClass: operation }, 65);
   const starterTier = tierById(tiers, "starter_2c4g_10gb", operation);
   const proTier = tierById(tiers, "pro_8c16g_100gb", operation);
-  for (const request of [starterCreateRequest, proCreateRequest]) {
-    parseJsonObject(request.AutoScalingGroupPara, "production_goal_real_tke_asg_para_required", operation);
-    parseJsonObject(request.LaunchConfigurePara, "production_goal_real_tke_launch_para_required", operation);
+  if (!useNativeNodePool) {
+    for (const request of [starterCreateRequest, proCreateRequest]) {
+      parseJsonObject(request.AutoScalingGroupPara, "production_goal_real_tke_asg_para_required", operation);
+      parseJsonObject(request.LaunchConfigurePara, "production_goal_real_tke_launch_para_required", operation);
+    }
   }
-  if (!upgradeRequest.modifyClusterNodePool && !upgradeRequest.modifyNodePoolInstanceTypes) {
+  if (
+    !upgradeRequest.modifyClusterNodePool
+    && !upgradeRequest.modifyNodePoolInstanceTypes
+    && !upgradeRequest.modifyNodePool
+    && !upgradeRequest.scaleNodePool
+  ) {
     failClosed("production_goal_real_tke_upgrade_request_required", { operationClass: operation }, 65);
   }
-  const Client = root?.tke?.v20180525?.Client;
+  const Client = useNativeNodePool ? root?.tke?.v20220501?.Client : root?.tke?.v20180525?.Client;
   if (typeof Client !== "function") failClosed("production_goal_real_tke_sdk_missing", { operationClass: operation }, 65);
   const client = new Client({
     credential: { secretId: env.TENCENT_MUTATION_SECRET_ID, secretKey: env.TENCENT_MUTATION_SECRET_KEY },
@@ -672,42 +799,57 @@ export async function runRealTkeRuntimeNodeLifecycle({ operation, env, plan: inp
   const lifecycle = {};
   let cleanupResults = [];
   try {
-    const starterCreated = await client.CreateClusterNodePool({ ClusterId: clusterId, ...withNodePoolName(starterCreateRequest, "starter") });
+    const starterCreated = useNativeNodePool
+      ? await client.CreateNodePool({ ClusterId: clusterId, ...withNodePoolName(starterCreateRequest, "starter") })
+      : await client.CreateClusterNodePool({ ClusterId: clusterId, ...withNodePoolName(starterCreateRequest, "starter") });
     const starterNodePoolId = extractFirstString(starterCreated, ["NodePoolId", "NodePoolID", "Id", "ID"])
       || extractFirstString(starterCreated?.Response, ["NodePoolId", "NodePoolID", "Id", "ID"]);
     if (!starterNodePoolId) failClosed("production_goal_real_tke_create_missing_node_pool_id", { operationClass: operation, tier: starterTier.id }, 1);
     createdNodePoolIds.push(starterNodePoolId);
-    const starterObserved = await waitForTkeNodePool(client, clusterId, starterNodePoolId, operation, "starter_created", Number(plan.createObserveAttempts || 24), {
+    const starterObserved = await (useNativeNodePool ? waitForNativeTkeNodePool : waitForTkeNodePool)(client, clusterId, starterNodePoolId, operation, "starter_created", Number(plan.createObserveAttempts || 24), {
       requireNodeTotal: Number(plan.requireNodeTotal || 1),
       requireReadyNodeCount: Number(plan.requireReadyNodeCount || plan.requireNodeTotal || 1),
     });
     if (upgradeRequest.modifyClusterNodePool) await client.ModifyClusterNodePool({ ClusterId: clusterId, NodePoolId: starterNodePoolId, ...upgradeRequest.modifyClusterNodePool });
     if (upgradeRequest.modifyNodePoolInstanceTypes) await client.ModifyNodePoolInstanceTypes({ ClusterId: clusterId, NodePoolId: starterNodePoolId, ...upgradeRequest.modifyNodePoolInstanceTypes });
-    const starterUpgradeObserved = await waitForTkeNodePool(client, clusterId, starterNodePoolId, operation, "starter_upgrade_checked", Number(plan.upgradeObserveAttempts || 12));
-    const proCreated = await client.CreateClusterNodePool({ ClusterId: clusterId, ...withNodePoolName(proCreateRequest, "pro") });
+    if (upgradeRequest.modifyNodePool) await client.ModifyNodePool({ ClusterId: clusterId, NodePoolId: starterNodePoolId, ...upgradeRequest.modifyNodePool });
+    if (upgradeRequest.scaleNodePool) await client.ScaleNodePool({ ClusterId: clusterId, NodePoolId: starterNodePoolId, ...upgradeRequest.scaleNodePool });
+    const starterUpgradeObserved = await (useNativeNodePool ? waitForNativeTkeNodePool : waitForTkeNodePool)(client, clusterId, starterNodePoolId, operation, "starter_upgrade_checked", Number(plan.upgradeObserveAttempts || 12), {
+      requireInstanceType: upgradeTargetInstanceType(upgradeRequest, proTier),
+    });
+    const proCreated = useNativeNodePool
+      ? await client.CreateNodePool({ ClusterId: clusterId, ...withNodePoolName(proCreateRequest, "pro") })
+      : await client.CreateClusterNodePool({ ClusterId: clusterId, ...withNodePoolName(proCreateRequest, "pro") });
     const proNodePoolId = extractFirstString(proCreated, ["NodePoolId", "NodePoolID", "Id", "ID"])
       || extractFirstString(proCreated?.Response, ["NodePoolId", "NodePoolID", "Id", "ID"]);
     if (!proNodePoolId) failClosed("production_goal_real_tke_create_missing_node_pool_id", { operationClass: operation, tier: proTier.id }, 1);
     createdNodePoolIds.push(proNodePoolId);
-    const proObserved = await waitForTkeNodePool(client, clusterId, proNodePoolId, operation, "pro_created", Number(plan.createObserveAttempts || 24), {
+    const proObserved = await (useNativeNodePool ? waitForNativeTkeNodePool : waitForTkeNodePool)(client, clusterId, proNodePoolId, operation, "pro_created", Number(plan.createObserveAttempts || 24), {
       requireNodeTotal: Number(plan.requireNodeTotal || 1),
       requireReadyNodeCount: Number(plan.requireReadyNodeCount || plan.requireNodeTotal || 1),
     });
-    lifecycle.createStarter = { api: "CreateClusterNodePool", tier: starterTier.id, observed: starterObserved };
+    lifecycle.createStarter = { api: useNativeNodePool ? "CreateNodePool" : "CreateClusterNodePool", tier: starterTier.id, observed: starterObserved };
     lifecycle.upgradeStarter = {
-      api: upgradeRequest.modifyNodePoolInstanceTypes ? "ModifyNodePoolInstanceTypes" : "ModifyClusterNodePool",
+      api: useNativeNodePool
+        ? (upgradeRequest.modifyNodePool ? "ModifyNodePool" : "ScaleNodePool")
+        : (upgradeRequest.modifyNodePoolInstanceTypes ? "ModifyNodePoolInstanceTypes" : "ModifyClusterNodePool"),
       tierFrom: starterTier.id,
       tierTo: proTier.id,
       observed: starterUpgradeObserved,
     };
-    lifecycle.createPro = { api: "CreateClusterNodePool", tier: proTier.id, observed: proObserved };
+    lifecycle.createPro = { api: useNativeNodePool ? "CreateNodePool" : "CreateClusterNodePool", tier: proTier.id, observed: proObserved };
   } finally {
     cleanupResults = [];
     for (const nodePoolId of [...createdNodePoolIds].reverse()) {
       const cleanupResult = { nodePoolRef: publicRef(nodePoolId), cleanupVerified: false, nodePoolDestroyed: false };
       try {
-        await client.DeleteClusterNodePool({ ClusterId: clusterId, NodePoolIds: [nodePoolId], ...deleteRequest });
-        Object.assign(cleanupResult, await waitForTkeNodePoolDeleted(client, clusterId, nodePoolId, operation, Number(plan.deleteObserveAttempts || 36)));
+        if (useNativeNodePool) {
+          await client.DeleteNodePool({ ClusterId: clusterId, NodePoolId: nodePoolId, ...deleteRequest });
+          Object.assign(cleanupResult, await waitForNativeTkeNodePoolDeleted(client, clusterId, nodePoolId, operation, Number(plan.deleteObserveAttempts || 36)));
+        } else {
+          await client.DeleteClusterNodePool({ ClusterId: clusterId, NodePoolIds: [nodePoolId], ...deleteRequest });
+          Object.assign(cleanupResult, await waitForTkeNodePoolDeleted(client, clusterId, nodePoolId, operation, Number(plan.deleteObserveAttempts || 36)));
+        }
       } catch (error) {
         cleanupResult.cleanupBlocker = error instanceof RealTkeLifecycleFailure
           ? error.blocker
@@ -731,7 +873,7 @@ export async function runRealTkeRuntimeNodeLifecycle({ operation, env, plan: inp
       derivedFromPlatformNodePool: Boolean(plan.derivedFromPlatformNodePool?.enabled),
       derivedFromClusterFoundation: Boolean(plan.derivedFromClusterFoundation?.enabled),
       ...lifecycle,
-      destroy: { api: "DeleteClusterNodePool", cleanupResults },
+      destroy: { api: useNativeNodePool ? "DeleteNodePool" : "DeleteClusterNodePool", cleanupResults },
     },
     cleanupVerified,
     nodePoolDestroyed: cleanupVerified,

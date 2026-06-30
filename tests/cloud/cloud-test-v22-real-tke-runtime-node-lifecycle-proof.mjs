@@ -70,8 +70,8 @@ assert(
   "real_tke_lifecycle_must_call_provider_create_or_scale_api",
 );
 assert(
-  realTkeSupportSource.includes("tierRequest(plan, \"createClusterNodePool\", \"starter_2c4g_10gb\"")
-    && realTkeSupportSource.includes("tierRequest(plan, \"createClusterNodePool\", \"pro_8c16g_100gb\""),
+  realTkeSupportSource.includes("tierRequest(plan, useNativeNodePool ? \"createNativeNodePool\" : \"createClusterNodePool\", \"starter_2c4g_10gb\"")
+    && realTkeSupportSource.includes("tierRequest(plan, useNativeNodePool ? \"createNativeNodePool\" : \"createClusterNodePool\", \"pro_8c16g_100gb\""),
   "real_tke_lifecycle_must_require_provider_create_request_per_plan_tier",
 );
 assert(
@@ -91,7 +91,7 @@ assert(
   "real_tke_lifecycle_must_cover_starter_and_pro_plan_tiers",
 );
 assert(
-  realTkeSupportSource.includes("ModifyNodePoolInstanceTypes") || realTkeSupportSource.includes("modifyNodePoolInstanceTypes"),
+  realTkeSupportSource.includes("ModifyNodePoolInstanceTypes") || realTkeSupportSource.includes("ModifyNodePool") || realTkeSupportSource.includes("modifyNodePoolInstanceTypes"),
   "real_tke_lifecycle_must_cover_real_instance_type_upgrade_path",
 );
 assert(
