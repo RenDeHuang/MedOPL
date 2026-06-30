@@ -417,7 +417,6 @@ async function deriveRealTkePlanFromPlatformNodePool({ plan, env, root, operatio
     autoScalingGroup: sourceAsGroup,
     launchConfiguration: sourceLaunchConfiguration,
     instanceAdvancedSettings: plan.deriveFromPlatformNodePool?.instanceAdvancedSettings || {
-      DesiredPodNumber: 32,
       Taints: [],
       Labels: [],
       DataDisks: [],
@@ -550,7 +549,6 @@ async function deriveRealTkePlanFromClusterFoundation({ plan, env, root, operati
       InstanceChargeType: "POSTPAID_BY_HOUR",
     },
     instanceAdvancedSettings: foundation.instanceAdvancedSettings || {
-      DesiredPodNumber: 32,
       Taints: [],
       Labels: [],
       DataDisks: [],
