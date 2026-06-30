@@ -934,11 +934,12 @@ export async function runRealTkeRuntimeNodeLifecycle({ operation, env, plan: inp
       profile: { httpProfile: { reqTimeout: 60 } },
     });
     const deleteObserveAttempts = observeAttemptCount(plan, "deleteObserveAttempts", 72);
+    const cleanupObserveOnly = plan.cleanupOnlyObserveOnly === true;
     const cleanupResults = [];
     for (const nodePoolId of [...cleanupOnlyNodePoolRefs].reverse()) {
       const cleanupResult = { nodePoolRef: publicRef(nodePoolId), cleanupVerified: false, nodePoolDestroyed: false };
       try {
-        await client.DeleteNodePool({ ClusterId: clusterIdFromInput, NodePoolId: nodePoolId });
+        if (!cleanupObserveOnly) await client.DeleteNodePool({ ClusterId: clusterIdFromInput, NodePoolId: nodePoolId });
         Object.assign(cleanupResult, await waitForNativeTkeNodePoolDeleted(client, clusterIdFromInput, nodePoolId, operation, deleteObserveAttempts));
       } catch (error) {
         cleanupResult.cleanupBlocker = blockerFromLifecycleError(error);
@@ -953,7 +954,8 @@ export async function runRealTkeRuntimeNodeLifecycle({ operation, env, plan: inp
       status: cleanupVerified ? "accepted" : "blocked",
       provider: "tencent_tke",
       cleanupOnly: true,
-      realProviderMutationExecuted: true,
+      cleanupOnlyObserveOnly: cleanupObserveOnly,
+      realProviderMutationExecuted: !cleanupObserveOnly,
       clusterRef: "TENCENT_MUTATION_TKE_CLUSTER_ID",
       nodePoolRefs: cleanupOnlyNodePoolRefs,
       region: regionFromInput,
@@ -974,7 +976,8 @@ export async function runRealTkeRuntimeNodeLifecycle({ operation, env, plan: inp
     return {
       provider: "tencent_tke",
       cleanupOnly: true,
-      realProviderMutationExecuted: true,
+      cleanupOnlyObserveOnly: cleanupObserveOnly,
+      realProviderMutationExecuted: !cleanupObserveOnly,
       nodePoolRefs: cleanupOnlyNodePoolRefs,
       cleanupVerified,
       nodePoolDestroyed: cleanupVerified,

@@ -687,6 +687,68 @@ assert.deepEqual(
 );
 assertNoSensitiveText(cleanupBlocked.stdout + cleanupBlocked.stderr + JSON.stringify(cleanupBlockedEvidence), "cleanup_blocked");
 
+const cleanupObserveOnlyPlanFile = path.join(tempDir, "real-tke-cleanup-observe-only-plan.json");
+const cleanupObserveOnlyFakeSdk = path.join(tempDir, "fake-tencentcloud-sdk-nodejs-cleanup-observe-only.mjs");
+const cleanupObserveOnlySdkLog = path.join(tempDir, "real-tke-cleanup-observe-only-fake-sdk.log");
+const cleanupObserveOnlyRuntimeDir = path.join(repoRoot, ".runtime", "v22-cloud-authorization", `cleanup-observe-only-${Date.now()}`);
+mkdirSync(cleanupObserveOnlyRuntimeDir, { recursive: true });
+writeFileSync(cleanupObserveOnlyPlanFile, JSON.stringify({
+  clusterId: "cls-test",
+  region: "na-siliconvalley",
+  cleanupOnlyNodePoolRefs: ["np-leftover-observe-only"],
+  cleanupOnlyObserveOnly: true,
+  deleteObserveAttempts: 2,
+}, null, 2));
+writeFileSync(cleanupObserveOnlyFakeSdk, `
+const calls = [];
+let visible = true;
+async function persist() {
+  const { writeFileSync } = await import("node:fs");
+  writeFileSync(process.env.TEST_REAL_TKE_CLEANUP_OBSERVE_ONLY_FAKE_SDK_LOG, JSON.stringify(calls, null, 2));
+}
+class TkeClient {
+  async DeleteNodePool(request) {
+    calls.push({ api: "DeleteNodePool", request });
+    await persist();
+    throw new Error("observe-only cleanup must not call DeleteNodePool");
+  }
+  async DescribeNodePools(request) {
+    calls.push({ api: "DescribeNodePools", request });
+    await persist();
+    const requested = new Set(request.Filters.find((filter) => filter.Name === "NodePoolsId").Values);
+    if (!visible || !requested.has("np-leftover-observe-only")) return { NodePools: [] };
+    visible = false;
+    return { NodePools: [{
+      NodePoolId: "np-leftover-observe-only",
+      LifeState: "Deleting",
+      Native: {
+        Replicas: 1,
+        ReadyReplicas: 0,
+        NodeCountSummary: { AutoscalingAdded: { Total: 0, Normal: 0 }, ManuallyAdded: { Total: 0, Normal: 0 } },
+      },
+    }] };
+  }
+}
+export default {
+  tke: { v20220501: { Client: TkeClient } },
+};
+`);
+const cleanupObserveOnly = parseJson(run(["--operation", "real_tke_runtime_node_lifecycle", "--execute", "--confirm-current-session-authorization"], {
+  V22_TENCENT_MUTATION_SECRET_FILE: mutationSecretFile,
+  V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_FILE: cleanupObserveOnlyPlanFile,
+  V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_SDK_MODULE: cleanupObserveOnlyFakeSdk,
+  V22_GOAL_EVIDENCE_REF: path.join(".runtime", "v22-cloud-authorization", path.basename(cleanupObserveOnlyRuntimeDir), "real_tke_runtime_node_lifecycle.json"),
+  TEST_REAL_TKE_CLEANUP_OBSERVE_ONLY_FAKE_SDK_LOG: cleanupObserveOnlySdkLog,
+}), "real_tke_cleanup_observe_only_execute");
+assert.equal(cleanupObserveOnly.summary.cleanupOnly, true, "cleanup_observe_only_summary");
+assert.equal(cleanupObserveOnly.summary.realProviderMutationExecuted, false, "cleanup_observe_only_must_not_claim_mutation");
+assert.equal(cleanupObserveOnly.summary.cleanupVerified, true, "cleanup_observe_only_must_verify_cleanup");
+assert.deepEqual(
+  JSON.parse(readFileSync(cleanupObserveOnlySdkLog, "utf8")).map((call) => call.api),
+  ["DescribeNodePools", "DescribeNodePools"],
+  "cleanup_observe_only_must_only_observe",
+);
+
 console.log(JSON.stringify({
   ok: true,
   contract: "v22_real_tke_cluster_foundation_lifecycle",
