@@ -64,6 +64,7 @@ writeFileSync(planFile, JSON.stringify({
     vpcId: "vpc-test",
     subnetId: "subnet-test",
     imageNamePattern: "TencentOS",
+    requireSecurityGroup: true,
   },
 }, null, 2));
 
@@ -84,6 +85,9 @@ class TkeClient {
     calls.push({ api: "CreateClusterNodePool", request });
     const nodePoolId = request.Name.includes("pro") ? "np-pro-foundation" : "np-starter-foundation";
     const launch = JSON.parse(request.LaunchConfigurePara);
+    if (!Array.isArray(launch.SecurityGroupIds) || launch.SecurityGroupIds[0] !== "sg-foundation") {
+      throw new Error("security group ids is not set");
+    }
     pools.set(nodePoolId, {
       NodePoolId: nodePoolId,
       LifeState: "normal",
@@ -124,7 +128,10 @@ class VpcClient {
   async DescribeSecurityGroups(request) {
     calls.push({ api: "DescribeSecurityGroups", request });
     await persist();
-    throw new Error("unexpected DescribeSecurityGroups " + JSON.stringify(request));
+    return { SecurityGroupSet: [
+      { SecurityGroupId: "sg-other", SecurityGroupName: "zz-other", VpcId: "vpc-test" },
+      { SecurityGroupId: "sg-foundation", SecurityGroupName: "medopl-runtime", VpcId: "vpc-test" },
+    ] };
   }
 }
 class CvmClient {
@@ -168,6 +175,7 @@ assert.deepEqual(instanceTypeDiscovery.request, {}, "cluster_foundation_must_not
 assert.deepEqual(calls.map((call) => call.api).filter((api) => api !== "DescribeClusterNodePools"), [
   "DescribeClusters",
   "DescribeInstanceTypeConfigs",
+  "DescribeSecurityGroups",
   "CreateClusterNodePool",
   "ModifyNodePoolInstanceTypes",
   "CreateClusterNodePool",
@@ -188,11 +196,12 @@ assert.equal(JSON.parse(created[0].LaunchConfigurePara).LaunchConfigurationName,
 assert.equal(JSON.parse(created[1].LaunchConfigurePara).LaunchConfigurationName, undefined, "cluster_foundation_pro_tke_create_must_not_set_launch_configuration_name");
 assert.equal(JSON.parse(created[0].LaunchConfigurePara).InstanceType, "S5.MEDIUM4", "cluster_foundation_starter_must_use_single_instance_type");
 assert.equal(JSON.parse(created[0].LaunchConfigurePara).InstanceTypes, undefined, "cluster_foundation_create_must_not_use_instance_types_array");
+assert.deepEqual(JSON.parse(created[0].LaunchConfigurePara).SecurityGroupIds, ["sg-foundation"], "cluster_foundation_create_must_set_security_group_ids");
 assert.equal(JSON.parse(created[1].LaunchConfigurePara).InstanceType, "S5.2XLARGE16", "cluster_foundation_pro_must_use_single_instance_type");
 assert.equal(JSON.parse(created[1].LaunchConfigurePara).InstanceTypes, undefined, "cluster_foundation_pro_create_must_not_use_instance_types_array");
+assert.deepEqual(JSON.parse(created[1].LaunchConfigurePara).SecurityGroupIds, ["sg-foundation"], "cluster_foundation_pro_create_must_set_security_group_ids");
 assert.equal(created[0].NodePoolOs, "tlinux3.1x86_64", "cluster_foundation_default_node_pool_os");
 assert.deepEqual(JSON.parse(created[0].AutoScalingGroupPara).SubnetIds, ["subnet-test"], "cluster_foundation_subnet");
-assert.equal(JSON.parse(created[0].LaunchConfigurePara).SecurityGroupIds, undefined, "cluster_foundation_default_must_not_require_vpc_security_group_permission");
 assert.deepEqual(
   calls.filter((call) => call.api === "DeleteClusterNodePool").map((call) => call.request.NodePoolIds),
   [["np-pro-foundation"], ["np-starter-foundation"]],
