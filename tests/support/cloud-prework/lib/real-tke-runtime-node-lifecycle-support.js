@@ -183,7 +183,7 @@ function summarizeNodePoolCandidate(nodePool = {}) {
 
 function isNodePoolNotFound(error) {
   const text = `${String(error?.code || "")} ${String(error?.message || "")}`;
-  return /DBRecordNotFound|record not found|get nodepool .* failed/iu.test(text);
+  return /ResourceNotFound|DBRecordNotFound|record not found|get nodepool .* failed|node pool not found/iu.test(text);
 }
 
 function providerErrorCategory(error) {
@@ -952,8 +952,12 @@ export async function runRealTkeRuntimeNodeLifecycle({ operation, env, plan: inp
         if (!cleanupObserveOnly) await client.DeleteNodePool({ ClusterId: clusterIdFromInput, NodePoolId: nodePoolId });
         Object.assign(cleanupResult, await waitForNativeTkeNodePoolDeleted(client, clusterIdFromInput, nodePoolId, operation, deleteObserveAttempts));
       } catch (error) {
-        cleanupResult.cleanupBlocker = blockerFromLifecycleError(error);
-        if (error instanceof RealTkeLifecycleFailure && error.details?.observed) {
+        if (isNodePoolNotFound(error)) {
+          Object.assign(cleanupResult, { cleanupVerified: true, nodePoolDestroyed: true, alreadyAbsent: true });
+        } else {
+          cleanupResult.cleanupBlocker = blockerFromLifecycleError(error);
+        }
+        if (!cleanupResult.cleanupVerified && error instanceof RealTkeLifecycleFailure && error.details?.observed) {
           cleanupResult.observed = error.details.observed;
         }
       }
@@ -1104,8 +1108,12 @@ export async function runRealTkeRuntimeNodeLifecycle({ operation, env, plan: inp
           Object.assign(cleanupResult, await waitForTkeNodePoolDeleted(client, clusterId, nodePoolId, operation, deleteObserveAttempts));
         }
       } catch (error) {
-        cleanupResult.cleanupBlocker = blockerFromLifecycleError(error);
-        if (error instanceof RealTkeLifecycleFailure && error.details?.observed) {
+        if (isNodePoolNotFound(error)) {
+          Object.assign(cleanupResult, { cleanupVerified: true, nodePoolDestroyed: true, alreadyAbsent: true });
+        } else {
+          cleanupResult.cleanupBlocker = blockerFromLifecycleError(error);
+        }
+        if (!cleanupResult.cleanupVerified && error instanceof RealTkeLifecycleFailure && error.details?.observed) {
           cleanupResult.observed = error.details.observed;
         }
       }

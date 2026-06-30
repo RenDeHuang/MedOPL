@@ -619,6 +619,56 @@ assert.equal(cleanupOnly.summary.cleanupVerified, true, "cleanup_only_must_verif
 const cleanupOnlyCalls = JSON.parse(readFileSync(cleanupOnlySdkLog, "utf8"));
 assert.deepEqual(cleanupOnlyCalls.map((call) => call.api), ["DeleteNodePool", "DescribeNodePools"], "cleanup_only_must_only_delete_and_observe");
 
+const cleanupMissingPlanFile = path.join(tempDir, "real-tke-cleanup-missing-plan.json");
+const cleanupMissingFakeSdk = path.join(tempDir, "fake-tencentcloud-sdk-nodejs-cleanup-missing.mjs");
+const cleanupMissingSdkLog = path.join(tempDir, "real-tke-cleanup-missing-fake-sdk.log");
+const cleanupMissingRuntimeDir = path.join(repoRoot, ".runtime", "v22-cloud-authorization", `cleanup-missing-${Date.now()}`);
+mkdirSync(cleanupMissingRuntimeDir, { recursive: true });
+writeFileSync(cleanupMissingPlanFile, JSON.stringify({
+  clusterId: "cls-test",
+  region: "na-siliconvalley",
+  cleanupOnlyNodePoolRefs: ["np-already-gone"],
+  deleteObserveAttempts: 2,
+}, null, 2));
+writeFileSync(cleanupMissingFakeSdk, `
+const calls = [];
+async function persist() {
+  const { writeFileSync } = await import("node:fs");
+  writeFileSync(process.env.TEST_REAL_TKE_CLEANUP_MISSING_FAKE_SDK_LOG, JSON.stringify(calls, null, 2));
+}
+class TkeClient {
+  async DeleteNodePool(request) {
+    calls.push({ api: "DeleteNodePool", request });
+    await persist();
+    const error = new Error("node pool not found");
+    error.code = "ResourceNotFound";
+    throw error;
+  }
+  async DescribeNodePools(request) {
+    calls.push({ api: "DescribeNodePools", request });
+    await persist();
+    return { NodePools: [] };
+  }
+}
+export default {
+  tke: { v20220501: { Client: TkeClient } },
+};
+`);
+const cleanupMissing = parseJson(run(["--operation", "real_tke_runtime_node_lifecycle", "--execute", "--confirm-current-session-authorization"], {
+  V22_TENCENT_MUTATION_SECRET_FILE: mutationSecretFile,
+  V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_FILE: cleanupMissingPlanFile,
+  V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_SDK_MODULE: cleanupMissingFakeSdk,
+  V22_GOAL_EVIDENCE_REF: path.join(".runtime", "v22-cloud-authorization", path.basename(cleanupMissingRuntimeDir), "real_tke_runtime_node_lifecycle.json"),
+  TEST_REAL_TKE_CLEANUP_MISSING_FAKE_SDK_LOG: cleanupMissingSdkLog,
+}), "real_tke_cleanup_missing_execute");
+assert.equal(cleanupMissing.summary.cleanupVerified, true, "cleanup_missing_must_verify_cleanup");
+assert.equal(cleanupMissing.summary.nodePoolDestroyed, true, "cleanup_missing_must_treat_not_found_as_destroyed");
+assert.deepEqual(
+  JSON.parse(readFileSync(cleanupMissingSdkLog, "utf8")).map((call) => call.api),
+  ["DeleteNodePool"],
+  "cleanup_missing_must_not_need_extra_observe",
+);
+
 const cleanupBlockedPlanFile = path.join(tempDir, "real-tke-cleanup-blocked-plan.json");
 const cleanupBlockedFakeSdk = path.join(tempDir, "fake-tencentcloud-sdk-nodejs-cleanup-blocked.mjs");
 const cleanupBlockedSdkLog = path.join(tempDir, "real-tke-cleanup-blocked-fake-sdk.log");
