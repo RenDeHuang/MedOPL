@@ -2,6 +2,10 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { parseEnvFile, readJsonFile } from "./production-goal-command-config-support.js";
+import {
+  cloneAutoScalingGroup,
+  cloneLaunchConfiguration,
+} from "./real-tke-derived-node-pool-request-support.js";
 
 export class RealTkeLifecycleFailure extends Error {
   constructor(blocker, details = {}, status = 1) {
@@ -242,62 +246,6 @@ function normalizeTencentCloudTags(tags = [], fallback = []) {
     })
     .filter(Boolean);
   return safe.length ? safe : undefined;
-}
-
-function cloneLaunchConfiguration(source = {}, overrides = {}, suffix = "runtime") {
-  const instanceTypes = Array.isArray(overrides.InstanceTypes) && overrides.InstanceTypes.length
-    ? overrides.InstanceTypes
-    : (Array.isArray(source.InstanceTypes) && source.InstanceTypes.length ? source.InstanceTypes : undefined);
-  return withoutEmpty({
-    ImageId: source.ImageId,
-    ImageFamily: source.ImageFamily,
-    ProjectId: source.ProjectId,
-    InstanceType: overrides.InstanceType || (!instanceTypes ? source.InstanceType : undefined),
-    InstanceTypes: instanceTypes,
-    SystemDisk: source.SystemDisk,
-    DataDisks: overrides.DataDisks || source.DataDisks,
-    InternetAccessible: source.InternetAccessible,
-    SecurityGroupIds: source.SecurityGroupIds,
-    EnhancedService: source.EnhancedService,
-    InstanceChargeType: source.InstanceChargeType || "POSTPAID_BY_HOUR",
-    InstanceTypesCheckPolicy: source.LastOperationInstanceTypesCheckPolicy || source.InstanceTypesCheckPolicy || "ANY",
-    InstanceTags: source.InstanceTags,
-    Tags: normalizeTencentCloudTags(source.Tags),
-    CamRoleName: source.CamRoleName,
-    HostNameSettings: source.HostNameSettings,
-    InstanceNameSettings: source.InstanceNameSettings,
-    DiskTypePolicy: source.DiskTypePolicy,
-    HpcClusterId: source.HpcClusterId,
-    DisasterRecoverGroupIds: source.DisasterRecoverGroupIds,
-    DedicatedClusterId: source.DedicatedClusterId,
-  });
-}
-
-function cloneAutoScalingGroup(source = {}, launchConfigurationId = "", overrides = {}, suffix = "runtime") {
-  return withoutEmpty({
-    LaunchConfigurationId: launchConfigurationId,
-    MaxSize: Number(overrides.MaxSize || 1),
-    MinSize: Number(overrides.MinSize || 1),
-    DesiredCapacity: Number(overrides.DesiredCapacity || 1),
-    VpcId: source.VpcId,
-    SubnetIds: source.SubnetIdSet,
-    Zones: source.ZoneSet,
-    ProjectId: source.ProjectId,
-    DefaultCooldown: source.DefaultCooldown,
-    TerminationPolicySet: source.TerminationPolicySet,
-    RetryPolicy: source.RetryPolicy,
-    Tags: normalizeTencentCloudTags(source.Tags),
-    ServiceSettings: source.ServiceSettings,
-    MultiZoneSubnetPolicy: source.MultiZoneSubnetPolicy,
-    HealthCheckType: source.HealthCheckType,
-    LoadBalancerHealthCheckGracePeriod: source.LoadBalancerHealthCheckGracePeriod,
-    InstanceAllocationPolicy: source.InstanceAllocationPolicy,
-    SpotMixedAllocationPolicy: source.SpotMixedAllocationPolicy,
-    CapacityRebalance: source.CapacityRebalance,
-    InstanceNameIndexSettings: source.InstanceNameIndexSettings,
-    HostNameIndexSettings: source.HostNameIndexSettings,
-    ConcurrentScaleOutForDesiredCapacity: source.ConcurrentScaleOutForDesiredCapacity,
-  });
 }
 
 function createRequestFromDerivedPlan(plan, source = {}, tierId = "", suffix = "runtime") {
