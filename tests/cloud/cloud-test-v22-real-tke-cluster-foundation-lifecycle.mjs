@@ -206,8 +206,10 @@ assert.equal(created[0].Native.InstanceTypes[0], "S5.MEDIUM4", "cluster_foundati
 assert.deepEqual(created[0].Native.SecurityGroupIds, ["sg-foundation"], "cluster_foundation_create_must_set_security_group_ids");
 assert.equal(created[0].Native.SystemDisk.DiskType, "CLOUD_PREMIUM", "cluster_foundation_default_system_disk");
 assert.deepEqual(created[0].Native.SubnetIds, ["subnet-test"], "cluster_foundation_subnet");
+assert.equal(created[0].Native.InternetAccessible, undefined, "cluster_foundation_default_must_not_send_legacy_internet_accessible_shape");
 assert.equal(created[1].Native.InstanceTypes[0], "S5.2XLARGE16", "cluster_foundation_pro_must_use_instance_type");
 assert.deepEqual(created[1].Native.SecurityGroupIds, ["sg-foundation"], "cluster_foundation_pro_create_must_set_security_group_ids");
+assert.equal(created[1].Native.InternetAccessible, undefined, "cluster_foundation_pro_default_must_not_send_legacy_internet_accessible_shape");
 const modifyCall = calls.find((call) => call.api === "ModifyNodePool");
 assert.deepEqual(modifyCall.request.Native.InstanceTypes, ["S5.2XLARGE16"], "cluster_foundation_upgrade_must_target_pro_instance_type");
 const scaleCall = calls.find((call) => call.api === "ScaleNodePool");
