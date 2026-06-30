@@ -324,16 +324,20 @@ function filterFirst(items = [], keys = []) {
 
 function pickInstanceType(configs = [], tier = {}, allowedZones = []) {
   const zones = new Set((Array.isArray(allowedZones) ? allowedZones : []).filter(Boolean));
-  const supportedNativeCvmFamilies = /^(?:S|SA|C|M|IT|GN|GT|GA)\d*\./u;
+  const nativeCvmFamilyPriority = ["S", "SA", "M", "MA", "BF", "IT", "ITA", "TGN", "BMG"];
+  const nativeCvmFamilyOrder = new Map(nativeCvmFamilyPriority.map((family, index) => [family, index]));
+  const nativeCvmSupportedFamily = /^(?:BF1|BMG5t|ITA5|M3|M8|MA3|MA4|MA5|S2|S3|S5|S8|S9e|SA2|SA3|SA4|SA5|TGN7)\./u;
+  const familyPrefix = (instanceType = "") => String(instanceType).split(".")[0].replace(/\d.*$/u, "");
   const candidates = (Array.isArray(configs) ? configs : [])
     .filter((config) => Number(config.CPU) === Number(tier.cpuCores) && Number(config.Memory) === Number(tier.memoryGb))
     .filter((config) => !zones.size || !config.Zone || zones.has(config.Zone))
     .map((config) => String(config.InstanceType || "").trim())
     .filter(Boolean)
+    .filter((instanceType) => nativeCvmSupportedFamily.test(instanceType))
     .sort((left, right) => {
-      const leftSupported = supportedNativeCvmFamilies.test(left) ? 0 : 1;
-      const rightSupported = supportedNativeCvmFamilies.test(right) ? 0 : 1;
-      if (leftSupported !== rightSupported) return leftSupported - rightSupported;
+      const leftFamilyOrder = nativeCvmFamilyOrder.get(familyPrefix(left)) ?? 99;
+      const rightFamilyOrder = nativeCvmFamilyOrder.get(familyPrefix(right)) ?? 99;
+      if (leftFamilyOrder !== rightFamilyOrder) return leftFamilyOrder - rightFamilyOrder;
       return left.localeCompare(right);
     });
   return candidates[0] || "";
