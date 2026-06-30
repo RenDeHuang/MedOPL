@@ -851,6 +851,7 @@
     "contract": "contracts/medopl-problem-driven-development-lifecycle-contract.json",
     "gate": "tests/health/health-check-v22-problem-driven-development-lifecycle.mjs",
     "raw_evidence_git_truth": false,
+    "github_issue_intake": "external_pointer_only",
     "process_truth": "issue_or_runtime_state",
     "lifecycle_states": [
       "observed",

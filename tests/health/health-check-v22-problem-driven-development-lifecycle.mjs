@@ -26,6 +26,8 @@ assert.equal(lifecycle.state, "active", "problem_lifecycle_state_mismatch");
 assert.equal(lifecycle.authority_boundary.problem_process_truth, "issue_or_runtime_state", "problem_process_truth_must_not_be_repo_docs");
 assert.equal(lifecycle.authority_boundary.repo_truth, "source_tests_contracts_small_history_summary", "repo_truth_boundary_mismatch");
 assert.equal(lifecycle.authority_boundary.raw_evidence_git_truth, false, "raw_evidence_must_not_be_git_truth");
+assert.equal(lifecycle.authority_boundary.github_issue_truth, "external_problem_intake_only", "github_issue_truth_boundary_mismatch");
+assert.equal(lifecycle.authority_boundary.github_issue_repo_truth, false, "github_issue_must_not_be_repo_truth");
 
 assert.deepEqual(
   lifecycle.reproducible_problem.required_fields,
@@ -43,6 +45,26 @@ assert.deepEqual(
 );
 assert.equal(lifecycle.reproducible_problem.journey_id_source, "contracts/medopl-commercial-launch-product-contract-matrix.json", "journey_id_source_mismatch");
 assert.equal(lifecycle.reproducible_problem.observation_without_required_fields, "not_reproducible", "observation_must_not_be_reproducible");
+
+assert.deepEqual(
+  lifecycle.github_issue_intake.required_triage_fields,
+  [
+    "issue_pointer",
+    "dedupe_key",
+    "affected_journey_ids",
+    "severity",
+    "reproducibility",
+    "owner_surface",
+    "minimum_repo_delta",
+    "closeout_assets_policy",
+  ],
+  "github_issue_intake_required_fields_mismatch",
+);
+assert.equal(lifecycle.github_issue_intake.repo_truth_role, "external_pointer_only", "github_issue_intake_repo_truth_role_mismatch");
+assert.equal(lifecycle.github_issue_intake.duplicate_policy, "merge_by_dedupe_key", "github_issue_duplicate_policy_mismatch");
+assert.equal(lifecycle.github_issue_intake.full_issue_body_git_truth, false, "github_issue_body_must_not_be_git_truth");
+assert.equal(lifecycle.github_issue_intake.raw_evidence_git_truth, false, "github_issue_raw_evidence_must_not_be_git_truth");
+assert.equal(lifecycle.github_issue_intake.source_of_next_work, "goal_or_journey_triage_queue_after_reproducible", "github_issue_next_work_source_mismatch");
 
 assert.deepEqual(
   lifecycle.dedupe_key.fields,
@@ -127,6 +149,11 @@ assert.equal(
   manifest.problem_driven_development_lifecycle?.raw_evidence_git_truth,
   false,
   "manifest_problem_lifecycle_raw_evidence_boundary_mismatch",
+);
+assert.equal(
+  manifest.problem_driven_development_lifecycle?.github_issue_intake,
+  "external_pointer_only",
+  "manifest_problem_lifecycle_github_issue_intake_mismatch",
 );
 
 assert(testReadme.includes("Problem-driven Development Lifecycle"), "tests_readme_problem_lifecycle_section_missing");

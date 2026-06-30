@@ -113,18 +113,28 @@ async function assertNoGlobalHorizontalOverflow(page, label) {
 
 async function assertProductionAuthEntryVisible(page, label) {
   const bodyText = await page.locator("body").innerText();
-  assert(bodyText.includes("登录你的 MedOPL 账户"), `${label}_login_subtitle_missing`);
-  assert(bodyText.includes("邮箱"), `${label}_email_field_missing`);
-  assert(bodyText.includes("密码"), `${label}_password_field_missing`);
-  assert(bodyText.includes("忘记密码？"), `${label}_forgot_password_action_missing`);
-  assert(bodyText.includes("还没有账户？"), `${label}_register_prompt_missing`);
-  assert(bodyText.includes("免费注册"), `${label}_register_action_missing`);
-  assert(bodyText.includes("登录"), `${label}_primary_action_missing`);
-  assert(bodyText.includes("owner 创建或批准 MedOPL 账号"), `${label}_owner_approval_missing`);
-  assert(bodyText.includes("按需使用算力，弹性存储数据"), `${label}_figma_brand_panel_missing`);
+  assert(bodyText.includes("进入 MedOPL"), `${label}_entry_title_missing`);
+  assert(bodyText.includes("仅限受控准入账户"), `${label}_controlled_admission_badge_missing`);
+  assert(bodyText.includes("当前生产环境仅支持 owner 提供的 session bootstrap 入口"), `${label}_bootstrap_boundary_missing`);
+  assert(bodyText.includes("不开放自助密码登录、公开注册或忘记密码流程"), `${label}_self_serve_boundary_missing`);
+  assert(bodyText.includes("我有 bootstrap 链接"), `${label}_bootstrap_action_missing`);
+  assert(bodyText.includes("联系 owner 获取开通"), `${label}_owner_action_missing`);
+  assert(bodyText.includes("当前浏览器尚未持有有效准入会话"), `${label}_controlled_session_state_missing`);
+  assert(bodyText.includes("进入前你需要满足"), `${label}_readiness_state_title_missing`);
+  assert(bodyText.includes("账户已由 owner 创建或批准"), `${label}_owner_approval_missing`);
+  assert(bodyText.includes("按需开通计算资源、存储空间与费用控制"), `${label}_figma_brand_panel_missing`);
   assert(bodyText.includes("计算资源"), `${label}_compute_card_missing`);
   assert(bodyText.includes("存储空间"), `${label}_storage_card_missing`);
   assert(bodyText.includes("费用与用量"), `${label}_billing_card_missing`);
+  assert.equal(await page.locator("input").count(), 0, `${label}_must_not_render_public_password_form`);
+  assert.equal(bodyText.includes("登录你的 MedOPL 账户"), false, `${label}_must_not_claim_password_login`);
+  assert.equal(bodyText.includes("you@example.com"), false, `${label}_must_not_render_email_placeholder`);
+  assert.equal(bodyText.includes("至少 6 位"), false, `${label}_must_not_render_password_placeholder`);
+  assert.equal(bodyText.includes("忘记密码？"), false, `${label}_must_not_render_forgot_password_action`);
+  assert.equal(bodyText.includes("还没有账户"), false, `${label}_must_not_render_register_prompt`);
+  assert.equal(bodyText.includes("免费注册"), false, `${label}_must_not_render_free_register`);
+  assert.equal(bodyText.includes("创建账户"), false, `${label}_must_not_render_create_account`);
+  assert.equal(bodyText.includes("直接登录"), false, `${label}_must_not_render_direct_login`);
   assert.equal(bodyText.includes("张伟"), false, `${label}_must_not_show_mock_user`);
   assert.equal(bodyText.includes("Chat"), false, `${label}_must_not_show_chat_copy`);
   assert.equal(bodyText.includes("SecretId"), false, `${label}_must_not_show_cloud_secret_copy`);
@@ -214,7 +224,7 @@ try {
     });
 
     await page.goto(`${frontendBaseUrl}/login`, { waitUntil: "domcontentloaded" });
-    await page.waitForSelector("text=欢迎回来", { timeout: 30000 });
+    await page.waitForSelector("text=进入 MedOPL", { timeout: 30000 });
     await page.waitForTimeout(1500);
     await assertProductionAuthEntryVisible(page, "production_auth_entry");
     assert.equal(
@@ -231,9 +241,9 @@ try {
 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`${frontendBaseUrl}/login`, { waitUntil: "domcontentloaded" });
-    await page.waitForSelector("text=欢迎回来", { timeout: 30000 });
+    await page.waitForSelector("text=进入 MedOPL", { timeout: 30000 });
     await assertNoGlobalHorizontalOverflow(page, "production_auth_entry_mobile");
-    const primaryAction = page.getByRole("button", { name: "登录" });
+    const primaryAction = page.getByRole("button", { name: "我有 bootstrap 链接" });
     const primaryBox = await primaryAction.boundingBox();
     assert(primaryBox && primaryBox.width >= 44 && primaryBox.height >= 44, `production_auth_entry_primary_action_touch_target:${JSON.stringify(primaryBox)}`);
 
@@ -242,7 +252,7 @@ try {
     navigations.length = 0;
     await page.setViewportSize({ width: 1440, height: 920 });
     await page.goto(`${frontendBaseUrl}/`, { waitUntil: "domcontentloaded" });
-    await page.waitForSelector("text=欢迎回来", { timeout: 30000 });
+    await page.waitForSelector("text=进入 MedOPL", { timeout: 30000 });
     await page.waitForTimeout(1500);
     await assertProductionAuthEntryVisible(page, "production_root_auth_entry");
     assert.equal(page.url(), `${frontendBaseUrl}/login`, `production_root_auth_entry_url:${page.url()}`);
@@ -259,7 +269,8 @@ try {
     contract: "v22_portal_production_auth_entry_browser",
     checked: [
       "production_api_me_login_url_points_to_login",
-      "login_route_renders_commercial_admission_page",
+      "login_route_renders_controlled_admission_entry",
+      "login_route_does_not_render_public_password_login_register_or_forgot_password",
       "login_route_does_not_fetch_me_or_reload_loop",
       "login_route_has_desktop_mobile_visible_first_screen",
     ],

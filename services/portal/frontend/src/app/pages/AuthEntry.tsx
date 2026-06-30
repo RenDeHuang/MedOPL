@@ -1,29 +1,23 @@
-import { useState, type FormEvent } from "react";
 import {
   Check,
   CheckCircle2,
   CreditCard,
-  Eye,
-  EyeOff,
   HardDrive,
-  KeyRound,
   LockKeyhole,
   Server,
   Shield,
   ShieldCheck,
   Sparkles,
-  UserPlus,
   Zap,
 } from "lucide-react";
 import { Link } from "react-router";
 import { Badge, Button, Card } from "../components/ui/core";
 
-type AuthMode = "login" | "register";
-
 const readinessItems = [
-  "owner 创建或批准 MedOPL 账号",
-  "账户余额、套餐和 quota 满足资源开通条件",
-  "计算资源、存储空间和账单 receipt 由 Portal 后端确认",
+  "账户已由 owner 创建或批准",
+  "套餐、余额和 quota 满足资源开通条件",
+  "资源与账单状态由 Portal 后端确认",
+  "满足条件后可进入 OPL",
 ];
 
 const resourceCards = [
@@ -45,76 +39,10 @@ const resourceCards = [
 ];
 
 const brandPromises = [
-  { icon: Server, text: "计算资源按量计费，开通状态由后端确认" },
-  { icon: HardDrive, text: "弹性存储，释放计算后数据可按策略保留" },
-  { icon: Shield, text: "账号、资源和账单边界 fail closed" },
+  { icon: Server, text: "计算资源按套餐开通" },
+  { icon: HardDrive, text: "存储与账单统一管理" },
+  { icon: Shield, text: "所有入口按准入边界 fail closed" },
 ];
-
-function fieldClasses(hasError: boolean, withAction = false) {
-  return [
-    "h-11 w-full rounded-lg border bg-white px-3.5 text-sm text-slate-950 shadow-sm shadow-slate-200/60",
-    "placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/40",
-    hasError ? "border-red-300" : "border-slate-200",
-    withAction ? "pr-11" : "",
-  ].join(" ");
-}
-
-function AuthInput({
-  id,
-  label,
-  type = "text",
-  placeholder,
-  value,
-  onChange,
-  error,
-}: {
-  id: string;
-  label: string;
-  type?: "text" | "email" | "password";
-  placeholder: string;
-  value: string;
-  onChange: (value: string) => void;
-  error?: string;
-}) {
-  const [showPassword, setShowPassword] = useState(false);
-  const password = type === "password";
-  const renderedType = password && showPassword ? "text" : type;
-
-  return (
-    <div className="space-y-1.5">
-      <label htmlFor={id} className="block text-sm font-medium text-slate-900">
-        {label}
-      </label>
-      <div className="relative">
-        <input
-          id={id}
-          type={renderedType}
-          placeholder={placeholder}
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          className={fieldClasses(Boolean(error), password)}
-          aria-invalid={error ? "true" : "false"}
-          aria-describedby={error ? `${id}-error` : undefined}
-        />
-        {password ? (
-          <button
-            type="button"
-            onClick={() => setShowPassword((current) => !current)}
-            className="absolute right-0 top-0 flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 transition-colors hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            aria-label={showPassword ? "隐藏密码" : "显示密码"}
-          >
-            {showPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
-          </button>
-        ) : null}
-      </div>
-      {error ? (
-        <p id={`${id}-error`} className="text-xs text-red-600" role="alert">
-          {error}
-        </p>
-      ) : null}
-    </div>
-  );
-}
 
 function BrandPanel() {
   return (
@@ -129,14 +57,14 @@ function BrandPanel() {
         </Link>
         <div className="space-y-4">
           <h1 className="text-3xl font-bold leading-snug tracking-normal">
-            AI 研究资源
+            研究资源
             <br />
-            控制面板
+            控制面
           </h1>
           <p className="text-[15px] leading-relaxed text-white/60">
-            按需使用算力，弹性存储数据，
+            按需开通计算资源、存储空间与费用控制。
             <br />
-            专注于你的研究本身。
+            满足准入条件后进入 OPL。
           </p>
         </div>
       </div>
@@ -155,37 +83,6 @@ function BrandPanel() {
 }
 
 export function AuthEntry() {
-  const [mode, setMode] = useState<AuthMode>("login");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [submitStatus, setSubmitStatus] = useState("");
-
-  const validate = () => {
-    const nextErrors: Record<string, string> = {};
-    if (mode === "register" && !name.trim()) nextErrors.name = "请输入姓名";
-    if (!email) nextErrors.email = "请输入邮箱";
-    else if (!/\S+@\S+\.\S+/.test(email)) nextErrors.email = "邮箱格式不正确";
-    if (!password) nextErrors.password = mode === "register" ? "请设置密码" : "请输入密码";
-    else if (password.length < 6) nextErrors.password = "密码至少 6 位";
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
-  };
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setSubmitStatus("");
-    if (!validate()) return;
-    setSubmitStatus("生产登录接口尚未开放自助密码登录。请使用 owner 提供的 session bootstrap 链接进入；本页面不会伪造会话。");
-  };
-
-  const switchMode = (nextMode: AuthMode) => {
-    setMode(nextMode);
-    setErrors({});
-    setSubmitStatus("");
-  };
-
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950" data-page-id="production-auth-entry">
       <div className="flex min-h-screen">
@@ -199,7 +96,7 @@ export function AuthEntry() {
               <span className="text-sm font-semibold text-slate-950">MedOPL</span>
             </Link>
             <Badge variant="outline" className="border-teal-200 bg-teal-50 text-teal-700">
-              生产准入
+              仅限受控准入账户
             </Badge>
           </header>
 
@@ -208,46 +105,42 @@ export function AuthEntry() {
               <div className="mx-auto w-full max-w-[360px] xl:mx-0">
                 <div className="mb-8">
                   <Badge variant="outline" className="mb-4 hidden border-teal-200 bg-teal-50 text-teal-700 lg:inline-flex">
-                    owner-created-or-approved MedOPL account
+                    仅限受控准入账户
                   </Badge>
                   <h2 className="text-2xl font-bold leading-tight tracking-normal text-slate-950">
-                    {mode === "login" ? "欢迎回来" : "创建账户"}
+                    进入 MedOPL
                   </h2>
                   <p className="mt-1.5 text-sm leading-6 text-slate-600">
-                    {mode === "login" ? "登录你的 MedOPL 账户" : "填写信息，等待 owner 完成商业账号准入"}
+                    当前生产环境仅支持 owner 提供的 session bootstrap 入口。
+                    不开放自助密码登录、公开注册或忘记密码流程。
                   </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-                  {mode === "register" ? (
-                    <AuthInput id="name" label="姓名" placeholder="你的姓名" value={name} onChange={setName} error={errors.name} />
-                  ) : null}
-                  <AuthInput id="email" label="邮箱" type="email" placeholder="you@example.com" value={email} onChange={setEmail} error={errors.email} />
-                  <div className="space-y-1">
-                    <AuthInput id="password" label="密码" type="password" placeholder="至少 6 位" value={password} onChange={setPassword} error={errors.password} />
-                    {mode === "login" ? (
-                      <div className="flex justify-end pt-0.5">
-                        <button type="button" className="min-h-11 rounded-lg px-1 text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40">
-                          忘记密码？
-                        </button>
-                      </div>
-                    ) : null}
-                  </div>
-                  <Button type="submit" size="lg" className="mt-2 w-full">
-                    {mode === "login" ? "登录" : "创建账户"}
-                  </Button>
-                </form>
-
-                <p className="mt-6 text-center text-sm text-slate-600">
-                  {mode === "login" ? "还没有账户？" : "已有账户？"}
-                  <button
+                <div className="grid gap-3" aria-label="MedOPL 受控准入动作">
+                  <Button
                     type="button"
-                    onClick={() => switchMode(mode === "login" ? "register" : "login")}
-                    className="ml-1 min-h-11 rounded-lg px-1 font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                    size="lg"
+                    className="w-full"
+                    onClick={() => {
+                      window.location.hash = "use-owner-bootstrap-link";
+                    }}
                   >
-                    {mode === "login" ? "免费注册" : "直接登录"}
-                  </button>
-                </p>
+                    <LockKeyhole className="h-4 w-4" aria-hidden="true" />
+                    我有 bootstrap 链接
+                  </Button>
+                  <Button
+                    type="button"
+                    size="lg"
+                    variant="outline"
+                    className="w-full border-teal-200 text-teal-800 hover:bg-teal-50"
+                    onClick={() => {
+                      window.location.hash = "contact-owner-for-access";
+                    }}
+                  >
+                    <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                    联系 owner 获取开通
+                  </Button>
+                </div>
 
                 <div
                   className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800"
@@ -258,13 +151,13 @@ export function AuthEntry() {
                   <div className="flex items-start gap-2">
                     <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0" data-ui-signal="status-icon" aria-hidden="true" />
                     <span data-ui-signal="status-label">
-                      {submitStatus || "当前浏览器没有有效 MedOPL 会话。请使用 owner 提供的账号开通或 session bootstrap 链接进入。"}
+                      当前浏览器尚未持有有效准入会话。请使用 owner 提供的 bootstrap 链接进入；如果尚未收到入口链接，请先完成账户开通。
                     </span>
                   </div>
                 </div>
 
                 <p className="mt-8 text-center text-xs leading-6 text-slate-400">
-                  登录即表示同意服务条款与隐私政策；自助密码登录、外部支付结算和全量生产账号开通仍由后端授权边界控制。
+                  Portal 不伪造会话；账号准入、外部支付结算和全量生产账号开通仍由后端授权边界控制。
                 </p>
               </div>
 
@@ -272,11 +165,11 @@ export function AuthEntry() {
                 <Card className="border border-slate-200 bg-white p-5 shadow-sm shadow-slate-200/60">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <h3 className="text-lg font-semibold text-slate-950">上线前准入检查</h3>
-                      <p className="mt-1 text-sm leading-6 text-slate-600">这些条件满足后，Portal 才会显示资源、存储、费用和 OPL 入口。</p>
+                      <h3 className="text-lg font-semibold text-slate-950">进入前你需要满足</h3>
+                      <p className="mt-1 text-sm leading-6 text-slate-600">这些状态满足后，Portal 才会显示资源、存储、费用和 OPL 入口。</p>
                     </div>
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-primary">
-                      {mode === "login" ? <KeyRound className="h-4 w-4" aria-hidden="true" /> : <UserPlus className="h-4 w-4" aria-hidden="true" />}
+                      <ShieldCheck className="h-4 w-4" aria-hidden="true" />
                     </span>
                   </div>
                   <div className="mt-5 space-y-3">

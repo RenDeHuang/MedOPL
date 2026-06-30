@@ -7,6 +7,8 @@
     "authority_boundary": {
       "problem_process_truth": "issue_or_runtime_state",
       "repo_truth": "source_tests_contracts_small_history_summary",
+      "github_issue_truth": "external_problem_intake_only",
+      "github_issue_repo_truth": false,
       "raw_evidence_git_truth": false,
       "raw_evidence_sink": ".runtime/problem-driven-development"
     },
@@ -23,6 +25,23 @@
       ],
       "journey_id_source": "contracts/medopl-commercial-launch-product-contract-matrix.json",
       "observation_without_required_fields": "not_reproducible"
+    },
+    "github_issue_intake": {
+      "required_triage_fields": [
+        "issue_pointer",
+        "dedupe_key",
+        "affected_journey_ids",
+        "severity",
+        "reproducibility",
+        "owner_surface",
+        "minimum_repo_delta",
+        "closeout_assets_policy"
+      ],
+      "repo_truth_role": "external_pointer_only",
+      "duplicate_policy": "merge_by_dedupe_key",
+      "full_issue_body_git_truth": false,
+      "raw_evidence_git_truth": false,
+      "source_of_next_work": "goal_or_journey_triage_queue_after_reproducible"
     },
     "dedupe_key": {
       "fields": [
