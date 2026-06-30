@@ -175,6 +175,11 @@ assert.deepEqual(calls.map((call) => call.api).filter((api) => api !== "Describe
   "DeleteClusterNodePool",
 ], "cluster_foundation_must_discover_create_upgrade_and_destroy");
 const created = calls.filter((call) => call.api === "CreateClusterNodePool").map((call) => call.request);
+for (const request of created) {
+  for (const tag of request.Tags || []) {
+    assert.equal(String(tag.Key || "").includes("/"), false, "cluster_foundation_cloud_tags_must_use_tencent_safe_keys");
+  }
+}
 assert.equal(JSON.parse(created[0].LaunchConfigurePara).ImageId, undefined, "cluster_foundation_default_must_not_require_cvm_image_permission");
 assert.equal(created[0].NodePoolOs, "tlinux3.1x86_64", "cluster_foundation_default_node_pool_os");
 assert.deepEqual(JSON.parse(created[0].AutoScalingGroupPara).SubnetIds, ["subnet-test"], "cluster_foundation_subnet");
