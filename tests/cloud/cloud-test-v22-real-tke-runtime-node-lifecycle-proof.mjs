@@ -9,6 +9,8 @@ const repoRoot = path.resolve(__dirname, "../..");
 const authPack = JSON.parse(readFileSync(path.join(repoRoot, "contracts/medopl-cloud-authorization-pack.json"), "utf8"));
 const runnerSource = readFileSync(path.join(repoRoot, "tests/support/cloud-prework/production-goal-command-runner.mjs"), "utf8");
 const realTkeSupportSource = readFileSync(path.join(repoRoot, "tests/support/cloud-prework/lib/real-tke-runtime-node-lifecycle-support.js"), "utf8");
+const realTkeFailureSupportSource = readFileSync(path.join(repoRoot, "tests/support/cloud-prework/lib/real-tke-lifecycle-failure-support.js"), "utf8");
+const realTkeObservationSupportSource = readFileSync(path.join(repoRoot, "tests/support/cloud-prework/lib/real-tke-node-pool-observation-support.js"), "utf8");
 const executorSource = readFileSync(path.join(repoRoot, "scripts/v22-cloud-authorized-executor.mjs"), "utf8");
 const configSupportSource = readFileSync(path.join(repoRoot, "tests/support/cloud-prework/lib/production-goal-command-config-support.js"), "utf8");
 const productionGoalExecutorSource = readFileSync(path.join(repoRoot, "tests/support/cloud-prework/cloud-authorized-production-goal-executor.js"), "utf8");
@@ -67,6 +69,29 @@ assert(
   "production_goal_runner_must_implement_real_tke_runtime_node_lifecycle",
 );
 assert(
+  realTkeSupportSource.includes("./real-tke-lifecycle-failure-support.js")
+    && realTkeSupportSource.includes("./real-tke-node-pool-observation-support.js"),
+  "real_tke_lifecycle_main_support_must_import_split_helpers",
+);
+assert(
+  realTkeFailureSupportSource.includes("export class RealTkeLifecycleFailure")
+    && realTkeFailureSupportSource.includes("export function failClosed"),
+  "real_tke_lifecycle_failure_support_must_export_fail_closed_boundary",
+);
+for (const exportedHelper of [
+  "waitForNativeTkeNodePool",
+  "waitForNativeTkeNodePoolDeleted",
+  "waitForTkeNodePool",
+  "waitForTkeNodePoolDeleted",
+  "nodePoolNodeTotal",
+  "nodePoolReadyNodeCount",
+]) {
+  assert(
+    realTkeObservationSupportSource.includes(`export function ${exportedHelper}`) || realTkeObservationSupportSource.includes(`export async function ${exportedHelper}`),
+    `real_tke_observation_support_helper_missing:${exportedHelper}`,
+  );
+}
+assert(
   realTkeSupportSource.includes("CreateClusterNodePool") || realTkeSupportSource.includes("CreateNodePool") || realTkeSupportSource.includes("CreateClusterInstances"),
   "real_tke_lifecycle_must_call_provider_create_or_scale_api",
 );
@@ -76,7 +101,9 @@ assert(
   "real_tke_lifecycle_must_require_provider_create_request_per_plan_tier",
 );
 assert(
-  realTkeSupportSource.includes("nodePoolNodeTotal") && realTkeSupportSource.includes("requireNodeTotal"),
+  realTkeObservationSupportSource.includes("nodePoolNodeTotal")
+    && realTkeObservationSupportSource.includes("options.requireNodeTotal")
+    && realTkeSupportSource.includes("requireNodeTotal"),
   "real_tke_lifecycle_must_observe_real_node_count_before_accepting_runtime_receipt",
 );
 assert(

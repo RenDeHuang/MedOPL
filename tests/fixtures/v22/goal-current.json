@@ -36,12 +36,13 @@
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
     "branch": "recovery/platform-v22-trunk",
-    "landed_commit": "fbf7f07f8d19cb8a72954957a94e2e2f08be2086",
+    "landed_commit": "42b12a0f721cdb0da30569e443ee1d918449a377",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
       "npm run test:run-plan -- --dry-run --json passed",
       "npm run test:run-plan passed",
       "npm run verify passed",
+      "npm run test:health passed",
       "npm run gate:review passed",
       "npm run repo:bloat passed",
       "npm run line:budget passed",
@@ -63,9 +64,9 @@
       "opl_webui_runtime_required"
     ],
     "canClaim": [
-      "GitHub issue intake template records reproducible problem fields truth impact classes and test profiles without making issues product truth",
-      "Portal root package wrapper is physically retired and callers use services/portal/frontend directly",
-      "old suite-test-v22-mvp wrapper is retired in favor of suite-test-v22-local-acceptance"
+      "latest trunk closeout pointer synchronized to current origin/recovery/platform-v22-trunk HEAD",
+      "real TKE lifecycle support split below line budget with cloud proof coverage",
+      "no removable project-local .worktrees remain"
     ],
     "cannotClaim": [
       "production complete",
@@ -73,7 +74,6 @@
       "Kubernetes command success",
       "live-test coverage",
       "external PSP settlement",
-      "full issue body or raw evidence as git truth",
       "all legacy product experience physically deleted"
     ],
     "verification": {
@@ -82,6 +82,7 @@
         "npm run test:run-plan -- --dry-run --json passed",
         "npm run test:run-plan passed",
         "npm run verify passed",
+        "npm run test:health passed",
         "npm run gate:review passed",
         "npm run repo:bloat passed",
         "npm run line:budget passed",
@@ -98,11 +99,11 @@
       "cannot_claim": "done"
     },
     "cleanup_result": {
-      "deleted": "services/portal root package wrapper and old suite-test-v22-mvp wrapper",
-      "folded": "issue intake truth impact classes test profiles and local acceptance naming into contract manifest runner tests and compact history",
-      "retained": "negative regression guards for old MVP suite name and production/deploy cannot-claim boundaries",
-      "reason": "issue intake and local verification shape changed without authorizing cloud mutation or production claims",
-      "next": "batch future issue-driven fixes through scoped profiles and keep release/deploy evidence under authorized receipts"
+      "deleted": "no removable v22 temporary worktrees, platform-v19 retained because Git reports it as the main working tree",
+      "folded": "post-merge trunk closeout pointer and real TKE support split evidence into active/history/current truth and cloud proof tests",
+      "retained": "current commercial business closure cursor and production/deploy cannot-claim boundaries",
+      "reason": "health gate found stale latest_landed_closeout and line budget gate found real TKE lifecycle support over 1000 lines",
+      "next": "release image and cloud rollout must use authorized GitHub Actions receipts not local kubectl or raw secrets"
     },
     "retirement": {
       "active_blocker_retired": true,
@@ -192,7 +193,7 @@
   "current_blockers": [
     "none_for_current_scoped_commercial_business_flow"
   ],
-  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is recovery/platform-v22-trunk at fbf7f07f8d19cb8a72954957a94e2e2f08be2086; it binds goal-driven development to affected_journeys from the Commercial Launch Product Contract Matrix without replacing goals with journeys. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is recovery/platform-v22-trunk at fbf7f07f8d19cb8a72954957a94e2e2f08be2086.",
+  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is recovery/platform-v22-trunk at 42b12a0f721cdb0da30569e443ee1d918449a377; it binds goal-driven development to affected_journeys from the Commercial Launch Product Contract Matrix without replacing goals with journeys. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is recovery/platform-v22-trunk at 42b12a0f721cdb0da30569e443ee1d918449a377.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -1192,8 +1193,8 @@
     },
     "receipt_manifest_artifact_id": "7937559220"
   },
-  "base_trunk_head": "fbf7f07f8d19cb8a72954957a94e2e2f08be2086",
-  "last_landed_commit": "fbf7f07f8d19cb8a72954957a94e2e2f08be2086",
+  "base_trunk_head": "42b12a0f721cdb0da30569e443ee1d918449a377",
+  "last_landed_commit": "42b12a0f721cdb0da30569e443ee1d918449a377",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
@@ -1967,7 +1968,7 @@
       },
       {
         "goal_id": "recovery/platform-v22-trunk",
-        "landed_commit": "fbf7f07f8d19cb8a72954957a94e2e2f08be2086",
+        "landed_commit": "42b12a0f721cdb0da30569e443ee1d918449a377",
         "status": "completed_retired",
         "retired_from": [
           "active_blocker",

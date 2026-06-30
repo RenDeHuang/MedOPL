@@ -2,10 +2,22 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 
 import { parseEnvFile, readJsonFile } from "./production-goal-command-config-support.js";
+import { failClosed, RealTkeLifecycleFailure } from "./real-tke-lifecycle-failure-support.js";
 import {
   cloneAutoScalingGroup,
   cloneLaunchConfiguration,
 } from "./real-tke-derived-node-pool-request-support.js";
+import {
+  extractFirstString,
+  extractNumber,
+  publicRef,
+  summarizeNodePoolCandidate,
+  waitForNativeTkeNodePool,
+  waitForNativeTkeNodePoolDeleted,
+  waitForTkeNodePool,
+  waitForTkeNodePoolDeleted,
+  withoutEmpty,
+} from "./real-tke-node-pool-observation-support.js";
 import {
   pickImage,
   pickInstanceType,
@@ -13,19 +25,6 @@ import {
   pickZone,
   securityGroupDiscoveryRequest,
 } from "./real-tke-runtime-node-selection-support.js";
-
-export class RealTkeLifecycleFailure extends Error {
-  constructor(blocker, details = {}, status = 1) {
-    super(blocker);
-    this.blocker = blocker;
-    this.details = details;
-    this.status = status;
-  }
-}
-
-function failClosed(blocker, details = {}, status = 1) {
-  throw new RealTkeLifecycleFailure(blocker, details, status);
-}
 
 function requireObject(value, blocker, operation) {
   if (!value || typeof value !== "object" || Array.isArray(value)) failClosed(blocker, { operationClass: operation }, 65);
@@ -42,30 +41,6 @@ function requirePlanArray(plan, key, blocker, operation) {
   return value;
 }
 
-function publicRef(value = "") {
-  const raw = String(value || "").trim();
-  if (!raw) return "";
-  return raw.replace(/[^A-Za-z0-9_.:-]/gu, "-").slice(0, 96);
-}
-
-function extractFirstString(value, keys = []) {
-  if (!value || typeof value !== "object") return "";
-  for (const key of keys) {
-    const child = value[key];
-    if (typeof child === "string" && child.trim()) return child.trim();
-  }
-  return "";
-}
-
-function extractNumber(value, keys = []) {
-  if (!value || typeof value !== "object") return 0;
-  for (const key of keys) {
-    const number = Number(value[key]);
-    if (Number.isFinite(number)) return number;
-  }
-  return 0;
-}
-
 function parseJsonObject(value, blocker, operation) {
   if (value && typeof value === "object" && !Array.isArray(value)) return value;
   if (typeof value !== "string" || !value.trim()) failClosed(blocker, { operationClass: operation }, 65);
@@ -76,38 +51,6 @@ function parseJsonObject(value, blocker, operation) {
   }
 }
 
-function nodePoolNodeTotal(nodePool = {}) {
-  const summary = nodePool.NodeCountSummary || nodePool.Native?.NodeCountSummary || {};
-  const autoscaling = summary.AutoscalingAdded || {};
-  const manual = summary.ManuallyAdded || {};
-  const total = extractNumber(autoscaling, ["Total", "Normal", "Joining", "Initializing"])
-    + extractNumber(manual, ["Total", "Normal", "Joining", "Initializing"]);
-  return total || extractNumber(nodePool.Native || {}, ["ReadyReplicas"]);
-}
-
-function nodePoolReadyNodeCount(nodePool = {}) {
-  const summary = nodePool.NodeCountSummary || nodePool.Native?.NodeCountSummary || {};
-  const autoscaling = summary.AutoscalingAdded || {};
-  const manual = summary.ManuallyAdded || {};
-  const ready = extractNumber(autoscaling, ["Normal", "Ready", "Total"])
-    + extractNumber(manual, ["Normal", "Ready", "Total"]);
-  return ready || extractNumber(nodePool.Native || {}, ["ReadyReplicas"]);
-}
-
-function nodePoolInstanceTypes(nodePool = {}) {
-  const sources = [
-    nodePool.InstanceTypes,
-    nodePool.Native?.InstanceTypes,
-    nodePool.Regular?.InstanceTypes,
-    nodePool.LaunchConfiguration?.InstanceTypes,
-  ];
-  for (const source of sources) {
-    if (Array.isArray(source) && source.length) return source.map((item) => String(item || "").trim()).filter(Boolean);
-  }
-  const single = extractFirstString(nodePool, ["InstanceType"]);
-  return single ? [single] : [];
-}
-
 function upgradeTargetInstanceType(upgradeRequest = {}, proTier = {}) {
   return String(
     upgradeRequest.modifyNodePoolInstanceTypes?.InstanceTypes?.[0]
@@ -115,43 +58,6 @@ function upgradeTargetInstanceType(upgradeRequest = {}, proTier = {}) {
       || proTier.instanceType
       || "",
   ).trim();
-}
-
-function tagValue(item = {}, keys = []) {
-  const sources = [
-    item.Tags,
-    item.TagSet,
-    item.Labels,
-    item.LabelSet,
-    item.TagSpecification?.Tags,
-  ].filter(Array.isArray);
-  for (const source of sources) {
-    for (const tag of source) {
-      const key = String(tag?.Key ?? tag?.key ?? tag?.Name ?? tag?.name ?? "").trim();
-      const value = String(tag?.Value ?? tag?.value ?? "").trim();
-      if (keys.includes(key) && value) return value;
-    }
-  }
-  return "";
-}
-
-function classifyNodePool(nodePool = {}) {
-  const role = tagValue(nodePool, ["medopl.io/pool", "medopl.io/role", "medopl_pool", "medopl_role"]);
-  if (["platform", "platform_service", "platform_services"].includes(role)) return "platform_service";
-  if (["tenant", "tenant_node_pool", "tenant_workspace"].includes(role)) return "tenant";
-  if (["shared", "shared_user_compute"].includes(role)) return "shared_user_compute_forbidden";
-  return "unclassified";
-}
-
-function summarizeNodePoolCandidate(nodePool = {}) {
-  return withoutEmpty({
-    nodePoolRef: publicRef(extractFirstString(nodePool, ["NodePoolId", "NodePoolID", "Id", "ID"])),
-    name: publicRef(extractFirstString(nodePool, ["Name", "NodePoolName"])),
-    role: classifyNodePool(nodePool),
-    lifeState: publicRef(extractFirstString(nodePool, ["LifeState", "Status", "State"])),
-    nodeTotal: nodePoolNodeTotal(nodePool),
-    readyNodeCount: nodePoolReadyNodeCount(nodePool),
-  });
 }
 
 function isNodePoolNotFound(error) {
@@ -170,47 +76,9 @@ function blockerFromLifecycleError(error) {
   return providerErrorCategory(error);
 }
 
-function nativeNodePoolDescribeRequest(clusterId, nodePoolId) {
-  return {
-    ClusterId: clusterId,
-    Filters: [{ Name: "NodePoolsId", Values: [nodePoolId] }],
-    Limit: 20,
-  };
-}
-
 function observeAttemptCount(plan, key, fallback) {
   const value = Number(plan[key]);
   return Number.isFinite(value) && value > 0 ? value : fallback;
-}
-
-function observationFailureDetails(operation, stage, nodePoolId, attempts, lastObservation = null, waitReason = "node_pool_not_found") {
-  return {
-    operationClass: operation,
-    stage,
-    nodePoolRef: "created_node_pool_ref",
-    observed: withoutEmpty({
-      found: false,
-      stage,
-      attempts,
-      waitReason,
-      nodePoolRef: publicRef(nodePoolId),
-      ...(lastObservation || {}),
-    }),
-  };
-}
-
-function deletionFailureDetails(operation, nodePoolId, attempts, lastObservation = null) {
-  return {
-    operationClass: operation,
-    nodePoolRef: "created_node_pool_ref",
-    observed: withoutEmpty({
-      found: Boolean(lastObservation),
-      attempts,
-      waitReason: lastObservation ? "node_pool_still_visible" : "node_pool_not_found",
-      nodePoolRef: publicRef(nodePoolId),
-      ...(lastObservation || {}),
-    }),
-  };
 }
 
 function lifecycleFailureKey(stage = "") {
@@ -254,10 +122,6 @@ function nodePoolName(plan = {}, suffix = "runtime", tierId = "") {
     .replace(/^[^a-z]+/u, "m")
     .replace(/[^a-z0-9]+$/u, "") || `medopl-${suffix}`;
   return `${prefix}-${suffix}-${tierId}`.slice(0, 63);
-}
-
-function withoutEmpty(value = {}) {
-  return Object.fromEntries(Object.entries(value).filter(([, child]) => child !== undefined && child !== null && child !== ""));
 }
 
 function normalizeTencentCloudTagKey(value = "") {
@@ -634,136 +498,6 @@ async function deriveRealTkePlanFromClusterFoundation({ plan, env, root, operati
       imageRef: "cluster_foundation_image_ref",
     },
   };
-}
-
-async function waitForTkeNodePool(client, clusterId, nodePoolId, operation, stage, maxAttempts = 12, options = {}) {
-  let lastObservation = null;
-  let waitReason = "node_pool_not_found";
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const response = await client.DescribeClusterNodePools({ ClusterId: clusterId });
-    const nodePools = Array.isArray(response?.NodePoolSet) ? response.NodePoolSet : [];
-    const found = nodePools.find((item) => extractFirstString(item, ["NodePoolId", "NodePoolID", "Id", "ID"]) === nodePoolId);
-    if (found) {
-      const observed = {
-        found: true,
-        nodePoolId,
-        stage,
-        attempt,
-        lifeState: extractFirstString(found, ["LifeState", "Status", "State"]),
-        nodeTotal: nodePoolNodeTotal(found),
-        readyNodeCount: nodePoolReadyNodeCount(found),
-        desiredNodesNum: extractNumber(found, ["DesiredNodesNum", "DesiredCapacity"]),
-        minNodesNum: extractNumber(found, ["MinNodesNum", "MinSize"]),
-        maxNodesNum: extractNumber(found, ["MaxNodesNum", "MaxSize"]),
-        instanceTypes: nodePoolInstanceTypes(found),
-      };
-      lastObservation = observed;
-      if (options.requireNodeTotal && observed.nodeTotal < Number(options.requireNodeTotal)) {
-        waitReason = "node_total_below_requirement";
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-        continue;
-      }
-      if (options.requireReadyNodeCount && observed.readyNodeCount < Number(options.requireReadyNodeCount)) {
-        waitReason = "ready_node_count_below_requirement";
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-        continue;
-      }
-      if (options.requireDesiredNodesNum && observed.desiredNodesNum !== Number(options.requireDesiredNodesNum)) {
-        waitReason = "desired_nodes_num_mismatch";
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-        continue;
-      }
-      if (options.requireInstanceType && !observed.instanceTypes.includes(String(options.requireInstanceType))) {
-        waitReason = "instance_type_mismatch";
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-        continue;
-      }
-      return observed;
-    }
-    lastObservation = null;
-    waitReason = "node_pool_not_found";
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-  }
-  failClosed("production_goal_real_tke_node_pool_not_observed", observationFailureDetails(operation, stage, nodePoolId, maxAttempts, lastObservation, waitReason), 1);
-}
-
-async function waitForTkeNodePoolDeleted(client, clusterId, nodePoolId, operation, maxAttempts = 18) {
-  let lastObservation = null;
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const response = await client.DescribeClusterNodePools({ ClusterId: clusterId });
-    const found = (Array.isArray(response?.NodePoolSet) ? response.NodePoolSet : [])
-      .find((item) => extractFirstString(item, ["NodePoolId", "NodePoolID", "Id", "ID"]) === nodePoolId);
-    if (!found) return { cleanupVerified: true, nodePoolDestroyed: true, attempt };
-    lastObservation = summarizeNodePoolCandidate({ ...found, NodePoolId: nodePoolId });
-    lastObservation.attempt = attempt;
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-  }
-  failClosed("production_goal_real_tke_node_pool_destroy_not_verified", deletionFailureDetails(operation, nodePoolId, maxAttempts, lastObservation), 1);
-}
-
-async function waitForNativeTkeNodePool(client, clusterId, nodePoolId, operation, stage, maxAttempts = 12, options = {}) {
-  let lastObservation = null;
-  let waitReason = "node_pool_not_found";
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const response = await client.DescribeNodePools(nativeNodePoolDescribeRequest(clusterId, nodePoolId));
-    const nodePools = Array.isArray(response?.NodePools) ? response.NodePools : [];
-    const found = nodePools.find((item) => extractFirstString(item, ["NodePoolId", "NodePoolID", "Id", "ID"]) === nodePoolId);
-    if (found) {
-      const observed = {
-        found: true,
-        nodePoolId,
-        stage,
-        attempt,
-        lifeState: extractFirstString(found, ["LifeState", "Status", "State"]),
-        nodeTotal: nodePoolNodeTotal(found),
-        readyNodeCount: nodePoolReadyNodeCount(found),
-        desiredNodesNum: extractNumber(found.Native || found, ["Replicas", "DesiredNodesNum", "DesiredCapacity"]),
-        minNodesNum: extractNumber(found.Native?.Scaling || found, ["MinReplicas", "MinNodesNum", "MinSize"]),
-        maxNodesNum: extractNumber(found.Native?.Scaling || found, ["MaxReplicas", "MaxNodesNum", "MaxSize"]),
-        instanceTypes: nodePoolInstanceTypes(found),
-      };
-      lastObservation = observed;
-      if (options.requireNodeTotal && observed.nodeTotal < Number(options.requireNodeTotal)) {
-        waitReason = "node_total_below_requirement";
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-        continue;
-      }
-      if (options.requireReadyNodeCount && observed.readyNodeCount < Number(options.requireReadyNodeCount)) {
-        waitReason = "ready_node_count_below_requirement";
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-        continue;
-      }
-      if (options.requireDesiredNodesNum && observed.desiredNodesNum !== Number(options.requireDesiredNodesNum)) {
-        waitReason = "desired_nodes_num_mismatch";
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-        continue;
-      }
-      if (options.requireInstanceType && !observed.instanceTypes.includes(String(options.requireInstanceType))) {
-        waitReason = "instance_type_mismatch";
-        await new Promise((resolve) => setTimeout(resolve, 5000));
-        continue;
-      }
-      return observed;
-    }
-    lastObservation = null;
-    waitReason = "node_pool_not_found";
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-  }
-  failClosed("production_goal_real_tke_node_pool_not_observed", observationFailureDetails(operation, stage, nodePoolId, maxAttempts, lastObservation, waitReason), 1);
-}
-
-async function waitForNativeTkeNodePoolDeleted(client, clusterId, nodePoolId, operation, maxAttempts = 18) {
-  let lastObservation = null;
-  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-    const response = await client.DescribeNodePools(nativeNodePoolDescribeRequest(clusterId, nodePoolId));
-    const found = (Array.isArray(response?.NodePools) ? response.NodePools : [])
-      .find((item) => extractFirstString(item, ["NodePoolId", "NodePoolID", "Id", "ID"]) === nodePoolId);
-    if (!found) return { cleanupVerified: true, nodePoolDestroyed: true, attempt };
-    lastObservation = summarizeNodePoolCandidate({ ...found, NodePoolId: nodePoolId });
-    lastObservation.attempt = attempt;
-    await new Promise((resolve) => setTimeout(resolve, 5000));
-  }
-  failClosed("production_goal_real_tke_node_pool_destroy_not_verified", deletionFailureDetails(operation, nodePoolId, maxAttempts, lastObservation), 1);
 }
 
 export async function runRealTkeRuntimeNodeLifecycle({ operation, env, plan: inputPlan, writeEvidence }) {
