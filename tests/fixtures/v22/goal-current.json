@@ -35,8 +35,18 @@
   "latest_landed_closeout": {
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
-    "branch": "goal-journey-bound-goal-development",
-    "landed_commit": "11672a6b87b7ab4198579d5189d201f68b8091c5",
+    "branch": "recovery/platform-v22-trunk",
+    "landed_commit": "fbf7f07f8d19cb8a72954957a94e2e2f08be2086",
+    "landing_gate_result": "passed / ff-only landed / pushed",
+    "post_push_verification": [
+      "npm run test:run-plan -- --dry-run --json passed",
+      "npm run test:run-plan passed",
+      "npm run verify passed",
+      "npm run gate:review passed",
+      "npm run repo:bloat passed",
+      "npm run line:budget passed",
+      "git diff --check passed"
+    ],
     "affected_journeys": [
       "account_prepare",
       "account_approval",
@@ -52,68 +62,47 @@
       "admin_audit_receipt",
       "opl_webui_runtime_required"
     ],
-    "landing_gate_result": "passed / ff-only landed / pushed",
-    "post_push_verification": [
-      "npm run test:run-plan -- --dry-run --json passed",
-      "npm run test:run-plan passed",
-      "npm run verify passed",
-      "npm run test:health passed",
-      "npm run test:contract passed",
-      "npm run gate:review passed",
-      "npm run repo:bloat passed",
-      "npm run line:budget passed",
-      "post-push closeout check failed before this closeout-only cursor update; closeout check passed after update"
-    ],
     "canClaim": [
-      "Goal-driven development remains the project delivery layer",
-      "Active commercial goals now declare affected_journeys from the Commercial Launch Product Contract Matrix",
-      "active-platform, health and local-contract gates validate affected_journeys against commercial journey ids"
+      "GitHub issue intake template records reproducible problem fields truth impact classes and test profiles without making issues product truth",
+      "Portal root package wrapper is physically retired and callers use services/portal/frontend directly",
+      "old suite-test-v22-mvp wrapper is retired in favor of suite-test-v22-local-acceptance"
     ],
     "cannotClaim": [
-      "full experience replacement complete",
-      "all legacy experience physically deleted",
-      "rollout complete",
       "production complete",
+      "deploy completion",
+      "Kubernetes command success",
+      "live-test coverage",
       "external PSP settlement",
-      "real payment completed",
-      "all users/all tenants",
-      "multi-region/SLA",
-      "enterprise compliance",
-      "ongoing authorization"
+      "full issue body or raw evidence as git truth",
+      "all legacy product experience physically deleted"
     ],
     "verification": {
       "risk_class": "commercial_billing_boundary",
       "commands": [
-        "node tests/contracts/contract-test-v22-validate-active-platform.mjs passed",
-        "node scripts/v22-verify.mjs active-platform --json passed",
-        "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs passed",
-        "node tests/product/product-test-v22-medopl-contract-authority.mjs passed",
-        "npm run verify passed",
-        "npm run test:health passed before post-push closeout pointer sync",
-        "npm run test:contract passed before post-push closeout pointer sync",
-        "npm run gate:review passed",
         "npm run test:run-plan -- --dry-run --json passed",
         "npm run test:run-plan passed",
+        "npm run verify passed",
+        "npm run gate:review passed",
         "npm run repo:bloat passed",
         "npm run line:budget passed",
-        "git diff --check -- docs tests scripts services passed"
+        "git diff --check passed"
       ],
       "result": "passed"
     },
     "plan_completion_audit": {
       "functional": "done",
-      "code_cleanup": "partial",
+      "code_cleanup": "done",
       "docs_foldback": "done",
       "verification": "done",
       "retired_entrypoints": "done",
       "cannot_claim": "done"
     },
     "cleanup_result": {
-      "deleted": "no compatibility layer or temporary change package added; retired the interpretation that goal development and journey development are separate product-facing processes",
-      "folded": "Goal lifecycle affected_journeys folded into goal-current, agent verify manifest, active-platform validation, health gate and active/delivery/history summaries",
-      "retained": "frontend portalJourneyRegistry, full experience replacement, all legacy physical deletion, production rollout, PSP, all-tenant, SLA, compliance and ongoing authorization cannot-claim boundaries",
-      "reason": "goal remains the project delivery unit while journey ids bind product-facing scope, evidence and cleanup expectations",
-      "next": "goal-commercial-release-metadata-rollback-maturity"
+      "deleted": "services/portal root package wrapper and old suite-test-v22-mvp wrapper",
+      "folded": "issue intake truth impact classes test profiles and local acceptance naming into contract manifest runner tests and compact history",
+      "retained": "negative regression guards for old MVP suite name and production/deploy cannot-claim boundaries",
+      "reason": "issue intake and local verification shape changed without authorizing cloud mutation or production claims",
+      "next": "batch future issue-driven fixes through scoped profiles and keep release/deploy evidence under authorized receipts"
     },
     "retirement": {
       "active_blocker_retired": true,
@@ -131,8 +120,8 @@
   "current_authoring_goal": {
     "schema_version": 1,
     "goal_id": "goal-commercial-journey-product-evidence-system",
-    "branch": "goal-commercial-journey-product-evidence-system",
-    "status": "authoring_branch_verified_not_landed",
+    "branch": "goal-runtime-provisioning-proof-boundary-correction",
+    "status": "landed_post_push_verified",
     "affected_journeys": [
       "account_prepare",
       "account_approval",
@@ -197,12 +186,13 @@
       "npm run test:journey-evidence",
       "npm run test:regression"
     ],
-    "next_recommended_goal": "goal-commercial-release-metadata-rollback-maturity"
+    "next_recommended_goal": "goal-commercial-release-metadata-rollback-maturity",
+    "landed_commit": "6498e4cd8fa92a932debe797383caddfcf357b4c"
   },
   "current_blockers": [
     "none_for_current_scoped_commercial_business_flow"
   ],
-  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is goal-journey-bound-goal-development at 11672a6b87b7ab4198579d5189d201f68b8091c5; it binds goal-driven development to affected_journeys from the Commercial Launch Product Contract Matrix without replacing goals with journeys. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is goal-journey-bound-goal-development at 11672a6b87b7ab4198579d5189d201f68b8091c5.",
+  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is recovery/platform-v22-trunk at fbf7f07f8d19cb8a72954957a94e2e2f08be2086; it binds goal-driven development to affected_journeys from the Commercial Launch Product Contract Matrix without replacing goals with journeys. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is recovery/platform-v22-trunk at fbf7f07f8d19cb8a72954957a94e2e2f08be2086.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -778,9 +768,9 @@
     "tests/fixtures/v22/goal-current.json",
     "tests/fixtures/v22/agent-verify-manifest.json"
   ],
-  "last_landed_branch": "goal-journey-bound-goal-development",
-  "last_landed_at": "2026-06-29",
-  "history_latest_branch": "goal-journey-bound-goal-development",
+  "last_landed_branch": "recovery/platform-v22-trunk",
+  "last_landed_at": "2026-06-30",
+  "history_latest_branch": "recovery/platform-v22-trunk",
   "post_merge_closeout_completed": true,
   "product_engineering_loop": {
     "schema_version": 1,
@@ -1202,8 +1192,8 @@
     },
     "receipt_manifest_artifact_id": "7937559220"
   },
-  "base_trunk_head": "11672a6b87b7ab4198579d5189d201f68b8091c5",
-  "last_landed_commit": "11672a6b87b7ab4198579d5189d201f68b8091c5",
+  "base_trunk_head": "fbf7f07f8d19cb8a72954957a94e2e2f08be2086",
+  "last_landed_commit": "fbf7f07f8d19cb8a72954957a94e2e2f08be2086",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
@@ -1928,6 +1918,56 @@
       {
         "goal_id": "goal-journey-bound-goal-development",
         "landed_commit": "11672a6b87b7ab4198579d5189d201f68b8091c5",
+        "status": "completed_retired",
+        "retired_from": [
+          "active_blocker",
+          "current_cursor"
+        ],
+        "evidence_pointer": "docs/history/README.md"
+      },
+      {
+        "goal_id": "goal-commercial-journey-product-evidence-system",
+        "landed_commit": "6498e4cd8fa92a932debe797383caddfcf357b4c",
+        "status": "completed_retired",
+        "retired_from": [
+          "active_blocker",
+          "current_cursor"
+        ],
+        "evidence_pointer": "docs/history/README.md"
+      },
+      {
+        "goal_id": "goal-problem-driven-development-lifecycle-gate",
+        "landed_commit": "215bd86267d892406a03f248ec169ff05b93a5dc",
+        "status": "completed_retired",
+        "retired_from": [
+          "active_blocker",
+          "current_cursor"
+        ],
+        "evidence_pointer": "docs/history/README.md"
+      },
+      {
+        "goal_id": "goal-scoped-test-profile",
+        "landed_commit": "b5606a55bdd0d665d2831f9d596eb09202d60ffd",
+        "status": "completed_retired",
+        "retired_from": [
+          "active_blocker",
+          "current_cursor"
+        ],
+        "evidence_pointer": "docs/history/README.md"
+      },
+      {
+        "goal_id": "ci-playwright-workspace-loader-fix",
+        "landed_commit": "706b45ebec8947420de84cae8d243864c0e90bb2",
+        "status": "completed_retired",
+        "retired_from": [
+          "active_blocker",
+          "current_cursor"
+        ],
+        "evidence_pointer": "docs/history/README.md"
+      },
+      {
+        "goal_id": "recovery/platform-v22-trunk",
+        "landed_commit": "fbf7f07f8d19cb8a72954957a94e2e2f08be2086",
         "status": "completed_retired",
         "retired_from": [
           "active_blocker",

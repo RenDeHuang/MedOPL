@@ -528,6 +528,7 @@
         "node tests/health/health-check-v22-dynamic-test-run-plan.mjs",
         "node tests/health/health-check-v22-journey-product-evidence-and-test-weight.mjs",
         "node tests/health/health-check-v22-production-receipt-boundary.mjs",
+        "node tests/health/health-check-v22-problem-driven-development-lifecycle.mjs",
         "node tests/health/health-check-v22-line-budget-gate.mjs",
         "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
         "node tests/health/health-check-v22-repo-hygiene-gate.mjs",
@@ -577,6 +578,7 @@
         "node tests/health/health-check-v22-dynamic-test-run-plan.mjs",
         "node tests/health/health-check-v22-journey-product-evidence-and-test-weight.mjs",
         "node tests/health/health-check-v22-production-receipt-boundary.mjs",
+        "node tests/health/health-check-v22-problem-driven-development-lifecycle.mjs",
         "node tests/health/health-check-v22-line-budget-gate.mjs",
         "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
         "node tests/health/health-check-v22-repo-hygiene-gate.mjs",
@@ -597,7 +599,7 @@
         "node tests/release/release-test-v22-boundary-contract.mjs",
         "node tests/release/release-test-v22-production-receipt-boundary.mjs",
         "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs",
-        "node tests/suites/suite-test-v22-mvp.mjs"
+        "node tests/suites/suite-test-v22-local-acceptance.mjs"
       ]
     },
     {
@@ -633,6 +635,7 @@
         "node tests/regression/portal/regression-test-v22-portal-mobile-table-usability.mjs",
         "node tests/regression/portal/regression-test-v22-portal-mobile-usability.mjs",
         "node tests/regression/portal/regression-test-v22-portal-package-surface-isolation.mjs",
+        "node tests/regression/portal/regression-test-v22-portal-production-auth-entry-browser.mjs",
         "node tests/regression/portal/regression-test-v22-portal-role-surface-boundaries.mjs",
         "node tests/regression/portal/regression-test-v22-portal-runtime-suite.mjs",
         "node tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs",
@@ -739,6 +742,7 @@
         "node tests/health/health-check-v22-dynamic-test-run-plan.mjs",
         "node tests/health/health-check-v22-journey-product-evidence-and-test-weight.mjs",
         "node tests/health/health-check-v22-production-receipt-boundary.mjs",
+        "node tests/health/health-check-v22-problem-driven-development-lifecycle.mjs",
         "node tests/health/health-check-v22-line-budget-gate.mjs",
         "node tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
         "node tests/health/health-check-v22-repo-hygiene-gate.mjs",
@@ -817,8 +821,8 @@
         "node scripts/v22-local-product-e2e.mjs --dry-run --json",
         "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
         "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
-        "npm --prefix services/portal run frontend:install",
-        "npm --prefix services/portal run check",
+        "npm --prefix services/portal/frontend ci",
+        "npm --prefix services/portal/frontend run typecheck",
         "node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk --json",
         "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
         "git diff --check -- docs specs tests scripts package.json services/portal/frontend/src services/medopl-go-backend services/opl-web-gateway services/opl-runtime-bridge"
@@ -846,5 +850,35 @@
       ]
     }
   ],
-  "branch_override_suites": []
+  "branch_override_suites": [],
+  "problem_driven_development_lifecycle": {
+    "contract": "contracts/medopl-problem-driven-development-lifecycle-contract.json",
+    "gate": "tests/health/health-check-v22-problem-driven-development-lifecycle.mjs",
+    "raw_evidence_git_truth": false,
+    "github_issue_intake": "external_pointer_only",
+    "github_issue_template": ".github/ISSUE_TEMPLATE/problem.yml",
+    "process_truth": "issue_or_runtime_state",
+    "truth_impact_classes": [
+      "no_truth_change",
+      "current_truth_pointer",
+      "ux_truth_challenge",
+      "journey_truth_challenge",
+      "product_boundary_challenge",
+      "release_evidence_gap"
+    ],
+    "test_profiles": [
+      "daily_scoped",
+      "ci_landing",
+      "release_candidate",
+      "authorized_deploy_canary"
+    ],
+    "lifecycle_states": [
+      "observed",
+      "reproducible",
+      "fixed",
+      "institutionalized",
+      "cleared"
+    ],
+    "closeout_asset_policy": "source_test_contract_boundary_or_compact_history_only_then_periodic_cleanup"
+  }
 }

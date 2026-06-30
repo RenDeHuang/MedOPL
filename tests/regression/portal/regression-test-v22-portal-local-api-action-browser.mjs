@@ -43,7 +43,7 @@ async function freePort() {
 
 async function loadPlaywright() {
   const candidates = [
-    process.env.PLAYWRIGHT_ENTRY,
+    process.env.PLAYWRIGHT_ENTRY, path.join(frontendRoot, "node_modules", "playwright", "index.js"),
     path.join(repoRoot, ".runtime", "browser-test", "node_modules", "playwright", "index.js"),
     path.join(repoRoot, "node_modules", "playwright", "index.js"),
     path.join(os.homedir(), ".codex", "skills", "gstack", "browse", "node_modules", "playwright", "index.js"),

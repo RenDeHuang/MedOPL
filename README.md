@@ -63,7 +63,7 @@ node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk
 node scripts/v22-verify.mjs suite health --base origin/recovery/platform-v22-trunk
 node scripts/v22-verify.mjs suite smoke --base origin/recovery/platform-v22-trunk
 node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk
-npm --prefix services/portal run frontend:typecheck
+npm --prefix services/portal/frontend run typecheck
 ```
 
 本 README 不要求执行真实云 API、`git remote set-url`、push、build/push/kubectl/live-test。

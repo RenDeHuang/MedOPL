@@ -66,7 +66,7 @@ export const TEST_LANES = Object.freeze([
   "journey-product-evidence",
 ]);
 export const DEFAULT_SMOKE_CATEGORIES = Object.freeze(["product", "frontend", "backend", "runtime", "release", "hygiene", "smoke", "suite-wrapper"]);
-export const HEALTH_CHECK_MAX = 17;
+export const HEALTH_CHECK_MAX = 18;
 export const SMOKE_GOLDEN_MIN = 8;
 export const SMOKE_GOLDEN_MAX = 15;
 const UNCLASSIFIED_TEST_LANE = "unclassified";
@@ -94,6 +94,7 @@ export const TEST_LANE_CONTRACT_REFS = Object.freeze([
   "contracts/medopl-cloud-boundary.json",
   "contracts/medopl-cloud-authorization-pack.json",
   "contracts/medopl-production-receipt-boundary.json",
+  "contracts/medopl-problem-driven-development-lifecycle-contract.json",
   "specs/product/spec.md",
   "specs/runtime/spec.md",
   "specs/operations/spec.md",
@@ -129,6 +130,7 @@ const HEALTH_FILES = Object.freeze([
   "tests/health/health-check-v22-journey-product-evidence-and-test-weight.mjs",
   "tests/health/health-check-v22-line-budget-gate.mjs",
   "tests/health/health-check-v22-production-receipt-boundary.mjs",
+  "tests/health/health-check-v22-problem-driven-development-lifecycle.mjs",
   "tests/health/health-check-v22-repo-bloat-audit-gate.mjs",
   "tests/health/health-check-v22-repo-hygiene-gate.mjs",
   "tests/health/health-check-v22-root-verify-workflow-entrypoints.mjs",
@@ -241,6 +243,9 @@ function contractsForFile(file, surface) {
   if (file.startsWith("tests/cloud/")) refs.add("contracts/medopl-cloud-boundary.json");
   if (file.startsWith("tests/support/cloud-prework/")) refs.add("contracts/medopl-cloud-boundary.json");
   if (file.startsWith("tests/hygiene/")) refs.add("contracts/medopl-product-profile.json");
+  if (file === "tests/health/health-check-v22-problem-driven-development-lifecycle.mjs") {
+    refs.add("contracts/medopl-problem-driven-development-lifecycle-contract.json");
+  }
   if (surface === "portal") refs.add("specs/product/spec.md");
   if (surface === "runtime-bridge" || surface === "opl") refs.add("specs/runtime/spec.md");
   if (surface === "cloud") refs.add("specs/operations/spec.md");
@@ -325,7 +330,7 @@ function explicitEntries() {
     ...CURRENT_GATE_FILES.map((file) => gateSelfTestEntry(file, "contract", "contract-local", ["health", "local-contract", "current", "review"])),
     ...CURRENT_CONTRACT_FILES.map((file) => baseEntry(file, "contract", "contract-local", ["local-contract", "current", "review"])),
     baseEntry("tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs", "regression-portal", "local-regression", ["local-regression", "journey-product-evidence"]),
-    ...["tests/suites/suite-test-v22-golden-smoke.mjs", "tests/suites/suite-test-v22-mvp.mjs"]
+    ...["tests/suites/suite-test-v22-golden-smoke.mjs", "tests/suites/suite-test-v22-local-acceptance.mjs"]
       .map((file) => baseEntry(file, "contract", "contract-local", file.includes("golden") ? ["golden-path", "smoke"] : ["local-contract"])),
   ];
 }
@@ -423,7 +428,7 @@ function wrapperCoverageFiles(wrapperFile) {
       .map((entry) => entry.file)
       .sort());
   }
-  if (wrapperFile === "tests/suites/suite-test-v22-mvp.mjs") {
+  if (wrapperFile === "tests/suites/suite-test-v22-local-acceptance.mjs") {
     return Object.freeze(TEST_LANE_REGISTRY
       .filter((entry) => ["health-check", "smoke-golden", "contract-local"].includes(entry.tier) && entry.entryKind !== "suite-wrapper")
       .map((entry) => entry.file)

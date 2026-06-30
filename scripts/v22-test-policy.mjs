@@ -539,7 +539,7 @@ export const TEST_SURFACE_RULES = Object.freeze([
       return file.startsWith("services/portal/") && !file.startsWith("services/portal/frontend/");
     },
     commands: Object.freeze([
-      "npm --prefix services/portal run check",
+      "npm --prefix services/portal/frontend run typecheck",
       "npm run test:regression",
     ]),
     reason: "portal control-plane changed",
@@ -766,7 +766,7 @@ export function planCommandsForFiles(files, { profile = "changed-surface", exist
   const matchedSurfaces = [];
   const environments = [];
   const authorizedEnvironments = [];
-  const recommendedCommands = [...TEST_PLAN_BASE_COMMANDS];
+  const recommendedCommands = profile === "scoped" ? [] : [...TEST_PLAN_BASE_COMMANDS];
   const authorizedCommands = [];
   const cannotClaim = [...TEST_PLAN_CANNOT_CLAIM];
   const reasons = [];

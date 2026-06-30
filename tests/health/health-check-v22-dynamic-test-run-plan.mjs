@@ -48,6 +48,21 @@ for (const command of ["npm run test:contract", "npm run test:backend", "npm run
   assert(apiContractPlan.recommendedCommands.includes(command), `api_contract_plan_must_recommend_command:${command}`);
 }
 
+const frontendScopedPlan = planCommandsForFiles(["services/portal/frontend/src/app/routes.tsx"], { profile: "scoped" });
+assert.deepEqual(
+  frontendScopedPlan.recommendedCommands,
+  ["npm run test:frontend", "npm run test:journey-evidence", "npm run test:regression"],
+  "frontend_scoped_plan_must_only_recommend_frontend_surface_commands",
+);
+for (const command of ["npm run test:health", "npm run test:smoke", "npm run test:contract", "npm run test:fast", "npm run test:lanes"]) {
+  assert.equal(frontendScopedPlan.recommendedCommands.includes(command), false, `frontend_scoped_plan_must_not_include_landing_command:${command}`);
+}
+
+const frontendChangedSurfacePlan = planCommandsForFiles(["services/portal/frontend/src/app/routes.tsx"]);
+for (const command of ["npm run test:health", "npm run test:smoke", "npm run test:contract", "npm run test:fast", "npm run test:lanes"]) {
+  assert(frontendChangedSurfacePlan.recommendedCommands.includes(command), `changed_surface_plan_must_keep_landing_command:${command}`);
+}
+
 const cloudPlan = planCommandsForFiles(["contracts/medopl-cloud-boundary.json"]);
 assert.deepEqual(cloudPlan.authorizedCommands, CLOUD_GOAL_AUTHORIZED_COMMANDS, "cloud_plan_must_keep_goal_authorized_commands");
 assert.equal(

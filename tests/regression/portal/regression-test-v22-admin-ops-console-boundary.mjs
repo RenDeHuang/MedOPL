@@ -29,7 +29,7 @@ const [
   readFile("services/portal/frontend/src/api/portal/admin.ts", "utf8"),
   readFile("services/medopl-go-backend/internal/server/router.go", "utf8"),
   readFile("services/medopl-go-backend/internal/server/handlers/portal_projection_admin.go", "utf8"),
-  readFile("tests/suites/suite-test-v22-mvp.mjs", "utf8"),
+  readFile("tests/suites/suite-test-v22-local-acceptance.mjs", "utf8"),
 ]);
 
 assertIncludes(specsIndex, "spec:v22-admin-ops-console-boundary", "specs_index_admin_ops_anchor");
@@ -82,8 +82,8 @@ for (const forbidden of [
   assertNotIncludes(adminOpsPage, forbidden, "admin_ops_page_secret_or_console_language");
 }
 
-assertIncludes(suite, "listSmokeEvalScripts", "mvp_suite_must_use_eval_tier_selector");
-assertIncludes(suite, "mvpLocalTiers", "mvp_suite_must_name_local_tier_scope");
+assertIncludes(suite, "listSmokeEvalScripts", "local_acceptance_suite_must_use_eval_tier_selector");
+assertIncludes(suite, "localAcceptanceTiers", "local_acceptance_suite_must_name_local_tier_scope");
 assert.equal(smokeEvalMetadataOf(smokeScriptPath).tier, "local-regression", "admin_ops_boundary_must_be_local_regression");
 
 console.log(JSON.stringify({

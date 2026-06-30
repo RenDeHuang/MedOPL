@@ -23,7 +23,7 @@ const LOCAL_SERVICE_PLAN = Object.freeze([
     id: "portal-frontend",
     owner: "Product Plane",
     cwd: ".",
-    command: "npm --prefix services/portal run start",
+    command: "npm --prefix services/portal/frontend run dev -- --host 127.0.0.1",
     env: {
       VITE_MEDOPL_GO_BACKEND_URL: "http://127.0.0.1:8789",
     },

@@ -27,10 +27,9 @@ const groups = new Map([
     "tests/contracts/contract-test-v22-node-portal-backend-physical-removal.mjs",
   ]],
   ["build", [
-    "services/portal:check",
-    "services/portal:frontend:typecheck",
-    "services/portal:frontend:test",
-    "services/portal:frontend:build",
+    "services/portal/frontend:typecheck",
+    "services/portal/frontend:test",
+    "services/portal/frontend:build",
   ]],
   ["browser", [
     "tests/regression/portal/regression-test-v22-portal-local-api-action-browser.mjs",

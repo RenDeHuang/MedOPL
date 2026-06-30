@@ -25,6 +25,7 @@ const [registry, manifest, packageJson] = await Promise.all([
 const testClassification = await readFile("scripts/v22-test-classification.mjs", "utf8");
 const workflowEntrypointHealth = await readFile("tests/health/health-check-v22-root-verify-workflow-entrypoints.mjs", "utf8");
 const uiBrowserRegression = await readFile("tests/regression/portal/regression-test-v22-portal-resource-control-ui-browser.mjs", "utf8");
+const localApiActionBrowserRegression = await readFile("tests/regression/portal/regression-test-v22-portal-local-api-action-browser.mjs", "utf8");
 
 const productEvidenceLane = manifest.suites.find((suite) => suite.id === "journey-product-evidence");
 assert(productEvidenceLane, "journey_product_evidence_suite_missing");
@@ -99,6 +100,15 @@ assert.equal(
   true,
   "workflow_entrypoint_health_must_expect_frontend_playwright_install",
 );
+for (const [browserRegressionName, browserRegressionSource] of [
+  ["resource_control_ui", uiBrowserRegression],
+  ["local_api_action", localApiActionBrowserRegression],
+]) {
+  assert(
+    browserRegressionSource.includes('path.join(frontendRoot, "node_modules", "playwright", "index.js")'),
+    `browser_regression_must_load_frontend_workspace_playwright:${browserRegressionName}`,
+  );
+}
 
 const frontendPackage = await readJson("services/portal/frontend/package.json");
 assert.equal(

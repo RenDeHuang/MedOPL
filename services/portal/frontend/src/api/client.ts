@@ -7,6 +7,10 @@ export const goControlPlaneClient = axios.create({
 });
 
 let authRedirectStarted = false;
+function currentPathname() {
+  if (typeof window === "undefined") return "";
+  return window.location.pathname || "/";
+}
 
 function cookieValue(name: string) {
   if (typeof document === "undefined") return "";
@@ -28,10 +32,12 @@ goControlPlaneClient.interceptors.response.use(
   (response) => response,
   (error) => {
     const data = error?.response?.data;
-    const loginUrl = typeof data?.loginUrl === "string" && data.loginUrl ? data.loginUrl : "/";
+    const loginUrl = typeof data?.loginUrl === "string" && data.loginUrl ? data.loginUrl : "/login";
     if (error?.response?.status === 401 && data?.error === "unauthenticated" && !authRedirectStarted && typeof window !== "undefined") {
       authRedirectStarted = true;
-      window.location.assign(loginUrl);
+      if (currentPathname() !== loginUrl) {
+        window.location.assign(loginUrl);
+      }
     }
     return Promise.reject(error);
   },

@@ -78,7 +78,7 @@ assert(reviewWithBlockers.findings.some((finding) => finding.code === "services_
 assert(reviewWithBlockers.findings.some((finding) => finding.code === "formal_change_without_machine_evidence_update"), "review_must_require_machine_evidence_update");
 assertIncludesAll(reviewWithBlockers.recommendedCommands.join("\n"), [
   "node scripts/v22-verify.mjs current --base origin/recovery/platform-v22-trunk",
-  "npm --prefix services/portal run check",
+  "npm --prefix services/portal/frontend run typecheck",
 ], "review_recommended_commands");
 
 const reviewWithRetiredChangeWrite = evaluateReview({

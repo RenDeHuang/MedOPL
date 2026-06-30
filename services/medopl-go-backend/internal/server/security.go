@@ -371,7 +371,7 @@ func writeSecurityError(ctx *gin.Context, status int, code string) {
 			"ok":       false,
 			"error":    "unauthenticated",
 			"code":     code,
-			"loginUrl": "/",
+			"loginUrl": "/login",
 		})
 		return
 	}

@@ -19,12 +19,16 @@ State: `active`
 - **Landing Gate**：每个 gap 可以 push feature branch 到 GitHub；feature branch push 只代表远端 review / backup，不代表 trunk landed。trunk landing 按 `current truth -> vision gap -> lane owner/consumer -> worktree branch -> implement -> run-plan -> targeted gates -> verify/review/bloat -> commit -> push feature branch -> ff-only merge trunk -> push trunk -> post-push verify -> tombstone cleanup` 执行。`ff-only merge trunk` 和 `push trunk` 必须先有 fresh landing gate；真实云、secret、provider call、kubectl、deploy、build/push 和 live-test 仍走授权包和 receipt。
 - **Development Admission Gate**：`npm run slice:start -- --execute --slice-id <slice-id> --slice-type <product|automation|cloud|cleanup> --owner-surface <owner>` 写入 `.runtime/slices/<slice-id>/slice.json`。后续 `npm run gate:review -- --slice-id <slice-id>` 和 `npm run repo:bloat -- --diff --slice-id <slice-id>` 消费该 admission，自动拦截本轮 diff 的越界 owner path、新增顶层 `scripts/v22-*.mjs`、新增 `tests/health/*.mjs`、未准入 contract、cloud surface 越权和超线文件继续增长。默认 product slice 必须复用现有 runner/test lane，不能为了单个产品 gap 横向扩控制面。
 
+- **scoped profile**：小修、复现问题和单 surface 调试先用 `npm run test:run-plan -- --profile scoped --files <path> --dry-run --json` 和 `npm run test:run-plan -- --profile scoped --files <path>`。`--profile scoped` 只推荐 changed-file surface 命中的 targeted commands，不自动加入 main lane、fast lane 或 lane registry gate；它不能替代 review、landing、release 或 deploy 证明。
+- **changed-surface profile**：默认 review / landing 计划仍用 `--profile changed-surface`。它保留 main lane、fast lane、lane registry gate 和 changed-file surface targeted commands，用于把局部修复带回 trunk 前的常规验证。
+- **full-local profile**：大改动、release candidate、deploy 前本地证明使用 `--profile full-local`。它在 changed-surface 基础上叠加 local regression 和 local release-candidate commands；它仍然不是 production、真实云、kubectl、build/push 或 live-test 授权。
+
 - **main lane**：默认主线 gate，base 承接健康、烟测和契约验证；回归由相关 surface 或 full/local RC 触发。
 - **targeted lane**：按 discovery 命中的变更面选最小相关测试面，前端、后端、runtime、release、hygiene / policy 等都应先从对应目录和 runner 入口下手。
 - **full/local RC lane**：用于发布前或大改动的本地 RC 证明，覆盖 main lane，并叠加与本次变更相关的 targeted lane。
 - **authorized lane**：只在显式授权边界内运行，面向受控 cloud / provider / dry-run / readonly diagnostics；它不是 production 证明，也不自动获得真实云执行权限。
 
-开发者不应在没有筛选的情况下直接跑“全部测试”来代替判断。默认先执行 `npm run test:run-plan -- --dry-run --json`，查看 `changedFiles`、`matchedSurfaces`、`environments`、`authorizedEnvironments`、`reasons`、`recommendedCommands`、`authorizedCommands`、`preflight` 和 `cannotClaim`，再跑 `npm run test:run-plan` 执行本地推荐命令。发布或大改动时，再升级到 full/local RC lane。local / full / RC 只说明本地或受控环境通过，不能 claim production。authorized cloud lane 也只覆盖授权包内的边界，不等于真实云授权，更不会被 runner 自动执行。
+开发者不应在没有筛选的情况下直接跑“全部测试”来代替判断。小修和问题复现先显式指定 `--profile scoped --files <path>`，查看 `changedFiles`、`matchedSurfaces`、`environments`、`authorizedEnvironments`、`reasons`、`recommendedCommands`、`authorizedCommands`、`preflight` 和 `cannotClaim` 后再执行 scoped run-plan。正式 review / landing 前回到 `--profile changed-surface`，发布或大改动时再升级到 `--profile full-local` 或 full/local RC lane。local / full / RC 只说明本地或受控环境通过，不能 claim production。authorized cloud lane 也只覆盖授权包内的边界，不等于真实云授权，更不会被 runner 自动执行。
 
 ## Taxonomy
 
@@ -89,6 +93,14 @@ Test lifecycle cleanup gate 是 `node tests/health/health-check-v22-test-lifecyc
 - forbidden active roles such as historical-proof, compat-only, alias-only, wrapper-only, and closeout-evidence-only cannot appear;
 - suite-wrapper entries remain active registry entries or explicit override entries;
 - the zero-compat active surface gate remains in health and local-contract.
+
+## Problem-driven Development Lifecycle
+
+问题驱动开发必须走 `observed -> reproducible -> fixed -> institutionalized -> cleared`。问题过程默认留在 issue / `.runtime`，不能把 raw screenshot、trace、debug log、一次性 reproduction payload 或完整 transcript 写成 git truth。
+
+可复现问题必须绑定 `journey_id`、preconditions、steps、expected/actual result、evidence pointer、severity 和 environment；重复问题按 `journey_id + invariant_violated + failure_mode + likely_root_cause` 去重。只有 repeated 或 P0/P1 问题才能升级为 contract/schema/gate/runtime guard。修复 closeout 后长期资产也必须周期性合并、删除或折叠，不能把 closeout evidence-only test 或历史证明作为 active test 保留。
+
+Problem lifecycle gate 是 `node tests/health/health-check-v22-problem-driven-development-lifecycle.mjs`。机器规则归 `contracts/medopl-problem-driven-development-lifecycle-contract.json` 和 `tests/fixtures/v22/agent-verify-manifest.json#/problem_driven_development_lifecycle`；本 README 只做人读导航。
 
 ## Product Gate Boundary
 

@@ -23,6 +23,7 @@ const runtimeEnvironmentRoute = pageRoute("./pages/RuntimeEnvironment.tsx", "Run
 const workspaceRoute = pageRoute("./pages/Workspace.tsx", "Workspace");
 const billingAuditRoute = pageRoute("./pages/BillingAudit.tsx", "BillingAudit");
 const oplEntryRoute = pageRoute("./pages/OPLEntry.tsx", "OPLEntry");
+const authEntryRoute = pageRoute("./pages/AuthEntry.tsx", "AuthEntry");
 const adminDashboardRoute = pageRoute("./pages/admin/AdminDashboard.tsx", "AdminDashboard");
 const adminUsersRoute = pageRoute("./pages/admin/AdminUsers.tsx", "AdminUsers");
 const adminAlertsRoute = pageRoute("./pages/admin/AdminAlerts.tsx", "AdminAlerts");
@@ -42,13 +43,19 @@ const layoutRoute = async () => {
 
 export const router = createBrowserRouter([
   {
+    path: "/login",
+    lazy: authEntryRoute,
+    hydrateFallbackElement: <div className="min-h-screen bg-slate-50" />,
+  },
+  {
+    path: "/",
+    element: <Navigate to="/login" replace />,
+  },
+  {
     path: "/",
     lazy: layoutRoute,
     hydrateFallbackElement: <div className="min-h-screen bg-white" />,
     children: [
-      // Redirect root to overview
-      { index: true, element: <Navigate to="/overview" replace /> },
-
       // 普通用户路由
       { path: "overview", lazy: overviewRoute },
       { path: "packages", lazy: packagesPurchaseRoute, handle: { journeys: journeysForRoute("/packages") } },

@@ -103,6 +103,9 @@ for (const command of [
 
 for (const expected of [
   "Test Policy -> Discovery -> Preflight -> Run -> Report/Completion Gate",
+  "`--profile scoped`",
+  "`--profile changed-surface`",
+  "`--profile full-local`",
   "`npm run test:run-plan`",
   "`recommendedCommands`",
   "`authorizedCommands`",
@@ -117,6 +120,9 @@ for (const expected of [
 }
 for (const expected of [
   "Test Policy -> Discovery -> Preflight -> Run -> Report/Completion Gate",
+  "`--profile scoped`",
+  "`--profile changed-surface`",
+  "`--profile full-local`",
   "`npm run test:run-plan`",
   "`recommendedCommands`",
   "`authorizedCommands`",
@@ -260,8 +266,8 @@ assert.deepEqual(localReleaseCandidateSuite.commands, [
   "node scripts/v22-local-product-e2e.mjs --dry-run --json",
   "node scripts/v22-verify.mjs suite golden-path --base origin/recovery/platform-v22-trunk --json",
   "node scripts/v22-verify.mjs suite local-contract --base origin/recovery/platform-v22-trunk --json",
-  "npm --prefix services/portal run frontend:install",
-  "npm --prefix services/portal run check",
+  "npm --prefix services/portal/frontend ci",
+  "npm --prefix services/portal/frontend run typecheck",
   "node scripts/v22-verify.mjs suite local-regression --base origin/recovery/platform-v22-trunk --json",
   "bash -lc \"cd services/medopl-go-backend && GOPROXY=https://goproxy.cn,direct GOSUMDB=sum.golang.google.cn go test ./...\"",
   "git diff --check -- docs specs tests scripts package.json services/portal/frontend/src services/medopl-go-backend services/opl-web-gateway services/opl-runtime-bridge",
@@ -274,6 +280,7 @@ assert.deepEqual(cloudReleaseCandidateSuite.commands, [
   "node tests/cloud/cloud-test-v22-medopl-github-cloud-rollout-shape.mjs",
   "node tests/cloud/cloud-test-v22-production-goal-command-runner.mjs",
   "node tests/cloud/cloud-test-v22-production-goal-runners.mjs",
+  "node tests/cloud/cloud-test-v22-real-tke-cluster-foundation-lifecycle.mjs",
   "node tests/cloud/cloud-test-v22-real-tke-runtime-node-lifecycle-proof.mjs",
   "node tests/cloud/cloud-test-v22-runtime-storage-lifecycle-rollout-scope.mjs",
   "node tests/release/release-test-v22-production-receipt-boundary.mjs",
