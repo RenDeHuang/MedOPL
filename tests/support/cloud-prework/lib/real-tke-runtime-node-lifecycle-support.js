@@ -295,6 +295,7 @@ function createNativeNodePoolRequestFromDerivedPlan(plan, source = {}, tierId = 
   const tier = (Array.isArray(plan.tiers) ? plan.tiers : []).find((item) => item?.id === tierId) || {};
   const tierOverride = plan.deriveFromClusterFoundation?.tierOverrides?.[tierId] || {};
   const replicas = Number(tierOverride.replicas || tierOverride.desiredCapacity || plan.requireNodeTotal || 1);
+  const nativeInternetAccessible = tierOverride.internetAccessible || plan.deriveFromClusterFoundation?.nativeInternetAccessible;
   return {
     Name: `medopl-${suffix}-${tierId}`.slice(0, 63),
     Type: "Native",
@@ -313,7 +314,7 @@ function createNativeNodePoolRequestFromDerivedPlan(plan, source = {}, tierId = 
       SystemDisk: source.launchConfiguration?.SystemDisk || { DiskType: "CLOUD_PREMIUM", DiskSize: 50 },
       InstanceTypes: [tierOverride.instanceType || tier.instanceType].filter(Boolean),
       SecurityGroupIds: source.launchConfiguration?.SecurityGroupIds,
-      InternetAccessible: source.launchConfiguration?.InternetAccessible,
+      InternetAccessible: nativeInternetAccessible,
       DataDisks: tierOverride.dataDisks || source.launchConfiguration?.DataDisks,
       EnableAutoscaling: true,
       Replicas: replicas,
