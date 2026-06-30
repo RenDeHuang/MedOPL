@@ -540,13 +540,24 @@ jobs:
               }
             };
           }
-          for (const key of ["tiers"]) {
-            if (!parsed[key]) fail(`TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_JSON missing ${key}`);
+          if (Array.isArray(parsed.cleanupOnlyNodePoolRefs) && parsed.cleanupOnlyNodePoolRefs.length > 0) {
+            if (!parsed.clusterId && !process.env.TENCENT_MUTATION_TKE_CLUSTER_ID) {
+              fail("TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_JSON cleanupOnlyNodePoolRefs requires clusterId");
+            }
+            for (const ref of parsed.cleanupOnlyNodePoolRefs) {
+              if (!/^[A-Za-z0-9_.:-]{1,96}$/.test(String(ref || ""))) {
+                fail("TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_JSON cleanupOnlyNodePoolRefs contains invalid ref");
+              }
+            }
+          } else {
+            for (const key of ["tiers"]) {
+              if (!parsed[key]) fail(`TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_JSON missing ${key}`);
+            }
+            if (!Array.isArray(parsed.tiers) || !parsed.tiers.some((tier) => tier.id === "starter_2c4g_10gb") || !parsed.tiers.some((tier) => tier.id === "pro_8c16g_100gb")) {
+              fail("TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_JSON must cover starter_2c4g_10gb and pro_8c16g_100gb");
+            }
           }
-          if (!Array.isArray(parsed.tiers) || !parsed.tiers.some((tier) => tier.id === "starter_2c4g_10gb") || !parsed.tiers.some((tier) => tier.id === "pro_8c16g_100gb")) {
-            fail("TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_JSON must cover starter_2c4g_10gb and pro_8c16g_100gb");
-          }
-          if (!parsed.deriveFromPlatformNodePool?.enabled && !parsed.deriveFromClusterFoundation?.enabled) {
+          if (!Array.isArray(parsed.cleanupOnlyNodePoolRefs) && !parsed.deriveFromPlatformNodePool?.enabled && !parsed.deriveFromClusterFoundation?.enabled) {
             for (const key of ["createClusterNodePool", "upgradeClusterNodePool", "deleteClusterNodePool"]) {
               if (!parsed[key]) fail(`TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_JSON missing ${key}`);
             }

@@ -130,6 +130,7 @@ assert.equal(
 assert(
   cloudRolloutWorkflowSource.includes("real_tke_node_lifecycle_plan_json") &&
     cloudRolloutWorkflowSource.includes("inputs.real_tke_node_lifecycle_plan_json") &&
-    cloudRolloutWorkflowSource.includes("vars.TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_JSON"),
+    cloudRolloutWorkflowSource.includes("vars.TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_JSON") &&
+    cloudRolloutWorkflowSource.includes("cleanupOnlyNodePoolRefs"),
   "cloud_rollout_must_allow_per_dispatch_real_tke_plan_without_mutating_persistent_vars",
 );
