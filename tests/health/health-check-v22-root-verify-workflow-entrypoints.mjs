@@ -280,6 +280,7 @@ assert.deepEqual(cloudReleaseCandidateSuite.commands, [
   "node tests/cloud/cloud-test-v22-medopl-github-cloud-rollout-shape.mjs",
   "node tests/cloud/cloud-test-v22-production-goal-command-runner.mjs",
   "node tests/cloud/cloud-test-v22-production-goal-runners.mjs",
+  "node tests/cloud/cloud-test-v22-real-tke-cluster-foundation-lifecycle.mjs",
   "node tests/cloud/cloud-test-v22-real-tke-runtime-node-lifecycle-proof.mjs",
   "node tests/cloud/cloud-test-v22-runtime-storage-lifecycle-rollout-scope.mjs",
   "node tests/release/release-test-v22-production-receipt-boundary.mjs",
