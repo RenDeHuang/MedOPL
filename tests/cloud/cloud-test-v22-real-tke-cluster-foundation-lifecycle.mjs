@@ -158,6 +158,10 @@ class CvmClient {
     calls.push({ api: "DescribeInstanceTypeConfigs", request });
     await persist();
     return { InstanceTypeConfigSet: [
+      { Zone: "na-siliconvalley-1", InstanceType: "BF1.MEDIUM4", CPU: 2, Memory: 4 },
+      { Zone: "na-siliconvalley-1", InstanceType: "BF1.2XLARGE16", CPU: 8, Memory: 16 },
+      { Zone: "na-siliconvalley-1", InstanceType: "C4.MEDIUM4", CPU: 2, Memory: 4 },
+      { Zone: "na-siliconvalley-1", InstanceType: "C4.2XLARGE16", CPU: 8, Memory: 16 },
       { Zone: "na-siliconvalley-1", InstanceType: "S5.MEDIUM4", CPU: 2, Memory: 4 },
       { Zone: "na-siliconvalley-1", InstanceType: "S5.2XLARGE16", CPU: 8, Memory: 16 },
     ] };
@@ -279,6 +283,8 @@ class CvmClient {
     return { InstanceTypeConfigSet: [
       { Zone: "na-siliconvalley-1", InstanceType: "BF1.MEDIUM4", CPU: 2, Memory: 4 },
       { Zone: "na-siliconvalley-1", InstanceType: "BF1.2XLARGE16", CPU: 8, Memory: 16 },
+      { Zone: "na-siliconvalley-1", InstanceType: "C4.MEDIUM4", CPU: 2, Memory: 4 },
+      { Zone: "na-siliconvalley-1", InstanceType: "C4.2XLARGE16", CPU: 8, Memory: 16 },
       { Zone: "na-siliconvalley-1", InstanceType: "S5.MEDIUM4", CPU: 2, Memory: 4 },
       { Zone: "na-siliconvalley-1", InstanceType: "S5.2XLARGE16", CPU: 8, Memory: 16 },
     ] };
