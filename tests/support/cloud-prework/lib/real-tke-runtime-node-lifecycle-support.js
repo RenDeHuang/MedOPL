@@ -420,7 +420,7 @@ function createNativeNodePoolRequestFromDerivedPlan(plan, source = {}, tierId = 
       },
       SubnetIds: source.autoScalingGroup?.SubnetIdSet,
       InstanceChargeType: source.launchConfiguration?.InstanceChargeType || "POSTPAID_BY_HOUR",
-      SystemDisk: source.launchConfiguration?.SystemDisk || { DiskType: "CLOUD_PREMIUM", DiskSize: 50 },
+      SystemDisk: source.launchConfiguration?.SystemDisk || { DiskType: "CloudBSSD", DiskSize: 50 },
       InstanceTypes: [tierOverride.instanceType || tier.instanceType].filter(Boolean),
       SecurityGroupIds: source.launchConfiguration?.SecurityGroupIds,
       InternetAccessible: nativeInternetAccessible,
@@ -745,7 +745,7 @@ async function deriveRealTkePlanFromClusterFoundation({ plan, env, root, operati
     },
     launchConfiguration: {
       ImageId: imageId || undefined,
-      SystemDisk: foundation.systemDisk || { DiskType: "CLOUD_PREMIUM", DiskSize: 50 },
+      SystemDisk: foundation.systemDisk || { DiskType: "CloudBSSD", DiskSize: 50 },
       SecurityGroupIds: securityGroupId ? [securityGroupId] : undefined,
       InternetAccessible: foundation.internetAccessible || { InternetChargeType: "TRAFFIC_POSTPAID_BY_HOUR", InternetMaxBandwidthOut: 1, PublicIpAssigned: false },
       EnhancedService: foundation.enhancedService || { SecurityService: { Enabled: true }, MonitorService: { Enabled: true } },

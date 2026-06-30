@@ -211,7 +211,7 @@ for (const request of created) {
 }
 assert.equal(created[0].Native.InstanceTypes[0], "S5.MEDIUM4", "cluster_foundation_starter_must_use_instance_type");
 assert.deepEqual(created[0].Native.SecurityGroupIds, ["sg-foundation"], "cluster_foundation_create_must_set_security_group_ids");
-assert.equal(created[0].Native.SystemDisk.DiskType, "CLOUD_PREMIUM", "cluster_foundation_default_system_disk");
+assert.equal(created[0].Native.SystemDisk.DiskType, "CloudBSSD", "cluster_foundation_default_system_disk");
 assert.deepEqual(created[0].Native.SubnetIds, ["subnet-test"], "cluster_foundation_subnet");
 assert.equal(created[0].Native.MachineType, "NativeCVM", "cluster_foundation_create_must_use_cvm_backed_native_nodes");
 assert.equal(created[0].Native.InternetAccessible, undefined, "cluster_foundation_default_must_not_send_legacy_internet_accessible_shape");
