@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
@@ -121,8 +121,12 @@ class TkeClient {
   }
   async DescribeNodePools(request) {
     calls.push({ api: "DescribeNodePools", request });
+    if (!request.Filters?.some((filter) => filter.Name === "NodePoolsId" && filter.Values?.length === 1)) {
+      throw new Error("DescribeNodePools must filter by NodePoolsId for real lifecycle proof");
+    }
     await persist();
-    return { NodePools: Array.from(pools.values()) };
+    const requested = new Set(request.Filters.find((filter) => filter.Name === "NodePoolsId").Values);
+    return { NodePools: Array.from(pools.values()).filter((pool) => requested.has(pool.NodePoolId)) };
   }
   async DeleteNodePool(request) {
     calls.push({ api: "DeleteNodePool", request });
@@ -218,6 +222,107 @@ assert.deepEqual(
   calls.filter((call) => call.api === "DeleteNodePool").map((call) => call.request.NodePoolId),
   ["np-pro-foundation", "np-starter-foundation"],
   "cluster_foundation_cleanup_must_delete_all_created_node_pools",
+);
+
+const blockedFakeSdk = path.join(tempDir, "fake-tencentcloud-sdk-nodejs-cluster-foundation-blocked.mjs");
+const blockedSdkLog = path.join(tempDir, "real-tke-cluster-foundation-blocked-fake-sdk.log");
+const blockedRuntimeDir = path.join(repoRoot, ".runtime", "v22-cloud-authorization", `cluster-foundation-blocked-${Date.now()}`);
+const blockedEvidenceRef = path.join(".runtime", "v22-cloud-authorization", path.basename(blockedRuntimeDir), "real_tke_runtime_node_lifecycle.json");
+mkdirSync(blockedRuntimeDir, { recursive: true });
+writeFileSync(blockedFakeSdk, `
+const calls = [];
+async function persist() {
+  const { writeFileSync } = await import("node:fs");
+  writeFileSync(process.env.TEST_REAL_TKE_CLUSTER_FOUNDATION_BLOCKED_FAKE_SDK_LOG, JSON.stringify(calls, null, 2));
+}
+class TkeClient {
+  async DescribeClusters(request) {
+    calls.push({ api: "DescribeClusters", request });
+    await persist();
+    return { Clusters: [{ ClusterId: "cls-test", ClusterNetworkSettings: { VpcId: "vpc-test", Subnets: ["subnet-test"] } }] };
+  }
+  async CreateNodePool(request) {
+    calls.push({ api: "CreateNodePool", request });
+    await persist();
+    return { NodePoolId: "np-starter-unobserved" };
+  }
+  async DescribeNodePools(request) {
+    calls.push({ api: "DescribeNodePools", request });
+    if (!request.Filters?.some((filter) => filter.Name === "NodePoolsId" && filter.Values?.[0] === "np-starter-unobserved")) {
+      throw new Error("DescribeNodePools must filter by returned NodePoolsId before accepting proof");
+    }
+    await persist();
+    return { NodePools: [] };
+  }
+  async DeleteNodePool(request) {
+    calls.push({ api: "DeleteNodePool", request });
+    await persist();
+    return { RequestId: "delete-node-pool" };
+  }
+}
+class VpcClient {
+  async DescribeSecurityGroups(request) {
+    calls.push({ api: "DescribeSecurityGroups", request });
+    await persist();
+    return { SecurityGroupSet: [{ SecurityGroupId: "sg-foundation", SecurityGroupName: "medopl-runtime", VpcId: "vpc-test" }] };
+  }
+}
+class CvmClient {
+  async DescribeInstanceTypeConfigs(request) {
+    calls.push({ api: "DescribeInstanceTypeConfigs", request });
+    await persist();
+    return { InstanceTypeConfigSet: [
+      { Zone: "na-siliconvalley-1", InstanceType: "S5.MEDIUM4", CPU: 2, Memory: 4 },
+      { Zone: "na-siliconvalley-1", InstanceType: "S5.2XLARGE16", CPU: 8, Memory: 16 },
+    ] };
+  }
+}
+export default {
+  tke: { v20180525: { Client: TkeClient }, v20220501: { Client: TkeClient } },
+  vpc: { v20170312: { Client: VpcClient } },
+  cvm: { v20170312: { Client: CvmClient } },
+};
+`);
+const blocked = run(["--operation", "real_tke_runtime_node_lifecycle", "--execute", "--confirm-current-session-authorization"], {
+  V22_TENCENT_MUTATION_SECRET_FILE: mutationSecretFile,
+  V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_FILE: planFile,
+  V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_SDK_MODULE: blockedFakeSdk,
+  V22_GOAL_EVIDENCE_REF: blockedEvidenceRef,
+  TEST_REAL_TKE_CLUSTER_FOUNDATION_BLOCKED_FAKE_SDK_LOG: blockedSdkLog,
+});
+assert.notEqual(blocked.status, 0, "cluster_foundation_unobserved_node_pool_must_fail_closed");
+const blockedPayload = JSON.parse(blocked.stdout);
+assert.equal(
+  blockedPayload.summary.blocker,
+  "production_goal_real_tke_node_pool_not_observed",
+  "cluster_foundation_unobserved_node_pool_blocker",
+);
+assert.equal(existsSync(path.join(repoRoot, blockedEvidenceRef)), true, "cluster_foundation_blocked_must_write_partial_evidence");
+const blockedEvidence = JSON.parse(readFileSync(path.join(repoRoot, blockedEvidenceRef), "utf8"));
+assert.equal(blockedEvidence.status, "blocked", "cluster_foundation_blocked_evidence_status");
+assert.equal(blockedEvidence.blocker, "production_goal_real_tke_node_pool_not_observed", "cluster_foundation_blocked_evidence_blocker");
+assert.deepEqual(blockedEvidence.nodePoolRefs, ["np-starter-unobserved"], "cluster_foundation_blocked_evidence_node_pool_refs");
+assert.equal(blockedEvidence.cleanupVerified, true, "cluster_foundation_blocked_evidence_cleanup_verified");
+assert.equal(blockedEvidence.nodePoolDestroyed, true, "cluster_foundation_blocked_evidence_node_pool_destroyed");
+assert.deepEqual(
+  blockedEvidence.cleanupResults.map((item) => item.nodePoolRef),
+  ["np-starter-unobserved"],
+  "cluster_foundation_blocked_evidence_cleanup_refs",
+);
+assert.deepEqual(blockedEvidence.cannotClaim, [
+  "real TKE/CVM node ready",
+  "starter/pro upgrade complete",
+  "production complete",
+  "all users/all tenants",
+  "SLA/multi-region",
+  "ongoing authorization",
+], "cluster_foundation_blocked_evidence_cannot_claim");
+assertNoSensitiveText(blocked.stdout + blocked.stderr + JSON.stringify(blockedEvidence), "cluster_foundation_blocked");
+const blockedCalls = JSON.parse(readFileSync(blockedSdkLog, "utf8"));
+assert.deepEqual(
+  blockedCalls.map((call) => call.api).filter((api) => api !== "DescribeNodePools"),
+  ["DescribeClusters", "DescribeInstanceTypeConfigs", "DescribeSecurityGroups", "CreateNodePool", "DeleteNodePool"],
+  "cluster_foundation_blocked_must_cleanup_after_create_observe_failure",
 );
 
 console.log(JSON.stringify({
