@@ -204,7 +204,6 @@ function cloneLaunchConfiguration(source = {}, overrides = {}, suffix = "runtime
 
 function cloneAutoScalingGroup(source = {}, launchConfigurationId = "", overrides = {}, suffix = "runtime") {
   return withoutEmpty({
-    AutoScalingGroupName: `medopl-${suffix}-${Date.now()}`.slice(0, 60),
     LaunchConfigurationId: launchConfigurationId,
     MaxSize: Number(overrides.MaxSize || 1),
     MinSize: Number(overrides.MinSize || 1),
