@@ -55,6 +55,7 @@ writeFileSync(planFile, JSON.stringify({
   createObserveAttempts: 1,
   upgradeObserveAttempts: 1,
   deleteObserveAttempts: 1,
+  nodePoolNamePrefix: "medopl-proof-isolated",
   tiers: [
     { id: "starter_2c4g_10gb", cpuCores: 2, memoryGb: 4, storageGb: 10 },
     { id: "pro_8c16g_100gb", cpuCores: 8, memoryGb: 16, storageGb: 100 },
@@ -83,7 +84,7 @@ class TkeClient {
   }
   async CreateNodePool(request) {
     calls.push({ api: "CreateNodePool", request });
-    const nodePoolId = request.Name.includes("pro") ? "np-pro-foundation" : "np-starter-foundation";
+    const nodePoolId = request.Name.includes("-pro-") ? "np-pro-foundation" : "np-starter-foundation";
     if (request.Type !== "Native") {
       throw new Error("cluster foundation real proof must use native node pool");
     }
@@ -202,6 +203,7 @@ assert.deepEqual(calls.map((call) => call.api).filter((api) => api !== "Describe
 ], "cluster_foundation_must_discover_create_replacement_upgrade_and_destroy_with_native_node_pool");
 const created = calls.filter((call) => call.api === "CreateNodePool").map((call) => call.request);
 for (const request of created) {
+  assert.match(request.Name, /^medopl-proof-isolated-(starter|pro)-/u, "cluster_foundation_must_support_isolated_node_pool_names");
   assert.equal(request.Tags, undefined, "cluster_foundation_default_must_not_send_tke_node_pool_tags");
   assert.equal(request.Type, "Native", "cluster_foundation_must_use_native_node_pool");
   assert.equal(request.AutoScalingGroupPara, undefined, "cluster_foundation_native_create_must_not_set_asg_para");

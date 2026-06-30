@@ -352,6 +352,16 @@ function cloneAutoScalingGroup(source = {}, launchConfigurationId = "", override
   });
 }
 
+function nodePoolName(plan = {}, suffix = "runtime", tierId = "") {
+  const prefix = String(plan.nodePoolNamePrefix || `medopl-${suffix}`)
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/gu, "-")
+    .slice(0, 48)
+    .replace(/^[^a-z]+/u, "m")
+    .replace(/[^a-z0-9]+$/u, "") || `medopl-${suffix}`;
+  return `${prefix}-${suffix}-${tierId}`.slice(0, 63);
+}
+
 function createRequestFromDerivedPlan(plan, source = {}, tierId = "", suffix = "runtime") {
   const tier = (Array.isArray(plan.tiers) ? plan.tiers : []).find((item) => item?.id === tierId) || {};
   const tierOverride = plan.deriveFromPlatformNodePool?.tierOverrides?.[tierId] || {};
@@ -374,7 +384,7 @@ function createRequestFromDerivedPlan(plan, source = {}, tierId = "", suffix = "
     suffix,
   );
   return {
-    Name: `medopl-${suffix}-${tierId}`.slice(0, 63),
+    Name: nodePoolName(plan, suffix, tierId),
     AutoScalingGroupPara: JSON.stringify(autoScalingGroup),
     LaunchConfigurePara: JSON.stringify(launchConfiguration),
     InstanceAdvancedSettings: source.instanceAdvancedSettings || {},
@@ -396,7 +406,7 @@ function createNativeNodePoolRequestFromDerivedPlan(plan, source = {}, tierId = 
   const replicas = Number(tierOverride.replicas || tierOverride.desiredCapacity || plan.requireNodeTotal || 1);
   const nativeInternetAccessible = tierOverride.internetAccessible || plan.deriveFromClusterFoundation?.nativeInternetAccessible;
   return {
-    Name: `medopl-${suffix}-${tierId}`.slice(0, 63),
+    Name: nodePoolName(plan, suffix, tierId),
     Type: "Native",
     Labels: source.labels,
     Taints: source.taints,
