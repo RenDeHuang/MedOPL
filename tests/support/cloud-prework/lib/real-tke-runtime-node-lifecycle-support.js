@@ -226,6 +226,20 @@ function observationFailureDetails(operation, stage, nodePoolId, attempts, lastO
   };
 }
 
+function deletionFailureDetails(operation, nodePoolId, attempts, lastObservation = null) {
+  return {
+    operationClass: operation,
+    nodePoolRef: "created_node_pool_ref",
+    observed: withoutEmpty({
+      found: Boolean(lastObservation),
+      attempts,
+      waitReason: lastObservation ? "node_pool_still_visible" : "node_pool_not_found",
+      nodePoolRef: publicRef(nodePoolId),
+      ...(lastObservation || {}),
+    }),
+  };
+}
+
 function lifecycleFailureKey(stage = "") {
   if (stage === "starter_created") return "createStarter";
   if (stage === "starter_upgrade_checked") return "upgradeStarter";
@@ -823,14 +837,17 @@ async function waitForTkeNodePool(client, clusterId, nodePoolId, operation, stag
 }
 
 async function waitForTkeNodePoolDeleted(client, clusterId, nodePoolId, operation, maxAttempts = 18) {
+  let lastObservation = null;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const response = await client.DescribeClusterNodePools({ ClusterId: clusterId });
     const found = (Array.isArray(response?.NodePoolSet) ? response.NodePoolSet : [])
-      .some((item) => extractFirstString(item, ["NodePoolId", "NodePoolID", "Id", "ID"]) === nodePoolId);
+      .find((item) => extractFirstString(item, ["NodePoolId", "NodePoolID", "Id", "ID"]) === nodePoolId);
     if (!found) return { cleanupVerified: true, nodePoolDestroyed: true, attempt };
+    lastObservation = summarizeNodePoolCandidate({ ...found, NodePoolId: nodePoolId });
+    lastObservation.attempt = attempt;
     await new Promise((resolve) => setTimeout(resolve, 5000));
   }
-  failClosed("production_goal_real_tke_node_pool_destroy_not_verified", { operationClass: operation, nodePoolRef: "created_node_pool_ref" }, 1);
+  failClosed("production_goal_real_tke_node_pool_destroy_not_verified", deletionFailureDetails(operation, nodePoolId, maxAttempts, lastObservation), 1);
 }
 
 async function waitForNativeTkeNodePool(client, clusterId, nodePoolId, operation, stage, maxAttempts = 12, options = {}) {
@@ -885,14 +902,17 @@ async function waitForNativeTkeNodePool(client, clusterId, nodePoolId, operation
 }
 
 async function waitForNativeTkeNodePoolDeleted(client, clusterId, nodePoolId, operation, maxAttempts = 18) {
+  let lastObservation = null;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const response = await client.DescribeNodePools(nativeNodePoolDescribeRequest(clusterId, nodePoolId));
     const found = (Array.isArray(response?.NodePools) ? response.NodePools : [])
-      .some((item) => extractFirstString(item, ["NodePoolId", "NodePoolID", "Id", "ID"]) === nodePoolId);
+      .find((item) => extractFirstString(item, ["NodePoolId", "NodePoolID", "Id", "ID"]) === nodePoolId);
     if (!found) return { cleanupVerified: true, nodePoolDestroyed: true, attempt };
+    lastObservation = summarizeNodePoolCandidate({ ...found, NodePoolId: nodePoolId });
+    lastObservation.attempt = attempt;
     await new Promise((resolve) => setTimeout(resolve, 5000));
   }
-  failClosed("production_goal_real_tke_node_pool_destroy_not_verified", { operationClass: operation, nodePoolRef: "created_node_pool_ref" }, 1);
+  failClosed("production_goal_real_tke_node_pool_destroy_not_verified", deletionFailureDetails(operation, nodePoolId, maxAttempts, lastObservation), 1);
 }
 
 export async function runRealTkeRuntimeNodeLifecycle({ operation, env, plan: inputPlan, writeEvidence }) {
@@ -922,6 +942,9 @@ export async function runRealTkeRuntimeNodeLifecycle({ operation, env, plan: inp
         Object.assign(cleanupResult, await waitForNativeTkeNodePoolDeleted(client, clusterIdFromInput, nodePoolId, operation, deleteObserveAttempts));
       } catch (error) {
         cleanupResult.cleanupBlocker = blockerFromLifecycleError(error);
+        if (error instanceof RealTkeLifecycleFailure && error.details?.observed) {
+          cleanupResult.observed = error.details.observed;
+        }
       }
       cleanupResults.push(cleanupResult);
     }
@@ -1069,6 +1092,9 @@ export async function runRealTkeRuntimeNodeLifecycle({ operation, env, plan: inp
         }
       } catch (error) {
         cleanupResult.cleanupBlocker = blockerFromLifecycleError(error);
+        if (error instanceof RealTkeLifecycleFailure && error.details?.observed) {
+          cleanupResult.observed = error.details.observed;
+        }
       }
       cleanupResults.push(cleanupResult);
     }
