@@ -310,6 +310,10 @@ function pickSecurityGroup(securityGroups = [], vpcId = "") {
   return String(candidates[0]?.SecurityGroupId || "").trim();
 }
 
+function securityGroupDiscoveryRequest(securityGroupId = "") {
+  return securityGroupId ? { SecurityGroupIds: [securityGroupId] } : { Limit: "100" };
+}
+
 function pickZone(configs = [], allowedZones = []) {
   const zones = new Set((Array.isArray(allowedZones) ? allowedZones : []).filter(Boolean));
   const candidates = (Array.isArray(configs) ? configs : [])
@@ -517,13 +521,11 @@ async function deriveRealTkePlanFromClusterFoundation({ plan, env, root, operati
     if (!imageId) failClosed("production_goal_real_tke_cluster_foundation_image_missing", { operationClass: operation }, 65);
   }
   let securityGroupId = String(foundation.securityGroupId || "").trim();
-  if (securityGroupId || foundation.validateSecurityGroup === true) {
+  if (securityGroupId || foundation.validateSecurityGroup === true || foundation.requireSecurityGroup !== false) {
     const VpcClient = root?.vpc?.v20170312?.Client;
     if (typeof VpcClient !== "function") failClosed("production_goal_real_tke_sdk_missing", { operationClass: operation }, 65);
     const vpcClient = new VpcClient(clientConfig);
-    const securityGroupResponse = await vpcClient.DescribeSecurityGroups(securityGroupId
-      ? { SecurityGroupIds: [securityGroupId] }
-      : { VpcId: vpcId, Limit: "100" });
+    const securityGroupResponse = await vpcClient.DescribeSecurityGroups(securityGroupDiscoveryRequest(securityGroupId));
     securityGroupId ||= pickSecurityGroup(securityGroupResponse?.SecurityGroupSet || [], vpcId);
     const securityGroup = (Array.isArray(securityGroupResponse?.SecurityGroupSet) ? securityGroupResponse.SecurityGroupSet : [])
       .find((item) => item?.SecurityGroupId === securityGroupId) || {};

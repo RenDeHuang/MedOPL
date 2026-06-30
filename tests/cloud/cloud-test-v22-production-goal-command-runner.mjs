@@ -495,6 +495,9 @@ class TkeClient {
     calls.push({ api: "CreateClusterNodePool", request });
     const nodePoolId = request.Name.includes("pro") ? "np-pro-created" : "np-starter-created";
     const launch = JSON.parse(request.LaunchConfigurePara);
+    if (!Array.isArray(launch.SecurityGroupIds) || launch.SecurityGroupIds[0] !== "sg-test") {
+      throw new Error("security group ids is not set");
+    }
     pools.set(nodePoolId, {
       NodePoolId: nodePoolId,
       LifeState: "normal",
@@ -667,9 +670,11 @@ export default {
   assert.equal(JSON.parse(createdRequests[0].LaunchConfigurePara).InstanceType, "S5.MEDIUM4", "starter_tier_instance_type");
   assert.equal(JSON.parse(createdRequests[0].LaunchConfigurePara).InstanceTypes, undefined, "starter_create_must_not_use_instance_types_array");
   assert.equal(JSON.parse(createdRequests[0].LaunchConfigurePara).LaunchConfigurationName, undefined, "starter_create_must_not_set_launch_configuration_name");
+  assert.deepEqual(JSON.parse(createdRequests[0].LaunchConfigurePara).SecurityGroupIds, ["sg-test"], "starter_create_must_set_security_group_ids");
   assert.equal(JSON.parse(createdRequests[1].LaunchConfigurePara).InstanceType, "S5.2XLARGE16", "pro_tier_instance_type");
   assert.equal(JSON.parse(createdRequests[1].LaunchConfigurePara).InstanceTypes, undefined, "pro_create_must_not_use_instance_types_array");
   assert.equal(JSON.parse(createdRequests[1].LaunchConfigurePara).LaunchConfigurationName, undefined, "pro_create_must_not_set_launch_configuration_name");
+  assert.deepEqual(JSON.parse(createdRequests[1].LaunchConfigurePara).SecurityGroupIds, ["sg-test"], "pro_create_must_set_security_group_ids");
   const upgradeCall = realTkeCalls.find((call) => call.api === "ModifyNodePoolInstanceTypes");
   assert.deepEqual(upgradeCall.request.InstanceTypes, ["S5.2XLARGE16"], "starter_upgrade_must_target_pro_instance_type");
   assert.deepEqual(realTkeCalls.filter((call) => call.api === "DeleteClusterNodePool").map((call) => call.request.NodePoolIds), [
