@@ -36,7 +36,7 @@
     "schema_version": 1,
     "status": "landed / pushed / post-push verified",
     "branch": "recovery/platform-v22-trunk",
-    "landed_commit": "42b12a0f721cdb0da30569e443ee1d918449a377",
+    "landed_commit": "f46fc85fc1611f7a0b8a8ca33c77555de9b82e92",
     "landing_gate_result": "passed / ff-only landed / pushed",
     "post_push_verification": [
       "npm run test:run-plan -- --dry-run --json passed",
@@ -193,7 +193,7 @@
   "current_blockers": [
     "none_for_current_scoped_commercial_business_flow"
   ],
-  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is recovery/platform-v22-trunk at 42b12a0f721cdb0da30569e443ee1d918449a377; it binds goal-driven development to affected_journeys from the Commercial Launch Product Contract Matrix without replacing goals with journeys. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is recovery/platform-v22-trunk at 42b12a0f721cdb0da30569e443ee1d918449a377.",
+  "current_problem": "MedOPL current truth for goal-commercial-runtime-storage-billing-business-closure within opl-webui-runtime-production-slice is the commercial SaaS business flow: account prepare -> account approval -> credit -> plan -> open runtime/storage -> upload/run/artifact -> billing ledger -> statement reconciliation -> release/destroy/stop billing. OPL-Webui triggers runtime_required and consumes artifact refs; MedOPL owns account approval, recharge/credit, plan/balance/quota, runtime/storage opening, billing ledger, audit and release truth. The latest repo/gate closeout is recovery/platform-v22-trunk at f46fc85fc1611f7a0b8a8ca33c77555de9b82e92; it binds goal-driven development to affected_journeys from the Commercial Launch Product Contract Matrix without replacing goals with journeys. The upload_file billing ledger writeback source fix is landed at 34b0e3070357504b475a0bee2ff6bd4de0af23df; the storage_destroy billing ledger writeback source fix is landed at 64699bd3619f01a4442936b096079b3e8051733d and keeps billing/audit fail-closed while using collision-resistant billing event IDs. The scoped production-canary proof is retained as operations substrate only; detailed run provenance stays in docs/history, dedicated machine evidence fields and GitHub Actions artifact. Release Image, Cloud Rollout, receipt manifest and cloud goal runner are not business admission, recharge, quota, cost ceiling, billing truth or current product cursor. Cost ceiling for business claims comes from account balance, plan hold amount and quota. External PSP settlement, unrestricted full production for all users/tenants, multi-region/SLA, enterprise compliance, ongoing authorization and unobserved tenants/resources remain unclaimed. Raw workflow evidence, secrets, kubeconfig, cloud payloads, runtime artifacts, uploaded files and transcripts stay outside git. The latest landed closeout is recovery/platform-v22-trunk at f46fc85fc1611f7a0b8a8ca33c77555de9b82e92.",
   "public_api_availability": {
     "schema_version": 1,
     "status": "go_health_ready_available",
@@ -1193,8 +1193,8 @@
     },
     "receipt_manifest_artifact_id": "7937559220"
   },
-  "base_trunk_head": "42b12a0f721cdb0da30569e443ee1d918449a377",
-  "last_landed_commit": "42b12a0f721cdb0da30569e443ee1d918449a377",
+  "base_trunk_head": "f46fc85fc1611f7a0b8a8ca33c77555de9b82e92",
+  "last_landed_commit": "f46fc85fc1611f7a0b8a8ca33c77555de9b82e92",
   "provider_key_production_secret_root_shape": {
     "schema_version": 1,
     "status": "local_deploy_config_shape_fixed",
@@ -1968,7 +1968,7 @@
       },
       {
         "goal_id": "recovery/platform-v22-trunk",
-        "landed_commit": "42b12a0f721cdb0da30569e443ee1d918449a377",
+        "landed_commit": "f46fc85fc1611f7a0b8a8ca33c77555de9b82e92",
         "status": "completed_retired",
         "retired_from": [
           "active_blocker",

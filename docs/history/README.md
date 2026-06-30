@@ -17,7 +17,7 @@ History 只保留短索引：
 ## Latest Machine Cursor
 
 - latest landed branch: `recovery/platform-v22-trunk`
-- latest landed commit: `42b12a0f721cdb0da30569e443ee1d918449a377`
+- latest landed commit: `f46fc85fc1611f7a0b8a8ca33c77555de9b82e92`
 - next cursor: `goal-commercial-runtime-storage-billing-business-closure`
 - machine owner: `tests/fixtures/v22/goal-current.json`
 - verify manifest: `tests/fixtures/v22/agent-verify-manifest.json`
