@@ -652,7 +652,7 @@ jobs:
         run: node scripts/cloud-rollout/medopl.mjs --availability-probe
 
       - name: Upload runtime storage lifecycle receipts
-        if: ${{ inputs.rollout_scope == 'runtime_storage_lifecycle' }}
+        if: ${{ always() && inputs.rollout_scope == 'runtime_storage_lifecycle' }}
         uses: actions/upload-artifact@v4
         with:
           name: medopl-runtime-storage-lifecycle-receipts

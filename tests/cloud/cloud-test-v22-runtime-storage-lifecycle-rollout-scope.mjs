@@ -37,7 +37,7 @@ assert.equal(
 );
 assert(
   productionApplyJob.includes("Upload runtime storage lifecycle receipts") &&
-    productionApplyJob.includes("if: ${{ inputs.rollout_scope == 'runtime_storage_lifecycle' }}") &&
+    productionApplyJob.includes("if: ${{ always() && inputs.rollout_scope == 'runtime_storage_lifecycle' }}") &&
     productionApplyJob.includes("medopl-runtime-storage-lifecycle-receipts") &&
     productionApplyJob.includes(".runtime/v22-cloud-authorization/run-v22-001/real_tke_runtime_node_lifecycle.json") &&
     productionApplyJob.includes(".runtime/v22-cloud-authorization/run-v22-001/runtime_owner_receipt.json") &&

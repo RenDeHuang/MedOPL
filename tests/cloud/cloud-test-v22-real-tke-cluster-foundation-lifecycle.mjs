@@ -301,6 +301,10 @@ assert.equal(existsSync(path.join(repoRoot, blockedEvidenceRef)), true, "cluster
 const blockedEvidence = JSON.parse(readFileSync(path.join(repoRoot, blockedEvidenceRef), "utf8"));
 assert.equal(blockedEvidence.status, "blocked", "cluster_foundation_blocked_evidence_status");
 assert.equal(blockedEvidence.blocker, "production_goal_real_tke_node_pool_not_observed", "cluster_foundation_blocked_evidence_blocker");
+assert.equal(blockedEvidence.lifecycle.createStarter.observed.found, false, "cluster_foundation_blocked_evidence_observe_found");
+assert.equal(blockedEvidence.lifecycle.createStarter.observed.stage, "starter_created", "cluster_foundation_blocked_evidence_observe_stage");
+assert.equal(blockedEvidence.lifecycle.createStarter.observed.waitReason, "node_pool_not_found", "cluster_foundation_blocked_evidence_wait_reason");
+assert.equal(blockedEvidence.lifecycle.createStarter.observed.attempts, 1, "cluster_foundation_blocked_evidence_observe_attempts");
 assert.deepEqual(blockedEvidence.nodePoolRefs, ["np-starter-unobserved"], "cluster_foundation_blocked_evidence_node_pool_refs");
 assert.equal(blockedEvidence.cleanupVerified, true, "cluster_foundation_blocked_evidence_cleanup_verified");
 assert.equal(blockedEvidence.nodePoolDestroyed, true, "cluster_foundation_blocked_evidence_node_pool_destroyed");
