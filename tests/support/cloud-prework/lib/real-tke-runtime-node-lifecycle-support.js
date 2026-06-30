@@ -97,6 +97,44 @@ function nodePoolInstanceTypes(nodePool = {}) {
   return single ? [single] : [];
 }
 
+function instanceConfigCpu(config = {}) {
+  return Number(config.CPU ?? config.Cpu ?? config.CpuCores ?? config.CpuCoreCount);
+}
+
+function instanceConfigMemory(config = {}) {
+  return Number(config.Memory ?? config.Mem ?? config.MemoryGb ?? config.MemorySize);
+}
+
+function stockStatusScore(config = {}, hasStockSignal = false) {
+  const raw = String(config.StatusCategory || config.Status || config.SaleStatus || "")
+    .trim()
+    .toLowerCase();
+  if (!raw) return hasStockSignal ? 20 : 5;
+  if (/enough|normal|available|sell|售卖|充足|有保障/u.test(raw)) return raw.includes("normal") ? 1 : 0;
+  if (/under|limited|少量|即将/u.test(raw)) return 4;
+  if (/without|sold|sellout|unavailable|offline|closed|unsupported|无货|售罄|不可用/u.test(raw)) return 100;
+  return 10;
+}
+
+function buildStockStatusIndex(stockConfigs = [], allowedZones = []) {
+  const zones = new Set((Array.isArray(allowedZones) ? allowedZones : []).filter(Boolean));
+  const index = new Map();
+  for (const config of Array.isArray(stockConfigs) ? stockConfigs : []) {
+    const instanceType = String(config.InstanceType || "").trim();
+    if (!instanceType) continue;
+    if (zones.size && config.Zone && !zones.has(config.Zone)) continue;
+    const previous = index.get(instanceType);
+    const score = stockStatusScore(config, true);
+    if (!previous || score < previous.score) {
+      index.set(instanceType, {
+        score,
+        status: publicRef(config.StatusCategory || config.Status || config.SaleStatus || "unknown"),
+      });
+    }
+  }
+  return index;
+}
+
 function upgradeTargetInstanceType(upgradeRequest = {}, proTier = {}) {
   return String(
     upgradeRequest.modifyNodePoolInstanceTypes?.InstanceTypes?.[0]
@@ -374,25 +412,38 @@ function filterFirst(items = [], keys = []) {
   return (Array.isArray(items) ? items : []).find((item) => keys.every((key) => item?.[key] !== undefined && item?.[key] !== null && item?.[key] !== "")) || null;
 }
 
-function pickInstanceType(configs = [], tier = {}, allowedZones = []) {
+function pickInstanceType(configs = [], tier = {}, allowedZones = [], stockConfigs = []) {
   const zones = new Set((Array.isArray(allowedZones) ? allowedZones : []).filter(Boolean));
-  const nativeCvmFamilyPriority = ["S", "SA", "M", "MA", "BF", "IT", "ITA", "TGN", "BMG"];
+  const nativeCvmFamilyPriority = ["S5", "S8", "S9e", "S3", "SA2", "SA3", "SA4", "SA5", "M8", "M3", "MA5", "MA4", "MA3", "BF1", "ITA5", "TGN7", "BMG5t", "S2"];
   const nativeCvmFamilyOrder = new Map(nativeCvmFamilyPriority.map((family, index) => [family, index]));
   const nativeCvmSupportedFamily = /^(?:BF1|BMG5t|ITA5|M3|M8|MA3|MA4|MA5|S2|S3|S5|S8|S9e|SA2|SA3|SA4|SA5|TGN7)\./u;
-  const familyPrefix = (instanceType = "") => String(instanceType).split(".")[0].replace(/\d.*$/u, "");
+  const familyPrefix = (instanceType = "") => String(instanceType).split(".")[0];
+  const stockStatusByType = buildStockStatusIndex(stockConfigs, allowedZones);
+  const hasStockSignal = stockStatusByType.size > 0;
   const candidates = (Array.isArray(configs) ? configs : [])
-    .filter((config) => Number(config.CPU) === Number(tier.cpuCores) && Number(config.Memory) === Number(tier.memoryGb))
+    .filter((config) => instanceConfigCpu(config) === Number(tier.cpuCores) && instanceConfigMemory(config) === Number(tier.memoryGb))
     .filter((config) => !zones.size || !config.Zone || zones.has(config.Zone))
-    .map((config) => String(config.InstanceType || "").trim())
-    .filter(Boolean)
-    .filter((instanceType) => nativeCvmSupportedFamily.test(instanceType))
-    .sort((left, right) => {
+    .map((config) => {
+      const instanceType = String(config.InstanceType || "").trim();
+      const stock = stockStatusByType.get(instanceType);
+      return {
+        instanceType,
+        stockScore: stock?.score ?? stockStatusScore(config, hasStockSignal),
+      };
+    })
+    .filter((candidate) => candidate.instanceType)
+    .filter((candidate) => nativeCvmSupportedFamily.test(candidate.instanceType))
+    .filter((candidate) => candidate.stockScore < 100)
+    .sort((leftCandidate, rightCandidate) => {
+      if (leftCandidate.stockScore !== rightCandidate.stockScore) return leftCandidate.stockScore - rightCandidate.stockScore;
+      const left = leftCandidate.instanceType;
+      const right = rightCandidate.instanceType;
       const leftFamilyOrder = nativeCvmFamilyOrder.get(familyPrefix(left)) ?? 99;
       const rightFamilyOrder = nativeCvmFamilyOrder.get(familyPrefix(right)) ?? 99;
       if (leftFamilyOrder !== rightFamilyOrder) return leftFamilyOrder - rightFamilyOrder;
       return left.localeCompare(right);
     });
-  return candidates[0] || "";
+  return candidates[0]?.instanceType || "";
 }
 
 function pickImage(images = [], pattern = "") {
@@ -609,9 +660,23 @@ async function deriveRealTkePlanFromClusterFoundation({ plan, env, root, operati
     : [];
   const zone = String(foundation.zone || pickZone(instanceTypes, clusterSubnetZones)).trim();
   if (!zone) failClosed("production_goal_real_tke_cluster_foundation_zone_missing", { operationClass: operation }, 65);
+  let zoneInstanceTypeQuotas = [];
+  if (typeof cvmClient.DescribeZoneInstanceConfigInfos === "function") {
+    try {
+      const quotaResponse = await cvmClient.DescribeZoneInstanceConfigInfos({
+        Filters: [
+          { Name: "zone", Values: [zone] },
+          { Name: "instance-charge-type", Values: ["POSTPAID_BY_HOUR"] },
+        ],
+      });
+      zoneInstanceTypeQuotas = Array.isArray(quotaResponse?.InstanceTypeQuotaSet) ? quotaResponse.InstanceTypeQuotaSet : [];
+    } catch {
+      zoneInstanceTypeQuotas = [];
+    }
+  }
   const derivedTiers = (Array.isArray(plan.tiers) ? plan.tiers : []).map((tier) => ({
     ...tier,
-    instanceType: tier.instanceType || pickInstanceType(instanceTypes, tier, [zone]),
+    instanceType: tier.instanceType || pickInstanceType(instanceTypes, tier, [zone], zoneInstanceTypeQuotas),
   }));
   for (const tier of derivedTiers) {
     if (!tier.instanceType) {
@@ -834,6 +899,64 @@ export async function runRealTkeRuntimeNodeLifecycle({ operation, env, plan: inp
   let plan = inputPlan;
   const sdkRoot = await importTencentCloudSdkForRealTkeLifecycle();
   const root = sdkRoot.default || sdkRoot;
+  const clusterIdFromInput = plan.clusterId || env.TENCENT_MUTATION_TKE_CLUSTER_ID || "";
+  const regionFromInput = plan.region || (env.TENCENT_MUTATION_REGIONS || env.TENCENT_MUTATION_COS_REGION || "").split(",")[0].trim();
+  const cleanupOnlyNodePoolRefs = Array.isArray(plan.cleanupOnlyNodePoolRefs)
+    ? plan.cleanupOnlyNodePoolRefs.map(publicRef).filter(Boolean)
+    : [];
+  if (cleanupOnlyNodePoolRefs.length) {
+    if (!clusterIdFromInput || !regionFromInput) failClosed("production_goal_real_tke_foundation_missing", { operationClass: operation }, 65);
+    const Client = root?.tke?.v20220501?.Client;
+    if (typeof Client !== "function") failClosed("production_goal_real_tke_sdk_missing", { operationClass: operation }, 65);
+    const client = new Client({
+      credential: { secretId: env.TENCENT_MUTATION_SECRET_ID, secretKey: env.TENCENT_MUTATION_SECRET_KEY },
+      region: regionFromInput,
+      profile: { httpProfile: { reqTimeout: 60 } },
+    });
+    const deleteObserveAttempts = observeAttemptCount(plan, "deleteObserveAttempts", 72);
+    const cleanupResults = [];
+    for (const nodePoolId of [...cleanupOnlyNodePoolRefs].reverse()) {
+      const cleanupResult = { nodePoolRef: publicRef(nodePoolId), cleanupVerified: false, nodePoolDestroyed: false };
+      try {
+        await client.DeleteNodePool({ ClusterId: clusterIdFromInput, NodePoolId: nodePoolId });
+        Object.assign(cleanupResult, await waitForNativeTkeNodePoolDeleted(client, clusterIdFromInput, nodePoolId, operation, deleteObserveAttempts));
+      } catch (error) {
+        cleanupResult.cleanupBlocker = blockerFromLifecycleError(error);
+      }
+      cleanupResults.push(cleanupResult);
+    }
+    const cleanupVerified = cleanupResults.length === cleanupOnlyNodePoolRefs.length && cleanupResults.every((item) => item.cleanupVerified && item.nodePoolDestroyed);
+    writeEvidence(operation, {
+      status: cleanupVerified ? "accepted" : "blocked",
+      provider: "tencent_tke",
+      cleanupOnly: true,
+      realProviderMutationExecuted: true,
+      clusterRef: "TENCENT_MUTATION_TKE_CLUSTER_ID",
+      nodePoolRefs: cleanupOnlyNodePoolRefs,
+      region: regionFromInput,
+      lifecycle: { destroy: { api: "DeleteNodePool", cleanupResults } },
+      cleanupResults,
+      cleanupVerified,
+      nodePoolDestroyed: cleanupVerified,
+      cannotClaim: [
+        "real TKE/CVM node ready",
+        "starter/pro upgrade complete",
+        "production complete",
+        "all users/all tenants",
+        "SLA/multi-region",
+        "ongoing authorization",
+      ],
+    });
+    if (!cleanupVerified) failClosed("production_goal_real_tke_cleanup_incomplete", { operationClass: operation }, 1);
+    return {
+      provider: "tencent_tke",
+      cleanupOnly: true,
+      realProviderMutationExecuted: true,
+      nodePoolRefs: cleanupOnlyNodePoolRefs,
+      cleanupVerified,
+      nodePoolDestroyed: cleanupVerified,
+    };
+  }
   if (plan.deriveFromPlatformNodePool?.enabled === true) {
     plan = await deriveRealTkePlanFromPlatformNodePool({ plan, env, root, operation });
   } else if (plan.deriveFromClusterFoundation?.enabled === true) {
@@ -891,6 +1014,7 @@ export async function runRealTkeRuntimeNodeLifecycle({ operation, env, plan: inp
       requireNodeTotal: Number(plan.requireNodeTotal || 1),
       requireReadyNodeCount: Number(plan.requireReadyNodeCount || plan.requireNodeTotal || 1),
     });
+    lifecycle.createStarter = { api: useNativeNodePool ? "CreateNodePool" : "CreateClusterNodePool", tier: starterTier.id, observed: starterObserved };
     let starterUpgradeObserved = null;
     if (!useNativeNodePool) {
       if (upgradeRequest.modifyClusterNodePool) await client.ModifyClusterNodePool({ ClusterId: clusterId, NodePoolId: starterNodePoolId, ...upgradeRequest.modifyClusterNodePool });
@@ -911,7 +1035,6 @@ export async function runRealTkeRuntimeNodeLifecycle({ operation, env, plan: inp
       requireReadyNodeCount: Number(plan.requireReadyNodeCount || plan.requireNodeTotal || 1),
     });
     if (useNativeNodePool) starterUpgradeObserved = proObserved;
-    lifecycle.createStarter = { api: useNativeNodePool ? "CreateNodePool" : "CreateClusterNodePool", tier: starterTier.id, observed: starterObserved };
     lifecycle.upgradeStarter = {
       api: useNativeNodePool
         ? "CreateNodePool"
