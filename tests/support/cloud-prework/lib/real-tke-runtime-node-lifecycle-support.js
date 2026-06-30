@@ -265,7 +265,6 @@ function createRequestFromDerivedPlan(plan, source = {}, tierId = "", suffix = "
     RuntimeVersion: source.runtimeVersion,
     NodePoolOs: source.nodePoolOs,
     OsCustomizeType: source.osCustomizeType,
-    Tags: normalizeTencentCloudTags(source.tags),
     DeletionProtection: false,
   };
 }
@@ -429,7 +428,7 @@ async function deriveRealTkePlanFromPlatformNodePool({ plan, env, root, operatio
     containerRuntime: nodePool.RuntimeConfig?.RuntimeType || undefined,
     runtimeVersion: nodePool.RuntimeConfig?.RuntimeVersion || undefined,
     nodePoolOs: nodePool.NodePoolOs || undefined,
-    tags: normalizeTencentCloudTags(nodePool.TagSpecification?.Tags, [{ Key: "medopl_pool", Value: "tenant" }]),
+    tags: normalizeTencentCloudTags(nodePool.TagSpecification?.Tags),
   };
   return {
     ...plan,
@@ -564,7 +563,7 @@ async function deriveRealTkePlanFromClusterFoundation({ plan, env, root, operati
     containerRuntime: foundation.containerRuntime || "containerd",
     runtimeVersion: foundation.runtimeVersion || undefined,
     nodePoolOs: foundation.nodePoolOs || "tlinux3.1x86_64",
-    tags: normalizeTencentCloudTags(foundation.tags, [{ Key: "medopl_pool", Value: "tenant" }]),
+    tags: normalizeTencentCloudTags(foundation.tags),
   };
   return {
     ...plan,
