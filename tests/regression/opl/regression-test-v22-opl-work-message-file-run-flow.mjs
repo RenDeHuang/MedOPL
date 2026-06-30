@@ -257,7 +257,8 @@ try {
   assert.equal(run.json.ok, true, "run_must_return_ok");
   assert.equal(run.json.status, "succeeded", "run_status_mismatch");
   assert.equal(run.json.artifacts.length, 1, "run_must_create_artifact");
-  assert.equal(run.json.artifacts[0].providerKeyRef, bound.json.providerKeyRef, "artifact_provider_ref_mismatch");
+  assert.equal(run.json.artifacts[0].artifactRef, run.json.artifactRef, "run_artifact_ref_mismatch");
+  assert.equal(run.json.artifacts[0].providerKeyRef, undefined, "run_artifact_must_not_expose_provider_key_ref");
   assertNoPublicSecretLeak(run.json, "run");
 
   const artifact = await getJson(`${baseUrl}/api/opl/artifacts/${encodeURIComponent(run.json.artifacts[0].artifactRef)}?launchId=${encodeURIComponent(launchId)}`);

@@ -104,9 +104,20 @@ func assertPublicPayload(t *testing.T, payload map[string]any, rawProviderKey st
 	t.Helper()
 	encoded, _ := json.Marshal(payload)
 	text := string(encoded)
-	for _, marker := range []string{rawProviderKey, "rawProviderKey", "providerApiKey", "launchToken", "runtimeToken", "bearerToken", "SecretId", "SecretKey", "signedUrl", "objectKey", "localPath"} {
+	for _, marker := range []string{rawProviderKey, "rawProviderKey", "providerApiKey", "launchToken", "runtimeToken", "bearerToken", "SecretId", "SecretKey", "signedUrl", "objectKey", "storageObjectKey", "localPath"} {
 		if strings.Contains(text, marker) {
 			t.Fatalf("public payload leaked %q: %s", marker, text)
+		}
+	}
+}
+
+func assertNoConsumerTruthLeak(t *testing.T, payload map[string]any) {
+	t.Helper()
+	encoded, _ := json.Marshal(payload)
+	text := string(encoded)
+	for _, marker := range []string{"artifactBody", "artifact_body", "storageObjectKey", "paymentTruth", "billingTruth", "runtimeToken", "signedUrl", "kubeconfig"} {
+		if strings.Contains(text, marker) {
+			t.Fatalf("consumer payload leaked truth marker %q: %s", marker, text)
 		}
 	}
 }

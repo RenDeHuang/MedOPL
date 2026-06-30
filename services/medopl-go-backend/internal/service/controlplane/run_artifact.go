@@ -37,6 +37,13 @@ type PublicArtifact struct {
 	ContentType      string   `json:"contentType"`
 }
 
+type PublicRunArtifactRef struct {
+	ArtifactRef string `json:"artifactRef"`
+	Kind        string `json:"kind,omitempty"`
+	Title       string `json:"title"`
+	Status      string `json:"status"`
+}
+
 type PublicProgress struct {
 	Stage string `json:"stage"`
 	State string `json:"state"`
@@ -60,16 +67,16 @@ type PublicRunRefs struct {
 }
 
 type PublicRunResult struct {
-	Ok               bool                `json:"ok"`
-	Status           string              `json:"status"`
-	StatusURL        string              `json:"statusUrl,omitempty"`
-	StorageBindingID string              `json:"storageBindingId,omitempty"`
-	Run              PublicRun           `json:"run"`
-	ArtifactRef      string              `json:"artifactRef"`
-	Artifacts        []PublicArtifact    `json:"artifacts"`
-	Refs             PublicRunRefs       `json:"refs"`
-	Progress         []PublicProgress    `json:"progress"`
-	Deliverables     []PublicDeliverable `json:"deliverables"`
+	Ok               bool                   `json:"ok"`
+	Status           string                 `json:"status"`
+	StatusURL        string                 `json:"statusUrl,omitempty"`
+	StorageBindingID string                 `json:"storageBindingId,omitempty"`
+	Run              PublicRun              `json:"run"`
+	ArtifactRef      string                 `json:"artifactRef"`
+	Artifacts        []PublicRunArtifactRef `json:"artifacts"`
+	Refs             PublicRunRefs          `json:"refs"`
+	Progress         []PublicProgress       `json:"progress"`
+	Deliverables     []PublicDeliverable    `json:"deliverables"`
 }
 
 func (service *Service) StartRun(ctx context.Context, input StartRunInput) (PublicRunResult, error) {
@@ -128,18 +135,11 @@ func (service *Service) StartRun(ctx context.Context, input StartRunInput) (Publ
 			StorageBindingID: storageBindingID,
 			FileRefs:         append([]string(nil), fileRefs...),
 		},
-		Artifacts: []PublicArtifact{{
-			ArtifactRef:      artifactRef,
-			WorkspaceID:      launch.WorkspaceID,
-			ProviderKeyRef:   launch.ProviderKeyRef,
-			StorageBindingID: storageBindingID,
-			ObjectRef:        artifactObjectRef,
-			SourceFileRefs:   append([]string(nil), fileRefs...),
-			Kind:             "outputs",
-			Name:             "result.md",
-			RelativePath:     artifactRelativePath,
-			SizeBytes:        256,
-			ContentType:      "text/markdown",
+		Artifacts: []PublicRunArtifactRef{{
+			ArtifactRef: artifactRef,
+			Kind:        "outputs",
+			Title:       "result.md",
+			Status:      "available",
 		}},
 		Progress: []PublicProgress{
 			{Stage: "run_started", State: "done", Title: "Run started"},
@@ -170,21 +170,20 @@ func (service *Service) StartRun(ctx context.Context, input StartRunInput) (Publ
 	}); err != nil {
 		return PublicRunResult{}, err
 	}
-	artifact := result.Artifacts[0]
 	if err := service.store.SaveArtifact(ctx, cpd.ArtifactRecord{
-		ArtifactRef:      artifact.ArtifactRef,
+		ArtifactRef:      artifactRef,
 		RunID:            runID,
 		LaunchID:         launch.LaunchID,
-		WorkspaceID:      artifact.WorkspaceID,
-		ProviderKeyRef:   artifact.ProviderKeyRef,
-		StorageBindingID: artifact.StorageBindingID,
-		ObjectRef:        artifact.ObjectRef,
-		SourceFileRefs:   artifact.SourceFileRefs,
-		Kind:             artifact.Kind,
-		Name:             artifact.Name,
-		RelativePath:     artifact.RelativePath,
-		SizeBytes:        artifact.SizeBytes,
-		ContentType:      artifact.ContentType,
+		WorkspaceID:      launch.WorkspaceID,
+		ProviderKeyRef:   launch.ProviderKeyRef,
+		StorageBindingID: storageBindingID,
+		ObjectRef:        artifactObjectRef,
+		SourceFileRefs:   append([]string(nil), fileRefs...),
+		Kind:             "outputs",
+		Name:             "result.md",
+		RelativePath:     artifactRelativePath,
+		SizeBytes:        256,
+		ContentType:      "text/markdown",
 		CreatedAt:        started.Format(time.RFC3339),
 	}); err != nil {
 		return PublicRunResult{}, err

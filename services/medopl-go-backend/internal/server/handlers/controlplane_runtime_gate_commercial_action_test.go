@@ -2,6 +2,140 @@ package handlers
 
 import "testing"
 
+func TestControlPlaneHandlersExposeOPLWebuiConsumerReadyPathClosure(t *testing.T) {
+	router := controlPlaneHandlerTestRouter()
+	rawProviderKey := "consumer-ready-path-provider-key-material-that-must-stay-private"
+	tenantID := "tenant-consumer-ready"
+	userID := "user-consumer-ready"
+	workspaceID := "workspace-consumer-ready"
+	sessionID := "session-consumer-ready"
+	taskRef := "task-consumer-ready"
+	taskIntent := "paper_question"
+
+	postMap(t, router, "/api/v22/users/prepare", map[string]any{
+		"tenantId":    tenantID,
+		"userId":      userID,
+		"workspaceId": workspaceID,
+	})
+	postMap(t, router, "/api/v22/users/approve", map[string]any{
+		"tenantId":    tenantID,
+		"userId":      userID,
+		"workspaceId": workspaceID,
+	})
+	postMap(t, router, "/api/v22/users/credit", map[string]any{
+		"tenantId":       tenantID,
+		"userId":         userID,
+		"workspaceId":    workspaceID,
+		"amount":         200,
+		"currency":       "CNY",
+		"idempotencyKey": "consumer-ready-credit-once",
+	})
+	binding := postMap(t, router, "/api/v22/provider-key", map[string]any{
+		"tenantId":       tenantID,
+		"portalUserId":   userID,
+		"workspaceId":    workspaceID,
+		"apiKey":         rawProviderKey,
+		"idempotencyKey": "consumer-ready-provider-once",
+	})
+	assertPublicPayload(t, binding, rawProviderKey)
+	if binding["providerBound"] != true || binding["providerKeyRef"] == "" {
+		t.Fatalf("provider key ref must be bound for dedicated canary account: %+v", binding)
+	}
+
+	opened := postMap(t, router, "/api/v22/managed-environment/open", map[string]any{
+		"tenantId":       tenantID,
+		"portalUserId":   userID,
+		"workspaceId":    workspaceID,
+		"idempotencyKey": "consumer-ready-open-once",
+	})
+	assertPublicPayload(t, opened, rawProviderKey)
+	launchID := opened["launchId"].(string)
+	resourceBindingID := opened["resourceBindingId"].(string)
+
+	gate := postMap(t, router, "/api/opl/runtime-gate", map[string]any{
+		"tenantId":       tenantID,
+		"portalUserId":   userID,
+		"workspaceId":    workspaceID,
+		"invocationMode": "runtime_required",
+		"sessionId":      sessionID,
+		"taskRef":        taskRef,
+		"taskIntent":     taskIntent,
+	})
+	assertPublicPayload(t, gate, rawProviderKey)
+	assertNoConsumerTruthLeak(t, gate)
+	if gate["ok"] != true || gate["runtimeState"] != "ready" || gate["storageState"] != "ready" {
+		t.Fatalf("runtime gate must be ready after account/plan/balance/provider/runtime/storage setup: %+v", gate)
+	}
+	if gate["runtimeBindingId"] != resourceBindingID || gate["storageBindingId"] == "" {
+		t.Fatalf("runtime gate binding refs mismatch: %+v", gate)
+	}
+	consumerProjection := gate["consumerProjection"].(map[string]any)
+	if consumerProjection["ready"] != true || consumerProjection["runEnabled"] != true || consumerProjection["uploadEnabled"] != true || consumerProjection["artifactEnabled"] != true {
+		t.Fatalf("consumer projection must expose explicit ready path for OPL-Webui: %+v", consumerProjection)
+	}
+	if consumerProjection["runSurface"] != "opl-webui_with_medopl_runtime" {
+		t.Fatalf("consumer run surface must remain OPL-Webui consumer surface: %+v", consumerProjection)
+	}
+	actionContract := gate["actionContract"].(map[string]any)
+	primaryAction := actionContract["primaryAction"].(map[string]any)
+	if primaryAction["action"] != "return_to_opl_task" || primaryAction["reason"] != "runtime_storage_ready" {
+		t.Fatalf("ready runtime gate must hand back to OPL-Webui task: %+v", primaryAction)
+	}
+	returnContract := primaryAction["returnToOplTaskContract"].(map[string]any)
+	if returnContract["resumeAction"] != "return_to_opl_task" || returnContract["sessionId"] != sessionID || returnContract["taskRef"] != taskRef || returnContract["taskIntent"] != taskIntent {
+		t.Fatalf("return-to-OPL task contract must preserve session/task identity: %+v", returnContract)
+	}
+
+	file := postMap(t, router, "/api/opl/files?launchId="+launchID, map[string]any{
+		"fileName":     "measurements.csv",
+		"relativePath": "inputs/measurements.csv",
+		"contentType":  "text/csv",
+		"sizeBytes":    128,
+	})
+	assertPublicPayload(t, file, rawProviderKey)
+	fileRef := file["fileRef"].(string)
+	if fileRef == "" {
+		t.Fatalf("file upload must return a file ref: %+v", file)
+	}
+
+	run := postMap(t, router, "/api/opl/runs?launchId="+launchID, map[string]any{
+		"message":   "analyze file",
+		"fileRefs":  []any{fileRef},
+		"toolName":  taskIntent,
+		"requestId": "run-consumer-ready",
+	})
+	assertPublicPayload(t, run, rawProviderKey)
+	assertNoConsumerTruthLeak(t, run)
+	if run["ok"] != true || run["status"] != "succeeded" {
+		t.Fatalf("runtime run must succeed with refs-only output: %+v", run)
+	}
+	refs := run["refs"].(map[string]any)
+	if refs["runRef"] == "" || refs["artifactRef"] == "" || refs["storageBindingId"] == "" {
+		t.Fatalf("runtime run refs must include run/artifact/storage refs: %+v", refs)
+	}
+	if run["artifactRef"] != run["artifacts"].([]any)[0].(map[string]any)["artifactRef"] {
+		t.Fatalf("top-level artifactRef must match first artifact ref: %+v", run)
+	}
+	if len(run["progress"].([]any)) == 0 || len(run["deliverables"].([]any)) == 0 {
+		t.Fatalf("runtime run must expose progress and deliverable refs: %+v", run)
+	}
+
+	billing := getMap(t, router, "/api/billing/summary?workspaceId="+workspaceID)
+	assertPublicPayload(t, billing, rawProviderKey)
+	assertNoConsumerTruthLeak(t, billing)
+	if billing["ok"] != true || billing["runCount"] != float64(1) || billing["ledgerCount"] == nil {
+		t.Fatalf("billing summary must expose run count and ledger refs after canary run: %+v", billing)
+	}
+	ledger := billing["ledger"].([]any)
+	if len(ledger) == 0 {
+		t.Fatalf("billing summary must include ledger refs after canary run: %+v", billing)
+	}
+	ledgerEntry := ledger[0].(map[string]any)
+	if ledgerEntry["id"] == "" || ledgerEntry["type"] == "" || ledgerEntry["sourceEventId"] == "" {
+		t.Fatalf("ledger entry must carry reconciliation refs: %+v", ledgerEntry)
+	}
+}
+
 func TestControlPlaneHandlersExposeOPLWebuiCommercialActionContract(t *testing.T) {
 	router := controlPlaneHandlerTestRouter()
 	rawProviderKey := "runtime-gate-commercial-action-provider-key-material-that-must-stay-private"

@@ -263,6 +263,21 @@
         ],
         "boundary": "paid_account_runtime_gate_uses_account_plan_balance_quota_and_platform_stop_state"
       },
+      "consumer_projection": {
+        "intent": "opl_webui_runtime_ready_path_readiness_projection",
+        "fields": [
+          "chatSurface",
+          "runSurface",
+          "ready",
+          "uploadEnabled",
+          "runEnabled",
+          "artifactEnabled",
+          "releaseAction",
+          "storageAction"
+        ],
+        "ready_policy": "ready_true_only_when_runtime_state_ready_and_storage_state_ready",
+        "boundary": "OPL-Webui may consume ready/upload/run/artifact/deeplink projection but does not own runtime_storage_truth"
+      },
       "commercial_action_contract": {
         "intent": "opl_webui_runtime_required_commercial_purchase_actions",
         "actions": [
@@ -711,8 +726,12 @@
         "rawObjectStoreSecret",
         "signedUrl",
         "objectKey",
+        "storageObjectKey",
         "storageKey",
         "localPath",
+        "artifactBody",
+        "paymentTruth",
+        "billingTruth",
         "bearerToken",
         "runtimeToken",
         "kubeconfig"

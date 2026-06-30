@@ -629,14 +629,14 @@ func TestServiceStorageFileArtifactMetadataRoundTripsThroughPostgresOwnedRefs(t 
 		t.Fatalf("run metadata must persist storage input object lineage: %+v file=%+v", storedRun, fileRef)
 	}
 	artifact := runResult.Artifacts[0]
-	if artifact.StorageBindingID != gate.StorageBindingID || artifact.ObjectRef == "" {
-		t.Fatalf("public artifact must expose MedOPL storage metadata: %+v", artifact)
+	if artifact.ArtifactRef == "" || artifact.Title != "result.md" || artifact.Status != "available" {
+		t.Fatalf("run result artifact must expose refs-only consumer metadata: %+v", artifact)
 	}
 	storedArtifact, err := service.store.ArtifactByRef(ctx, artifact.ArtifactRef)
 	if err != nil {
 		t.Fatalf("ArtifactByRef() error = %v", err)
 	}
-	if storedArtifact.StorageBindingID != gate.StorageBindingID || storedArtifact.ObjectRef != artifact.ObjectRef || storedArtifact.SourceFileRefs[0] != fileRef.FileRef {
+	if storedArtifact.StorageBindingID != gate.StorageBindingID || storedArtifact.ObjectRef == "" || storedArtifact.SourceFileRefs[0] != fileRef.FileRef {
 		t.Fatalf("artifact metadata must persist storage output lineage: stored=%+v public=%+v file=%+v", storedArtifact, artifact, fileRef)
 	}
 
@@ -648,7 +648,7 @@ func TestServiceStorageFileArtifactMetadataRoundTripsThroughPostgresOwnedRefs(t 
 	if !ok {
 		t.Fatalf("artifact payload type = %T %+v", artifactPayload["artifact"], artifactPayload["artifact"])
 	}
-	if publicArtifact.StorageBindingID != gate.StorageBindingID || publicArtifact.ObjectRef != artifact.ObjectRef {
+	if publicArtifact.StorageBindingID != gate.StorageBindingID || publicArtifact.ObjectRef != storedArtifact.ObjectRef {
 		t.Fatalf("artifact projection must round-trip storage metadata: %+v", publicArtifact)
 	}
 }

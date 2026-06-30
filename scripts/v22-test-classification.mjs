@@ -117,7 +117,10 @@ const FRONTEND_FILES = Object.freeze([
 const JOURNEY_EVIDENCE_FRONTEND_FILES = new Set([
   "tests/frontend/frontend-test-v22-portal-journey-registry.mjs",
 ]);
-const BACKEND_FILES = Object.freeze(["tests/backend/backend-test-v22-api-contract.mjs"]);
+const BACKEND_FILES = Object.freeze([
+  "tests/backend/backend-test-v22-api-contract.mjs",
+  "tests/backend/backend-test-v22-opl-webui-consumer-ready-path.mjs",
+]);
 const RUNTIME_FILES = Object.freeze(["tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs"]);
 const RELEASE_FILES = Object.freeze([
   "tests/release/release-test-v22-boundary-contract.mjs",

@@ -179,6 +179,7 @@
         "node tests/product/product-test-v22-medopl-contract-authority.mjs",
         "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
         "node tests/backend/backend-test-v22-api-contract.mjs",
+        "node tests/backend/backend-test-v22-opl-webui-consumer-ready-path.mjs",
         "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs",
         "node tests/release/release-test-v22-boundary-contract.mjs",
         "node tests/release/release-test-v22-production-receipt-boundary.mjs",
@@ -279,6 +280,7 @@
         "node tests/product/product-test-v22-medopl-contract-authority.mjs",
         "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
         "node tests/backend/backend-test-v22-api-contract.mjs",
+        "node tests/backend/backend-test-v22-opl-webui-consumer-ready-path.mjs",
         "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs",
         "node tests/release/release-test-v22-boundary-contract.mjs",
         "node tests/release/release-test-v22-production-receipt-boundary.mjs",
@@ -380,6 +382,7 @@
         "node tests/product/product-test-v22-medopl-contract-authority.mjs",
         "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
         "node tests/backend/backend-test-v22-api-contract.mjs",
+        "node tests/backend/backend-test-v22-opl-webui-consumer-ready-path.mjs",
         "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs",
         "node tests/release/release-test-v22-boundary-contract.mjs",
         "node tests/release/release-test-v22-production-receipt-boundary.mjs",
@@ -478,6 +481,7 @@
         "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
         "node tests/frontend/frontend-test-v22-portal-journey-registry.mjs",
         "node tests/backend/backend-test-v22-api-contract.mjs",
+        "node tests/backend/backend-test-v22-opl-webui-consumer-ready-path.mjs",
         "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs",
         "node tests/release/release-test-v22-boundary-contract.mjs",
         "node tests/release/release-test-v22-production-receipt-boundary.mjs",
@@ -511,6 +515,7 @@
         "node tests/frontend/frontend-test-v22-commercial-launch-ui-productization.mjs",
         "node tests/frontend/frontend-test-v22-portal-journey-registry.mjs",
         "node tests/backend/backend-test-v22-api-contract.mjs",
+        "node tests/backend/backend-test-v22-opl-webui-consumer-ready-path.mjs",
         "node tests/runtime/runtime-test-v22-runtime-bridge-product-boundary.mjs",
         "node tests/release/release-test-v22-boundary-contract.mjs",
         "node tests/release/release-test-v22-production-receipt-boundary.mjs",
@@ -562,6 +567,7 @@
       "id": "local-contract",
       "commands": [
         "node tests/backend/backend-test-v22-api-contract.mjs",
+        "node tests/backend/backend-test-v22-opl-webui-consumer-ready-path.mjs",
         "node tests/contracts/contract-test-v22-go-backend-service-surface.mjs",
         "node tests/contracts/contract-test-v22-local-service-orchestration.mjs",
         "node tests/contracts/contract-test-v22-node-portal-backend-physical-removal.mjs",
@@ -677,6 +683,7 @@
       "commands": [
         "node scripts/v22-workflow-gate.mjs review --base origin/recovery/platform-v22-trunk",
         "node tests/backend/backend-test-v22-api-contract.mjs",
+        "node tests/backend/backend-test-v22-opl-webui-consumer-ready-path.mjs",
         "node tests/contracts/contract-test-v22-validate-active-platform.mjs",
         "node tests/contracts/contract-test-v22-commercial-launch-product-contract-matrix.mjs",
         "node tests/frontend/frontend-test-v22-portal-page-state-matrix.mjs",
@@ -713,7 +720,8 @@
     {
       "id": "backend",
       "commands": [
-        "node tests/backend/backend-test-v22-api-contract.mjs"
+        "node tests/backend/backend-test-v22-api-contract.mjs",
+        "node tests/backend/backend-test-v22-opl-webui-consumer-ready-path.mjs"
       ]
     },
     {

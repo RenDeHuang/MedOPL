@@ -59,6 +59,7 @@ type RuntimeGateRelease struct {
 type RuntimeGateConsumerProjection struct {
 	ChatSurface     string `json:"chatSurface"`
 	RunSurface      string `json:"runSurface"`
+	Ready           bool   `json:"ready"`
 	UploadEnabled   bool   `json:"uploadEnabled"`
 	RunEnabled      bool   `json:"runEnabled"`
 	ArtifactEnabled bool   `json:"artifactEnabled"`
@@ -632,6 +633,7 @@ func runtimeGateConsumerProjection(runtimeState string, storageState string, rel
 	return RuntimeGateConsumerProjection{
 		ChatSurface:     "opl-webui",
 		RunSurface:      runSurface,
+		Ready:           ready,
 		UploadEnabled:   ready,
 		RunEnabled:      ready,
 		ArtifactEnabled: ready,

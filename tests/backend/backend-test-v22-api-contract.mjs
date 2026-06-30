@@ -731,7 +731,7 @@ assert(
 );
 const runRefsProjection = serviceSurface.slice(
   serviceSurface.indexOf("Refs: PublicRunRefs{"),
-  serviceSurface.indexOf("Artifacts: []PublicArtifact{{"),
+  serviceSurface.indexOf("Artifacts: []PublicRunArtifactRef{{"),
 );
 for (const marker of [
   "RunRef:           runID",
