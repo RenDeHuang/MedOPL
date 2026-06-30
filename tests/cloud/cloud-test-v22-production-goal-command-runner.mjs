@@ -666,8 +666,10 @@ export default {
   }
   assert.equal(JSON.parse(createdRequests[0].LaunchConfigurePara).InstanceType, "S5.MEDIUM4", "starter_tier_instance_type");
   assert.equal(JSON.parse(createdRequests[0].LaunchConfigurePara).InstanceTypes, undefined, "starter_create_must_not_use_instance_types_array");
+  assert.equal(JSON.parse(createdRequests[0].LaunchConfigurePara).LaunchConfigurationName, undefined, "starter_create_must_not_set_launch_configuration_name");
   assert.equal(JSON.parse(createdRequests[1].LaunchConfigurePara).InstanceType, "S5.2XLARGE16", "pro_tier_instance_type");
   assert.equal(JSON.parse(createdRequests[1].LaunchConfigurePara).InstanceTypes, undefined, "pro_create_must_not_use_instance_types_array");
+  assert.equal(JSON.parse(createdRequests[1].LaunchConfigurePara).LaunchConfigurationName, undefined, "pro_create_must_not_set_launch_configuration_name");
   const upgradeCall = realTkeCalls.find((call) => call.api === "ModifyNodePoolInstanceTypes");
   assert.deepEqual(upgradeCall.request.InstanceTypes, ["S5.2XLARGE16"], "starter_upgrade_must_target_pro_instance_type");
   assert.deepEqual(realTkeCalls.filter((call) => call.api === "DeleteClusterNodePool").map((call) => call.request.NodePoolIds), [
