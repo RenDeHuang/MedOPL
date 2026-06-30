@@ -658,6 +658,11 @@ export default {
   assert.equal(createdRequests.length, 2, "real_tke_must_create_two_node_pools");
   for (const request of createdRequests) {
     assert.equal(request.Tags, undefined, "real_tke_default_must_not_send_tke_node_pool_tags");
+    assert.equal(
+      JSON.parse(request.AutoScalingGroupPara).AutoScalingGroupName,
+      undefined,
+      "real_tke_create_must_not_set_auto_scaling_group_name",
+    );
   }
   assert.equal(JSON.parse(createdRequests[0].LaunchConfigurePara).InstanceTypes[0], "S5.MEDIUM4", "starter_tier_instance_type");
   assert.equal(JSON.parse(createdRequests[1].LaunchConfigurePara).InstanceTypes[0], "S5.2XLARGE16", "pro_tier_instance_type");
