@@ -67,6 +67,11 @@ on:
         required: true
         default: cloud-rollout-rollback-explicit-image
         type: string
+      real_tke_node_lifecycle_plan_json:
+        description: Optional per-dispatch real TKE lifecycle plan JSON for runtime_storage_lifecycle cleanup or proof runs.
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
@@ -167,7 +172,7 @@ jobs:
       TENCENT_MUTATION_COS_REGION: ${{ vars.TENCENT_MUTATION_COS_REGION }}
       TENCENT_MUTATION_WORKSPACE_PREFIX_ROOT: ${{ vars.TENCENT_MUTATION_WORKSPACE_PREFIX_ROOT }}
       TENCENT_MUTATION_REGIONS: ${{ vars.TENCENT_MUTATION_REGIONS }}
-      TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_JSON: ${{ vars.TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_JSON }}
+      TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_JSON: ${{ inputs.real_tke_node_lifecycle_plan_json != '' && inputs.real_tke_node_lifecycle_plan_json || vars.TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_JSON }}
       V22_TENCENT_RUNTIME_USE_OFFICIAL_SDK: "1"
       V22_TENCENT_STORAGE_USE_COS_SDK: "1"
       V22_TENCENT_STORAGE_DELETE_PROBE: "1"

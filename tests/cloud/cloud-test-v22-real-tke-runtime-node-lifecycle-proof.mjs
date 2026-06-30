@@ -12,6 +12,7 @@ const realTkeSupportSource = readFileSync(path.join(repoRoot, "tests/support/clo
 const executorSource = readFileSync(path.join(repoRoot, "scripts/v22-cloud-authorized-executor.mjs"), "utf8");
 const configSupportSource = readFileSync(path.join(repoRoot, "tests/support/cloud-prework/lib/production-goal-command-config-support.js"), "utf8");
 const productionGoalExecutorSource = readFileSync(path.join(repoRoot, "tests/support/cloud-prework/cloud-authorized-production-goal-executor.js"), "utf8");
+const cloudRolloutWorkflowSource = readFileSync(path.join(repoRoot, ".github/workflows/cloud-rollout.yml"), "utf8");
 
 const operationClasses = authPack.active_pack.operation_classes;
 assert(
@@ -124,4 +125,11 @@ assert.equal(
   /real_tke_runtime_node_lifecycle[\s\S]*status:\s*"accepted"[\s\S]*(?:DescribeClusterNodePools|DescribeClusters)[\s\S]*realProviderMutationExecuted:\s*false/u.test(realTkeSupportSource),
   false,
   "describe_only_observation_must_not_be_accepted_as_real_tke_lifecycle",
+);
+
+assert(
+  cloudRolloutWorkflowSource.includes("real_tke_node_lifecycle_plan_json") &&
+    cloudRolloutWorkflowSource.includes("inputs.real_tke_node_lifecycle_plan_json") &&
+    cloudRolloutWorkflowSource.includes("vars.TENCENT_REAL_TKE_NODE_LIFECYCLE_PLAN_JSON"),
+  "cloud_rollout_must_allow_per_dispatch_real_tke_plan_without_mutating_persistent_vars",
 );
