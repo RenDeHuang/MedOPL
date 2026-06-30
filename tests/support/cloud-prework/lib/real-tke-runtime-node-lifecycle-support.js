@@ -1,4 +1,5 @@
 import path from "node:path";
+import { tmpdir } from "node:os";
 import { pathToFileURL } from "node:url";
 
 import { parseEnvFile, readJsonFile } from "./production-goal-command-config-support.js";
@@ -217,14 +218,27 @@ function filterFirst(items = [], keys = []) {
   return (Array.isArray(items) ? items : []).find((item) => keys.every((key) => item?.[key] !== undefined && item?.[key] !== null && item?.[key] !== "")) || null;
 }
 
+function isWithinDirectory(filePath, directoryPath) {
+  const directory = String(directoryPath || "").trim();
+  if (!directory) return false;
+  const relative = path.relative(path.resolve(directory), filePath);
+  return relative === "" || (relative && !relative.startsWith("..") && !path.isAbsolute(relative));
+}
+
 async function importTencentCloudSdkForRealTkeLifecycle() {
   const moduleOverride = String(process.env.V22_TENCENT_REAL_TKE_NODE_LIFECYCLE_SDK_MODULE || "").trim();
   if (moduleOverride) {
     const absolutePath = path.resolve(moduleOverride);
-    const relativePath = path.relative(process.cwd(), absolutePath);
-    const isRuntimePath = relativePath.startsWith(`.runtime${path.sep}`);
-    const isTempPath = absolutePath.startsWith(path.resolve(process.env.RUNNER_TEMP || process.env.TMPDIR || "/tmp"));
-    if (!isRuntimePath && !isTempPath) {
+    const allowedRoots = [
+      path.resolve(process.cwd(), ".runtime"),
+      process.env.RUNNER_TEMP,
+      process.env.TMPDIR,
+      process.env.TEMP,
+      process.env.TMP,
+      tmpdir(),
+      "/tmp",
+    ];
+    if (!allowedRoots.some((root) => isWithinDirectory(absolutePath, root))) {
       failClosed("production_goal_real_tke_sdk_module_override_not_allowed", { operationClass: "real_tke_runtime_node_lifecycle" }, 65);
     }
     return import(pathToFileURL(absolutePath).href);

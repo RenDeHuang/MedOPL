@@ -75,7 +75,7 @@ for (const expected of [
 }
 
 assert(
-  cloudRollout.includes("if (!parsed.deriveFromPlatformNodePool?.enabled && !parsed.deriveFromClusterFoundation?.enabled)"),
+  cloudRollout.includes("if (!Array.isArray(parsed.cleanupOnlyNodePoolRefs) && !parsed.deriveFromPlatformNodePool?.enabled && !parsed.deriveFromClusterFoundation?.enabled)"),
   "cluster_foundation_derived_plan_must_skip_prebuilt_node_pool_request_validation",
 );
 

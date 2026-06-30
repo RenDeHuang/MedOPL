@@ -340,6 +340,8 @@ export default {
   assert.equal(realTkeCheck.summary.requiredEnvMissing.length, 0, "real_tke_required_env");
   assert.equal(realTkeCheck.summary.requiredPathMissing.length, 0, "real_tke_required_paths");
 
+  const alternateRunnerTempDir = path.join(tempDir, "runner-temp");
+  mkdirSync(alternateRunnerTempDir);
   const realTkeExecute = parseJson(run(["--operation", "real_tke_runtime_node_lifecycle", "--execute", "--confirm-current-session-authorization"], baseEnv), "real_tke_execute");
   assert.equal(realTkeExecute.summary.realProviderMutationExecuted, true, "real_tke_must_execute_provider_mutation");
   assert.deepEqual(realTkeExecute.summary.tierCoverage, ["starter_2c4g_10gb", "pro_8c16g_100gb"], "real_tke_must_cover_starter_and_pro");
@@ -347,6 +349,17 @@ export default {
   assert.equal(realTkeExecute.summary.cleanupVerified, true, "real_tke_must_verify_cleanup");
   assert.equal(realTkeExecute.summary.nodePoolDestroyed, true, "real_tke_must_destroy_created_node_pools");
   assertNoSensitiveText(JSON.stringify(realTkeExecute), "real_tke_execute");
+  const realTkeRunnerTempMismatch = parseJson(run(["--operation", "real_tke_runtime_node_lifecycle", "--execute", "--confirm-current-session-authorization"], {
+    ...baseEnv,
+    RUNNER_TEMP: alternateRunnerTempDir,
+    TEST_REAL_TKE_FAKE_SDK_LOG: path.join(tempDir, "real-tke-runner-temp-mismatch-fake-sdk.log"),
+  }), "real_tke_runner_temp_mismatch");
+  assert.equal(
+    realTkeRunnerTempMismatch.summary.realProviderMutationExecuted,
+    true,
+    "real_tke_fake_sdk_in_system_tmp_must_be_allowed_when_runner_temp_differs",
+  );
+  assertNoSensitiveText(JSON.stringify(realTkeRunnerTempMismatch), "real_tke_runner_temp_mismatch");
   const realTkeCalls = JSON.parse(readFileSync(baseEnv.TEST_REAL_TKE_FAKE_SDK_LOG, "utf8"));
   assert.deepEqual(realTkeCalls.map((call) => call.api).filter((api) => api !== "DescribeClusterNodePools"), [
     "DescribeClusterNodePoolDetail",
