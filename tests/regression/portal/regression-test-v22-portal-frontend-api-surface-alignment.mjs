@@ -41,131 +41,41 @@ const allowedAdjudicationStatuses = new Set([
   "future-reserved",
 ]);
 
+const futureReserved = (reason) => ({ status: "future-reserved", reason });
+const backendOnly = (reason) => ({ status: "backend-only", reason });
+
 const unusedAdjudications = {
-  "admin.ts:fetchAdminAuditEvents": {
-    status: "future-reserved",
-    reason: "Admin audit event endpoint exists, but current React admin route set uses alerts/audit/system/ops instead of a dedicated audit event page.",
-  },
-  "admin.ts:fetchAdminGroups": {
-    status: "future-reserved",
-    reason: "Backend and shell remnants expose groups, but current React admin navigation does not include a groups page.",
-  },
-  "admin.ts:fetchAdminUsage": {
-    status: "future-reserved",
-    reason: "Usage analytics endpoint is retained for a future admin drilldown, not the current admin dashboard route set.",
-  },
-  "admin.ts:fetchAdminSandboxes": {
-    status: "future-reserved",
-    reason: "Sandbox inventory is not part of the current React admin surface.",
-  },
-  "admin.ts:fetchAdminUserPortrait": {
-    status: "future-reserved",
-    reason: "User portrait drilldown is still represented by backend/shell links, while current React admin uses the users table and detail dialog.",
-  },
-  "admin.ts:fetchAdminWorkspacePortrait": {
-    status: "future-reserved",
-    reason: "Workspace portrait drilldown is not mounted in current React routes.",
-  },
-  "admin.ts:fetchAdminRunPortrait": {
-    status: "future-reserved",
-    reason: "Run portrait drilldown is not mounted in current React routes.",
-  },
-  "billing.ts:fetchCostsSummary": {
-    status: "future-reserved",
-    reason: "Cost summary projection is available for future cost drilldowns; current billing page uses billing summary/details.",
-  },
-  "billing.ts:fetchWorkspaceCosts": {
-    status: "future-reserved",
-    reason: "Workspace cost projection is not shown by the current workspace or billing pages.",
-  },
-  "billing.ts:fetchRunCosts": {
-    status: "future-reserved",
-    reason: "Run cost projection is not shown by the current费用与用量 page yet.",
-  },
-  "opl.ts:sendOplMessage": {
-    status: "future-reserved",
-    reason: "Real provider message canary exists, but Portal's current product surface is OPL launch/session binding rather than embedded chat.",
-  },
-  "opl.ts:fetchOplMessageStatus": {
-    status: "future-reserved",
-    reason: "Message status belongs to the future OPL bridge backflow surface, not the current launch-only Portal UI.",
-  },
-  "opl.ts:fetchOplArtifact": {
-    status: "future-reserved",
-    reason: "Artifact fetch remains typed for OPL/runtime backflow, while current MedOPL user UI shows storage inventory and usage instead of an artifact detail page.",
-  },
-  "public.ts:fetchPublicSettings": {
-    status: "backend-only",
-    reason: "Public settings are consumed by the server-rendered public home and admin system payload, not directly by the React app.",
-  },
-  "production-bootstrap.ts:planProductionBootstrap": {
-    status: "future-reserved",
-    reason: "Production bootstrap is a Gap 01 contract-only API trace; it stays unmounted until admin/tenant/workspace bootstrap receives separate execution authorization.",
-  },
-  "production-bootstrap.ts:commitProductionBootstrap": {
-    status: "future-reserved",
-    reason: "Production bootstrap commit must fail closed before authorization and is tracked only as typed API shape for Gap 01.",
-  },
-  "production-operation.ts:planProductionPackageCOperation": {
-    status: "future-reserved",
-    reason: "Production Package C operation planning is Gap 02 contract-only API trace; it stays unmounted until Package C live operation receives separate authorization.",
-  },
-  "production-operation.ts:commitProductionPackageCOperation": {
-    status: "future-reserved",
-    reason: "Production Package C operation commit must fail closed before authorization and is tracked only as typed API shape for Gap 02.",
-  },
-  "production-ledger.ts:planProductionLedger": {
-    status: "future-reserved",
-    reason: "Production ResourceBinding ledger planning is Gap 03 contract-only API trace; it stays unmounted until PostgreSQL write/read receives separate authorization.",
-  },
-  "production-ledger.ts:commitProductionLedger": {
-    status: "future-reserved",
-    reason: "Production ResourceBinding ledger commit must fail closed before authorization and is tracked only as typed API shape for Gap 03.",
-  },
-  "production-commercial-ledger.ts:planProductionCommercialLedger": {
-    status: "future-reserved",
-    reason: "Production billing / audit / quota ledger planning is Gap 04 contract-only API trace; it stays unmounted until commercial ledger execution receives separate authorization.",
-  },
-  "production-commercial-ledger.ts:commitProductionCommercialLedger": {
-    status: "future-reserved",
-    reason: "Production billing / audit / quota ledger commit must fail closed before authorization and is tracked only as typed API shape for Gap 04.",
-  },
-  "production-workspace-lifecycle.ts:planProductionWorkspaceLifecycle": {
-    status: "future-reserved",
-    reason: "Production workspace suspend / resume / delete lifecycle planning is Gap 05 contract-only API trace; it stays unmounted until lifecycle execution receives separate authorization.",
-  },
-  "production-workspace-lifecycle.ts:commitProductionWorkspaceLifecycle": {
-    status: "future-reserved",
-    reason: "Production workspace suspend / resume / delete lifecycle commit must fail closed before authorization and is tracked only as typed API shape for Gap 05.",
-  },
-  "production-canary.ts:planProductionCanary": {
-    status: "future-reserved",
-    reason: "Production smoke / canary / rollback / cleanup evidence planning is Gap 06 contract-only API trace; it stays unmounted until canary execution receives separate authorization.",
-  },
-  "production-canary.ts:commitProductionCanary": {
-    status: "future-reserved",
-    reason: "Production smoke / canary / rollback / cleanup evidence commit must fail closed before authorization and is tracked only as typed API shape for Gap 06.",
-  },
-  "external-access-strategy.ts:planExternalAccessStrategy": {
-    status: "future-reserved",
-    reason: "Portal external access strategy planning is Gap 07 contract-only API trace; it stays unmounted until Ingress/HTTPS dry-run or execution receives separate authorization.",
-  },
-  "external-access-strategy.ts:commitExternalAccessStrategy": {
-    status: "future-reserved",
-    reason: "Portal external access strategy commit must fail closed before authorization and is tracked only as typed API shape for Gap 07.",
-  },
-  "server-plans.ts:fetchServerPlans": {
-    status: "future-reserved",
-    reason: "Server plan catalog remains a lower-level backend surface; current React runtime UI is package-oriented.",
-  },
-  "sessions.ts:fetchSessions": {
-    status: "future-reserved",
-    reason: "Session list is not exposed as an active React page; OPL owns the chat-first project/session surface.",
-  },
-  "sessions.ts:fetchRuns": {
-    status: "future-reserved",
-    reason: "Run list is not exposed as an active React page; MedOPL shows usage and billing references instead of a user observability surface.",
-  },
+  "admin.ts:fetchAdminAuditEvents": futureReserved("Admin audit event endpoint exists, but current React admin route set uses alerts/audit/system/ops instead of a dedicated audit event page."),
+  "admin.ts:fetchAdminGroups": futureReserved("Backend and shell remnants expose groups, but current React admin navigation does not include a groups page."),
+  "admin.ts:fetchAdminUsage": futureReserved("Usage analytics endpoint is retained for a future admin drilldown, not the current admin dashboard route set."),
+  "admin.ts:fetchAdminSandboxes": futureReserved("Sandbox inventory is not part of the current React admin surface."),
+  "admin.ts:fetchAdminUserPortrait": futureReserved("User portrait drilldown is still represented by backend/shell links, while current React admin uses the users table and detail dialog."),
+  "admin.ts:fetchAdminWorkspacePortrait": futureReserved("Workspace portrait drilldown is not mounted in current React routes."),
+  "admin.ts:fetchAdminRunPortrait": futureReserved("Run portrait drilldown is not mounted in current React routes."),
+  "billing.ts:fetchCostsSummary": futureReserved("Cost summary projection is available for future cost drilldowns; current billing page uses billing summary/details."),
+  "billing.ts:fetchWorkspaceCosts": futureReserved("Workspace cost projection is not shown by the current workspace or billing pages."),
+  "billing.ts:fetchRunCosts": futureReserved("Run cost projection is not shown by the current费用与用量 page yet."),
+  "opl.ts:sendOplMessage": futureReserved("Real provider message canary exists, but Portal's current product surface is OPL launch/session binding rather than embedded chat."),
+  "opl.ts:fetchOplMessageStatus": futureReserved("Message status belongs to the future OPL bridge backflow surface, not the current launch-only Portal UI."),
+  "opl.ts:fetchOplArtifact": futureReserved("Artifact fetch remains typed for OPL/runtime backflow, while current MedOPL user UI shows storage inventory and usage instead of an artifact detail page."),
+  "public.ts:fetchPublicSettings": backendOnly("Public settings are consumed by the server-rendered public home and admin system payload, not directly by the React app."),
+  "production-bootstrap.ts:planProductionBootstrap": futureReserved("Production bootstrap is a Gap 01 contract-only API trace; it stays unmounted until admin/tenant/workspace bootstrap receives separate execution authorization."),
+  "production-bootstrap.ts:commitProductionBootstrap": futureReserved("Production bootstrap commit must fail closed before authorization and is tracked only as typed API shape for Gap 01."),
+  "production-operation.ts:planProductionPackageCOperation": futureReserved("Production Package C operation planning is Gap 02 contract-only API trace; it stays unmounted until Package C live operation receives separate authorization."),
+  "production-operation.ts:commitProductionPackageCOperation": futureReserved("Production Package C operation commit must fail closed before authorization and is tracked only as typed API shape for Gap 02."),
+  "production-ledger.ts:planProductionLedger": futureReserved("Production ResourceBinding ledger planning is Gap 03 contract-only API trace; it stays unmounted until PostgreSQL write/read receives separate authorization."),
+  "production-ledger.ts:commitProductionLedger": futureReserved("Production ResourceBinding ledger commit must fail closed before authorization and is tracked only as typed API shape for Gap 03."),
+  "production-commercial-ledger.ts:planProductionCommercialLedger": futureReserved("Production billing / audit / quota ledger planning is Gap 04 contract-only API trace; it stays unmounted until commercial ledger execution receives separate authorization."),
+  "production-commercial-ledger.ts:commitProductionCommercialLedger": futureReserved("Production billing / audit / quota ledger commit must fail closed before authorization and is tracked only as typed API shape for Gap 04."),
+  "production-workspace-lifecycle.ts:planProductionWorkspaceLifecycle": futureReserved("Production workspace suspend / resume / delete lifecycle planning is Gap 05 contract-only API trace; it stays unmounted until lifecycle execution receives separate authorization."),
+  "production-workspace-lifecycle.ts:commitProductionWorkspaceLifecycle": futureReserved("Production workspace suspend / resume / delete lifecycle commit must fail closed before authorization and is tracked only as typed API shape for Gap 05."),
+  "production-canary.ts:planProductionCanary": futureReserved("Production smoke / canary / rollback / cleanup evidence planning is Gap 06 contract-only API trace; it stays unmounted until canary execution receives separate authorization."),
+  "production-canary.ts:commitProductionCanary": futureReserved("Production smoke / canary / rollback / cleanup evidence commit must fail closed before authorization and is tracked only as typed API shape for Gap 06."),
+  "external-access-strategy.ts:planExternalAccessStrategy": futureReserved("Portal external access strategy planning is Gap 07 contract-only API trace; it stays unmounted until Ingress/HTTPS dry-run or execution receives separate authorization."),
+  "external-access-strategy.ts:commitExternalAccessStrategy": futureReserved("Portal external access strategy commit must fail closed before authorization and is tracked only as typed API shape for Gap 07."),
+  "server-plans.ts:fetchServerPlans": futureReserved("Server plan catalog remains a lower-level backend surface; current React runtime UI is package-oriented."),
+  "sessions.ts:fetchSessions": futureReserved("Session list is not exposed as an active React page; OPL owns the chat-first project/session surface."),
+  "sessions.ts:fetchRuns": futureReserved("Run list is not exposed as an active React page; MedOPL shows usage and billing references instead of a user observability surface."),
 };
 
 function repoRelative(filePath) {
